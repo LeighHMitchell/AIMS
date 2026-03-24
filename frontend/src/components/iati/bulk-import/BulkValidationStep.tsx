@@ -202,8 +202,8 @@ export default function BulkValidationStep({
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <XCircle className="h-6 w-6 mx-auto mb-1 text-red-600" />
-              <p className="text-3xl font-bold text-red-600">{summary.errors}</p>
+              <XCircle className="h-6 w-6 mx-auto mb-1 text-destructive" />
+              <p className="text-3xl font-bold text-destructive">{summary.errors}</p>
               <p className="text-sm text-gray-600">Errors</p>
             </div>
           </CardContent>
@@ -211,9 +211,9 @@ export default function BulkValidationStep({
       </div>
 
       {hasBlockingErrors && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive/20 bg-destructive/10">
           <CardContent className="p-4">
-            <p className="text-sm text-red-800 font-medium">
+            <p className="text-sm text-destructive font-medium">
               All activities have errors. Fix the issues and re-upload, or deselect activities with errors in the Preview step.
             </p>
           </CardContent>
@@ -250,7 +250,7 @@ export default function BulkValidationStep({
                           <ChevronRight className="h-4 w-4 text-gray-400" />
                         )}
                         {hasErrors ? (
-                          <XCircle className="h-4 w-4 text-red-500" />
+                          <XCircle className="h-4 w-4 text-destructive" />
                         ) : hasWarnings ? (
                           <AlertTriangle className="h-4 w-4 text-yellow-500" />
                         ) : (
@@ -282,7 +282,7 @@ export default function BulkValidationStep({
                         {activity.validationIssues.map((issue, idx) => (
                           <div key={idx} className="flex items-start gap-2 text-sm py-1">
                             {issue.severity === 'error' ? (
-                              <XCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+                              <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
                             ) : issue.severity === 'warning' ? (
                               <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
                             ) : (

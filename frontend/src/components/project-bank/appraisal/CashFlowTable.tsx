@@ -529,7 +529,7 @@ function CashFlowChart({
                   'text-[10px] px-2 py-0.5 rounded transition-colors',
                   chartMode === mode
                     ? 'bg-slate-200 text-slate-900 font-semibold'
-                    : 'text-gray-600 hover:bg-gray-100',
+                    : 'text-gray-600 hover:bg-muted',
                 )}
               >
                 {mode === 'annual' ? 'Annual' : 'Cumulative'}
@@ -539,7 +539,7 @@ function CashFlowChart({
           <button
             type="button"
             onClick={downloadCsv}
-            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border text-gray-600 hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border text-gray-600 hover:bg-muted transition-colors"
             title="Download CSV"
           >
             <Download className="h-3 w-3" />

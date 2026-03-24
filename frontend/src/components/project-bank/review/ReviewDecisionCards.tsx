@@ -27,7 +27,7 @@ export function ReviewDecisionCards({ options, selected, onSelect, recommendedVa
               "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
               isSelected
                 ? "ring-border bg-primary/5"
-                : "ring-border bg-background hover:bg-gray-50"
+                : "ring-border bg-background hover:bg-muted/50"
             )}
           >
             <Image src={opt.image} alt={opt.alt} fill className="object-cover opacity-15" />

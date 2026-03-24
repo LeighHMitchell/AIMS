@@ -196,9 +196,9 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
-          <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
@@ -256,7 +256,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
                 <p className="font-medium capitalize flex items-center gap-1.5">
                   {assignment.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />}
                   {assignment.status === "in_progress" && <Clock className="h-3.5 w-3.5 text-blue-600" />}
-                  {assignment.status === "overdue" && <AlertCircle className="h-3.5 w-3.5 text-red-600" />}
+                  {assignment.status === "overdue" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
                   {assignment.status.replace(/_/g, " ")}
                 </p>
               </div>
@@ -301,7 +301,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               <h4 className="text-sm font-medium">Complete Study — Enter Results</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">FIRR (%) <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs">FIRR (%) <span className="text-destructive">*</span></Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -311,7 +311,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">EIRR (%) <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs">EIRR (%) <span className="text-destructive">*</span></Label>
                   <Input
                     type="number"
                     step="0.1"

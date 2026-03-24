@@ -256,7 +256,7 @@ export function HierarchicalSectorSelect({
                   <div key={category.code} className="mb-2">
                     {/* Category Header - Non-selectable */}
                     <div 
-                      className="px-3 py-2 text-sm font-semibold text-gray-900 bg-gray-100 border-t border-gray-200 first:border-t-0"
+                      className="px-3 py-2 text-sm font-semibold text-gray-900 bg-muted border-t border-gray-200 first:border-t-0"
                       role="heading"
                       aria-level={3}
                     >
@@ -268,7 +268,7 @@ export function HierarchicalSectorSelect({
                       <div key={sector.code}>
                         {/* 3-digit Sector Header - Non-selectable */}
                         <div
-                          className="px-3 py-1.5 text-sm font-semibold text-gray-700 bg-gray-50 cursor-default"
+                          className="px-3 py-1.5 text-sm font-semibold text-gray-700 bg-muted/50 cursor-default"
                           role="heading"
                           aria-level={4}
                         >
@@ -286,7 +286,7 @@ export function HierarchicalSectorSelect({
                               className={cn(
                                 "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-colors",
                                 isSelected && "bg-blue-100 text-blue-900",
-                                !isSelected && !isDisabled && "hover:bg-gray-100",
+                                !isSelected && !isDisabled && "hover:bg-muted",
                                 isDisabled && "text-gray-400 cursor-not-allowed"
                               )}
                               onClick={() => !isDisabled && handleSelect(subsector.code)}

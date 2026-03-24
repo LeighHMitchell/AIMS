@@ -282,7 +282,7 @@ export function EnhancedDatePicker({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateYear('prev')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-muted rounded"
                 type="button"
               >
                 <ChevronLeft className="h-3 w-3" />
@@ -290,7 +290,7 @@ export function EnhancedDatePicker({
               </button>
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-muted rounded"
                 type="button"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -304,14 +304,14 @@ export function EnhancedDatePicker({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-muted rounded"
                 type="button"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => navigateYear('next')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-muted rounded"
                 type="button"
               >
                 <ChevronRight className="h-3 w-3" />
@@ -338,7 +338,7 @@ export function EnhancedDatePicker({
                   "p-2 text-sm rounded hover:bg-blue-100",
                   !day && "invisible",
                   day && value && day.toDateString() === value.toDateString() && "bg-blue-500 text-white hover:bg-blue-600",
-                  day && (!value || day.toDateString() !== value.toDateString()) && "hover:bg-gray-100"
+                  day && (!value || day.toDateString() !== value.toDateString()) && "hover:bg-muted"
                 )}
                 type="button"
               >

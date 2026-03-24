@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area } from 'recharts'
 import {
-  Building2,
   ArrowLeft,
+  Building2,
   Globe,
   MapPin,
   Calendar,
@@ -129,6 +129,7 @@ import { getCountryCode } from '@/lib/country-utils'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 
 interface Organization {
   id: string
@@ -1262,16 +1263,13 @@ export default function OrganizationProfilePage() {
         <div className="w-full p-6">
 
           {/* Header */}
+          <Breadcrumbs items={[
+            { label: "Organizations", href: "/organizations" },
+            { label: organization.name },
+          ]} />
           <div className="flex items-center justify-between mb-6">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push('/organizations')}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Organizations
-            </Button>
-            
+            <div />
+
             <div className="flex gap-2 items-center" data-tour="org-actions">
               <Button variant="outline" className="border-border text-foreground hover:bg-muted">
                 <Download className="h-4 w-4 mr-2" />

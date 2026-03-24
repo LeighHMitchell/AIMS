@@ -250,9 +250,9 @@ interface SectorGroup {
 type SortField = 'subSector' | 'sector' | 'category' | 'percentage';
 type SortDirection = 'asc' | 'desc';
 
-export default function ImprovedSectorAllocationForm({ 
-  allocations = [], 
-  onChange, 
+function ImprovedSectorAllocationFormInner({
+  allocations = [],
+  onChange,
   onValidationChange,
   onCompletionStatusChange,
   allowPublish = true,
@@ -262,11 +262,6 @@ export default function ImprovedSectorAllocationForm({
   sectorExportLevel = 'activity',
   onSectorExportLevelChange
 }: ImprovedSectorAllocationFormProps) {
-  console.log('[ImprovedSectorAllocationForm] Component mounted with:', {
-    allocationsCount: allocations.length,
-    allocations,
-    hasCompletionCallback: !!onCompletionStatusChange
-  });
   const { user } = useUser();
   
   // Sector allocation mode (activity vs transaction level)
@@ -867,21 +862,30 @@ export default function ImprovedSectorAllocationForm({
   }, [allocations, sectorsAutosave.state.isPersistentlySaved, sectorsAutosave.state.isSaving, sectorsAutosave.state.error, onCompletionStatusChange]);
 
   // Save to autosave when allocations change (with deep comparison to prevent unnecessary saves)
+  const isInitialMountRef = useRef(true);
   const prevAllocationsStringRef = useRef<string>('');
+  const sectorsAutosaveRef = useRef(sectorsAutosave);
+  sectorsAutosaveRef.current = sectorsAutosave;
   useEffect(() => {
-    const currentAllocationsString = JSON.stringify(allocations.map(a => ({ 
-      code: a.code, 
-      percentage: a.percentage, 
-      level: a.level 
+    const currentAllocationsString = JSON.stringify(allocations.map(a => ({
+      code: a.code,
+      percentage: a.percentage,
+      level: a.level
     })).sort((a, b) => a.code.localeCompare(b.code)));
-    
-    // Only save if there's a meaningful change
-    if (currentAllocationsString !== prevAllocationsStringRef.current && allocations.length > 0) {
-      console.log('[SectorForm] Allocations changed, triggering save:', allocations);
+
+    // On initial mount, just record the current state without saving
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
       prevAllocationsStringRef.current = currentAllocationsString;
-      sectorsAutosave.saveNow(allocations);
+      return;
     }
-  }, [allocations, sectorsAutosave]);
+
+    // Only save if there's a meaningful change from the last known state
+    if (currentAllocationsString !== prevAllocationsStringRef.current && allocations.length > 0) {
+      prevAllocationsStringRef.current = currentAllocationsString;
+      sectorsAutosaveRef.current.saveNow(allocations);
+    }
+  }, [allocations]);
 
   // Handle sunburst chart segment selection - only show info, don't modify
   const handleSunburstSegmentClick = (code: string, level: 'category' | 'sector' | 'subsector') => {
@@ -1336,4 +1340,8 @@ export default function ImprovedSectorAllocationForm({
       </div>
     </div>
   );
-} 
+}
+
+// Memoize to prevent re-renders from parent state changes during background preloading
+const ImprovedSectorAllocationForm = React.memo(ImprovedSectorAllocationFormInner);
+export default ImprovedSectorAllocationForm;

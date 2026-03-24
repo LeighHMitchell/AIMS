@@ -242,6 +242,7 @@ export default function Dashboard() {
               <div>
                 {/* Welcome message with role badge on same line */}
                 <div className="flex items-center gap-3">
+                  <LayoutDashboard className="h-8 w-8 text-muted-foreground" />
                   <p className="text-2xl text-foreground">
                     Welcome, <span className="font-semibold">
                       {user.firstName || user.name.split(' ')[0]}

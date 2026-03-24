@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Upload, 
-  FileText, 
-  Trash2, 
+import {
+  Upload,
+  FileText,
+  Trash2,
   ExternalLink,
   Loader2,
-  AlertCircle
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -21,6 +24,7 @@ interface ReadinessDocumentUploadProps {
   documents: ReadinessEvidenceDocument[];
   onUpload: (file: File) => Promise<void>;
   onDelete: (documentId: string) => Promise<void>;
+  onRename: (documentId: string, fileName: string) => Promise<void>;
   isUploading: boolean;
   readOnly: boolean;
   isRequired?: boolean;
@@ -30,10 +34,14 @@ export function ReadinessDocumentUpload({
   documents,
   onUpload,
   onDelete,
+  onRename,
   isUploading,
   readOnly,
   isRequired = false,
 }: ReadinessDocumentUploadProps) {
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       await onUpload(acceptedFiles[0]);
@@ -73,33 +81,82 @@ export function ReadinessDocumentUpload({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const startEditing = (doc: ReadinessEvidenceDocument) => {
+    setEditingDocId(doc.id);
+    setEditName(doc.file_name);
+  };
+
+  const cancelEditing = () => {
+    setEditingDocId(null);
+    setEditName('');
+  };
+
+  const saveEdit = async (docId: string) => {
+    if (editName.trim()) {
+      await onRename(docId, editName.trim());
+    }
+    setEditingDocId(null);
+    setEditName('');
+  };
+
   return (
     <div className="space-y-3">
       <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
         <FileText className="h-4 w-4" />
         Supporting Document
-        {isRequired && (
-          <span className="text-xs text-orange-600">(Recommended)</span>
-        )}
       </Label>
 
       {/* Uploaded Documents List */}
       {hasDocuments && (
         <div className="space-y-2">
           {documents.map((doc) => (
-            <div 
+            <div
               key={doc.id}
-              className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+              className="flex items-center justify-between p-3 bg-muted/50 border rounded-lg"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded flex items-center justify-center text-lg">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-lg flex-shrink-0">
                   {getFileIcon(doc.file_type)}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {doc.file_name}
-                  </p>
-                  <p className="text-xs text-gray-500">
+                <div className="min-w-0 flex-1">
+                  {editingDocId === doc.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="h-7 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit(doc.id);
+                          if (e.key === 'Escape') cancelEditing();
+                        }}
+                      />
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(doc.id)}>
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={cancelEditing}>
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {doc.file_name}
+                      </p>
+                      {!readOnly && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 w-5 p-0 flex-shrink-0"
+                          onClick={(e) => { e.stopPropagation(); startEditing(doc); }}
+                          title="Rename document"
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
                     {formatFileSize(doc.file_size)}
                     {doc.uploaded_at && (
                       <> • Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}</>
@@ -110,7 +167,7 @@ export function ReadinessDocumentUpload({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -125,10 +182,9 @@ export function ReadinessDocumentUpload({
                     variant="ghost"
                     onClick={() => onDelete(doc.id)}
                     disabled={isUploading}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     title="Delete document"
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 )}
               </div>
@@ -143,43 +199,38 @@ export function ReadinessDocumentUpload({
           {...getRootProps()}
           className={cn(
             "border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer",
-            isDragActive 
-              ? "border-blue-500 bg-blue-50" 
-              : "border-gray-300 hover:border-gray-400 hover:bg-gray-50",
+            isDragActive
+              ? "border-foreground/50 bg-muted"
+              : "border-border hover:border-muted-foreground hover:bg-muted/50",
             isUploading && "opacity-50 cursor-wait",
             readOnly && "opacity-50 cursor-not-allowed"
           )}
         >
           <input {...getInputProps()} />
-          
+
           {isUploading ? (
             <div className="space-y-2">
-              <Loader2 className="h-6 w-6 mx-auto text-blue-500 animate-spin" />
-              <p className="text-sm text-gray-600">Uploading...</p>
+              <Loader2 className="h-6 w-6 mx-auto text-muted-foreground animate-spin" />
+              <p className="text-sm text-muted-foreground">Uploading...</p>
             </div>
           ) : isDragActive ? (
             <div className="space-y-2">
-              <Upload className="h-6 w-6 mx-auto text-blue-500" />
-              <p className="text-sm font-medium text-blue-600">Drop file here</p>
+              <Upload className="h-6 w-6 mx-auto text-foreground" />
+              <p className="text-sm font-medium text-foreground">Drop file here</p>
             </div>
           ) : (
             <div className="space-y-2">
-              <Upload className="h-6 w-6 mx-auto text-gray-400" />
-              <p className="text-sm text-gray-600">
+              <Upload className="h-6 w-6 mx-auto text-muted-foreground/60" />
+              <p className="text-sm text-muted-foreground">
                 {hasDocuments ? 'Add another document' : 'Drag & drop evidence document'}
                 <br />
-                <span className="text-xs text-gray-500">or click to browse (PDF, Word, Images - max 10MB)</span>
+                <span className="text-xs text-muted-foreground/60">
+                  or click to browse (PDF, Word, Images - max 10MB)
+                  {isRequired && ' · Recommended for completed items'}
+                </span>
               </p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Required warning */}
-      {isRequired && !hasDocuments && !readOnly && (
-        <div className="flex items-center gap-2 text-xs text-orange-600">
-          <AlertCircle className="h-3 w-3" />
-          <span>Uploading evidence is recommended for completed items</span>
         </div>
       )}
     </div>

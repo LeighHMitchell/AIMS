@@ -68,7 +68,7 @@ export default function HomePage() {
   return (
     <MainLayout>
       <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
-        <div className="max-w-[900px] w-full text-center">
+        <div className="max-w-3xl w-full text-center">
           <div className="mb-10">
             <h1 className="text-3xl font-bold tracking-tight">
               Aether
@@ -82,7 +82,7 @@ export default function HomePage() {
             {modules.map((m) => (
               <div
                 key={m.key}
-                className="relative flex flex-col justify-end rounded-lg shadow-sm ring-1 ring-inset ring-border bg-background hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all overflow-hidden h-[280px] group"
+                className="relative flex flex-col justify-end rounded-lg shadow-sm ring-1 ring-inset ring-border bg-background hover:bg-muted/50 dark:hover:bg-gray-800/50 transition-all overflow-hidden h-[280px] group"
               >
                 {/* Background illustration */}
                 <Image

@@ -1,7 +1,7 @@
 'use client';
 
 import { RequiredDot } from "@/components/ui/required-dot";
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
 import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp, HelpCircle } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -123,15 +123,19 @@ export default function ForwardSpendingSurveyTab({
     }
   }, [activityId, fetchFssData]);
 
+  // Stable ref for callback to avoid infinite re-render loop
+  const onFssChangeRef = useRef(onFssChange);
+  onFssChangeRef.current = onFssChange;
+
   // Notify parent component when forecasts change (only after initial load)
   // This prevents the green tick from disappearing when switching tabs
   useEffect(() => {
-    if (onFssChange && !loading) {
+    if (onFssChangeRef.current && !loading) {
       const count = forecasts.length > 0 ? 1 : 0;
       console.log('[FSS Tab] Notifying parent with forecast count:', count);
-      onFssChange(count);
+      onFssChangeRef.current(count);
     }
-  }, [forecasts, onFssChange, loading]);
+  }, [forecasts, loading]);
 
   // Read stored USD values from database (no conversion needed)
   useEffect(() => {

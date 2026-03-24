@@ -200,13 +200,13 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
   // Error state
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-destructive/20 bg-destructive/10">
         <CardContent className="p-6">
-          <div className="flex items-center space-x-2 text-red-800">
+          <div className="flex items-center space-x-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <div>
               <h3 className="font-medium">Error loading contacts</h3>
-              <p className="text-sm text-red-600 mt-1">{error}</p>
+              <p className="text-sm text-destructive mt-1">{error}</p>
             </div>
           </div>
         </CardContent>

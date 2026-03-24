@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 
 interface Organization {
   id?: string
@@ -133,6 +134,13 @@ export default function EditOrganizationPage() {
 
   return (
     <MainLayout>
+      <div className="max-w-6xl mx-auto p-6">
+        <Breadcrumbs items={[
+          { label: "Organizations", href: "/organizations" },
+          { label: organization.name, href: `/organizations/${organizationId}` },
+          { label: "Edit" },
+        ]} />
+      </div>
       <OrganizationEditor
         organizationId={organizationId}
         initialData={organization}

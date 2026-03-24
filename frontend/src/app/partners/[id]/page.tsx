@@ -30,7 +30,6 @@ import {
   Download,
   Printer,
   Plus,
-  ArrowLeft,
   X,
   Loader2
 } from "lucide-react";
@@ -63,6 +62,7 @@ import {
 } from "@/components/OrganizationFieldHelpers";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useHomeCountry } from "@/contexts/SystemSettingsContext";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 
 export default function PartnerProfilePage() {
   const params = useParams();
@@ -265,15 +265,10 @@ export default function PartnerProfilePage() {
     <MainLayout>
       <div className="min-h-screen">
         <div className="p-8">
-          {/* Back button */}
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/partners")}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Partners
-          </Button>
+          <Breadcrumbs items={[
+            { label: "Partners", href: "/partners" },
+            { label: partner.name },
+          ]} />
 
           {/* Hero Section with Banner */}
           {partner.banner && (

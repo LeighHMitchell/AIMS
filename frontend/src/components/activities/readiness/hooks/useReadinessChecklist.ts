@@ -35,6 +35,7 @@ interface UseReadinessChecklistReturn {
   updateItemResponse: (itemId: string, data: UpdateReadinessResponseRequest) => Promise<void>;
   uploadDocument: (itemId: string, file: File) => Promise<void>;
   deleteDocument: (itemId: string, documentId: string) => Promise<void>;
+  renameDocument: (itemId: string, documentId: string, fileName: string) => Promise<void>;
   signOffStage: (templateId: string, data: SignOffStageRequest) => Promise<void>;
   
   // Utilities
@@ -254,6 +255,38 @@ export function useReadinessChecklist({
     }
   }, [activityId, fetchState]);
 
+  // Rename document
+  const renameDocument = useCallback(async (itemId: string, documentId: string, fileName: string) => {
+    if (!activityId) return;
+
+    try {
+      setIsUpdating(true);
+      setUpdatingItemId(itemId);
+
+      const response = await apiFetch(`/api/activities/${activityId}/readiness/${itemId}/upload`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId, file_name: fileName }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to rename document');
+      }
+
+      await fetchState();
+      toast.success('Document renamed');
+    } catch (err) {
+      console.error('[useReadinessChecklist] Error renaming document:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to rename document');
+      throw err;
+    } finally {
+      setIsUpdating(false);
+      setUpdatingItemId(null);
+    }
+  }, [activityId, fetchState]);
+
   // Sign off stage
   const signOffStage = useCallback(async (
     templateId: string,
@@ -302,6 +335,7 @@ export function useReadinessChecklist({
     updateItemResponse,
     uploadDocument,
     deleteDocument,
+    renameDocument,
     signOffStage,
     isUpdating,
     updatingItemId,

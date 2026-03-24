@@ -249,7 +249,7 @@ export function SimpleSectorSelect({
                     <CommandGroup key={categoryName} className="p-0">
                       {/* Category Header */}
                       <div
-                        className="flex items-center px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors"
+                        className="flex items-center px-4 py-3 bg-muted/50 border-b cursor-pointer hover:bg-muted transition-colors"
                         onClick={() => toggleCategory(categoryName)}
                       >
                         {isExpanded ? (

@@ -457,15 +457,15 @@ export default function PartnerSummaryPage() {
     return (
       <MainLayout>
         <div className="container mx-auto p-6">
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-destructive/20 bg-destructive/10">
             <CardHeader>
-              <CardTitle className="text-red-800 flex items-center">
+              <CardTitle className="text-destructive flex items-center">
                 <AlertCircle className="h-5 w-5 mr-2" />
                 Error Loading Partner Summary
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-red-700 mb-4">{error}</p>
+              <p className="text-destructive mb-4">{error}</p>
               <Button onClick={fetchPartnerSummary} variant="outline">
                 Try Again
               </Button>
@@ -704,7 +704,7 @@ export default function PartnerSummaryPage() {
                                   <TableCell className="py-0.5">
                                     <Link 
                                       href={`/partners/${partner.id}`}
-                                      className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                      className="font-medium text-primary hover:text-primary hover:underline"
                                     >
                                       {partner.fullName && partner.acronym 
                                         ? `${partner.fullName} (${partner.acronym})`

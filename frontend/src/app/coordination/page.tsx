@@ -57,13 +57,13 @@ export default function CoordinationPage() {
       <MainLayout>
         <div className="min-h-screen bg-card">
           <div className="p-6">
-            <Card className="border-red-200 bg-red-50">
+            <Card className="border-destructive/20 bg-destructive/10">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <AlertCircle className="h-5 w-5 text-destructive" />
                   <div>
-                    <h3 className="font-medium text-red-900">Error Loading Data</h3>
-                    <p className="text-sm text-red-700">{error}</p>
+                    <h3 className="font-medium text-destructive">Error Loading Data</h3>
+                    <p className="text-sm text-destructive">{error}</p>
                   </div>
                   <Button
                     variant="outline"

@@ -3,12 +3,13 @@
 import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
-import { Card, CardContent } from "@/components/ui/card"
+import { StatCard } from "@/components/ui/stat-card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FilterBar } from "@/components/ui/filter-bar"
-import { CalendarClock, AlertTriangle, CheckCircle, Search, BarChart3 } from "lucide-react"
+import { CalendarClock, AlertTriangle, CheckCircle, Search, BarChart3, Inbox } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import { apiFetch } from "@/lib/api-fetch"
 
 interface DashboardData {
@@ -58,9 +59,9 @@ export default function MonitoringDashboardPage() {
       <div className="w-full">
         {/* Header with icon + subtitle */}
         <div className="flex items-center gap-3 mb-6">
-          <CalendarClock className="h-7 w-7 text-muted-foreground" />
+          <CalendarClock className="h-8 w-8 text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold">Monitoring Dashboard</h1>
+            <h1 className="text-3xl font-bold">Monitoring Dashboard</h1>
             <p className="text-muted-foreground text-sm">
               Project monitoring schedules and compliance tracking
             </p>
@@ -69,42 +70,10 @@ export default function MonitoringDashboardPage() {
 
         {/* Hero Cards — monochrome icons */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Total Monitored</span>
-                <CalendarClock className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stats.totalMonitored}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Due This Month</span>
-                <CalendarClock className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stats.dueThisMonth}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Overdue</span>
-                <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stats.overdue}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Compliance Rate</span>
-                <CheckCircle className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stats.complianceRate}%</div>
-            </CardContent>
-          </Card>
+          <StatCard label="Total Monitored" value={stats.totalMonitored} icon={CalendarClock} />
+          <StatCard label="Due This Month" value={stats.dueThisMonth} icon={CalendarClock} />
+          <StatCard label="Overdue" value={stats.overdue} icon={AlertTriangle} />
+          <StatCard label="Compliance Rate" value={`${stats.complianceRate}%`} icon={CheckCircle} />
         </div>
 
         {/* Search — styled like Project List filter bar */}
@@ -141,7 +110,7 @@ export default function MonitoringDashboardPage() {
                     </tr>
                   ))
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No monitored projects found</td></tr>
+                  <tr><td colSpan={5} className="p-0"><EmptyState icon={<Inbox className="h-10 w-10 text-muted-foreground" />} title="No monitored projects found" message="Try adjusting your search or filters." /></td></tr>
                 ) : (
                   filtered.map((s: any) => {
                     const proj = s.project_bank_projects;

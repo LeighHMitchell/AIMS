@@ -737,9 +737,9 @@ export function IntakeReviewTab() {
                     This project is pending review. Claim it to begin desk review.
                   </p>
                   {error && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-                      <p className="text-sm text-red-800">{error}</p>
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                      <p className="text-sm text-destructive">{error}</p>
                     </div>
                   )}
                   <Button
@@ -777,9 +777,9 @@ export function IntakeReviewTab() {
                   </h3>
 
                   {error && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-                      <p className="text-sm text-red-800">{error}</p>
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                      <p className="text-sm text-destructive">{error}</p>
                     </div>
                   )}
 
@@ -796,7 +796,7 @@ export function IntakeReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(decision === "returned" || decision === "returned_to_desk" || decision === "rejected") && (
-                        <span className="text-red-500 ml-1">*</span>
+                        <span className="text-destructive ml-1">*</span>
                       )}
                     </Label>
                     <Textarea

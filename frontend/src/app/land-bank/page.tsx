@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard } from "@/components/ui/stat-card"
 import { MapPin, Layers, CheckCircle, AlertTriangle } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -129,20 +130,9 @@ export default function LandBankDashboard() {
           <>
             {/* Hero stat cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {heroCards.map((card) => {
-                const Icon = card.icon
-                return (
-                  <Card key={card.label}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-muted-foreground">{card.label}</span>
-                        <Icon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div className="text-2xl font-bold">{card.value}</div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+              {heroCards.map((card) => (
+                <StatCard key={card.label} label={card.label} value={card.value} icon={card.icon} />
+              ))}
             </div>
 
             {/* Charts row */}

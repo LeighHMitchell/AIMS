@@ -616,7 +616,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
               svg.transition().duration(300).call(zoomRef.current.scaleBy, 1.3);
             }
           }}
-          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors text-sm font-bold text-gray-700 shadow-lg"
+          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-muted transition-colors text-sm font-bold text-gray-700 shadow-lg"
           title="Zoom in"
         >
           +
@@ -628,7 +628,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
               svg.transition().duration(300).call(zoomRef.current.scaleBy, 0.7);
             }
           }}
-          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors text-sm font-bold text-gray-700 shadow-lg"
+          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-muted transition-colors text-sm font-bold text-gray-700 shadow-lg"
           title="Zoom out"
         >
           −

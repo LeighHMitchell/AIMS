@@ -1377,8 +1377,8 @@ export function SectorDisbursementOverTime({
             <div className="overflow-auto max-h-[500px]">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-gray-700 sticky left-0 bg-gray-50">
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold text-gray-700 sticky left-0 bg-muted/50">
                       Year
                     </TableHead>
                     {visibleItemData.map(item => (
@@ -1409,7 +1409,7 @@ export function SectorDisbursementOverTime({
                           0
                         )
                         return (
-                          <TableRow key={idx} className="hover:bg-gray-50">
+                          <TableRow key={idx} className="hover:bg-muted/50">
                             <TableCell className="font-medium sticky left-0 bg-white">
                               {yearData.calendarYear}
                             </TableCell>
@@ -1425,8 +1425,8 @@ export function SectorDisbursementOverTime({
                         )
                       })}
                       {/* Totals row */}
-                      <TableRow className="bg-gray-100 font-semibold">
-                        <TableCell className="sticky left-0 bg-gray-100">Total</TableCell>
+                      <TableRow className="bg-muted font-semibold">
+                        <TableCell className="sticky left-0 bg-muted">Total</TableCell>
                         {visibleItemData.map(item => {
                           const itemTotal = timeSeriesData.reduce(
                             (sum, yearData) => sum + (yearData[item.code] || 0),

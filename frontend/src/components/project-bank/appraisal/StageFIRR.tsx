@@ -297,7 +297,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                     'text-[10px] px-2 py-0.5 rounded transition-colors',
                     comparisonView === view
                       ? 'bg-slate-200 text-slate-900 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-100',
+                      : 'text-gray-600 hover:bg-muted',
                   )}
                 >
                   {view === 'net' ? 'Net' : view === 'capex' ? 'CAPEX' : view === 'opex' ? 'OPEX' : 'Revenue'}

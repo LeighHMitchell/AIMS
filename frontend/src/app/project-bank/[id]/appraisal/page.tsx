@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { AppraisalWizard } from "@/components/project-bank/appraisal/AppraisalWizard"
 
 export default function ResumeAppraisalPage() {
@@ -10,8 +11,12 @@ export default function ResumeAppraisalPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-[1600px]">
-        <h1 className="text-2xl font-bold mb-6">Project Appraisal</h1>
+      <div className="max-w-6xl">
+        <Breadcrumbs items={[
+          { label: "Project Bank", href: "/project-bank" },
+          { label: "Appraisal" },
+        ]} />
+        <h1 className="text-3xl font-bold mb-6">Project Appraisal</h1>
         <AppraisalWizard projectId={id} />
       </div>
     </MainLayout>

@@ -11,13 +11,13 @@ import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { ActivityCardActionMenu } from './ActivityCardActionMenu';
 import { getActivityStatusLabel } from '@/lib/activity-status-utils';
 
-// Color palette
+// Color palette — uses brand tokens from CSS variables for theme compatibility
 const colors = {
-  primaryScarlet: '#dc2625',
-  paleSlate: '#cfd0d5',
-  blueSlate: '#4c5568',
-  coolSteel: '#7b95a7',
-  platinum: '#f1f4f8',
+  primaryScarlet: 'hsl(var(--brand-scarlet))',
+  paleSlate: 'hsl(var(--brand-pale-slate))',
+  blueSlate: 'hsl(var(--brand-blue-slate))',
+  coolSteel: 'hsl(var(--brand-cool-steel))',
+  platinum: 'hsl(var(--brand-platinum))',
 };
 
 interface ActivityCardModernProps {
@@ -141,8 +141,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
       whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate border ${className}`}
-      style={{ backgroundColor: 'white' }}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate border bg-card ${className}`}
       role="article"
       aria-label={`Activity: ${activity.title}`}
     >
@@ -229,7 +228,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       {/* Activity Icon Overlay - positioned outside banner to avoid overflow clipping */}
       {activity.icon && activity.icon.trim() !== '' && (
         <div className="absolute right-4 top-48 -translate-y-[75%] z-30">
-          <div className="w-14 h-14 rounded-full border-4 shadow-lg overflow-hidden" style={{ borderColor: colors.platinum, backgroundColor: 'white' }}>
+          <div className="w-14 h-14 rounded-full border-4 shadow-lg overflow-hidden bg-card" style={{ borderColor: colors.platinum }}>
             <img
               src={activity.icon}
               alt={`Icon for ${activity.title}`}
@@ -244,7 +243,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       )}
 
       {/* Ticket Details Section */}
-      <div className="relative flex-1 p-5 flex flex-col select-text cursor-default" style={{ backgroundColor: 'white' }}>
+      <div className="relative flex-1 p-5 flex flex-col select-text cursor-default bg-card">
         <div className="flex-1">
           <div className="grid grid-cols-2 gap-4 mt-2">
               {/* Start Date */}
@@ -292,9 +291,9 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
 
           {/* Rip Line */}
           <div className="relative flex items-center justify-center my-4">
-            <div className="absolute -left-5 h-10 w-10 rounded-full z-20" style={{ backgroundColor: 'white' }} />
+            <div className="absolute -left-5 h-10 w-10 rounded-full z-20 bg-background" />
             <div className="w-full border-t-2 border-dashed" style={{ borderColor: colors.paleSlate }} />
-            <div className="absolute -right-5 h-10 w-10 rounded-full z-20" style={{ backgroundColor: 'white' }} />
+            <div className="absolute -right-5 h-10 w-10 rounded-full z-20 bg-background" />
           </div>
 
           {/* Bottom Section */}

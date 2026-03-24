@@ -246,7 +246,7 @@ export function TaskTrackingView({
             key={task.id}
             className={cn(
               'transition-all',
-              isOverdue && pending + inProgress > 0 && 'border-red-200 bg-red-50/30',
+              isOverdue && pending + inProgress > 0 && 'border-destructive/20 bg-destructive/10',
               isDueSoon && !isOverdue && pending + inProgress > 0 && 'border-amber-200 bg-amber-50/30'
             )}
           >
@@ -288,7 +288,7 @@ export function TaskTrackingView({
                       {deadline && (
                         <div className={cn(
                           'flex items-center gap-1 text-sm',
-                          isOverdue && 'text-red-600',
+                          isOverdue && 'text-destructive',
                           isDueSoon && !isOverdue && 'text-amber-600'
                         )}>
                           <Calendar className="h-4 w-4" />
@@ -440,11 +440,11 @@ export function TaskTrackingView({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               onClick={(e) => e.stopPropagation()}
                               disabled={deletingTaskId === task.id}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent onClick={(e) => e.stopPropagation()}>
@@ -457,7 +457,7 @@ export function TaskTrackingView({
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                className="bg-red-600 hover:bg-red-700"
+                                className="bg-destructive hover:bg-destructive/90"
                                 onClick={() => handleDelete(task.id)}
                               >
                                 Delete Task
@@ -560,7 +560,7 @@ export function TaskTrackingView({
                               <TableRow
                                 key={assignment.id}
                                 className={cn(
-                                  assignmentOverdue && 'bg-red-50/50'
+                                  assignmentOverdue && 'bg-destructive/5'
                                 )}
                               >
                                 <TableCell>
@@ -618,7 +618,7 @@ export function TaskTrackingView({
                                       {getStatusLabel(assignment.status)}
                                     </Badge>
                                     {assignmentOverdue && (
-                                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                                      <AlertTriangle className="h-4 w-4 text-destructive" />
                                     )}
                                   </div>
                                 </TableCell>

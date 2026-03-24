@@ -10,7 +10,6 @@ import {
   Award,
   Lock
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 import type {
   ReadinessStageWithData,
@@ -26,6 +25,7 @@ interface ReadinessStageContentProps {
   onUpdateResponse: (itemId: string, data: UpdateReadinessResponseRequest) => Promise<void>;
   onUploadDocument: (itemId: string, file: File) => Promise<void>;
   onDeleteDocument: (itemId: string, documentId: string) => Promise<void>;
+  onRenameDocument: (itemId: string, documentId: string, fileName: string) => Promise<void>;
   onSignOff: (templateId: string, data: SignOffStageRequest) => Promise<void>;
   isUpdating: boolean;
   updatingItemId: string | null;
@@ -38,6 +38,7 @@ export function ReadinessStageContent({
   onUpdateResponse,
   onUploadDocument,
   onDeleteDocument,
+  onRenameDocument,
   onSignOff,
   isUpdating,
   updatingItemId,
@@ -51,25 +52,21 @@ export function ReadinessStageContent({
 
   const getStatusIcon = () => {
     if (isStageSigned) {
-      return <Award className="h-5 w-5 text-green-600" />;
+      return <Award className="h-5 w-5 text-foreground" />;
     }
     if (isComplete) {
-      return <CheckCircle className="h-5 w-5 text-blue-600" />;
+      return <CheckCircle className="h-5 w-5 text-foreground" />;
     }
     if (progress.in_progress > 0 || progress.completed > 0) {
-      return <Clock className="h-5 w-5 text-yellow-600" />;
+      return <Clock className="h-5 w-5 text-muted-foreground" />;
     }
-    return <Circle className="h-5 w-5 text-gray-400" />;
+    return <Circle className="h-5 w-5 text-muted-foreground/50" />;
   };
 
   return (
     <div>
       {/* Stage header */}
-      <div className={cn(
-        'p-6 rounded-lg border mb-6',
-        isStageSigned && 'border-green-200 bg-green-50',
-        isComplete && !isStageSigned && 'border-blue-200 bg-blue-50',
-      )}>
+      <div className="p-6 rounded-lg border mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {getStatusIcon()}
@@ -91,23 +88,20 @@ export function ReadinessStageContent({
               <div className="w-24">
                 <Progress
                   value={progress.percentage}
-                  className={cn(
-                    'h-2',
-                    isComplete && '[&>div]:bg-green-600',
-                  )}
+                  className="h-2"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {isStageSigned && (
-                <Badge className="bg-green-600">
+                <Badge variant="secondary">
                   <Lock className="h-3 w-3 mr-1" />
                   Signed Off
                 </Badge>
               )}
               {isComplete && !isStageSigned && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                <Badge variant="secondary">
                   Ready for Sign-off
                 </Badge>
               )}
@@ -143,6 +137,7 @@ export function ReadinessStageContent({
               onUpdateResponse={(data) => onUpdateResponse(item.id, data)}
               onUploadDocument={(file) => onUploadDocument(item.id, file)}
               onDeleteDocument={(docId) => onDeleteDocument(item.id, docId)}
+              onRenameDocument={(docId, fileName) => onRenameDocument(item.id, docId, fileName)}
               isUpdating={isUpdating && updatingItemId === item.id}
               readOnly={readOnly || isStageSigned}
             />

@@ -38,7 +38,10 @@ import {
   ArrowUp,
   ArrowDown,
   Globe,
-  FileText
+  FileText,
+  Users,
+  List,
+  LayoutGrid
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -46,6 +49,8 @@ import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { INSTITUTIONAL_GROUPS, getAllInstitutionalGroupNames } from "@/data/location-groups";
 import { apiFetch } from '@/lib/api-fetch';
+import PartnerCardModern from '@/components/partners/PartnerCardModern';
+import type { Partner } from '@/hooks/usePartners';
 
 type SortField = 'name' | 'reportedActivities' | 'providerReceiver' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
@@ -130,6 +135,7 @@ export default function PartnersPage() {
   const [loadingCountries, setLoadingCountries] = useState<Set<string>>(new Set());
   const [expandLevel, setExpandLevel] = useState<0 | 1 | 2>(0); // 0 = collapsed, 1 = orgs expanded, 2 = activities expanded
   const [hideInactiveOrgs, setHideInactiveOrgs] = useState(false); // Hide orgs with no financial activity
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const transactionType = 'D'; // Disbursements - matches the summary data shown
 
   // Fetch summary data - unified view with actual disbursements + planned disbursements
@@ -953,8 +959,11 @@ export default function PartnersPage() {
       <div className="min-h-screen">
         <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Partner Summary</h1>
+          <div className="flex items-center gap-3 mb-6">
+            <Users className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Partner Summary</h1>
+            </div>
           </div>
 
           {/* Main Content */}
@@ -972,6 +981,28 @@ export default function PartnersPage() {
               </TabsList>
 
               <div className="flex items-center gap-4">
+                {/* View Toggle */}
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    variant={viewMode === "table" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("table")}
+                    className="rounded-r-none gap-1"
+                  >
+                    <List className="h-4 w-4" />
+                    List
+                  </Button>
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className="rounded-l-none gap-1"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    Cards
+                  </Button>
+                </div>
+
                 {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -985,35 +1016,69 @@ export default function PartnersPage() {
                 </div>
 
                 {/* Actions */}
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleExpandAll}
-                  disabled={expandLevel === 2}
-                >
-                  {expandLevel === 0 ? 'Expand Countries/Organisations' : expandLevel === 1 ? 'Expand Activities' : 'Expand All'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleCollapseAll}
-                  disabled={expandLevel === 0 && expandedCountries.size === 0 && expandedOrgs.size === 0}
-                >
-                  {expandLevel === 2 ? 'Collapse Activities' : 'Collapse All'}
-                </Button>
-                <Button 
-                  variant={hideInactiveOrgs ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setHideInactiveOrgs(!hideInactiveOrgs)}
-                  title={hideInactiveOrgs ? "Show all organizations" : "Hide organizations with no financial activity"}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  {hideInactiveOrgs ? 'Show All' : 'Hide Inactive'}
-                </Button>
+                {viewMode === 'table' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExpandAll}
+                      disabled={expandLevel === 2}
+                    >
+                      {expandLevel === 0 ? 'Expand Countries/Organisations' : expandLevel === 1 ? 'Expand Activities' : 'Expand All'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCollapseAll}
+                      disabled={expandLevel === 0 && expandedCountries.size === 0 && expandedOrgs.size === 0}
+                    >
+                      {expandLevel === 2 ? 'Collapse Activities' : 'Collapse All'}
+                    </Button>
+                    <Button
+                      variant={hideInactiveOrgs ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setHideInactiveOrgs(!hideInactiveOrgs)}
+                      title={hideInactiveOrgs ? "Show all organizations" : "Hide organizations with no financial activity"}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      {hideInactiveOrgs ? 'Show All' : 'Hide Inactive'}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
-            <TabsContent value="type">
+            {/* Grid View */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(() => {
+                  const allOrgs: OrganizationMetrics[] = [];
+                  if (summaryData) {
+                    const groups = groupBy === 'type' ? summaryData.predefinedGroups : summaryData.customGroups;
+                    groups.forEach((group: GroupData) => {
+                      allOrgs.push(...filterOrganizations(group.organizations));
+                    });
+                  }
+                  return sortOrganizations(allOrgs).map((org) => {
+                    const partner: Partner = {
+                      id: org.id,
+                      name: org.name,
+                      fullName: org.fullName,
+                      acronym: org.acronym,
+                      organisationType: org.organisationType,
+                      countryRepresented: org.countryRepresented,
+                      logo: org.logo,
+                      website: org.website,
+                    };
+                    return (
+                      <PartnerCardModern key={org.id} partner={partner} />
+                    );
+                  });
+                })()}
+              </div>
+            )}
+
+            {viewMode === 'table' && (<><TabsContent value="type">
               <div className="space-y-4">
                 {/* Bilateral Partners Table */}
                 <Card className="bg-white border border-border">
@@ -1506,7 +1571,7 @@ export default function PartnersPage() {
                   })
                 )}
               </div>
-            </TabsContent>
+            </TabsContent></>)}
           </Tabs>
         </div>
       </div>

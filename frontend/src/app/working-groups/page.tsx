@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatCard } from '@/components/ui/stat-card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -32,7 +33,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, Table as TableIcon, Pencil, MoreVertical, Eye, Trash2 } from 'lucide-react'
+import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, List, Table as TableIcon, Pencil, MoreVertical, Eye, Trash2, Inbox } from 'lucide-react'
+import { EmptyState } from "@/components/ui/empty-state"
+import WorkingGroupCardModern from '@/components/working-groups/WorkingGroupCardModern'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useUserRole } from '@/hooks/useUserRole'
@@ -155,11 +158,14 @@ export default function WorkingGroupsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Working Groups</h1>
-            <p className="mt-2 text-muted-foreground">
-              Technical and Sector Working Groups for coordination and collaboration
-            </p>
+          <div className="flex items-center gap-3">
+            <Users className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Working Groups</h1>
+              <p className="mt-2 text-muted-foreground">
+                Technical and Sector Working Groups for coordination and collaboration
+              </p>
+            </div>
           </div>
           <Button className="gap-2" onClick={() => router.push('/working-groups/new')}>
             <PlusIcon className="h-5 w-5" />
@@ -169,59 +175,10 @@ export default function WorkingGroupsPage() {
 
         {/* Summary Cards - Monochrome */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Groups</p>
-                  <p className="text-2xl font-bold text-foreground">{workingGroups.length}</p>
-                </div>
-                <NetworkIcon className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Groups</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {workingGroups.filter(wg => wg.status === 'active').length}
-                  </p>
-                </div>
-                <UserCheck className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Members</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {workingGroups.reduce((sum, wg) => sum + (wg.member_count || 0), 0)}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Linked Activities</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {workingGroups.reduce((sum, wg) => sum + (wg.activities_count || 0), 0)}
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard label="Total Groups" value={workingGroups.length} icon={NetworkIcon} />
+          <StatCard label="Active Groups" value={workingGroups.filter(wg => wg.status === 'active').length} icon={UserCheck} />
+          <StatCard label="Total Members" value={workingGroups.reduce((sum, wg) => sum + (wg.member_count || 0), 0)} icon={Users} />
+          <StatCard label="Linked Activities" value={workingGroups.reduce((sum, wg) => sum + (wg.activities_count || 0), 0)} icon={Calendar} />
         </div>
 
         {/* Filters + View Toggle */}
@@ -249,22 +206,24 @@ export default function WorkingGroupsPage() {
             </SelectContent>
           </Select>
 
-          <div className="flex border rounded-md">
+          <div className="flex items-center border rounded-md">
             <Button
-              variant="ghost"
+              variant={viewMode === "table" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-              onClick={() => setViewMode('table')}
+              onClick={() => setViewMode("table")}
+              className="rounded-r-none gap-1"
             >
-              <TableIcon className="h-4 w-4" />
+              <List className="h-4 w-4" />
+              List
             </Button>
             <Button
-              variant="ghost"
+              variant={viewMode === "card" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-l-none ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-              onClick={() => setViewMode('card')}
+              onClick={() => setViewMode("card")}
+              className="rounded-l-none gap-1"
             >
               <LayoutGrid className="h-4 w-4" />
+              Cards
             </Button>
           </div>
         </div>
@@ -273,102 +232,18 @@ export default function WorkingGroupsPage() {
         {viewMode === 'card' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGroups.map((wg) => (
-              <Card
+              <WorkingGroupCardModern
                 key={wg.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer relative group"
-                onClick={() => router.push(`/working-groups/${wg.id}`)}
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold line-clamp-2">
-                        {wg.label}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">{wg.code}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={wg.status === 'active' ? 'default' : 'secondary'}
-                        className="ml-2"
-                      >
-                        {wg.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  {wg.group_type && (
-                    <Badge variant="outline" className="text-xs mt-2 w-fit">
-                      {GROUP_TYPE_LABELS[wg.group_type] || wg.group_type}
-                    </Badge>
-                  )}
-                </CardHeader>
-
-                <CardContent>
-                  {wg.description && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {wg.description}
-                    </p>
-                  )}
-
-                  {wg.lead_person && (
-                    <div className="mb-4">
-                      <p className="text-xs text-muted-foreground">Chair</p>
-                      <p className="text-sm font-medium">{wg.lead_person.name}</p>
-                      <p className="text-xs text-muted-foreground">{wg.lead_person.organization}</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{wg.member_count || 0} members</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{wg.activities_count || 0} activities</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Kebab menu for super users */}
-                  {isSuperUser() && (
-                    <div
-                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-sm"
-                          >
-                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/working-groups/${wg.id}`)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/working-groups/${wg.id}/edit`)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => setWgToDelete(wg)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                workingGroup={{
+                  id: wg.id,
+                  code: wg.code,
+                  label: wg.label,
+                  description: wg.description,
+                  sector_code: wg.sector_code,
+                  is_active: wg.is_active,
+                  status: wg.status,
+                }}
+              />
             ))}
           </div>
         )}
@@ -436,9 +311,11 @@ export default function WorkingGroupsPage() {
         )}
 
         {filteredGroups.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No working groups found matching your criteria</p>
-          </div>
+          <EmptyState
+            icon={<Inbox className="h-10 w-10 text-muted-foreground" />}
+            title="No working groups found"
+            message="No working groups match your current criteria. Try adjusting your search or filters."
+          />
         )}
       </div>
 

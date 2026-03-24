@@ -24,6 +24,7 @@ import {
   Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area,
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch'
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { getTargetsForGoal } from '@/data/sdg-targets'
@@ -336,18 +337,10 @@ export default function SDGProfilePage() {
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
-          {/* Back button */}
-          <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/sdgs')}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1.5" />
-              SDGs
-            </Button>
-          </div>
+          <Breadcrumbs items={[
+            { label: "SDGs", href: "/sdgs" },
+            { label: `SDG ${params?.id}` },
+          ]} />
 
           {/* Hero Banner */}
           <SDGHeroBanner

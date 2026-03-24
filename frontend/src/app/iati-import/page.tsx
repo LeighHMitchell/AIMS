@@ -344,7 +344,7 @@ function HistoryTab() {
                 <div key={record.id} className="border rounded-lg overflow-hidden">
                   {/* Batch Row */}
                   <button
-                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 text-left"
+                    className="w-full flex items-center justify-between p-4 hover:bg-muted/50 text-left"
                     onClick={() => fetchBatchItems(record.id)}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -450,7 +450,7 @@ function HistoryTab() {
 
                   {/* Expanded Batch Items (drill-down) */}
                   {isExpanded && (
-                    <div className="border-t bg-gray-50 px-4 py-3">
+                    <div className="border-t bg-muted/50 px-4 py-3">
                       {loadingItems ? (
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1623,7 +1623,7 @@ export default function IATIImportPage() {
                 </CardHeader>
                 <CardContent>
                   {/* Summary Stats */}
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="mb-6 p-4 bg-muted/50 rounded-lg">
                     <h4 className="font-medium text-sm text-foreground mb-3">Data Found in XML File:</h4>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">

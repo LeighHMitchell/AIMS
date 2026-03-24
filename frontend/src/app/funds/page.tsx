@@ -35,6 +35,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Search, DollarSign, Users, Layers, TrendingUp, ArrowUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
 import { useUser } from "@/hooks/useUser"
 import { exportActivityToPDF } from "@/lib/activity-export"
@@ -246,15 +247,15 @@ export default function FundsPage() {
         ) : error ? (
           <div className="text-center py-12 text-muted-foreground"><p>{error}</p></div>
         ) : filteredFunds.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <Wallet className="h-12 w-12 mx-auto mb-3" />
-            <p className="text-lg font-medium">No pooled funds found</p>
-            <p className="text-sm mt-1">
-              {searchQuery || statusFilter !== 'all'
+          <EmptyState
+            icon={<Wallet className="h-10 w-10 text-muted-foreground" />}
+            title="No pooled funds found"
+            message={
+              searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your filters.'
-                : 'Mark an activity as a pooled fund to see it here.'}
-            </p>
-          </div>
+                : 'Mark an activity as a pooled fund to see it here.'
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredFunds.map(fund => {

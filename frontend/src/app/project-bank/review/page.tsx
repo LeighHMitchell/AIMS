@@ -39,9 +39,9 @@ export default function ReviewBoardPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <KanbanSquare className="h-7 w-7 text-muted-foreground" />
+            <KanbanSquare className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-2xl font-bold">Review Board</h1>
+              <h1 className="text-3xl font-bold">Review Board</h1>
               <p className="text-muted-foreground text-sm">
                 Review intake submissions and feasibility study narratives
               </p>

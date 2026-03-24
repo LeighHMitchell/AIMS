@@ -245,7 +245,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
               'relative flex flex-col justify-end w-[120px] h-[120px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               !ndpAligned
                 ? 'ring-amber-300 bg-amber-50'
-                : 'ring-border bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-muted/50',
             )}
           >
             <Image src="/images/msdp-not-aligned.png" alt="Not aligned" fill className="object-contain opacity-15" style={{ objectPosition: 'left bottom' }} />
@@ -275,7 +275,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                     ? 'ring-[#5f7f7a] bg-[#f6f5f3] ring-2'
                     : isSecondary
                     ? 'ring-[#5f7f7a]/60 bg-[#f6f5f3]'
-                    : 'ring-border bg-background hover:bg-gray-50',
+                    : 'ring-border bg-background hover:bg-muted/50',
                 )}
               >
                 {goalImage && (

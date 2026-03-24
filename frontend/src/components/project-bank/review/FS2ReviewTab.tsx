@@ -549,9 +549,9 @@ export function FS2ReviewTab() {
               </div>
 
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-                  <p className="text-sm text-red-800">{error}</p>
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
 
@@ -606,7 +606,7 @@ export function FS2ReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
-                        <span className="text-red-500 ml-1">*</span>
+                        <span className="text-destructive ml-1">*</span>
                       )}
                     </Label>
                     <Textarea
@@ -649,7 +649,7 @@ export function FS2ReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
-                        <span className="text-red-500 ml-1">*</span>
+                        <span className="text-destructive ml-1">*</span>
                       )}
                     </Label>
                     <Textarea
@@ -727,7 +727,7 @@ export function FS2ReviewTab() {
                     {isOverride ? (
                       <div className="space-y-2">
                         <Label className="text-sm">
-                          Rationale for Override <span className="text-red-500">*</span>
+                          Rationale for Override <span className="text-destructive">*</span>
                         </Label>
                         <p className="text-xs text-muted-foreground">
                           You are selecting a different category than the system recommendation. Please explain why.

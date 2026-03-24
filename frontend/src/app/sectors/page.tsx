@@ -4,10 +4,11 @@ import React, { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
+import { StatCard } from '@/components/ui/stat-card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ChevronRight, ChevronDown, Search, DollarSign, BarChart3, Activity } from 'lucide-react'
+import { AlertCircle, ChevronRight, ChevronDown, Search, DollarSign, BarChart3, Activity, PieChart } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
 import { getSectorColor } from '@/lib/sector-colors'
 
@@ -178,48 +179,21 @@ export default function SectorsListingPage() {
       <div className="min-h-screen">
         <div className="w-full p-6">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Sectors</h1>
-            <p className="text-sm text-muted-foreground">
-              DAC CRS Purpose Codes — {data.totals.activeSectors} active sectors across {data.totals.totalActivities} activities
-            </p>
+          <div className="flex items-center gap-3 mb-6">
+            <PieChart className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-1">Sectors</h1>
+              <p className="text-sm text-muted-foreground">
+                DAC CRS Purpose Codes — {data.totals.activeSectors} active sectors across {data.totals.totalActivities} activities
+              </p>
+            </div>
           </div>
 
           {/* Summary stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card className="border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">Total Funding</p>
-                    <p className="text-xl font-bold text-foreground">{formatCurrencyShort(data.totals.totalFunding)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <BarChart3 className="h-8 w-8 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">Active Sectors</p>
-                    <p className="text-xl font-bold text-foreground">{data.totals.activeSectors}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Activity className="h-8 w-8 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">Top Sector Group</p>
-                    <p className="text-xl font-bold text-foreground truncate">{topGroup?.name || 'N/A'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <StatCard label="Total Funding" value={formatCurrencyShort(data.totals.totalFunding)} icon={DollarSign} />
+            <StatCard label="Active Sectors" value={data.totals.activeSectors} icon={BarChart3} />
+            <StatCard label="Top Sector Group" value={topGroup?.name || 'N/A'} icon={Activity} />
           </div>
 
           {/* Search bar */}

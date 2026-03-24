@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -263,12 +264,11 @@ export default function ProjectDetailPage() {
         {/*  HERO SECTION                                                */}
         {/* ============================================================ */}
         <div>
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-            <Link href="/project-bank/projects" className="hover:text-foreground">All Projects</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span>{project.project_code}</span>
-          </div>
+          <Breadcrumbs items={[
+            { label: "Project Bank", href: "/project-bank" },
+            { label: "Projects", href: "/project-bank/projects" },
+            { label: project.name },
+          ]} />
 
           {/* Banner image */}
           {(project as any).banner && (
@@ -935,10 +935,10 @@ export default function ProjectDetailPage() {
 
                         {/* FS-1 Rejected */}
                         {project.project_stage === 'fs1_rejected' && (
-                          <div className="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50/50">
-                            <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+                          <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive/20 bg-destructive/10">
+                            <XCircle className="h-5 w-5 text-destructive shrink-0" />
                             <div>
-                              <h3 className="text-sm font-semibold text-red-700">FS-1 Rejected</h3>
+                              <h3 className="text-sm font-semibold text-destructive">FS-1 Rejected</h3>
                               {project.fs1_rejected_at && (
                                 <p className="text-xs text-muted-foreground">
                                   Cool-down until {new Date(new Date(project.fs1_rejected_at).getTime() + 6 * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
@@ -1277,10 +1277,10 @@ export default function ProjectDetailPage() {
 
             {/* 4. Rejection */}
             {project.rejection_reason && (
-              <Card className="border-red-200">
-                <CardHeader><CardTitle className="text-sm text-red-600">Rejection</CardTitle></CardHeader>
+              <Card className="border-destructive/20">
+                <CardHeader><CardTitle className="text-sm text-destructive">Rejection</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-sm text-red-600">{project.rejection_reason}</p>
+                  <p className="text-sm text-destructive">{project.rejection_reason}</p>
                   {project.rejected_at && (
                     <p className="text-xs text-muted-foreground mt-1">
                       {new Date(project.rejected_at).toLocaleDateString()}

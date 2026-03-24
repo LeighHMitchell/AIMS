@@ -14,7 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Download, Map as MapIcon, List, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Search, Download, Map as MapIcon, List, LayoutGrid, Inbox } from "lucide-react"
+import { FullPagination } from "@/components/ui/full-pagination"
+import { EmptyState } from "@/components/ui/empty-state"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
 import {
@@ -28,6 +30,7 @@ import { TitleStatusBadge } from "@/components/land-bank/TitleStatusBadge"
 import { ParcelStatusBadge } from "@/components/land-bank/ParcelStatusBadge"
 import { ParcelMapView } from "@/components/land-bank/ParcelMapView"
 import { ParcelActionMenu } from "@/components/land-bank/ParcelActionMenu"
+import { ParcelCardModern } from "@/components/land-bank/ParcelCardModern"
 import type { LandParcel, ParcelStatus } from "@/types/land-bank"
 
 export default function ParcelsListPage() {
@@ -35,7 +38,7 @@ export default function ParcelsListPage() {
   const { permissions } = useUser()
   const [parcels, setParcels] = useState<LandParcel[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<"table" | "map">("table")
+  const [viewMode, setViewMode] = useState<"table" | "grid" | "map">("table")
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("all")
@@ -50,7 +53,7 @@ export default function ParcelsListPage() {
 
   // Pagination/sort
   const [page, setPage] = useState(1)
-  const perPage = 50
+  const [perPage, setPerPage] = useState(20)
   const [sortField, setSortField] = useState("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
@@ -171,7 +174,7 @@ export default function ParcelsListPage() {
       <div className="w-full">
         {/* Title + actions */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">All Parcels</h1>
+          <h1 className="text-3xl font-bold">All Parcels</h1>
           <div className="flex items-center gap-2">
             {/* View toggle */}
             <div className="flex items-center border rounded-md">
@@ -183,6 +186,15 @@ export default function ParcelsListPage() {
               >
                 <List className="h-4 w-4" />
                 Table
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="rounded-none gap-1"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Cards
               </Button>
               <Button
                 variant={viewMode === "map" ? "default" : "ghost"}
@@ -343,6 +355,46 @@ export default function ParcelsListPage() {
             parcels={filtered}
             onParcelClick={(p) => router.push(`/land-bank/${p.id}`)}
           />
+        ) : viewMode === "grid" ? (
+          <>
+            {/* Grid/Cards view */}
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : paginated.length === 0 ? (
+              <EmptyState
+                icon={<Inbox className="h-10 w-10 text-muted-foreground" />}
+                title="No parcels found"
+                message="Try adjusting your search or filters."
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginated.map(parcel => (
+                  <ParcelCardModern
+                    key={parcel.id}
+                    parcel={parcel}
+                    onClick={() => router.push(`/land-bank/${parcel.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {filtered.length > 0 && (
+              <FullPagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                perPage={perPage}
+                onPageChange={setPage}
+                onPerPageChange={setPerPage}
+                itemLabel="parcels"
+              />
+            )}
+          </>
         ) : (
           <>
             {/* Table view */}
@@ -376,8 +428,12 @@ export default function ParcelsListPage() {
                       ))
                     ) : paginated.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                          No parcels found
+                        <td colSpan={10} className="p-0">
+                          <EmptyState
+                            icon={<Inbox className="h-10 w-10 text-muted-foreground" />}
+                            title="No parcels found"
+                            message="Try adjusting your search or filters."
+                          />
                         </td>
                       </tr>
                     ) : (
@@ -424,34 +480,15 @@ export default function ParcelsListPage() {
 
             {/* Pagination */}
             {filtered.length > 0 && (
-              <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page <= 1}
-                      onClick={() => setPage(p => p - 1)}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm px-2">
-                      Page {page} of {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage(p => p + 1)}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <FullPagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                perPage={perPage}
+                onPageChange={setPage}
+                onPerPageChange={setPerPage}
+                itemLabel="parcels"
+              />
             )}
           </>
         )}

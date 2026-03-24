@@ -660,8 +660,8 @@ export default function IATIImportEnhancedPage() {
 
               {/* Blocking message if there are unresolved issues */}
               {(parseResult.summary?.transactionsNeedingAssignment || parseResult.summary?.unmappedCodesCount) && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                <Alert className="border-destructive/20 bg-destructive/10">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
                   <AlertDescription>
                     <strong>Import Blocked:</strong> Please resolve all issues before proceeding:
                     {parseResult.summary.transactionsNeedingAssignment && parseResult.summary.transactionsNeedingAssignment > 0 && (

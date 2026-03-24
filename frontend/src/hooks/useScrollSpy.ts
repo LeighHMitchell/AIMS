@@ -16,6 +16,9 @@ interface UseScrollSpyOptions {
   debounceMs?: number
   /** The scrollable container element. Defaults to null (uses viewport) */
   root?: Element | null
+  /** Initial active section ID. Defaults to sections[0].id. Set this to avoid
+   *  an extra state update when the desired initial section isn't the first one. */
+  initialSection?: string | null
 }
 
 interface UseScrollSpyReturn {
@@ -45,10 +48,11 @@ export function useScrollSpy(
     threshold = 0,
     debounceMs = 100,
     root = null,
+    initialSection = null,
   } = options
 
   const [activeSection, setActiveSection] = useState<string | null>(
-    sections.length > 0 ? sections[0].id : null
+    initialSection || (sections.length > 0 ? sections[0].id : null)
   )
 
   // Track which sections are currently intersecting and their ratios
@@ -90,6 +94,11 @@ export function useScrollSpy(
     }
   }, [lockScrollSpy])
 
+  // Use a ref to track current active section so updateActiveSection doesn't need
+  // activeSection in its dependency array (which would recreate the observer on every change)
+  const activeSectionRef = useRef(activeSection)
+  activeSectionRef.current = activeSection
+
   // Debounced function to update active section based on intersections
   const updateActiveSection = useCallback(() => {
     if (debounceTimeout.current) {
@@ -123,11 +132,11 @@ export function useScrollSpy(
         }
       }
 
-      if (topMostSection && topMostSection !== activeSection) {
+      if (topMostSection && topMostSection !== activeSectionRef.current) {
         setActiveSection(topMostSection)
       }
     }, debounceMs)
-  }, [sections, activeSection, debounceMs])
+  }, [sections, debounceMs])
 
   // Set up Intersection Observer
   useEffect(() => {

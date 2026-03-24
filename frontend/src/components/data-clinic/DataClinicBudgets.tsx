@@ -384,7 +384,7 @@ export function DataClinicBudgets() {
             {dataGaps.map((gap) => (
               <div
                 key={gap.field}
-                className="p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelectedFilter(gap.field)}
               >
                 <p className="text-sm text-muted-foreground">{gap.label}</p>

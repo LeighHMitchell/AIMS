@@ -244,7 +244,7 @@ export function TransactionSectorManager({
               const categoryName = categoryMatch ? categoryMatch[2] : sectorInfo.category || '';
               
               return (
-                <Card key={`${sector.code}-${index}`} className="p-3 hover:bg-gray-50 transition-colors">
+                <Card key={`${sector.code}-${index}`} className="p-3 hover:bg-muted/50 transition-colors">
                   <div className="flex items-start gap-3">
                     {/* Sector info */}
                     <div className="flex-1 min-w-0">

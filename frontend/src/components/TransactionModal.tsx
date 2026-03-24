@@ -1679,14 +1679,14 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-muted text-gray-600'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
                     </div>
                   ) : (
                     // Read-only status display for users without permission
-                    <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-gray-50 px-4 py-3">
+                    <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-muted/50 px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-gray-500">
                           {formData.status === 'actual' ? 'Validated Transaction' : 'Pending Validation'}
@@ -1698,7 +1698,7 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-muted text-gray-600'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Pending'}
                       </div>
@@ -2572,7 +2572,7 @@ export default function TransactionModal({
                       </Button>
                     </div>
                   </div>
-                  {creationError && <p className="text-red-500 text-sm text-center mt-2">{creationError}</p>}
+                  {creationError && <p className="text-destructive text-sm text-center mt-2">{creationError}</p>}
                 </div>
               ) : (
                 <TransactionDocumentUpload
@@ -2595,7 +2595,7 @@ export default function TransactionModal({
               <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting}>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 bg-muted/50 hover:bg-muted rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
@@ -2613,7 +2613,7 @@ export default function TransactionModal({
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
+                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
                     {/* Activity-level geography message */}
                     {geographyLevel === 'activity' && (
                       <Alert>
@@ -2831,7 +2831,7 @@ export default function TransactionModal({
               <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors}>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 bg-muted/50 hover:bg-muted rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
@@ -2847,7 +2847,7 @@ export default function TransactionModal({
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
+                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
                     {/* Radio group for sector source selection */}
                     <div className="space-y-3">
                       <div className="flex items-start gap-3">
@@ -2893,7 +2893,7 @@ export default function TransactionModal({
                                   {/* Category header - only show if there's a category */}
                                   {group.categoryCode && (
                                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
-                                      <span className="font-mono bg-gray-50 px-1 py-0.5 rounded">
+                                      <span className="font-mono bg-muted/50 px-1 py-0.5 rounded">
                                         {group.categoryCode}
                                       </span>
                                       <span>{group.categoryName}</span>
@@ -2990,7 +2990,7 @@ export default function TransactionModal({
                                   {/* Category header with code and name */}
                                   {group.categoryCode && (
                                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
-                                      <span className="font-mono bg-gray-50 px-1 py-0.5 rounded">
+                                      <span className="font-mono bg-muted/50 px-1 py-0.5 rounded">
                                         {group.categoryCode}
                                       </span>
                                       <span>{group.categoryName}</span>
@@ -3069,7 +3069,7 @@ export default function TransactionModal({
               <Collapsible open={showMultipleAidTypes} onOpenChange={setShowMultipleAidTypes}>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 bg-muted/50 hover:bg-muted rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
@@ -3082,7 +3082,7 @@ export default function TransactionModal({
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
+                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
                     <p className="text-xs text-gray-600">
                       Specify multiple aid type classifications with different vocabularies.
                     </p>
@@ -3111,7 +3111,7 @@ export default function TransactionModal({
                 {/* Activity ID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Activity ID</label>
-                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
                     <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
                       {activityPartnerId || 'Not reported'}
                     </span>
@@ -3138,7 +3138,7 @@ export default function TransactionModal({
                 {/* Activity UUID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Activity UUID</label>
-                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
                     <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
                       {activityId || 'Not available'}
                     </span>
@@ -3165,7 +3165,7 @@ export default function TransactionModal({
                 {/* Transaction ID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Transaction ID</label>
-                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
                     <input
                       value={formData.transaction_reference || ''}
                       onChange={e => handleFieldChange('transaction_reference', e.target.value)}
@@ -3195,7 +3195,7 @@ export default function TransactionModal({
                 {/* Transaction UUID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Transaction UUID</label>
-                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
                     <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
                       {transaction?.uuid || 'Generated after save'}
                     </span>

@@ -227,7 +227,7 @@ export function OrganizationCombobox({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-gray-300 hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
               className
             )}
           >
@@ -255,7 +255,7 @@ export function OrganizationCombobox({
                       />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm">
+                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-muted rounded-sm">
                       <Building2 className="h-5 w-5 text-gray-400" />
                     </div>
                   )}
@@ -340,7 +340,7 @@ export function OrganizationCombobox({
                     onValueChange('');
                   }
                 }}
-                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                className="h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Clear selection"
               >
                 <X className="h-3 w-3 text-gray-500" />
@@ -407,7 +407,7 @@ export function OrganizationCombobox({
                         />
                       </div>
                     ) : (
-                      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm mt-0.5">
+                      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-muted rounded-sm mt-0.5">
                         <Building2 className="h-5 w-5 text-gray-400" />
                       </div>
                     )}

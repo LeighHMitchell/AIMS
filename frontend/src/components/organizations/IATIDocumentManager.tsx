@@ -854,7 +854,7 @@ export function IATIDocumentManager({
                 <h4 className="font-medium">Categories</h4>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                   {DOCUMENT_CATEGORIES.map((category) => (
-                    <label key={category.code} className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <label key={category.code} className="flex items-start gap-2 p-2 hover:bg-muted/50 rounded cursor-pointer">
                       <input
                         type="checkbox"
                         checked={editingDocument.categories.includes(category.code)}
@@ -882,7 +882,7 @@ export function IATIDocumentManager({
                 <h4 className="font-medium">Document Languages</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {COMMON_LANGUAGES.map((language) => (
-                    <label key={language.code} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <label key={language.code} className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded cursor-pointer">
                       <input
                         type="checkbox"
                         checked={editingDocument.languages.includes(language.code)}

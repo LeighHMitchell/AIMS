@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DefaultFieldsSection } from '@/components/forms/DefaultFieldsSection';
 import { SupabaseSelect, withSupabaseIntegration } from '@/components/forms/SupabaseSelect';
 import TransactionsManager from '@/components/TransactionsManager';
@@ -117,9 +117,13 @@ export function EnhancedFinancesSection({
     modality: Boolean(general.defaultModality), // Updated to camelCase
   };
 
-  const handleFieldUpdate = (field: string, value: string | null) => {
+  // Use refs to hold the latest callbacks to avoid recreating useCallback wrappers
+  const onDefaultsChangeRef = useRef(onDefaultsChange);
+  onDefaultsChangeRef.current = onDefaultsChange;
+
+  const handleFieldUpdate = useCallback((field: string, value: string | null) => {
     console.log(`[EnhancedFinancesSection] Field updated: ${field} = ${value}`);
-    
+
     // Update stats
     setUpdateStats(prev => ({
       ...prev,
@@ -128,13 +132,13 @@ export function EnhancedFinancesSection({
       lastUpdate: new Date()
     }));
 
-    // Call parent callback
-    onDefaultsChange?.(field, value);
-  };
+    // Call parent callback via ref to avoid stale closure
+    onDefaultsChangeRef.current?.(field, value);
+  }, []);
 
-  const handleFieldError = (field: string, error: Error) => {
+  const handleFieldError = useCallback((field: string, error: Error) => {
     console.error(`[EnhancedFinancesSection] Field update error for ${field}:`, error);
-    
+
     // Update stats
     setUpdateStats(prev => ({
       ...prev,
@@ -142,25 +146,31 @@ export function EnhancedFinancesSection({
       failedUpdates: prev.failedUpdates + 1,
       lastUpdate: new Date()
     }));
-  };
+  }, []);
+
+  const handleMissingColumnError = useCallback((field: string, error: Error) => {
+    // Handle missing column gracefully
+    if (error.message.includes('default_modality') && error.message.includes('schema cache')) {
+      console.warn(`[EnhancedFinancesSection] Column ${field} not yet added to Supabase. Skipping database save.`);
+      // Still update local state
+      handleFieldUpdate(field, null);
+    } else {
+      handleFieldError(field, error);
+    }
+  }, [handleFieldUpdate, handleFieldError]);
 
   // Supabase field update hook for boolean fields (declared after handleFieldUpdate and handleFieldError)
   const { updateField: updateSupabaseField } = useSupabaseFieldUpdate(activityId, {
     tableName: 'activities',
     onSuccess: handleFieldUpdate,
-    onError: (field, error) => {
-      // Handle missing column gracefully
-      if (error.message.includes('default_modality') && error.message.includes('schema cache')) {
-        console.warn(`[EnhancedFinancesSection] Column ${field} not yet added to Supabase. Skipping database save.`);
-        // Still update local state
-        handleFieldUpdate(field, null);
-      } else {
-        handleFieldError(field, error);
-      }
-    },
+    onError: handleMissingColumnError,
     showSuccessToast: false,
     showErrorToast: false // Disable error toasts for missing columns
   });
+
+  // Refs for stable access in the modality effect (avoids infinite re-render loop)
+  const updateSupabaseFieldRef = useRef(updateSupabaseField);
+  updateSupabaseFieldRef.current = updateSupabaseField;
 
   // Auto-calculate modality when relevant fields change and override is off
   useEffect(() => {
@@ -169,7 +179,7 @@ export function EnhancedFinancesSection({
         general.defaultAidType,
         general.defaultFinanceType
       );
-      
+
       // Only update if different from current value
       if (calculatedModality !== general.defaultModality) {
         console.log('[EnhancedFinancesSection] Auto-calculating modality:', {
@@ -178,15 +188,15 @@ export function EnhancedFinancesSection({
           calculated: calculatedModality,
           current: general.defaultModality
         });
-        
+
         // Save to Supabase and update local state (gracefully handle missing columns)
-        updateSupabaseField('defaultModality', calculatedModality).catch(error => {
+        updateSupabaseFieldRef.current('defaultModality', calculatedModality).catch(error => {
           console.warn('[EnhancedFinancesSection] Could not save to database:', error.message);
         });
-        onDefaultsChange?.('defaultModality', calculatedModality);
+        onDefaultsChangeRef.current?.('defaultModality', calculatedModality);
       }
     }
-  }, [general.defaultAidType, general.defaultFinanceType, modalityOverride, general.defaultModality, updateSupabaseField, onDefaultsChange]);
+  }, [general.defaultAidType, general.defaultFinanceType, modalityOverride, general.defaultModality]);
 
   const handleModalityOverrideChange = async (checked: boolean) => {
     console.log(`[EnhancedFinancesSection] Modality override changed: ${checked}`);

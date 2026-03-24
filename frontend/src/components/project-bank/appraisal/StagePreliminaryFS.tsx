@@ -239,7 +239,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               'relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.fs_conductor_type === 'individual'
                 ? 'ring-border bg-primary/5'
-                : 'ring-border bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-muted/50',
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >
@@ -262,7 +262,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               'relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.fs_conductor_type === 'company'
                 ? 'ring-border bg-primary/5'
-                : 'ring-border bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-muted/50',
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >

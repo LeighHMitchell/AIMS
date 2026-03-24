@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Upload, FileJson, FileSpreadsheet, AlertTriangle } from "lucide-react"
+import { Upload, FileJson, FileSpreadsheet, AlertTriangle } from "lucide-react"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
 import { STATES_REGIONS } from "@/lib/land-bank-utils"
@@ -161,16 +162,13 @@ export default function ImportParcelsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-[1100px] pb-16">
-        <button
-          onClick={() => router.push("/land-bank/parcels")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Parcels
-        </button>
+      <div className="max-w-6xl pb-16">
+        <Breadcrumbs items={[
+          { label: "Land Bank", href: "/land-bank" },
+          { label: "Import" },
+        ]} />
 
-        <h1 className="text-2xl font-bold mb-2">Import Parcels</h1>
+        <h1 className="text-3xl font-bold mb-2">Import Parcels</h1>
         <p className="text-sm text-muted-foreground mb-6">
           Upload a CSV file with parcel metadata and optionally a GeoJSON file with geometries.
           Match geometries to parcels using the <code className="text-xs bg-muted px-1 rounded">parcel_code</code> property.

@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertTriangle, ChevronLeft, ChevronRight, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { AlertTriangle, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Inbox } from "lucide-react"
+import { FullPagination } from "@/components/ui/full-pagination"
+import { EmptyState } from "@/components/ui/empty-state"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -114,9 +114,9 @@ export default function FundingGapsPage() {
     <MainLayout>
       <div className="w-full">
         <div className="flex items-center gap-3 mb-6">
-          <AlertTriangle className="h-7 w-7 text-muted-foreground" />
+          <AlertTriangle className="h-8 w-8 text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold">Funding Gaps</h1>
+            <h1 className="text-3xl font-bold">Funding Gaps</h1>
             <p className="text-muted-foreground text-sm">
               Projects in the pipeline that have not yet secured full financing commitments
             </p>
@@ -148,7 +148,7 @@ export default function FundingGapsPage() {
                     </tr>
                   ))
                 ) : paginated.length === 0 ? (
-                  <tr><td colSpan={colCount} className="px-4 py-8 text-center text-sm text-muted-foreground">No funding gaps found</td></tr>
+                  <tr><td colSpan={colCount} className="p-0"><EmptyState icon={<Inbox className="h-10 w-10 text-muted-foreground" />} title="No funding gaps found" message="Try adjusting your search or filters." /></td></tr>
                 ) : (
                   paginated.map(p => {
                     const secured = (p.estimated_cost || 0) - (p.funding_gap || 0)
@@ -246,57 +246,15 @@ export default function FundingGapsPage() {
 
         {/* Pagination */}
         {projects.length > 0 && (
-          <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {Math.min(startIndex + 1, projects.length)} to {Math.min(startIndex + perPage, projects.length)} of {projects.length} projects
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
-                  <ChevronLeft className="h-4 w-4" /> First
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                  <ChevronLeft className="h-4 w-4" /> Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) { pageNum = i + 1; }
-                    else if (page <= 3) { pageNum = i + 1; }
-                    else if (page >= totalPages - 2) { pageNum = totalPages - 4 + i; }
-                    else { pageNum = page - 2 + i; }
-                    return (
-                      <Button key={pageNum} variant="outline" size="sm" onClick={() => setPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${page === pageNum ? "bg-slate-200 text-slate-900" : ""}`}>
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                  Next <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(totalPages)} disabled={page === totalPages}>
-                  Last <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Items per page:</label>
-                <Select value={String(perPage)} onValueChange={v => { setPerPage(Number(v)); setPage(1) }}>
-                  <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+          <FullPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={projects.length}
+            perPage={perPage}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+            itemLabel="projects"
+          />
         )}
       </div>
     </MainLayout>

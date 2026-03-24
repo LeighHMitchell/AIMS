@@ -146,7 +146,7 @@ export function OrgTypeMappingModal({
 
         <div className="space-y-5 py-4">
           {/* Organization Info */}
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-gray-200">
             <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-md border border-gray-200">
               <Building2 className="h-5 w-5 text-gray-400" />
             </div>
@@ -194,7 +194,7 @@ export function OrgTypeMappingModal({
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                       selectedType === option.code
                         ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-muted/50"
                     }`}
                   >
                     <RadioGroupItem value={option.code} className="mt-0.5" />

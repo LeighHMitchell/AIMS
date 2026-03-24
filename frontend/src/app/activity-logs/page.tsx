@@ -34,6 +34,7 @@ import {
   LogIn,
   LogOut,
   AlertTriangle,
+  ScrollText,
 } from 'lucide-react';
 
 // Icon mapping for different action types
@@ -299,13 +300,16 @@ export default function ActivityLogsPage() {
     <MainLayout>
       <div className="p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Activity Logs</h1>
-            <p className="text-muted-foreground mt-1">
+          <div className="flex items-center gap-3">
+            <ScrollText className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold">Activity Logs</h1>
+              <p className="text-muted-foreground mt-1">
               {user?.role === 'super_user'
                 ? 'System-wide audit trail of all user actions'
                 : 'Activity history for your organization'}
             </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={exportLogs}>

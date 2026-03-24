@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useEffect, useState } from "react"
+import React, { useRef, useEffect, useState, useCallback, useMemo } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
@@ -95,6 +95,11 @@ export function FundingDeliveryGroup({
   onDisbursementsChange,
 }: FundingDeliveryGroupProps) {
 
+  // Stable callback for EnhancedFinancesSection to update defaults without causing re-render loops
+  const handleDefaultsChange = useCallback((field: string, value: string | null | boolean) => {
+    setGeneral((g: any) => ({ ...g, [field]: value }))
+  }, [setGeneral])
+
   // Create refs for each section
   const financesRef = useRef<HTMLElement>(null)
   const plannedDisbursementsRef = useRef<HTMLElement>(null)
@@ -104,16 +109,17 @@ export function FundingDeliveryGroup({
   const hasInitiallyScrolled = useRef(false)
 
   // Build section refs array for scroll spy (only if activityCreated)
-  const sectionRefs: SectionRef[] = activityCreated ? [
+  const sectionRefs: SectionRef[] = useMemo(() => activityCreated ? [
     { id: 'finances', ref: financesRef },
     { id: 'planned-disbursements', ref: plannedDisbursementsRef },
     { id: 'budgets', ref: budgetsRef },
-  ] : []
+  ] : [], [activityCreated])
 
   // Use scroll spy to track visible section
   const { activeSection, scrollToSection, setActiveSection, lockScrollSpy } = useScrollSpy(sectionRefs, {
     rootMargin: '-80px 0px -60% 0px', // Account for sticky headers
     debounceMs: 100,
+    initialSection: initialSection && isFundingDeliverySection(initialSection) ? initialSection : null,
   })
 
   // Use lazy loader to track which sections have been scrolled into view
@@ -129,6 +135,8 @@ export function FundingDeliveryGroup({
   // When initialSection changes (user clicked a section in this group),
   // lock scroll spy, set active section, and instantly scroll to target
   const prevInitialSection = useRef(initialSection)
+  const isFirstRender = useRef(true)
+
   useEffect(() => {
     if (initialSection && isFundingDeliverySection(initialSection) && activityCreated) {
       lockScrollSpy(500)
@@ -143,16 +151,22 @@ export function FundingDeliveryGroup({
     }
   }, [initialSection, activityCreated, lockScrollSpy, setActiveSection])
 
-  // Update parent when active section changes (for sidebar highlighting)
-  useEffect(() => {
-    if (activeSection && isFundingDeliverySection(activeSection)) {
-      onActiveSectionChange(activeSection)
+  // Stable ref for callback to avoid infinite re-render loop
+  const onActiveSectionChangeRef = useRef(onActiveSectionChange)
+  onActiveSectionChangeRef.current = onActiveSectionChange
 
-      const params = new URLSearchParams(window.location.search)
-      params.set('section', activeSection)
-      window.history.replaceState({}, '', `?${params.toString()}`)
+  // Update parent when active section changes (for sidebar highlighting)
+  // Skipped on first render — scroll spy hasn't settled yet
+  useEffect(() => {
+    if (isFirstRender.current) return
+    if (activeSection && isFundingDeliverySection(activeSection)) {
+      onActiveSectionChangeRef.current(activeSection)
     }
-  }, [activeSection, onActiveSectionChange])
+  }, [activeSection])
+
+  useEffect(() => {
+    isFirstRender.current = false
+  })
 
   // Handle activity creation - reveal sections with animation
   useEffect(() => {
@@ -213,17 +227,21 @@ export function FundingDeliveryGroup({
 
   // Aggressive preloading - load all sections quickly for seamless scrolling
   // Only enabled when enablePreloading prop is true (user has visited this group)
+  // Note: activeSections (Set) is NOT in deps to avoid re-render loop — read via ref instead
+  const activeSectionsRef = useRef(activeSections)
+  activeSectionsRef.current = activeSections
+
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
     // Preload all sections in a single batch
     const sectionsToPreload = FUNDING_DELIVERY_SECTIONS.slice()
 
-    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    const unloaded = sectionsToPreload.filter(id => !activeSectionsRef.current.has(id))
     if (unloaded.length > 0) {
       activateSections(unloaded)
     }
-  }, [activityCreated, enablePreloading, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSections])
 
   return (
     <div className="funding-delivery-group space-y-0">
@@ -259,15 +277,7 @@ export function FundingDeliveryGroup({
                   onTransactionsChange={setTransactions}
                   onRefreshNeeded={refreshTransactions}
                   initialTransactionId={initialTransactionId}
-                  onDefaultsChange={(field, value) => {
-                    if (field === 'defaultFlowType') {
-                      setGeneral((g: any) => ({ ...g, defaultFlowType: value }))
-                    } else if (field === 'defaultTiedStatus') {
-                      setGeneral((g: any) => ({ ...g, defaultTiedStatus: value }))
-                    } else {
-                      setGeneral((g: any) => ({ ...g, [field]: value }))
-                    }
-                  }}
+                  onDefaultsChange={handleDefaultsChange}
                   disabled={false}
                   geographyLevel={geographyLevel || 'activity'}
                   activitySectors={activitySectors}

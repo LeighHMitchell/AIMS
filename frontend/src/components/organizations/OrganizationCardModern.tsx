@@ -8,13 +8,13 @@ import { toast } from "sonner";
 import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
 
-// Color palette
+// Color palette — uses brand tokens from CSS variables for theme compatibility
 const colors = {
-  primaryScarlet: '#dc2625',
-  paleSlate: '#cfd0d5',
-  blueSlate: '#4c5568',
-  coolSteel: '#7b95a7',
-  platinum: '#f1f4f8',
+  primaryScarlet: 'hsl(var(--brand-scarlet))',
+  paleSlate: 'hsl(var(--brand-pale-slate))',
+  blueSlate: 'hsl(var(--brand-blue-slate))',
+  coolSteel: 'hsl(var(--brand-cool-steel))',
+  platinum: 'hsl(var(--brand-platinum))',
 };
 
 interface Organization {
@@ -89,8 +89,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
       whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border ${className}`}
-      style={{ backgroundColor: 'white' }}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border bg-card ${className}`}
       role="article"
       aria-label={`Organization: ${organization.name}`}
     >
@@ -179,7 +178,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       {/* Logo Overlay - positioned outside banner to avoid overflow clipping */}
       {organization.logo && (
         <div className="absolute right-4 top-48 -translate-y-[75%] z-30">
-          <div className="w-14 h-14 rounded-full border-4 shadow-lg overflow-hidden p-1" style={{ borderColor: colors.platinum, backgroundColor: 'white' }}>
+          <div className="w-14 h-14 rounded-full border-4 shadow-lg overflow-hidden p-1 bg-card" style={{ borderColor: colors.platinum }}>
             <img
               src={organization.logo}
               alt={`${organization.name} logo`}
@@ -190,7 +189,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       )}
 
       {/* Details Section */}
-      <div className="relative flex-1 p-5 flex flex-col" style={{ backgroundColor: 'white' }}>
+      <div className="relative flex-1 p-5 flex flex-col bg-card">
         <div className="flex-1">
           {/* Description */}
           {organization.description && (

@@ -30,9 +30,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { LockedOrganizationField } from '@/components/ui/locked-organization-field';
 import { useOrganizations } from '@/hooks/use-organizations';
+import { getActivityStatusByCode } from '@/data/activity-status-types';
 import { useUser } from '@/hooks/useUser';
 import { USER_ROLES } from '@/types/user';
 import { toast } from 'sonner';
@@ -194,6 +194,15 @@ const getActionDescription = (log: ActivityLog): string => {
     default:
       return `${user} performed ${action} on this activity`;
   }
+};
+
+const ACTIVITY_STATUS_WORD_TO_CODE: Record<string, string> = {
+  pipeline: '1',
+  implementation: '2',
+  finalisation: '3',
+  closed: '4',
+  cancelled: '5',
+  suspended: '6',
 };
 
 const formatCurrency = (value: number) => {
@@ -401,268 +410,238 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         </Button>
       </div>
 
-      {/* Basic Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Creation Info */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-gray-600" />
-              Creation Info
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-gray-900">
-              {format(new Date(metadata.created_at), 'PPP \'at\' p')}
-            </div>
-            <div className="text-xs text-gray-500">
-              {formatDistanceToNow(new Date(metadata.created_at), { addSuffix: true })}
-            </div>
+      {/* Metadata Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <tbody className="divide-y divide-border">
+            {/* Title */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground w-[180px] bg-muted/30 align-top">Title</td>
+              <td className="px-4 py-3 text-foreground font-medium">{metadata.title}</td>
+            </tr>
+            {/* Activity ID (code) */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Code</td>
+              <td className="px-4 py-3">
+                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.partner_id || 'Not assigned'}</code>
+              </td>
+            </tr>
+            {/* IATI ID */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">IATI ID</td>
+              <td className="px-4 py-3">
+                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.iati_identifier || 'Not assigned'}</code>
+              </td>
+            </tr>
+            {/* UUID */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">UUID</td>
+              <td className="px-4 py-3">
+                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.id}</code>
+              </td>
+            </tr>
+            {/* Activity Status - show code and name */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Activity Status</td>
+              <td className="px-4 py-3 text-foreground">
+                {(() => {
+                  const statusWord = metadata.activity_status || 'pipeline';
+                  const code = ACTIVITY_STATUS_WORD_TO_CODE[statusWord] || statusWord;
+                  const statusInfo = getActivityStatusByCode(code);
+                  return statusInfo ? (
+                    <span className="inline-flex items-center gap-2">
+                      <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{statusInfo.code}</code>
+                      {statusInfo.name}
+                    </span>
+                  ) : statusWord;
+                })()}
+              </td>
+            </tr>
+            {/* Publication Status */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Publication Status</td>
+              <td className="px-4 py-3 text-foreground capitalize">{metadata.publication_status || 'draft'}</td>
+            </tr>
+            {/* Submission Status */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Submission Status</td>
+              <td className="px-4 py-3 text-foreground capitalize">{metadata.submission_status || 'pending'}</td>
+            </tr>
+            {/* Version */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Version</td>
+              <td className="px-4 py-3 text-foreground">{metadata.version || 1}</td>
+            </tr>
+            {/* Creation */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Created</td>
+              <td className="px-4 py-3 text-foreground">
+                {format(new Date(metadata.created_at), 'PPP \'at\' p')}
+                <span className="text-muted-foreground ml-2">({formatDistanceToNow(new Date(metadata.created_at), { addSuffix: true })})</span>
+              </td>
+            </tr>
             {metadata.created_by && (
-              <div className="pt-2 border-t border-gray-100">
-                <div className="text-sm font-medium text-gray-900">Created by</div>
-                <div className="text-sm text-gray-900">{metadata.created_by.name}</div>
-                <div className="text-xs text-gray-500">{metadata.created_by.role}</div>
-                {metadata.created_by.email && (
-                  <div className="text-xs text-gray-500">{metadata.created_by.email}</div>
-                )}
-              </div>
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Created By</td>
+                <td className="px-4 py-3 text-foreground">
+                  {metadata.created_by.name}
+                  <span className="text-muted-foreground ml-2">{metadata.created_by.role}</span>
+                  {metadata.created_by.email && (
+                    <span className="text-muted-foreground ml-2">· {metadata.created_by.email}</span>
+                  )}
+                </td>
+              </tr>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Last Modified */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-gray-600" />
-              Last Modified
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-gray-900">
-              {format(new Date(metadata.updated_at), 'PPP \'at\' p')}
-            </div>
-            <div className="text-xs text-gray-500">
-              {formatDistanceToNow(new Date(metadata.updated_at), { addSuffix: true })}
-            </div>
+            {/* Last Modified */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Last Modified</td>
+              <td className="px-4 py-3 text-foreground">
+                {format(new Date(metadata.updated_at), 'PPP \'at\' p')}
+                <span className="text-muted-foreground ml-2">({formatDistanceToNow(new Date(metadata.updated_at), { addSuffix: true })})</span>
+              </td>
+            </tr>
             {metadata.updated_by && (
-              <div className="pt-2 border-t border-gray-100">
-                <div className="text-sm font-medium text-gray-900">Updated by</div>
-                <div className="text-sm text-gray-900">{metadata.updated_by.name}</div>
-                <div className="text-xs text-gray-500">{metadata.updated_by.role}</div>
-                {metadata.updated_by.email && (
-                  <div className="text-xs text-gray-500">{metadata.updated_by.email}</div>
-                )}
-              </div>
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Modified By</td>
+                <td className="px-4 py-3 text-foreground">
+                  {metadata.updated_by.name}
+                  <span className="text-muted-foreground ml-2">{metadata.updated_by.role}</span>
+                  {metadata.updated_by.email && (
+                    <span className="text-muted-foreground ml-2">· {metadata.updated_by.email}</span>
+                  )}
+                </td>
+              </tr>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Status Info */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5 text-gray-600" />
-              Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-600">Publication</span>
-              <Badge variant={metadata.publication_status === 'published' ? 'default' : 'secondary'}>
-                {metadata.publication_status || 'draft'}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-600">Submission</span>
-              <Badge variant={metadata.submission_status === 'validated' ? 'default' : 'secondary'}>
-                {metadata.submission_status || 'pending'}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-600">Activity</span>
-              <Badge variant="outline">
-                {metadata.activity_status || 'planning'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Reporting Organization */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Building className="h-5 w-5 text-gray-600" />
-              Reporting Organization
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LockedOrganizationField
-              label="Reported by"
-              value={metadata.reporting_org_id || ""}
-              onChange={() => {}} // Handled by onSave
-              organizations={organizations}
-              onSave={handleReportingOrgSave}
-              saving={savingReportingOrg}
-              isSuperUser={true} // Keep prop for compatibility, but component now allows all users
-              placeholder="Select reporting organization..."
-              lockTooltip="Click to unlock and change the reporting organization"
-              unlockTooltip="Click to unlock and change the reporting organization"
-              disabled={organizationsLoading}
-            />
-            {(metadata.created_by_org_name || metadata.created_by_org_acronym) && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm font-medium text-gray-600 mb-1">Current Organization</div>
-                <div className="text-sm text-gray-900">
-                  {metadata.created_by_org_name}
-                  {metadata.created_by_org_acronym && metadata.created_by_org_name !== metadata.created_by_org_acronym && (
-                    <span className="text-gray-600"> ({metadata.created_by_org_acronym})</span>
+            {/* Sync */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Sync Status</td>
+              <td className="px-4 py-3 text-foreground capitalize">{metadata.sync_status || 'never'}</td>
+            </tr>
+            {metadata.last_sync_time && (
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Last Sync</td>
+                <td className="px-4 py-3 text-foreground">
+                  {format(new Date(metadata.last_sync_time), 'PPP \'at\' p')}
+                </td>
+              </tr>
+            )}
+            {/* Narrative Language */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">
+                <LabelSaveIndicator
+                  isSaving={languageAutosave.isSaving}
+                  isSaved={languageAutosave.isPersistentlySaved || !!language}
+                  hasValue={!!language}
+                >
+                  Narrative Language
+                </LabelSaveIndicator>
+              </td>
+              <td className="px-4 py-3">
+                <div className="max-w-xs">
+                  <LanguageSearchableSelect
+                    value={language}
+                    onValueChange={(value) => {
+                      setLanguage(value);
+                      languageAutosave.triggerFieldSave(value);
+                    }}
+                    placeholder="Select language"
+                    dropdownId="metadata-language"
+                  />
+                </div>
+              </td>
+            </tr>
+            {/* Reporting Organization */}
+            <tr>
+              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Reporting Organization</td>
+              <td className="px-4 py-3">
+                <div className="max-w-md">
+                  <LockedOrganizationField
+                    label="Reported by"
+                    value={metadata.reporting_org_id || ""}
+                    onChange={() => {}}
+                    organizations={organizations}
+                    onSave={handleReportingOrgSave}
+                    saving={savingReportingOrg}
+                    isSuperUser={true}
+                    placeholder="Select reporting organization..."
+                    lockTooltip="Click to unlock and change the reporting organization"
+                    unlockTooltip="Click to unlock and change the reporting organization"
+                    disabled={organizationsLoading}
+                  />
+                  {(metadata.created_by_org_name || metadata.created_by_org_acronym) && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      {metadata.created_by_org_name}
+                      {metadata.created_by_org_acronym && metadata.created_by_org_name !== metadata.created_by_org_acronym && (
+                        <span> ({metadata.created_by_org_acronym})</span>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-
-      {/* Technical Details */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Identifiers & Sync */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Database className="h-5 w-5 text-gray-600" />
-              Technical Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="font-medium text-gray-600 flex items-center gap-1">
-                  <Hash className="h-4 w-4" />
-                  Activity ID
-                </div>
-                <div className="text-gray-900 font-mono text-xs break-all">
-                  {metadata.partner_id || 'Not assigned'}
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-600 flex items-center gap-1">
-                  <Globe className="h-4 w-4" />
-                  IATI ID
-                </div>
-                <div className="text-gray-900 font-mono text-xs break-all">
-                  {metadata.iati_identifier || 'Not assigned'}
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-600">Version</div>
-                <div className="text-gray-900">{metadata.version || 1}</div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-600">Sync Status</div>
-                <Badge variant={metadata.sync_status === 'live' ? 'default' : 'secondary'}>
-                  {metadata.sync_status || 'never'}
-                </Badge>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-gray-100">
-              <LabelSaveIndicator
-                isSaving={languageAutosave.isSaving}
-                isSaved={languageAutosave.isPersistentlySaved || !!language}
-                hasValue={!!language}
-                className="mb-2"
-              >
-                Narrative Language
-              </LabelSaveIndicator>
-              <LanguageSearchableSelect
-                value={language}
-                onValueChange={(value) => {
-                  setLanguage(value);
-                  languageAutosave.triggerFieldSave(value);
-                }}
-                placeholder="Select language"
-                dropdownId="metadata-language"
-              />
-            </div>
-            {metadata.last_sync_time && (
-              <div>
-                <div className="text-sm font-medium text-gray-600">Last Sync</div>
-                <div className="text-sm text-gray-900">
-                  {format(new Date(metadata.last_sync_time), 'PPP \'at\' p')}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* Activity Log */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <History className="h-5 w-5 text-gray-600" />
-            Activity Log
-            <Badge variant="outline" className="ml-2">
-              {stats.totalLogs} entries
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {logs.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              <History className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p>No activity logs found for this activity.</p>
-              <p className="text-sm">Changes will appear here when the activity is modified.</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-96">
-              <div className="p-6 space-y-4">
-                {logs.map((log, index) => (
-                  <div key={log.id} className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
+      <div className="border rounded-lg overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
+          <History className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Activity Log</span>
+          <span className="text-xs text-muted-foreground">({stats.totalLogs} entries)</span>
+        </div>
+        {logs.length === 0 ? (
+          <div className="p-6 text-center text-muted-foreground">
+            <History className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+            <p>No activity logs found for this activity.</p>
+            <p className="text-sm">Changes will appear here when the activity is modified.</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-96">
+            <div className="p-4">
+              {logs.map((log, index) => (
+                <div key={log.id} className="flex gap-3">
+                  {/* Timeline column */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted shrink-0">
                       {getActionIcon(log.action)}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">
-                          {getActionDescription(log)}
-                        </p>
-                        <time className="text-xs text-gray-500">
-                          {format(new Date(log.created_at), 'MMM d, yyyy \'at\' h:mm a')}
-                        </time>
-                      </div>
-                      {log.details.metadata?.fieldChanged && (
-                        <div className="mt-1 text-xs text-gray-600">
-                          <span className="font-medium">Field:</span> {log.details.metadata.fieldChanged}
-                          {log.details.metadata.oldValue && log.details.metadata.newValue && (
-                            <div className="mt-1">
-                              <span className="text-red-600">- {JSON.stringify(log.details.metadata.oldValue)}</span>
-                              <br />
-                              <span className="text-green-600">+ {JSON.stringify(log.details.metadata.newValue)}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                      </div>
-                    </div>
                     {index < logs.length - 1 && (
-                      <div className="absolute left-[18px] mt-8 w-px h-8 bg-gray-200" 
-                           style={{ marginLeft: '18px' }} />
+                      <div className="w-px flex-1 bg-border min-h-[16px]" />
                     )}
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 pb-4">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {getActionDescription(log)}
+                      </p>
+                      <time className="text-xs text-muted-foreground whitespace-nowrap">
+                        {format(new Date(log.created_at), 'MMM d, yyyy')}
+                      </time>
+                    </div>
+                    {log.details.metadata?.fieldChanged && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        <span className="font-medium">Field:</span> {log.details.metadata.fieldChanged}
+                        {log.details.metadata.oldValue && log.details.metadata.newValue && (
+                          <div className="mt-1 font-mono">
+                            <span className="text-red-600">- {JSON.stringify(log.details.metadata.oldValue)}</span>
+                            <br />
+                            <span className="text-green-600">+ {JSON.stringify(log.details.metadata.newValue)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
     </div>
   );
 }

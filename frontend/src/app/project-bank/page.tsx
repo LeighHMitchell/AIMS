@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard } from "@/components/ui/stat-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { FullPagination } from "@/components/ui/full-pagination"
 import {
   ResponsiveContainer,
   BarChart,
@@ -281,63 +282,10 @@ export default function ProjectBankDashboard() {
           <>
             {/* Hero Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {/* Total Projects */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Total Projects
-                      <HelpTooltip text="Total number of projects registered in the Project Bank." />
-                    </span>
-                    <FolderKanban className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-2xl font-bold">{stats.totalProjects}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stats.activeProjects} Active</p>
-                </CardContent>
-              </Card>
-
-              {/* Projects in Appraisal */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Projects in Appraisal
-                      <HelpTooltip text="Projects currently in screening or appraisal stages of the pipeline." />
-                    </span>
-                    <ClipboardList className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-2xl font-bold">{projectsInAppraisal}</div>
-                </CardContent>
-              </Card>
-
-              {/* Total Pipeline Value */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Total Pipeline Value
-                      <HelpTooltip text="Sum of estimated costs across all projects in the pipeline." />
-                    </span>
-                    <DollarSign className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.totalPipelineValue)}</div>
-                </CardContent>
-              </Card>
-
-              {/* Funding Gap */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Funding Gap
-                      <HelpTooltip text="Total unfunded amount — the difference between estimated cost and secured funding." />
-                    </span>
-                    <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.fundingGap)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stats.fundingGapProjects} project{stats.fundingGapProjects !== 1 ? 's' : ''} with gaps</p>
-                </CardContent>
-              </Card>
+              <StatCard label="Total Projects" value={stats.totalProjects} icon={FolderKanban} subtext={`${stats.activeProjects} Active`} />
+              <StatCard label="Projects in Appraisal" value={projectsInAppraisal} icon={ClipboardList} />
+              <StatCard label="Total Pipeline Value" value={formatCurrency(stats.totalPipelineValue)} icon={DollarSign} />
+              <StatCard label="Funding Gap" value={formatCurrency(stats.fundingGap)} icon={AlertTriangle} subtext={`${stats.fundingGapProjects} project${stats.fundingGapProjects !== 1 ? 's' : ''} with gaps`} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -632,62 +580,15 @@ export default function ProjectBankDashboard() {
                   </Card>
 
                   {totalItems > 0 && (
-                    <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
-                          Showing {startIndex + 1} to {endIndex} of {totalItems} projects
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={safePage === 1}>
-                            <ChevronLeft className="h-4 w-4" /> First
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(Math.max(1, safePage - 1))} disabled={safePage === 1}>
-                            <ChevronLeft className="h-4 w-4" /> Previous
-                          </Button>
-
-                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNum: number
-                            if (totalPages <= 5) pageNum = i + 1
-                            else if (safePage <= 3) pageNum = i + 1
-                            else if (safePage >= totalPages - 2) pageNum = totalPages - 4 + i
-                            else pageNum = safePage - 2 + i
-                            return (
-                              <Button
-                                key={pageNum}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-8 h-8 p-0 ${safePage === pageNum ? 'bg-slate-200 text-slate-900' : ''}`}
-                              >
-                                {pageNum}
-                              </Button>
-                            )
-                          })}
-
-                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))} disabled={safePage === totalPages}>
-                            Next <ChevronRight className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages}>
-                            Last <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm text-gray-600">Items per page:</label>
-                          <Select value={pageLimit.toString()} onValueChange={(v) => { setPageLimit(Number(v)); setCurrentPage(1); }}>
-                            <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="10">10</SelectItem>
-                              <SelectItem value="20">20</SelectItem>
-                              <SelectItem value="25">25</SelectItem>
-                              <SelectItem value="50">50</SelectItem>
-                              <SelectItem value="100">100</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
+                    <FullPagination
+                      page={safePage}
+                      totalPages={totalPages}
+                      totalItems={totalItems}
+                      perPage={pageLimit}
+                      onPageChange={setCurrentPage}
+                      onPerPageChange={setPageLimit}
+                      itemLabel="projects"
+                    />
                   )}
                 </>
               )

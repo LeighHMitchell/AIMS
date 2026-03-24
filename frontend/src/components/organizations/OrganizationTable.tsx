@@ -370,7 +370,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                             e.stopPropagation();
                                             copyToClipboard(org.iati_org_id!, 'IATI ID');
                                           }}
-                                          className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+                                          className="p-0.5 hover:bg-muted rounded transition-colors"
                                           title="Copy IATI ID"
                                         >
                                           <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />
@@ -384,7 +384,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                     e.stopPropagation();
                                     copyToClipboard(org.name, 'Organization name');
                                   }}
-                                  className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
+                                  className="flex-shrink-0 p-1 hover:bg-muted rounded transition-colors"
                                   title="Copy organization name"
                                 >
                                   <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />

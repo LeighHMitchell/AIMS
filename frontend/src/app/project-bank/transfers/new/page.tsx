@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Loader2, TrendingDown } from "lucide-react"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { apiFetch } from "@/lib/api-fetch"
 import { SECTORS } from "@/lib/project-bank-utils"
 
@@ -79,10 +80,15 @@ export default function NewTransferPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-[640px] pb-16">
+      <div className="max-w-3xl pb-16">
+        <Breadcrumbs items={[
+          { label: "Project Bank", href: "/project-bank" },
+          { label: "Transfers", href: "/project-bank/transfers" },
+          { label: "New Transfer" },
+        ]} />
         <div className="flex items-center gap-3 mb-6">
-          <TrendingDown className="h-7 w-7 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">New SEE Transfer</h1>
+          <TrendingDown className="h-8 w-8 text-muted-foreground" />
+          <h1 className="text-3xl font-bold">New SEE Transfer</h1>
         </div>
 
         <Card>

@@ -290,11 +290,11 @@ export function EditTaskModal({
 
           {/* Delete Confirmation */}
           {showDeleteConfirm && onDelete && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-              <p className="text-sm text-red-800 font-medium">
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 space-y-2">
+              <p className="text-sm text-destructive font-medium">
                 Are you sure you want to delete this task?
               </p>
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 This will remove the task and all its assignments. This action cannot be undone.
               </p>
               <div className="flex gap-2">
@@ -329,7 +329,7 @@ export function EditTaskModal({
                 variant="outline"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={loading || deleting}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 Delete Task
               </Button>

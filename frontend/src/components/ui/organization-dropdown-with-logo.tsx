@@ -102,7 +102,7 @@ export function OrganizationDropdownWithLogo({
             }}
           />
         ) : (
-          <div className="w-6 h-6 bg-gray-100 rounded-sm flex items-center justify-center">
+          <div className="w-6 h-6 bg-muted rounded-sm flex items-center justify-center">
             <Building2 className="h-4 w-4 text-gray-400" />
           </div>
         )}
@@ -132,7 +132,7 @@ export function OrganizationDropdownWithLogo({
         aria-expanded={open}
         disabled={disabled}
         className={cn(
-          "w-full justify-between font-normal min-w-[320px] px-4 py-2 h-auto border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 flex items-center",
+          "w-full justify-between font-normal min-w-[320px] px-4 py-2 h-auto border border-gray-300 rounded-md bg-white hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 flex items-center",
           disabled && "opacity-50 cursor-not-allowed",
           className
         )}
@@ -153,7 +153,7 @@ export function OrganizationDropdownWithLogo({
                     }}
                   />
                 ) : (
-                  <div className="w-5 h-5 bg-gray-100 rounded-sm flex items-center justify-center">
+                  <div className="w-5 h-5 bg-muted rounded-sm flex items-center justify-center">
                     <Building2 className="h-3 w-3 text-gray-400" />
                   </div>
                 )}

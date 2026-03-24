@@ -540,7 +540,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                           <button
                             type="button"
                             onClick={() => handleDelete(contact.id || '')}
-                            className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                            className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                             title="Remove contact"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />

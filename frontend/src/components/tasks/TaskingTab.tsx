@@ -328,13 +328,13 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
               <p className="text-2xl font-bold mt-1">{currentStats.declined}</p>
             </CardContent>
           </Card>
-          <Card className={currentStats.overdue > 0 ? 'border-red-200 bg-red-50/50' : ''}>
+          <Card className={currentStats.overdue > 0 ? 'border-destructive/20 bg-destructive/10' : ''}>
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Overdue</span>
               </div>
-              <p className={`text-2xl font-bold mt-1 ${currentStats.overdue > 0 ? 'text-red-600' : ''}`}>
+              <p className={`text-2xl font-bold mt-1 ${currentStats.overdue > 0 ? 'text-destructive' : ''}`}>
                 {currentStats.overdue}
               </p>
             </CardContent>
@@ -577,9 +577,9 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                       {/* Deadline if exists */}
                       {reassignment.assignment.task?.deadline && (
                         <div className="flex items-center gap-2 text-sm">
-                          <AlertTriangle className={`h-4 w-4 ${reassignment.assignment.is_overdue ? 'text-red-500' : 'text-muted-foreground'}`} />
+                          <AlertTriangle className={`h-4 w-4 ${reassignment.assignment.is_overdue ? 'text-destructive' : 'text-muted-foreground'}`} />
                           <span className="text-muted-foreground">Deadline:</span>
-                          <span className={reassignment.assignment.is_overdue ? 'text-red-500 font-medium' : ''}>
+                          <span className={reassignment.assignment.is_overdue ? 'text-destructive font-medium' : ''}>
                             {new Date(reassignment.assignment.task.deadline).toLocaleDateString()}
                             {reassignment.assignment.is_overdue && ' (Overdue)'}
                           </span>
@@ -653,7 +653,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                         </td>
                         <td className="p-3">
                           {reassignment.assignment.task?.deadline ? (
-                            <span className={reassignment.assignment.is_overdue ? 'text-red-500 font-medium' : ''}>
+                            <span className={reassignment.assignment.is_overdue ? 'text-destructive font-medium' : ''}>
                               {new Date(reassignment.assignment.task.deadline).toLocaleDateString()}
                               {reassignment.assignment.is_overdue && ' (Overdue)'}
                             </span>

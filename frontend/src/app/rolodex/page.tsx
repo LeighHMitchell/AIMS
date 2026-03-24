@@ -42,8 +42,10 @@ import {
   ExternalLink,
   Trash2,
   Copy,
-  Check
+  Check,
+  BookUser
 } from 'lucide-react';
+import { EmptyState } from "@/components/ui/empty-state"
 
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { FilterPanel } from '@/components/rolodex/FilterPanel';
@@ -312,11 +314,14 @@ export default function RolodexPage() {
       <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Rolodex</h1>
-            <p className="text-muted-foreground mt-1">
-              Comprehensive directory of all individuals in the aid system
-            </p>
+          <div className="flex items-center gap-3">
+            <BookUser className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Rolodex</h1>
+              <p className="text-muted-foreground mt-1">
+                Comprehensive directory of all individuals in the aid system
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -384,30 +389,27 @@ export default function RolodexPage() {
 
         <div className="space-y-6">
         {error ? (
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-destructive/20 bg-destructive/10">
             <CardContent className="p-6">
-              <div className="flex items-center space-x-2 text-red-800">
+              <div className="flex items-center space-x-2 text-destructive">
                 <AlertCircle className="h-5 w-5" />
                 <div>
                   <h3 className="font-medium">Error loading rolodex data</h3>
-                  <p className="text-sm text-red-600 mt-1">{error}</p>
+                  <p className="text-sm text-destructive mt-1">{error}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         ) : people.length === 0 && !loading ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No people found</h3>
-              <p className="text-muted-foreground mb-4">
-                {filters.search || filters.organization || filters.activity || filters.orgType || filters.role
-                  ? 'No people match your current filters. Try adjusting your filter criteria.'
-                  : 'No people are currently in the system.'
-                }
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<Users className="h-10 w-10 text-muted-foreground" />}
+            title="No people found"
+            message={
+              filters.search || filters.organization || filters.activity || filters.orgType || filters.role
+                ? 'No people match your current filters. Try adjusting your filter criteria.'
+                : 'No people are currently in the system.'
+            }
+          />
         ) : (
           <>
             {/* People Grid/Table */}
@@ -600,7 +602,7 @@ export default function RolodexPage() {
                                   onClick={() => handleDeleteContact(person)}
                                   title="Delete Contact"
                                 >
-                                  <Trash2 className="h-4 w-4 hover: text-red-500" />
+                                  <Trash2 className="h-4 w-4 hover: text-destructive" />
                                 </Button>
                               )}
                             </div>

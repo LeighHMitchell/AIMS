@@ -187,9 +187,9 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
 
         {/* Status Messages */}
         {evaluation.missingRequired.length > 0 && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+          <Alert className="border-destructive/20 bg-destructive/10">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
               <span className="font-medium">Required fields missing.</span> Complete these to publish your activity.
             </AlertDescription>
           </Alert>
@@ -200,7 +200,7 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
           <div className="space-y-3">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              className="text-sm text-primary hover:text-primary font-medium flex items-center gap-1"
             >
               {isExpanded ? '▼' : '▶'} How can I improve this score?
             </button>
@@ -209,11 +209,11 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
               <div className="space-y-4 pt-2">
                 {evaluation.missingRequired.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-red-700 mb-2">Required Fields:</h4>
+                    <h4 className="text-sm font-semibold text-destructive mb-2">Required Fields:</h4>
                     <ul className="space-y-1.5">
                       {evaluation.missingRequired.map((field) => (
                         <li key={field.key} className="flex items-start gap-2 text-sm">
-                          <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                          <AlertCircle className="h-3 w-3 text-destructive mt-0.5 flex-shrink-0" />
                           <span className="text-slate-700">{field.label}</span>
                         </li>
                       ))}

@@ -116,9 +116,9 @@ export default function ActivityEditorNavigation({
     {
       title: "Administration",
       sections: [
-        { id: "metadata", label: "Metadata" },
+        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
         { id: "readiness_checklist", label: "Readiness Checklist" },
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : [])
+        { id: "metadata", label: "Metadata" }
       ]
     }
   ]

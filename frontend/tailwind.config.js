@@ -55,6 +55,13 @@ module.exports = {
   				'cool-steel': '#7b95a7',
   				'platinum': '#f1f4f8'
   			},
+  			brand: {
+  				scarlet: 'hsl(var(--brand-scarlet))',
+  				'pale-slate': 'hsl(var(--brand-pale-slate))',
+  				'blue-slate': 'hsl(var(--brand-blue-slate))',
+  				'cool-steel': 'hsl(var(--brand-cool-steel))',
+  				platinum: 'hsl(var(--brand-platinum))',
+  			},
   			'surface-muted': 'var(--surface-muted)',
 			chart: {
   				'1': 'hsl(var(--chart-1))',

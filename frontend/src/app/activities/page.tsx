@@ -60,7 +60,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   Plus, Download, Pencil, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, LayoutGrid, TableIcon, Search, MoreVertical, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, ChevronUp, Heart,
-  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck
+  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck, Activity as ActivityIcon
 } from "lucide-react";
 import { exportActivityToPDF, exportActivityToExcel } from "@/lib/activity-export";
 import { useUser } from "@/hooks/useUser";
@@ -1661,12 +1661,15 @@ const router = useRouter();
       <div className="w-full space-y-6">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-6" data-tour="activities-header">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
-            <HelpTextTooltip 
-              content="View key information about each activity. Users with appropriate permissions can update or remove activities from this list."
-            />
+        <div className="flex items-center gap-3">
+          <ActivityIcon className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
+              <HelpTextTooltip
+                content="View key information about each activity. Users with appropriate permissions can update or remove activities from this list."
+              />
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">

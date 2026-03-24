@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useEffect, useState } from "react"
+import React, { useRef, useEffect, useState, useMemo } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
@@ -103,7 +103,7 @@ export function AdvancedGroup({
 
   const hasInitiallyScrolled = useRef(false)
 
-  const sectionRefs: SectionRef[] = activityCreated ? [
+  const sectionRefs: SectionRef[] = useMemo(() => activityCreated ? [
     { id: 'linked_activities', ref: linkedActivitiesRef },
     { id: 'results', ref: resultsRef },
     { id: 'forward-spending-survey', ref: forwardSpendRef },
@@ -111,17 +111,24 @@ export function AdvancedGroup({
     { id: 'financing-terms', ref: financingTermsRef },
     { id: 'conditions', ref: conditionsRef },
     { id: 'country-budget', ref: countryBudgetRef },
-  ] : []
+  ] : [], [activityCreated])
 
   const { activeSection, scrollToSection, setActiveSection, lockScrollSpy } = useScrollSpy(sectionRefs, {
     rootMargin: '-80px 0px -60% 0px',
     debounceMs: 100,
+    initialSection: initialSection && isAdvancedSection(initialSection) ? initialSection : null,
   })
 
+  // When entering via a specific section (e.g. 'country-budget'), only activate that section initially.
+  // The rest will lazy-load via IntersectionObserver as the user scrolls.
+  // This prevents mounting all 7 tabs at once which causes too many re-renders.
+  const initialActiveSections = activityCreated
+    ? (enablePreloading && !initialSection
+        ? [...ADVANCED_SECTIONS]
+        : [initialSection && isAdvancedSection(initialSection) ? initialSection : 'linked_activities'])
+    : [];
   const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
-    activityCreated
-      ? (enablePreloading ? [...ADVANCED_SECTIONS] : ['linked_activities'])
-      : []
+    initialActiveSections
   )
 
   const [sectionsRevealed, setSectionsRevealed] = useState(activityCreated)
@@ -129,6 +136,12 @@ export function AdvancedGroup({
   // When initialSection changes (user clicked a section in this group),
   // lock scroll spy, set active section, and instantly scroll to target
   const prevInitialSection = useRef(initialSection)
+  // Skip sync-to-parent on the very first render to prevent ping-pong:
+  // On mount, scroll spy defaults to the first section (e.g. 'linked_activities'),
+  // but we want 'country-budget'. Effect 1 fixes the scroll spy, but Effect 2
+  // would sync the stale initial value back to the parent in the same render cycle.
+  const isFirstRender = useRef(true)
+
   useEffect(() => {
     if (initialSection && isAdvancedSection(initialSection) && activityCreated) {
       lockScrollSpy(500)
@@ -143,15 +156,25 @@ export function AdvancedGroup({
     }
   }, [initialSection, activityCreated, lockScrollSpy, setActiveSection])
 
-  useEffect(() => {
-    if (activeSection && isAdvancedSection(activeSection)) {
-      onActiveSectionChange(activeSection)
+  // Stable ref for callback to avoid infinite re-render loop
+  const onActiveSectionChangeRef = useRef(onActiveSectionChange)
+  onActiveSectionChangeRef.current = onActiveSectionChange
 
-      const params = new URLSearchParams(window.location.search)
-      params.set('section', activeSection)
-      window.history.replaceState({}, '', `?${params.toString()}`)
+  // Sync scroll spy's active section to parent (for sidebar highlighting).
+  // Skipped on the first render — the scroll spy hasn't settled yet.
+  // NOTE: Do NOT call window.history.replaceState here — it triggers Next.js's
+  // useSearchParams to update, creating an infinite re-render loop.
+  useEffect(() => {
+    if (isFirstRender.current) return
+    if (activeSection && isAdvancedSection(activeSection)) {
+      onActiveSectionChangeRef.current(activeSection)
     }
-  }, [activeSection, onActiveSectionChange])
+  }, [activeSection])
+
+  // Mark first render complete — must be AFTER the sync effect above
+  useEffect(() => {
+    isFirstRender.current = false
+  })
 
   useEffect(() => {
     if (activityCreated && !sectionsRevealed) {
@@ -209,16 +232,22 @@ export function AdvancedGroup({
     return () => observer.disconnect()
   }, [activityCreated, activateSection])
 
+  const activeSectionsRef = useRef(activeSections)
+  activeSectionsRef.current = activeSections
+
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
-    const sectionsToPreload = ADVANCED_SECTIONS.slice()
-
-    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
-    if (unloaded.length > 0) {
-      activateSections(unloaded)
-    }
-  }, [activityCreated, enablePreloading, activateSection, activeSections])
+    // Delay preloading remaining sections to let the initial render settle.
+    // This prevents mounting all 7 tabs simultaneously when the group first appears.
+    const timer = setTimeout(() => {
+      const unloaded = ADVANCED_SECTIONS.filter(id => !activeSectionsRef.current.has(id))
+      if (unloaded.length > 0) {
+        activateSections(unloaded)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [activityCreated, enablePreloading, activateSections])
 
   return (
     <div className="advanced-group space-y-0">

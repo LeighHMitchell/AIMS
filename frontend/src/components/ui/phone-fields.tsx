@@ -111,7 +111,7 @@ export function PhoneFields({
             aria-expanded={open}
             aria-label="Select country code"
             className={cn(
-              "w-[120px] justify-between h-9 flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50",
+              "w-[120px] justify-between h-9 flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-muted/50",
               disabled && "cursor-not-allowed opacity-50"
             )}
             disabled={disabled}

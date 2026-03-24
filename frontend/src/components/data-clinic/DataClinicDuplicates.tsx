@@ -344,7 +344,7 @@ export function DataClinicDuplicates() {
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {/* By Confidence */}
               <div 
-                className={`p-4 rounded-lg border cursor-pointer hover:bg-gray-50 ${confidenceFilter === 'high' ? 'ring-2 ring-primary' : ''}`}
+                className={`p-4 rounded-lg border cursor-pointer hover:bg-muted/50 ${confidenceFilter === 'high' ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setConfidenceFilter(confidenceFilter === 'high' ? 'all' : 'high')}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -355,7 +355,7 @@ export function DataClinicDuplicates() {
               </div>
 
               <div 
-                className={`p-4 rounded-lg border cursor-pointer hover:bg-gray-50 ${confidenceFilter === 'medium' ? 'ring-2 ring-primary' : ''}`}
+                className={`p-4 rounded-lg border cursor-pointer hover:bg-muted/50 ${confidenceFilter === 'medium' ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setConfidenceFilter(confidenceFilter === 'medium' ? 'all' : 'medium')}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -366,7 +366,7 @@ export function DataClinicDuplicates() {
               </div>
 
               <div 
-                className={`p-4 rounded-lg border cursor-pointer hover:bg-gray-50 ${confidenceFilter === 'low' ? 'ring-2 ring-primary' : ''}`}
+                className={`p-4 rounded-lg border cursor-pointer hover:bg-muted/50 ${confidenceFilter === 'low' ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setConfidenceFilter(confidenceFilter === 'low' ? 'all' : 'low')}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -380,7 +380,7 @@ export function DataClinicDuplicates() {
               {detectionTypeOptions.slice(0, 3).map((type) => (
                 <div 
                   key={type}
-                  className={`p-4 rounded-lg border cursor-pointer hover:bg-gray-50 ${detectionTypeFilter === type ? 'ring-2 ring-primary' : ''}`}
+                  className={`p-4 rounded-lg border cursor-pointer hover:bg-muted/50 ${detectionTypeFilter === type ? 'ring-2 ring-primary' : ''}`}
                   onClick={() => setDetectionTypeFilter(detectionTypeFilter === type ? 'all' : type)}
                 >
                   <p className="text-sm text-muted-foreground mb-1">{DETECTION_TYPE_LABELS[type]}</p>

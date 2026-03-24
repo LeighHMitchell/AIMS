@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from "react";
+import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef, startTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -747,13 +747,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Local saveActivity function for title onBlur
   const saveActivity = useCallback(async ({ publish = false, goToList = false, goToNext = false }) => {
-    console.log('[DEBUG] saveActivity called with:', { publish, goToList, goToNext });
     if (!general.title?.trim()) {
       toast.error('Activity Title is required');
       return;
     }
 
-    console.log('[DEBUG] Setting loading state');
     setIsSaving(true);
 
     // Show orange toast notification while creating activity
@@ -781,7 +779,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         user: user ? { id: user.id } : undefined
       };
       
-      console.log('[DEBUG] Creating activity with payload:', payload);
       
       const res = await apiFetch('/api/activities', {
         method: 'POST',
@@ -795,7 +792,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
       
       const data = await res.json();
-      console.log('[DEBUG] Activity created successfully:', data);
       
       // Dismiss the loading toast
       toast.dismiss(loadingToastId);
@@ -1090,7 +1086,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               value={general.acronym || ''}
               onChange={(e) => {
                 if (!fieldLockStatus.isLocked) {
-                  console.log('[AIMS DEBUG] Acronym onChange triggered:', e.target.value);
                   setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
                   setHasUnsavedChanges(true);
                 }
@@ -2727,12 +2722,40 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     : isAdvancedSection(section) ? 'advanced'
     : null;
 
-  // Render all visited groups but only show the active one (CSS display toggle).
-  // This preserves internal component state so switching back is instant — no re-fetching.
+  // Guard: only forward scroll-spy section changes from the currently-visible group.
+  // Hidden groups (display:none) still run their scroll spy and would otherwise fight
+  // over the parent's activeSection, causing an infinite re-render loop.
+  const activeGroupRef = useRef(activeGroup);
+  activeGroupRef.current = activeGroup;
+
+  const guardedSectionChange = useCallback((groupName: string) => {
+    return (sectionId: string) => {
+      if (activeGroupRef.current === groupName) {
+        onSectionChange(sectionId);
+      }
+    };
+  }, [onSectionChange]);
+
+  const onActivityOverviewSectionChange = useMemo(() => guardedSectionChange('activity-overview'), [guardedSectionChange]);
+  const onStakeholdersSectionChange = useMemo(() => guardedSectionChange('stakeholders'), [guardedSectionChange]);
+  const onFundingDeliverySectionChange = useMemo(() => guardedSectionChange('funding-delivery'), [guardedSectionChange]);
+  const onStrategicAlignmentSectionChange = useMemo(() => guardedSectionChange('strategic-alignment'), [guardedSectionChange]);
+  const onSupportingInfoSectionChange = useMemo(() => guardedSectionChange('supporting-info'), [guardedSectionChange]);
+  const onAdvancedSectionChange = useMemo(() => guardedSectionChange('advanced'), [guardedSectionChange]);
+
+  // Stable callbacks for AdvancedGroup to avoid re-render cascades
+  const onFinancingTermsChange = useCallback((hasData: boolean) => setFinancingTermsCount(hasData ? 1 : 0), []);
+  const onConditionsChange = useCallback((conditions: any[]) => setConditionsCount(conditions.length), []);
+  const onFocalPointsChange = useCallback((focalPoints: any[]) => setFocalPointsCount(focalPoints.length), []);
+
+  // Render only the active group. Previously we used CSS display:none to keep all groups
+  // mounted, but this caused infinite re-render crashes because hidden groups still
+  // re-render on every parent state change, and the combined render count exceeded
+  // React's maximum update depth when switching to groups with many tabs.
   if (activeGroup) {
     return (
       <>
-        <div style={{ display: activeGroup === 'activity-overview' ? 'block' : 'none' }}>
+        {activeGroup === 'activity-overview' && <div>
           <ActivityOverviewGroup
             general={general}
             setGeneral={setGeneral}
@@ -2765,20 +2788,20 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             subnationalBreakdowns={subnationalBreakdowns}
             setSubnationalBreakdowns={setSubnationalBreakdowns}
             permissions={permissions}
-            onActiveSectionChange={onSectionChange}
+            onActiveSectionChange={onActivityOverviewSectionChange}
             initialSection={section}
             activityCreated={!!general.id}
             enablePreloading={true}
             renderGeneralSection={renderGeneralSection}
           />
-        </div>
+        </div>}
 
-        {visitedGroups.has('stakeholders') && (
-          <div style={{ display: activeGroup === 'stakeholders' ? 'block' : 'none' }}>
+        {activeGroup === 'stakeholders' && (
+          <div>
             <StakeholdersGroup
               activityId={general.id}
               permissions={permissions}
-              onActiveSectionChange={onSectionChange}
+              onActiveSectionChange={onStakeholdersSectionChange}
               initialSection={section}
               activityCreated={!!general.id}
               enablePreloading={true}
@@ -2804,19 +2827,19 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               }}
               onParticipatingOrganizationsChange={setParticipatingOrgsCount}
               onContactsChange={setContacts}
-              onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
+              onFocalPointsChange={onFocalPointsChange}
             />
           </div>
         )}
 
-        {visitedGroups.has('funding-delivery') && (
-          <div style={{ display: activeGroup === 'funding-delivery' ? 'block' : 'none' }}>
+        {activeGroup === 'funding-delivery' && (
+          <div>
             <FundingDeliveryGroup
               activityId={general.id}
               general={general}
               setGeneral={setGeneral}
               permissions={permissions}
-              onActiveSectionChange={onSectionChange}
+              onActiveSectionChange={onFundingDeliverySectionChange}
               initialSection={section}
               activityCreated={!!general.id}
               enablePreloading={true}
@@ -2832,13 +2855,13 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           </div>
         )}
 
-        {visitedGroups.has('strategic-alignment') && (
-          <div style={{ display: activeGroup === 'strategic-alignment' ? 'block' : 'none' }}>
+        {activeGroup === 'strategic-alignment' && (
+          <div>
             <StrategicAlignmentGroup
               activityId={general.id}
               userId={user?.id}
               permissions={permissions}
-              onActiveSectionChange={onSectionChange}
+              onActiveSectionChange={onStrategicAlignmentSectionChange}
               initialSection={section}
               activityCreated={!!general.id}
               enablePreloading={true}
@@ -2855,14 +2878,14 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           </div>
         )}
 
-        {visitedGroups.has('supporting-info') && (
-          <div style={{ display: activeGroup === 'supporting-info' ? 'block' : 'none' }}>
+        {activeGroup === 'supporting-info' && (
+          <div>
             <SupportingInfoGroup
               activityId={general.id}
               general={general}
               setGeneral={setGeneral}
               permissions={permissions}
-              onActiveSectionChange={onSectionChange}
+              onActiveSectionChange={onSupportingInfoSectionChange}
               initialSection={section}
               activityCreated={!!general.id}
               enablePreloading={true}
@@ -2873,22 +2896,22 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           </div>
         )}
 
-        {visitedGroups.has('advanced') && (
-          <div style={{ display: activeGroup === 'advanced' ? 'block' : 'none' }}>
+        {activeGroup === 'advanced' && (
+          <div>
             <AdvancedGroup
               activityId={general.id}
               userId={user?.id}
               permissions={permissions}
-              onActiveSectionChange={onSectionChange}
+              onActiveSectionChange={onAdvancedSectionChange}
               initialSection={section}
               activityCreated={!!general.id}
               enablePreloading={true}
               onLinkedActivitiesCountChange={setLinkedActivitiesCount}
               onResultsChange={handleResultsChange}
               onFssChange={setForwardSpendCount}
-              onCapitalSpendChange={(percentage) => setCapitalSpendPercentage(percentage)}
-              onFinancingTermsChange={(hasData) => setFinancingTermsCount(hasData ? 1 : 0)}
-              onConditionsChange={(conditions) => setConditionsCount(conditions.length)}
+              onCapitalSpendChange={setCapitalSpendPercentage}
+              onFinancingTermsChange={onFinancingTermsChange}
+              onConditionsChange={onConditionsChange}
               general={general}
               setGeneral={setGeneral}
               onCountryBudgetItemsChange={setCountryBudgetItemsCount}
@@ -3781,11 +3804,6 @@ function NewActivityPageContent() {
     
     if (shouldResetForm) {
       console.log('[AIMS] Resetting form state for new activity creation');
-      console.log('[AIMS DEBUG] User organization data for reset:', {
-        user_organisation: user?.organisation,
-        user_organization_name: user?.organization?.name,
-        user_organizationId: user?.organizationId
-      });
       setGeneral({
         id: "",
         partnerId: "",
@@ -3968,7 +3986,6 @@ function NewActivityPageContent() {
       submitting ||
       publishing
     );
-    console.log('[DEBUG] isAnyAutosaveInProgress:', result, { saving, savingAndNext, submitting, publishing });
     return result;
   }, [
     saving,
@@ -4179,17 +4196,6 @@ function NewActivityPageContent() {
           
           const data = await response.json();
           console.log('[AIMS] Activity loaded:', data.title);
-          console.log('[AIMS DEBUG] Title and Acronym from API:', {
-            title: data.title,
-            acronym: data.acronym,
-            title_narrative: data.title_narrative
-          });
-          console.log('[AIMS DEBUG] Organization data from API:', {
-            created_by_org_name: data.created_by_org_name,
-            created_by_org_acronym: data.created_by_org_acronym,
-            reportingOrgId: data.reportingOrgId,
-            createdByOrg: data.createdByOrg
-          });
           // Update all state with loaded data
           setGeneral({
             id: data.id || activityId,
@@ -4469,8 +4475,9 @@ function NewActivityPageContent() {
       }
     };
 
-    // Start preloading after a short delay to let the initial render settle
-    const timer = setTimeout(preloadAll, 1000);
+    // Start preloading after a delay to let the initial render fully settle.
+    // Too short (1s) causes preloading state updates to overlap with initial mount effects.
+    const timer = setTimeout(preloadAll, 2000);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -4931,7 +4938,7 @@ function NewActivityPageContent() {
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
-      "metadata", "government", "readiness_checklist"
+      "government", "readiness_checklist", "metadata"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
@@ -4947,7 +4954,7 @@ function NewActivityPageContent() {
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
-      "metadata", "government", "readiness_checklist"
+      "government", "readiness_checklist", "metadata"
     ].filter(id => id !== "government" || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
@@ -4956,21 +4963,17 @@ function NewActivityPageContent() {
 
   // Update transactions callback
   const updateTransactions = useCallback((newTransactions: Transaction[]) => {
-    console.log('[AIMS DEBUG] updateTransactions called with:', newTransactions.length, 'transactions');
     setTransactions(newTransactions);
     setTransactionsLoaded(true);
   }, []);
 
   // Update contacts callback
   const updateContacts = useCallback((newContacts: any[]) => {
-    console.log('[AIMS DEBUG] updateContacts called with:', newContacts);
     setContacts(newContacts);
   }, []);
 
   // Debug contacts state changes
   useEffect(() => {
-    console.log('[AIMS DEBUG] Contacts state changed:', contacts);
-    console.log('[AIMS DEBUG] Contacts count:', contacts.length);
   }, [contacts]);
 
 
@@ -5019,24 +5022,32 @@ function NewActivityPageContent() {
         if (mainEl) mainEl.scrollTop = 0;
       }
 
-      setActiveSection(value);
+      // Use startTransition to prevent the group switch from exceeding React's
+      // maximum update depth. The mount/unmount of large group components triggers
+      // many cascading effects that, combined with background preloading state updates,
+      // can exceed the ~50 synchronous update limit.
+      startTransition(() => {
+        setActiveSection(value);
 
-      // Update URL
+        // Trigger lazy loading for the target tab's group data if not yet loaded
+        const tabGroup = getTabGroup(value);
+        if (tabGroup) {
+          setVisitedGroups(prev => {
+            if (prev.has(tabGroup)) return prev;
+            const newSet = new Set(prev);
+            newSet.add(tabGroup);
+            return newSet;
+          });
+        }
+      });
+
+      // Update URL (outside transition - doesn't need to be deferred)
       const params = new URLSearchParams(window.location.search);
       params.set('section', value);
       window.history.replaceState({}, '', `?${params.toString()}`);
 
       // Trigger lazy loading for the target tab's group data if not yet loaded
-      // This ensures tab completion indicators update correctly
       const tabGroup = getTabGroup(value);
-      if (tabGroup) {
-        setVisitedGroups(prev => {
-          if (prev.has(tabGroup)) return prev;
-          const newSet = new Set(prev);
-          newSet.add(tabGroup);
-          return newSet;
-        });
-      }
       if (general.id && general.id !== 'NEW' && tabGroup && !tabDataLoader.isGroupLoaded(value)) {
         tabDataLoader.loadTabData(value).catch(err => {
           console.error('[AIMS Performance] Failed to load tab data:', err);
@@ -5130,13 +5141,11 @@ function NewActivityPageContent() {
 
   // Save activity to API
   const saveActivity = useCallback(async ({ publish = false, goToList = false, goToNext = false, suppressErrorToast = false }) => {
-    console.log('[DEBUG] saveActivity called with:', { publish, goToList, goToNext, suppressErrorToast });
     if (!general.title?.trim()) {
       toast.error('Activity Title is required');
       return;
     }
 
-    console.log('[DEBUG] Setting loading state');
     if (goToNext) {
       setSavingAndNext(true);
     } else {
@@ -5158,7 +5167,6 @@ function NewActivityPageContent() {
 
       // If no ID, create first via POST with essential fields
       if (!activityId) {
-        console.log('[DEBUG] Creating new activity via POST');
         const createRes = await apiFetch('/api/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -5170,12 +5178,10 @@ function NewActivityPageContent() {
           throw new Error(errorText);
         }
         const created = await createRes.json();
-        console.log('[DEBUG] POST successful, created activity:', created.id);
         activityId = created.id;
         setGeneral((g: any) => ({ ...g, id: created.id, uuid: created.uuid || created.id }));
         setShowActivityCreatedAlert(true);
       } else {
-        console.log('[DEBUG] Updating existing activity via PATCH');
         // Now persist the full General tab via PATCH
         const patchRes = await apiFetch(`/api/activities/${activityId}`, {
           method: 'PATCH',
@@ -5187,7 +5193,6 @@ function NewActivityPageContent() {
           console.error('[DEBUG] PATCH failed:', errorText);
           throw new Error(errorText);
         }
-        console.log('[DEBUG] PATCH successful');
         // Some backends return 204 No Content for PATCH. Avoid awaiting JSON which can hang.
         try { await patchRes.text(); } catch (_) { /* ignore */ }
       }
@@ -5212,7 +5217,6 @@ function NewActivityPageContent() {
         toast.success(publish ? 'Published' : 'Saved');
       }
       
-      console.log('[DEBUG] Save successful, clearing loading states');
 
       if (goToNext) {
         const nextId = getNextSection(activeSection);
@@ -5227,7 +5231,6 @@ function NewActivityPageContent() {
       }
       throw e; // Re-throw so the caller can handle it
     } finally {
-      console.log('[DEBUG] Finally block - clearing loading states');
       setSaving(false);
       setSavingAndNext(false);
     }
@@ -5319,9 +5322,9 @@ function NewActivityPageContent() {
     {
       title: "Administration",
       sections: [
-        { id: "metadata", label: "Metadata" },
+        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
         { id: "readiness_checklist", label: "Readiness Checklist" },
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : [])
+        { id: "metadata", label: "Metadata" }
       ]
     }
   ];

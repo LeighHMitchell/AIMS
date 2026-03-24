@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { StatCard } from "@/components/ui/stat-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { TrendingDown, Plus, Search, Building, ArrowRight } from "lucide-react"
+import { TrendingDown, Plus, Search, Building, ArrowRight, Inbox } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import { apiFetch } from "@/lib/api-fetch"
 import { SEE_STATUS_LABELS, SEE_TRANSFER_MODE_LABELS, formatCurrency } from "@/lib/project-bank-utils"
 import type { SEETransfer, SEETransferStatus } from "@/types/project-bank"
@@ -72,7 +74,7 @@ export default function TransfersListPage() {
           <div className="flex items-center gap-3">
             <TrendingDown className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-2xl font-bold">SEE Transfers</h1>
+              <h1 className="text-3xl font-bold">SEE Transfers</h1>
               <p className="text-muted-foreground mt-1">State Economic Enterprise equitization pipeline</p>
             </div>
           </div>
@@ -84,25 +86,10 @@ export default function TransfersListPage() {
 
         {/* Hero Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: "Total Transfers", value: stats.total, icon: Building },
-            { label: "In Progress", value: stats.inProgress, icon: ArrowRight },
-            { label: "Transferred", value: stats.transferred, icon: TrendingDown },
-            { label: "Total Valuation", value: formatCurrency(stats.totalValuation), icon: Building },
-          ].map(card => {
-            const Icon = card.icon
-            return (
-              <Card key={card.label}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">{card.label}</span>
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-2xl font-bold">{card.value}</div>
-                </CardContent>
-              </Card>
-            )
-          })}
+          <StatCard label="Total Transfers" value={stats.total} icon={Building} />
+          <StatCard label="In Progress" value={stats.inProgress} icon={ArrowRight} />
+          <StatCard label="Transferred" value={stats.transferred} icon={TrendingDown} />
+          <StatCard label="Total Valuation" value={formatCurrency(stats.totalValuation)} icon={Building} />
         </div>
 
         {/* Filters — styled like Project List */}
@@ -155,7 +142,7 @@ export default function TransfersListPage() {
                   {loading ? (
                     <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>
                   ) : transfers.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No transfers found</td></tr>
+                    <tr><td colSpan={7} className="p-0"><EmptyState icon={<Inbox className="h-10 w-10 text-muted-foreground" />} title="No transfers found" message="Try adjusting your search or filters." /></td></tr>
                   ) : transfers.map(transfer => (
                     <tr
                       key={transfer.id}

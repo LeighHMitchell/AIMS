@@ -1,14 +1,13 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
-  ArrowLeft,
   Edit,
   Trash2,
   MapPin,
@@ -18,7 +17,6 @@ import {
   Clock,
   Link2,
   FileText,
-  Target,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
@@ -33,9 +31,8 @@ import { AllocationRequestModal } from "@/components/land-bank/AllocationRequest
 import { ParcelHistoryTimeline } from "@/components/land-bank/ParcelHistoryTimeline"
 import { ParcelDocumentUpload } from "@/components/land-bank/ParcelDocumentUpload"
 import { SuggestedProjectsCard } from "@/components/land-bank/SuggestedProjectsCard"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import type { LandParcel, AllocationRequest, LandParcelHistory, LinkedProject, LandParcelDocument } from "@/types/land-bank"
-
-type Tab = "overview" | "map" | "documents" | "allocation" | "history"
 
 export default function ParcelDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -47,7 +44,6 @@ export default function ParcelDetailPage() {
   const [linkedProjects, setLinkedProjects] = useState<LinkedProject[]>([])
   const [documents, setDocuments] = useState<LandParcelDocument[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<Tab>("overview")
   const [showAllocationModal, setShowAllocationModal] = useState(false)
   const [deallocating, setDeallocating] = useState(false)
 
@@ -129,25 +125,22 @@ export default function ParcelDetailPage() {
     )
   }
 
-  const tabs: { key: Tab; label: string }[] = [
+  const tabs = useMemo(() => [
     { key: "overview", label: "Overview" },
     { key: "map", label: "Map" },
     { key: "documents", label: `Documents (${documents.length})` },
     { key: "allocation", label: `Allocation (${allocations.length})` },
     { key: "history", label: `History (${history.length})` },
-  ]
+  ], [documents.length, allocations.length, history.length])
 
   return (
     <MainLayout>
       <div className="w-full">
-        {/* Back link */}
-        <button
-          onClick={() => router.push("/land-bank/parcels")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Parcels
-        </button>
+        <Breadcrumbs items={[
+          { label: "Land Bank", href: "/land-bank" },
+          { label: "Parcels", href: "/land-bank/parcels" },
+          { label: parcel.name },
+        ]} />
 
         {/* Banner image */}
         {parcel.banner_document_id && documents.length > 0 && (() => {
@@ -167,7 +160,7 @@ export default function ParcelDetailPage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold">{parcel.name}</h1>
+              <h1 className="text-3xl font-bold">{parcel.name}</h1>
               <ParcelStatusBadge status={parcel.status} />
               <TitleStatusBadge status={parcel.title_status} />
               <LeaseExpiryBadge leaseEndDate={parcel.lease_end_date} />
@@ -230,261 +223,259 @@ export default function ParcelDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b mb-6">
-          {tabs.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs defaultValue="overview">
+          <TabsList>
+            {tabs.map(tab => (
+              <TabsTrigger key={tab.key} value={tab.key}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* Tab content */}
-        {activeTab === "map" ? (
-          /* Full-width map (no sidebar) */
-          <div className="h-[600px]">
-            <ParcelDetailMap parcel={parcel} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-            {/* Main content */}
-            <div>
-              {activeTab === "overview" && (
-                <div className="space-y-6">
-                  {/* Details card */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Parcel Details</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <dl className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Parcel Code</dt>
-                          <dd><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{parcel.parcel_code}</span></dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">State/Region</dt>
-                          <dd>{parcel.state_region}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Township</dt>
-                          <dd>{parcel.township || "—"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Size</dt>
-                          <dd>{formatHectares(parcel.size_hectares)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Classification</dt>
-                          <dd>{parcel.classification || "—"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Asset Type</dt>
-                          <dd>{parcel.asset_type || "—"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Status</dt>
-                          <dd><ParcelStatusBadge status={parcel.status} /></dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground mb-1">Title Status</dt>
-                          <dd><TitleStatusBadge status={parcel.title_status} /></dd>
-                        </div>
-                        {parcel.controlling_ministry && (
-                          <div className="col-span-2">
-                            <dt className="text-muted-foreground mb-1">Controlling Ministry</dt>
-                            <dd>{parcel.controlling_ministry.code} — {parcel.controlling_ministry.name}</dd>
-                          </div>
-                        )}
-                        {parcel.ndp_goal && (
-                          <div className="col-span-2">
-                            <dt className="text-muted-foreground mb-1">Primary NDP Goal</dt>
-                            <dd>{parcel.ndp_goal.code} — {parcel.ndp_goal.name}</dd>
-                          </div>
-                        )}
-                        {(parcel.submitter_first_name || parcel.submitter_last_name || parcel.submitter_organization) && (
-                          <div className="col-span-2">
-                            <dt className="text-muted-foreground mb-1">Submitted By</dt>
-                            <dd>
-                              {[parcel.submitter_first_name, parcel.submitter_last_name].filter(Boolean).join(" ")}
-                              {parcel.submitter_organization && (
-                                <span className="text-muted-foreground"> — {parcel.submitter_organization}</span>
-                              )}
-                            </dd>
-                          </div>
-                        )}
-                        {parcel.notes && (
-                          <div className="col-span-2">
-                            <dt className="text-muted-foreground mb-1">Notes</dt>
-                            <dd className="whitespace-pre-wrap">{parcel.notes}</dd>
-                          </div>
-                        )}
-                      </dl>
-                    </CardContent>
-                  </Card>
+          <TabsContent value="map" className="border-0 p-0">
+            {/* Full-width map (no sidebar) */}
+            <div className="h-[600px]">
+              <ParcelDetailMap parcel={parcel} />
+            </div>
+          </TabsContent>
 
-                  {/* Allocation info */}
-                  {parcel.status === "allocated" && parcel.organization && (
+          {/* Tabs with sidebar layout */}
+          {["overview", "documents", "allocation", "history"].map(tabKey => (
+            <TabsContent key={tabKey} value={tabKey} className="border-0 p-0">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+                {/* Main content */}
+                <div>
+                  {tabKey === "overview" && (
+                    <div className="space-y-6">
+                      {/* Details card */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Parcel Details</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <dl className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Parcel Code</dt>
+                              <dd><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{parcel.parcel_code}</span></dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">State/Region</dt>
+                              <dd>{parcel.state_region}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Township</dt>
+                              <dd>{parcel.township || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Size</dt>
+                              <dd>{formatHectares(parcel.size_hectares)}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Classification</dt>
+                              <dd>{parcel.classification || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Asset Type</dt>
+                              <dd>{parcel.asset_type || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Status</dt>
+                              <dd><ParcelStatusBadge status={parcel.status} /></dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted-foreground mb-1">Title Status</dt>
+                              <dd><TitleStatusBadge status={parcel.title_status} /></dd>
+                            </div>
+                            {parcel.controlling_ministry && (
+                              <div className="col-span-2">
+                                <dt className="text-muted-foreground mb-1">Controlling Ministry</dt>
+                                <dd>{parcel.controlling_ministry.code} — {parcel.controlling_ministry.name}</dd>
+                              </div>
+                            )}
+                            {parcel.ndp_goal && (
+                              <div className="col-span-2">
+                                <dt className="text-muted-foreground mb-1">Primary NDP Goal</dt>
+                                <dd>{parcel.ndp_goal.code} — {parcel.ndp_goal.name}</dd>
+                              </div>
+                            )}
+                            {(parcel.submitter_first_name || parcel.submitter_last_name || parcel.submitter_organization) && (
+                              <div className="col-span-2">
+                                <dt className="text-muted-foreground mb-1">Submitted By</dt>
+                                <dd>
+                                  {[parcel.submitter_first_name, parcel.submitter_last_name].filter(Boolean).join(" ")}
+                                  {parcel.submitter_organization && (
+                                    <span className="text-muted-foreground"> — {parcel.submitter_organization}</span>
+                                  )}
+                                </dd>
+                              </div>
+                            )}
+                            {parcel.notes && (
+                              <div className="col-span-2">
+                                <dt className="text-muted-foreground mb-1">Notes</dt>
+                                <dd className="whitespace-pre-wrap">{parcel.notes}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </CardContent>
+                      </Card>
+
+                      {/* Allocation info */}
+                      {parcel.status === "allocated" && parcel.organization && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">Allocation</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <dl className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <dt className="text-muted-foreground mb-1">Allocated To</dt>
+                                <dd className="font-medium">{parcel.organization.name}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-muted-foreground mb-1">Lease Period</dt>
+                                <dd>
+                                  {parcel.lease_start_date || "—"} to {parcel.lease_end_date || "—"}
+                                </dd>
+                              </div>
+                            </dl>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Linked projects */}
+                      {linkedProjects.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Link2 className="h-4 w-4" />
+                              Linked Projects ({linkedProjects.length})
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-0">
+                            <div className="divide-y">
+                              {linkedProjects.map(lp => (
+                                <div
+                                  key={lp.id}
+                                  className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                                  onClick={() => router.push(`/project-bank/${lp.project.id}`)}
+                                >
+                                  <p className="text-sm font-medium">{lp.project.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {lp.project.project_code} &middot; {lp.project.sector} &middot; {lp.project.status}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
+
+                  {tabKey === "documents" && (
+                    <ParcelDocumentUpload
+                      parcelId={parcel.id}
+                      documents={documents}
+                      canManage={permissions.canManageParcels}
+                      bannerDocumentId={parcel.banner_document_id}
+                      onDocumentsChange={fetchDocuments}
+                      onBannerChange={fetchParcel}
+                    />
+                  )}
+
+                  {tabKey === "allocation" && (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-base">Allocation</CardTitle>
+                        <CardTitle className="text-base">Allocation Requests</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <dl className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <dt className="text-muted-foreground mb-1">Allocated To</dt>
-                            <dd className="font-medium">{parcel.organization.name}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-muted-foreground mb-1">Lease Period</dt>
-                            <dd>
-                              {parcel.lease_start_date || "—"} to {parcel.lease_end_date || "—"}
-                            </dd>
-                          </div>
-                        </dl>
+                        <AllocationScoringPanel
+                          parcelId={parcel.id}
+                          requests={allocations}
+                          canManage={permissions.canManageParcels}
+                          onUpdate={fetchParcel}
+                        />
                       </CardContent>
                     </Card>
                   )}
 
-                  {/* Linked projects */}
-                  {linkedProjects.length > 0 && (
+                  {tabKey === "history" && (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Link2 className="h-4 w-4" />
-                          Linked Projects ({linkedProjects.length})
-                        </CardTitle>
+                        <CardTitle className="text-base">Audit History</CardTitle>
                       </CardHeader>
-                      <CardContent className="p-0">
-                        <div className="divide-y">
-                          {linkedProjects.map(lp => (
-                            <div
-                              key={lp.id}
-                              className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                              onClick={() => router.push(`/project-bank/${lp.project.id}`)}
-                            >
-                              <p className="text-sm font-medium">{lp.project.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {lp.project.project_code} &middot; {lp.project.sector} &middot; {lp.project.status}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
+                      <CardContent>
+                        <ParcelHistoryTimeline history={history} />
                       </CardContent>
                     </Card>
                   )}
                 </div>
-              )}
 
-              {activeTab === "documents" && (
-                <ParcelDocumentUpload
-                  parcelId={parcel.id}
-                  documents={documents}
-                  canManage={permissions.canManageParcels}
-                  bannerDocumentId={parcel.banner_document_id}
-                  onDocumentsChange={fetchDocuments}
-                  onBannerChange={fetchParcel}
-                />
-              )}
-
-              {activeTab === "allocation" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Allocation Requests</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <AllocationScoringPanel
-                      parcelId={parcel.id}
-                      requests={allocations}
-                      canManage={permissions.canManageParcels}
-                      onUpdate={fetchParcel}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {activeTab === "history" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Audit History</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ParcelHistoryTimeline history={history} />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Right sidebar */}
-            <div className="space-y-4">
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="text-sm font-medium mb-3">Quick Info</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{parcel.state_region}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatHectares(parcel.size_hectares)}</span>
-                    </div>
-                    {parcel.classification && (
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span>{parcel.classification}</span>
+                {/* Right sidebar */}
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="text-sm font-medium mb-3">Quick Info</h3>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{parcel.state_region}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Layers className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatHectares(parcel.size_hectares)}</span>
+                        </div>
+                        {parcel.classification && (
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <span>{parcel.classification}</span>
+                          </div>
+                        )}
+                        {parcel.controlling_ministry && (
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <span>{parcel.controlling_ministry.code}</span>
+                          </div>
+                        )}
+                        {parcel.lease_end_date && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>Lease ends {parcel.lease_end_date}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span>{documents.length} document{documents.length !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span>Created {new Date(parcel.created_at).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                    )}
-                    {parcel.controlling_ministry && (
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span>{parcel.controlling_ministry.code}</span>
-                      </div>
-                    )}
-                    {parcel.lease_end_date && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>Lease ends {parcel.lease_end_date}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>{documents.length} document{documents.length !== 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>Created {new Date(parcel.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
 
-              {parcel.geometry && (
-                <Card>
-                  <CardContent className="p-4">
-                    <h3 className="text-sm font-medium mb-2">Geometry</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Type: {parcel.geometry.type}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+                  {parcel.geometry && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h3 className="text-sm font-medium mb-2">Geometry</h3>
+                        <p className="text-xs text-muted-foreground">
+                          Type: {parcel.geometry.type}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
 
-              <SuggestedProjectsCard
-                parcelId={parcel.id}
-                canLink={permissions.canManageParcels}
-                onLinked={fetchParcel}
-              />
-            </div>
-          </div>
-        )}
+                  <SuggestedProjectsCard
+                    parcelId={parcel.id}
+                    canLink={permissions.canManageParcels}
+                    onLinked={fetchParcel}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
 
         {/* Allocation request modal */}
         <AllocationRequestModal

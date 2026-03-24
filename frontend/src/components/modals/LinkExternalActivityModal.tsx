@@ -181,7 +181,7 @@ export function LinkExternalActivityModal({
             variant="outline"
             onClick={handleClose}
             disabled={saving}
-            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="border-gray-300 text-gray-700 hover:bg-muted"
           >
             Cancel
           </Button>

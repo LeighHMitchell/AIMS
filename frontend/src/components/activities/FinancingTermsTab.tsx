@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,10 +111,14 @@ export function FinancingTermsTab({
     }
   }, [loanTerms]);
 
+  // Stable ref for callback to avoid infinite re-render loop
+  const onFinancingTermsChangeRef = useRef(onFinancingTermsChange);
+  onFinancingTermsChangeRef.current = onFinancingTermsChange;
+
   // Notify parent of completion status
   useEffect(() => {
-    onFinancingTermsChange?.(hasCompletedData);
-  }, [hasCompletedData, onFinancingTermsChange]);
+    onFinancingTermsChangeRef.current?.(hasCompletedData);
+  }, [hasCompletedData]);
 
   // Fetch channel code from primary participating org
   useEffect(() => {

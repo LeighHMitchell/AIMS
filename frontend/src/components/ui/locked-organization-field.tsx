@@ -102,7 +102,7 @@ export function LockedOrganizationField({
                   variant="ghost"
                   size="sm"
                   onClick={handleToggleLock}
-                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                  className="h-6 w-6 p-0 hover:bg-muted"
                   disabled={saving}
                 >
                   {isUnlocked ? (
@@ -127,7 +127,7 @@ export function LockedOrganizationField({
         placeholder={placeholder}
         disabled={isFieldDisabled}
         className={cn(
-          isFieldDisabled && "bg-gray-50 text-gray-400 cursor-not-allowed opacity-50"
+          isFieldDisabled && "bg-muted/50 text-gray-400 cursor-not-allowed opacity-50"
         )}
       />
       

@@ -84,13 +84,13 @@ export function ImportResults({
           </div>
         </Card>
 
-        <Card className="p-6 border-red-200 bg-red-50">
+        <Card className="p-6 border-destructive/20 bg-destructive/10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-red-700">Failed</p>
-              <p className="text-2xl font-bold text-red-700">{failed}</p>
+              <p className="text-sm text-destructive">Failed</p>
+              <p className="text-2xl font-bold text-destructive">{failed}</p>
             </div>
-            <XCircle className="h-8 w-8 text-red-600" />
+            <XCircle className="h-8 w-8 text-destructive" />
           </div>
         </Card>
       </div>

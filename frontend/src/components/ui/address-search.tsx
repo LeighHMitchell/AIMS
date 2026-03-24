@@ -182,7 +182,7 @@ export function AddressSearch({
                   key={result.place_id}
                   type="button"
                   onClick={() => handleAddressSelect(result)}
-                  className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100 last:border-b-0"
+                  className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-start gap-2 border-b border-gray-100 last:border-b-0"
                   disabled={disabled}
                 >
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />

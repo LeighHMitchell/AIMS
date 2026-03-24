@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard } from "@/components/ui/stat-card"
 import { MapPin, Layers, CheckCircle, TrendingUp } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -162,7 +163,7 @@ export default function LandBankAnalyticsPage() {
     <MainLayout>
       <div className="w-full">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">Land Bank Analytics</h1>
+          <h1 className="text-3xl font-bold">Land Bank Analytics</h1>
           <p className="text-muted-foreground mt-1">
             Interactive overview of parcel distribution and allocation metrics
           </p>
@@ -170,25 +171,10 @@ export default function LandBankAnalyticsPage() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Parcels", value: stats.totalParcels, icon: MapPin },
-            { label: "Total Hectares", value: formatHectares(stats.totalHectares), icon: Layers },
-            { label: "Allocated %", value: `${stats.allocatedPercent}%`, icon: CheckCircle },
-            { label: "Available", value: stats.availableCount, icon: TrendingUp },
-          ].map(card => {
-            const Icon = card.icon
-            return (
-              <Card key={card.label}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">{card.label}</span>
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-2xl font-bold">{typeof card.value === "number" ? card.value.toLocaleString() : card.value}</div>
-                </CardContent>
-              </Card>
-            )
-          })}
+          <StatCard label="Total Parcels" value={stats.totalParcels.toLocaleString()} icon={MapPin} />
+          <StatCard label="Total Hectares" value={formatHectares(stats.totalHectares)} icon={Layers} />
+          <StatCard label="Allocated %" value={`${stats.allocatedPercent}%`} icon={CheckCircle} />
+          <StatCard label="Available" value={stats.availableCount.toLocaleString()} icon={TrendingUp} />
         </div>
 
         {/* Row 1: Status pie, Classification bar, Count by Region */}

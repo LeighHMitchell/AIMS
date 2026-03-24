@@ -77,6 +77,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
     updateItemResponse,
     uploadDocument,
     deleteDocument,
+    renameDocument,
     signOffStage,
     isUpdating,
     updatingItemId,
@@ -100,6 +101,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
 
   // Wizard step state
   const [activeStep, setActiveStep] = useState(0);
+  const wizardRef = useRef<HTMLDivElement>(null);
 
   // Fetch government organizations (type codes 10, 11 = Partner Government)
   useEffect(() => {
@@ -238,19 +240,33 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
     return true;
   }, [steps.length, activeStep, isStepComplete]);
 
+  const scrollToWizard = () => {
+    // The scroll container is the <main> element, not the viewport
+    const mainEl = document.querySelector('main.flex-1.overflow-y-auto');
+    if (mainEl && wizardRef.current) {
+      const gridTop = wizardRef.current.offsetTop;
+      mainEl.scrollTo({ top: gridTop, behavior: 'smooth' });
+    }
+  };
+
   const handleBack = () => {
-    if (activeStep > 0) setActiveStep(activeStep - 1);
+    if (activeStep > 0) {
+      setActiveStep(activeStep - 1);
+      scrollToWizard();
+    }
   };
 
   const handleNext = () => {
     if (activeStep < steps.length - 1 && isStepComplete(activeStep)) {
       setActiveStep(activeStep + 1);
+      scrollToWizard();
     }
   };
 
   const handleStepClick = (index: number) => {
     if (canNavigateToStep(index)) {
       setActiveStep(index);
+      scrollToWizard();
     }
   };
 
@@ -335,7 +351,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
       )}
 
       {/* Wizard layout */}
-      <div className="grid grid-cols-[240px_1fr] gap-8">
+      <div ref={wizardRef} className="grid grid-cols-[240px_1fr] gap-8 scroll-mt-6">
         {/* Sidebar stepper */}
         <ReadinessProgressRail
           steps={steps}
@@ -394,6 +410,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                 onUpdateResponse={updateItemResponse}
                 onUploadDocument={uploadDocument}
                 onDeleteDocument={deleteDocument}
+                onRenameDocument={renameDocument}
                 onSignOff={signOffStage}
                 isUpdating={isUpdating}
                 updatingItemId={updatingItemId}

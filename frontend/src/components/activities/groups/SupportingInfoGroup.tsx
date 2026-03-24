@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useEffect, useState } from "react"
+import React, { useRef, useEffect, useState, useMemo } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
@@ -85,15 +85,16 @@ export function SupportingInfoGroup({
   const hasInitiallyScrolled = useRef(false)
 
   // Build section refs array for scroll spy (only if activityCreated)
-  const sectionRefs: SectionRef[] = activityCreated ? [
+  const sectionRefs: SectionRef[] = useMemo(() => activityCreated ? [
     { id: 'documents', ref: documentsRef },
     { id: 'aid_effectiveness', ref: aidEffectivenessRef },
-  ] : []
+  ] : [], [activityCreated])
 
   // Use scroll spy to track visible section
   const { activeSection, scrollToSection, setActiveSection, lockScrollSpy } = useScrollSpy(sectionRefs, {
     rootMargin: '-80px 0px -60% 0px', // Account for sticky headers
     debounceMs: 100,
+    initialSection: initialSection && isSupportingInfoSection(initialSection) ? initialSection : null,
   })
 
   // Use lazy loader to track which sections have been scrolled into view
@@ -109,6 +110,7 @@ export function SupportingInfoGroup({
   // When initialSection changes (user clicked a section in this group),
   // lock scroll spy, set active section, and instantly scroll to target
   const prevInitialSection = useRef(initialSection)
+  const isFirstRender = useRef(true)
   useEffect(() => {
     if (initialSection && isSupportingInfoSection(initialSection) && activityCreated) {
       lockScrollSpy(500)
@@ -123,16 +125,21 @@ export function SupportingInfoGroup({
     }
   }, [initialSection, activityCreated, lockScrollSpy, setActiveSection])
 
+  // Stable ref for callback to avoid infinite re-render loop
+  const onActiveSectionChangeRef = useRef(onActiveSectionChange)
+  onActiveSectionChangeRef.current = onActiveSectionChange
+
   // Update parent when active section changes (for sidebar highlighting)
   useEffect(() => {
+    if (isFirstRender.current) return
     if (activeSection && isSupportingInfoSection(activeSection)) {
-      onActiveSectionChange(activeSection)
-
-      const params = new URLSearchParams(window.location.search)
-      params.set('section', activeSection)
-      window.history.replaceState({}, '', `?${params.toString()}`)
+      onActiveSectionChangeRef.current(activeSection)
     }
-  }, [activeSection, onActiveSectionChange])
+  }, [activeSection])
+
+  useEffect(() => {
+    isFirstRender.current = false
+  })
 
   // Handle activity creation - reveal sections with animation
   useEffect(() => {
@@ -190,6 +197,9 @@ export function SupportingInfoGroup({
     return () => observer.disconnect()
   }, [activityCreated, activateSection])
 
+  const activeSectionsRef = useRef(activeSections)
+  activeSectionsRef.current = activeSections
+
   // Aggressive preloading - load all sections quickly for seamless scrolling
   // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
@@ -198,11 +208,11 @@ export function SupportingInfoGroup({
     // Preload all sections in a single batch
     const sectionsToPreload = ['documents', 'aid_effectiveness']
 
-    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    const unloaded = sectionsToPreload.filter(id => !activeSectionsRef.current.has(id))
     if (unloaded.length > 0) {
       activateSections(unloaded)
     }
-  }, [activityCreated, enablePreloading, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSections])
 
   return (
     <div className="supporting-info-group space-y-0">

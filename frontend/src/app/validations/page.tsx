@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,15 +11,18 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
+import {
+  CheckCircle,
+  XCircle,
+  Eye,
   MessageSquare,
   Clock,
   AlertCircle,
-  Filter
+  Filter,
+  ShieldCheck,
+  Inbox
 } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import { ValidationQueueSkeleton } from "@/components/skeletons/ValidationQueueSkeleton";
 import { StatusIcon } from "@/components/ui/status-icon";
 import { apiFetch } from '@/lib/api-fetch';
@@ -97,50 +101,20 @@ export default function ValidationsPage() {
       <div className="min-h-screen">
         <div className="p-8 max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">Activity Validations</h1>
-            <p className="text-muted-foreground mt-1">Review and validate submitted activities</p>
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-8 w-8 text-muted-foreground" />
+              <div>
+                <h1 className="text-3xl font-bold">Activity Validations</h1>
+                <p className="text-muted-foreground mt-1">Review and validate submitted activities</p>
+              </div>
+            </div>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-white cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilter('submitted')}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-                  <Clock className="h-4 w-4 text-orange-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{pendingCount}</div>
-                <p className="text-xs text-muted-foreground mt-1">Awaiting validation</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilter('validated')}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium">Validated</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{validatedCount}</div>
-                <p className="text-xs text-muted-foreground mt-1">Ready for publishing</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilter('rejected')}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-                  <XCircle className="h-4 w-4 text-red-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{rejectedCount}</div>
-                <p className="text-xs text-muted-foreground mt-1">Need revision</p>
-              </CardContent>
-            </Card>
+            <StatCard label="Pending Review" value={pendingCount} icon={Clock} subtext="Awaiting validation" onClick={() => setFilter('submitted')} />
+            <StatCard label="Validated" value={validatedCount} icon={CheckCircle} subtext="Ready for publishing" onClick={() => setFilter('validated')} />
+            <StatCard label="Rejected" value={rejectedCount} icon={XCircle} subtext="Need revision" onClick={() => setFilter('rejected')} />
           </div>
 
           {/* Filter and Search */}
@@ -188,11 +162,11 @@ export default function ValidationsPage() {
           {/* Activities List */}
           <div className="space-y-4">
             {filteredActivities.length === 0 ? (
-              <Card className="bg-white">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">No activities found</p>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={<Inbox className="h-10 w-10 text-muted-foreground" />}
+                title="No activities found"
+                message="No activities match your current filters. Try adjusting your search or filter criteria."
+              />
             ) : (
               filteredActivities.map((activity) => (
                 <Card key={activity.id} className="bg-white hover:shadow-lg transition-shadow">

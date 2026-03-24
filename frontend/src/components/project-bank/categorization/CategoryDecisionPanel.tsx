@@ -160,9 +160,9 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
-          <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
@@ -209,7 +209,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {isOverride && (
         <div className="space-y-2">
           <Label className="text-sm">
-            Rationale for Override <span className="text-red-500">*</span>
+            Rationale for Override <span className="text-destructive">*</span>
           </Label>
           <p className="text-xs text-muted-foreground">
             You are selecting a different category than the system recommendation. Please explain why.

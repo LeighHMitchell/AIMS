@@ -508,7 +508,7 @@ export default function LocationsTab({
                           <button
                             type="button"
                             onClick={() => handleEditLocation(location)}
-                            className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                            className="p-1.5 rounded hover:bg-muted text-gray-600"
                             title="Edit location"
                           >
                             <Pencil className="h-4 w-4 text-slate-500" />
@@ -516,10 +516,10 @@ export default function LocationsTab({
 <button
                             type="button"
                             onClick={() => location.id && handleDeleteLocation(location.id)}
-                            className="p-1.5 rounded hover:bg-gray-100 text-red-500"
+                            className="p-1.5 rounded hover:bg-muted text-destructive"
                             title="Delete location"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </button>
                         </div>
                       </TableCell>

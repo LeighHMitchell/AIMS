@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  ArrowLeft,
   Pencil,
   Save,
   Users,
@@ -45,6 +44,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { apiFetch } from '@/lib/api-fetch'
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 
 interface WorkingGroupMember {
   id: string
@@ -258,14 +258,10 @@ export default function WorkingGroupProfilePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/working-groups')}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Working Groups
-          </Button>
+          <Breadcrumbs items={[
+            { label: "Working Groups", href: "/working-groups" },
+            { label: workingGroup.label },
+          ]} />
 
           <div className="flex justify-between items-start">
             <div>

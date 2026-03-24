@@ -907,9 +907,9 @@ export default function UserManagement() {
                                     onClick={() => handleUserDelete(user.id)}
                                     disabled={user.id === currentUser?.id}
                                     title="Delete user"
-                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </div>
                               </td>

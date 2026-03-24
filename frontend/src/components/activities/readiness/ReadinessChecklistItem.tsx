@@ -42,6 +42,7 @@ interface ReadinessChecklistItemProps {
   onUpdateResponse: (data: UpdateReadinessResponseRequest) => Promise<void>;
   onUploadDocument: (file: File) => Promise<void>;
   onDeleteDocument: (documentId: string) => Promise<void>;
+  onRenameDocument: (documentId: string, fileName: string) => Promise<void>;
   isUpdating: boolean;
   readOnly: boolean;
 }
@@ -53,6 +54,7 @@ export function ReadinessChecklistItem({
   onUpdateResponse,
   onUploadDocument,
   onDeleteDocument,
+  onRenameDocument,
   isUpdating,
   readOnly,
 }: ReadinessChecklistItemProps) {
@@ -75,13 +77,13 @@ export function ReadinessChecklistItem({
   const getStatusIcon = () => {
     switch (currentStatus) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
+        return <CheckCircle className="h-5 w-5 text-foreground" />;
       case 'in_progress':
-        return <Clock className="h-5 w-5 text-yellow-600" />;
+        return <Clock className="h-5 w-5 text-muted-foreground" />;
       case 'not_required':
-        return <MinusCircle className="h-5 w-5 text-gray-400" />;
+        return <MinusCircle className="h-5 w-5 text-muted-foreground/50" />;
       default:
-        return <ChevronRight className="h-5 w-5 text-gray-300" />;
+        return <ChevronRight className="h-5 w-5 text-muted-foreground/30" />;
     }
   };
 
@@ -146,65 +148,67 @@ export function ReadinessChecklistItem({
         currentStatus === 'not_required' && "border-gray-200 bg-gray-50/50 opacity-75",
       )}>
         {/* Main Row - Always Visible */}
-        <div 
-          className="p-4 flex items-start gap-4 cursor-pointer"
+        <div
+          className="p-4 flex items-start gap-3 cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          {/* Status Indicator */}
+          {/* Expand/Collapse chevron */}
           <div className="flex-shrink-0 mt-0.5">
-            {isUpdating ? (
-              <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 text-gray-400" />
             ) : (
-              getStatusIcon()
+              <ChevronRight className="h-4 w-4 text-gray-400" />
             )}
           </div>
 
           {/* Item Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">{item.title}</h4>
-                {item.responsible_agency_type && (
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {item.responsible_agency_type}
-                  </p>
-                )}
-              </div>
-              
-              {/* Quick indicators */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Document indicator */}
-                {hasDocuments && (
-                  <Badge variant="outline" className="text-xs gap-1">
-                    <Paperclip className="h-3 w-3" />
-                    {documents.length}
-                  </Badge>
-                )}
-                
-                {/* Required badge */}
-                {item.is_required && currentStatus !== 'completed' && currentStatus !== 'not_required' && (
-                  <Badge variant="destructive" className="text-xs">Required</Badge>
-                )}
+            <div className="flex items-center gap-1.5">
+              <h4 className="text-sm font-medium text-gray-900">{item.title}</h4>
+              {/* Guidance tooltip - inline with title */}
+              {item.guidance_text && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">{item.guidance_text}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            {item.description && (
+              <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+            )}
+            {item.responsible_agency_type && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {item.responsible_agency_type}
+              </p>
+            )}
+          </div>
 
-                {/* Guidance tooltip */}
-                {item.guidance_text && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-sm">{item.guidance_text}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                
-                {/* Expand/Collapse */}
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-gray-400" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                )}
-              </div>
+          {/* Right-side indicators */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Document indicator */}
+            {hasDocuments && (
+              <Badge variant="outline" className="text-xs gap-1">
+                <Paperclip className="h-3 w-3" />
+                {documents.length}
+              </Badge>
+            )}
+
+            {/* Required badge */}
+            {item.is_required && currentStatus !== 'completed' && currentStatus !== 'not_required' && (
+              <Badge variant="destructive" className="text-xs">Required</Badge>
+            )}
+
+            {/* Status Indicator */}
+            <div className="flex-shrink-0">
+              {isUpdating ? (
+                <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+              ) : (
+                getStatusIcon()
+              )}
             </div>
           </div>
         </div>
@@ -213,13 +217,6 @@ export function ReadinessChecklistItem({
         {isExpanded && (
           <div className="px-4 pb-4 pt-0 border-t border-gray-100">
             <div className="mt-4 space-y-4 pl-9">
-              {/* Description */}
-              {item.description && (
-                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                  {item.description}
-                </div>
-              )}
-
               {/* Guidance */}
               {item.guidance_text && (
                 <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg flex gap-2">
@@ -259,6 +256,7 @@ export function ReadinessChecklistItem({
                 documents={documents}
                 onUpload={handleDocumentUpload}
                 onDelete={onDeleteDocument}
+                onRename={onRenameDocument}
                 isUploading={isUpdating}
                 readOnly={readOnly}
                 isRequired={item.is_required && currentStatus === 'completed' && !hasDocuments}

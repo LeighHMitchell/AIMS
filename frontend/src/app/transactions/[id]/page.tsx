@@ -6,7 +6,8 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -146,23 +147,18 @@ export default function TransactionDetailPage() {
     <MainLayout>
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
+        <Breadcrumbs items={[
+          { label: "Transactions", href: "/transactions" },
+          { label: transaction.id },
+        ]} />
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.back()}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">
-                Transaction Details
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                ID: {transaction.id}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">
+              Transaction Details
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              ID: {transaction.id}
+            </p>
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">

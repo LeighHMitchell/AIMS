@@ -19,13 +19,13 @@ import {
 import {
   TrendingDown,
   Loader2,
-  ArrowLeft,
   ArrowRight,
   Pencil,
   FileText,
   Users,
   Trash2,
 } from "lucide-react"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { apiFetch } from "@/lib/api-fetch"
 import {
   SEE_STATUS_LABELS,
@@ -131,18 +131,20 @@ export default function TransferDetailPage() {
 
   return (
     <MainLayout>
-      <div className="w-full max-w-[1200px]">
+      <div className="w-full max-w-6xl">
         {/* Header */}
         <div className="mb-6">
-          <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={() => router.push('/project-bank/transfers')}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> All Transfers
-          </Button>
+          <Breadcrumbs items={[
+            { label: "Project Bank", href: "/project-bank" },
+            { label: "Transfers", href: "/project-bank/transfers" },
+            { label: transfer.see_name },
+          ]} />
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <TrendingDown className="h-7 w-7 text-muted-foreground" />
+              <TrendingDown className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold">{transfer.see_name}</h1>
+                  <h1 className="text-3xl font-bold">{transfer.see_name}</h1>
                   <Badge variant={STATUS_BADGE_VARIANT[transfer.status] as any}>
                     {SEE_STATUS_LABELS[transfer.status]}
                   </Badge>

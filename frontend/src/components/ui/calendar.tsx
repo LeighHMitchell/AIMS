@@ -39,9 +39,9 @@ function Calendar({
         ),
         // Dropdown styles for month/year navigation
         dropdowns: "flex gap-2 items-center justify-center",
-        dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-        months_dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-        years_dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        months_dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        years_dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
         // Table and day styles
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex",
@@ -54,7 +54,7 @@ function Calendar({
         ),
         range_end: "day-range-end",
         selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-full",
-        today: "bg-gray-100 text-gray-900 font-semibold rounded-full",
+        today: "bg-muted text-gray-900 font-semibold rounded-full",
         outside: "text-gray-400 opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         disabled: "text-muted-foreground opacity-50",
         range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",

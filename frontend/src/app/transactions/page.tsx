@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Receipt, ShieldCheck, Building2, Banknote, Search } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Receipt, ShieldCheck, Building2, Banknote, Search, ArrowLeftRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
@@ -700,9 +700,12 @@ export default function TransactionsPage() {
       <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Transactions</h1>
-            <p className="text-muted-foreground">View and manage all financial transactions</p>
+          <div className="flex items-center gap-3">
+            <ArrowLeftRight className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Transactions</h1>
+              <p className="text-muted-foreground">View and manage all financial transactions</p>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             {transactions.data.length > 0 && (

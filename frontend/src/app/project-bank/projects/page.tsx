@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { FilterBar } from "@/components/ui/filter-bar"
 import {
-  Plus, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
-  MoreVertical, ListTodo, Copy, Check,
+  Plus, Search, ArrowUpDown, ArrowUp, ArrowDown,
+  MoreVertical, ListTodo, Copy, Check, LayoutGrid, List, Inbox,
 } from "lucide-react"
+import { FullPagination } from "@/components/ui/full-pagination"
+import { EmptyState } from "@/components/ui/empty-state"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -23,6 +25,7 @@ import {
   PATHWAY_LABELS, SECTORS,
 } from "@/lib/project-bank-utils"
 import type { ProjectBankProject } from "@/types/project-bank"
+import { ProjectCardModern } from "@/components/project-bank/ProjectCardModern"
 
 const STATUS_FILTERS: { value: string; label: string; code?: string }[] = [
   { value: "all", label: "All" },
@@ -126,6 +129,7 @@ export default function ProjectListPage() {
   const [sortField, setSortField] = useState<string>("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
 
   const copyToClipboard = (text: string, field: string, projectId: string) => {
     navigator.clipboard.writeText(text)
@@ -241,19 +245,41 @@ export default function ProjectListPage() {
         {/* Header with icon + subtitle like Funding Gaps */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <ListTodo className="h-7 w-7 text-muted-foreground" />
+            <ListTodo className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-2xl font-bold">Project List</h1>
+              <h1 className="text-3xl font-bold">Project List</h1>
               <p className="text-muted-foreground text-sm">
                 All projects in the national development pipeline — {filtered.length} projects
               </p>
             </div>
           </div>
-          {permissions.canCreateProjects && (
-            <Button onClick={() => router.push("/project-bank/new")} className="gap-2">
-              <Plus className="h-4 w-4" /> Submit Project
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === "table" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className="rounded-r-none gap-1"
+              >
+                <List className="h-4 w-4" />
+                Table
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="rounded-l-none gap-1"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Cards
+              </Button>
+            </div>
+            {permissions.canCreateProjects && (
+              <Button onClick={() => router.push("/project-bank/new")} className="gap-2">
+                <Plus className="h-4 w-4" /> Submit Project
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -347,7 +373,35 @@ export default function ProjectListPage() {
           </div>
         </FilterBar>
 
+        {/* Grid View */}
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-lg border border-border shadow-sm p-6">
+                  <div className="h-4 bg-muted animate-pulse rounded w-3/4 mb-3" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-1/2 mb-2" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-1/3" />
+                </div>
+              ))
+            ) : paginated.length === 0 ? (
+              <div className="col-span-full">
+                <EmptyState
+                  icon={<Inbox className="h-10 w-10 text-muted-foreground" />}
+                  title="No projects found"
+                  message="Try adjusting your search or filters."
+                />
+              </div>
+            ) : (
+              paginated.map(p => (
+                <ProjectCardModern key={p.id} project={p} />
+              ))
+            )}
+          </div>
+        )}
+
         {/* Table */}
+        {viewMode === 'table' && (
         <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse table-auto">
@@ -383,8 +437,12 @@ export default function ProjectListPage() {
                   ))
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={colCount} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      No projects found
+                    <td colSpan={colCount} className="p-0">
+                      <EmptyState
+                        icon={<Inbox className="h-10 w-10 text-muted-foreground" />}
+                        title="No projects found"
+                        message="Try adjusting your search or filters."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -581,98 +639,19 @@ export default function ProjectListPage() {
             </table>
           </div>
         </div>
+        )}
 
         {/* Pagination */}
         {filtered.length > 0 && (
-          <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {Math.min(startIndex + 1, filtered.length)} to {Math.min(startIndex + perPage, filtered.length)} of {filtered.length} projects
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(1)}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  First
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${page === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(totalPages)}
-                  disabled={page === totalPages}
-                >
-                  Last
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Items per page:</label>
-                <Select value={String(perPage)} onValueChange={v => { setPerPage(Number(v)); setPage(1) }}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+          <FullPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            perPage={perPage}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+            itemLabel="projects"
+          />
         )}
       </div>
     </MainLayout>

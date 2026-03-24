@@ -308,6 +308,65 @@ export async function DELETE(
   }
 }
 
+/**
+ * PATCH /api/activities/[id]/readiness/[itemId]/upload
+ * Rename an evidence document
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; itemId: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  try {
+    const { id: activityId } = await params;
+    const { documentId, file_name } = await request.json();
+
+    if (!documentId || !file_name) {
+      return NextResponse.json(
+        { error: 'Document ID and file_name are required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the document belongs to this activity
+    const { data: document, error: fetchError } = await supabase
+      .from('readiness_evidence_documents')
+      .select('id, response_id')
+      .eq('id', documentId)
+      .single();
+
+    if (fetchError || !document) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    const { data: response } = await supabase
+      .from('activity_readiness_responses')
+      .select('activity_id')
+      .eq('id', document.response_id)
+      .single();
+
+    if (!response || response.activity_id !== activityId) {
+      return NextResponse.json({ error: 'Document not found for this activity' }, { status: 404 });
+    }
+
+    const { error: updateError } = await supabase
+      .from('readiness_evidence_documents')
+      .update({ file_name })
+      .eq('id', documentId);
+
+    if (updateError) {
+      return NextResponse.json({ error: 'Failed to rename document' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[Readiness Upload API] Rename error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // Handle OPTIONS for CORS
 export async function OPTIONS() {
   return new NextResponse(null, {

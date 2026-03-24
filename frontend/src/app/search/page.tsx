@@ -196,6 +196,15 @@ function SearchPageContent() {
   return (
     <MainLayout>
       <div>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Search className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h1 className="text-3xl font-bold">Search</h1>
+            <p className="text-muted-foreground text-sm">Find activities, organisations, sectors, and more</p>
+          </div>
+        </div>
+
         {/* Search Bar - Always visible at top, centered */}
         <div className={cn(
           "flex flex-col items-center mb-8",
@@ -296,7 +305,7 @@ function SearchPageContent() {
                     {filteredResults.map((result) => (
                       <div
                         key={`${result.type}-${result.id}`}
-                        className="py-5 cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 rounded transition-colors"
+                        className="py-5 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
                         onClick={() => handleResultClick(result)}
                       >
                         <SearchResultRow

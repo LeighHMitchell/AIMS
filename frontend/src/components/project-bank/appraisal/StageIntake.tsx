@@ -278,7 +278,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               'relative flex flex-col justify-end w-[260px] h-[200px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               (formData.origin || 'government') === 'government'
                 ? 'ring-border bg-primary/5'
-                : 'ring-border bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-muted/50',
             )}
           >
             <Image src="/images/origin-government.png" alt="Government Nominated" fill className="object-contain object-bottom object-left opacity-15 scale-75 origin-bottom-left" />
@@ -301,7 +301,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               'relative flex flex-col justify-end w-[260px] h-[200px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.origin === 'unsolicited'
                 ? 'ring-border bg-primary/5'
-                : 'ring-border bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-muted/50',
             )}
           >
             <Image src="/images/origin-unsolicited.png" alt="Unsolicited Proposal" fill className="object-contain object-bottom object-left opacity-15 scale-75 origin-bottom-left" />

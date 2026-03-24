@@ -203,7 +203,7 @@ export function ResolveOrganizationModal({
 
               return (
                 <AccordionItem key={key} value={key} className="border-b last:border-b-0">
-                  <AccordionTrigger className="hover:bg-gray-50 px-4">
+                  <AccordionTrigger className="hover:bg-muted/50 px-4">
                     <div className="flex items-center gap-3 flex-1">
                       <div className="flex-shrink-0">
                         {isResolved ? (
@@ -299,7 +299,7 @@ export function ResolveOrganizationModal({
                             Create new organization
                           </Label>
                           {resolution?.action === 'create' && (
-                            <div className="mt-2 space-y-2 bg-gray-50 p-3 rounded border">
+                            <div className="mt-2 space-y-2 bg-muted/50 p-3 rounded border">
                               <div>
                                 <Label htmlFor={`${key}-name`} className="text-xs">Name <RequiredDot /></Label>
                                 <Input

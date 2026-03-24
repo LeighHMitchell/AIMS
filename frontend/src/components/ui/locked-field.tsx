@@ -61,7 +61,7 @@ export function LockedField({
                   variant="ghost"
                   size="sm"
                   onClick={handleToggleLock}
-                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                  className="h-6 w-6 p-0 hover:bg-muted"
                 >
                   {isUnlocked ? (
                     <Unlock className="h-3 w-3 text-green-600" />
@@ -97,7 +97,7 @@ export function LockedField({
           disabled: isFieldDisabled,
           className: cn(
             (children as React.ReactElement).props?.className,
-            isFieldDisabled && "bg-gray-50 text-gray-400 cursor-not-allowed"
+            isFieldDisabled && "bg-muted/50 text-gray-400 cursor-not-allowed"
           )
         })
       ) : (
@@ -107,7 +107,7 @@ export function LockedField({
           disabled={isFieldDisabled}
           placeholder={placeholder}
           className={cn(
-            isFieldDisabled && "bg-gray-50 text-gray-400 cursor-not-allowed"
+            isFieldDisabled && "bg-muted/50 text-gray-400 cursor-not-allowed"
           )}
         />
       )}
