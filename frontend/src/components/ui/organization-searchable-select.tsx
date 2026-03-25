@@ -140,7 +140,7 @@ export function OrganizationSearchableSelect({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <span className="font-medium text-foreground truncate">
               {org.name}
             </span>
@@ -149,17 +149,14 @@ export function OrganizationSearchableSelect({
                 ({org.acronym})
               </span>
             )}
+            {org.iati_org_id && (
+              <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                {org.iati_org_id}
+              </span>
+            )}
           </div>
-          {(org.iati_org_id || orgTypeName || org.country) && (
+          {(orgTypeName || org.country) && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-              {org.iati_org_id && (
-                <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                  {org.iati_org_id}
-                </span>
-              )}
-              {org.iati_org_id && (orgTypeName || org.country) && (
-                <span className="text-xs text-muted-foreground">•</span>
-              )}
               {orgTypeName && (
                 <span className="text-xs text-muted-foreground">
                   {orgTypeCode && <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{orgTypeCode}</span>}{' '}{orgTypeName}
@@ -202,8 +199,8 @@ export function OrganizationSearchableSelect({
               renderOrganizationDisplay(selectedOrganization, true)
             ) : fallbackRef ? (
               <span className="flex flex-col min-w-0 text-left leading-relaxed">
-                <span className="truncate font-medium text-yellow-600">{fallbackRef}</span>
-                <span className="text-sm text-yellow-500 truncate mt-0.5">Organization not found in list</span>
+                <span className="truncate font-medium text-red-600">{fallbackRef}</span>
+                <span className="text-sm text-red-500 truncate mt-0.5">Organization not found in list</span>
               </span>
             ) : (
               placeholder
@@ -276,16 +273,10 @@ export function OrganizationSearchableSelect({
                   type="button"
                   onClick={() => handleSelect(org.id)}
                   className={cn(
-                    "pl-6 pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
+                    "px-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
                     value === org.id && "bg-accent"
                   )}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 mt-1 flex-shrink-0",
-                      value === org.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
                   {renderOrganizationDisplay(org, true)}
                 </button>
               ))

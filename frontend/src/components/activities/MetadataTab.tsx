@@ -214,9 +214,13 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+// Module-level cache so re-mounts don't flash a skeleton for already-fetched data
+const metadataCache = new Map<string, MetadataResponse>();
+
 export default function MetadataTab({ activityId }: MetadataTabProps) {
-  const [data, setData] = useState<MetadataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = activityId ? metadataCache.get(activityId) : null;
+  const [data, setData] = useState<MetadataResponse | null>(cached);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
   const [savingReportingOrg, setSavingReportingOrg] = useState(false);
   const [language, setLanguage] = useState<string>('en');
@@ -284,9 +288,12 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     }
   };
 
-  const fetchMetadata = async () => {
+  const fetchMetadata = async (showSkeleton = false) => {
     try {
-      setLoading(true);
+      // Only show skeleton on first load when we have no data yet
+      if (showSkeleton || !data) {
+        setLoading(true);
+      }
       setError(null);
       
       console.log('[MetadataTab] Fetching metadata for activity ID:', activityId);
@@ -312,6 +319,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         created_by_org_acronym: result.metadata?.created_by_org_acronym
       });
       setData(result);
+      if (activityId) metadataCache.set(activityId, result);
       setLanguage(result.metadata?.language || 'en');
     } catch (err) {
       console.error('[AIMS] Error fetching activity metadata:', err);

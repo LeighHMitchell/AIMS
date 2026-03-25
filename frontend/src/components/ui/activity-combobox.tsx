@@ -74,7 +74,7 @@ function ReportingOrgLine({ org, recipientCountries }: { org?: ReportingOrg | nu
   const country = getFirstRecipientCountry(recipientCountries);
 
   return (
-    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-xs text-muted-foreground">
       {org.logo && (
         <img
           src={org.logo}
@@ -83,21 +83,17 @@ function ReportingOrgLine({ org, recipientCountries }: { org?: ReportingOrg | nu
         />
       )}
       {org.name && (
-        <span className="text-xs text-gray-500">{org.name}</span>
+        <span>{org.acronym ? `${org.name} (${org.acronym})` : org.name}</span>
       )}
-      {org.acronym && (
-        <span className="text-xs text-gray-500">({org.acronym})</span>
-      )}
+      {org.name && (typeCode || typeName) && <span>•</span>}
       {typeCode && (
-        <span className="text-xs font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded">
-          {typeCode}
-        </span>
+        <span className="font-mono bg-muted px-1 py-0.5 rounded">{typeCode}</span>
       )}
       {typeName && (
-        <span className="text-xs text-gray-400">{typeName}</span>
+        <span>{typeName}</span>
       )}
       {country && (
-        <span className="text-xs text-gray-500">
+        <span>
           {countryCodeToFlag(country.code)} {country.name}
         </span>
       )}
@@ -223,7 +219,7 @@ export function ActivityCombobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'w-full justify-between font-normal h-auto min-h-[40px] px-4 py-2 text-base border-gray-300 hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900 whitespace-normal',
+              'w-full justify-between font-normal h-auto min-h-[60px] px-3 py-3 text-sm border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal transition-colors',
               !value && 'text-muted-foreground',
               className
             )}
@@ -232,18 +228,11 @@ export function ActivityCombobox({
           <div className="flex items-start gap-2 flex-1 min-w-0">
             {selectedActivity ? (
               <>
-                {selectedActivity.icon && (
-                  <img
-                    src={selectedActivity.icon}
-                    alt=""
-                    className="w-6 h-6 rounded flex-shrink-0 mt-0.5"
-                  />
-                )}
                 <div className="flex-1 min-w-0 text-left break-words">
-                  <span className="font-normal text-sm">
+                  <span className="text-sm">
                     {getActivityTitle(selectedActivity)}
                     {selectedActivity.acronym && (
-                      <span className="text-gray-500 ml-1">
+                      <span className="ml-1">
                         ({selectedActivity.acronym})
                       </span>
                     )}
@@ -320,17 +309,11 @@ export function ActivityCombobox({
                     value === activity.id && "bg-accent"
                   )}
                 >
-                  <Check
-                    className={cn(
-                      'h-4 w-4 shrink-0 mt-0.5',
-                      value === activity.id ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
                   <div className="flex-1 min-w-0">
-                    <span className="font-normal text-sm">
+                    <span className="text-sm">
                       {title}
                       {activity.acronym && (
-                        <span className="text-gray-500 ml-1">
+                        <span className="ml-1">
                           ({activity.acronym})
                         </span>
                       )}

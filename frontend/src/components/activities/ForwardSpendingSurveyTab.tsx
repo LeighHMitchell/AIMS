@@ -3,7 +3,7 @@
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp, HelpCircle } from 'lucide-react';
+import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp, HelpCircle, RefreshCw, Info } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +18,8 @@ import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { convertToUSD } from '@/lib/currency-conversion-api';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -75,6 +77,10 @@ export default function ForwardSpendingSurveyTab({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
+  const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false);
+  const [modalExchangeRate, setModalExchangeRate] = useState<number | null>(null);
+  const [isLoadingModalRate, setIsLoadingModalRate] = useState(false);
+  const [modalRateError, setModalRateError] = useState<string | null>(null);
 
   // USD conversion tracking
   const [usdValues, setUsdValues] = useState<Record<string, { 
@@ -320,32 +326,76 @@ export default function ForwardSpendingSurveyTab({
     return errors;
   };
 
-  // Auto-calculate USD value
-  useEffect(() => {
-    const calculateUSD = async () => {
-      if (modalForecast?.amount && modalForecast?.currency && modalForecast?.value_date) {
-        setIsCalculatingUSD(true);
-        try {
-          if (modalForecast.currency === 'USD') {
-            setModalForecast(prev => prev ? { ...prev, usd_amount: modalForecast.amount } : null);
-          } else {
-            const result = await convertToUSD(
-              modalForecast.amount,
-              modalForecast.currency,
-              new Date(modalForecast.value_date)
-            );
-            setModalForecast(prev => prev ? { ...prev, usd_amount: result.usd_amount || 0 } : null);
-          }
-        } catch (err) {
-          console.error('[FSS Tab] Currency conversion error:', err);
-        } finally {
-          setIsCalculatingUSD(false);
-        }
+  // Fetch exchange rate for modal
+  const fetchModalExchangeRate = useCallback(async () => {
+    if (!modalForecast) return;
+    const currency = modalForecast.currency;
+    if (!currency) return;
+
+    if (currency === 'USD') {
+      setModalExchangeRate(1);
+      setModalRateError(null);
+      return;
+    }
+
+    const valueDate = modalForecast.value_date;
+    if (!valueDate) {
+      setModalRateError('Please set a value date first');
+      return;
+    }
+
+    setIsLoadingModalRate(true);
+    setModalRateError(null);
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(1, currency, new Date(valueDate));
+      if (result.success && result.exchange_rate) {
+        setModalExchangeRate(result.exchange_rate);
+        setModalRateError(null);
+      } else {
+        setModalRateError(result.error || 'Failed to fetch exchange rate');
+        setModalExchangeRate(null);
       }
-    };
-    
-    calculateUSD();
-  }, [modalForecast?.amount, modalForecast?.currency, modalForecast?.value_date]);
+    } catch (err) {
+      console.error('[FSS Tab] Error fetching exchange rate:', err);
+      setModalRateError('Failed to fetch exchange rate');
+      setModalExchangeRate(null);
+    } finally {
+      setIsLoadingModalRate(false);
+    }
+  }, [modalForecast?.currency, modalForecast?.value_date]);
+
+  // Calculated USD value
+  const modalCalculatedUsdValue = modalForecast?.amount && modalExchangeRate
+    ? Math.round(modalForecast.amount * modalExchangeRate * 100) / 100
+    : null;
+
+  // Auto-fetch exchange rate when currency or date changes (only if not manual)
+  useEffect(() => {
+    if (!modalExchangeRateManual && modalForecast?.currency) {
+      if (modalForecast.currency === 'USD') {
+        setModalExchangeRate(1);
+        setModalRateError(null);
+      } else if (modalForecast.value_date) {
+        fetchModalExchangeRate();
+      }
+    }
+  }, [modalForecast?.currency, modalForecast?.value_date, modalExchangeRateManual, fetchModalExchangeRate]);
+
+  // Sync calculatedUsdValue back into modalForecast.usd_amount for save
+  useEffect(() => {
+    if (modalCalculatedUsdValue !== null && modalForecast) {
+      setModalForecast(prev => prev ? { ...prev, usd_amount: modalCalculatedUsdValue } : null);
+    }
+  }, [modalCalculatedUsdValue]);
+
+  // Reset exchange rate state when modal opens
+  useEffect(() => {
+    if (showForecastModal && modalForecast) {
+      setModalExchangeRateManual(false);
+      setModalExchangeRate(null);
+      setModalRateError(null);
+    }
+  }, [showForecastModal, modalForecast?.id]);
 
   // Update form field
   const updateForecastField = (field: string, value: any) => {
@@ -841,17 +891,104 @@ export default function ForwardSpendingSurveyTab({
               </div>
             </div>
 
-            {modalForecast?.currency !== 'USD' && (
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">USD Amount:</span>
-                  <span className="text-lg font-bold">
-                    {isCalculatingUSD ? (
-                      <Loader2 className="h-4 w-4 animate-spin inline" />
-                    ) : (
-                      `$${(modalForecast?.usd_amount || 0).toLocaleString()}`
+            {/* Exchange Rate & USD Value */}
+            {modalForecast?.currency && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between min-h-[24px]">
+                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      Exchange Rate
+                      <TooltipProvider>
+                        <UITooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-sm">The exchange rate used to convert the forecast value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                          </TooltipContent>
+                        </UITooltip>
+                      </TooltipProvider>
+                    </Label>
+                    {modalForecast.currency !== 'USD' && (
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="fss_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                          {modalExchangeRateManual ? 'Manual' : 'Auto'}
+                        </Label>
+                        <Switch
+                          id="fss_exchange_rate_mode"
+                          checked={!modalExchangeRateManual}
+                          onCheckedChange={(checked) => {
+                            setModalExchangeRateManual(!checked);
+                            if (checked) {
+                              fetchModalExchangeRate();
+                            }
+                          }}
+                        />
+                      </div>
                     )}
-                  </span>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.000001"
+                      value={modalExchangeRate || ''}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        setModalExchangeRate(isNaN(value) ? null : value);
+                      }}
+                      disabled={!modalExchangeRateManual || isLoadingModalRate || modalForecast.currency === 'USD'}
+                      className={cn(
+                        (!modalExchangeRateManual || modalForecast.currency === 'USD') && 'bg-muted cursor-not-allowed'
+                      )}
+                      placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
+                    />
+                    {isLoadingModalRate && (
+                      <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                    {!isLoadingModalRate && !modalExchangeRateManual && modalForecast.currency !== 'USD' && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1 h-8 w-8 p-0"
+                        onClick={fetchModalExchangeRate}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  {modalExchangeRate != null && modalForecast.currency !== 'USD' && (
+                    <p className="text-xs text-muted-foreground">
+                      1 {modalForecast.currency} = {modalExchangeRate.toFixed(6)} USD
+                    </p>
+                  )}
+                  {modalRateError && (
+                    <p className="text-xs text-red-500">{modalRateError}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center min-h-[24px]">
+                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      USD Value
+                      <TooltipProvider>
+                        <UITooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-sm">The forecast value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                          </TooltipContent>
+                        </UITooltip>
+                      </TooltipProvider>
+                    </Label>
+                  </div>
+                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                    {modalCalculatedUsdValue !== null ? (
+                      <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

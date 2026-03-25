@@ -101,7 +101,7 @@ const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
 // Column configuration for the activity transaction list
 type ActivityTransactionColumnId =
   | 'transactionDate' | 'transactionType' | 'financeType' | 'organizations'
-  | 'amount' | 'valueDate' | 'usdValue'
+  | 'amount' | 'valueDate' | 'usdValue' | 'exchangeRate'
   | 'aidType' | 'flowType' | 'tiedStatus' | 'currency'
   | 'description' | 'disbursementChannel' | 'humanitarian'
 ;
@@ -123,7 +123,8 @@ const ACTIVITY_TRANSACTION_COLUMN_CONFIGS: ActivityTransactionColumnConfig[] = [
   { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
   { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true, sortable: true },
   { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
-  
+  { id: 'exchangeRate', label: 'Ex. Rate', group: 'additionalDetails', defaultVisible: false, sortable: true, align: 'right' },
+
   // Classification columns (optional, gray if inherited)
   { id: 'financeType', label: 'Finance Type', group: 'classification', defaultVisible: false, sortable: true },
   { id: 'aidType', label: 'Aid Type', group: 'classification', defaultVisible: false },
@@ -146,7 +147,7 @@ const ACTIVITY_TRANSACTION_COLUMN_GROUPS = {
 const DEFAULT_VISIBLE_ACTIVITY_COLUMNS: ActivityTransactionColumnId[] = 
   ACTIVITY_TRANSACTION_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
 
-const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns_v2';  // v2: Type column now shows Finance Type
+const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns_v3';  // v3: Added Exchange Rate column
 
 // Column Selector Component for Activity Transaction List
 interface ActivityTransactionColumnSelectorProps {
@@ -1641,13 +1642,23 @@ export default function TransactionList({
                       </TableHead>
                     )}
                     
+                    {/* Exchange Rate column (optional) */}
+                    {isColumnVisible('exchangeRate') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('exchange_rate_used')}>
+                        <div className="flex items-center justify-end gap-1">
+                          <span>Ex. Rate</span>
+                          {getSortIcon('exchange_rate_used')}
+                        </div>
+                      </TableHead>
+                    )}
+
                     {/* Description column (optional) */}
                     {isColumnVisible('description') && (
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }}>
                         Description
                       </TableHead>
                     )}
-                    
+
                     {/* Disbursement Channel column (optional) */}
                     {isColumnVisible('disbursementChannel') && (
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '150px', maxWidth: '150px' }}>
@@ -2069,6 +2080,22 @@ export default function TransactionList({
                         </TableCell>
                       )}
                       
+                      {/* Exchange Rate (optional) */}
+                      {isColumnVisible('exchangeRate') && (
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                          {(transaction as any).exchange_rate_used != null ? (
+                            <span className="text-sm font-mono flex items-center justify-end gap-1">
+                              {(transaction as any).exchange_rate_used.toFixed(4)}
+                              {(transaction as any).exchange_rate_manual && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">M</Badge>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                      )}
+
                       {/* Description (optional) */}
                       {isColumnVisible('description') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
@@ -2077,7 +2104,7 @@ export default function TransactionList({
                           </span>
                         </TableCell>
                       )}
-                      
+
                       {/* Disbursement Channel (optional) */}
                       {isColumnVisible('disbursementChannel') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">

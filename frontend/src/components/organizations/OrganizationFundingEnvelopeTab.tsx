@@ -28,7 +28,10 @@ import {
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X, RefreshCw } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import OrganizationFundingVisualization from './OrganizationFundingVisualization'
 import {
@@ -69,6 +72,10 @@ export default function OrganizationFundingEnvelopeTab({
   const [showModal, setShowModal] = useState(false)
   const [editingEnvelope, setEditingEnvelope] = useState<OrganizationFundingEnvelope | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false)
+  const [modalExchangeRate, setModalExchangeRate] = useState<number | null>(null)
+  const [isLoadingModalRate, setIsLoadingModalRate] = useState(false)
+  const [modalRateError, setModalRateError] = useState<string | null>(null)
   
   const currencies = useMemo(() => getAllCurrenciesWithPinned(), [])
   const currentYear = new Date().getFullYear()
@@ -356,6 +363,70 @@ export default function OrganizationFundingEnvelopeTab({
   }
 
   // Format currency
+  // Fetch exchange rate for modal
+  const fetchModalExchangeRate = useCallback(async () => {
+    if (!editingEnvelope) return
+    const currency = editingEnvelope.currency
+    if (!currency) return
+
+    if (currency === 'USD') {
+      setModalExchangeRate(1)
+      setModalRateError(null)
+      return
+    }
+
+    const valueDate = editingEnvelope.value_date
+    if (!valueDate) {
+      setModalRateError('Please set a value date first')
+      return
+    }
+
+    setIsLoadingModalRate(true)
+    setModalRateError(null)
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(1, currency, new Date(valueDate))
+      if (result.success && result.exchange_rate) {
+        setModalExchangeRate(result.exchange_rate)
+        setModalRateError(null)
+      } else {
+        setModalRateError(result.error || 'Failed to fetch exchange rate')
+        setModalExchangeRate(null)
+      }
+    } catch (err) {
+      console.error('[FundingEnvelope] Error fetching exchange rate:', err)
+      setModalRateError('Failed to fetch exchange rate')
+      setModalExchangeRate(null)
+    } finally {
+      setIsLoadingModalRate(false)
+    }
+  }, [editingEnvelope?.currency, editingEnvelope?.value_date])
+
+  // Calculated USD value
+  const modalCalculatedUsdValue = editingEnvelope?.amount && modalExchangeRate
+    ? Math.round(editingEnvelope.amount * modalExchangeRate * 100) / 100
+    : null
+
+  // Auto-fetch exchange rate when currency or date changes (only if not manual)
+  useEffect(() => {
+    if (!modalExchangeRateManual && editingEnvelope?.currency) {
+      if (editingEnvelope.currency === 'USD') {
+        setModalExchangeRate(1)
+        setModalRateError(null)
+      } else if (editingEnvelope.value_date) {
+        fetchModalExchangeRate()
+      }
+    }
+  }, [editingEnvelope?.currency, editingEnvelope?.value_date, modalExchangeRateManual, fetchModalExchangeRate])
+
+  // Reset exchange rate state when modal opens
+  useEffect(() => {
+    if (showModal && editingEnvelope) {
+      setModalExchangeRateManual(false)
+      setModalExchangeRate(null)
+      setModalRateError(null)
+    }
+  }, [showModal, editingEnvelope?.id])
+
   const formatCurrency = (amount: number | null | undefined, currency: string = 'USD') => {
     if (amount === null || amount === undefined) return 'N/A'
     return new Intl.NumberFormat('en-US', {
@@ -892,6 +963,108 @@ export default function OrganizationFundingEnvelopeTab({
                     />
                   </div>
                 </div>
+
+                {/* Exchange Rate & USD Value */}
+                {editingEnvelope.currency && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between min-h-[24px]">
+                        <Label className="flex items-center gap-1.5 text-sm font-medium">
+                          Exchange Rate
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-sm">The exchange rate used to convert the funding envelope value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </Label>
+                        {editingEnvelope.currency !== 'USD' && (
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="envelope_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                              {modalExchangeRateManual ? 'Manual' : 'Auto'}
+                            </Label>
+                            <Switch
+                              id="envelope_exchange_rate_mode"
+                              checked={!modalExchangeRateManual}
+                              onCheckedChange={(checked) => {
+                                setModalExchangeRateManual(!checked)
+                                if (checked) {
+                                  fetchModalExchangeRate()
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.000001"
+                          value={modalExchangeRate || ''}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value)
+                            setModalExchangeRate(isNaN(value) ? null : value)
+                          }}
+                          disabled={!modalExchangeRateManual || isLoadingModalRate || editingEnvelope.currency === 'USD'}
+                          className={cn(
+                            (!modalExchangeRateManual || editingEnvelope.currency === 'USD') && 'bg-muted cursor-not-allowed'
+                          )}
+                          placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
+                        />
+                        {isLoadingModalRate && (
+                          <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                        {!isLoadingModalRate && !modalExchangeRateManual && editingEnvelope.currency !== 'USD' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1 h-8 w-8 p-0"
+                            onClick={fetchModalExchangeRate}
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      {modalExchangeRate != null && editingEnvelope.currency !== 'USD' && (
+                        <p className="text-xs text-muted-foreground">
+                          1 {editingEnvelope.currency} = {modalExchangeRate.toFixed(6)} USD
+                        </p>
+                      )}
+                      {modalRateError && (
+                        <p className="text-xs text-red-500">{modalRateError}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center min-h-[24px]">
+                        <Label className="flex items-center gap-1.5 text-sm font-medium">
+                          USD Value
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-sm">The funding envelope value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </Label>
+                      </div>
+                      <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                        {modalCalculatedUsdValue !== null ? (
+                          <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Flow Direction and Organisation Role Row */}
                 <div className="grid grid-cols-2 gap-4">

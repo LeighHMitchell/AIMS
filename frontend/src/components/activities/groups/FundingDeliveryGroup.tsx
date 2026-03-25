@@ -139,13 +139,17 @@ export function FundingDeliveryGroup({
 
   useEffect(() => {
     if (initialSection && isFundingDeliverySection(initialSection) && activityCreated) {
-      lockScrollSpy(500)
+      lockScrollSpy(2000)
       setActiveSection(initialSection)
       if (initialSection !== 'finances' || prevInitialSection.current !== initialSection) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
         })
+        setTimeout(() => {
+          const el = document.getElementById(initialSection)
+          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+        }, 800)
       }
       prevInitialSection.current = initialSection
     }

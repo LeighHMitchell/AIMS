@@ -172,7 +172,7 @@ export function FlowTypeSelect({
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border bottom-full"
+          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
           align="start"
           sideOffset={4}
         >
@@ -207,14 +207,8 @@ export function FlowTypeSelect({
                         setOpen(false);
                         setSearchQuery("");
                       }}
-                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className={cn("cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors", value === option.code && "bg-accent")}
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
@@ -241,14 +235,8 @@ export function FlowTypeSelect({
                         setOpen(false);
                         setSearchQuery("");
                       }}
-                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className={cn("cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors", value === option.code && "bg-accent")}
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>

@@ -144,13 +144,20 @@ export function AdvancedGroup({
 
   useEffect(() => {
     if (initialSection && isAdvancedSection(initialSection) && activityCreated) {
-      lockScrollSpy(500)
+      // Lock long enough to survive the preloading layout shift (500ms preload + render time)
+      lockScrollSpy(2000)
       setActiveSection(initialSection)
       if (initialSection !== 'linked_activities' || prevInitialSection.current !== initialSection) {
+        // Immediate scroll
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
         })
+        // Re-scroll after preloaded sections render and cause layout shifts
+        setTimeout(() => {
+          const el = document.getElementById(initialSection)
+          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+        }, 800)
       }
       prevInitialSection.current = initialSection
     }

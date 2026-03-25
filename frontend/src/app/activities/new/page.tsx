@@ -2993,6 +2993,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             activityId={general.id || ''}
             governmentInputs={governmentInputs}
             onChange={setGovernmentInputs}
+            plannedStartDate={general.plannedStartDate}
+            plannedEndDate={general.plannedEndDate}
           />
         </div>
       );

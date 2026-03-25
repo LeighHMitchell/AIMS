@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useState, useRef } from 'react';
-import { Upload, FileText, ExternalLink, X, Eye, Download, AlertCircle, Check, Loader2 } from 'lucide-react';
+import { Upload, FileText, ExternalLink, X, Eye, Download, AlertCircle, Check, Loader2, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,8 @@ export function TransactionDocumentUpload({
 }: TransactionDocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   // External links state
   const [externalUrl, setExternalUrl] = useState('');
   const [urlDescription, setUrlDescription] = useState('');
@@ -229,12 +231,30 @@ export function TransactionDocumentUpload({
     }
   };
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType === 'external') return <ExternalLink className="h-4 w-4" />;
-    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
-    if (fileType.includes('image')) return <Eye className="h-4 w-4 text-blue-500" />;
-    if (fileType.includes('spreadsheet') || fileType.includes('excel')) return <FileText className="h-4 w-4 text-green-500" />;
-    return <FileText className="h-4 w-4" />;
+  const handleRename = useCallback(async (docId: string, newName: string) => {
+    if (!newName.trim()) return;
+    try {
+      const response = await apiFetch(`/api/transactions/documents?id=${docId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: newName.trim() }),
+      });
+      if (response.ok) {
+        onDocumentsChange(documents.map(d => d.id === docId ? { ...d, fileName: newName.trim() } : d));
+      } else {
+        toast.error('Failed to rename document');
+      }
+    } catch {
+      toast.error('Failed to rename document');
+    }
+    setRenamingId(null);
+  }, [documents, onDocumentsChange]);
+
+  const getFileIcon = (fileType: string | undefined | null) => {
+    if (!fileType) return <FileText className="h-4 w-4 text-muted-foreground" />;
+    if (fileType === 'external') return <ExternalLink className="h-4 w-4 text-muted-foreground" />;
+    if (fileType.includes('image')) return <Eye className="h-4 w-4 text-muted-foreground" />;
+    return <FileText className="h-4 w-4 text-muted-foreground" />;
   };
 
   return (
@@ -370,18 +390,52 @@ export function TransactionDocumentUpload({
               {documents.map((doc, index) => (
                 <div key={doc.id}>
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
                       {getFileIcon(doc.fileType)}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{doc.fileName}</p>
+                        {renamingId === doc.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRename(doc.id, renameValue);
+                                if (e.key === 'Escape') setRenamingId(null);
+                              }}
+                              className="h-7 text-sm"
+                              autoFocus
+                            />
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleRename(doc.id, renameValue)}>
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setRenamingId(null)}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
+                        )}
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                           {doc.fileSize > 0 && <span>{formatFileSize(doc.fileSize)}</span>}
-                          <span>{doc.uploadedAt.toLocaleDateString()}</span>
+                          {doc.uploadedAt && <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>}
                           {doc.externalUrl && <Badge variant="outline" className="text-xs">External</Badge>}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-1">
+                      {renamingId !== doc.id && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setRenamingId(doc.id);
+                            setRenameValue(doc.fileName);
+                          }}
+                          disabled={disabled}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       {doc.externalUrl ? (
                         <Button
                           size="sm"

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Lock, Unlock, CalendarRange, SplitSquareHorizontal, Trash2, Info } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentDropzone, UploadedDocument } from "@/components/ui/document-dropzone";
 import { apiFetch } from "@/lib/api-fetch";
@@ -14,6 +14,9 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { CurrencySelector } from "@/components/forms/CurrencySelector";
+import { convertToUSD } from "@/lib/currency-conversion-api";
 
 // ─── Risk Assessment Types ──────────────────────────────────────────────────
 
@@ -104,6 +107,10 @@ interface GovernmentInputs {
 
   rgcContribution?: {
     isProvided?: boolean;
+    currency?: string;
+    exchangeRate?: number;
+    exchangeRateManual?: boolean;
+    distributionMode?: 'lump_sum' | 'annual';
     totalAmountLocal?: number;
     totalAmountUSD?: number;
     valueDate?: string;
@@ -137,6 +144,8 @@ interface GovernmentInputsSectionProps {
   activityId: string;
   governmentInputs: GovernmentInputs;
   onChange: (inputs: GovernmentInputs) => void;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
 }
 
 // ─── Helper Functions ───────────────────────────────────────────────────────
@@ -172,6 +181,8 @@ export function GovernmentInputsSectionEnhanced({
   activityId,
   governmentInputs,
   onChange,
+  plannedStartDate,
+  plannedEndDate,
 }: GovernmentInputsSectionProps) {
   const updateField = (path: string, value: any) => {
     const keys = path.split(".");
@@ -189,6 +200,102 @@ export function GovernmentInputsSectionEnhanced({
     current[keys[keys.length - 1]] = value;
     onChange(newInputs);
   };
+
+  // ─── Exchange Rate State & Logic ───────────────────────────────────────────
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
+
+  const rgc = governmentInputs.rgcContribution;
+  const currentCurrency = rgc?.currency;
+  const currentValueDate = rgc?.valueDate;
+  const currentExchangeRateManual = rgc?.exchangeRateManual;
+
+  const fetchExchangeRate = useCallback(async () => {
+    if (!currentCurrency || currentCurrency === 'USD') {
+      updateField('rgcContribution.exchangeRate', 1);
+      setRateError(null);
+      return;
+    }
+
+    if (!currentValueDate) {
+      setRateError('Please set a value date first');
+      return;
+    }
+
+    setIsLoadingRate(true);
+    setRateError(null);
+
+    try {
+      const result = await convertToUSD(1, currentCurrency, new Date(currentValueDate));
+      if (result.success && result.exchange_rate) {
+        updateField('rgcContribution.exchangeRate', result.exchange_rate);
+        setRateError(null);
+      } else {
+        setRateError(result.error || 'Failed to fetch exchange rate');
+      }
+    } catch (err) {
+      console.error('[GovContribution] Error fetching exchange rate:', err);
+      setRateError('Failed to fetch exchange rate');
+    } finally {
+      setIsLoadingRate(false);
+    }
+  }, [currentCurrency, currentValueDate]);
+
+  // Auto-fetch exchange rate when currency or date changes (only if not manual)
+  useEffect(() => {
+    if (!currentExchangeRateManual && currentCurrency && currentCurrency !== 'USD') {
+      if (currentValueDate) {
+        fetchExchangeRate();
+      }
+    } else if (currentCurrency === 'USD') {
+      updateField('rgcContribution.exchangeRate', 1);
+      setRateError(null);
+    }
+  }, [currentCurrency, currentValueDate, currentExchangeRateManual]);
+
+  // Computed USD values
+  const exchangeRate = rgc?.exchangeRate || null;
+  const totalLocal = rgc?.totalAmountLocal || 0;
+  const computedTotalUSD = totalLocal && exchangeRate
+    ? Math.round(totalLocal * exchangeRate * 100) / 100
+    : null;
+
+  // ─── Year Generation & Distribution Helpers ────────────────────────────────
+
+  const generateYearRows = useCallback(() => {
+    if (!plannedStartDate || !plannedEndDate) return;
+    const startYear = new Date(plannedStartDate).getFullYear();
+    const endYear = new Date(plannedEndDate).getFullYear();
+    if (isNaN(startYear) || isNaN(endYear) || endYear < startYear) return;
+
+    const existingAnnual = rgc?.annual || [];
+    const generated: Array<{ year: number; amountLocal: number; amountUSD: number }> = [];
+    for (let y = startYear; y <= endYear; y++) {
+      const existing = existingAnnual.find(r => r.year === y);
+      generated.push(existing || { year: y, amountLocal: 0, amountUSD: 0 });
+    }
+    updateField('rgcContribution.annual', generated);
+  }, [plannedStartDate, plannedEndDate, rgc?.annual]);
+
+  const distributeEvenly = useCallback(() => {
+    const rows = rgc?.annual;
+    if (!rows || rows.length === 0 || !totalLocal) return;
+    const rate = exchangeRate || 0;
+    const perRow = Math.round(totalLocal / rows.length);
+    let remaining = totalLocal;
+
+    const updated = rows.map((row, idx) => {
+      const isLast = idx === rows.length - 1;
+      const amountLocal = isLast ? remaining : perRow;
+      remaining -= perRow;
+      return {
+        ...row,
+        amountLocal,
+        amountUSD: rate ? Math.round(amountLocal * rate * 100) / 100 : 0,
+      };
+    });
+    updateField('rgcContribution.annual', updated);
+  }, [rgc?.annual, totalLocal, exchangeRate]);
 
   // Document state
   const [budgetDocs, setBudgetDocs] = useState<UploadedDocument[]>([]);
@@ -428,124 +535,301 @@ export function GovernmentInputsSectionEnhanced({
                 {/* Contribution Details */}
                 {governmentInputs.rgcContribution?.isProvided && (
                   <>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-4">
+                    {/* Currency + Value Date */}
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-4">
+                      <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="h-5 w-5 text-gray-600" />
-                        <h4 className="font-semibold text-gray-900">Total Government Contribution</h4>
+                        <h4 className="font-semibold text-gray-900">Contribution Details</h4>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Local Currency Amount
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="e.g., 1,000,000"
-                            value={governmentInputs.rgcContribution?.totalAmountLocal || ""}
-                            onChange={(e) =>
-                              updateField("rgcContribution.totalAmountLocal", parseFloat(e.target.value) || 0)
-                            }
-                            className="h-10"
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Currency</Label>
+                          <CurrencySelector
+                            value={rgc?.currency || undefined}
+                            onValueChange={(value) => updateField("rgcContribution.currency", value)}
+                            placeholder="Select currency"
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            USD Equivalent
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="e.g., 250,000"
-                            value={governmentInputs.rgcContribution?.totalAmountUSD || ""}
-                            onChange={(e) =>
-                              updateField("rgcContribution.totalAmountUSD", parseFloat(e.target.value) || 0)
-                            }
-                            className="h-10"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Value Date
-                          </label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Value Date</Label>
                           <Input
                             type="date"
-                            value={governmentInputs.rgcContribution?.valueDate || ""}
+                            value={rgc?.valueDate || ""}
                             onChange={(e) => updateField("rgcContribution.valueDate", e.target.value)}
                             className="h-10"
                           />
                         </div>
                       </div>
+
+                      {/* Exchange Rate Display */}
+                      {rgc?.currency && rgc.currency !== 'USD' && (
+                        <div className="p-3 border rounded-lg bg-white">
+                          <div className="flex items-center justify-between mb-2">
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              Exchange Rate
+                              {!rgc.exchangeRateManual && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={fetchExchangeRate}
+                                  disabled={isLoadingRate}
+                                >
+                                  <RefreshCw className={`h-3 w-3 ${isLoadingRate ? 'animate-spin' : ''}`} />
+                                </Button>
+                              )}
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {rgc.exchangeRateManual ? 'Manual' : 'API Rate'}
+                              </span>
+                              <Switch
+                                checked={!rgc.exchangeRateManual}
+                                onCheckedChange={(checked) => {
+                                  updateField("rgcContribution.exchangeRateManual", !checked);
+                                  if (checked) {
+                                    fetchExchangeRate();
+                                  }
+                                }}
+                              />
+                              {rgc.exchangeRateManual ? (
+                                <Unlock className="h-4 w-4 text-orange-500" />
+                              ) : (
+                                <Lock className="h-4 w-4 text-green-600" />
+                              )}
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              step="0.000001"
+                              value={exchangeRate || ''}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                updateField("rgcContribution.exchangeRate", isNaN(val) ? null : val);
+                              }}
+                              disabled={!rgc.exchangeRateManual || isLoadingRate}
+                              className={cn("h-9", !rgc.exchangeRateManual && 'bg-gray-100')}
+                              placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
+                            />
+                            {isLoadingRate && (
+                              <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
+                          {exchangeRate && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              1 {rgc.currency} = {exchangeRate.toFixed(6)} USD
+                            </p>
+                          )}
+                          {rateError && (
+                            <p className="text-xs text-red-500 mt-1">{rateError}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Total Amount */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">
+                            Total Amount {rgc?.currency ? `(${rgc.currency})` : '(Local Currency)'}
+                          </Label>
+                          <Input
+                            type="number"
+                            placeholder="e.g., 1,000,000"
+                            value={rgc?.totalAmountLocal || ""}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              updateField("rgcContribution.totalAmountLocal", val);
+                              // Auto-compute USD
+                              if (exchangeRate) {
+                                updateField("rgcContribution.totalAmountUSD", Math.round(val * exchangeRate * 100) / 100);
+                              }
+                            }}
+                            className="h-10"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">USD Equivalent</Label>
+                          <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                            {computedTotalUSD !== null ? (
+                              <>$ {computedTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                            ) : (
+                              <span className="text-muted-foreground font-normal text-sm">
+                                {!rgc?.currency ? 'Select a currency' : !exchangeRate ? 'Set value date for rate' : 'Enter amount'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Annual Breakdown */}
+                    {/* Distribution Mode */}
                     <div className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-slate-900">Annual Breakdown</h4>
+                      <h4 className="font-medium text-slate-900 mb-3">Distribution Mode</h4>
+                      <RadioGroup
+                        value={rgc?.distributionMode || 'lump_sum'}
+                        onValueChange={(value) =>
+                          updateField("rgcContribution.distributionMode", value as 'lump_sum' | 'annual')
+                        }
+                        className="flex gap-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="lump_sum" id="dist-lump" />
+                          <label htmlFor="dist-lump" className="text-sm font-medium cursor-pointer">
+                            Lump Sum
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="annual" id="dist-annual" />
+                          <label htmlFor="dist-annual" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
+                            <SplitSquareHorizontal className="h-3.5 w-3.5" />
+                            Annual Breakdown
+                          </label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Annual Breakdown Table */}
+                    {rgc?.distributionMode === 'annual' && (
+                      <div className="p-4 border rounded-lg space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-slate-900">Annual Breakdown</h4>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={generateYearRows}
+                              disabled={!plannedStartDate || !plannedEndDate}
+                              className="gap-1.5"
+                              title={!plannedStartDate || !plannedEndDate ? 'Set planned start/end dates first' : 'Generate year rows from activity dates'}
+                            >
+                              <CalendarRange className="h-3.5 w-3.5" />
+                              Generate Years
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={distributeEvenly}
+                              disabled={!totalLocal || !(rgc?.annual?.length)}
+                              className="gap-1.5"
+                            >
+                              <SplitSquareHorizontal className="h-3.5 w-3.5" />
+                              Distribute Evenly
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Warning if no planned dates */}
+                        {(!plannedStartDate || !plannedEndDate) && (
+                          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <Info className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                            <p className="text-sm text-amber-800">
+                              Set planned start and end dates in the Activity Overview section to auto-generate annual breakdown rows. You can still add years manually below.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Year table */}
+                        {(rgc?.annual?.length ?? 0) > 0 && (
+                          <div className="overflow-x-auto border rounded-lg">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-surface-muted">
+                                  <th className="text-left p-2 font-medium text-xs w-24">Year</th>
+                                  <th className="text-right p-2 font-medium text-xs">
+                                    Amount {rgc?.currency ? `(${rgc.currency})` : '(Local)'}
+                                  </th>
+                                  <th className="text-right p-2 font-medium text-xs">USD Equivalent</th>
+                                  <th className="w-10" />
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {(rgc?.annual || []).map((item, index) => {
+                                  const rowUSD = item.amountLocal && exchangeRate
+                                    ? Math.round(item.amountLocal * exchangeRate * 100) / 100
+                                    : item.amountUSD || 0;
+                                  return (
+                                    <tr key={index} className="hover:bg-muted/50">
+                                      <td className="p-1.5">
+                                        <span className="text-sm tabular-nums font-medium">{item.year}</span>
+                                      </td>
+                                      <td className="p-1.5 text-right">
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={item.amountLocal || ''}
+                                          onChange={(e) => {
+                                            const newAnnual = [...(rgc?.annual || [])];
+                                            const amtLocal = parseFloat(e.target.value) || 0;
+                                            const amtUSD = exchangeRate ? Math.round(amtLocal * exchangeRate * 100) / 100 : 0;
+                                            newAnnual[index] = { ...item, amountLocal: amtLocal, amountUSD: amtUSD };
+                                            updateField("rgcContribution.annual", newAnnual);
+                                          }}
+                                          className="h-7 text-sm text-right tabular-nums w-full"
+                                        />
+                                      </td>
+                                      <td className="p-1.5 text-right">
+                                        <span className="text-sm tabular-nums text-green-700 font-medium">
+                                          {rowUSD ? `$ ${rowUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                                        </span>
+                                      </td>
+                                      <td className="p-1.5">
+                                        <button
+                                          onClick={() => {
+                                            const newAnnual = (rgc?.annual || []).filter((_, i) => i !== index);
+                                            updateField("rgcContribution.annual", newAnnual);
+                                          }}
+                                          className="text-muted-foreground hover:text-red-500 transition-colors"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                              <tfoot>
+                                <tr className="border-t-2 font-medium bg-muted/30">
+                                  <td className="p-2 text-xs">Total</td>
+                                  <td className="p-2 text-right tabular-nums text-sm">
+                                    {(rgc?.annual || []).reduce((sum, r) => sum + (r.amountLocal || 0), 0).toLocaleString()}
+                                  </td>
+                                  <td className="p-2 text-right tabular-nums text-sm text-green-700">
+                                    $ {(rgc?.annual || []).reduce((sum, r) => {
+                                      const usd = r.amountLocal && exchangeRate ? Math.round(r.amountLocal * exchangeRate * 100) / 100 : (r.amountUSD || 0);
+                                      return sum + usd;
+                                    }, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </td>
+                                  <td />
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Manual Add Year */}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const currentAnnual = governmentInputs.rgcContribution?.annual || [];
-                            const newYear = new Date().getFullYear() + currentAnnual.length;
+                            const currentAnnual = rgc?.annual || [];
+                            const lastYear = currentAnnual.length > 0
+                              ? Math.max(...currentAnnual.map(r => r.year))
+                              : new Date().getFullYear() - 1;
                             updateField("rgcContribution.annual", [
                               ...currentAnnual,
-                              { year: newYear, amountLocal: 0, amountUSD: 0 },
+                              { year: lastYear + 1, amountLocal: 0, amountUSD: 0 },
                             ]);
                           }}
-                          className="gap-2"
+                          className="gap-1.5"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-3.5 w-3.5" />
                           Add Year
                         </Button>
                       </div>
-                      <div className="space-y-3">
-                        {(governmentInputs.rgcContribution?.annual || []).map((item, index) => (
-                          <div key={index} className="grid grid-cols-4 gap-3 p-3 bg-slate-50 rounded">
-                            <Input
-                              type="number"
-                              placeholder="Year"
-                              value={item.year}
-                              onChange={(e) => {
-                                const newAnnual = [...(governmentInputs.rgcContribution?.annual || [])];
-                                newAnnual[index] = { ...item, year: parseInt(e.target.value) || 0 };
-                                updateField("rgcContribution.annual", newAnnual);
-                              }}
-                            />
-                            <Input
-                              type="number"
-                              placeholder="Local amount"
-                              value={item.amountLocal}
-                              onChange={(e) => {
-                                const newAnnual = [...(governmentInputs.rgcContribution?.annual || [])];
-                                newAnnual[index] = { ...item, amountLocal: parseFloat(e.target.value) || 0 };
-                                updateField("rgcContribution.annual", newAnnual);
-                              }}
-                            />
-                            <Input
-                              type="number"
-                              placeholder="USD amount"
-                              value={item.amountUSD}
-                              onChange={(e) => {
-                                const newAnnual = [...(governmentInputs.rgcContribution?.annual || [])];
-                                newAnnual[index] = { ...item, amountUSD: parseFloat(e.target.value) || 0 };
-                                updateField("rgcContribution.annual", newAnnual);
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const newAnnual = (governmentInputs.rgcContribution?.annual || []).filter(
-                                  (_, i) => i !== index
-                                );
-                                updateField("rgcContribution.annual", newAnnual);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    )}
 
                     {/* Additional Details */}
                     <div className="grid grid-cols-2 gap-4">

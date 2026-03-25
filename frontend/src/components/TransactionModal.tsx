@@ -1,8 +1,8 @@
 "use client"
 import { RequiredDot } from "@/components/ui/required-dot";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload } from "lucide-react";
+import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -74,6 +74,8 @@ import { FinanceTypeSelect } from '@/components/forms/FinanceTypeSelect';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
 import { Switch } from '@/components/ui/switch';
+import { DatePicker } from '@/components/ui/date-picker';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autosave';
 import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
@@ -688,6 +690,86 @@ export default function TransactionModal({
   const recipientRegionAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_region_code', userId: user?.id });
   const useActivitySectorsAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'use_activity_sectors', userId: user?.id });
   
+  // Exchange rate state
+  const [exchangeRateManual, setExchangeRateManual] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
+
+  // Fetch exchange rate
+  const fetchExchangeRate = useCallback(async () => {
+    const currency = formData.currency;
+    if (!currency) return;
+
+    if (currency === 'USD') {
+      setExchangeRate(1);
+      setRateError(null);
+      return;
+    }
+
+    const valueDate = formData.value_date || formData.transaction_date;
+    if (!valueDate) {
+      setRateError('Please set a date first');
+      return;
+    }
+
+    setIsLoadingRate(true);
+    setRateError(null);
+
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(1, currency, new Date(valueDate));
+      if (result.success && result.exchange_rate) {
+        setExchangeRate(result.exchange_rate);
+        setRateError(null);
+      } else {
+        setRateError(result.error || 'Failed to fetch exchange rate');
+        setExchangeRate(null);
+      }
+    } catch (err) {
+      console.error('[TransactionModal] Error fetching exchange rate:', err);
+      setRateError('Failed to fetch exchange rate');
+      setExchangeRate(null);
+    } finally {
+      setIsLoadingRate(false);
+    }
+  }, [formData.currency, formData.value_date, formData.transaction_date]);
+
+  // Calculated USD value
+  const calculatedUsdValue = formData.value && exchangeRate
+    ? Math.round(formData.value * exchangeRate * 100) / 100
+    : null;
+
+  // Auto-fetch exchange rate when currency or date changes (only if not manual)
+  useEffect(() => {
+    if (!exchangeRateManual && formData.currency) {
+      if (formData.currency === 'USD') {
+        setExchangeRate(1);
+        setRateError(null);
+      } else {
+        const valueDate = formData.value_date || formData.transaction_date;
+        if (valueDate) {
+          fetchExchangeRate();
+        }
+      }
+    }
+  }, [formData.currency, formData.value_date, formData.transaction_date, exchangeRateManual, fetchExchangeRate]);
+
+  // Reset exchange rate state when modal opens
+  useEffect(() => {
+    if (open && transaction) {
+      const existingManual = (transaction as any).exchange_rate_manual ?? false;
+      const existingRate = (transaction as any).exchange_rate_used ?? null;
+      setExchangeRateManual(existingManual);
+      setExchangeRate(existingRate);
+      setRateError(null);
+    } else if (open && !transaction) {
+      // New transaction — reset
+      setExchangeRateManual(false);
+      setExchangeRate(null);
+      setRateError(null);
+    }
+  }, [open, transaction?.id]);
+
   // Handler for switching sector source choice
   const handleSectorChoiceChange = (useActivitySectors: boolean) => {
     setUseActivitySectorChoice(useActivitySectors);
@@ -944,7 +1026,8 @@ export default function TransactionModal({
       'disbursement_channel', 'flow_type', 'finance_type', 'aid_type', 'tied_status',
       'sector_code', 'sector_vocabulary', 'recipient_country_code', 'recipient_region_code', 'recipient_region_vocab',
       'sectors', 'aid_types', 'use_activity_sectors',
-      'is_humanitarian'
+      'is_humanitarian',
+      'exchange_rate_used', 'value_usd', 'exchange_rate_manual'
     ];
     const payload: any = {};
     for (const key of allowed) {
@@ -985,6 +1068,13 @@ export default function TransactionModal({
       receiver_org_name: organizations.find(o => o.id === formData.receiver_org_id)?.acronym || organizations.find(o => o.id === formData.receiver_org_id)?.name || '',
       financing_classification: isClassificationOverridden ? manualClassification : computedClassification
     });
+
+    // Add exchange rate fields to submission
+    if (exchangeRate !== null) {
+      submissionData.exchange_rate_used = exchangeRate;
+      submissionData.exchange_rate_manual = exchangeRateManual;
+      submissionData.value_usd = calculatedUsdValue;
+    }
 
     // Debug: Log what's being submitted for sectors and aid_types
     console.log('[TransactionModal] Submission payload debug:', {
@@ -1607,7 +1697,7 @@ export default function TransactionModal({
                                   setTransactionTypePopoverOpen(false);
                                   setTransactionTypeSearch("");
                                 }}
-                                className="flex flex-col items-start px-4 py-3 gap-1 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                                className={cn("flex flex-col items-start px-4 py-3 gap-1 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors", formData.transaction_type === opt.code && "bg-accent")}
                               >
                                 <div className="flex items-center gap-3 w-full">
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded min-w-[28px] text-center">
@@ -1669,12 +1759,10 @@ export default function TransactionModal({
                           }}
                           className="h-5 w-5"
                         />
-                        <div className="flex flex-col">
-                          <Label htmlFor="validated" className="text-sm font-medium cursor-pointer">
-                            Mark as Validated
-                            <InfoTooltip text="Check this box to mark the transaction as validated and approved" />
-                          </Label>
-                        </div>
+                        <Label htmlFor="validated" className="text-sm font-medium cursor-pointer flex items-center gap-1">
+                          Mark as Validated
+                          <InfoTooltip text="Check this box to mark the transaction as validated and approved" />
+                        </Label>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
@@ -1788,11 +1876,9 @@ export default function TransactionModal({
                       Transaction Date <RequiredDot />
                     </LabelWithInfoAndSave>
                   </div>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={formData.transaction_date || ''}
-                    onChange={e => {
-                      const newDate = e.target.value;
+                    onChange={(newDate) => {
                       setFormData(prev => ({
                         ...prev,
                         transaction_date: newDate,
@@ -1800,7 +1886,7 @@ export default function TransactionModal({
                       }));
                       transactionDateAutosave.triggerFieldSave(newDate);
                     }}
-                    className="w-full"
+                    placeholder="Select date"
                   />
                 </div>
 
@@ -1837,24 +1923,111 @@ export default function TransactionModal({
                       </Label>
                     </div>
                   </div>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={showValueDate ? formData.value_date || '' : formData.transaction_date || ''}
-                    onChange={e => {
-                      const newValue = e.target.value;
+                    onChange={(newValue) => {
                       setFormData({...formData, value_date: newValue});
                       valueDateAutosave.triggerFieldSave(newValue);
                     }}
                     disabled={!showValueDate}
-                    className={cn(
-                      "w-full",
-                      !showValueDate && "bg-muted cursor-not-allowed",
-                      showValueDate && "text-black"
-                    )}
+                    placeholder="Select date"
                   />
                 </div>
               </div>
             </div>
+
+            {/* Exchange Rate & USD Value */}
+            {formData.currency && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between min-h-[24px]">
+                    <LabelWithInfoAndSave
+                      helpText="The exchange rate used to convert the transaction value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead."
+                      isSaving={false}
+                      isSaved={false}
+                      hasValue={exchangeRate != null}
+                    >
+                      Exchange Rate
+                    </LabelWithInfoAndSave>
+                    {formData.currency !== 'USD' && (
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                          {exchangeRateManual ? 'Manual' : 'Auto'}
+                        </Label>
+                        <Switch
+                          id="exchange_rate_mode"
+                          checked={!exchangeRateManual}
+                          onCheckedChange={(checked) => {
+                            setExchangeRateManual(!checked);
+                            if (checked) {
+                              fetchExchangeRate();
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.000001"
+                      value={exchangeRate || ''}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        setExchangeRate(isNaN(value) ? null : value);
+                      }}
+                      disabled={!exchangeRateManual || isLoadingRate || formData.currency === 'USD'}
+                      className={cn(
+                        "w-full",
+                        (!exchangeRateManual || formData.currency === 'USD') && "bg-muted cursor-not-allowed"
+                      )}
+                      placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
+                    />
+                    {isLoadingRate && (
+                      <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                    {!isLoadingRate && !exchangeRateManual && formData.currency !== 'USD' && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1 h-8 w-8 p-0"
+                        onClick={fetchExchangeRate}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  {exchangeRate != null && formData.currency !== 'USD' && (
+                    <p className="text-xs text-muted-foreground">
+                      1 {formData.currency} = {exchangeRate.toFixed(6)} USD
+                    </p>
+                  )}
+                  {rateError && (
+                    <p className="text-xs text-red-500">{rateError}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center min-h-[24px]">
+                    <LabelWithInfoAndSave
+                      helpText="The transaction value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate."
+                      isSaving={false}
+                      isSaved={false}
+                      hasValue={calculatedUsdValue != null}
+                    >
+                      USD Value
+                    </LabelWithInfoAndSave>
+                  </div>
+                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                    {calculatedUsdValue !== null ? (
+                      <>$ {calculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Parties Involved Section */}
             <div className="space-y-4">
@@ -1902,31 +2075,28 @@ export default function TransactionModal({
               </div>
 
               {/* Provider Organization Activity ID */}
-              <div className={`space-y-2 ${isPooledFund && ['1', '11', '13'].includes(formData.transaction_type || '') ? 'rounded-lg border-2 border-amber-400 bg-amber-50/50 p-3' : ''}`}>
+              <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="Link to the IATI activity of the provider organization"
+                  helpText="Link to the IATI activity of the provider organization. For pooled funds, linking provider activities avoids double-counting in reports."
                   isSaving={providerActivityAutosave.isSaving}
                   isSaved={providerActivityAutosave.isSaved}
                   hasValue={!!formData.provider_org_activity_id || !!formData.provider_activity_uuid}
                 >
                   Provider Activity
                 </LabelWithInfoAndSave>
-                {isPooledFund && ['1', '11', '13'].includes(formData.transaction_type || '') && !formData.provider_activity_uuid && (
-                  <p className="text-xs text-amber-700 font-medium">Link to provider activity to avoid double-counting in reports</p>
-                )}
 
                 {/* Show warning UI if IATI reference exists but not linked to database */}
                 {formData.provider_org_activity_id && !formData.provider_activity_uuid ? (
                   <div className="space-y-2">
                     {/* IATI Reference Display with Warning */}
-                    <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                        <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-amber-800 truncate font-mono">
+                          <div className="text-sm font-medium text-foreground truncate font-mono">
                             {formData.provider_org_activity_id}
                           </div>
-                          <div className="text-xs text-amber-600">
+                          <div className="text-xs text-muted-foreground">
                             IATI reference - not linked to database
                           </div>
                         </div>
@@ -1937,7 +2107,7 @@ export default function TransactionModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="text-amber-700 border-amber-300 hover:bg-amber-100 ml-2 flex-shrink-0"
+                        className="ml-2 flex-shrink-0"
                         onClick={async () => {
                           setIsCheckingProviderActivity(true);
                           try {
@@ -2109,31 +2279,28 @@ export default function TransactionModal({
               </div>
 
               {/* Receiver Organization Activity ID */}
-              <div className={`space-y-2 ${isPooledFund && ['2', '3', '4'].includes(formData.transaction_type || '') ? 'rounded-lg border-2 border-amber-400 bg-amber-50/50 p-3' : ''}`}>
+              <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="Link to the IATI activity of the receiver organization"
+                  helpText="Link to the IATI activity of the receiver organization. For pooled funds, linking child activities avoids double-counting in reports."
                   isSaving={receiverActivityAutosave.isSaving}
                   isSaved={receiverActivityAutosave.isSaved}
                   hasValue={!!formData.receiver_org_activity_id || !!formData.receiver_activity_uuid}
                 >
                   Receiver Activity
                 </LabelWithInfoAndSave>
-                {isPooledFund && ['2', '3', '4'].includes(formData.transaction_type || '') && !formData.receiver_activity_uuid && (
-                  <p className="text-xs text-amber-700 font-medium">Link to child activity to avoid double-counting in reports</p>
-                )}
                 
                 {/* Show warning UI if IATI reference exists but not linked to database */}
                 {formData.receiver_org_activity_id && !formData.receiver_activity_uuid ? (
                   <div className="space-y-2">
                     {/* IATI Reference Display with Warning */}
-                    <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                        <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-amber-800 truncate font-mono">
+                          <div className="text-sm font-medium text-foreground truncate font-mono">
                             {formData.receiver_org_activity_id}
                           </div>
-                          <div className="text-xs text-amber-600">
+                          <div className="text-xs text-muted-foreground">
                             IATI reference - not linked to database
                           </div>
                         </div>
@@ -2144,7 +2311,7 @@ export default function TransactionModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="text-amber-700 border-amber-300 hover:bg-amber-100 ml-2 flex-shrink-0"
+                        className="ml-2 flex-shrink-0"
                         onClick={async () => {
                           setIsCheckingReceiverActivity(true);
                           try {
@@ -2301,10 +2468,10 @@ export default function TransactionModal({
             <div className="space-y-4">
               <SectionHeader title="Funding Modality & Aid Classification" />
 
-              {/* Aid Type and Flow Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Row 1: Aid Type and Disbursement Channel (taller) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 <div className="space-y-2">
-                  <LabelWithInfoAndSave 
+                  <LabelWithInfoAndSave
                     helpText={IATI_FIELD_HELP.aidType}
                     isSaving={aidTypeAutosave.isSaving}
                     isSaved={aidTypeAutosave.isSaved || hasDefaultValue('aid_type', formData.aid_type)}
@@ -2324,117 +2491,43 @@ export default function TransactionModal({
                     open={openDropdown === 'aid-type'}
                     onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'aid-type' : null)}
                   />
-                  {formData.aid_type && (
-                    <FieldDescription>
-                      {getSelectedDescription('aid', formData.aid_type)}
-                    </FieldDescription>
-                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <LabelWithInfoAndSave 
-                    helpText="Origin and concessionality of the financial flow"
-                    isSaving={flowTypeAutosave.isSaving}
-                    isSaved={flowTypeAutosave.isSaved || hasDefaultValue('flow_type', formData.flow_type)}
-                    hasValue={!!formData.flow_type}
+                  <LabelWithInfoAndSave
+                    helpText="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies."
+                    isSaving={disbursementChannelAutosave.isSaving}
+                    isSaved={disbursementChannelAutosave.isSaved}
+                    hasValue={!!formData.disbursement_channel}
                   >
-                    Flow Type
+                    Disbursement Channel
                   </LabelWithInfoAndSave>
-                  <FlowTypeSelect
-                    value={formData.flow_type as string | undefined}
-                    onValueChange={(v: string | null) => {
-                      const newValue = v as FlowType || undefined;
-                      setFormData({...formData, flow_type: newValue});
-                      flowTypeAutosave.triggerFieldSave(newValue);
-                    }}
-                    placeholder="Select flow type"
-                    open={openDropdown === 'flow-type'}
-                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'flow-type' : null)}
-                  />
-                </div>
-              </div>
-
-              {/* Finance Type and Tied Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <LabelWithInfoAndSave 
-                    helpText="Financial instrument used"
-                    isSaving={financeTypeAutosave.isSaving}
-                    isSaved={financeTypeAutosave.isSaved || hasDefaultValue('finance_type', formData.finance_type)}
-                    hasValue={!!formData.finance_type}
-                  >
-                    Finance Type
-                  </LabelWithInfoAndSave>
-                  <FinanceTypeSelect
-                    value={formData.finance_type as string | undefined}
-                    onChange={(v: string) => {
-                      const newValue = v as FinanceType || undefined;
-                      setFormData({...formData, finance_type: newValue});
-                      financeTypeAutosave.triggerFieldSave(newValue);
-                    }}
-                    placeholder="Select finance type"
-                    open={openDropdown === 'finance-type'}
-                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'finance-type' : null)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <LabelWithInfoAndSave 
-                    helpText={IATI_FIELD_HELP.tiedStatus}
-                    isSaving={tiedStatusAutosave.isSaving}
-                    isSaved={tiedStatusAutosave.isSaved || hasDefaultValue('tied_status', formData.tied_status)}
-                    hasValue={!!formData.tied_status}
-                  >
-                    Tied Status
-                  </LabelWithInfoAndSave>
-                  <TiedStatusSelect
-                    value={(formData.tied_status as any) as string | undefined}
-                    onValueChange={(v: string | null) => {
-                      const newValue = v as TiedStatus || undefined;
-                      setFormData({...formData, tied_status: newValue});
-                      tiedStatusAutosave.triggerFieldSave(newValue);
-                    }}
-                    placeholder="Select tied status"
-                    open={openDropdown === 'tied-status'}
-                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'tied-status' : null)}
-                  />
-                </div>
-              </div>
-
-              {/* Disbursement Channel */}
-              <div className="space-y-2">
-                <LabelWithInfoAndSave 
-                  helpText="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies."
-                  isSaving={disbursementChannelAutosave.isSaving}
-                  isSaved={disbursementChannelAutosave.isSaved}
-                  hasValue={!!formData.disbursement_channel}
-                >
-                  Disbursement Channel
-                </LabelWithInfoAndSave>
-                {/* Modern popover/command UI for Disbursement Channel */}
-                <Popover open={disbursementPopoverOpen} onOpenChange={setDisbursementPopoverOpen}>
-                  <PopoverTrigger
-                    className="w-full"
-                  >
-                    <Button
-                      variant="outline"
-                      className="w-full flex justify-between items-center"
-                      aria-haspopup="listbox"
+                  {/* Modern popover/command UI for Disbursement Channel */}
+                  <Popover open={disbursementPopoverOpen} onOpenChange={setDisbursementPopoverOpen}>
+                    <PopoverTrigger
+                      className="w-full"
                     >
-                      {formData.disbursement_channel ? (
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {formData.disbursement_channel}
-                          </span>
-                          <span className="font-medium">
-                            {DISBURSEMENT_CHANNELS_WITH_DESC[formData.disbursement_channel]?.label}
-                          </span>
+                      <Button
+                        variant="outline"
+                        className="w-full flex justify-between items-start h-auto min-h-[60px] whitespace-normal text-left px-3 py-3"
+                        aria-haspopup="listbox"
+                      >
+                        <span className="flex-1 min-w-0">
+                          {formData.disbursement_channel ? (
+                            <span className="flex items-start gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {formData.disbursement_channel}
+                              </span>
+                              <span className="text-sm">
+                                {DISBURSEMENT_CHANNELS_WITH_DESC[formData.disbursement_channel]?.label}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Select disbursement channel</span>
+                          )}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground">Select disbursement channel</span>
-                      )}
-                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
-                    </Button>
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2 mt-0.5" />
+                      </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] max-w-xl p-0 shadow-lg border" align="start" sideOffset={4}>
                     <Command>
@@ -2465,17 +2558,17 @@ export default function TransactionModal({
                                   setDisbursementPopoverOpen(false);
                                   setDisbursementSearch("");
                                 }}
-                                className="flex flex-col items-start px-4 py-3 gap-1 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                                className={cn("flex flex-col items-start px-4 py-3 gap-1 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors", formData.disbursement_channel === code && "bg-accent")}
                               >
-                                <div className="flex items-center gap-3 w-full">
-                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded min-w-[28px] text-center">
+                                <div className="flex items-start gap-3 w-full">
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded min-w-[28px] text-center flex-shrink-0">
                                     {code}
                                   </span>
-                                  <span className="font-semibold text-foreground flex-1 truncate">
+                                  <span className="text-sm text-foreground">
                                     {option.label}
                                   </span>
                                 </div>
-                                <div className="text-sm text-muted-foreground pl-10 leading-relaxed w-full">
+                                <div className="text-xs text-muted-foreground pl-10 leading-relaxed w-full">
                                   {option.desc}
                                 </div>
                               </CommandItem>
@@ -2506,28 +2599,92 @@ export default function TransactionModal({
                   </PopoverContent>
                 </Popover>
               </div>
+              </div>
 
-              {/* Humanitarian Transaction - Separate Red Card */}
-              <Card className="border-red-200 bg-red-50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Siren className="h-5 w-5 text-red-500" />
-                      <div>
-                        <LabelWithInfoAndSave 
-                          helpText="Tick this if the transaction qualifies as humanitarian assistance under IATI or OCHA guidelines, including emergency response, disaster relief, or protection activities."
-                          isSaving={humanitarianAutosave.isSaving}
-                          isSaved={humanitarianAutosave.isSaved}
-                          hasValue={!!formData.is_humanitarian}
-                          className="text-sm font-medium cursor-pointer text-red-900"
-                        >
-                          Humanitarian Transaction
-                        </LabelWithInfoAndSave>
-                        <p className="text-xs text-red-700 mt-1">
-                          Mark if this transaction is for emergency response or disaster relief
-                        </p>
-                      </div>
-                    </div>
+              {/* Row 2: Flow Type and Finance Type */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <LabelWithInfoAndSave
+                    helpText="Origin and concessionality of the financial flow"
+                    isSaving={flowTypeAutosave.isSaving}
+                    isSaved={flowTypeAutosave.isSaved || hasDefaultValue('flow_type', formData.flow_type)}
+                    hasValue={!!formData.flow_type}
+                  >
+                    Flow Type
+                  </LabelWithInfoAndSave>
+                  <FlowTypeSelect
+                    value={formData.flow_type as string | undefined}
+                    onValueChange={(v: string | null) => {
+                      const newValue = v as FlowType || undefined;
+                      setFormData({...formData, flow_type: newValue});
+                      flowTypeAutosave.triggerFieldSave(newValue);
+                    }}
+                    placeholder="Select flow type"
+                    open={openDropdown === 'flow-type'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'flow-type' : null)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <LabelWithInfoAndSave
+                    helpText="Financial instrument used"
+                    isSaving={financeTypeAutosave.isSaving}
+                    isSaved={financeTypeAutosave.isSaved || hasDefaultValue('finance_type', formData.finance_type)}
+                    hasValue={!!formData.finance_type}
+                  >
+                    Finance Type
+                  </LabelWithInfoAndSave>
+                  <FinanceTypeSelect
+                    value={formData.finance_type as string | undefined}
+                    onChange={(v: string) => {
+                      const newValue = v as FinanceType || undefined;
+                      setFormData({...formData, finance_type: newValue});
+                      financeTypeAutosave.triggerFieldSave(newValue);
+                    }}
+                    placeholder="Select finance type"
+                    open={openDropdown === 'finance-type'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'finance-type' : null)}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Tied Status and Humanitarian */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <LabelWithInfoAndSave
+                    helpText={IATI_FIELD_HELP.tiedStatus}
+                    isSaving={tiedStatusAutosave.isSaving}
+                    isSaved={tiedStatusAutosave.isSaved || hasDefaultValue('tied_status', formData.tied_status)}
+                    hasValue={!!formData.tied_status}
+                  >
+                    Tied Status
+                  </LabelWithInfoAndSave>
+                  <TiedStatusSelect
+                    value={(formData.tied_status as any) as string | undefined}
+                    onValueChange={(v: string | null) => {
+                      const newValue = v as TiedStatus || undefined;
+                      setFormData({...formData, tied_status: newValue});
+                      tiedStatusAutosave.triggerFieldSave(newValue);
+                    }}
+                    placeholder="Select tied status"
+                    open={openDropdown === 'tied-status'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'tied-status' : null)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <LabelWithInfoAndSave
+                    helpText="Tick this if the transaction qualifies as humanitarian assistance under IATI or OCHA guidelines, including emergency response, disaster relief, or protection activities."
+                    isSaving={humanitarianAutosave.isSaving}
+                    isSaved={humanitarianAutosave.isSaved}
+                    hasValue={!!formData.is_humanitarian}
+                  >
+                    Humanitarian
+                  </LabelWithInfoAndSave>
+                  <div className="flex items-center justify-between h-10 px-3 border rounded-md">
+                    <span className="text-sm text-muted-foreground">
+                      {formData.is_humanitarian ? 'Yes — humanitarian transaction' : 'No'}
+                    </span>
                     <Switch
                       id="is_humanitarian"
                       checked={formData.is_humanitarian}
@@ -2535,11 +2692,10 @@ export default function TransactionModal({
                         setFormData({ ...formData, is_humanitarian: checked });
                         humanitarianAutosave.triggerFieldSave(checked);
                       }}
-                      className="data-[state=checked]:bg-red-600 data-[state=unchecked]:bg-red-200"
                     />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
 
             {/* Supporting Documents Section */}
@@ -2941,8 +3097,8 @@ export default function TransactionModal({
                       )}
                       
                       {useActivitySectorChoice && activitySectors.length === 0 && (
-                        <div className="ml-7 p-3 bg-amber-50 rounded-md border border-amber-200">
-                          <p className="text-xs text-amber-700">
+                        <div className="ml-7 p-3 bg-muted/50 rounded-md border border-border">
+                          <p className="text-xs text-muted-foreground">
                             No sectors defined at the activity level. Add sectors in the Sectors tab, or specify custom sectors for this transaction.
                           </p>
                         </div>
@@ -3038,8 +3194,8 @@ export default function TransactionModal({
                       )}
 
                       {!useActivitySectorChoice && (!formData.sectors || formData.sectors.length === 0) && (
-                        <div className="ml-7 p-3 bg-amber-50 rounded-md border border-amber-200">
-                          <p className="text-xs text-amber-700">
+                        <div className="ml-7 p-3 bg-muted/50 rounded-md border border-border">
+                          <p className="text-xs text-muted-foreground">
                             No custom sectors defined yet. Use the sector editor below to add sectors.
                           </p>
                         </div>

@@ -195,10 +195,10 @@ export function CurrencySelector({
         </PopoverTrigger>
         <PopoverContent
           className={cn(
-            "min-w-[320px] max-h-[400px] overflow-y-auto p-0 shadow-lg border",
+            "w-[var(--radix-popover-trigger-width)] max-h-[400px] overflow-y-auto p-0 shadow-lg border",
             dropDirection === "top" && "bottom-full top-auto mb-1"
           )}
-          align="end"
+          align="start"
           sideOffset={4}
         >
           <Command>
@@ -252,19 +252,14 @@ export function CurrencySelector({
                       }}
                       className={cn(
                         "cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
-                        option.withdrawn && "opacity-50 pointer-events-none bg-muted"
+                        option.withdrawn && "opacity-50 pointer-events-none bg-muted",
+                        value === option.code && "bg-accent"
                       )}
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
-                          <span className="font-medium text-foreground">{option.name}</span>
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
+                          <span className="text-foreground">{option.name}</span>
                           {option.withdrawn && (
                             <span className="ml-2 text-xs text-red-500">Withdrawn</span>
                           )}

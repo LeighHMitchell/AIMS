@@ -189,13 +189,17 @@ export function ActivityOverviewGroup({
   const isFirstRender = useRef(true)
   useEffect(() => {
     if (initialSection && isActivityOverviewSection(initialSection) && activityCreated) {
-      lockScrollSpy(500)
+      lockScrollSpy(2000)
       setActiveSection(initialSection)
       if (initialSection !== 'general' || prevInitialSection.current !== initialSection) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
         })
+        setTimeout(() => {
+          const el = document.getElementById(initialSection)
+          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+        }, 800)
       }
       prevInitialSection.current = initialSection
     }

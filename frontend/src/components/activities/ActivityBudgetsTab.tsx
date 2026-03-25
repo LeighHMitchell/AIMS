@@ -2015,7 +2015,8 @@ export default function ActivityBudgetsTab({
                     { label: "Type", width: 110, sortKey: "type", align: "left" },
                     { label: "Amount", width: 160, sortKey: "value", align: "right" },
                     { label: "Value Date", width: 140, sortKey: "value_date", align: "left" },
-                    { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" }
+                    { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" },
+                    { label: "Ex. Rate", width: 110, sortKey: "exchange_rate_used", align: "right" }
                   ].map((header, i) => (
                     <TableHead
                       key={i + 2}
@@ -2160,6 +2161,18 @@ export default function ActivityBudgetsTab({
                             <span className="text-xs text-red-500">Failed</span>
                         )}
                         </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '110px' }}>
+                        {(budget as any).exchange_rate_used != null ? (
+                          <span className="text-sm font-mono flex items-center justify-end gap-1">
+                            {(budget as any).exchange_rate_used.toFixed(4)}
+                            {(budget as any).exchange_rate_manual && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">M</Badge>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       {!readOnly && (
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap">
@@ -2736,95 +2749,103 @@ export default function ActivityBudgetsTab({
                 </div>
               </div>
 
-              {/* USD Conversion Section */}
-              {modalBudget.currency && modalBudget.currency !== 'USD' && (
-                <div className="border border-green-200 bg-green-50/50 rounded-lg p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <Label className="text-sm font-medium">USD Conversion</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {modalExchangeRateManual ? 'Manual' : 'API Rate'}
-                      </span>
-                      <Switch 
-                        checked={!modalExchangeRateManual}
-                        onCheckedChange={(checked) => {
-                          setModalExchangeRateManual(!checked);
-                          if (checked) {
-                            fetchModalExchangeRate();
-                          }
-                        }}
-                      />
-                      {modalExchangeRateManual ? (
-                        <Unlock className="h-4 w-4 text-orange-500" />
-                      ) : (
-                        <Lock className="h-4 w-4 text-green-600" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {modalExchangeRateManual 
-                      ? 'Enter your own exchange rate below'
-                      : 'Exchange rate is automatically fetched based on value date'
-                    }
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2 text-sm">
+              {/* Exchange Rate & USD Value */}
+              {modalBudget.currency && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between min-h-[24px]">
+                      <Label className="flex items-center gap-1.5 text-sm font-medium">
                         Exchange Rate
-                        {!modalExchangeRateManual && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={fetchModalExchangeRate}
-                            disabled={isLoadingModalRate}
-                          >
-                            <RefreshCw className={`h-3 w-3 ${isLoadingModalRate ? 'animate-spin' : ''}`} />
-                          </Button>
-                        )}
+                        <TooltipProvider>
+                          <UITooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-sm">The exchange rate used to convert the budget value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                            </TooltipContent>
+                          </UITooltip>
+                        </TooltipProvider>
                       </Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.000001"
-                          value={modalExchangeRate || ''}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            setModalExchangeRate(isNaN(value) ? null : value);
-                          }}
-                          disabled={!modalExchangeRateManual || isLoadingModalRate}
-                          className={!modalExchangeRateManual ? 'bg-muted' : ''}
-                          placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
-                        />
-                        {isLoadingModalRate && (
-                          <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-                        )}
-                      </div>
-                      {modalExchangeRate && (
-                        <p className="text-xs text-muted-foreground">
-                          1 {modalBudget.currency} = {modalExchangeRate.toFixed(6)} USD
-                        </p>
-                      )}
-                      {modalRateError && (
-                        <p className="text-xs text-red-500">{modalRateError}</p>
+                      {modalBudget.currency !== 'USD' && (
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="budget_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                            {modalExchangeRateManual ? 'Manual' : 'Auto'}
+                          </Label>
+                          <Switch
+                            id="budget_exchange_rate_mode"
+                            checked={!modalExchangeRateManual}
+                            onCheckedChange={(checked) => {
+                              setModalExchangeRateManual(!checked);
+                              if (checked) {
+                                fetchModalExchangeRate();
+                              }
+                            }}
+                          />
+                        </div>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">USD Value</Label>
-                      <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
-                        {modalCalculatedUsdValue !== null ? (
-                          <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.000001"
+                        value={modalExchangeRate || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          setModalExchangeRate(isNaN(value) ? null : value);
+                        }}
+                        disabled={!modalExchangeRateManual || isLoadingModalRate || modalBudget.currency === 'USD'}
+                        className={cn(
+                          (!modalExchangeRateManual || modalBudget.currency === 'USD') && 'bg-muted cursor-not-allowed'
                         )}
-                      </div>
+                        placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
+                      />
+                      {isLoadingModalRate && (
+                        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                      {!isLoadingModalRate && !modalExchangeRateManual && modalBudget.currency !== 'USD' && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-8 w-8 p-0"
+                          onClick={fetchModalExchangeRate}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    {modalExchangeRate != null && modalBudget.currency !== 'USD' && (
                       <p className="text-xs text-muted-foreground">
-                        Calculated from {modalBudget.currency} {modalBudget.value?.toLocaleString() || 0}
+                        1 {modalBudget.currency} = {modalExchangeRate.toFixed(6)} USD
                       </p>
+                    )}
+                    {modalRateError && (
+                      <p className="text-xs text-red-500">{modalRateError}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center min-h-[24px]">
+                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        USD Value
+                        <TooltipProvider>
+                          <UITooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-sm">The budget value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                            </TooltipContent>
+                          </UITooltip>
+                        </TooltipProvider>
+                      </Label>
+                    </div>
+                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                      {modalCalculatedUsdValue !== null ? (
+                        <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </div>
                   </div>
                 </div>

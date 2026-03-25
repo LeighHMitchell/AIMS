@@ -159,14 +159,11 @@ export function AidTypeSelect({
 
   const COMMONLY_USED_AID_CODES = ["C01", "B01", "D02", "B04", "B031", "B032"];
   const commonlyUsedAidTypes = filteredItems.filter(opt => COMMONLY_USED_AID_CODES.includes(opt.code));
-  const otherGroupedItems = Object.entries(groupedItems).reduce((acc, [group, options]) => {
-    acc[group] = options.filter(opt => !COMMONLY_USED_AID_CODES.includes(opt.code));
-    return acc;
-  }, {} as typeof groupedItems);
+  const otherGroupedItems = groupedItems;
 
   const renderItemContent = (item: typeof flattenedAidTypes[0]) => {
     const isSelected = value === item.code
-    const indentClass = item.level === 1 ? "pl-6" : item.level === 2 ? "pl-10" : ""
+    const indentClass = item.level === 1 ? "pl-4" : item.level === 2 ? "pl-7" : ""
 
     return (
       <CommandItem
@@ -178,30 +175,22 @@ export function AidTypeSelect({
           }
         }}
         className={cn(
-          "cursor-pointer px-4 py-2 space-y-1 hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:text-blue-700",
+          "cursor-pointer px-3 py-2 space-y-1 hover:bg-accent/50",
           "flex items-start gap-2",
           indentClass,
-          item.level === 0 && "font-semibold text-sm opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit"
+          item.level === 0 && "font-semibold text-sm opacity-70 cursor-default pointer-events-none hover:bg-transparent hover:text-inherit",
+          isSelected && item.level > 0 && "bg-accent"
         )}
       >
-        {item.level > 0 && (
-          <Check
-            className={cn(
-              "mt-0.5 h-4 w-4 shrink-0",
-              isSelected ? "opacity-100" : "opacity-0"
-            )}
-          />
-        )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="text-sm">
             <span className={cn(
-              "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded",
+              "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5",
               item.level === 0 ? "text-gray-700" : ""
             )}>
               {item.code}
             </span>
             <span className={cn(
-              "text-sm",
               item.level === 0 ? "text-gray-600" : "text-gray-700"
             )}>
               – {item.name}
@@ -247,15 +236,15 @@ export function AidTypeSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+            "w-full justify-between font-normal px-3 py-3 text-sm h-auto min-h-[60px] border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal text-left",
             !value && "text-muted-foreground"
           )}
         >
-          <span className="truncate">
+          <span className="flex-1 min-w-0 text-left">
             {selectedItem ? (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedItem.code}</span>
-                <span className="font-medium text-sm text-gray-900">{selectedItem.name}</span>
+              <span className="flex items-start gap-2">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{selectedItem.code}</span>
+                <span className="text-sm text-foreground">{selectedItem.name}</span>
               </span>
             ) : (
               <span className="text-muted-foreground text-sm">{placeholder}</span>
@@ -287,10 +276,11 @@ export function AidTypeSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[var(--radix-popover-trigger-width)] max-w-none p-0 overflow-visible bottom-full mb-2" 
+        className="w-[var(--radix-popover-trigger-width)] max-w-none p-0"
         align="start"
+        sideOffset={4}
       >
-        <Command shouldFilter={false} className="overflow-visible">
+        <Command shouldFilter={false}>
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
@@ -308,7 +298,7 @@ export function AidTypeSelect({
               autoFocus
             />
           </div>
-          <CommandList className="max-h-[400px] overflow-auto rounded-md bg-white shadow border">
+          <CommandList className="max-h-[300px] overflow-auto">
             {searchQuery && filteredItems.length > 0 && (
               <div className="px-3 py-2 text-xs text-muted-foreground border-b">
                 {filteredItems.length} match{filteredItems.length !== 1 ? 'es' : ''} found

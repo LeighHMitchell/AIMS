@@ -101,6 +101,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
 
   // Wizard step state
   const [activeStep, setActiveStep] = useState(0);
+  const hasSetInitialStep = useRef(false);
   const wizardRef = useRef<HTMLDivElement>(null);
 
   // Fetch government organizations (type codes 10, 11 = Partner Government)
@@ -210,6 +211,32 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
     result.push({ id: 'endorsement', label: 'Endorsement', type: 'endorsement' });
     return result;
   }, [filteredStages]);
+
+  // Resume at the latest step the user was working on
+  useEffect(() => {
+    if (loading || hasSetInitialStep.current || steps.length === 0) return;
+    hasSetInitialStep.current = true;
+
+    // Find the first incomplete step — that's where the user left off
+    let resumeStep = 0;
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (step.type === 'config') {
+        if (!state?.config?.financing_type) break;
+      } else if (step.type === 'stage') {
+        const stage = filteredStages.find((s) => s.id === step.id);
+        if (stage && stage.progress.not_completed > 0) {
+          resumeStep = i;
+          break;
+        }
+      }
+      // If this step is complete, tentatively move resumeStep forward
+      resumeStep = i;
+    }
+    if (resumeStep > 0) {
+      setActiveStep(resumeStep);
+    }
+  }, [loading, steps, state?.config?.financing_type, filteredStages]);
 
   // Step completion logic
   const isStepComplete = useCallback((index: number): boolean => {
