@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, Heart, Code2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,6 +20,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             <Info className="h-5 w-5" />
             About DFMIS
           </DialogTitle>
+          <DialogDescription>Learn about the system, acknowledgements, and release history.</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="about" className="w-full">

@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -72,6 +73,7 @@ export function AllocationRequestModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Request Allocation</DialogTitle>
+          <DialogDescription>Submit a request to allocate this land parcel by specifying its purpose and timeline.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

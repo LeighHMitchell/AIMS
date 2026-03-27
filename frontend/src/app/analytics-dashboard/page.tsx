@@ -650,6 +650,15 @@ export default function AnalyticsDashboardPage() {
       <div className="min-h-screen bg-card">
         {/* Main Dashboard Content */}
         <div className="mx-auto p-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
+              <p className="text-muted-foreground mt-1">Comprehensive financial and operational analytics across the aid portfolio</p>
+            </div>
+          </div>
+
           {/* Error Display */}
           {error && (
             <Card className="bg-red-50 border-red-200 mb-6">

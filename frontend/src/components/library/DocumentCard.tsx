@@ -73,13 +73,13 @@ export function DocumentCard({
   addedByName,
 }: DocumentCardProps) {
   return (
-    <Card className={`group relative transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+    <Card className={`group relative rounded-3xl border bg-card shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden ${isSelected ? 'ring-2 ring-primary' : ''}`}>
       {/* Selection Checkbox */}
       <div className="absolute top-2 left-2 z-10">
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelect}
-          className="bg-white/90 dark:bg-gray-900/90"
+          className="bg-card/90"
         />
       </div>
 
@@ -130,7 +130,7 @@ export function DocumentCard({
             {onDelete && document.sourceType === 'standalone' && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={onDelete}
                   className="text-destructive focus:text-destructive"
                 >
@@ -144,9 +144,9 @@ export function DocumentCard({
       </div>
 
       <CardContent className="p-0">
-        {/* Thumbnail - cropped preview showing top of document */}
+        {/* Thumbnail */}
         <div
-          className="relative w-full aspect-[16/10] bg-muted rounded-t-lg overflow-hidden cursor-pointer"
+          className="relative w-full aspect-[16/10] bg-muted rounded-t-3xl overflow-hidden cursor-pointer"
           onClick={onPreview}
         >
           <DocumentThumbnail
@@ -159,12 +159,12 @@ export function DocumentCard({
         </div>
 
         {/* Content */}
-        <div className="p-3 space-y-2">
+        <div className="p-4 space-y-2">
           {/* Title */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <h3 
+                <h3
                   className="font-medium text-sm line-clamp-2 cursor-pointer hover:text-primary"
                   onClick={onPreview}
                 >
@@ -181,7 +181,7 @@ export function DocumentCard({
           </TooltipProvider>
 
           {/* Format and Source Type */}
-          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className={`inline-block font-medium px-2 py-0.5 rounded ${getFormatBadgeClasses(document.format)}`}>
               {getFormatLabel(document.format)}
             </span>
@@ -191,11 +191,11 @@ export function DocumentCard({
           {/* Category */}
           {document.categoryCode && (
             <div className="flex items-start gap-1 text-xs">
-              <span className="font-mono bg-muted dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded shrink-0">
+              <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded shrink-0">
                 {document.categoryCode}
               </span>
               {document.categoryName && (
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-muted-foreground">
                   {document.categoryName}
                 </span>
               )}
@@ -233,9 +233,8 @@ export function DocumentCard({
             </div>
           )}
 
-          {/* Footer - Date and Org */}
-          <div className="flex flex-col gap-2 text-xs text-muted-foreground pt-2 border-t">
-            {/* Date */}
+          {/* Footer */}
+          <div className="flex flex-col gap-2 text-xs text-muted-foreground pt-2 border-t border-border">
             <span>
               {document.createdAt
                 ? `Uploaded on ${format(new Date(document.createdAt), 'MMMM do yyyy')}`
@@ -244,19 +243,18 @@ export function DocumentCard({
                   : '-'
               }
             </span>
-            
-            {/* Organization with logo */}
+
             {document.reportingOrgName && (
               <div className="flex items-center gap-2">
                 {document.reportingOrgLogo ? (
-                  <img 
-                    src={document.reportingOrgLogo} 
+                  <img
+                    src={document.reportingOrgLogo}
                     alt=""
                     className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
                   />
                 ) : (
-                  <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                  <div className="h-5 w-5 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-medium text-muted-foreground">
                       {(document.reportingOrgAcronym || document.reportingOrgName || '?')[0].toUpperCase()}
                     </span>
                   </div>
@@ -277,7 +275,6 @@ export function DocumentCard({
             )}
           </div>
         </div>
-
       </CardContent>
     </Card>
   );

@@ -157,14 +157,6 @@ export function OrganizationSearchableSelect({
           </div>
           {(orgTypeName || org.country) && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-              {orgTypeName && (
-                <span className="text-xs text-muted-foreground">
-                  {orgTypeCode && <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{orgTypeCode}</span>}{' '}{orgTypeName}
-                </span>
-              )}
-              {orgTypeName && org.country && (
-                <span className="text-xs text-muted-foreground">•</span>
-              )}
               {org.country && (
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   {getCountryCode(org.country) && (
@@ -174,6 +166,14 @@ export function OrganizationSearchableSelect({
                     />
                   )}
                   {org.country}
+                </span>
+              )}
+              {org.country && orgTypeName && (
+                <span className="text-xs text-muted-foreground">•</span>
+              )}
+              {orgTypeName && (
+                <span className="text-xs text-muted-foreground">
+                  {orgTypeCode && <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{orgTypeCode}</span>}{' '}{orgTypeName}
                 </span>
               )}
             </div>

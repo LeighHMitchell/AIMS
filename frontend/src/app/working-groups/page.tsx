@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StatCard } from '@/components/ui/stat-card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, List, Table as TableIcon, Pencil, MoreVertical, Eye, Trash2, Inbox } from 'lucide-react'
+import { PlusIcon, SearchIcon, Users, LayoutGrid, List, Table as TableIcon, Pencil, MoreVertical, Eye, Trash2, Inbox } from 'lucide-react'
 import { EmptyState } from "@/components/ui/empty-state"
 import WorkingGroupCardModern from '@/components/working-groups/WorkingGroupCardModern'
 import { useRouter } from 'next/navigation'
@@ -155,14 +154,14 @@ export default function WorkingGroupsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div>
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-muted-foreground" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Working Groups</h1>
-              <p className="mt-2 text-muted-foreground">
+              <p className="text-muted-foreground mt-1">
                 Technical and Sector Working Groups for coordination and collaboration
               </p>
             </div>
@@ -171,14 +170,6 @@ export default function WorkingGroupsPage() {
             <PlusIcon className="h-5 w-5" />
             New Working Group
           </Button>
-        </div>
-
-        {/* Summary Cards - Monochrome */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Groups" value={workingGroups.length} icon={NetworkIcon} />
-          <StatCard label="Active Groups" value={workingGroups.filter(wg => wg.status === 'active').length} icon={UserCheck} />
-          <StatCard label="Total Members" value={workingGroups.reduce((sum, wg) => sum + (wg.member_count || 0), 0)} icon={Users} />
-          <StatCard label="Linked Activities" value={workingGroups.reduce((sum, wg) => sum + (wg.activities_count || 0), 0)} icon={Calendar} />
         </div>
 
         {/* Filters + View Toggle */}

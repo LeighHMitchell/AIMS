@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   BarChart,
@@ -173,6 +174,7 @@ function ExpandedChartModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>Expanded view of the visualization for detailed analysis.</DialogDescription>
         </DialogHeader>
         <div className="h-80">
           {children}

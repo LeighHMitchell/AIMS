@@ -219,7 +219,7 @@ export function AidTypeSelect({
   }
 
   return (
-    <div className="relative w-full" ref={popoverRef}>
+    <div className="relative w-full flex-1 flex flex-col" ref={popoverRef}>
       <Popover 
         open={open} 
         onOpenChange={(newOpen) => {
@@ -236,7 +236,7 @@ export function AidTypeSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal px-3 py-3 text-sm h-auto min-h-[60px] border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal text-left",
+            "w-full h-full justify-between font-normal px-3 py-3 text-sm min-h-[60px] border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal text-left items-start",
             !value && "text-muted-foreground"
           )}
         >

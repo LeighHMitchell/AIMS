@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronLeft, ChevronRight, FileText, Building2 } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, FileText, Building2, CalendarClock } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -388,9 +388,12 @@ export default function PlannedDisbursementsPage() {
       <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Planned Disbursements</h1>
-            <p className="text-slate-500">View and manage all planned disbursements</p>
+          <div className="flex items-center gap-3">
+            <CalendarClock className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Planned Disbursements</h1>
+              <p className="text-muted-foreground mt-1">View and manage all planned disbursements</p>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             {disbursements.length > 0 && (

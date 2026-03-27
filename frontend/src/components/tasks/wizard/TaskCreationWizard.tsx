@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { useTaskWizard, WizardStep, WizardFormData } from './useTaskWizard';
 import { TaskDetailsStep } from './steps/TaskDetailsStep';
@@ -180,6 +181,7 @@ export function TaskCreationWizard({
               <X className="h-4 w-4" />
             </Button>
           </DialogTitle>
+          <DialogDescription>Define the task details, select an audience, and configure delivery.</DialogDescription>
         </DialogHeader>
 
         {/* Progress Steps */}

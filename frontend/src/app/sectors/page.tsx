@@ -4,13 +4,12 @@ import React, { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
-import { StatCard } from '@/components/ui/stat-card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ChevronRight, ChevronDown, Search, DollarSign, BarChart3, Activity, PieChart } from 'lucide-react'
+import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, Search, PieChart } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
-import { getSectorColor } from '@/lib/sector-colors'
 
 interface SectorNode {
   code: string
@@ -121,6 +120,21 @@ export default function SectorsListingPage() {
       .filter(Boolean) as GroupNode[]
   }, [data, searchTerm])
 
+  const allExpanded = expandedGroups.size >= filteredGroups.length && filteredGroups.length > 0
+
+  const toggleExpandAll = () => {
+    if (!data) return
+    if (allExpanded) {
+      setExpandedGroups(new Set())
+      setExpandedCategories(new Set())
+    } else {
+      setExpandedGroups(new Set(filteredGroups.map(g => g.code)))
+      const cats = new Set<string>()
+      filteredGroups.forEach(g => g.categories.forEach(c => cats.add(c.code)))
+      setExpandedCategories(cats)
+    }
+  }
+
   // Auto-expand when searching
   useMemo(() => {
     if (searchTerm.trim()) {
@@ -172,8 +186,6 @@ export default function SectorsListingPage() {
     )
   }
 
-  const topGroup = [...data.groups].sort((a, b) => b.totalValue - a.totalValue)[0]
-
   return (
     <MainLayout>
       <div className="min-h-screen">
@@ -182,64 +194,72 @@ export default function SectorsListingPage() {
           <div className="flex items-center gap-3 mb-6">
             <PieChart className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">Sectors</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-3xl font-bold text-foreground">Sectors</h1>
+              <p className="text-muted-foreground mt-1">
                 DAC CRS Purpose Codes — {data.totals.activeSectors} active sectors across {data.totals.totalActivities} activities
               </p>
             </div>
           </div>
 
-          {/* Summary stat cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <StatCard label="Total Funding" value={formatCurrencyShort(data.totals.totalFunding)} icon={DollarSign} />
-            <StatCard label="Active Sectors" value={data.totals.activeSectors} icon={BarChart3} />
-            <StatCard label="Top Sector Group" value={topGroup?.name || 'N/A'} icon={Activity} />
-          </div>
-
-          {/* Search bar */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or code..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          {/* Search bar + Expand/Collapse All */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or code..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={toggleExpandAll} disabled={filteredGroups.length === 0}>
+              {allExpanded ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+              {allExpanded ? 'Collapse All' : 'Expand All'}
+            </Button>
           </div>
 
           {/* Hierarchical tree */}
-          <div className="space-y-1">
-            {filteredGroups.map(group => {
+          <div className="border border-border rounded-lg overflow-hidden">
+            {/* Header row */}
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="w-4 flex-shrink-0" />
+              <div className="w-12 flex-shrink-0">Code</div>
+              <div className="flex-1">Name</div>
+              <div className="w-24 text-right flex-shrink-0">Activities</div>
+              <div className="w-24 text-right flex-shrink-0">Funding</div>
+            </div>
+
+            {filteredGroups.map((group, groupIdx) => {
               const isGroupExpanded = expandedGroups.has(group.code)
-              const groupColor = getSectorColor(group.code)
 
               return (
                 <div key={group.code}>
                   {/* Group level */}
                   <div
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    style={{ borderLeft: `4px solid ${groupColor}` }}
+                    className={`w-full flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors ${groupIdx > 0 ? 'border-t border-border' : ''}`}
                   >
-                    <button onClick={() => toggleGroup(group.code)} className="flex-shrink-0">
+                    <button onClick={() => toggleGroup(group.code)} className="flex-shrink-0 w-4">
                       {isGroupExpanded ? (
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       ) : (
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
-                    <code className="text-xs font-mono font-bold text-muted-foreground flex-shrink-0 w-8">{group.code}</code>
+                    <code className="text-xs font-mono font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{group.code}</code>
                     <Link
                       href={`/sectors/${group.code}`}
                       className="font-semibold text-foreground text-sm flex-1 text-left hover:text-blue-600"
                     >
                       {group.name}
                     </Link>
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="w-24 text-right flex-shrink-0">
                       {group.activityCount > 0 && (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {group.activityCount} activities
+                          {group.activityCount}
                         </Badge>
                       )}
+                    </div>
+                    <div className="w-24 text-right flex-shrink-0">
                       {group.totalValue > 0 && (
                         <span className="text-xs font-medium text-muted-foreground">{formatCurrencyShort(group.totalValue)}</span>
                       )}
@@ -248,26 +268,28 @@ export default function SectorsListingPage() {
 
                   {/* Categories */}
                   {isGroupExpanded && (
-                    <div className="ml-8 space-y-0.5">
+                    <div>
                       {group.categories.map(cat => {
                         const isCatExpanded = expandedCategories.has(cat.code)
 
                         return (
                           <div key={cat.code}>
-                            <button
+                            <div
+                              className="flex items-center gap-3 px-3 py-2.5 pl-10 border-t border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
                               onClick={() => toggleCategory(cat.code)}
-                              className="w-full flex items-center gap-3 p-2.5 rounded-md hover:bg-muted/50 transition-colors ml-2"
                             >
-                              {cat.sectors && cat.sectors.length > 0 ? (
-                                isCatExpanded ? (
-                                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                              <div className="flex-shrink-0 w-4">
+                                {cat.sectors && cat.sectors.length > 0 ? (
+                                  isCatExpanded ? (
+                                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )
                                 ) : (
-                                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                )
-                              ) : (
-                                <div className="w-3.5" />
-                              )}
-                              <code className="text-xs font-mono text-muted-foreground flex-shrink-0 w-8">{cat.code}</code>
+                                  <div className="w-3.5" />
+                                )}
+                              </div>
+                              <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{cat.code}</code>
                               <Link
                                 href={`/sectors/${cat.code}`}
                                 onClick={e => e.stopPropagation()}
@@ -275,31 +297,36 @@ export default function SectorsListingPage() {
                               >
                                 {cat.name}
                               </Link>
-                              <div className="flex items-center gap-3 flex-shrink-0">
+                              <div className="w-24 text-right flex-shrink-0">
                                 {cat.activityCount > 0 && (
-                                  <span className="text-[10px] text-muted-foreground">{cat.activityCount}</span>
+                                  <span className="text-xs text-muted-foreground">{cat.activityCount}</span>
                                 )}
+                              </div>
+                              <div className="w-24 text-right flex-shrink-0">
                                 {cat.totalValue > 0 && (
                                   <span className="text-xs text-muted-foreground">{formatCurrencyShort(cat.totalValue)}</span>
                                 )}
                               </div>
-                            </button>
+                            </div>
 
                             {/* Sectors (5-digit) */}
                             {isCatExpanded && cat.sectors && (
-                              <div className="ml-10 space-y-0.5">
+                              <div>
                                 {cat.sectors.map(sector => (
                                   <Link
                                     key={sector.code}
                                     href={`/sectors/${sector.code}`}
-                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors ml-4"
+                                    className="flex items-center gap-3 px-3 py-2 pl-16 border-t border-border/30 hover:bg-muted/50 transition-colors"
                                   >
-                                    <code className="text-xs font-mono text-muted-foreground flex-shrink-0 w-12">{sector.code}</code>
+                                    <div className="w-4 flex-shrink-0" />
+                                    <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{sector.code}</code>
                                     <span className="text-sm text-muted-foreground flex-1">{sector.name}</span>
-                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                    <div className="w-24 text-right flex-shrink-0">
                                       {sector.activityCount > 0 && (
                                         <span className="text-[10px] text-muted-foreground">{sector.activityCount}</span>
                                       )}
+                                    </div>
+                                    <div className="w-24 text-right flex-shrink-0">
                                       {sector.totalValue > 0 && (
                                         <span className="text-xs text-muted-foreground">{formatCurrencyShort(sector.totalValue)}</span>
                                       )}
@@ -318,13 +345,11 @@ export default function SectorsListingPage() {
             })}
 
             {filteredGroups.length === 0 && (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">
-                    {searchTerm ? `No sectors matching "${searchTerm}"` : 'No sector data found'}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  {searchTerm ? `No sectors matching "${searchTerm}"` : 'No sector data found'}
+                </p>
+              </div>
             )}
           </div>
         </div>

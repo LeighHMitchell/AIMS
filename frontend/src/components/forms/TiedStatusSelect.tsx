@@ -82,7 +82,7 @@ export function TiedStatusSelect({
             disabled={disabled}
             id={id}
             className={cn(
-              "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-3 py-2 text-sm h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
               !selectedOption && "text-muted-foreground"
             )}
           >

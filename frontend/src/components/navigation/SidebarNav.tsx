@@ -27,7 +27,6 @@ import {
   Zap,
   Upload,
   ChevronDown,
-  Construction,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -51,7 +50,6 @@ import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -164,10 +162,10 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
-        { name: "Atlas", href: "/atlas", show: true, underDevelopment: true },
+        { name: "Atlas", href: "/atlas", show: true },
         { name: "Search", href: "/search", show: true },
-        { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
-        { name: "Reports", href: "/reports", show: true, underDevelopment: true },
+        { name: "Portfolios", href: "/partners", show: true },
+        { name: "Reports", href: "/reports", show: true },
       ]
     },
     {
@@ -177,7 +175,7 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Activity List", href: "/activities", show: true },
-        { name: "Pooled Funds", href: "/funds", show: true, underDevelopment: true, badge: "New" },
+        { name: "Pooled Funds", href: "/funds", show: true },
       ]
     },
     {
@@ -207,10 +205,10 @@ export function SidebarNav({
       isAnimated: false,
       defaultOpen: true,
       items: [
-        { name: "SDGs", href: "/sdgs", show: true, underDevelopment: true },
-        { name: "Sectors", href: "/sectors", show: true, underDevelopment: true },
-        { name: "Policy Markers", href: "/policy-markers", show: true, underDevelopment: true },
-        { name: "Working Groups", href: "/working-groups", show: true, underDevelopment: true },
+        { name: "SDGs", href: "/sdgs", show: true },
+        { name: "Sectors", href: "/sectors", show: true },
+        { name: "Policy Markers", href: "/policy-markers", show: true },
+        { name: "Working Groups", href: "/working-groups", show: true },
       ]
     },
     {
@@ -219,8 +217,8 @@ export function SidebarNav({
       isAnimated: false,
       defaultOpen: true,
       items: [
-        { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
-        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
+        { name: "Transparency Index", href: "/transparency-index", show: true },
+        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
       ]
     },
     {
@@ -229,10 +227,10 @@ export function SidebarNav({
       isAnimated: true,
       defaultOpen: true,
       items: [
-        { name: "Calendar", href: "/calendar", show: true, underDevelopment: true },
-        { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
-        { name: "Library", href: "/library", show: true, underDevelopment: true },
-        { name: "Build History", href: "/build-history", show: true, underDevelopment: true },
+        { name: "Calendar", href: "/calendar", show: true },
+        { name: "Data Clinic", href: "/data-clinic", show: true },
+        { name: "Library", href: "/library", show: true },
+        { name: "Build History", href: "/build-history", show: true },
       ]
     },
     {
@@ -693,14 +691,6 @@ export function SidebarNav({
                                 }}
                               >
                                 {item.name}
-                                {'badge' in item && item.badge && (
-                                  <Badge variant="success" className="text-[10px] px-1.5 py-0 font-medium">
-                                    {item.badge}
-                                  </Badge>
-                                )}
-                                {'underDevelopment' in item && item.underDevelopment && (
-                                  <Construction className="h-3.5 w-3.5 text-gray-400 cursor-help" title="Under Development — This feature is usable but not in its final form" />
-                                )}
                               </span>
                               {!isCollapsed && itemCount != null && itemCount > 0 && (
                                 <span className="text-[11px] tabular-nums text-gray-400 dark:text-gray-500 font-normal ml-auto">
@@ -721,18 +711,7 @@ export function SidebarNav({
                                     <div className="flex flex-col gap-1">
                                       <span className="flex items-center gap-2">
                                         {item.name}
-                                        {'badge' in item && item.badge && (
-                                          <Badge variant="success" className="text-[10px] px-1.5 py-0 font-medium">
-                                            {item.badge}
-                                          </Badge>
-                                        )}
-                                        {'underDevelopment' in item && item.underDevelopment && (
-                                          <Construction className="h-3.5 w-3.5 text-gray-400" />
-                                        )}
                                       </span>
-                                      {'underDevelopment' in item && item.underDevelopment && (
-                                        <span className="text-[10px] text-gray-400 font-normal">Under Development — Usable but not final</span>
-                                      )}
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>

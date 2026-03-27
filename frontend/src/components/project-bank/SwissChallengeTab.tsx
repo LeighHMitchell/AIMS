@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -299,7 +299,10 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
       {/* Add Bidder Dialog */}
       <Dialog open={showAddBidder} onOpenChange={setShowAddBidder}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Counter Bidder</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Add Counter Bidder</DialogTitle>
+            <DialogDescription>Enter the counter bidder details and bid amount.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Company Name</Label>
@@ -332,7 +335,10 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
       {/* Score Bidder Dialog */}
       <Dialog open={!!showScoreBidder} onOpenChange={() => setShowScoreBidder(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Score: {showScoreBidder?.company_name}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Score: {showScoreBidder?.company_name}</DialogTitle>
+            <DialogDescription>Assign evaluation scores for this bidder across each criterion.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Evaluation Score (0-100)</Label>

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -251,7 +251,10 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
       {/* Submit Report Dialog */}
       <Dialog open={!!showSubmitDialog} onOpenChange={() => setShowSubmitDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Submit Monitoring Report</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Submit Monitoring Report</DialogTitle>
+            <DialogDescription>Provide your monitoring observations and attach supporting evidence.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Key Findings</Label>
@@ -274,7 +277,10 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
       {/* Review Report Dialog */}
       <Dialog open={!!showReviewDialog} onOpenChange={() => setShowReviewDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Review Monitoring Report</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Review Monitoring Report</DialogTitle>
+            <DialogDescription>Evaluate the submitted monitoring report and provide feedback.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Compliance Status</Label>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Plus, Pencil, Trash2, AlertCircle, ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BudgetIdentifierVocabularySelect } from "@/components/forms/BudgetIdentifierVocabularySelect";
 import { MultiLingualNarrativeInput } from "@/components/forms/MultiLingualNarrativeInput";
@@ -233,6 +233,7 @@ export function BudgetMappingModal({
           <DialogTitle>
             {existingData ? 'Edit Budget Mapping' : 'Add Budget Mapping'}
           </DialogTitle>
+          <DialogDescription>Configure budget allocations by selecting classifications and percentages.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

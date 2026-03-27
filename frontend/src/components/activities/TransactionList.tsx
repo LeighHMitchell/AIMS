@@ -23,7 +23,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
   Plus, 
   Pencil, 
@@ -2750,6 +2750,9 @@ export default function TransactionList({
             <DialogTitle>
               {editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}
             </DialogTitle>
+            <DialogDescription>
+              {editingTransaction ? 'Update the transaction details below.' : 'Record financial transaction details including amounts, dates, and classifications.'}
+            </DialogDescription>
           </DialogHeader>
           <TransactionForm
             transaction={editingTransaction || undefined}

@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { 
   Tooltip,
@@ -102,6 +103,7 @@ export function TransactionDocumentIndicator({
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Transaction Documents</DialogTitle>
+                  <DialogDescription>View documents attached to this transaction.</DialogDescription>
                 </DialogHeader>
                 <DocumentsList documents={documents} loading={loading} />
               </DialogContent>

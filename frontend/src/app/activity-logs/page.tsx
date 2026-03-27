@@ -271,7 +271,7 @@ export default function ActivityLogsPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="text-center">Loading activity logs...</div>
         </div>
       </MainLayout>
@@ -281,7 +281,7 @@ export default function ActivityLogsPage() {
   if (error) {
     return (
       <MainLayout>
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="w-full">
           <Card>
             <CardContent className="text-center py-8">
               <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
@@ -298,7 +298,7 @@ export default function ActivityLogsPage() {
 
   return (
     <MainLayout>
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="w-full">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <ScrollText className="h-8 w-8 text-muted-foreground" />

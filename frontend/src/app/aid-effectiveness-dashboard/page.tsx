@@ -537,10 +537,10 @@ export default function AidEffectivenessDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-[#F37021]" />
+            <Shield className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-3xl font-bold text-[#F37021]">Aid Effectiveness Dashboard</h1>
-              <p className="text-muted-foreground">GPEDC Compliance & Development Effectiveness Analytics</p>
+              <h1 className="text-3xl font-bold text-foreground">Aid Effectiveness Dashboard</h1>
+              <p className="text-muted-foreground mt-1">GPEDC Compliance & Development Effectiveness Analytics</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleRefresh}>

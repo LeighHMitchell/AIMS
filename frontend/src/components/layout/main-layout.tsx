@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AuthGuard } from "@/components/AuthGuard"
@@ -39,6 +39,28 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   // Get the home route based on whether user has an organization
   const homeRoute = getHomeRoute(user);
 
+  // Persist sidebar scroll position across navigations
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  const SIDEBAR_SCROLL_KEY = 'sidebar-scroll-top';
+
+  useEffect(() => {
+    const el = sidebarScrollRef.current;
+    if (!el) return;
+
+    // Restore scroll position on mount
+    const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    if (saved) {
+      el.scrollTop = Number(saved);
+    }
+
+    // Save scroll position on scroll
+    const handleScroll = () => {
+      sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(el.scrollTop));
+    };
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const content = (
     <div className="flex h-screen overflow-hidden bg-background border-0">
       <TourOverlay />
@@ -69,7 +91,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         </div>
 
         {/* Hydration-safe Navigation - flex-1 to take remaining space */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div ref={sidebarScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           <SidebarNav
             userRole={user?.role}
             canManageUsers={permissions.canManageUsers}

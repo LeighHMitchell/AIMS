@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, FileImage, Printer, X } from 'lucide-react';
 import { ActivityCardForExport } from './ActivityCardForExport';
@@ -88,7 +88,10 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <DialogTitle className="text-xl font-semibold">Image Export</DialogTitle>
+          <div>
+            <DialogTitle className="text-xl font-semibold">Image Export</DialogTitle>
+            <DialogDescription>Export the activity card as an image file or print it.</DialogDescription>
+          </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
               Optimized Layout

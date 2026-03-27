@@ -61,8 +61,8 @@ export default function MonitoringDashboardPage() {
         <div className="flex items-center gap-3 mb-6">
           <CalendarClock className="h-8 w-8 text-muted-foreground" />
           <div>
-            <h1 className="text-3xl font-bold">Monitoring Dashboard</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-3xl font-bold text-foreground">Monitoring Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
               Project monitoring schedules and compliance tracking
             </p>
           </div>

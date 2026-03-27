@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -108,7 +108,10 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>EIRR Calculator</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>EIRR Calculator</DialogTitle>
+          <DialogDescription>Calculate the economic internal rate of return using project costs and benefits.</DialogDescription>
+        </DialogHeader>
 
         {/* Parameters */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">

@@ -94,7 +94,7 @@ export function FilterPanel({
   }, [orgSearch]);
 
   return (
-    <div className="bg-white p-4 rounded-md shadow-sm border border-slate-200 space-y-3">
+    <div className="bg-surface-muted py-2 px-3 rounded-lg border border-border space-y-3 mb-4">
       {/* Filter Row with Labels */}
       <div className="flex items-end gap-3">
         {/* Search */}

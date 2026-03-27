@@ -92,11 +92,6 @@ function ReportingOrgLine({ org, recipientCountries }: { org?: ReportingOrg | nu
       {typeName && (
         <span>{typeName}</span>
       )}
-      {country && (
-        <span>
-          {countryCodeToFlag(country.code)} {country.name}
-        </span>
-      )}
     </div>
   );
 }

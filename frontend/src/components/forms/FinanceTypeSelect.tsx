@@ -86,7 +86,7 @@ export function FinanceTypeSelect({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-3 py-2 text-sm h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
               !selectedOption && "text-muted-foreground"
             )}
           >
@@ -97,7 +97,7 @@ export function FinanceTypeSelect({
                   <span className="font-medium text-sm text-gray-900">{selectedOption.name}</span>
                 </span>
               ) : (
-                <span className="text-gray-400 text-sm">{placeholder}</span>
+                <span className="text-muted-foreground text-sm">{placeholder}</span>
               )}
             </span>
             <div className="flex items-center gap-1 ml-2">

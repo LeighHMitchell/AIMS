@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, ArrowRight, Info, Calendar, Hash, FileText, Users, Coins, Globe } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -265,6 +265,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
         <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b">
           <DialogTitle className="text-xl">IATI Data Comparison</DialogTitle>
+          <DialogDescription>Review and select which IATI data fields to import into your activity record.</DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-1 max-h-[calc(90vh-8rem)]">

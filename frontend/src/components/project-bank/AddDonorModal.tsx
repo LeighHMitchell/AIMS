@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -56,7 +56,10 @@ export function AddDonorModal({ open, onOpenChange, projectId, onSaved }: AddDon
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Add Donor Commitment</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Add Donor Commitment</DialogTitle>
+          <DialogDescription>Record a new donor commitment with funding details and status.</DialogDescription>
+        </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label>Donor Name *</Label>

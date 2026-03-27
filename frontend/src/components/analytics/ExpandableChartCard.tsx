@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Maximize2 } from 'lucide-react'
 
@@ -63,6 +64,7 @@ export function ExpandableChartCard({
         <DialogContent className="max-w-[95vw] w-[1400px] h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>Expanded view of the chart for detailed analysis.</DialogDescription>
           </DialogHeader>
           <div className="flex-1 mt-4 min-h-0 overflow-x-auto overflow-y-auto">
             <div className="min-w-fit">

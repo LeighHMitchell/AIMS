@@ -6,7 +6,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, ArrowRight } from 'lucide-react'
+import { AlertCircle, ArrowRight, Bookmark } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
 import { getIconForMarker, MARKER_TYPE_BADGE_CLASSES, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
 
@@ -107,11 +107,14 @@ export default function PolicyMarkersListingPage() {
       <div className="min-h-screen">
         <div className="w-full p-6">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Policy Markers</h1>
-            <p className="text-sm text-muted-foreground">
-              {totalMarkers} markers across {totalActivities} activity alignments
-            </p>
+          <div className="flex items-center gap-3 mb-8">
+            <Bookmark className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Policy Markers</h1>
+              <p className="text-muted-foreground mt-1">
+                {totalMarkers} markers across {totalActivities} activity alignments
+              </p>
+            </div>
           </div>
 
           {/* Grouped sections */}

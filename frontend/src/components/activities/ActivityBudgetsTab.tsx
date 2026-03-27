@@ -51,6 +51,9 @@ import { toast } from 'sonner';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { exportToCSV } from '@/lib/csv-export';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
+import { DatePicker } from '@/components/ui/date-picker';
+import { CurrencySelector } from '@/components/forms/CurrencySelector';
+import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -2460,7 +2463,14 @@ export default function ActivityBudgetsTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
+                  <LabelWithInfoAndSave
+                    helpText="Whether this is an original or revised budget"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget?.type}
+                  >
+                    Type
+                  </LabelWithInfoAndSave>
                   <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
                     <PopoverTrigger
                       className={cn(
@@ -2531,7 +2541,14 @@ export default function ActivityBudgetsTab({
 
                 {/* Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                  <LabelWithInfoAndSave
+                    helpText="Whether this budget is indicative or has been formally committed"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget?.status}
+                  >
+                    Status
+                  </LabelWithInfoAndSave>
                   <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
                     <PopoverTrigger
                       className={cn(
@@ -2604,26 +2621,36 @@ export default function ActivityBudgetsTab({
               {/* Period Dates */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="period_start">Period Start Date</Label>
-                  <Input
-                    id="period_start"
-                    type="date"
-                    value={modalBudget.period_start}
-                    onChange={(e) => updateFormField('period_start', e.target.value)}
-                    className={fieldErrors.period_start ? 'border-red-500' : ''}
+                  <LabelWithInfoAndSave
+                    helpText="The start date of the budget period"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget.period_start}
+                  >
+                    Period Start Date
+                  </LabelWithInfoAndSave>
+                  <DatePicker
+                    value={modalBudget.period_start || ''}
+                    onChange={(value) => updateFormField('period_start', value)}
+                    placeholder="Select start date"
                   />
                   {fieldErrors.period_start && (
                     <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="period_end">Period End Date</Label>
-                  <Input
-                    id="period_end"
-                    type="date"
-                    value={modalBudget.period_end}
-                    onChange={(e) => updateFormField('period_end', e.target.value)}
-                    className={fieldErrors.period_end ? 'border-red-500' : ''}
+                  <LabelWithInfoAndSave
+                    helpText="The end date of the budget period"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget.period_end}
+                  >
+                    Period End Date
+                  </LabelWithInfoAndSave>
+                  <DatePicker
+                    value={modalBudget.period_end || ''}
+                    onChange={(value) => updateFormField('period_end', value)}
+                    placeholder="Select end date"
                   />
                   {fieldErrors.period_end && (
                     <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
@@ -2633,70 +2660,19 @@ export default function ActivityBudgetsTab({
 
               {/* Currency */}
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Popover open={currencyPopoverOpen} onOpenChange={setCurrencyPopoverOpen}>
-                  <PopoverTrigger
-                    className={cn(
-                      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-                      fieldErrors.currency && "border-red-500",
-                      !modalBudget?.currency && "text-muted-foreground"
-                    )}
-                  >
-                    <span className="truncate">
-                      {modalBudget?.currency ? (() => {
-                        const selectedCurrency = currencies.find(c => c.code === modalBudget.currency);
-                        return selectedCurrency ? (
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedCurrency.code}</span>
-                            <span className="font-medium">{selectedCurrency.name}</span>
-                          </span>
-                        ) : (
-                          "Select currency"
-                        );
-                      })() : (
-                        "Select currency"
-                      )}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {modalBudget?.currency && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateFormField('currency', 'USD');
-                            setCurrencyPopoverOpen(false);
-                          }}
-                          className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                          aria-label="Clear selection"
-                        >
-                          <span className="text-xs">×</span>
-                        </button>
-                      )}
-                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <div className="max-h-[300px] overflow-y-auto">
-                      {currencies.map(currency => (
-                        <button
-                          key={currency.code}
-                          type="button"
-                          className={cn(
-                            "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                            modalBudget?.currency === currency.code && "bg-accent text-accent-foreground"
-                          )}
-                          onClick={() => {
-                            updateFormField('currency', currency.code);
-                            setCurrencyPopoverOpen(false);
-                          }}
-                        >
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currency.code}</span>
-                          <span className="font-medium">{currency.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <LabelWithInfoAndSave
+                  helpText="The currency in which the budget value is denominated"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalBudget?.currency}
+                >
+                  Currency
+                </LabelWithInfoAndSave>
+                <CurrencySelector
+                  value={modalBudget?.currency || null}
+                  onValueChange={(value) => updateFormField('currency', value || 'USD')}
+                  placeholder="Select currency"
+                />
                 {fieldErrors.currency && (
                   <p className="text-xs text-red-500">{fieldErrors.currency}</p>
                 )}
@@ -2705,13 +2681,19 @@ export default function ActivityBudgetsTab({
               {/* Value and Value Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="value">Value</Label>
+                  <LabelWithInfoAndSave
+                    helpText="The total budget amount for this period in the specified currency"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget.value && modalBudget.value > 0}
+                  >
+                    Value
+                  </LabelWithInfoAndSave>
                   <Input
                     id="value"
                     type="text"
                     value={isEditingValue ? (modalBudget.value || '').toString() : (modalBudget.value ? modalBudget.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
                     onChange={(e) => {
-                      // Remove all non-numeric characters except decimal point
                       const rawValue = e.target.value.replace(/[^\d.]/g, '');
                       const numValue = parseFloat(rawValue);
                       if (!isNaN(numValue)) {
@@ -2735,13 +2717,18 @@ export default function ActivityBudgetsTab({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="value_date">Value Date</Label>
-                  <Input
-                    id="value_date"
-                    type="date"
-                    value={modalBudget.value_date}
-                    onChange={(e) => updateFormField('value_date', e.target.value)}
-                    className={fieldErrors.value_date ? 'border-red-500' : ''}
+                  <LabelWithInfoAndSave
+                    helpText="The date on which the budget value was set or the exchange rate applied"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget.value_date}
+                  >
+                    Value Date
+                  </LabelWithInfoAndSave>
+                  <DatePicker
+                    value={modalBudget.value_date || ''}
+                    onChange={(value) => updateFormField('value_date', value)}
+                    placeholder="Select date"
                   />
                   {fieldErrors.value_date && (
                     <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
@@ -2814,12 +2801,12 @@ export default function ActivityBudgetsTab({
                           <RefreshCw className="h-3 w-3" />
                         </Button>
                       )}
+                      {modalExchangeRate != null && modalBudget.currency !== 'USD' && !isLoadingModalRate && (
+                        <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                          1 {modalBudget.currency} = {modalExchangeRate.toFixed(6)} USD
+                        </span>
+                      )}
                     </div>
-                    {modalExchangeRate != null && modalBudget.currency !== 'USD' && (
-                      <p className="text-xs text-muted-foreground">
-                        1 {modalBudget.currency} = {modalExchangeRate.toFixed(6)} USD
-                      </p>
-                    )}
                     {modalRateError && (
                       <p className="text-xs text-red-500">{modalRateError}</p>
                     )}

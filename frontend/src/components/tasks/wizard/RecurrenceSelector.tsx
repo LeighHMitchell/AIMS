@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -171,6 +172,7 @@ export function RecurrenceSelector({
             <Repeat className="h-5 w-5" />
             Configure Recurrence
           </DialogTitle>
+          <DialogDescription>Set the frequency, interval, and schedule for this recurring task.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

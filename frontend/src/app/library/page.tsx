@@ -23,7 +23,6 @@ import {
   Plus,
   Download,
   Trash2,
-  SlidersHorizontal,
   X,
   ChevronLeft,
   ChevronRight,
@@ -87,7 +86,7 @@ export default function LibraryPage() {
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+
   const [filters, setFilters] = useState<LibraryFilters>({
     sourceTypes: undefined,
     categoryCodes: undefined,
@@ -396,16 +395,19 @@ export default function LibraryPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto py-6 px-4 space-y-6">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Document Library
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Browse all documents from activities, transactions, organizations, and more
-            </p>
+          <div className="flex items-center gap-3">
+            <BookOpen className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Document Library
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Browse all documents from activities, transactions, organizations, and more
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -450,6 +452,13 @@ export default function LibraryPage() {
           {/* All Documents Tab */}
           <TabsContent value="all" className="border-0 p-0 mt-4">
             <div className="space-y-4">
+              {/* Filters */}
+              <LibraryFiltersPanel
+                filters={filters}
+                onFiltersChange={setFilters}
+                onClear={handleClearFilters}
+              />
+
               {/* Search and Controls Bar */}
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Search */}
@@ -475,21 +484,6 @@ export default function LibraryPage() {
 
                 {/* Controls */}
                 <div className="flex items-center gap-2">
-                  {/* Filter Toggle */}
-                  <Button
-                    variant={showFilters ? "secondary" : "outline"}
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="relative"
-                  >
-                    <SlidersHorizontal className="h-4 w-4 mr-2" />
-                    Filters
-                    {activeFilterCount > 0 && (
-                      <Badge variant="default" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                        {activeFilterCount}
-                      </Badge>
-                    )}
-                  </Button>
-
                   {/* View Toggle */}
                   <div className="flex items-center border rounded-md">
                     <Button
@@ -521,15 +515,6 @@ export default function LibraryPage() {
                   </Button>
                 </div>
               </div>
-
-              {/* Filters Panel */}
-              {showFilters && (
-                <LibraryFiltersPanel
-                  filters={filters}
-                  onFiltersChange={setFilters}
-                  onClear={handleClearFilters}
-                />
-              )}
 
               {/* Results Summary */}
               <div className="flex items-center justify-between text-sm text-muted-foreground">

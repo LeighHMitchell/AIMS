@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -957,12 +957,13 @@ export default function PartnersPage() {
   return (
     <MainLayout>
       <div className="min-h-screen">
-        <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
+        <div className="w-full space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <Users className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Partner Summary</h1>
+              <h1 className="text-3xl font-bold text-foreground">Partner Summary</h1>
+              <p className="text-muted-foreground mt-1">Overview of development partners grouped by type and portfolio</p>
             </div>
           </div>
 
@@ -1595,8 +1596,9 @@ export default function PartnersPage() {
                 <div className="text-sm text-slate-500 font-normal">{selectedOrg?.fullName}</div>
               </div>
             </DialogTitle>
+            <DialogDescription>View organization details, contact information, and activity involvement.</DialogDescription>
           </DialogHeader>
-          
+
           {selectedOrg && (
             <div className="space-y-6">
               {/* Organization Info */}

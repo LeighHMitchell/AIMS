@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/ui/stat-card"
-import { MapPin, Layers, CheckCircle, TrendingUp } from "lucide-react"
+import { MapPin, Layers, CheckCircle, TrendingUp, BarChart3 } from "lucide-react"
 import {
   ResponsiveContainer,
   BarChart,
@@ -84,7 +84,13 @@ export default function LandBankAnalyticsPage() {
     return (
       <MainLayout>
         <div className="w-full">
-          <h1 className="text-2xl font-bold mb-6">Analytics</h1>
+          <div className="flex items-center gap-3 mb-6">
+            <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Land Bank Analytics</h1>
+              <p className="text-muted-foreground mt-1">Interactive overview of parcel distribution and allocation metrics</p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
               <Card key={i}>
@@ -162,11 +168,14 @@ export default function LandBankAnalyticsPage() {
   return (
     <MainLayout>
       <div className="w-full">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Land Bank Analytics</h1>
-          <p className="text-muted-foreground mt-1">
-            Interactive overview of parcel distribution and allocation metrics
-          </p>
+        <div className="flex items-center gap-3 mb-8">
+          <BarChart3 className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Land Bank Analytics</h1>
+            <p className="text-muted-foreground mt-1">
+              Interactive overview of parcel distribution and allocation metrics
+            </p>
+          </div>
         </div>
 
         {/* Summary cards */}

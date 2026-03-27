@@ -94,13 +94,15 @@ export default function DataClinicPage() {
         <div className="p-8 w-full">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <Stethoscope className="h-8 w-8 text-gray-700" />
-              <h1 className="text-3xl font-bold">Data Clinic</h1>
+            <div className="flex items-center gap-3">
+              <Stethoscope className="h-8 w-8 text-muted-foreground" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Data Clinic</h1>
+                <p className="text-muted-foreground mt-1">
+                  Detect and fix missing or invalid IATI fields in your aid project data
+                </p>
+              </div>
             </div>
-            <p className="text-muted-foreground">
-              Detect and fix missing or invalid IATI fields in your aid project data
-            </p>
           </div>
 
           {/* Tabs */}

@@ -1029,12 +1029,12 @@ export default function OrganizationFundingEnvelopeTab({
                             <RefreshCw className="h-3 w-3" />
                           </Button>
                         )}
+                        {modalExchangeRate != null && editingEnvelope.currency !== 'USD' && !isLoadingModalRate && (
+                          <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                            1 {editingEnvelope.currency} = {modalExchangeRate.toFixed(6)} USD
+                          </span>
+                        )}
                       </div>
-                      {modalExchangeRate != null && editingEnvelope.currency !== 'USD' && (
-                        <p className="text-xs text-muted-foreground">
-                          1 {editingEnvelope.currency} = {modalExchangeRate.toFixed(6)} USD
-                        </p>
-                      )}
                       {modalRateError && (
                         <p className="text-xs text-red-500">{modalRateError}</p>
                       )}

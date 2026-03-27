@@ -167,15 +167,15 @@ export default function TransparencyIndexPage() {
   return (
     <MainLayout>
       <div className="space-y-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <ShieldCheck className="h-8 w-8 text-blue-600" />
-          Country-Level Transparency Index
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Automated assessment of data quality based on the 2026 Aid Transparency Index methodology.
-        </p>
-      </header>
+      <div className="flex items-center gap-3 mb-8">
+        <ShieldCheck className="h-8 w-8 text-muted-foreground" />
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Country-Level Transparency Index</h1>
+          <p className="text-muted-foreground mt-1">
+            Automated assessment of data quality based on the 2026 Aid Transparency Index methodology.
+          </p>
+        </div>
+      </div>
 
       <Tabs defaultValue="projects" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">

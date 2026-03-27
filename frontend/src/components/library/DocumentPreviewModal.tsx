@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,7 @@ export function DocumentPreviewModal({
               <DialogTitle className="text-lg font-semibold line-clamp-1">
                 {document.title}
               </DialogTitle>
+              <DialogDescription>Preview document content, download, or open in a new tab.</DialogDescription>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${getFormatBadgeClasses(document.format)}`}>
                   {getFormatLabel(document.format)}

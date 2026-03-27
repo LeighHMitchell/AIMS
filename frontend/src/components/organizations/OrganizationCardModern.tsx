@@ -3,18 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { Building2, MapPin, Activity, DollarSign, ExternalLink, Copy } from 'lucide-react';
-import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { toast } from 'sonner';
 import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
+import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
 
 // Color palette — uses brand tokens from CSS variables for theme compatibility
 const colors = {
-  primaryScarlet: 'hsl(var(--brand-scarlet))',
   paleSlate: 'hsl(var(--brand-pale-slate))',
   blueSlate: 'hsl(var(--brand-blue-slate))',
   coolSteel: 'hsl(var(--brand-cool-steel))',
-  platinum: 'hsl(var(--brand-platinum))',
 };
 
 interface Organization {
@@ -81,117 +79,76 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
 
   // Display ID - prefer IATI org ID, fallback to internal ID
   const displayId = organization.iati_org_id || organization.id.slice(0, 12);
-  const idLabel = organization.iati_org_id ? 'IATI Org ID' : 'Org ID';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
-      whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border bg-card ${className}`}
-      role="article"
-      aria-label={`Organization: ${organization.name}`}
-    >
-      {/* Invisible link overlay - covers the card but sits below interactive elements */}
-      <Link 
-        href={orgUrl} 
-        className="absolute inset-0 z-0"
-        aria-label={`View ${organization.name}`}
-      >
-        <span className="sr-only">View organization</span>
-      </Link>
-      {/* Banner/Poster Section */}
-      <div className="relative h-48 w-full overflow-hidden" style={{ backgroundColor: colors.blueSlate }}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
-        {organization.banner ? (
-          <motion.img
-            src={organization.banner}
-            alt={`${organization.name} banner`}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <Building2 className="h-16 w-16" style={{ color: colors.coolSteel, opacity: 0.3 }} />
-          </div>
-        )}
-
-        {/* Action Menu - Top Left - z-30 to be above the link overlay (z-0) */}
-        <div className="absolute top-4 left-4 z-30">
-          <OrganizationCardActionMenu
-            organizationId={organization.id}
-            onEdit={onEdit ? () => onEdit(organization) : undefined}
-            onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
-            onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
-            onDelete={onDelete ? () => onDelete(organization) : undefined}
-            isBookmarked={isBookmarked(organization.id)}
-            onToggleBookmark={() => toggleBookmark(organization.id)}
-          />
-        </div>
-
-        {/* Title & Metadata - Bottom of banner */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-lg font-bold text-white mb-1 transition-colors">
-              <Link
-                href={orgUrl}
-                className="relative z-10 hover:underline inline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {organization.name}
-                {organization.acronym && (
-                  <span className="ml-1">({organization.acronym})</span>
-                )}
-              </Link>
-              {' '}
-              <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
-                <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm no-underline">{displayId}</span>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    copyToClipboard(displayId);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
-                  title="Copy ID"
-                >
-                  <Copy className="w-3 h-3 text-white/70" />
-                </button>
-              </span>
-            </h2>
-            <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
-              {(organization.country_represented || organization.country) && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {organization.country_represented || organization.country}
-                </span>
+    <CardShell
+      href={orgUrl}
+      ariaLabel={`Organization: ${organization.name}`}
+      className={className}
+      bannerImage={organization.banner}
+      bannerIcon={Building2}
+      bannerActions={
+        <OrganizationCardActionMenu
+          organizationId={organization.id}
+          onEdit={onEdit ? () => onEdit(organization) : undefined}
+          onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
+          onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
+          onDelete={onDelete ? () => onDelete(organization) : undefined}
+          isBookmarked={isBookmarked(organization.id)}
+          onToggleBookmark={() => toggleBookmark(organization.id)}
+        />
+      }
+      bannerOverlay={
+        <>
+          <h2 className="text-lg font-bold text-white mb-1 transition-colors">
+            <Link
+              href={orgUrl}
+              className="relative z-10 hover:underline inline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {organization.name}
+              {organization.acronym && (
+                <span className="ml-1">({organization.acronym})</span>
               )}
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Logo Overlay - positioned outside banner to avoid overflow clipping */}
-      {organization.logo && (
-        <div className="absolute right-4 top-48 -translate-y-[75%] z-30">
-          <div className="w-14 h-14 rounded-full border-4 shadow-lg overflow-hidden p-1 bg-card" style={{ borderColor: colors.platinum }}>
-            <img
-              src={organization.logo}
-              alt={`${organization.name} logo`}
-              className="w-full h-full object-contain"
-            />
+            </Link>
+            {' '}
+            <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
+              <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm no-underline">{displayId}</span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  copyToClipboard(displayId);
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
+                title="Copy ID"
+              >
+                <Copy className="w-3 h-3 text-white/70" />
+              </button>
+            </span>
+          </h2>
+          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+            {(organization.country_represented || organization.country) && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {organization.country_represented || organization.country}
+              </span>
+            )}
           </div>
-        </div>
+        </>
+      }
+    >
+      {/* Logo Overlay */}
+      {organization.logo && (
+        <CardShellLogoOverlay
+          src={organization.logo}
+          alt={`${organization.name} logo`}
+        />
       )}
 
       {/* Details Section */}
       <div className="relative flex-1 p-5 flex flex-col bg-card">
         <div className="flex-1">
-          {/* Description */}
           {organization.description && (
             <p className="text-sm line-clamp-2 mb-4" style={{ color: colors.coolSteel }}>
               {organization.description}
@@ -199,7 +156,6 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
           )}
 
           <div className="grid grid-cols-2 gap-4 mt-2">
-            {/* Active Projects */}
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Activities
@@ -209,7 +165,6 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
                 <span>{organization.activeProjects || 0}</span>
               </div>
             </div>
-            {/* Total Budgeted */}
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Total Budgeted
@@ -223,10 +178,8 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
         </div>
 
         {/* Rip Line */}
-        <div className="relative flex items-center justify-center my-4">
-          <div className="absolute -left-5 h-10 w-10 rounded-full z-20" style={{ backgroundColor: 'white' }} />
-          <div className="w-full border-t-2 border-dashed" style={{ borderColor: colors.paleSlate }} />
-          <div className="absolute -right-5 h-10 w-10 rounded-full z-20" style={{ backgroundColor: 'white' }} />
+        <div className="my-4">
+          <CardShellRipLine />
         </div>
 
         {/* Bottom Section */}
@@ -247,7 +200,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
           )}
         </div>
       </div>
-    </motion.div>
+    </CardShell>
   );
 };
 

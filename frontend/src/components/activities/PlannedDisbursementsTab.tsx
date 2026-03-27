@@ -72,10 +72,14 @@ import {
 } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { OrganizationCombobox } from '@/components/ui/organization-combobox';
+import { OrganizationSearchableSelect } from '@/components/ui/organization-searchable-select';
 import { ActivityCombobox } from '@/components/ui/activity-combobox';
 import { OrgTypeMappingModal, useOrgTypeMappingModal } from '@/components/organizations/OrgTypeMappingModal';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronsUpDown } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
+import { CurrencySelector } from '@/components/forms/CurrencySelector';
+import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
 import { exportToCSV } from '@/lib/csv-export';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
 
@@ -2384,7 +2388,14 @@ export default function PlannedDisbursementsTab({
           <div className="space-y-6">
             {/* Type */}
             <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
+              <LabelWithInfoAndSave
+                helpText="Whether this is an original or revised planned disbursement"
+                isSaving={false}
+                isSaved={false}
+                hasValue={!!modalDisbursement?.type}
+              >
+                Type
+              </LabelWithInfoAndSave>
               <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
                 <PopoverTrigger
                   className={cn(
@@ -2457,28 +2468,38 @@ export default function PlannedDisbursementsTab({
             {/* Period */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="period-start">Period Start Date</Label>
-                <Input
-                  id="period-start"
-                  type="date"
+                <LabelWithInfoAndSave
+                  helpText="The start date of the period this planned disbursement covers"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalDisbursement?.period_start}
+                >
+                  Period Start Date
+                </LabelWithInfoAndSave>
+                <DatePicker
                   value={modalDisbursement?.period_start || ''}
-                  onChange={(e) => updateFormField('period_start', e.target.value)}
-                  className={cn("h-10", fieldErrors.period_start && "border-red-500")}
+                  onChange={(value) => updateFormField('period_start', value)}
                   disabled={savingId === modalDisbursement?.id}
+                  placeholder="Select start date"
                 />
                 {fieldErrors.period_start && (
                   <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="period-end">Period End Date</Label>
-                <Input
-                  id="period-end"
-                  type="date"
+                <LabelWithInfoAndSave
+                  helpText="The end date of the period this planned disbursement covers"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalDisbursement?.period_end}
+                >
+                  Period End Date
+                </LabelWithInfoAndSave>
+                <DatePicker
                   value={modalDisbursement?.period_end || ''}
-                  onChange={(e) => updateFormField('period_end', e.target.value)}
-                  className={cn("h-10", fieldErrors.period_end && "border-red-500")}
+                  onChange={(value) => updateFormField('period_end', value)}
                   disabled={savingId === modalDisbursement?.id}
+                  placeholder="Select end date"
                 />
                 {fieldErrors.period_end && (
                   <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
@@ -2489,77 +2510,33 @@ export default function PlannedDisbursementsTab({
             {/* Currency, Amount, Value Date */}
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Popover open={currencyPopoverOpen} onOpenChange={setCurrencyPopoverOpen}>
-                  <PopoverTrigger
-                    className={cn(
-                      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-                      fieldErrors.currency && "border-red-500",
-                      !modalDisbursement?.currency && "text-muted-foreground"
-                    )}
-                    disabled={savingId === modalDisbursement?.id}
-                  >
-                    <span className="truncate">
-                      {modalDisbursement?.currency ? (() => {
-                        const selectedCurrency = currencies.find(c => c.code === modalDisbursement.currency);
-                        return selectedCurrency ? (
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedCurrency.code}</span>
-                            <span className="font-medium">{selectedCurrency.name}</span>
-                          </span>
-                        ) : (
-                          "Select currency"
-                        );
-                      })() : (
-                        "Select currency"
-                      )}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {modalDisbursement?.currency && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateFormField('currency', 'USD');
-                            setCurrencyPopoverOpen(false);
-                          }}
-                          className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                          aria-label="Clear selection"
-                        >
-                          <span className="text-xs">×</span>
-                        </button>
-                      )}
-                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <div className="max-h-[300px] overflow-y-auto">
-                      {currencies.map(currency => (
-                        <button
-                          key={currency.code}
-                          type="button"
-                          className={cn(
-                            "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                            modalDisbursement?.currency === currency.code && "bg-accent text-accent-foreground"
-                          )}
-                          onClick={() => {
-                            updateFormField('currency', currency.code);
-                            setCurrencyPopoverOpen(false);
-                          }}
-                        >
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{currency.code}</span>
-                          <span className="font-medium">{currency.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <LabelWithInfoAndSave
+                  helpText="The currency in which the planned disbursement value is denominated"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalDisbursement?.currency}
+                >
+                  Currency
+                </LabelWithInfoAndSave>
+                <CurrencySelector
+                  value={modalDisbursement?.currency || null}
+                  onValueChange={(value) => updateFormField('currency', value || 'USD')}
+                  disabled={savingId === modalDisbursement?.id}
+                  placeholder="Select currency"
+                />
                 {fieldErrors.currency && (
                   <p className="text-xs text-red-500">{fieldErrors.currency}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
+                <LabelWithInfoAndSave
+                  helpText="The planned disbursement amount in the specified currency"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalDisbursement?.amount && modalDisbursement.amount > 0}
+                >
+                  Amount
+                </LabelWithInfoAndSave>
                 <Input
                   id="amount"
                   type="text"
@@ -2567,14 +2544,12 @@ export default function PlannedDisbursementsTab({
                   onChange={(e) => {
                     const value = e.target.value;
                     setAmountInputValue(value);
-                    // Remove all non-numeric characters except decimal point
                     const rawValue = value.replace(/[^\d.]/g, '');
                     const numericValue = parseFloat(rawValue) || 0;
                     updateFormField('amount', numericValue);
                   }}
                   onFocus={() => {
                     setIsAmountFocused(true);
-                    // Show raw number without formatting when focused
                     if (modalDisbursement?.amount && modalDisbursement.amount > 0) {
                       setAmountInputValue(modalDisbursement.amount.toString());
                     } else {
@@ -2583,7 +2558,6 @@ export default function PlannedDisbursementsTab({
                   }}
                   onBlur={() => {
                     setIsAmountFocused(false);
-                    // Format the value on blur
                     if (modalDisbursement?.amount && modalDisbursement.amount > 0) {
                       setAmountInputValue(modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                     } else {
@@ -2599,14 +2573,19 @@ export default function PlannedDisbursementsTab({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="value-date">Value Date</Label>
-                <Input
-                  id="value-date"
-                  type="date"
+                <LabelWithInfoAndSave
+                  helpText="The date on which the disbursement value was set or the exchange rate applied"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalDisbursement?.value_date}
+                >
+                  Value Date
+                </LabelWithInfoAndSave>
+                <DatePicker
                   value={modalDisbursement?.value_date || ''}
-                  onChange={(e) => updateFormField('value_date', e.target.value)}
-                  className={cn("h-10", fieldErrors.value_date && "border-red-500")}
+                  onChange={(value) => updateFormField('value_date', value)}
                   disabled={savingId === modalDisbursement?.id}
+                  placeholder="Select date"
                 />
                 {fieldErrors.value_date && (
                   <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
@@ -2679,12 +2658,12 @@ export default function PlannedDisbursementsTab({
                         <RefreshCw className="h-3 w-3" />
                       </Button>
                     )}
+                    {modalExchangeRate != null && modalDisbursement.currency !== 'USD' && !isLoadingModalRate && (
+                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                        1 {modalDisbursement.currency} = {modalExchangeRate.toFixed(6)} USD
+                      </span>
+                    )}
                   </div>
-                  {modalExchangeRate != null && modalDisbursement.currency !== 'USD' && (
-                    <p className="text-xs text-muted-foreground">
-                      1 {modalDisbursement.currency} = {modalExchangeRate.toFixed(6)} USD
-                    </p>
-                  )}
                   {modalRateError && (
                     <p className="text-xs text-red-500">{modalRateError}</p>
                   )}
@@ -2718,21 +2697,31 @@ export default function PlannedDisbursementsTab({
 
             {/* Provider Organisation */}
             <div className="space-y-2">
-              <Label htmlFor="provider-org">Provider Organisation</Label>
-              <OrganizationCombobox
+              <LabelWithInfoAndSave
+                helpText="The organization providing or disbursing the funds for this planned disbursement"
+                isSaving={false}
+                isSaved={false}
+                hasValue={!!modalDisbursement?.provider_org_id}
+              >
+                Provider Organisation
+              </LabelWithInfoAndSave>
+              <OrganizationSearchableSelect
                 value={modalDisbursement?.provider_org_id || ''}
                 onValueChange={(orgId) => {
-                  const org = organizations.find(o => o.id === orgId);
+                  const org = organizations.find((o: any) => o.id === orgId);
                   if (org) {
                     updateFormField('provider_org_id', orgId);
                     updateFormField('provider_org_name', getOrganizationDisplayName(org));
-                    // Auto-fill ref and type if available
                     if (org.iati_identifier) {
                       updateFormField('provider_org_ref', org.iati_identifier);
                     }
                     if (org.org_type) {
                       updateFormField('provider_org_type', org.org_type);
                     }
+                  } else {
+                    updateFormField('provider_org_id', '');
+                    updateFormField('provider_org_name', '');
+                    updateFormField('provider_org_ref', '');
                   }
                 }}
                 placeholder="Search for provider organisation..."
@@ -2743,7 +2732,14 @@ export default function PlannedDisbursementsTab({
 
             {/* Provider Activity */}
             <div className="space-y-2">
-              <Label htmlFor="provider-activity">Provider Activity</Label>
+              <LabelWithInfoAndSave
+                helpText="Link to the IATI activity of the provider organization"
+                isSaving={false}
+                isSaved={false}
+                hasValue={!!modalDisbursement?.provider_activity_uuid}
+              >
+                Provider Activity
+              </LabelWithInfoAndSave>
               <ActivityCombobox
                 value={modalDisbursement?.provider_activity_uuid || ''}
                 onValueChange={async (activityId) => {
@@ -2776,21 +2772,31 @@ export default function PlannedDisbursementsTab({
 
             {/* Receiver Organisation */}
             <div className="space-y-2">
-              <Label htmlFor="receiver-org">Receiver Organisation</Label>
-              <OrganizationCombobox
+              <LabelWithInfoAndSave
+                helpText="The organization receiving the funds from this planned disbursement"
+                isSaving={false}
+                isSaved={false}
+                hasValue={!!modalDisbursement?.receiver_org_id}
+              >
+                Receiver Organisation
+              </LabelWithInfoAndSave>
+              <OrganizationSearchableSelect
                 value={modalDisbursement?.receiver_org_id || ''}
                 onValueChange={(orgId) => {
-                  const org = organizations.find(o => o.id === orgId);
+                  const org = organizations.find((o: any) => o.id === orgId);
                   if (org) {
                     updateFormField('receiver_org_id', orgId);
                     updateFormField('receiver_org_name', getOrganizationDisplayName(org));
-                    // Auto-fill ref and type if available
                     if (org.iati_identifier) {
                       updateFormField('receiver_org_ref', org.iati_identifier);
                     }
                     if (org.org_type) {
                       updateFormField('receiver_org_type', org.org_type);
                     }
+                  } else {
+                    updateFormField('receiver_org_id', '');
+                    updateFormField('receiver_org_name', '');
+                    updateFormField('receiver_org_ref', '');
                   }
                 }}
                 placeholder="Search for receiver organisation..."
@@ -2801,7 +2807,14 @@ export default function PlannedDisbursementsTab({
 
             {/* Receiver Activity */}
             <div className="space-y-2">
-              <Label htmlFor="receiver-activity">Receiver Activity</Label>
+              <LabelWithInfoAndSave
+                helpText="Link to the IATI activity of the receiver organization"
+                isSaving={false}
+                isSaved={false}
+                hasValue={!!modalDisbursement?.receiver_activity_uuid}
+              >
+                Receiver Activity
+              </LabelWithInfoAndSave>
               <ActivityCombobox
                 value={modalDisbursement?.receiver_activity_uuid || ''}
                 onValueChange={async (activityId) => {
@@ -2831,7 +2844,14 @@ export default function PlannedDisbursementsTab({
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <LabelWithInfoAndSave
+                helpText="Additional notes or description for this planned disbursement"
+                isSaving={false}
+                isSaved={false}
+                hasValue={!!modalDisbursement?.description}
+              >
+                Notes
+              </LabelWithInfoAndSave>
               <Textarea
                 id="notes"
                 value={modalDisbursement?.notes || ''}

@@ -31,19 +31,58 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Fetch planned disbursements separately to avoid ambiguous relationship error
+    // Run disbursements query and all 5 event queries in parallel
     const activityIds = activities?.map((a: any) => a.id) || []
-    let plannedDisbursementsTotal = 0
 
-    if (activityIds.length > 0) {
-      const { data: disbursements } = await supabase
+    const [
+      disbursementsResult,
+      activityEventsResult,
+      transactionEventsResult,
+      budgetEventsResult,
+      disbursementEventsResult,
+      logEventsResult,
+    ] = await Promise.all([
+      // Planned disbursements (depends on activityIds)
+      activityIds.length > 0
+        ? supabase
+            .from('planned_disbursements')
+            .select('activity_id, usd_amount')
+            .in('activity_id', activityIds)
+        : Promise.resolve({ data: null }),
+      // Activity events for contribution calendar
+      supabase
+        .from('activities')
+        .select('id, title_narrative, created_at, updated_at')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      // Transaction events
+      supabase
+        .from('transactions')
+        .select('id, description, created_at, transaction_type')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      // Budget events
+      supabase
+        .from('activity_budgets')
+        .select('id, created_at, value, currency')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      // Planned disbursement events
+      supabase
         .from('planned_disbursements')
-        .select('activity_id, usd_amount')
-        .in('activity_id', activityIds)
+        .select('id, created_at, amount, currency')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      // Activity logs
+      supabase
+        .from('activity_logs')
+        .select('id, action, details, created_at')
+        .order('created_at', { ascending: false })
+        .limit(500),
+    ])
 
-      plannedDisbursementsTotal = disbursements?.reduce((sum: number, d: any) =>
-        sum + (d.usd_amount || 0), 0) || 0
-    }
+    const plannedDisbursementsTotal = disbursementsResult.data?.reduce((sum: number, d: any) =>
+      sum + (d.usd_amount || 0), 0) || 0
 
     // Calculate summary statistics
     const summary = {
@@ -60,8 +99,8 @@ export async function GET(request: NextRequest) {
 
     // Filter pipeline activities past expected start
     const today = new Date()
-    const pipelinePastStart = activities?.filter((activity: any) => 
-      activity.activity_status === 'pipeline' && 
+    const pipelinePastStart = activities?.filter((activity: any) =>
+      activity.activity_status === 'pipeline' &&
       activity.planned_start_date &&
       new Date(activity.planned_start_date) < today
     ).map((activity: any) => ({
@@ -74,7 +113,7 @@ export async function GET(request: NextRequest) {
     // Filter activities inactive for 90+ days
     const ninetyDaysAgo = new Date()
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
-    const inactive90Days = activities?.filter((activity: any) => 
+    const inactive90Days = activities?.filter((activity: any) =>
       activity.updated_at &&
       new Date(activity.updated_at) < ninetyDaysAgo
     ).map((activity: any) => ({
@@ -95,29 +134,29 @@ export async function GET(request: NextRequest) {
     if (activities && Array.isArray(activities)) {
       activities.forEach((activity: any) => {
         if (!activity) return
-        
+
         const title = activity.title_narrative || 'Untitled Activity'
-        
+
         // Check for missing sectors (simplified check since we removed the join)
         if (!activity.sector_code) {
           missingData.sector.push(title)
         }
-        
+
         // Check for missing dates
         if (!activity.planned_start_date || !activity.planned_end_date) {
           missingData.dates.push(title)
         }
-        
+
         // Check for missing budget
         if (!activity.activity_budgets || activity.activity_budgets.length === 0) {
           missingData.budget.push(title)
         }
-        
+
         // Check for missing reporting org
         if (!activity.reporting_org_id) {
           missingData.reportingOrg.push(title)
         }
-        
+
         // Check for missing IATI ID
         if (!activity.iati_identifier) {
           missingData.iatiId.push(title)
@@ -135,7 +174,7 @@ export async function GET(request: NextRequest) {
     // Calculate sector distribution - simplified for now
     const sectorDistribution: Record<string, number> = {
       '110': 5, // Education
-      '120': 8, // Health  
+      '120': 8, // Health
       '140': 3, // Water & Sanitation
       '210': 2  // Transport
     }
@@ -148,21 +187,14 @@ export async function GET(request: NextRequest) {
       endDate: activity.planned_end_date
     })) || []
 
-    // Fetch user system activity data for the contribution calendar
-    // This tracks when the user created/updated records in the system
+    // Build user activity events from parallel query results
     const userActivityEvents: Array<{
       date: string
-      type: 'activity_created' | 'activity_updated' | 'transaction_created' | 'budget_created' | 'disbursement_created' | 'other'
+      type: string
       description: string
     }> = []
 
-    // Get activities created/updated by current user (using created_at/updated_at)
-    const { data: activityEvents } = await supabase
-      .from('activities')
-      .select('id, title_narrative, created_at, updated_at')
-      .order('created_at', { ascending: false })
-      .limit(500)
-
+    const { data: activityEvents } = activityEventsResult
     if (activityEvents) {
       activityEvents.forEach((a: any) => {
         if (a.created_at) {
@@ -172,7 +204,6 @@ export async function GET(request: NextRequest) {
             description: `Created activity: ${a.title_narrative || 'Untitled'}`
           })
         }
-        // Only add update if it's different from create date
         if (a.updated_at && a.created_at !== a.updated_at) {
           userActivityEvents.push({
             date: a.updated_at,
@@ -183,13 +214,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get transactions with created_at
-    const { data: transactionEvents } = await supabase
-      .from('transactions')
-      .select('id, description, created_at, transaction_type')
-      .order('created_at', { ascending: false })
-      .limit(500)
-
+    const { data: transactionEvents } = transactionEventsResult
     if (transactionEvents) {
       transactionEvents.forEach((t: any) => {
         if (t.created_at) {
@@ -202,13 +227,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get budgets with created_at
-    const { data: budgetEvents } = await supabase
-      .from('activity_budgets')
-      .select('id, created_at, value, currency')
-      .order('created_at', { ascending: false })
-      .limit(500)
-
+    const { data: budgetEvents } = budgetEventsResult
     if (budgetEvents) {
       budgetEvents.forEach((b: any) => {
         if (b.created_at) {
@@ -221,13 +240,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get planned disbursements with created_at
-    const { data: disbursementEvents } = await supabase
-      .from('planned_disbursements')
-      .select('id, created_at, amount, currency')
-      .order('created_at', { ascending: false })
-      .limit(500)
-
+    const { data: disbursementEvents } = disbursementEventsResult
     if (disbursementEvents) {
       disbursementEvents.forEach((d: any) => {
         if (d.created_at) {
@@ -240,17 +253,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get activity logs if available (for explicit action tracking)
-    const { data: logEvents } = await supabase
-      .from('activity_logs')
-      .select('id, action, details, created_at')
-      .order('created_at', { ascending: false })
-      .limit(500)
-
+    const { data: logEvents } = logEventsResult
     if (logEvents) {
       logEvents.forEach((l: any) => {
         if (l.created_at) {
-          // Categorize based on action string
           const action = (l.action || '').toLowerCase()
           let type: string = 'other'
 

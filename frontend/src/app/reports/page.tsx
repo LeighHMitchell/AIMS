@@ -232,15 +232,15 @@ export default function ReportsPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <header>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <FileText className="h-8 w-8 text-foreground" />
-            Reports
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Download pre-formatted reports or design your own custom pivot tables.
-          </p>
-        </header>
+        <div className="flex items-center gap-3">
+          <FileText className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Reports</h1>
+            <p className="text-muted-foreground mt-1">
+              Download pre-formatted reports or design your own custom pivot tables.
+            </p>
+          </div>
+        </div>
 
         {/* Tabs for Standard vs Custom Reports */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">

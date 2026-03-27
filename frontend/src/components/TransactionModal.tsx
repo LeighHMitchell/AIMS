@@ -2,7 +2,7 @@
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2 } from "lucide-react";
+import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -1281,9 +1281,21 @@ export default function TransactionModal({
     }
   };
 
-  const SectionHeader = ({ title }: { title: string }) => (
+  const SectionHeader = ({ title, helpText }: { title: string; helpText?: string }) => (
     <div className="flex items-center gap-2 mb-4">
       <h3 className="text-base font-semibold text-slate-700">{title}</h3>
+      {helpText && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-sm">{helpText}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </div>
   );
 
@@ -1583,13 +1595,16 @@ export default function TransactionModal({
           <DialogTitle className="text-xl">
             {isEditing ? "Edit Transaction" : "Add New Transaction"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Update the transaction details below." : "Record financial transaction details including amounts, dates, and classifications."}
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-1 overflow-y-auto">
           <div className="px-8 py-6 space-y-8">
             {/* Transaction Details Section */}
             <div className="space-y-4">
-              <SectionHeader title="Transaction Details" />
+              <SectionHeader title="Transaction Details" helpText="Core transaction information including type, value, currency, dates, and validation status." />
 
               {/* Error alert for IATI loading issues */}
               {(iatiError || (!iatiLoading && (!iatiValues || getFieldValues('transaction_type').length === 0))) && (
@@ -1765,8 +1780,8 @@ export default function TransactionModal({
                         </Label>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
-                        formData.status === 'actual' 
-                          ? 'bg-green-100 text-green-700' 
+                        formData.status === 'actual'
+                          ? 'bg-green-700 text-white'
                           : 'bg-muted text-gray-600'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
@@ -1997,12 +2012,12 @@ export default function TransactionModal({
                         <RefreshCw className="h-3 w-3" />
                       </Button>
                     )}
+                    {exchangeRate != null && formData.currency !== 'USD' && !isLoadingRate && (
+                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                        1 {formData.currency} = {exchangeRate.toFixed(6)} USD
+                      </span>
+                    )}
                   </div>
-                  {exchangeRate != null && formData.currency !== 'USD' && (
-                    <p className="text-xs text-muted-foreground">
-                      1 {formData.currency} = {exchangeRate.toFixed(6)} USD
-                    </p>
-                  )}
                   {rateError && (
                     <p className="text-xs text-red-500">{rateError}</p>
                   )}
@@ -2031,7 +2046,7 @@ export default function TransactionModal({
 
             {/* Parties Involved Section */}
             <div className="space-y-4">
-              <SectionHeader title="Parties Involved" />
+              <SectionHeader title="Parties Involved" helpText="The organizations providing and receiving funds in this transaction, and optionally the specific activities they relate to." />
               
               {/* Provider Organization */}
               <div className="space-y-2">
@@ -2087,27 +2102,25 @@ export default function TransactionModal({
 
                 {/* Show warning UI if IATI reference exists but not linked to database */}
                 {formData.provider_org_activity_id && !formData.provider_activity_uuid ? (
-                  <div className="space-y-2">
-                    {/* IATI Reference Display with Warning */}
-                    <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate font-mono">
-                            {formData.provider_org_activity_id}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            IATI reference - not linked to database
-                          </div>
+                  <div className="flex items-center justify-between min-h-[60px] px-3 py-3 border border-input rounded-md">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate font-mono">
+                          {formData.provider_org_activity_id}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          IATI reference - not linked to database
                         </div>
                       </div>
-                      
+                    </div>
+                    <div className="flex items-center gap-1 ml-2 shrink-0">
                       {/* Check & Link Button */}
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="ml-2 flex-shrink-0"
+                        className="h-7 text-xs"
                         onClick={async () => {
                           setIsCheckingProviderActivity(true);
                           try {
@@ -2118,10 +2131,8 @@ export default function TransactionModal({
                               const matchedActivity = activities.find(
                                 (a: any) => a.iati_identifier === formData.provider_org_activity_id
                               );
-                              
+
                               if (matchedActivity) {
-                                // Save to database using activity-specific endpoint
-                                // Send current form data with updated UUID to avoid null constraint issues
                                 const updatePayload = {
                                   ...formData,
                                   provider_activity_uuid: matchedActivity.id
@@ -2168,22 +2179,21 @@ export default function TransactionModal({
                         <RefreshCw className={`h-3 w-3 mr-1 ${isCheckingProviderActivity ? 'animate-spin' : ''}`} />
                         {isCheckingProviderActivity ? 'Checking...' : 'Check & Link'}
                       </Button>
+                      {/* Clear Reference Button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setFormData({...formData, provider_org_activity_id: ''});
+                          providerActivityAutosave.triggerFieldSave('');
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                    
-                    {/* Clear Reference Button */}
-                    <Button 
-                      type="button"
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-gray-500 hover:text-gray-700 w-full"
-                      onClick={() => {
-                        setFormData({...formData, provider_org_activity_id: ''});
-                        providerActivityAutosave.triggerFieldSave('');
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Clear Reference
-                    </Button>
                   </div>
                 ) : (
                   /* Normal ActivityCombobox when linked or no reference */
@@ -2291,71 +2301,50 @@ export default function TransactionModal({
                 
                 {/* Show warning UI if IATI reference exists but not linked to database */}
                 {formData.receiver_org_activity_id && !formData.receiver_activity_uuid ? (
-                  <div className="space-y-2">
-                    {/* IATI Reference Display with Warning */}
-                    <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate font-mono">
-                            {formData.receiver_org_activity_id}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            IATI reference - not linked to database
-                          </div>
+                  <div className="flex items-center justify-between min-h-[60px] px-3 py-3 border border-input rounded-md">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate font-mono">
+                          {formData.receiver_org_activity_id}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          IATI reference - not linked to database
                         </div>
                       </div>
-                      
-                      {/* Check & Link Button */}
+                    </div>
+                    <div className="flex items-center gap-1 ml-2 shrink-0">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="ml-2 flex-shrink-0"
+                        className="h-7 text-xs"
                         onClick={async () => {
                           setIsCheckingReceiverActivity(true);
                           try {
-                            const response = await apiFetch(`/api/activities?iati_identifier=${encodeURIComponent(formData.receiver_org_activity_id || '')}`
-                            );
+                            const response = await apiFetch(`/api/activities?iati_identifier=${encodeURIComponent(formData.receiver_org_activity_id || '')}`);
                             if (response.ok) {
                               const activities = await response.json();
                               const matchedActivity = activities.find(
                                 (a: any) => a.iati_identifier === formData.receiver_org_activity_id
                               );
-                              
                               if (matchedActivity) {
-                                // Save to database using activity-specific endpoint
-                                // Send current form data with updated UUID to avoid null constraint issues
-                                const updatePayload = {
-                                  ...formData,
-                                  receiver_activity_uuid: matchedActivity.id
-                                };
+                                const updatePayload = { ...formData, receiver_activity_uuid: matchedActivity.id };
                                 const updateResponse = await apiFetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify(updatePayload)
                                 });
-                                
                                 if (updateResponse.ok) {
-                                  // Update local state
-                                  setFormData({
-                                    ...formData, 
-                                    receiver_activity_uuid: matchedActivity.id
-                                  });
-                                  
+                                  setFormData({ ...formData, receiver_activity_uuid: matchedActivity.id });
                                   toast.success(`Linked to activity: ${matchedActivity.title_narrative || matchedActivity.title || 'Untitled'}`);
                                   receiverActivityAutosave.triggerFieldSave(matchedActivity.id);
                                 } else {
                                   const errorData = await updateResponse.json().catch(() => ({}));
-                                  console.error('Failed to save activity link:', errorData);
-                                  toast.error('Failed to save activity link', {
-                                    description: errorData.error || 'Please try again'
-                                  });
+                                  toast.error('Failed to save activity link', { description: errorData.error || 'Please try again' });
                                 }
                               } else {
-                                toast.info('Activity not found in database', {
-                                  description: 'The referenced activity may not be imported yet'
-                                });
+                                toast.info('Activity not found in database', { description: 'The referenced activity may not be imported yet' });
                               }
                             } else {
                               toast.error('Failed to check for activity');
@@ -2372,22 +2361,20 @@ export default function TransactionModal({
                         <RefreshCw className={`h-3 w-3 mr-1 ${isCheckingReceiverActivity ? 'animate-spin' : ''}`} />
                         {isCheckingReceiverActivity ? 'Checking...' : 'Check & Link'}
                       </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setFormData({...formData, receiver_org_activity_id: ''});
+                          receiverActivityAutosave.triggerFieldSave('');
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                    
-                    {/* Clear Reference Button */}
-                    <Button 
-                      type="button"
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-gray-500 hover:text-gray-700 w-full"
-                      onClick={() => {
-                        setFormData({...formData, receiver_org_activity_id: ''});
-                        receiverActivityAutosave.triggerFieldSave('');
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Clear Reference
-                    </Button>
                   </div>
                 ) : (
                   /* Normal ActivityCombobox when linked or no reference */
@@ -2444,7 +2431,7 @@ export default function TransactionModal({
 
             {/* Description Section */}
             <div className="space-y-4">
-              <SectionHeader title="Description" />
+              <SectionHeader title="Description" helpText="A free-text description of this transaction providing additional context or detail." />
               <div className="space-y-2">
                 <LabelWithInfoAndSave 
                   helpText="Additional details, notes, or context about this transaction"
@@ -2466,11 +2453,11 @@ export default function TransactionModal({
 
             {/* Funding Modality & Aid Classification Section */}
             <div className="space-y-4">
-              <SectionHeader title="Funding Modality & Aid Classification" />
+              <SectionHeader title="Funding Modality & Aid Classification" helpText="IATI classification codes describing the type, modality, and terms of the financial flow. These may be inherited from activity-level defaults." />
 
               {/* Row 1: Aid Type and Disbursement Channel (taller) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-                <div className="space-y-2">
+                <div className="space-y-2 flex flex-col">
                   <LabelWithInfoAndSave
                     helpText={IATI_FIELD_HELP.aidType}
                     isSaving={aidTypeAutosave.isSaving}
@@ -2493,7 +2480,7 @@ export default function TransactionModal({
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 flex flex-col">
                   <LabelWithInfoAndSave
                     helpText="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies."
                     isSaving={disbursementChannelAutosave.isSaving}
@@ -2505,11 +2492,14 @@ export default function TransactionModal({
                   {/* Modern popover/command UI for Disbursement Channel */}
                   <Popover open={disbursementPopoverOpen} onOpenChange={setDisbursementPopoverOpen}>
                     <PopoverTrigger
-                      className="w-full"
+                      className="w-full flex-1"
                     >
                       <Button
                         variant="outline"
-                        className="w-full flex justify-between items-start h-auto min-h-[60px] whitespace-normal text-left px-3 py-3"
+                        className={cn(
+                          "w-full h-full flex justify-between items-start min-h-[60px] whitespace-normal text-left px-3 py-3",
+                          !formData.disbursement_channel && "text-muted-foreground font-normal"
+                        )}
                         aria-haspopup="listbox"
                       >
                         <span className="flex-1 min-w-0">
@@ -2679,10 +2669,17 @@ export default function TransactionModal({
                     isSaved={humanitarianAutosave.isSaved}
                     hasValue={!!formData.is_humanitarian}
                   >
-                    Humanitarian
+                    Humanitarian Flag
                   </LabelWithInfoAndSave>
-                  <div className="flex items-center justify-between h-10 px-3 border rounded-md">
-                    <span className="text-sm text-muted-foreground">
+                  <div className={cn(
+                    "flex items-center justify-between h-10 px-3 border rounded-md",
+                    formData.is_humanitarian && "border-red-200 bg-red-50"
+                  )}>
+                    <span className={cn(
+                      "text-sm flex items-center gap-1.5",
+                      formData.is_humanitarian ? "text-red-700 font-medium" : "text-muted-foreground"
+                    )}>
+                      {formData.is_humanitarian && <Flag className="h-3.5 w-3.5 text-red-500" />}
                       {formData.is_humanitarian ? 'Yes — humanitarian transaction' : 'No'}
                     </span>
                     <Switch
@@ -2700,12 +2697,7 @@ export default function TransactionModal({
 
             {/* Supporting Documents Section */}
             <div className="space-y-4">
-              <SectionHeader title="Supporting Documents" />
-              <div className="text-sm text-muted-foreground mb-4">
-                Upload receipts, invoices, contracts, or other evidence to support this transaction.
-                You can also add links to documents hosted elsewhere.
-                You must complete the required fields before uploading documents.
-              </div>
+              <SectionHeader title="Supporting Documents" helpText="Upload receipts, invoices, contracts, or other evidence to support this transaction. You can also add links to documents hosted elsewhere. You must complete the required fields before uploading documents." />
               {!(createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) ? (
                 <div className="opacity-40 pointer-events-none select-none">
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
@@ -2745,13 +2737,13 @@ export default function TransactionModal({
 
             {/* Advanced IATI Fields Section - Individual Collapsibles */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">Advanced IATI Fields</h3>
+              <SectionHeader title="Advanced IATI Fields" helpText="Optional IATI fields for geographic targeting, multiple sectors, and multiple aid types. These are only needed for transactions that differ from the activity-level defaults." />
               
               {/* Geographic Targeting - Simplified for IATI Transaction Level */}
               <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting}>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 bg-muted/50 hover:bg-muted rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
@@ -2804,7 +2796,7 @@ export default function TransactionModal({
                                   recipient_region_vocab: undefined
                                 });
                               }}
-                              className="h-4 w-4 text-blue-600"
+                              className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
                             <span className="text-sm text-gray-600">Activity-level default</span>
@@ -2822,7 +2814,7 @@ export default function TransactionModal({
                                   recipient_region_vocab: undefined
                                 });
                               }}
-                              className="h-4 w-4 text-blue-600"
+                              className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
                             <span className="text-sm">Country</span>
@@ -2839,7 +2831,7 @@ export default function TransactionModal({
                                   recipient_country_code: ''
                                 });
                               }}
-                              className="h-4 w-4 text-blue-600"
+                              className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
                             <span className="text-sm">Region</span>
@@ -2987,7 +2979,7 @@ export default function TransactionModal({
               <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors}>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 bg-muted/50 hover:bg-muted rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
@@ -3013,7 +3005,7 @@ export default function TransactionModal({
                           name="sector-source"
                           checked={useActivitySectorChoice}
                           onChange={() => handleSectorChoiceChange(true)}
-                          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          className="mt-1 h-4 w-4 accent-foreground"
                         />
                         <label htmlFor="sector-activity" className="flex-1 cursor-pointer">
                           <span className="text-sm font-medium text-gray-700">Use activity sectors</span>
@@ -3026,73 +3018,64 @@ export default function TransactionModal({
                       {/* Show activity sectors preview when "Use activity sectors" is selected */}
                       {useActivitySectorChoice && activitySectors.length > 0 && (
                         <div className="ml-7 p-3 bg-white rounded-md border border-gray-200">
-                          <p className="text-xs font-medium text-gray-600 mb-2">Activity sectors:</p>
-                          <div className="space-y-2">
-                            {(() => {
-                              // Group sectors by category
-                              const grouped = activitySectors.reduce((acc, sector) => {
-                                const categoryCode = (sector as any).categoryCode || '';
-                                const rawCategoryName = (sector as any).categoryName || (sector as any).category || '';
-                                // Strip the code prefix from category name (e.g., "250 - Business" -> "Business")
-                                const categoryName = rawCategoryName.replace(/^\d+\s*[-–]\s*/, '');
-                                const categoryKey = categoryCode || 'uncategorized';
-                                if (!acc[categoryKey]) {
-                                  acc[categoryKey] = { categoryCode, categoryName, sectors: [] };
-                                }
-                                acc[categoryKey].sectors.push(sector);
-                                return acc;
-                              }, {} as Record<string, { categoryCode: string; categoryName: string; sectors: typeof activitySectors }>);
-
-                              const groupEntries = Object.entries(grouped);
-                              return groupEntries.map(([key, group], groupIdx) => (
-                                <div key={key} className="space-y-1">
-                                  {/* Category header - only show if there's a category */}
-                                  {group.categoryCode && (
-                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
-                                      <span className="font-mono bg-muted/50 px-1 py-0.5 rounded">
-                                        {group.categoryCode}
-                                      </span>
-                                      <span>{group.categoryName}</span>
-                                    </div>
-                                  )}
-                                  {/* Sectors in this category */}
-                                  <div className={cn("space-y-1", group.categoryCode && "ml-3")}>
-                                    {group.sectors.map((sector, idx) => {
-                                      const sectorCode = (sector as any).code || sector.sector_code;
-                                      const rawSectorName = (sector as any).name || sector.sector_name || '';
-                                      // Strip the code prefix from sector name (e.g., "11220 - Primary education" -> "Primary education")
-                                      const sectorName = rawSectorName.replace(/^\d+\s*[-–]\s*/, '');
-                                      return (
-                                        <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
-                                          <div className="flex items-center gap-1.5 min-w-0">
-                                            {sectorCode && (
-                                              <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-gray-700 shrink-0">
-                                                {sectorCode}
-                                              </span>
-                                            )}
-                                            <span className="truncate">{sectorName || sectorCode}</span>
-                                          </div>
-                                          {sector.percentage !== undefined && sector.percentage > 0 && (
-                                            <span className="text-gray-500 shrink-0">{sector.percentage}%</span>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  {/* Divider line between categories */}
-                                  {groupIdx < groupEntries.length - 1 && (
-                                    <div className="border-b border-gray-200 mt-2" />
-                                  )}
-                                </div>
-                              ));
-                            })()}
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Activity sectors:</p>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-muted-foreground border-b">
+                                <th className="text-left py-1 font-medium">Sector</th>
+                                <th className="text-right py-1 font-medium w-14">%</th>
+                                {formData.value > 0 && formData.currency !== 'USD' && (
+                                  <th className="text-right py-1 font-medium w-24">{formData.currency}</th>
+                                )}
+                                {formData.value > 0 && calculatedUsdValue && (
+                                  <th className="text-right py-1 font-medium w-24">USD</th>
+                                )}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {activitySectors.map((sector, idx) => {
+                                const sectorCode = (sector as any).code || sector.sector_code;
+                                const rawSectorName = (sector as any).name || sector.sector_name || '';
+                                const sectorName = rawSectorName.replace(/^\d+\s*[-–]\s*/, '');
+                                const pct = sector.percentage || 0;
+                                const originalValue = formData.value > 0 && pct > 0 ? Math.round(formData.value * pct / 100) : null;
+                                const usdValue = calculatedUsdValue && pct > 0 ? Math.round(calculatedUsdValue * pct / 100) : null;
+                                return (
+                                  <tr key={idx} className="border-b border-muted/50">
+                                    <td className="py-1.5">
+                                      <div className="flex items-center gap-1.5">
+                                        {sectorCode && (
+                                          <span className="font-mono bg-muted px-1 py-0.5 rounded shrink-0">{sectorCode}</span>
+                                        )}
+                                        <span className="truncate">{sectorName || sectorCode}</span>
+                                      </div>
+                                    </td>
+                                    <td className="text-right py-1.5 text-muted-foreground">{pct > 0 ? `${pct}%` : '—'}</td>
+                                    {formData.value > 0 && formData.currency !== 'USD' && (
+                                      <td className="text-right py-1.5 tabular-nums">{originalValue !== null ? originalValue.toLocaleString() : '—'}</td>
+                                    )}
+                                    {formData.value > 0 && calculatedUsdValue && (
+                                      <td className="text-right py-1.5 tabular-nums">{usdValue !== null ? usdValue.toLocaleString() : '—'}</td>
+                                    )}
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
                             {activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
-                              <div className="flex justify-between text-xs font-medium text-gray-700 pt-1 border-t">
-                                <span>Total</span>
-                                <span>{activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0)}%</span>
-                              </div>
+                              <tfoot>
+                                <tr className="font-medium border-t">
+                                  <td className="py-1.5">Total</td>
+                                  <td className="text-right py-1.5">{activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0)}%</td>
+                                  {formData.value > 0 && formData.currency !== 'USD' && (
+                                    <td className="text-right py-1.5 tabular-nums">{formData.value.toLocaleString()}</td>
+                                  )}
+                                  {formData.value > 0 && calculatedUsdValue && (
+                                    <td className="text-right py-1.5 tabular-nums">{calculatedUsdValue.toLocaleString()}</td>
+                                  )}
+                                </tr>
+                              </tfoot>
                             )}
-                          </div>
+                          </table>
                         </div>
                       )}
                       
@@ -3111,7 +3094,7 @@ export default function TransactionModal({
                           name="sector-source"
                           checked={!useActivitySectorChoice}
                           onChange={() => handleSectorChoiceChange(false)}
-                          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          className="mt-1 h-4 w-4 accent-foreground"
                         />
                         <label htmlFor="sector-custom" className="flex-1 cursor-pointer">
                           <span className="text-sm font-medium text-gray-700">Specify for this transaction</span>
@@ -3121,85 +3104,6 @@ export default function TransactionModal({
                         </label>
                       </div>
 
-                      {/* Show custom sectors preview table when custom sectors is selected */}
-                      {!useActivitySectorChoice && formData.sectors && formData.sectors.length > 0 && (
-                        <div className="ml-7 p-3 bg-white rounded-md border border-gray-200">
-                          <p className="text-xs font-medium text-gray-600 mb-2">Transaction sectors:</p>
-                          <div className="space-y-2">
-                            {(() => {
-                              // Group sectors by category using DAC sector data lookup
-                              const grouped = (formData.sectors || []).reduce((acc, sector) => {
-                                const sectorInfo = getDacSectorInfo(sector.code);
-                                const categoryCode = sectorInfo.category?.match(/^(\d+)/)?.[1] || sector.code?.substring(0, 3) || '';
-                                const categoryName = sectorInfo.categoryName || '';
-                                const categoryKey = categoryCode || 'uncategorized';
-                                if (!acc[categoryKey]) {
-                                  acc[categoryKey] = { categoryCode, categoryName, sectors: [] };
-                                }
-                                acc[categoryKey].sectors.push({ ...sector, sectorInfo });
-                                return acc;
-                              }, {} as Record<string, { categoryCode: string; categoryName: string; sectors: Array<typeof formData.sectors[0] & { sectorInfo: DacSectorInfo }> }>);
-
-                              const groupEntries = Object.entries(grouped);
-                              return groupEntries.map(([key, group], groupIdx) => (
-                                <div key={key} className="space-y-1">
-                                  {/* Category header with code and name */}
-                                  {group.categoryCode && (
-                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
-                                      <span className="font-mono bg-muted/50 px-1 py-0.5 rounded">
-                                        {group.categoryCode}
-                                      </span>
-                                      <span>{group.categoryName}</span>
-                                    </div>
-                                  )}
-                                  {/* Sectors in this category */}
-                                  <div className={cn("space-y-1", group.categoryCode && "ml-3")}>
-                                    {group.sectors.map((sector, idx) => {
-                                      const sectorCode = sector.code;
-                                      // Use DAC sector name, fallback to narrative, strip code prefix
-                                      const rawName = sector.sectorInfo?.name || sector.narrative || '';
-                                      const cleanName = rawName.replace(/^\d+\s*[-–]\s*/, '');
-                                      return (
-                                        <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
-                                          <div className="flex items-center gap-1.5 min-w-0">
-                                            {sectorCode && (
-                                              <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-gray-700 shrink-0">
-                                                {sectorCode}
-                                              </span>
-                                            )}
-                                            <span className="truncate">{cleanName || sectorCode}</span>
-                                          </div>
-                                          {sector.percentage !== undefined && sector.percentage > 0 && (
-                                            <span className="text-gray-500 shrink-0">{sector.percentage}%</span>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  {/* Divider line between categories */}
-                                  {groupIdx < groupEntries.length - 1 && (
-                                    <div className="border-b border-gray-200 mt-2" />
-                                  )}
-                                </div>
-                              ));
-                            })()}
-                            {(formData.sectors || []).reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
-                              <div className="flex justify-between text-xs font-medium text-gray-700 pt-1 border-t">
-                                <span>Total</span>
-                                <span>{(formData.sectors || []).reduce((sum, s) => sum + (s.percentage || 0), 0)}%</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {!useActivitySectorChoice && (!formData.sectors || formData.sectors.length === 0) && (
-                        <div className="ml-7 p-3 bg-muted/50 rounded-md border border-border">
-                          <p className="text-xs text-muted-foreground">
-                            No custom sectors defined yet. Use the sector editor below to add sectors.
-                          </p>
-                        </div>
-                      )}
                     </div>
 
                     {/* Show TransactionSectorManager only when custom sectors is selected */}
@@ -3214,6 +3118,9 @@ export default function TransactionModal({
                         setFormData({ ...formData, sectors });
                       }}
                       allowPercentages={true}
+                      transactionValue={formData.value || 0}
+                      transactionCurrency={formData.currency || 'USD'}
+                      calculatedUsdValue={calculatedUsdValue}
                     />
                       </div>
                     )}
@@ -3225,7 +3132,7 @@ export default function TransactionModal({
               <Collapsible open={showMultipleAidTypes} onOpenChange={setShowMultipleAidTypes}>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 bg-muted/50 hover:bg-muted rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">

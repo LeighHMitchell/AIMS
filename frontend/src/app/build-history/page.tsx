@@ -60,7 +60,7 @@ export default function BuildHistoryPage() {
               <History className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold text-foreground">Build History</h1>
+                  <h1 className="text-3xl font-bold text-foreground">Build History</h1>
                   <TooltipProvider>
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -79,7 +79,7 @@ export default function BuildHistoryPage() {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1">
                   A timeline of all releases and updates to æther Myanmar
                 </p>
               </div>

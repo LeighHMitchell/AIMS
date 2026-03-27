@@ -244,7 +244,7 @@ export default function WorkingGroupProfilePage() {
   if (!workingGroup) {
     return (
       <MainLayout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div>
           <Alert>
             <AlertDescription>Working group not found</AlertDescription>
           </Alert>
@@ -255,7 +255,7 @@ export default function WorkingGroupProfilePage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div>
         {/* Header */}
         <div className="mb-8">
           <Breadcrumbs items={[

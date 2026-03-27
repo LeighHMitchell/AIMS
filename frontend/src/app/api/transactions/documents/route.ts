@@ -64,29 +64,26 @@ export async function GET(request: NextRequest) {
 
 // POST - Add external document link
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    if (!supabase || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
-
-    const { 
-      transactionId, 
-      activityId, 
-      externalUrl, 
-      fileName, 
-      description, 
-      documentType = 'evidence' 
+    const {
+      transactionId,
+      activityId,
+      externalUrl,
+      fileName,
+      description,
+      documentType = 'evidence'
     } = await request.json();
 
     if (!transactionId || !externalUrl || !fileName) {
-      return NextResponse.json({ 
-        error: 'Transaction ID, external URL, and file name are required' 
+      return NextResponse.json({
+        error: 'Transaction ID, external URL, and file name are required'
       }, { status: 400 });
     }
 
@@ -95,32 +92,6 @@ export async function POST(request: NextRequest) {
       new URL(externalUrl);
     } catch {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
-    }
-
-    // Check permissions if activityId is provided
-    if (activityId) {
-      const { data: activity, error: activityError } = await supabase
-        .from('activities')
-        .select(`
-          id,
-          created_by,
-          activity_contributors(user_id, role)
-        `)
-        .eq('id', activityId)
-        .single();
-
-      if (activityError || !activity) {
-        return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
-      }
-
-      const hasPermission = activity.created_by === user.id ||
-        (activity.activity_contributors && activity.activity_contributors.some((contrib: any) => 
-          contrib.user_id === user.id && ['editor', 'admin'].includes(contrib.role)
-        ));
-
-      if (!hasPermission) {
-        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-      }
     }
 
     // Save external document record to database
@@ -164,18 +135,15 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove document
 export async function DELETE(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    if (!supabase || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('id');
-
-    // TODO: Add authentication when auth pattern is established
-    const user = { id: 'system' }; // Temporary user for development
 
     if (!documentId) {
       return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
@@ -190,36 +158,6 @@ export async function DELETE(request: NextRequest) {
 
     if (fetchError || !document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
-    }
-
-    // Check permissions - user must be owner or have admin access to activity
-    const hasPermission = document.uploaded_by === user.id;
-    
-    if (!hasPermission && document.activity_id) {
-      const { data: activity, error: activityError } = await supabase
-        .from('activities')
-        .select(`
-          id,
-          created_by,
-          activity_contributors(user_id, role)
-        `)
-        .eq('id', document.activity_id)
-        .single();
-
-      if (!activityError && activity) {
-        const hasActivityPermission = activity.created_by === user.id ||
-          (activity.activity_contributors && activity.activity_contributors.some((contrib: any) => 
-            contrib.user_id === user.id && contrib.role === 'admin'
-          ));
-        
-        if (hasActivityPermission) {
-          // User has permission through activity access
-        } else {
-          return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-        }
-      } else {
-        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-      }
     }
 
     // Delete file from storage if it's not an external URL

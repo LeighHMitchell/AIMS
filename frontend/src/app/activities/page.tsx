@@ -1665,11 +1665,12 @@ const router = useRouter();
           <ActivityIcon className="h-8 w-8 text-muted-foreground" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
+              <h1 className="text-3xl font-bold text-foreground">Activities</h1>
               <HelpTextTooltip
                 content="View key information about each activity. Users with appropriate permissions can update or remove activities from this list."
               />
             </div>
+            <p className="text-muted-foreground mt-1">Browse, manage, and track all aid activities in the system</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -2585,23 +2586,6 @@ const router = useRouter();
                           }}
                         >
                           <div className="flex items-start gap-2">
-                            {/* Activity Icon */}
-                            {activity.icon && activity.icon.trim() !== '' && (
-                              <div className="flex-shrink-0 mt-0.5">
-                                <div className="w-6 h-6 rounded-sm overflow-hidden border border-gray-200 bg-white">
-                                  <img 
-                                    src={activity.icon} 
-                                    alt="Activity icon" 
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            
                             {/* Activity Title and Details */}
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
                               <h3

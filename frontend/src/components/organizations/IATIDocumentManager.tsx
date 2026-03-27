@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Pencil, Trash2, ExternalLink, FileText, Calendar, Globe, Tag, Languages, GripVertical, Loader2, AlertCircle, Upload } from 'lucide-react'
@@ -708,6 +708,9 @@ export function IATIDocumentManager({
             <DialogTitle>
               {editingDocument?.id ? 'Edit Document' : 'Add Document'}
             </DialogTitle>
+            <DialogDescription>
+              {editingDocument?.id ? 'Update the document details and metadata.' : 'Add a new document with title, URL, and category information.'}
+            </DialogDescription>
           </DialogHeader>
 
           {editingDocument && (

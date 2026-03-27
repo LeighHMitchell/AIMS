@@ -75,6 +75,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { LabelSaveIndicator } from '@/components/ui/save-indicator'
@@ -2059,9 +2060,9 @@ export function OrganizationFormContent({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Import from IATI</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Enter an IATI organization identifier to import data automatically
-          </p>
+          <DialogDescription>
+            Enter an IATI organization identifier to import data automatically.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">

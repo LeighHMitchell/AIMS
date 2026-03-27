@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, FileJson, FileSpreadsheet, AlertTriangle } from "lucide-react"
+import { Upload, FileJson, FileSpreadsheet, AlertTriangle, ArrowUpFromLine } from "lucide-react"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
@@ -168,11 +168,16 @@ export default function ImportParcelsPage() {
           { label: "Import" },
         ]} />
 
-        <h1 className="text-3xl font-bold mb-2">Import Parcels</h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          Upload a CSV file with parcel metadata and optionally a GeoJSON file with geometries.
-          Match geometries to parcels using the <code className="text-xs bg-muted px-1 rounded">parcel_code</code> property.
-        </p>
+        <div className="flex items-center gap-3 mb-6">
+          <ArrowUpFromLine className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Import Parcels</h1>
+            <p className="text-muted-foreground mt-1">
+              Upload a CSV file with parcel metadata and optionally a GeoJSON file with geometries.
+              Match geometries to parcels using the <code className="text-xs bg-muted px-1 rounded">parcel_code</code> property.
+            </p>
+          </div>
+        </div>
 
         {/* Upload zones */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

@@ -266,14 +266,14 @@ export default function CalendarPage() {
           border-radius: 4px;
         }
       `}</style>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="w-full space-y-6">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div>
           <div className="flex items-center gap-3">
             <Calendar className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-3xl font-bold">Calendar Events</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-bold text-foreground">Calendar Events</h1>
+              <p className="text-muted-foreground mt-1">
                 View and manage community events, deadlines, and meetings
               </p>
             </div>

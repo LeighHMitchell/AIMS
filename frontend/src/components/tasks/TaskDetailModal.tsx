@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -224,9 +225,9 @@ export function TaskDetailModal({
                     )}
                   </div>
                   <DialogTitle className="text-xl">{task.title}</DialogTitle>
-                  {task.description && (
-                    <p className="text-sm text-muted-foreground mt-2">{task.description}</p>
-                  )}
+                  <DialogDescription>
+                    {task.description || 'View task details, assignments, attachments, and history.'}
+                  </DialogDescription>
                 </div>
               </div>
             </DialogHeader>

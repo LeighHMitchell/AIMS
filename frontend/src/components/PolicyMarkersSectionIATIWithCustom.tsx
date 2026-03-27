@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { PolicyMarkerScoreSelectIATI } from '@/components/forms/PolicyMarkerScoreSelectIATI';
 import { HelpText } from '@/components/ui/help-text';
 import { toast } from 'sonner';
@@ -816,6 +816,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Add Custom Policy Marker</DialogTitle>
+                <DialogDescription>Create a custom policy marker with a name, vocabulary, and significance score.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -962,6 +963,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Edit Custom Policy Marker</DialogTitle>
+                <DialogDescription>Update the custom policy marker details and significance score.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">

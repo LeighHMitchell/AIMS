@@ -32,7 +32,7 @@ import {
   Star,
   FileCode2
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   ProjectReference,
@@ -769,6 +769,9 @@ export default function GovernmentEndorsementTab({
             <DialogTitle>
               {editingRef ? 'Edit Project Reference' : 'Add Project Reference'}
             </DialogTitle>
+            <DialogDescription>
+              {editingRef ? 'Update the project reference details.' : 'Add a government or donor project reference identifier.'}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

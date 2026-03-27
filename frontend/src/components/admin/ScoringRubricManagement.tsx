@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import {
   Plus, Trash2, Loader2, CheckCircle, Copy, Zap, Pencil, RefreshCw,
 } from "lucide-react"
@@ -449,6 +449,7 @@ export function ScoringRubricManagement() {
         <DialogContent>
           <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
             <DialogTitle>Create New Rubric Version</DialogTitle>
+            <DialogDescription>Start a new scoring rubric version with criteria and weights.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>

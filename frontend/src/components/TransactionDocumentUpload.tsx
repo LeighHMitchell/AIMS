@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useState, useRef } from 'react';
-import { Upload, FileText, ExternalLink, X, Eye, Download, AlertCircle, Check, Loader2, Pencil } from 'lucide-react';
+import { Upload, FileText, ExternalLink, X, Eye, Download, AlertCircle, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -194,15 +194,49 @@ export function TransactionDocumentUpload({
   }, [handleFileUpload]);
 
   // Add handler to add a link to the list
-  const handleAddExternalLink = () => {
+  const handleAddExternalLink = async () => {
     if (!externalUrl.trim()) {
       toast.error('Please enter a URL.');
       return;
     }
-    setExternalLinks([
-      ...externalLinks,
-      { url: externalUrl.trim(), description: urlDescription.trim() },
-    ]);
+    try {
+      let url = externalUrl.trim();
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+      const response = await apiFetch('/api/transactions/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionId: transactionId || 'temp',
+          activityId: activityId || null,
+          externalUrl: url,
+          fileName: urlDescription.trim() || url,
+          description: urlDescription.trim() || null,
+        }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        const newDoc: TransactionDocument = {
+          id: result.id,
+          transactionId: transactionId || 'temp',
+          fileName: result.fileName,
+          fileSize: 0,
+          fileType: 'external',
+          fileUrl: '',
+          externalUrl: result.externalUrl,
+          uploadedAt: new Date(result.uploadedAt),
+          uploadedBy: 'current-user',
+        };
+        onDocumentsChange([...documents, newDoc]);
+        toast.success('Link added successfully');
+      } else {
+        const err = await response.json();
+        toast.error(err.error || 'Failed to add link');
+      }
+    } catch {
+      toast.error('Failed to add link');
+    }
     setExternalUrl('');
     setUrlDescription('');
   };
@@ -315,13 +349,9 @@ export function TransactionDocumentUpload({
       </Card>
 
       {/* External Document Links Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-700">
-            Add External Document Links
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <div>
+        <h4 className="text-sm font-medium mb-3">Add External Document Links</h4>
+        <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="external-url">URL</Label>
             <Input
@@ -346,7 +376,7 @@ export function TransactionDocumentUpload({
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={handleAddExternalLink}
           >
@@ -356,7 +386,7 @@ export function TransactionDocumentUpload({
           {externalLinks.length > 0 && (
             <div className="space-y-2 mt-3">
               {externalLinks.map((link, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+                <div key={idx} className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-mono text-sm text-blue-700 truncate">{link.url}</p>
                     {link.description && <p className="text-xs text-muted-foreground mt-0.5">{link.description}</p>}
@@ -374,101 +404,82 @@ export function TransactionDocumentUpload({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Documents List */}
+      {/* Uploaded Documents and Links */}
       {documents.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
-              Uploaded Documents ({documents.length}/{maxFiles})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {documents.map((doc, index) => (
-                <div key={doc.id}>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      {getFileIcon(doc.fileType)}
-                      <div className="min-w-0 flex-1">
-                        {renamingId === doc.id ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              value={renameValue}
-                              onChange={(e) => setRenameValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleRename(doc.id, renameValue);
-                                if (e.key === 'Escape') setRenamingId(null);
-                              }}
-                              className="h-7 text-sm"
-                              autoFocus
-                            />
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleRename(doc.id, renameValue)}>
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setRenamingId(null)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
-                        )}
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          {doc.fileSize > 0 && <span>{formatFileSize(doc.fileSize)}</span>}
-                          {doc.uploadedAt && <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>}
-                          {doc.externalUrl && <Badge variant="outline" className="text-xs">External</Badge>}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      {renamingId !== doc.id && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setRenamingId(doc.id);
-                            setRenameValue(doc.fileName);
-                          }}
-                          disabled={disabled}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      {doc.externalUrl ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => window.open(doc.externalUrl, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => doc.fileUrl && window.open(doc.fileUrl, '_blank')}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeDocument(doc.id)}
-                        disabled={disabled}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {index < documents.length - 1 && <Separator className="my-2" />}
-                </div>
-              ))}
+        <div>
+          <div style={{ border: '1px solid #d1d5db', borderRadius: '0.375rem', overflow: 'hidden' }}>
+            <div className="bg-surface-muted px-3 py-2" style={{ borderBottom: '1px solid #d1d5db' }}>
+              <h4 className="text-sm font-medium">Uploaded Documents and Links</h4>
             </div>
-          </CardContent>
-        </Card>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted/50 text-muted-foreground border-b">
+                  <th className="text-left py-2 px-3 font-medium w-8"></th>
+                  <th className="text-left py-2 px-3 font-medium">Name</th>
+                  <th className="text-left py-2 px-3 font-medium w-28">Size</th>
+                  <th className="text-left py-2 px-3 font-medium w-24">Date</th>
+                  <th className="py-2 px-1 w-24"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((doc) => (
+                  <tr key={doc.id} className="border-b border-muted/50 hover:bg-muted/30">
+                    <td className="py-2 px-3">{getFileIcon(doc.fileType)}</td>
+                    <td className="py-2 px-3">
+                      {renamingId === doc.id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleRename(doc.id, renameValue);
+                              if (e.key === 'Escape') setRenamingId(null);
+                            }}
+                            className="h-7 text-xs"
+                            autoFocus
+                          />
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleRename(doc.id, renameValue)}>
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setRenamingId(null)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-sm truncate block">{doc.fileName}</span>
+                          {doc.externalUrl && (
+                            <span className="text-blue-600 truncate block font-mono">{doc.externalUrl}</span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 text-muted-foreground">{doc.fileSize > 0 ? formatFileSize(doc.fileSize) : '—'}</td>
+                    <td className="py-2 px-3 text-muted-foreground">{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : '—'}</td>
+                    <td className="py-1 px-1">
+                      <div className="flex items-center">
+                        {renamingId !== doc.id && (
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setRenamingId(doc.id); setRenameValue(doc.fileName); }} disabled={disabled}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => doc.externalUrl ? window.open(doc.externalUrl, '_blank') : doc.fileUrl && window.open(doc.fileUrl, '_blank')}>
+                          {doc.externalUrl ? <ExternalLink className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600" onClick={() => removeDocument(doc.id)} disabled={disabled}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );

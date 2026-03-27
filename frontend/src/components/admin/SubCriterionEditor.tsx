@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -91,6 +91,9 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
       <DialogContent className="max-w-lg">
         <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
           <DialogTitle>{criterion ? 'Edit Sub-Criterion' : 'Add Sub-Criterion'}</DialogTitle>
+          <DialogDescription>
+            {criterion ? 'Update the sub-criterion name, scoring rule, and thresholds.' : 'Define a new sub-criterion with scoring rules and weight.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { 
   CheckCircle2, 
   Info, 
@@ -285,6 +285,7 @@ export function FinancingTermsTab({
                 <DialogContent className="max-w-4xl h-[75vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Edit Loan Terms</DialogTitle>
+                    <DialogDescription>Update the loan repayment terms including rates, dates, and payment schedule.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-6 overflow-y-auto flex-1 pr-2">
           {/* Rates */}

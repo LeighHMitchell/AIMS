@@ -956,12 +956,12 @@ export default function ForwardSpendingSurveyTab({
                         <RefreshCw className="h-3 w-3" />
                       </Button>
                     )}
+                    {modalExchangeRate != null && modalForecast.currency !== 'USD' && !isLoadingModalRate && (
+                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                        1 {modalForecast.currency} = {modalExchangeRate.toFixed(6)} USD
+                      </span>
+                    )}
                   </div>
-                  {modalExchangeRate != null && modalForecast.currency !== 'USD' && (
-                    <p className="text-xs text-muted-foreground">
-                      1 {modalForecast.currency} = {modalExchangeRate.toFixed(6)} USD
-                    </p>
-                  )}
                   {modalRateError && (
                     <p className="text-xs text-red-500">{modalRateError}</p>
                   )}

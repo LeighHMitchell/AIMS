@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog"
 import { Plus, Pencil, Trash2, Target } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
@@ -145,6 +145,9 @@ export function NationalDevelopmentGoals() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingGoal ? "Edit Goal" : "Add Goal"}</DialogTitle>
+            <DialogDescription>
+              {editingGoal ? "Update the national development goal details." : "Define a new national development goal with code and description."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">

@@ -5,15 +5,14 @@ import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import { Calendar, Clock, Copy, Building2, DollarSign } from 'lucide-react';
 import { useBookmarks } from '@/hooks/use-bookmarks';
-import { motion } from "framer-motion";
 import { formatActivityDate, formatRelativeTime } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { ActivityCardActionMenu } from './ActivityCardActionMenu';
 import { getActivityStatusLabel } from '@/lib/activity-status-utils';
+import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
 
 // Color palette — uses brand tokens from CSS variables for theme compatibility
 const colors = {
-  primaryScarlet: 'hsl(var(--brand-scarlet))',
   paleSlate: 'hsl(var(--brand-pale-slate))',
   blueSlate: 'hsl(var(--brand-blue-slate))',
   coolSteel: 'hsl(var(--brand-cool-steel))',
@@ -53,8 +52,6 @@ interface ActivityCardModernProps {
   onDelete?: (activityId: string) => void;
   isLoading?: boolean;
 }
-
-// getActivityStatusLabel imported from @/lib/activity-status-utils
 
 // Currency formatting utility
 const formatCurrency = (value: number) => {
@@ -135,199 +132,153 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
   const idLabel = activity.iati_id ? 'IATI ID' : 'Activity ID';
 
   return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
-      whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate border bg-card ${className}`}
-      role="article"
-      aria-label={`Activity: ${activity.title}`}
-    >
-      {/* Action Menu - positioned at card level to avoid overflow clipping */}
-      <div className="absolute top-4 left-4 z-50" onClick={(e) => e.stopPropagation()}>
+    <CardShell
+      ariaLabel={`Activity: ${activity.title}`}
+      className={className}
+      cardRef={cardRef}
+      bannerImage={activity.banner}
+      bannerIcon={Building2}
+      bannerActions={
         <ActivityCardActionMenu
           activityId={activity.id}
           isBookmarked={isBookmarked(activity.id)}
           onToggleBookmark={() => toggleBookmark(activity.id)}
-          onExportJPG={handleExport}
-          onEdit={onEdit ? handleEdit : undefined}
-          onDelete={onDelete ? handleDelete : undefined}
+          onExportJPG={() => handleExport({} as React.MouseEvent)}
+          onEdit={onEdit ? () => onEdit(activity.id) : undefined}
+          onDelete={onDelete ? () => onDelete(activity.id) : undefined}
         />
-      </div>
-
-      {/* Banner/Poster Section */}
-      <div className="relative h-48 w-full overflow-hidden rounded-t-3xl" style={{ backgroundColor: colors.blueSlate }}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
-        {activity.banner ? (
-          <motion.img
-            src={activity.banner}
-            alt={`Banner for ${activity.title}`}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <Building2 className="h-16 w-16" style={{ color: colors.coolSteel, opacity: 0.3 }} />
+      }
+      bannerOverlay={
+        <>
+          <Link href={`/activities/${activity.id}`} className="block">
+            <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
+              {activity.title}
+              {activity.acronym && (
+                <span className="text-lg font-bold ml-1 text-white">({activity.acronym})</span>
+              )}
+            </h2>
+          </Link>
+          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+            {activity.created_by_org_acronym || activity.created_by_org_name ? (
+              <>
+                <span className="flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  {activity.created_by_org_acronym || activity.created_by_org_name}
+                </span>
+                <span>•</span>
+              </>
+            ) : null}
+            {activity.publication_status === 'published' ? (
+              <span style={{ color: colors.paleSlate }}>Published</span>
+            ) : (
+              <span style={{ color: colors.coolSteel }}>Unpublished</span>
+            )}
+            {activity.is_pooled_fund && (
+              <>
+                <span>•</span>
+                <span style={{ color: '#3C6255', fontWeight: 600 }}>Fund</span>
+              </>
+            )}
+            {activity.activity_status && (
+              <>
+                <span>•</span>
+                <span style={{ color: colors.paleSlate }}>
+                  {getActivityStatusLabel(activity.activity_status)}
+                </span>
+              </>
+            )}
           </div>
-        )}
-
-        {/* Title & Metadata - Bottom of banner */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Link href={`/activities/${activity.id}`} className="block">
-              <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
-                {activity.title}
-                {activity.acronym && (
-                  <span className="text-lg font-bold ml-1 text-white">({activity.acronym})</span>
-                )}
-              </h2>
-            </Link>
-            <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
-              {activity.created_by_org_acronym || activity.created_by_org_name ? (
-                <>
-                  <span className="flex items-center gap-1">
-                    <Building2 className="w-3 h-3" />
-                    {activity.created_by_org_acronym || activity.created_by_org_name}
-                  </span>
-                  <span>•</span>
-                </>
-              ) : null}
-              {activity.publication_status === 'published' ? (
-                <span style={{ color: colors.paleSlate }}>Published</span>
-              ) : (
-                <span style={{ color: colors.coolSteel }}>Unpublished</span>
-              )}
-              {activity.is_pooled_fund && (
-                <>
-                  <span>•</span>
-                  <span style={{ color: '#3C6255', fontWeight: 600 }}>Fund</span>
-                </>
-              )}
-              {activity.activity_status && (
-                <>
-                  <span>•</span>
-                  <span style={{ color: colors.paleSlate }}>
-                    {getActivityStatusLabel(activity.activity_status)}
-                  </span>
-                </>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Activity Icon Overlay - positioned outside banner to avoid overflow clipping */}
+        </>
+      }
+    >
+      {/* Activity Icon Overlay */}
       {activity.icon && activity.icon.trim() !== '' && (
-        <div className="absolute right-4 top-48 -translate-y-[75%] z-30">
-          <div className="w-14 h-14 rounded-full border-4 shadow-lg overflow-hidden bg-card" style={{ borderColor: colors.platinum }}>
-            <img
-              src={activity.icon}
-              alt={`Icon for ${activity.title}`}
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-          </div>
-        </div>
+        <CardShellLogoOverlay
+          src={activity.icon}
+          alt={`Icon for ${activity.title}`}
+        />
       )}
 
       {/* Ticket Details Section */}
       <div className="relative flex-1 p-5 flex flex-col select-text cursor-default bg-card">
         <div className="flex-1">
           <div className="grid grid-cols-2 gap-4 mt-2">
-              {/* Start Date */}
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                  Start Date
-                </p>
-                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
-                  <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                  <span>{activity.planned_start_date ? formatActivityDate(activity.planned_start_date) : 'Not set'}</span>
-                </div>
-              </div>
-              {/* End Date */}
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                  End Date
-                </p>
-                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
-                  <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                  <span>{activity.planned_end_date ? formatActivityDate(activity.planned_end_date) : 'Not set'}</span>
-                </div>
-              </div>
-              {/* Budget */}
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                  Total Budget
-                </p>
-                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
-                  <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                  <span>{formatCurrency(activity.totalBudget || 0)}</span>
-                </div>
-              </div>
-              {/* Disbursed */}
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                  Disbursed
-                </p>
-                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
-                  <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                  <span>{formatCurrency(activity.totalDisbursed || 0)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Rip Line */}
-          <div className="relative flex items-center justify-center my-4">
-            <div className="absolute -left-5 h-10 w-10 rounded-full z-20 bg-background" />
-            <div className="w-full border-t-2 border-dashed" style={{ borderColor: colors.paleSlate }} />
-            <div className="absolute -right-5 h-10 w-10 rounded-full z-20 bg-background" />
-          </div>
-
-          {/* Bottom Section */}
-          <div className="flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-                {idLabel}
+                Start Date
               </p>
-              <p className="text-xs leading-relaxed">
-                <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded-sm" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{displayId}</span>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(displayId);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity inline-block ml-1 align-middle"
-                  title="Copy ID"
-                >
-                  <Copy className="w-3 h-3" style={{ color: colors.coolSteel }} />
-                </button>
-              </p>
+              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+                <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
+                <span>{activity.planned_start_date ? formatActivityDate(activity.planned_start_date) : 'Not set'}</span>
+              </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              {activity.updated_at && (
-                <div className="flex items-center gap-1 text-[10px]" style={{ color: colors.coolSteel }}>
-                  <Clock className="w-3 h-3" />
-                  <span>Updated {formatRelativeTime(activity.updated_at)}</span>
-                </div>
-              )}
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
+                End Date
+              </p>
+              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+                <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
+                <span>{activity.planned_end_date ? formatActivityDate(activity.planned_end_date) : 'Not set'}</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
+                Total Budget
+              </p>
+              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+                <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
+                <span>{formatCurrency(activity.totalBudget || 0)}</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
+                Disbursed
+              </p>
+              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+                <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
+                <span>{formatCurrency(activity.totalDisbursed || 0)}</span>
+              </div>
             </div>
           </div>
         </div>
-    </motion.div>
+
+        {/* Rip Line */}
+        <div className="my-4">
+          <CardShellRipLine />
+        </div>
+
+        {/* Bottom Section */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
+              {idLabel}
+            </p>
+            <p className="text-xs leading-relaxed">
+              <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded-sm" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{displayId}</span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(displayId);
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity inline-block ml-1 align-middle"
+                title="Copy ID"
+              >
+                <Copy className="w-3 h-3" style={{ color: colors.coolSteel }} />
+              </button>
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            {activity.updated_at && (
+              <div className="flex items-center gap-1 text-[10px]" style={{ color: colors.coolSteel }}>
+                <Clock className="w-3 h-3" />
+                <span>Updated {formatRelativeTime(activity.updated_at)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </CardShell>
   );
 };
 

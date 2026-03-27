@@ -249,6 +249,7 @@ export function SearchableSelect({
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             {option.icon}
+                            <span className="truncate">{option.label}</span>
                             {option.code && (
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
                                 {option.code}
@@ -259,7 +260,6 @@ export function SearchableSelect({
                                 {option.value}
                               </span>
                             )}
-                            <span className="truncate">{option.label}</span>
                             {option.rightLabel && (
                               <span className="ml-auto text-xs text-muted-foreground shrink-0">
                                 {option.rightLabel}

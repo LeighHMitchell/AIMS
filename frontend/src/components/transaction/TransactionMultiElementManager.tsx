@@ -66,13 +66,19 @@ interface SectorManagerProps {
   onSectorsChange: (sectors: TransactionSector[]) => void;
   allowPercentages?: boolean;
   className?: string;
+  transactionValue?: number;
+  transactionCurrency?: string;
+  calculatedUsdValue?: number | null;
 }
 
-export function TransactionSectorManager({ 
-  sectors = [], 
+export function TransactionSectorManager({
+  sectors = [],
   onSectorsChange,
   allowPercentages = true,
-  className 
+  className,
+  transactionValue = 0,
+  transactionCurrency = 'USD',
+  calculatedUsdValue = null,
 }: SectorManagerProps) {
   // Track selected sector codes for the SectorSelect component
   const selectedSectorCodes = useMemo(() => sectors.map(s => s.code), [sectors]);
@@ -153,38 +159,19 @@ export function TransactionSectorManager({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Header with status badges */}
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Label className="text-sm font-medium">Transaction Sectors</Label>
           <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple sectors per transaction with percentage allocations" />
         </div>
         <div className="flex items-center gap-2">
-          {sectors.length > 0 && (
-            <Badge variant="outline" className="text-xs">
-              {sectors.length} sector{sectors.length !== 1 ? 's' : ''}
+          {hasPercentages && hasPercentageError && (
+            <Badge variant="destructive" className="text-xs">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              {totalPercentage.toFixed(1)}% (must be 100%)
             </Badge>
           )}
-          {hasPercentages && (
-            <>
-              {hasPercentageError && (
-                <Badge variant="destructive" className="text-xs">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  {totalPercentage.toFixed(1)}% (must be 100%)
-                </Badge>
-              )}
-              {isComplete && (
-                <Badge variant="default" className="text-xs bg-green-600">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  100%
-                </Badge>
-              )}
-              {!isComplete && !hasPercentageError && sectors.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {totalPercentage.toFixed(1)}%
-                </Badge>
-              )}
-            </>
           )}
         </div>
       </div>
@@ -213,7 +200,7 @@ export function TransactionSectorManager({
                   variant="default" 
                   size="sm"
                   onClick={distributeEqually}
-                  className="text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="text-xs h-7"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
                   Distribute Equally
@@ -232,75 +219,89 @@ export function TransactionSectorManager({
             </div>
           </div>
 
-          {/* Sector cards */}
-          <div className="space-y-2">
-            {sectors.map((sector, index) => {
-              const sectorInfo = getSectorInfo(sector.code);
-              // Extract just the sector name without the code prefix
-              const sectorNameOnly = sectorInfo.name.replace(/^\d+\s*[-–]\s*/, '');
-              // Parse category to separate code and name
-              const categoryMatch = sectorInfo.category?.match(/^(\d+)\s*[-–]\s*(.+)$/);
-              const categoryCode = categoryMatch ? categoryMatch[1] : '';
-              const categoryName = categoryMatch ? categoryMatch[2] : sectorInfo.category || '';
-              
-              return (
-                <Card key={`${sector.code}-${index}`} className="p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start gap-3">
-                    {/* Sector info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs font-mono shrink-0">
-                          {sector.code}
-                        </Badge>
-                        <span className="text-sm font-medium text-gray-900 truncate">
-                          {sectorNameOnly}
-                        </span>
-                      </div>
-                      {sectorInfo.category && (
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          {categoryCode && (
-                            <span className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
-                              {categoryCode}
-                            </span>
-                          )}
-                          <span className="text-xs text-gray-500">
-                            {categoryName}
-                          </span>
+          {/* Sector table */}
+          <div className="border rounded-md overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted/50 text-muted-foreground border-b">
+                  <th className="text-left py-2 px-3 font-medium">Sector</th>
+                  {allowPercentages && <th className="text-right py-2 px-3 font-medium w-20">%</th>}
+                  {transactionValue > 0 && transactionCurrency !== 'USD' && (
+                    <th className="text-right py-2 px-3 font-medium w-24">{transactionCurrency}</th>
+                  )}
+                  {transactionValue > 0 && calculatedUsdValue && (
+                    <th className="text-right py-2 px-3 font-medium w-24">USD</th>
+                  )}
+                  <th className="w-8 py-2 px-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sectors.map((sector, index) => {
+                  const sectorInfo = getSectorInfo(sector.code);
+                  const sectorNameOnly = sectorInfo.name.replace(/^\d+\s*[-–]\s*/, '');
+                  const pct = sector.percentage || 0;
+                  const originalValue = transactionValue > 0 && pct > 0 ? Math.round(transactionValue * pct / 100) : null;
+                  const usdValue = calculatedUsdValue && pct > 0 ? Math.round(calculatedUsdValue * pct / 100) : null;
+
+                  return (
+                    <tr key={`${sector.code}-${index}`} className="border-b border-muted/50 hover:bg-muted/30">
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono bg-muted px-1 py-0.5 rounded shrink-0">{sector.code}</span>
+                          <span className="truncate">{sectorNameOnly}</span>
                         </div>
+                      </td>
+                      {allowPercentages && (
+                        <td className="text-right py-1 px-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={sector.percentage ?? ''}
+                            onChange={(e) => updatePercentage(index, parseFloat(e.target.value) || 0)}
+                            className="w-16 h-7 text-xs text-right"
+                            placeholder="0"
+                          />
+                        </td>
                       )}
-                    </div>
-                    
-                    {/* Percentage input */}
-                    {allowPercentages && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={sector.percentage ?? ''}
-                          onChange={(e) => updatePercentage(index, parseFloat(e.target.value) || 0)}
-                          className="w-20 h-8 text-sm text-center"
-                          placeholder="0"
-                        />
-                        <span className="text-xs text-muted-foreground">%</span>
-                      </div>
+                      {transactionValue > 0 && transactionCurrency !== 'USD' && (
+                        <td className="text-right py-2 px-3 tabular-nums">{originalValue !== null ? originalValue.toLocaleString() : '—'}</td>
+                      )}
+                      {transactionValue > 0 && calculatedUsdValue && (
+                        <td className="text-right py-2 px-3 tabular-nums">{usdValue !== null ? usdValue.toLocaleString() : '—'}</td>
+                      )}
+                      <td className="py-1 px-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSector(index)}
+                          className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {allowPercentages && totalPercentage > 0 && (
+                <tfoot>
+                  <tr className="font-medium border-t bg-muted/30">
+                    <td className="py-2 px-3">Total</td>
+                    <td className="text-right py-2 px-3">{totalPercentage}%</td>
+                    {transactionValue > 0 && transactionCurrency !== 'USD' && (
+                      <td className="text-right py-2 px-3 tabular-nums">{transactionValue.toLocaleString()}</td>
                     )}
-                    
-                    {/* Remove button */}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSector(index)}
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+                    {transactionValue > 0 && calculatedUsdValue && (
+                      <td className="text-right py-2 px-3 tabular-nums">{calculatedUsdValue.toLocaleString()}</td>
+                    )}
+                    <td></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </div>
       )}

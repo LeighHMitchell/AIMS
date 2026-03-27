@@ -703,7 +703,7 @@ export default function TransactionsPage() {
           <div className="flex items-center gap-3">
             <ArrowLeftRight className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Transactions</h1>
+              <h1 className="text-3xl font-bold text-foreground">Transactions</h1>
               <p className="text-muted-foreground">View and manage all financial transactions</p>
             </div>
           </div>

@@ -1,14 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
-import { X, FileText, Receipt, Building2, Target, BarChart3, Library, Calendar, File, FileImage, FileVideo, FileSpreadsheet, FileCode } from 'lucide-react';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { FileText, Receipt, Building2, Target, BarChart3, Library, File, FileImage, FileVideo, FileSpreadsheet, FileCode } from 'lucide-react';
 import { DOCUMENT_CATEGORIES } from '@/lib/iatiDocumentLink';
 import type { LibraryFilters, DocumentSourceType } from '@/types/library-document';
 
@@ -18,32 +16,24 @@ interface LibraryFiltersPanelProps {
   onClear: () => void;
 }
 
-// Source type options with icons
-const SOURCE_TYPE_OPTIONS: Array<{
-  value: DocumentSourceType;
-  label: string;
-  icon: React.ReactNode;
-}> = [
-  { value: 'activity', label: 'Activities', icon: <FileText className="h-4 w-4" /> },
-  { value: 'transaction', label: 'Transactions', icon: <Receipt className="h-4 w-4" /> },
-  { value: 'organization', label: 'Organizations', icon: <Building2 className="h-4 w-4" /> },
-  { value: 'result', label: 'Results', icon: <Target className="h-4 w-4" /> },
-  { value: 'indicator', label: 'Indicators', icon: <BarChart3 className="h-4 w-4" /> },
-  { value: 'standalone', label: 'Library', icon: <Library className="h-4 w-4" /> },
+// Source type options for multi-select
+const SOURCE_TYPE_OPTIONS = [
+  { value: 'activity', label: 'Activities' },
+  { value: 'transaction', label: 'Transactions' },
+  { value: 'organization', label: 'Organizations' },
+  { value: 'result', label: 'Results' },
+  { value: 'indicator', label: 'Indicators' },
+  { value: 'standalone', label: 'Library' },
 ];
 
-// Format group options with icons
-const FORMAT_OPTIONS: Array<{
-  value: string;
-  label: string;
-  icon: React.ReactNode;
-}> = [
-  { value: 'application/pdf', label: 'PDF', icon: <File className="h-4 w-4" /> },
-  { value: 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', label: 'Word Documents', icon: <FileText className="h-4 w-4" /> },
-  { value: 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv', label: 'Spreadsheets', icon: <FileSpreadsheet className="h-4 w-4" /> },
-  { value: 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml', label: 'Images', icon: <FileImage className="h-4 w-4" /> },
-  { value: 'video/mp4,video/webm', label: 'Videos', icon: <FileVideo className="h-4 w-4" /> },
-  { value: 'application/json,application/xml,text/xml', label: 'Data Files', icon: <FileCode className="h-4 w-4" /> },
+// Format group options for multi-select
+const FORMAT_OPTIONS = [
+  { value: 'application/pdf', label: 'PDF' },
+  { value: 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', label: 'Word' },
+  { value: 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv', label: 'Spreadsheets' },
+  { value: 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml', label: 'Images' },
+  { value: 'video/mp4,video/webm', label: 'Videos' },
+  { value: 'application/json,application/xml,text/xml', label: 'Data Files' },
 ];
 
 // Category options for multi-select
@@ -62,7 +52,11 @@ export function LibraryFiltersPanel({
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
   // Track which dropdown is open - only one can be open at a time
-  const [openDropdown, setOpenDropdown] = useState<'category' | 'org' | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const handleDropdownOpenChange = (id: string) => (isOpen: boolean) => {
+    setOpenDropdown(isOpen ? id : null);
+  };
 
   // Fetch organizations for filter
   useEffect(() => {
@@ -82,47 +76,34 @@ export function LibraryFiltersPanel({
     fetchOrganizations();
   }, []);
 
-  // Handle source type toggle
-  const handleSourceTypeToggle = (sourceType: DocumentSourceType, checked: boolean) => {
-    const currentTypes = filters.sourceTypes || [];
-    let newTypes: DocumentSourceType[];
-    
-    if (checked) {
-      newTypes = [...currentTypes, sourceType];
-    } else {
-      newTypes = currentTypes.filter(t => t !== sourceType);
-    }
-    
+  // Handle source type changes from multi-select
+  const handleSourceTypeChange = (values: string[]) => {
     onFiltersChange({
       ...filters,
-      sourceTypes: newTypes.length > 0 ? newTypes : undefined,
+      sourceTypes: values.length > 0 ? values as DocumentSourceType[] : undefined,
     });
   };
 
-  // Handle format toggle
-  const handleFormatToggle = (formatValues: string, checked: boolean) => {
-    const formats = formatValues.split(',');
-    const currentFormats = filters.formats || [];
-    let newFormats: string[];
-    
-    if (checked) {
-      newFormats = [...new Set([...currentFormats, ...formats])];
-    } else {
-      newFormats = currentFormats.filter(f => !formats.includes(f));
-    }
-    
+  // Handle format changes from multi-select
+  // Each option value may contain multiple MIME types (comma-separated)
+  // We need to expand selected option values into individual MIME types
+  const handleFormatChange = (selectedOptionValues: string[]) => {
+    const allMimeTypes = selectedOptionValues.flatMap(v => v.split(','));
     onFiltersChange({
       ...filters,
-      formats: newFormats.length > 0 ? newFormats : undefined,
+      formats: allMimeTypes.length > 0 ? allMimeTypes : undefined,
     });
   };
 
-  // Check if format group is selected
-  const isFormatGroupSelected = (formatValues: string) => {
-    if (!filters.formats) return false;
-    const formats = formatValues.split(',');
-    return formats.some(f => filters.formats!.includes(f));
-  };
+  // Compute which format option values are currently selected
+  // An option is selected if any of its MIME types are in filters.formats
+  const selectedFormatValues = FORMAT_OPTIONS
+    .filter(opt => {
+      if (!filters.formats) return false;
+      const mimes = opt.value.split(',');
+      return mimes.some(m => filters.formats!.includes(m));
+    })
+    .map(opt => opt.value);
 
   // Organization options for searchable select
   const orgOptions: SearchableSelectOption[] = organizations.map(org => ({
@@ -141,142 +122,115 @@ export function LibraryFiltersPanel({
   }));
 
   return (
-    <Card className="overflow-visible">
-      <CardContent className="p-4 overflow-visible">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {/* Source Type Filter */}
-          <div className="space-y-4">
-            <Label className="text-xs text-muted-foreground">Source Type</Label>
-            <div className="flex flex-col gap-4">
-              {SOURCE_TYPE_OPTIONS.map(option => (
-                <div key={option.value} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`source-${option.value}`}
-                    checked={filters.sourceTypes?.includes(option.value) || false}
-                    onCheckedChange={(checked) =>
-                      handleSourceTypeToggle(option.value, checked as boolean)
-                    }
-                  />
-                  <Label
-                    htmlFor={`source-${option.value}`}
-                    className="flex items-center gap-2 text-sm cursor-pointer font-normal"
-                  >
-                    {option.icon}
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
+    <FilterBar className="flex-wrap">
+      {/* Source Type */}
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">Source Type</Label>
+        <MultiSelectFilter
+          options={SOURCE_TYPE_OPTIONS}
+          value={filters.sourceTypes || []}
+          onChange={handleSourceTypeChange}
+          placeholder="All Sources"
+          searchPlaceholder="Search sources..."
+          emptyText="No source types found."
+          icon={<FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+          className="w-[180px] h-9"
+          dropdownClassName="w-[240px]"
+          open={openDropdown === 'source'}
+          onOpenChange={handleDropdownOpenChange('source')}
+        />
+      </div>
 
-          {/* Format Filter */}
-          <div className="space-y-4">
-            <Label className="text-xs text-muted-foreground">File Format</Label>
-            <div className="flex flex-col gap-4">
-              {FORMAT_OPTIONS.map(option => (
-                <div key={option.value} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`format-${option.label}`}
-                    checked={isFormatGroupSelected(option.value)}
-                    onCheckedChange={(checked) =>
-                      handleFormatToggle(option.value, checked as boolean)
-                    }
-                  />
-                  <Label
-                    htmlFor={`format-${option.label}`}
-                    className="flex items-center gap-2 text-sm cursor-pointer font-normal"
-                  >
-                    {option.icon}
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* File Format */}
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">File Format</Label>
+        <MultiSelectFilter
+          options={FORMAT_OPTIONS}
+          value={selectedFormatValues}
+          onChange={handleFormatChange}
+          placeholder="All Formats"
+          searchPlaceholder="Search formats..."
+          emptyText="No formats found."
+          icon={<File className="h-4 w-4 text-muted-foreground shrink-0" />}
+          className="w-[180px] h-9"
+          dropdownClassName="w-[240px]"
+          open={openDropdown === 'format'}
+          onOpenChange={handleDropdownOpenChange('format')}
+        />
+      </div>
 
-          {/* Category and Organization Filters - stacked in wider column */}
-          <div className="space-y-4 lg:col-span-2 max-w-[90%]">
-            {/* Category Filter */}
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Document Category</Label>
-              <MultiSelectFilter
-                options={CATEGORY_OPTIONS}
-                value={filters.categoryCodes || []}
-                onChange={(values) =>
-                  onFiltersChange({
-                    ...filters,
-                    categoryCodes: values.length > 0 ? values : undefined,
-                  })
-                }
-                placeholder="Select categories..."
-                searchPlaceholder="Search categories..."
-                className="w-full"
-                dropdownClassName="z-[9999]"
-                open={openDropdown === 'category'}
-                onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'category' : null)}
-              />
-            </div>
+      {/* Document Category */}
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">Category</Label>
+        <MultiSelectFilter
+          options={CATEGORY_OPTIONS}
+          value={filters.categoryCodes || []}
+          onChange={(values) =>
+            onFiltersChange({
+              ...filters,
+              categoryCodes: values.length > 0 ? values : undefined,
+            })
+          }
+          placeholder="All Categories"
+          searchPlaceholder="Search categories..."
+          emptyText="No categories found."
+          icon={<Library className="h-4 w-4 text-muted-foreground shrink-0" />}
+          className="w-[200px] h-9"
+          dropdownClassName="w-[320px]"
+          open={openDropdown === 'category'}
+          onOpenChange={handleDropdownOpenChange('category')}
+        />
+      </div>
 
-            {/* Organization Filter */}
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Reporting Organization</Label>
-              <SearchableSelect
-                options={orgOptions}
-                value={filters.reportingOrgIds?.[0] || ''}
-                onValueChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
-                    reportingOrgIds: value ? [value] : undefined,
-                  })
-                }
-                placeholder="Select organization..."
-                searchPlaceholder="Search organizations..."
-                showValueCode={false}
-                open={openDropdown === 'org'}
-                onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'org' : null)}
-              />
-            </div>
-          </div>
+      {/* Reporting Organization */}
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">Reported by</Label>
+        <SearchableSelect
+          options={orgOptions}
+          value={filters.reportingOrgIds?.[0] || ''}
+          onValueChange={(value) =>
+            onFiltersChange({
+              ...filters,
+              reportingOrgIds: value ? [value] : undefined,
+            })
+          }
+          placeholder="All Organisations"
+          searchPlaceholder="Search organisations..."
+          showValueCode={false}
+          open={openDropdown === 'org'}
+          onOpenChange={handleDropdownOpenChange('org')}
+        />
+      </div>
 
-          {/* Date Range Filter */}
-          <div className="space-y-2 min-w-0 -ml-4">
-            <Label className="text-xs text-muted-foreground">Document Date</Label>
-            <div className="flex items-center gap-1.5">
-              <Input
-                type="date"
-                value={filters.documentDateFrom || ''}
-                onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
-                    documentDateFrom: e.target.value || undefined,
-                  })
-                }
-                className="text-sm min-w-0 flex-1"
-              />
-              <span className="text-muted-foreground text-sm shrink-0">to</span>
-              <Input
-                type="date"
-                value={filters.documentDateTo || ''}
-                onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
-                    documentDateTo: e.target.value || undefined,
-                  })
-                }
-                className="text-sm min-w-0 flex-1"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Clear Button */}
-        <div className="flex justify-end mt-4 pt-4 border-t">
-          <Button variant="ghost" size="sm" onClick={onClear}>
-            <X className="h-4 w-4 mr-1" />
-            Clear All Filters
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Date Range */}
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">Date From</Label>
+        <DatePicker
+          value={filters.documentDateFrom || ''}
+          onChange={(value) =>
+            onFiltersChange({
+              ...filters,
+              documentDateFrom: value || undefined,
+            })
+          }
+          placeholder="Start date"
+          className="w-[180px]"
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">Date To</Label>
+        <DatePicker
+          value={filters.documentDateTo || ''}
+          onChange={(value) =>
+            onFiltersChange({
+              ...filters,
+              documentDateTo: value || undefined,
+            })
+          }
+          placeholder="End date"
+          className="w-[180px]"
+        />
+      </div>
+    </FilterBar>
   );
 }

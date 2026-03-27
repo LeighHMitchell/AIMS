@@ -179,15 +179,15 @@ export default function FundsPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <header>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Wallet className="h-8 w-8 text-foreground" />
-            Pooled Funds
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Overview of all pooled and trust fund activities with contribution and disbursement summaries.
-          </p>
-        </header>
+        <div className="flex items-center gap-3">
+          <Wallet className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Pooled Funds</h1>
+            <p className="text-muted-foreground mt-1">
+              Overview of all pooled and trust fund activities with contribution and disbursement summaries.
+            </p>
+          </div>
+        </div>
 
         {/* Filters - shaded card like activity list */}
         <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg border border-gray-200">

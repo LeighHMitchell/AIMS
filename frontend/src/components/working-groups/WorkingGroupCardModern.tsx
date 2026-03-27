@@ -3,9 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { Users, Calendar, FileText, Copy } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { CardShell } from '@/components/ui/card-shell';
 
 // Brand palette from CSS variables
 const colors = {
@@ -42,69 +42,43 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, type: 'spring', bounce: 0.3 }}
-      whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border bg-card ${className}`}
-      role="article"
-      aria-label={`Working Group: ${workingGroup.label}`}
-    >
-      {/* Invisible link overlay */}
-      <Link
-        href={wgUrl}
-        className="absolute inset-0 z-0"
-        aria-label={`View ${workingGroup.label}`}
-      >
-        <span className="sr-only">View working group</span>
-      </Link>
-
-      {/* Banner Section */}
-      <div className="relative h-48 w-full overflow-hidden" style={{ backgroundColor: colors.blueSlate }}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
-        <div className="h-full w-full flex items-center justify-center">
-          <Users className="h-16 w-16" style={{ color: colors.coolSteel, opacity: 0.3 }} />
-        </div>
-
-        {/* Title - Bottom of banner */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-lg font-bold text-white mb-1 line-clamp-2">
-              <Link
-                href={wgUrl}
-                className="relative z-10 hover:underline inline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {workingGroup.label || 'Unnamed Group'}
-              </Link>{' '}
-              {workingGroup.code && (
-                <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
-                  <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                    {workingGroup.code}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      copyToClipboard(workingGroup.code!);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
-                    title="Copy code"
-                  >
-                    <Copy className="w-3 h-3 text-white/70" />
-                  </button>
+    <CardShell
+      href={wgUrl}
+      ariaLabel={`Working Group: ${workingGroup.label}`}
+      className={className}
+      bannerIcon={Users}
+      bannerOverlay={
+        <>
+          <h2 className="text-lg font-bold text-white mb-1 line-clamp-2">
+            <Link
+              href={wgUrl}
+              className="relative z-10 hover:underline inline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {workingGroup.label || 'Unnamed Group'}
+            </Link>{' '}
+            {workingGroup.code && (
+              <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
+                <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                  {workingGroup.code}
                 </span>
-              )}
-            </h2>
-          </motion.div>
-        </div>
-      </div>
-
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    copyToClipboard(workingGroup.code!);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
+                  title="Copy code"
+                >
+                  <Copy className="w-3 h-3 text-white/70" />
+                </button>
+              </span>
+            )}
+          </h2>
+        </>
+      }
+    >
       {/* Details Section */}
       <div className="relative flex-1 p-5 flex flex-col bg-card">
         <div className="flex items-center gap-2 mb-3">
@@ -143,7 +117,7 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
           </div>
         </div>
       </div>
-    </motion.div>
+    </CardShell>
   );
 };
 

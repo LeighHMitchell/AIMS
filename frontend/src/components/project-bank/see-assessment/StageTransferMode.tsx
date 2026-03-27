@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Plus, Users } from 'lucide-react';
@@ -182,6 +183,7 @@ export function StageTransferMode({ wizard }: StageTransferModeProps) {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Bidder</DialogTitle>
+                <DialogDescription>Enter the bidder company name and bid amount.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div>

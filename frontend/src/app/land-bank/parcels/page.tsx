@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Download, Map as MapIcon, List, LayoutGrid, Inbox } from "lucide-react"
+import { Plus, Search, Download, Map as MapIcon, List, LayoutGrid, Inbox, MapPin } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
 import { apiFetch } from "@/lib/api-fetch"
@@ -174,7 +174,13 @@ export default function ParcelsListPage() {
       <div className="w-full">
         {/* Title + actions */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">All Parcels</h1>
+          <div className="flex items-center gap-3">
+            <MapPin className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">All Parcels</h1>
+              <p className="text-muted-foreground mt-1">Browse and manage all registered land parcels</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             {/* View toggle */}
             <div className="flex items-center border rounded-md">
@@ -376,7 +382,6 @@ export default function ParcelsListPage() {
                   <ParcelCardModern
                     key={parcel.id}
                     parcel={parcel}
-                    onClick={() => router.push(`/land-bank/${parcel.id}`)}
                   />
                 ))}
               </div>

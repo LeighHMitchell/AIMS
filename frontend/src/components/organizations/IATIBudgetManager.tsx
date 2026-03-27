@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Pencil, Trash2, DollarSign, Building2, Globe2, MapPin, Loader2, AlertCircle, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -583,6 +583,9 @@ export function IATIBudgetManager({
             <DialogTitle>
               {editingBudget?.id ? 'Edit Budget' : 'Add Budget'}
             </DialogTitle>
+            <DialogDescription>
+              {editingBudget?.id ? 'Update the budget period, status, and amounts.' : 'Define a new budget with period, status, and financial details.'}
+            </DialogDescription>
           </DialogHeader>
 
           {editingBudget && (
@@ -773,6 +776,9 @@ export function IATIBudgetManager({
             <DialogTitle>
               {editingBudgetLine?.line.id ? 'Edit Budget Line' : 'Add Budget Line'}
             </DialogTitle>
+            <DialogDescription>
+              {editingBudgetLine?.line.id ? 'Update the budget line item details.' : 'Add a line item with narrative description and amount.'}
+            </DialogDescription>
           </DialogHeader>
 
           {editingBudgetLine && (

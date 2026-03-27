@@ -2,7 +2,7 @@
 
 import { RequiredDot } from "@/components/ui/required-dot";
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1130,6 +1130,9 @@ const autoPopulateIatiFields = useCallback((params: {
             <MapPin className="h-5 w-5" />
             {location?.id ? 'Edit Location' : 'Add Location'}
           </DialogTitle>
+          <DialogDescription>
+            {location?.id ? 'Update the location details and coordinates.' : 'Search for and configure a new location with coordinates and classification.'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
