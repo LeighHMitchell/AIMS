@@ -48,9 +48,10 @@ export function TransactionTypeSummaryCards({
       summary.totalUsd += usdValue;
     });
 
-    // Convert to array and sort by total USD value descending
+    // Sort by preferred order: Incoming Funds, Outgoing Commitment, Disbursement, Expenditure, then rest
+    const typeOrder: Record<string, number> = { '1': 0, '2': 1, '3': 2, '4': 3 };
     return Array.from(summaryMap.values())
-      .sort((a, b) => b.totalUsd - a.totalUsd);
+      .sort((a, b) => (typeOrder[a.type] ?? 99) - (typeOrder[b.type] ?? 99));
   }, [transactions]);
 
   if (transactionTypeSummaries.length === 0) {

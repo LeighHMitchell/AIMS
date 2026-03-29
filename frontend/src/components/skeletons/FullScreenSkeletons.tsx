@@ -123,40 +123,42 @@ export function IATIImportSkeleton() {
 // Transactions List Skeleton
 export function TransactionsListSkeleton() {
   return (
-    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading transactions">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div aria-busy="true" aria-label="Loading transactions">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Skeleton variant="rounded" width="32px" height="32px" />
           <div>
-            <Skeleton variant="text" width="250px" height="2rem" className="mb-2" />
-            <Skeleton variant="text" width="400px" height="1rem" />
+            <Skeleton variant="text" width="200px" height="2rem" className="mb-1" />
+            <Skeleton variant="text" width="340px" height="0.875rem" />
           </div>
-          <Skeleton variant="rounded" width="140px" height="40px" />
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4">
-              <Skeleton variant="rounded" width="200px" height="40px" />
-              <Skeleton variant="rounded" width="150px" height="40px" />
-              <Skeleton variant="rounded" width="150px" height="40px" />
-              <Skeleton variant="rounded" width="120px" height="40px" />
+        {/* FilterBar */}
+        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
+          <Skeleton variant="rounded" width="240px" height="36px" />
+          <Skeleton variant="rounded" width="150px" height="36px" />
+          <Skeleton variant="rounded" width="150px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <div className="flex-1" />
+          <Skeleton variant="rounded" width="120px" height="36px" />
+        </div>
+
+        {/* YearlyTotalsBarChart */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton variant="text" width="240px" height="1.25rem" className="mb-1" />
+                <Skeleton variant="text" width="300px" height="0.75rem" />
+              </div>
+              <Skeleton variant="rounded" width="160px" height="36px" />
             </div>
+          </CardHeader>
+          <CardContent>
+            <Skeleton variant="rectangular" width="100%" height="280px" />
           </CardContent>
         </Card>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <Skeleton variant="text" width="100px" height="0.875rem" className="mb-2" />
-                <Skeleton variant="text" width="150px" height="1.5rem" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
         {/* Table */}
         <Card>
@@ -164,43 +166,26 @@ export function TransactionsListSkeleton() {
             <table className="w-full">
               <thead className="bg-surface-muted border-b">
                 <tr>
-                  {['Activity', 'Date', 'Type', 'Status', 'Provider → Receiver', 'Value', 'Aid Type', 'Flow Type', 'Finance Type', 'Actions'].map((header) => (
-                    <th key={header} className="px-4 py-3 text-left">
+                  <th className="px-3 py-3 w-10"><Skeleton variant="rectangular" width="16px" height="16px" /></th>
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <th key={i} className="px-4 py-3 text-left">
                       <Skeleton variant="text" width="80px" height="0.875rem" />
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                {Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="200px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="100px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="80px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="circular" width="24px" height="24px" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="180px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="100px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="80px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="80px" height="0.875rem" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton variant="text" width="80px" height="0.875rem" />
-                    </td>
+                    <td className="px-3 py-3"><Skeleton variant="rectangular" width="16px" height="16px" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="200px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="90px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="80px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="circular" width="24px" height="24px" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="160px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="100px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="80px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="80px" height="0.875rem" /></td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <Skeleton variant="circular" width="32px" height="32px" />
@@ -344,58 +329,233 @@ export function PartnerFundingSummarySkeleton() {
   )
 }
 
-// Rolodex (Organization Directory) Skeleton
+// Rolodex (Contact Directory) Skeleton
 export function RolodexSkeleton() {
   return (
-    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading organization directory">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div aria-busy="true" aria-label="Loading contact directory">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Skeleton variant="text" width="250px" height="2rem" className="mb-2" />
-          <Skeleton variant="text" width="400px" height="1rem" />
-        </div>
-
-        {/* Search and Filters */}
-        <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex flex-wrap gap-4">
-            <Skeleton variant="rounded" width="300px" height="40px" />
-            <Skeleton variant="rounded" width="150px" height="40px" />
-            <Skeleton variant="rounded" width="150px" height="40px" />
-            <Skeleton variant="rounded" width="150px" height="40px" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton variant="rounded" width="32px" height="32px" />
+            <div>
+              <Skeleton variant="text" width="140px" height="2rem" className="mb-1" />
+              <Skeleton variant="text" width="400px" height="0.875rem" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton variant="rounded" width="80px" height="36px" />
+            <Skeleton variant="rounded" width="36px" height="36px" />
           </div>
         </div>
 
-        {/* Organization Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-            <Card key={i} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <Skeleton variant="rounded" width="64px" height="64px" />
-                  <div className="flex-1">
-                    <Skeleton variant="text" width="80%" height="1.25rem" className="mb-2" />
-                    <Skeleton variant="text" width="60%" height="0.875rem" />
-                  </div>
-                </div>
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Skeleton variant="circular" width="16px" height="16px" />
-                    <Skeleton variant="text" width="150px" height="0.875rem" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton variant="circular" width="16px" height="16px" />
-                    <Skeleton variant="text" width="120px" height="0.875rem" />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Skeleton variant="rounded" width="60px" height="24px" />
-                  <Skeleton variant="rounded" width="80px" height="24px" />
-                  <Skeleton variant="rounded" width="70px" height="24px" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Filter Panel */}
+        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
+          <Skeleton variant="rounded" width="240px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <Skeleton variant="rounded" width="160px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
         </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-md ring-1 ring-border overflow-hidden">
+          <table className="w-full table-auto border-collapse">
+            <thead className="bg-surface-muted border-b border-border">
+              <tr>
+                <th className="h-12 px-4 py-3 w-[60px]"><Skeleton variant="circular" width="32px" height="32px" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="80px" height="0.875rem" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="60px" height="0.875rem" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="60px" height="0.875rem" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="100px" height="0.875rem" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="50px" height="0.875rem" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="50px" height="0.875rem" /></th>
+                <th className="h-12 px-4 py-3"><Skeleton variant="text" width="60px" height="0.875rem" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-white">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-4 py-3"><Skeleton variant="circular" width="32px" height="32px" /></td>
+                  <td className="px-4 py-3">
+                    <Skeleton variant="text" width="140px" height="0.875rem" className="mb-1" />
+                    <Skeleton variant="text" width="100px" height="0.75rem" />
+                  </td>
+                  <td className="px-4 py-3"><Skeleton variant="text" width="160px" height="0.875rem" /></td>
+                  <td className="px-4 py-3"><Skeleton variant="text" width="110px" height="0.875rem" /></td>
+                  <td className="px-4 py-3"><Skeleton variant="text" width="140px" height="0.875rem" /></td>
+                  <td className="px-4 py-3"><Skeleton variant="text" width="80px" height="0.875rem" /></td>
+                  <td className="px-4 py-3"><Skeleton variant="rounded" width="64px" height="22px" /></td>
+                  <td className="px-4 py-3"><Skeleton variant="rounded" width="56px" height="28px" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Planned Disbursements List Skeleton
+export function PlannedDisbursementsListSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading planned disbursements">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Skeleton variant="rounded" width="32px" height="32px" />
+          <div>
+            <Skeleton variant="text" width="280px" height="2rem" className="mb-1" />
+            <Skeleton variant="text" width="360px" height="0.875rem" />
+          </div>
+        </div>
+
+        {/* FilterBar */}
+        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
+          <Skeleton variant="rounded" width="240px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <Skeleton variant="rounded" width="160px" height="36px" />
+          <div className="flex-1" />
+          <Skeleton variant="rounded" width="120px" height="36px" />
+        </div>
+
+        {/* YearlyTotalsBarChart */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton variant="text" width="300px" height="1.25rem" className="mb-1" />
+                <Skeleton variant="text" width="280px" height="0.75rem" />
+              </div>
+              <Skeleton variant="rounded" width="160px" height="36px" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Skeleton variant="rectangular" width="100%" height="280px" />
+          </CardContent>
+        </Card>
+
+        {/* Table */}
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-surface-muted border-b">
+                <tr>
+                  <th className="px-3 py-3 w-10"><Skeleton variant="rectangular" width="16px" height="16px" /></th>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <th key={i} className="px-4 py-3 text-left">
+                      <Skeleton variant="text" width="80px" height="0.875rem" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-3"><Skeleton variant="rectangular" width="16px" height="16px" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="200px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="90px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="90px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="70px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="160px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="100px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="90px" height="0.875rem" /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <Skeleton variant="circular" width="32px" height="32px" />
+                        <Skeleton variant="circular" width="32px" height="32px" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+// Budgets List Skeleton
+export function BudgetsListSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading budgets">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Skeleton variant="rounded" width="32px" height="32px" />
+          <div>
+            <Skeleton variant="text" width="160px" height="2rem" className="mb-1" />
+            <Skeleton variant="text" width="300px" height="0.875rem" />
+          </div>
+        </div>
+
+        {/* FilterBar */}
+        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
+          <Skeleton variant="rounded" width="240px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <Skeleton variant="rounded" width="140px" height="36px" />
+          <Skeleton variant="rounded" width="160px" height="36px" />
+          <div className="flex-1" />
+          <Skeleton variant="rounded" width="120px" height="36px" />
+        </div>
+
+        {/* YearlyTotalsBarChart */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton variant="text" width="220px" height="1.25rem" className="mb-1" />
+                <Skeleton variant="text" width="260px" height="0.75rem" />
+              </div>
+              <Skeleton variant="rounded" width="160px" height="36px" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Skeleton variant="rectangular" width="100%" height="280px" />
+          </CardContent>
+        </Card>
+
+        {/* Table */}
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-surface-muted border-b">
+                <tr>
+                  <th className="px-3 py-3 w-10"><Skeleton variant="rectangular" width="16px" height="16px" /></th>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <th key={i} className="px-4 py-3 text-left">
+                      <Skeleton variant="text" width="80px" height="0.875rem" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-3"><Skeleton variant="rectangular" width="16px" height="16px" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="200px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="130px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="90px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="90px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="70px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="80px" height="0.875rem" /></td>
+                    <td className="px-4 py-3"><Skeleton variant="text" width="100px" height="0.875rem" /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <Skeleton variant="circular" width="32px" height="32px" />
+                        <Skeleton variant="circular" width="32px" height="32px" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
     </div>
   )

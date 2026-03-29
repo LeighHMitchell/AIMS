@@ -176,8 +176,8 @@ export function SDGGeographyMap({ locations, sdgColor }: SDGGeographyMapProps) {
                   style={{
                     width: `${radius * 2}px`,
                     height: `${radius * 2}px`,
-                    backgroundColor: `${sdgColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
-                    borderColor: sdgColor,
+                    backgroundColor: `#4c5568${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+                    borderColor: '#4c5568',
                   }}
                   title={`${loc.countryName}: ${loc.activityCount} activities`}
                 >

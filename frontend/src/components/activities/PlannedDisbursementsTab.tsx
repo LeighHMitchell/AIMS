@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Unlock, RefreshCw, Info } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, PenLine, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Unlock, RefreshCw, Info } from 'lucide-react';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
@@ -217,6 +217,7 @@ export default function PlannedDisbursementsTab({
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   
   // Exchange rate state for modal
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false);
   const [modalExchangeRate, setModalExchangeRate] = useState<number | null>(null);
   const [isLoadingModalRate, setIsLoadingModalRate] = useState(false);
@@ -229,7 +230,6 @@ export default function PlannedDisbursementsTab({
   // Bulk selection state
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -285,30 +285,6 @@ export default function PlannedDisbursementsTab({
       setSortDirection('asc');
     }
   }, [sortColumn]);
-
-  // Toggle row expansion
-  const toggleRowExpansion = (disbursementId: string) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(disbursementId)) {
-        newSet.delete(disbursementId);
-      } else {
-        newSet.add(disbursementId);
-      }
-      return newSet;
-    });
-  };
-
-  // Expand all rows on current page
-  const expandAllRows = () => {
-    const allIds = new Set(paginatedDisbursements.map(d => d.id || 'new'));
-    setExpandedRows(allIds);
-  };
-
-  // Collapse all rows
-  const collapseAllRows = () => {
-    setExpandedRows(new Set());
-  };
 
   // Lazy-load organizations only when modal is opened (for autocomplete)
   const fetchOrganizationsIfNeeded = async () => {
@@ -1317,9 +1293,9 @@ export default function PlannedDisbursementsTab({
       exportData.push({ label: 'Receiver Reference', value: disbursement.receiver_org_ref });
     }
 
-    // Notes
+    // Description
     if (disbursement.notes) {
-      exportData.push({ label: 'Notes', value: disbursement.notes });
+      exportData.push({ label: 'Description', value: disbursement.notes });
     }
 
     // System Info
@@ -1619,27 +1595,6 @@ export default function PlannedDisbursementsTab({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  {expandedRows.size > 0 ? (
-                    <Button
-                      variant="outline"
-                      onClick={collapseAllRows}
-                      title="Collapse all expanded rows"
-                      data-collapse-all
-                    >
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Collapse All
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={expandAllRows}
-                      title="Expand all rows"
-                      data-expand-all
-                    >
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Expand All
-                    </Button>
-                  )}
                   <Button variant="outline" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
@@ -1674,29 +1629,6 @@ export default function PlannedDisbursementsTab({
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  {expandedRows.size > 0 ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={collapseAllRows}
-                      title="Collapse all expanded rows"
-                      data-collapse-all
-                    >
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Collapse All
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={expandAllRows}
-                      title="Expand all rows"
-                      data-expand-all
-                    >
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Expand All
-                    </Button>
-                  )}
                   <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
@@ -1730,29 +1662,6 @@ export default function PlannedDisbursementsTab({
                   </SelectContent>
                 </Select>
               </div>
-              {expandedRows.size > 0 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={collapseAllRows}
-                  title="Collapse all expanded rows"
-                  data-collapse-all
-                >
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Collapse All
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={expandAllRows}
-                  title="Expand all rows"
-                  data-expand-all
-                >
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Expand All
-                </Button>
-              )}
               <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                 <Download className="h-4 w-4" />
               </Button>
@@ -1776,7 +1685,6 @@ export default function PlannedDisbursementsTab({
                 <Table aria-label="Planned disbursements table" className="w-full">
                   <TableHeader className="bg-surface-muted border-b border-border/70">
                     <TableRow>
-                      <TableHead className="py-3 px-2 w-10"></TableHead>
                       {!readOnly && (
                         <TableHead className="text-center w-12">
                           <Checkbox
@@ -1865,19 +1773,6 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
-                        <div
-                          className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
-                          onClick={() => handleSort('exchange_rate_used')}
-                        >
-                          Ex. Rate
-                          {sortColumn === 'exchange_rate_used' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                          ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                          )}
-                        </div>
-                      </TableHead>
                       {!readOnly && (
                         <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-20">
                           Actions
@@ -1888,36 +1783,16 @@ export default function PlannedDisbursementsTab({
                   <TableBody>
                     {paginatedDisbursements.map((disbursement: PlannedDisbursement) => {
                       const disbursementId = disbursement.id || 'new';
-                      const isExpanded = expandedRows.has(disbursementId);
-                      
+
                       return (
                         <React.Fragment key={disbursementId}>
-                        <TableRow 
+                        <TableRow
                           className={cn(
                             "border-b border-border/40 hover:bg-muted/30 transition-colors",
                             disbursement.hasError ? 'bg-red-50' : '',
                             selectedDisbursementIds.has(disbursement.id!) && "bg-blue-50 border-blue-200"
                           )}
                         >
-                          {/* Chevron for expand/collapse */}
-                          <TableCell className="py-3 px-2 whitespace-nowrap">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleRowExpansion(disbursementId);
-                              }}
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TableCell>
-                          
                           {/* Checkbox */}
                           {!readOnly && (
                             <TableCell className="text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -2015,7 +1890,7 @@ export default function PlannedDisbursementsTab({
                           {/* Value Date */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
                             <div>
-                              {disbursement.value_date ? format(parseISO(disbursement.value_date), 'MMM dd, yyyy') : '-'}
+                              {disbursement.value_date ? format(parseISO(disbursement.value_date), 'd MMM yyyy') : '-'}
                             </div>
                           </TableCell>
 
@@ -2029,19 +1904,43 @@ export default function PlannedDisbursementsTab({
                                   <UITooltip>
                                     <TooltipTrigger asChild>
                                       <span className="font-medium cursor-help flex items-center gap-1">
+                                        <span className="w-4 shrink-0 flex items-center justify-center">
+                                          {(disbursement as any).exchange_rate_manual && (
+                                            <PenLine className="h-3.5 w-3.5 text-orange-500" />
+                                          )}
+                                        </span>
                                         <span className="text-muted-foreground">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                        {(disbursement as any).exchange_rate_manual && (
-                                          <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">Manual</Badge>
-                                        )}
                                       </span>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                      <div>
-                                        <div>Original: {disbursement.amount} {disbursement.currency}</div>
-                                        <div>Rate: {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].rate}</div>
-                                        <div>Date: {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].date}</div>
-                                        {(disbursement as any).exchange_rate_manual && <div className="text-orange-500 font-medium">Manually entered rate</div>}
-                                      </div>
+                                    <TooltipContent className="min-w-[200px]">
+                                      <table className="text-xs w-full">
+                                        <tbody>
+                                          <tr>
+                                            <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
+                                            <td className="text-right py-0.5">{disbursement.currency} {disbursement.amount?.toLocaleString()}</td>
+                                          </tr>
+                                          <tr>
+                                            <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
+                                            <td className="text-right py-0.5">{usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].rate}</td>
+                                          </tr>
+                                          <tr>
+                                            <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
+                                            <td className="text-right py-0.5">
+                                              {(() => {
+                                                const dateStr = usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].date;
+                                                if (!dateStr) return '—';
+                                                const parsed = new Date(dateStr);
+                                                return isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMMM yyyy');
+                                              })()}
+                                            </td>
+                                          </tr>
+                                          {(disbursement as any).exchange_rate_manual && (
+                                            <tr>
+                                              <td colSpan={2} className="pt-1 text-orange-500 font-medium">Manual exchange rate</td>
+                                            </tr>
+                                          )}
+                                        </tbody>
+                                      </table>
                                     </TooltipContent>
                                   </UITooltip>
                                 </TooltipProvider>
@@ -2068,19 +1967,6 @@ export default function PlannedDisbursementsTab({
                             </div>
                           </TableCell>
 
-                          {/* Exchange Rate */}
-                          <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                            {(disbursement as any).exchange_rate_used != null ? (
-                              <span className="text-sm font-mono flex items-center justify-end gap-1">
-                                {(disbursement as any).exchange_rate_used.toFixed(4)}
-                                {(disbursement as any).exchange_rate_manual && (
-                                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">M</Badge>
-                                )}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
 
                           {/* Actions */}
                           {!readOnly && (
@@ -2118,167 +2004,9 @@ export default function PlannedDisbursementsTab({
                             </TableCell>
                           )}
                         </TableRow>
-                        
-                        {/* Expandable Detail Row */}
-                        {isExpanded && (
-                          <TableRow className="bg-muted/20 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                            <TableCell colSpan={readOnly ? 7 : 8} className="py-4 px-6 relative">
-                              {/* CSV Export Button */}
-                              <div className="absolute top-4 right-4 z-10">
-                                <TooltipProvider>
-                                  <UITooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                        onClick={() => handleExportDisbursement(disbursement)}
-                                      >
-                                        <Download className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Export to CSV</p>
-                                    </TooltipContent>
-                                  </UITooltip>
-                                </TooltipProvider>
-                              </div>
-                              <div className="space-y-3 text-sm">
-                                {/* Disbursement Details */}
-                                <div className="grid grid-cols-2 gap-x-12 gap-y-3">
-                                  <div>
-                                    <span className="text-muted-foreground text-xs min-w-[160px]">Status:</span>
-                                    <span className="ml-2 font-medium text-xs capitalize">{disbursement.status || 'Original'}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground text-xs min-w-[160px]">Period Start:</span>
-                                    <span className="ml-2 text-xs">{format(parseISO(disbursement.period_start), 'MMM d, yyyy')}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground text-xs min-w-[160px]">Period End:</span>
-                                    <span className="ml-2 text-xs">{format(parseISO(disbursement.period_end), 'MMM d, yyyy')}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground text-xs min-w-[160px]">Original Amount:</span>
-                                    <span className="ml-2 font-medium text-xs">{disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {disbursement.currency}</span>
-                                  </div>
-                                  {disbursement.value_date && (
-                                    <div>
-                                      <span className="text-muted-foreground text-xs min-w-[160px]">Value Date:</span>
-                                      <span className="ml-2 text-xs">{format(parseISO(disbursement.value_date), 'MMM d, yyyy')}</span>
-                                    </div>
-                                  )}
-                                  {disbursement.usdAmount && (
-                                    <div>
-                                      <span className="text-muted-foreground text-xs min-w-[160px]">USD Value:</span>
-                                      <span className="ml-2 font-medium text-xs"><span className="text-muted-foreground">USD</span> {disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Organizations */}
-                                {(disbursement.provider_org_name || disbursement.receiver_org_name) && (
-                                  <div className="border-t pt-3 mt-3">
-                                    <div className="text-xs text-muted-foreground font-semibold mb-2">Organisations:</div>
-                                    <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
-                                      {disbursement.provider_org_name && (
-                                        <>
-                                          <div>
-                                            <span className="text-muted-foreground text-xs min-w-[160px]">Provider Organisation:</span>
-                                            <span className="ml-2 text-xs font-medium">{disbursement.provider_org_name}</span>
-                                          </div>
-                                          {disbursement.provider_org_ref && (
-                                            <div className="flex items-center gap-1">
-                                              <span className="text-muted-foreground text-xs min-w-[160px]">Provider Reference:</span>
-                                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{disbursement.provider_org_ref}</span>
-                                              <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(disbursement.provider_org_ref!)}>
-                                                <Copy className="h-3 w-3" />
-                                              </Button>
-                                            </div>
-                                          )}
-                                        </>
-                                      )}
-                                      {disbursement.receiver_org_name && (
-                                        <>
-                                          <div>
-                                            <span className="text-muted-foreground text-xs min-w-[160px]">Receiver Organisation:</span>
-                                            <span className="ml-2 text-xs font-medium">{disbursement.receiver_org_name}</span>
-                                          </div>
-                                          {disbursement.receiver_org_ref && (
-                                            <div className="flex items-center gap-1">
-                                              <span className="text-muted-foreground text-xs min-w-[160px]">Receiver Reference:</span>
-                                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{disbursement.receiver_org_ref}</span>
-                                              <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(disbursement.receiver_org_ref!)}>
-                                                <Copy className="h-3 w-3" />
-                                              </Button>
-                                            </div>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Notes */}
-                                {disbursement.notes && (
-                                  <div className="border-t pt-3 mt-3">
-                                    <div className="text-xs text-muted-foreground font-semibold mb-2">Notes:</div>
-                                    <p className="ml-4 text-foreground text-xs leading-relaxed">{disbursement.notes}</p>
-                                  </div>
-                                )}
-                                
-                                {/* System Info */}
-                                <div className="border-t pt-3 mt-3">
-                                  <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-xs">
-                                    {disbursement.id && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-muted-foreground min-w-[160px]">Disbursement ID:</span>
-                                        <span className="font-mono bg-muted px-1.5 py-0.5 rounded break-all">{disbursement.id}</span>
-                                        <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(disbursement.id!)}>
-                                          <Copy className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    )}
-                                    {disbursement.created_at && (
-                                      <div>
-                                        <span className="text-muted-foreground min-w-[160px]">Created:</span>
-                                        <span className="ml-2">{format(parseISO(disbursement.created_at), 'MMM d, yyyy')}</span>
-                                      </div>
-                                    )}
-                                    {disbursement.updated_at && (
-                                      <div>
-                                        <span className="text-muted-foreground min-w-[160px]">Updated:</span>
-                                        <span className="ml-2">{format(parseISO(disbursement.updated_at), 'MMM d, yyyy')}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
                         </React.Fragment>
                       );
                     })}
-                    {/* Total Row */}
-                    {sortedFilteredDisbursements.length > 0 && (
-                      <TableRow className="bg-muted border-t-2 border-border font-semibold">
-                        <TableCell colSpan={readOnly ? 6 : 7} className="py-3 px-4 text-right">
-                          Total:
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                          <span className="font-semibold">
-                            <span className="text-muted-foreground">USD</span>{' '}
-                            {Object.values(usdValues)
-                              .reduce((sum, val) => sum + (val.usd || 0), 0)
-                              .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                          </span>
-                        </TableCell>
-                        {!readOnly && (
-                          <TableCell className="py-3 px-4"></TableCell>
-                        )}
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -2377,7 +2105,7 @@ export default function PlannedDisbursementsTab({
 
       {/* Enhanced Modal for Add/Edit Planned Disbursement */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{modalDisbursement?.id ? 'Edit Planned Disbursement' : 'Add Planned Disbursement'}</DialogTitle>
             <DialogDescription>
@@ -2507,27 +2235,8 @@ export default function PlannedDisbursementsTab({
               </div>
             </div>
 
-            {/* Currency, Amount, Value Date */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <LabelWithInfoAndSave
-                  helpText="The currency in which the planned disbursement value is denominated"
-                  isSaving={false}
-                  isSaved={false}
-                  hasValue={!!modalDisbursement?.currency}
-                >
-                  Currency
-                </LabelWithInfoAndSave>
-                <CurrencySelector
-                  value={modalDisbursement?.currency || null}
-                  onValueChange={(value) => updateFormField('currency', value || 'USD')}
-                  disabled={savingId === modalDisbursement?.id}
-                  placeholder="Select currency"
-                />
-                {fieldErrors.currency && (
-                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
-                )}
-              </div>
+            {/* Amount / Currency */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <LabelWithInfoAndSave
                   helpText="The planned disbursement amount in the specified currency"
@@ -2574,6 +2283,29 @@ export default function PlannedDisbursementsTab({
               </div>
               <div className="space-y-2">
                 <LabelWithInfoAndSave
+                  helpText="The currency in which the planned disbursement value is denominated"
+                  isSaving={false}
+                  isSaved={false}
+                  hasValue={!!modalDisbursement?.currency}
+                >
+                  Currency
+                </LabelWithInfoAndSave>
+                <CurrencySelector
+                  value={modalDisbursement?.currency || null}
+                  onValueChange={(value) => updateFormField('currency', value || 'USD')}
+                  disabled={savingId === modalDisbursement?.id}
+                  placeholder="Select currency"
+                />
+                {fieldErrors.currency && (
+                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Value Date / Exchange Rate */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <LabelWithInfoAndSave
                   helpText="The date on which the disbursement value was set or the exchange rate applied"
                   isSaving={false}
                   isSaved={false}
@@ -2591,11 +2323,7 @@ export default function PlannedDisbursementsTab({
                   <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
                 )}
               </div>
-            </div>
-
-            {/* Exchange Rate & USD Value */}
-            {modalDisbursement?.currency && (
-              <div className="grid grid-cols-2 gap-4">
+              {modalDisbursement?.currency && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between min-h-[24px]">
                     <Label className="flex items-center gap-1.5 text-sm font-medium">
@@ -2613,12 +2341,13 @@ export default function PlannedDisbursementsTab({
                     </Label>
                     {modalDisbursement.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="pd_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                        <Label htmlFor="pd_exchange_rate_mode" className={cn("text-xs cursor-pointer", modalExchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                           {modalExchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
                           id="pd_exchange_rate_mode"
                           checked={!modalExchangeRateManual}
+                          className={cn(modalExchangeRateManual && "[&:not(:checked)]:bg-orange-500 data-[state=unchecked]:bg-orange-500")}
                           onCheckedChange={(checked) => {
                             setModalExchangeRateManual(!checked);
                             if (checked) {
@@ -2668,29 +2397,33 @@ export default function PlannedDisbursementsTab({
                     <p className="text-xs text-red-500">{modalRateError}</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center min-h-[24px]">
-                    <Label className="flex items-center gap-1.5 text-sm font-medium">
-                      USD Value
-                      <TooltipProvider>
-                        <UITooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-sm">The disbursement value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
-                          </TooltipContent>
-                        </UITooltip>
-                      </TooltipProvider>
-                    </Label>
-                  </div>
-                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
-                    {modalCalculatedUsdValue !== null ? (
-                      <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </div>
+              )}
+            </div>
+
+            {/* USD Value (full width) */}
+            {modalDisbursement?.currency && (
+              <div className="space-y-2">
+                <div className="flex items-center min-h-[24px]">
+                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    USD Value
+                    <TooltipProvider>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-sm">The disbursement value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                        </TooltipContent>
+                      </UITooltip>
+                    </TooltipProvider>
+                  </Label>
+                </div>
+                <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                  {modalCalculatedUsdValue !== null ? (
+                    <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </div>
               </div>
             )}
@@ -2744,12 +2477,10 @@ export default function PlannedDisbursementsTab({
                 value={modalDisbursement?.provider_activity_uuid || ''}
                 onValueChange={async (activityId) => {
                   console.log('[PlannedDisbursement] Provider activity selected:', activityId);
-                  // Update UUID immediately
                   updateFormField('provider_activity_uuid', activityId);
                   console.log('[PlannedDisbursement] Updated provider_activity_uuid to:', activityId);
-                  
+
                   if (activityId) {
-                    // Fetch activity details to get IATI identifier
                     try {
                       const response = await apiFetch(`/api/activities/${activityId}`);
                       if (response.ok) {
@@ -2818,11 +2549,9 @@ export default function PlannedDisbursementsTab({
               <ActivityCombobox
                 value={modalDisbursement?.receiver_activity_uuid || ''}
                 onValueChange={async (activityId) => {
-                  // Update UUID immediately
                   updateFormField('receiver_activity_uuid', activityId);
-                  
+
                   if (activityId) {
-                    // Fetch activity details to get IATI identifier
                     try {
                       const response = await apiFetch(`/api/activities/${activityId}`);
                       if (response.ok) {
@@ -2842,22 +2571,22 @@ export default function PlannedDisbursementsTab({
               />
             </div>
 
-            {/* Notes */}
+            {/* Description */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="Additional notes or description for this planned disbursement"
+                helpText="A description of this planned disbursement"
                 isSaving={false}
                 isSaved={false}
-                hasValue={!!modalDisbursement?.description}
+                hasValue={!!modalDisbursement?.notes}
               >
-                Notes
+                Description
               </LabelWithInfoAndSave>
               <Textarea
                 id="notes"
                 value={modalDisbursement?.notes || ''}
                 onChange={(e) => updateFormField('notes', e.target.value)}
                 className="min-h-[100px]"
-                placeholder="Add any additional notes about this planned disbursement..."
+                placeholder="Enter planned disbursement description..."
                 disabled={savingId === modalDisbursement?.id}
               />
             </div>

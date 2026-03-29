@@ -1886,8 +1886,8 @@ const router = useRouter();
           </div>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden fade-in" data-tour="activities-table">
-          <div className="overflow-x-auto">
+        <div className="fade-in" data-tour="activities-table">
+          <div className="overflow-x-auto rounded-md ring-1 ring-border bg-card">
             <table className="w-full border-collapse activities-table data-table-balanced">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>

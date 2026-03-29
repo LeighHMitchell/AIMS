@@ -114,6 +114,7 @@ export function showTransactionError(message: string, options?: {
  */
 export function showFieldSaveSuccess(fieldName: string, options?: {
   debounceMs?: number;
+  customMessage?: string;
 }) {
   const id = `${TRANSACTION_TOAST_IDS.FIELD_SAVE}-${fieldName}`;
   const debounceMs = options?.debounceMs || 1000;
@@ -131,7 +132,7 @@ export function showFieldSaveSuccess(fieldName: string, options?: {
       
       activeToasts.add(id);
       
-      toast.success(`${humanizeFieldName(fieldName)} updated`, {
+      toast.success(options?.customMessage || `${humanizeFieldName(fieldName)} updated`, {
         id,
         duration: 2000, // Shorter duration for field updates
         position: 'top-center',

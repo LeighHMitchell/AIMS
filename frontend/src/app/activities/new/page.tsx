@@ -15,6 +15,7 @@ import { AutosaveBannerUpload, AutosaveIconUpload } from "@/components/ui/autosa
 import { toast } from "sonner";
 import { Transaction } from "@/types/transaction";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ActivityExcelImportTab } from "@/components/activities/ActivityExcelImportTab";
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
 import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSelect";
 import { ActivityScopeSearchableSelect } from "@/components/forms/ActivityScopeSearchableSelect";
@@ -2958,6 +2959,14 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           />
         </div>
       );
+    case "excel-import":
+      return (
+        <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <ActivityExcelImportTab
+            activityId={general.id || null}
+          />
+        </div>
+      );
     case "xml-import":
       console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
@@ -4529,6 +4538,7 @@ function NewActivityPageContent() {
       "financing-terms": "Financing Terms",
       "conditions": "Conditions",
       "xml-import": "Import Single Activity",
+      "excel-import": "Excel Import",
       readiness_checklist: "Government Readiness Checklist"
     };
     return sectionLabels[sectionId] || sectionId;
@@ -4549,6 +4559,7 @@ function NewActivityPageContent() {
       policy_markers: "Assign OECD DAC and IATI-compliant policy markers to show how this activity addresses cross-cutting development issues. Policy markers are a standard way of signalling whether and to what extent an activity contributes to objectives such as gender equality, climate change, biodiversity, or disaster risk reduction. Each marker is scored to reflect the importance of the objective within the activity—for example, whether it is a principal objective, a significant objective, or not targeted at all. The Rio Markers are a specific subset that track environmental objectives in line with OECD DAC guidelines. Providing a short rationale alongside your chosen scores helps explain and justify the assessment, making the data more transparent and easier to interpret across organisations and reports.",
       documents: "You can drag and drop files into the upload area or click \"Choose Files\" to browse your computer. Supported formats include images (PNG, JPG, GIF), PDFs, Word documents, Excel sheets, and CSV files. Add a clear title and category so your uploads are easy to find later in the library.",
       "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import.",
+      "excel-import": "Import activity data from an Excel spreadsheet. Download the template, fill it out, and upload it to populate the activity fields.",
       "capital-spend": "Capital expenditure represents the percentage of the total activity cost used for fixed assets or infrastructure (e.g., buildings, equipment, vehicles). This helps distinguish between capital investment and operational/recurrent costs.",
       "conditions": "Conditions are requirements that must be met for the activity to proceed. They can be policy-related (requiring implementation of particular policies), performance-based (requiring achievement of specific outputs or outcomes), or fiduciary (requiring use of specific financial management measures).",
       "country-budget": "Map activity budget to recipient country budget classifications.",
@@ -5270,6 +5281,7 @@ function NewActivityPageContent() {
       title: "IATI Tools",
       sections: [
         { id: "xml-import", label: "Import Single Activity" },
+        { id: "excel-import", label: "Excel Import" },
         { id: "iati", label: "IATI Link" }
       ]
     },

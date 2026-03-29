@@ -8,9 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Calendar, DollarSign, Building2, Globe, Tag, Info, X, CheckCircle, Loader2, AlertTriangle, Lock, Unlock, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, Calendar, DollarSign, Building2, Globe, Tag, Info, X, CheckCircle, Loader2, AlertTriangle, Lock, Unlock, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 import { format } from "date-fns";
@@ -1175,14 +1174,20 @@ export default function TransactionForm({
           </div>
 
           {/* Advanced Fields */}
-          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <ChevronDown className={`h-4 w-4 mr-2 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-                Advanced Options
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-4">
+          <div
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+          >
+            <span>Advanced Fields</span>
+            {showAdvanced ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </div>
+
+          {showAdvanced && (
+            <div className="space-y-4 pt-4 border-t border-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Disbursement Channel */}
                 <div className="space-y-2">
@@ -1411,8 +1416,8 @@ export default function TransactionForm({
               </div>
 
 
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          )}
         </CardContent>
       </Card>
 

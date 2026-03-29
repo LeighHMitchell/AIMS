@@ -893,7 +893,7 @@ export default function TransactionsPage() {
             <div className="text-muted-foreground">No matching transactions found</div>
           </div>
         ) : (
-          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden" data-tour="transactions-table">
+          <div className="bg-card rounded-lg overflow-hidden" data-tour="transactions-table">
             <div className="overflow-x-auto">
               <TransactionTable
                 transactions={sortedTransactions}

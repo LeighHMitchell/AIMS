@@ -6,7 +6,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, ArrowRight, Target, List, LayoutGrid } from 'lucide-react'
+import { AlertCircle, Target, List, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SDGCardModern from '@/components/sdgs/SDGCardModern'
 import { SDG_GOALS } from '@/data/sdg-targets'
@@ -25,6 +25,7 @@ export default function SDGListingPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [banners, setBanners] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchSDGs = async () => {
@@ -41,6 +42,24 @@ export default function SDGListingPage() {
       }
     }
     fetchSDGs()
+
+    // Fetch all SDG banners in one request
+    const fetchBanners = async () => {
+      try {
+        const res = await apiFetch('/api/profile-banners/sdg')
+        if (res.ok) {
+          const data = await res.json()
+          const result: Record<string, string> = {}
+          Object.entries(data).forEach(([id, val]: [string, any]) => {
+            if (val.banner) result[id] = val.banner
+          })
+          setBanners(result)
+        }
+      } catch {
+        // Banners are optional
+      }
+    }
+    fetchBanners()
   }, [])
 
   if (loading) {
@@ -126,46 +145,64 @@ export default function SDGListingPage() {
             </div>
           </div>
 
-          {/* SDG List View */}
+          {/* SDG Table View */}
           {viewMode === 'list' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sdgs.map(sdg => (
-                <Link key={sdg.id} href={`/sdgs/${sdg.id}`}>
-                  <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-l-4 overflow-hidden" style={{ borderLeftColor: sdg.color }}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden shadow-sm">
-                          <img
-                            src={`/images/sdg/E_SDG_Icons-${sdg.id.toString().padStart(2, '0')}.jpg`}
-                            alt={`SDG ${sdg.id}`}
-                            className="object-cover w-full h-full"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: sdg.color }}>
-                              Goal {sdg.id}
-                            </span>
-                            {sdg.activityCount > 0 && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                {sdg.activityCount} {sdg.activityCount === 1 ? 'activity' : 'activities'}
-                              </Badge>
-                            )}
-                          </div>
-                          <h3 className="font-semibold text-slate-900 text-sm leading-tight mb-1">
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3 w-16"></th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3 w-20">Goal</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Name</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Description</th>
+                      <th className="text-right font-medium text-muted-foreground px-4 py-3 w-28">Activities</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sdgs.map(sdg => (
+                      <tr key={sdg.id} className="border-b last:border-b-0 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <Link href={`/sdgs/${sdg.id}`}>
+                            <div className="w-10 h-10 rounded overflow-hidden shadow-sm">
+                              <img
+                                src={`/images/sdg/E_SDG_Icons-${sdg.id.toString().padStart(2, '0')}.jpg`}
+                                alt={`SDG ${sdg.id}`}
+                                className="object-cover w-full h-full"
+                              />
+                            </div>
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: sdg.color }}>
+                            {sdg.id}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={`/sdgs/${sdg.id}`} className="font-medium text-foreground hover:underline">
                             {sdg.name}
-                          </h3>
-                          <p className="text-xs text-slate-500 line-clamp-2">
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <p className="text-muted-foreground line-clamp-2 max-w-md">
                             {sdg.description}
                           </p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-slate-300 flex-shrink-0 mt-1" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {sdg.activityCount > 0 ? (
+                            <Badge variant="secondary" className="text-xs">
+                              {sdg.activityCount}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
 
           {/* SDG Grid/Card View */}
@@ -183,6 +220,7 @@ export default function SDGListingPage() {
                     key={sdg.id}
                     goal={goal}
                     activityCount={sdg.activityCount}
+                    bannerImage={banners[String(sdg.id)]}
                   />
                 )
               })}

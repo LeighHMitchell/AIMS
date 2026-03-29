@@ -41,7 +41,8 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
     .filter(s => s.totalValue > 0)
     .slice(0, compact ? 5 : 8)
     .map(s => ({
-      name: s.code,
+      name: s.name.length > 20 ? s.name.substring(0, 18) + '…' : s.name,
+      code: s.code,
       value: s.totalValue,
       fullName: s.name,
       activityCount: s.activityCount,
@@ -71,7 +72,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                 tick={{ fontSize: 10, fill: '#64748b' }}
                 axisLine={{ stroke: '#e5e7eb' }}
                 tickLine={false}
-                width={compact ? 35 : 45}
+                width={compact ? 100 : 150}
               />
               <RechartsTooltip
                 content={({ active, payload }) => {
@@ -79,7 +80,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                     const d = payload[0]?.payload
                     return (
                       <div className={TOOLTIP_CLASSES}>
-                        <p className="font-medium text-xs text-slate-900">{d?.name}: {d?.fullName}</p>
+                        <p className="font-medium text-xs text-slate-900">{d?.code}: {d?.fullName}</p>
                         <p className="text-xs text-slate-600">{formatCurrencyShort(d?.value)}</p>
                         <p className="text-xs text-slate-600">{d?.activityCount} activities</p>
                       </div>
@@ -88,7 +89,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                   return null
                 }}
               />
-              <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
+              <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -120,7 +121,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                   >
                     <code
                       className="text-xs font-mono font-bold px-2 py-1 rounded text-white flex-shrink-0"
-                      style={{ backgroundColor: themeColor }}
+                      style={{ backgroundColor: '#4c5568' }}
                     >
                       {s.code}
                     </code>
@@ -130,7 +131,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full"
-                            style={{ width: `${progressPct}%`, backgroundColor: themeColor }}
+                            style={{ width: `${progressPct}%`, backgroundColor: '#4c5568' }}
                           />
                         </div>
                         <span className="text-xs text-slate-500 flex-shrink-0">{s.activityCount} activities</span>

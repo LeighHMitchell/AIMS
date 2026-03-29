@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Loader2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts'
@@ -103,8 +104,31 @@ export function ProjectScoringTab({ projectId }: ProjectScoringTabProps) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        {/* Score cards skeleton */}
+        <div className="grid gap-4 grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent className="flex flex-col items-center">
+                <Skeleton className="h-10 w-16 mb-1" />
+                <Skeleton className="h-3 w-16 mb-2" />
+                <Skeleton className="h-[160px] w-[200px] rounded-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Dimension details skeleton */}
+        <Card>
+          <CardHeader><Skeleton className="h-5 w-48" /></CardHeader>
+          <CardContent className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </CardContent>
+        </Card>
       </div>
     )
   }

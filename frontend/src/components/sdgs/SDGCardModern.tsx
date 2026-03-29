@@ -10,12 +10,14 @@ interface SDGCardModernProps {
   goal: SDGGoal;
   activityCount?: number;
   className?: string;
+  bannerImage?: string;
 }
 
 const SDGCardModern: React.FC<SDGCardModernProps> = ({
   goal,
   activityCount = 0,
   className = '',
+  bannerImage,
 }) => {
   const sdgUrl = `/sdgs/${goal.id}`;
 
@@ -25,11 +27,12 @@ const SDGCardModern: React.FC<SDGCardModernProps> = ({
       ariaLabel={`SDG ${goal.id}: ${goal.name}`}
       className={className}
       bannerColor={goal.color}
-      bannerContent={
+      bannerImage={bannerImage}
+      bannerContent={!bannerImage ? (
         <div className="h-full w-full flex items-center justify-center">
           <span className="text-6xl font-bold text-white/20">{goal.id}</span>
         </div>
-      }
+      ) : undefined}
       bannerOverlay={
         <h2 className="text-lg font-bold text-white mb-1">
           <Link

@@ -201,10 +201,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Documents & Media</h2>
-          <p className="text-sm text-gray-500 mt-1">Upload and manage working group documents</p>
-        </div>
+        <h2 className="text-xl font-semibold text-gray-900">Documents & Media</h2>
         <Button onClick={() => setShowUploadDialog(true)} className="gap-2">
           <Upload className="h-4 w-4" />
           Upload Document

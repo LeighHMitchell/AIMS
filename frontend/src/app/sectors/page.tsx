@@ -4,12 +4,28 @@ import React, { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
+import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, Search, PieChart } from 'lucide-react'
+import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, Search, PieChart, List, LayoutGrid, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
+
+// Color palette for sector groups
+const SECTOR_COLORS: Record<string, string> = {
+  '100': '#4C5568', '110': '#3C6255', '120': '#7c3aed', '130': '#b45309',
+  '140': '#0e7490', '150': '#be185d', '160': '#4338ca', '200': '#059669',
+  '210': '#dc2626', '220': '#7c3aed', '230': '#0d9488', '300': '#6366f1',
+  '310': '#ea580c', '320': '#2563eb', '330': '#9333ea', '400': '#16a34a',
+  '410': '#e11d48', '430': '#0284c7', '500': '#ca8a04', '510': '#65a30d',
+  '520': '#a855f7', '530': '#f97316', '600': '#64748b', '700': '#475569',
+  '900': '#334155', '998': '#1e293b',
+}
+
+function getSectorColor(code: string): string {
+  return SECTOR_COLORS[code] || '#4C5568'
+}
 
 interface SectorNode {
   code: string
@@ -54,6 +70,8 @@ export default function SectorsListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('list')
+  const [banners, setBanners] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +88,24 @@ export default function SectorsListingPage() {
       }
     }
     fetchData()
+
+    // Fetch all sector banners
+    const fetchBanners = async () => {
+      try {
+        const res = await apiFetch('/api/profile-banners/sector')
+        if (res.ok) {
+          const data = await res.json()
+          const result: Record<string, string> = {}
+          Object.entries(data).forEach(([id, val]: [string, any]) => {
+            if (val.banner) result[id] = val.banner
+          })
+          setBanners(result)
+        }
+      } catch {
+        // Banners are optional
+      }
+    }
+    fetchBanners()
   }, [])
 
   const toggleGroup = (code: string) => {
@@ -201,7 +237,7 @@ export default function SectorsListingPage() {
             </div>
           </div>
 
-          {/* Search bar + Expand/Collapse All */}
+          {/* Search bar + View Toggle + Expand/Collapse All */}
           <div className="flex items-center gap-3 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,14 +248,93 @@ export default function SectorsListingPage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" size="sm" onClick={toggleExpandAll} disabled={filteredGroups.length === 0}>
-              {allExpanded ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
-              {allExpanded ? 'Collapse All' : 'Expand All'}
-            </Button>
+            <div className="flex items-center border rounded-md">
+              <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none gap-1">
+                <List className="h-4 w-4" /> List
+              </Button>
+              <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none gap-1">
+                <LayoutGrid className="h-4 w-4" /> Cards
+              </Button>
+            </div>
+            {viewMode === 'list' && (
+              <Button variant="outline" size="sm" onClick={toggleExpandAll} disabled={filteredGroups.length === 0}>
+                {allExpanded ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                {allExpanded ? 'Collapse All' : 'Expand All'}
+              </Button>
+            )}
           </div>
 
+          {/* Card View */}
+          {viewMode === 'card' && (
+            <div className="space-y-8">
+              {filteredGroups.map(group => (
+                <div key={group.code}>
+                  <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5">{group.code}</code>
+                    {group.name}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {group.categories.map(cat => (
+                      <CardShell
+                        key={cat.code}
+                        href={`/sectors/${cat.code}`}
+                        ariaLabel={`${cat.code}: ${cat.name}`}
+                        bannerColor={getSectorColor(group.code)}
+                        bannerImage={banners[cat.code]}
+                        bannerContent={!banners[cat.code] ? (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <span className="text-5xl font-bold text-white/15 font-mono">{cat.code}</span>
+                          </div>
+                        ) : undefined}
+                        bannerOverlay={
+                          <h2 className="text-sm font-bold text-white leading-tight">
+                            <Link
+                              href={`/sectors/${cat.code}`}
+                              className="relative z-10 hover:underline inline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {cat.name}
+                            </Link>
+                          </h2>
+                        }
+                      >
+                        <div className="relative flex-1 p-5 flex flex-col bg-card">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Activity className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">
+                                {cat.activityCount} {cat.activityCount === 1 ? 'activity' : 'activities'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-3 border-t border-border">
+                            {cat.totalValue > 0 ? (
+                              <span className="font-semibold text-foreground">{formatCurrencyShort(cat.totalValue)}</span>
+                            ) : (
+                              <span>No financial data</span>
+                            )}
+                            {cat.sectors && cat.sectors.length > 0 && (
+                              <span>{cat.sectors.length} sub-sectors</span>
+                            )}
+                          </div>
+                        </div>
+                      </CardShell>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {filteredGroups.length === 0 && (
+                <div className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    {searchTerm ? `No sectors matching "${searchTerm}"` : 'No sector data found'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Hierarchical tree */}
-          <div className="border border-border rounded-lg overflow-hidden">
+          {viewMode === 'list' && <div className="border border-border rounded-lg overflow-hidden">
             {/* Header row */}
             <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
               <div className="w-4 flex-shrink-0" />
@@ -351,7 +466,7 @@ export default function SectorsListingPage() {
                 </p>
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </div>
     </MainLayout>

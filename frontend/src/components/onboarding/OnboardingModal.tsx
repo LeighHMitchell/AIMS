@@ -125,7 +125,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
   return (
     <Dialog open modal>
       <DialogContent
-        className="sm:max-w-xl"
+        className="sm:max-w-2xl"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >

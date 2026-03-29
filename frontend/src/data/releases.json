@@ -1,7 +1,61 @@
 {
-  "currentVersion": "3.19.0",
-  "narrativeSummary": "Version 3.19 brings comprehensive UI consistency across all financial modals, redesigned sector allocation tables, improved document management, and extensive dropdown refinements. Planned Disbursement and Budget modals now use the same DatePicker, CurrencySelector, OrganizationSearchableSelect, and LabelWithInfoAndSave components as the Transaction modal. Sector allocations show editable tables with financial value breakdowns. Transaction documents display in a proper table with rename support. All section headers have help tooltips.",
+  "currentVersion": "3.21.0",
+  "narrativeSummary": "Version 3.21 brings a major overhaul to SDG, Sector, and Location profile pages with consistent UI, banner image uploads, unified chart palette, and streamlined single-page layouts.",
   "releases": [
+    {
+      "version": "3.21.0",
+      "date": "2026-03-29",
+      "narrativeSummary": "Consistent, polished profile pages for SDGs, Sectors, and Locations with banner images, unified colour palette, expandable charts, and streamlined layouts.",
+      "changes": [
+        "<b>Unified Profile Page Design</b>",
+        "&nbsp;&nbsp;SDG, Sector, and Location profile pages now share the same hero banner style, card shapes, and layout structure",
+        "&nbsp;&nbsp;Consistent breadcrumb navigation across all profile types",
+        "&nbsp;&nbsp;All charts and UI elements use the same dashboard colour palette (Blue Slate, Cool Steel, Scarlet)",
+        "<b>Profile Banner Images</b>",
+        "&nbsp;&nbsp;Upload custom banner images for any SDG, Sector, or Location profile",
+        "&nbsp;&nbsp;Banners appear on both the profile detail page and the card listing view",
+        "&nbsp;&nbsp;Drag to reposition banner images with the built-in image editor",
+        "<b>Streamlined Single-Page Layouts</b>",
+        "&nbsp;&nbsp;Removed tabs from all profile pages &mdash; all content now shows on a single scrollable page",
+        "&nbsp;&nbsp;Removed redundant duplicate charts, summary cards, and transaction type displays",
+        "&nbsp;&nbsp;Activities and Organizations sections converted to clean table format",
+        "<b>Expandable Mini Charts</b>",
+        "&nbsp;&nbsp;All four hero charts (Funding Trends, Transaction Types, Top Donors, Geographic Spread) now have an expand icon",
+        "&nbsp;&nbsp;Click to view any chart at full size in a modal",
+        "<b>Financial Trends Toggle</b>",
+        "&nbsp;&nbsp;Location profiles now let you switch between Area, Bar, and Line chart views",
+        "&nbsp;&nbsp;Click legend items to show or hide individual series",
+        "<b>Activity IDs</b>",
+        "&nbsp;&nbsp;IATI identifiers now consistently shown inline next to activity names across all profile pages",
+        "<b>Location Profiles List View</b>",
+        "&nbsp;&nbsp;Location Profiles listing page now uses a proper table layout in list view"
+      ]
+    },
+    {
+      "version": "3.20.0",
+      "date": "2026-03-28",
+      "narrativeSummary": "A polished welcome experience for first-time users, a refreshed Home page, major Working Groups improvements, and quality-of-life fixes across the platform.",
+      "changes": [
+        "<b>Welcome Animation</b>",
+        "&nbsp;&nbsp;New users see an elegant handwritten \"hello\" animation when they first log in, followed by a \"Welcome to Aether\" message and version number",
+        "&nbsp;&nbsp;The animation also appears when a new version is released, so returning users know the system has been updated",
+        "&nbsp;&nbsp;The entire page blurs softly behind the animation for a focused, premium feel",
+        "&nbsp;&nbsp;Click anywhere to skip if you're in a hurry",
+        "<b>Refreshed Home Page</b>",
+        "&nbsp;&nbsp;The three module cards (Project Bank, DFMIS, Land Bank) are now larger and easier to read",
+        "&nbsp;&nbsp;Cards have a subtle lift effect on hover for a more interactive feel",
+        "&nbsp;&nbsp;Heading and descriptions are bigger and more legible",
+        "<b>Working Groups &mdash; Major Update</b>",
+        "&nbsp;&nbsp;Working Groups can now have Sub-Groups, making it easier to organise committees and task forces",
+        "&nbsp;&nbsp;Member management improved with better role assignment and display",
+        "&nbsp;&nbsp;New modern card design on the Working Groups listing page",
+        "&nbsp;&nbsp;General, Members, Documents, and Meetings sections all refined",
+        "<b>Profile Fix</b>",
+        "&nbsp;&nbsp;Your Position/Role now displays correctly on your profile page after saving (previously showed \"Position not specified\" even when set)",
+        "<b>Onboarding Wizard</b>",
+        "&nbsp;&nbsp;The Welcome to AIMS setup wizard is now wider for a more comfortable layout"
+      ]
+    },
     {
       "version": "3.19.0",
       "date": "2026-03-27",

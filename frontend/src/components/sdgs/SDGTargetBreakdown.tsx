@@ -71,8 +71,8 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="commitments" name="Commitments" fill={sdgColor} radius={[0, 4, 4, 0]} />
-              <Bar dataKey="disbursements" name="Disbursements" fill={`${sdgColor}99`} radius={[0, 4, 4, 0]} />
+              <Bar dataKey="commitments" name="Commitments" fill="#4c5568" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="disbursements" name="Disbursements" fill="#7b95a7" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -89,7 +89,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                   <div className="flex items-center gap-2">
                     <span
                       className="text-xs font-bold px-1.5 py-0.5 rounded text-white"
-                      style={{ backgroundColor: sdgColor }}
+                      style={{ backgroundColor: '#4c5568' }}
                     >
                       {target.targetId}
                     </span>
@@ -108,7 +108,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                     className="h-1.5 rounded-full transition-all"
                     style={{
                       width: `${Math.min(disbursedPercent, 100)}%`,
-                      backgroundColor: sdgColor,
+                      backgroundColor: '#4c5568',
                     }}
                   />
                 </div>

@@ -26,7 +26,7 @@ import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
-import { LoadingText } from "@/components/ui/loading-text";
+import { PlannedDisbursementsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
 import { apiFetch } from '@/lib/api-fetch';
 
 export default function PlannedDisbursementsPage() {
@@ -503,15 +503,13 @@ export default function PlannedDisbursementsPage() {
 
         {/* Planned Disbursements Table */}
         {loading && disbursements.length === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            <LoadingText>Loading planned disbursements...</LoadingText>
-          </div>
+          <PlannedDisbursementsListSkeleton />
         ) : disbursements.length === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
             <p className="text-slate-500">No planned disbursements found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md overflow-hidden">
             <div className="overflow-x-auto">
               <PlannedDisbursementsTable
                 key={`disbursements-table-${disbursements.length}-${selectedDisbursementIds.size}`}

@@ -85,46 +85,63 @@ export default function Dashboard() {
         <div className="min-h-screen">
           <div className="p-8">
             <div className="space-y-6">
-              {/* Header Skeleton */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Skeleton className="h-9 w-48 mb-2" />
-                  <Skeleton className="h-5 w-64" />
+              {/* Header Skeleton - matches actual avatar + welcome + org layout */}
+              <div className="flex items-center gap-6 pb-2">
+                <Skeleton className="h-[88px] w-[88px] rounded-full shrink-0" />
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-56" />
+                    <Skeleton className="h-6 w-20 rounded-md" />
+                  </div>
+                  <Skeleton className="h-4 w-48" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                    <Skeleton className="h-5 w-72" />
+                  </div>
                 </div>
-                <Skeleton className="h-10 w-32" />
+              </div>
+
+              {/* Tab bar skeleton */}
+              <div className="flex gap-1 border rounded-lg p-1">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-24 rounded-md" />
+                ))}
               </div>
 
               {/* Stats Grid Skeleton */}
               <DashboardStatsSkeleton />
 
-              {/* Activity Lists Skeleton */}
-              <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="bg-card">
-                  <CardHeader>
-                    <Skeleton className="h-6 w-40 mb-2" />
-                    <Skeleton className="h-4 w-48" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {[...Array(5)].map((_, i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card">
-                  <CardHeader>
-                    <Skeleton className="h-6 w-40 mb-2" />
-                    <Skeleton className="h-4 w-48" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {[...Array(5)].map((_, i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Visualization Cards Skeleton */}
+              <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-5 w-32 mb-1" />
+                      <Skeleton className="h-8 w-24" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-[120px] w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Recency Cards Skeleton */}
+              <div className="grid gap-6 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-5 w-36 mb-2" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           </div>
@@ -219,35 +236,27 @@ export default function Dashboard() {
         <div className="p-8">
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-start gap-5" data-tour="dashboard-welcome">
+            <div className="flex items-center gap-6 pb-2" data-tour="dashboard-welcome">
               {/* User Avatar */}
-              {user.profilePicture ? (
-                <Avatar className="h-24 w-24 ring-2 ring-slate-200">
+              <Avatar className="h-[88px] w-[88px] shrink-0 ring-2 ring-border/50 shadow-sm">
+                {user.profilePicture ? (
                   <AvatarImage src={user.profilePicture} alt={user.name} className="object-cover" />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-semibold">
-                    {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
-                    {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                <Avatar className="h-24 w-24 ring-2 ring-slate-200">
-                  <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-semibold">
-                    {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
-                    {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              )}
+                ) : null}
+                <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-semibold">
+                  {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
+                  {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
               {/* Text Content */}
-              <div>
+              <div className="space-y-1.5 min-w-0">
                 {/* Welcome message with role badge on same line */}
                 <div className="flex items-center gap-3">
-                  <LayoutDashboard className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-2xl text-foreground">
+                  <h1 className="text-2xl tracking-tight text-foreground">
                     Welcome, <span className="font-semibold">
                       {user.firstName || user.name.split(' ')[0]}
                     </span>
-                  </p>
+                  </h1>
                   {user.role === USER_ROLES.SUPER_USER ? (
                     <TooltipProvider>
                       <Tooltip>
@@ -279,30 +288,30 @@ export default function Dashboard() {
 
                 {/* Position and department */}
                 {(user.jobTitle || user.department) && (
-                  <p className="text-base font-semibold text-foreground mt-2">
+                  <p className="text-sm text-muted-foreground">
                     {user.jobTitle && user.department
-                      ? <>{user.jobTitle} <span className="text-muted-foreground font-normal">&middot;</span> {user.department}</>
+                      ? <>{user.jobTitle} <span>&middot;</span> {user.department}</>
                       : user.jobTitle || user.department}
                   </p>
                 )}
 
                 {/* Organization info with inline org logo */}
                 {user.organization && (
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2">
                     {user.organization.logo ? (
-                      <Avatar className="h-6 w-6">
+                      <Avatar className="h-5 w-5">
                         <AvatarImage src={user.organization.logo} alt={user.organization.name} className="object-cover" />
-                        <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-semibold">
+                        <AvatarFallback className="bg-muted text-muted-foreground text-[8px] font-semibold">
                           {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
-                    <p className="text-xl font-medium text-foreground">
+                    <p className="text-base font-medium text-foreground">
                       {user.organization.name}
                       {user.organization.acronym && (
-                        <span> ({user.organization.acronym})</span>
+                        <span className="text-muted-foreground"> ({user.organization.acronym})</span>
                       )}
                     </p>
                   </div>

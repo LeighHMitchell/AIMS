@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { LinkedActivityTitle } from '@/components/ui/linked-activity-title';
 import IatiLinkTab from './IatiLinkTab';
 import IatiImportTab from './IatiImportTab';
+import { ActivityExcelImportTab } from './ActivityExcelImportTab';
 import { LoadingText } from '@/components/ui/loading-text';
 import OrganizationsTab from './OrganizationsTab';
 import { ActivityScopeSearchableSelect } from '@/components/forms/ActivityScopeSearchableSelect';
@@ -690,7 +691,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
         {/* Main Activity Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Basic Info
@@ -726,6 +727,10 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             <TabsTrigger value="comments" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Comments
+            </TabsTrigger>
+            <TabsTrigger value="excel-import" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Excel Import
             </TabsTrigger>
           </TabsList>
 
@@ -1267,6 +1272,15 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             </Card>
           </TabsContent>
 
+          {/* Excel Import Tab */}
+          <TabsContent value="excel-import" className="space-y-6">
+            <ActivityExcelImportTab
+              activityId={activityId}
+              formData={formData}
+              setFormData={setFormData}
+              handleFieldBlur={handleFieldBlur}
+            />
+          </TabsContent>
 
         </Tabs>
 

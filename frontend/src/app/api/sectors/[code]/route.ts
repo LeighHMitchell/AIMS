@@ -88,7 +88,7 @@ export async function GET(
         .in('id', uniqueActivityIds),
       supabase
         .from('activity_contributors')
-        .select('activity_id, organization_id, contribution_type, organizations:organization_id (id, name, acronym, logo, country, organization_type)')
+        .select('activity_id, organization_id, role, organizations:organization_id (id, name, acronym, logo, country, type)')
         .in('activity_id', uniqueActivityIds),
       supabase
         .from('activity_locations')
@@ -191,17 +191,32 @@ export async function GET(
     });
 
     // Fill organization data from contributors
+    // Build per-activity financial totals for attribution to contributor orgs
+    const actFinancials = new Map<string, { totalValue: number; committed: number; disbursed: number }>();
+    transactions.forEach(tx => {
+      const mult = (activityPercentMap.get(tx.activity_id) || 100) / 100;
+      const v = (tx.value_usd || tx.value || 0) * mult;
+      if (!actFinancials.has(tx.activity_id)) {
+        actFinancials.set(tx.activity_id, { totalValue: 0, committed: 0, disbursed: 0 });
+      }
+      const af = actFinancials.get(tx.activity_id)!;
+      af.totalValue += v;
+      if (tx.transaction_type === '2' || tx.transaction_type === '11') af.committed += v;
+      else if (tx.transaction_type === '3') af.disbursed += v;
+    });
+
     (orgContributors || []).forEach((contrib: any) => {
       if (contrib.organizations) {
         const orgId = contrib.organizations.id;
+        const contribType = contrib.role;
         if (organizationMap.has(orgId)) {
           const od = organizationMap.get(orgId)!;
           od.organization = contrib.organizations;
           od.activityIds.add(contrib.activity_id);
-          if (contrib.contribution_type) od.contributionTypes.add(contrib.contribution_type);
+          if (contribType) od.contributionTypes.add(contribType);
         } else {
           const types = new Set<string>();
-          if (contrib.contribution_type) types.add(contrib.contribution_type);
+          if (contribType) types.add(contribType);
           organizationMap.set(orgId, {
             organization: contrib.organizations,
             totalValue: 0, totalCommitted: 0, totalDisbursed: 0,
@@ -212,40 +227,80 @@ export async function GET(
       }
     });
 
-    // ---- FILL GEOGRAPHIC DATA FROM ACTIVITY_LOCATIONS ----
-    // If transactions don't have recipient_country_code, use activity_locations
-    const locData = locResult.data;
-    if (geographicMap.size === 0 && locData && locData.length > 0) {
-      // Build activity total value map for proportional geo distribution
-      const actValMap = new Map<string, { totalValue: number; commitments: number; disbursements: number }>();
-      transactions.forEach(tx => {
-        const mult = (activityPercentMap.get(tx.activity_id) || 100) / 100;
-        const v = (tx.value_usd || tx.value || 0) * mult;
-        if (!actValMap.has(tx.activity_id)) {
-          actValMap.set(tx.activity_id, { totalValue: 0, commitments: 0, disbursements: 0 });
+    // Attribute activity financials to funding orgs when transactions lack provider_org_id
+    const actFundingOrgs = new Map<string, string[]>();
+    (orgContributors || []).forEach((contrib: any) => {
+      const ct = contrib.role;
+      if (contrib.organizations && ct === 'funder') {
+        if (!actFundingOrgs.has(contrib.activity_id)) {
+          actFundingOrgs.set(contrib.activity_id, []);
         }
-        const d = actValMap.get(tx.activity_id)!;
-        d.totalValue += v;
-        if (tx.transaction_type === '2' || tx.transaction_type === '11') d.commitments += v;
-        else if (tx.transaction_type === '3') d.disbursements += v;
+        actFundingOrgs.get(contrib.activity_id)!.push(contrib.organizations.id);
+      }
+    });
+
+    actFundingOrgs.forEach((orgIds, activityId) => {
+      const financials = actFinancials.get(activityId);
+      if (!financials || orgIds.length === 0) return;
+      // Skip if already attributed via provider_org_id
+      let alreadyAttributed = false;
+      orgIds.forEach(oid => {
+        const od = organizationMap.get(oid);
+        if (od && od.totalValue > 0) alreadyAttributed = true;
+      });
+      if (alreadyAttributed) return;
+      const share = 1 / orgIds.length;
+      orgIds.forEach(oid => {
+        const od = organizationMap.get(oid);
+        if (od) {
+          od.totalValue += financials.totalValue * share;
+          od.totalCommitted += financials.committed * share;
+          od.totalDisbursed += financials.disbursed * share;
+        }
+      });
+    });
+
+    // ---- FILL GEOGRAPHIC DATA FROM ACTIVITY_LOCATIONS ----
+    // Supplement geographic data for activities that lack transaction-level geo
+    const locData = locResult.data;
+    if (locData && locData.length > 0) {
+      const activitiesWithGeo = new Set<string>();
+      geographicMap.forEach(gd => {
+        gd.activityIds.forEach(aid => activitiesWithGeo.add(aid));
       });
 
       locData.forEach((loc: any) => {
         const cc = loc.country_code;
         if (!cc) return;
+        if (activitiesWithGeo.has(loc.activity_id)) return;
         if (!geographicMap.has(cc)) {
           geographicMap.set(cc, { totalValue: 0, commitments: 0, disbursements: 0, activityIds: new Set() });
         }
         const gd = geographicMap.get(cc)!;
         if (!gd.activityIds.has(loc.activity_id)) {
           gd.activityIds.add(loc.activity_id);
-          const vals = actValMap.get(loc.activity_id);
+          const vals = actFinancials.get(loc.activity_id);
           if (vals) {
             gd.totalValue += vals.totalValue;
-            gd.commitments += vals.commitments;
-            gd.disbursements += vals.disbursements;
+            gd.commitments += vals.committed;
+            gd.disbursements += vals.disbursed;
           }
         }
+      });
+    }
+
+    // ---- FILL MISSING ORG DETAILS FROM DB ----
+    const missingOrgIds = Array.from(organizationMap.entries())
+      .filter(([_, v]) => v.organization === null)
+      .map(([id]) => id);
+    if (missingOrgIds.length > 0) {
+      const { data: missingOrgs } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, logo, country, type')
+        .in('id', missingOrgIds);
+      (missingOrgs || []).forEach((org: any) => {
+        const entry = organizationMap.get(org.id);
+        if (entry) entry.organization = org;
       });
     }
 
@@ -348,7 +403,7 @@ export async function GET(
         name: org.organization.name,
         acronym: org.organization.acronym || null,
         logo: org.organization.logo || null,
-        orgType: org.organization.organization_type || null,
+        orgType: org.organization.type || null,
         totalCommitted: org.totalCommitted,
         totalDisbursed: org.totalDisbursed,
         activityCount: org.activityIds.size,

@@ -566,10 +566,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Meetings & Minutes</h2>
-          <p className="text-sm text-muted-foreground mt-1">Schedule meetings, take attendance, and record minutes</p>
-        </div>
+        <h2 className="text-xl font-semibold text-foreground">Meetings & Minutes</h2>
         <Button onClick={() => setShowAddDialog(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Meeting

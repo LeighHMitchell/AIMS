@@ -42,9 +42,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.log("[useUser] Found stored user after mount");
         const parsed = JSON.parse(storedUser);
         setUser(parsed);
-        if (parsed.onboardingCompleted === false) {
-          setShowOnboarding(true);
-        }
       } catch (error) {
         console.error('[useUser] Failed to parse stored user:', error);
         localStorage.removeItem('aims_user');
@@ -152,10 +149,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const handleSetUser = (newUser: User | null) => {
     if (newUser) {
       localStorage.setItem('aims_user', JSON.stringify(newUser));
-      // Show onboarding if user hasn't completed it
-      if (newUser.onboardingCompleted === false) {
-        setShowOnboarding(true);
-      }
     } else {
       localStorage.removeItem('aims_user');
       setShowOnboarding(false);

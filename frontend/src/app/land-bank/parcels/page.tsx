@@ -403,7 +403,7 @@ export default function ParcelsListPage() {
         ) : (
           <>
             {/* Table view */}
-            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            <div className="bg-card rounded-md ring-1 ring-border overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead className="bg-surface-muted border-b border-border">

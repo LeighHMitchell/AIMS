@@ -122,7 +122,7 @@ export function OrgTransactionsTable({
       const processedTransactions: TransactionRow[] = transactionsData
         .map((t: any) => {
           const isProvider = t.provider_org_id === organizationId;
-          const reportingOrgName = t.activity?.created_by_org_name || t.activity?.created_by_org_acronym || 'Unknown';
+          const reportingOrgName = t.activity?.created_by_org_acronym || t.activity?.created_by_org_name || 'Unknown';
           // Check if reported by another org (not the current org)
           const isExternallyReported = t.activity?.reporting_org_id
             ? t.activity.reporting_org_id !== organizationId

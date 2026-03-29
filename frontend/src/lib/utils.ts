@@ -48,6 +48,7 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   finance_type: 'Finance Type',
   aid_type: 'Aid Type',
   tied_status: 'Tied Status',
+  is_humanitarian: 'Humanitarian flag',
 };
 
 export function humanizeFieldName(fieldName: string): string {

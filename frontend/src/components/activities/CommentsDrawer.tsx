@@ -300,7 +300,7 @@ function CommentItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
                   type="button"
                   className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"

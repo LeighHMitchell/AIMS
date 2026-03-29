@@ -245,56 +245,65 @@ export default function RolodexPage() {
 
   // Skeleton loader for initial load
   const renderSkeleton = () => (
-    <div className="min-h-screen bg-white">
-      <div className="w-full space-y-6">
-        {/* Header Skeleton */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded" />
           <div>
-            <Skeleton className="h-9 w-48 mb-2" />
-            <Skeleton className="h-5 w-96" />
-          </div>
-          <div className="flex items-center space-x-3">
-            <Skeleton className="h-9 w-40" />
-            <Skeleton className="h-9 w-24" />
-            <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-9 w-20" />
+            <Skeleton className="h-9 w-36 mb-1" />
+            <Skeleton className="h-4 w-80" />
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-20 rounded" />
+          <Skeleton className="h-9 w-9 rounded" />
+        </div>
+      </div>
 
-        {/* Table Skeleton */}
-        <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
-          <table className="w-full table-auto border-collapse">
-            <thead className="bg-surface-muted border-b border-border">
-              <tr>
-                <th className="h-12 px-4 py-3 w-[60px]"><Skeleton className="h-4 w-8" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-20" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-28" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-14" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-14" /></th>
-                <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
+      {/* Filter Panel */}
+      <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
+        <Skeleton className="h-9 w-60 rounded" />
+        <Skeleton className="h-9 w-36 rounded" />
+        <Skeleton className="h-9 w-36 rounded" />
+        <Skeleton className="h-9 w-40 rounded" />
+        <Skeleton className="h-9 w-36 rounded" />
+        <Skeleton className="h-9 w-36 rounded" />
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-md ring-1 ring-border overflow-hidden">
+        <table className="w-full table-auto border-collapse">
+          <thead className="bg-surface-muted border-b border-border">
+            <tr>
+              <th className="h-12 px-4 py-3 w-[60px]"><Skeleton className="h-8 w-8 rounded-full" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-20" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-28" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-14" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-14" /></th>
+              <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border bg-white">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <tr key={i}>
+                <td className="px-4 py-3"><Skeleton className="h-8 w-8 rounded-full" /></td>
+                <td className="px-4 py-3">
+                  <Skeleton className="h-4 w-36 mb-1" />
+                  <Skeleton className="h-3 w-24" />
+                </td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-6 w-16 rounded-full" /></td>
+                <td className="px-4 py-3"><Skeleton className="h-7 w-14" /></td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border bg-white">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
-                <tr key={i}>
-                  <td className="px-4 py-3"><Skeleton className="h-8 w-8 rounded-full" /></td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </td>
-                  <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-6 w-16 rounded-full" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-7 w-14" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -427,7 +436,7 @@ export default function RolodexPage() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-white rounded-md ring-1 ring-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full table-auto border-collapse">
                     <thead className="bg-surface-muted border-b border-border">

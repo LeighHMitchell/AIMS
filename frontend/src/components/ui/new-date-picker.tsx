@@ -159,6 +159,11 @@ export function NewDatePicker({
           color: white !important;
         }
 
+        .modern-calendar .react-datepicker__day--selected:hover {
+          background: #2563eb !important;
+          color: white !important;
+        }
+
         .modern-calendar .react-datepicker__day--today {
           background: #dbeafe;
           color: #1d4ed8;

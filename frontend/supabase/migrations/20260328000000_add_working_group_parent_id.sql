@@ -1,0 +1,1 @@
+In this screenshot of the card viewer there was three dots of the second line.

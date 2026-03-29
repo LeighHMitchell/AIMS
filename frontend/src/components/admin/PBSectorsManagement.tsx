@@ -523,7 +523,7 @@ export function PBSectorsManagement() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
@@ -574,7 +574,7 @@ export function PBSectorsManagement() {
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
                                     className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                   >

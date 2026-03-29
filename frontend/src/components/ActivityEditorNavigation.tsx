@@ -56,7 +56,8 @@ export default function ActivityEditorNavigation({
       title: "TOOLS",
       sections: [
         { id: "iati", label: "IATI Link" },
-        { id: "xml-import", label: "XML Import" }
+        { id: "xml-import", label: "XML Import" },
+        { id: "excel-import", label: "Excel Import" }
       ]
     },
     {

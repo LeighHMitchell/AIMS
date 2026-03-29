@@ -1,6 +1,7 @@
 import React, { Suspense } from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
 import "./globals.css"
 import { UserProvider } from "@/hooks/useUser"
 import { UserMenu } from "@/components/UserMenu"
@@ -9,8 +10,6 @@ import { SystemSettingsProvider } from "@/contexts/SystemSettingsContext"
 import { LoadingBarProvider } from "@/components/providers/LoadingBarProvider"
 import { TourProvider } from "@/components/tour/TourProvider"
 import { Toaster } from "sonner"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "æther",
@@ -36,7 +35,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${GeistSans.className} ${GeistMono.variable} antialiased`}>
         <SystemSettingsProvider>
           <UserProvider>
             <Suspense fallback={null}>

@@ -1054,7 +1054,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                 <Button type="submit" disabled={loading} className="bg-[#dc2625] hover:bg-[#dc2625]/90 rounded-lg">
                   {loading ? (uploadingDocuments ? 'Uploading docs...' : 'Creating...') : 'Create Event'}
                 </Button>
-                <Button type="button" variant="ghost" size="sm" className="rounded-lg">
+                <Button type="button" variant="outline" size="sm" className="rounded-lg">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </div>

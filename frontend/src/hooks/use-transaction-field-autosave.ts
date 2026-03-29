@@ -8,6 +8,7 @@ interface TransactionFieldAutosaveOptions {
   userId?: string;
   initialValue?: any;
   debounceMs?: number;
+  toastMessage?: (value: any) => string;
 }
 
 export function useTransactionFieldAutosave({
@@ -15,7 +16,8 @@ export function useTransactionFieldAutosave({
   fieldName,
   userId,
   initialValue,
-  debounceMs = 1000
+  debounceMs = 1000,
+  toastMessage
 }: TransactionFieldAutosaveOptions) {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(!!initialValue);
@@ -48,7 +50,7 @@ export function useTransactionFieldAutosave({
       setIsSaved(true);
       
       // Show subtle success feedback for field-level saves
-      showFieldSaveSuccess(fieldName);
+      showFieldSaveSuccess(fieldName, toastMessage ? { customMessage: toastMessage(value) } : undefined);
     } catch (e: any) {
       setError(e.message || 'Failed to save');
       setIsSaving(false);

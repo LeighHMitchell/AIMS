@@ -8,23 +8,25 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+// Tabs removed — all content shown on single page
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, ExternalLink, MapPin,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
-  Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area,
+  Cell, PieChart as RechartsPieChart, Pie, AreaChart, Area,
 } from 'recharts'
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { exportChartToCSV } from '@/lib/chart-export'
-import { getSectorColor, sectorPalette } from '@/lib/sector-colors'
-import { SectorHierarchyBreadcrumb } from '@/components/sectors/SectorHierarchyBreadcrumb'
+import { getSectorColor } from '@/lib/sector-colors'
+import { CHART_COLOR_PALETTE } from '@/lib/chart-colors'
 import { SubSectorBreakdown } from '@/components/sectors/SubSectorBreakdown'
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
+import { ProfileBannerUpload } from '@/components/profiles/ProfileBannerUpload'
+import { MiniChartCard } from '@/components/profiles/MiniChartCard'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 import Flag from 'react-world-flags'
 
@@ -92,7 +94,6 @@ export default function SectorProfilePage() {
   const [data, setData] = useState<SectorData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('overview')
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const [activityView, setActivityView] = useState<'card' | 'table'>('card')
@@ -101,6 +102,8 @@ export default function SectorProfilePage() {
   const [activityPage, setActivityPage] = useState(1)
   const [orgRoleFilter, setOrgRoleFilter] = useState<string>('all')
   const [orgSort, setOrgSort] = useState<string>('value')
+  const [sectorBanner, setSectorBanner] = useState<string | null>(null)
+  const [sectorBannerPosition, setSectorBannerPosition] = useState(50)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -130,7 +133,7 @@ export default function SectorProfilePage() {
   useEffect(() => { setActivityPage(1) }, [activityStatusFilter, activitySort])
 
   const themeColor = useMemo(() => data ? getSectorColor(data.sector.code) : '#6B7280', [data])
-  const palette = useMemo(() => sectorPalette(themeColor), [themeColor])
+  const palette = CHART_COLOR_PALETTE
 
   const filteredActivities = useMemo(() => {
     if (!data) return []
@@ -194,33 +197,40 @@ export default function SectorProfilePage() {
       <div className="min-h-screen">
         <div className="w-full p-6">
           <Breadcrumbs items={[
-            { label: "Sectors", href: "/sectors" },
-            { label: sector.name },
+            { label: "All Sectors", href: "/sectors" },
+            ...(hierarchy.group ? [{ label: `${hierarchy.group.name} (${hierarchy.group.code})`, href: (!hierarchy.category && !hierarchy.sector) ? undefined : `/sectors/${hierarchy.group.code}` }] : []),
+            ...(hierarchy.category ? [{ label: `${hierarchy.category.name} (${hierarchy.category.code})`, href: !hierarchy.sector ? undefined : `/sectors/${hierarchy.category.code}` }] : []),
+            ...(hierarchy.sector ? [{ label: `${hierarchy.sector.name} (${hierarchy.sector.code})` }] : []),
           ]} />
 
-          {/* Sector Hierarchy */}
-          <SectorHierarchyBreadcrumb hierarchy={hierarchy} />
-
           {/* Hero Banner */}
-          <Card className="mb-6 border-0 shadow-sm overflow-hidden" style={{ borderTop: `4px solid ${themeColor}` }}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md flex-shrink-0 text-white font-bold text-lg" style={{ backgroundColor: themeColor }}>
-                  {sector.code}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold text-foreground mb-1">{sector.name}</h1>
-                  <div className="flex items-center gap-2 flex-wrap mt-2">
-                    <Badge variant="outline" className="border-border text-foreground">{getLevelLabel(sector.level)}</Badge>
-                    <Badge variant="outline" className="border-border text-foreground">DAC CRS</Badge>
-                    {sector.groupName && sector.level !== 'group' && (
-                      <Badge style={{ backgroundColor: `${themeColor}15`, color: themeColor, border: `1px solid ${themeColor}40` }}>{sector.groupName}</Badge>
-                    )}
-                  </div>
+          <div className="rounded-xl p-6 mb-6 border border-border relative overflow-hidden group" style={{ background: `linear-gradient(to right, ${themeColor}15, ${themeColor}08)` }}>
+            {sectorBanner && (
+              <div className="absolute inset-0">
+                <img src={sectorBanner} alt="" className="w-full h-full object-cover" style={{ objectPosition: `center ${sectorBannerPosition}%` }} />
+                <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-background/30" />
+              </div>
+            )}
+            <ProfileBannerUpload
+              profileType="sector"
+              profileId={sector.code}
+              onBannerChange={(b, pos) => { setSectorBanner(b); setSectorBannerPosition(pos) }}
+            />
+            <div className="flex items-center gap-4 relative z-[1]">
+              <div className="flex-shrink-0 w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: '#4c5568' }}>
+                {sector.code}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl font-bold text-foreground">{sector.name}</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-[11px] font-mono font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded">DAC CRS</code>
+                  {sector.groupName && sector.level !== 'group' && (
+                    <span className="text-xs font-semibold text-muted-foreground">{sector.groupName}</span>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Metric Cards */}
           <SDGMetricCards metrics={metrics} yoyStats={yoyStats} donorCount={donorRankings.length} sdgColor={themeColor} />
@@ -228,17 +238,15 @@ export default function SectorProfilePage() {
           {/* Mini Chart Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Funding Trends */}
-            <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Funding Trends</CardTitle></CardHeader>
-              <CardContent className="px-1 pb-2">
+            <MiniChartCard title="Funding Trends">
                 {transactionsByYear.length > 0 ? (
-                  <div className="h-36 -mx-1">
+                  <div className="h-36">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={transactionsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
                         <defs>
                           <linearGradient id="secGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={themeColor} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={themeColor} stopOpacity={0} />
+                            <stop offset="5%" stopColor="#4c5568" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#4c5568" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
@@ -249,29 +257,23 @@ export default function SectorProfilePage() {
                             {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground">{e.name}: {formatCurrencyShort(e.value)}</p>)}
                           </div>
                         ) : null} />
-                        <Area type="monotone" dataKey="commitments" stackId="1" stroke={themeColor} strokeWidth={2} fill="url(#secGrad)" name="Commitments" />
-                        <Area type="monotone" dataKey="disbursements" stackId="1" stroke={`${themeColor}99`} strokeWidth={1.5} fill={`${themeColor}33`} name="Disbursements" />
+                        <Area type="monotone" dataKey="commitments" stackId="1" stroke="#4c5568" strokeWidth={2} fill="url(#secGrad)" name="Commitments" />
+                        <Area type="monotone" dataKey="disbursements" stackId="1" stroke="#7b95a7" strokeWidth={1.5} fill="#7b95a733" name="Disbursements" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>}
-              </CardContent>
-            </Card>
+            </MiniChartCard>
 
             {/* Sub-sector Coverage mini */}
-            <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Sub-sector Coverage</CardTitle></CardHeader>
-              <CardContent className="px-1 pb-2">
+            <MiniChartCard title="Sub-sector Coverage">
                 <SubSectorBreakdown subSectors={subSectorBreakdown} themeColor={themeColor} compact />
-              </CardContent>
-            </Card>
+            </MiniChartCard>
 
             {/* Top Donors mini */}
-            <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Top Donors</CardTitle></CardHeader>
-              <CardContent className="px-1 pb-2">
+            <MiniChartCard title="Top Donors">
                 {donorRankings.length > 0 ? (
-                  <div className="h-36 -mx-1">
+                  <div className="h-36">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={donorRankings.slice(0, 5).map(d => ({ name: d.acronym || d.name.substring(0, 12), value: d.totalDisbursed, fullName: d.name }))} layout="vertical" margin={{ top: 0, right: 5, left: 0, bottom: 0 }}>
                         <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
@@ -279,20 +281,17 @@ export default function SectorProfilePage() {
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
                         ) : null} />
-                        <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No donor data</div>}
-              </CardContent>
-            </Card>
+            </MiniChartCard>
 
             {/* Geographic Spread mini */}
-            <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Geographic Spread</CardTitle></CardHeader>
-              <CardContent className="px-1 pb-2">
+            <MiniChartCard title="Geographic Spread">
                 {geographicDistribution.length > 0 ? (
-                  <div className="h-36 -mx-1">
+                  <div className="h-36">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={geographicDistribution.slice(0, 5).map(g => ({ name: g.countryCode, value: g.value, fullName: g.countryName }))} layout="vertical" margin={{ top: 0, right: 5, left: 0, bottom: 0 }}>
                         <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
@@ -300,40 +299,21 @@ export default function SectorProfilePage() {
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
                         ) : null} />
-                        <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No geo data</div>}
-              </CardContent>
-            </Card>
+            </MiniChartCard>
           </div>
 
-          {/* ============ TABS ============ */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="sub-sectors">Sub-Sectors</TabsTrigger>
-              <TabsTrigger value="financials">Financials</TabsTrigger>
-              <TabsTrigger value="activities">Activities</TabsTrigger>
-              <TabsTrigger value="donors">Donors</TabsTrigger>
-              <TabsTrigger value="organizations">Organizations</TabsTrigger>
-              <TabsTrigger value="geography">Geography</TabsTrigger>
-            </TabsList>
+          {/* ============ ALL SECTIONS ============ */}
+          <div className="space-y-8">
 
-            {/* Overview */}
-            <TabsContent value="overview" className="space-y-6">
-              <Card><CardHeader><CardTitle className="text-sm">Summary</CardTitle></CardHeader><CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div><p className="text-xs font-medium text-muted-foreground mb-1">Aligned Activities</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalActivities)}</p><p className="text-xs text-muted-foreground mt-0.5">in this sector</p></div>
-                  <div><p className="text-xs font-medium text-muted-foreground mb-1">Organizations</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalOrganizations)}</p><p className="text-xs text-muted-foreground mt-0.5">involved</p></div>
-                  <div><p className="text-xs font-medium text-muted-foreground mb-1">Total Financial Value</p><p className="text-3xl font-bold text-foreground">{formatCurrencyShort(metrics.totalValue)}</p><p className="text-xs text-muted-foreground mt-0.5">across all transactions</p></div>
-                </div>
-              </CardContent></Card>
-
-              {/* Sub-sector coverage summary */}
-              {subSectorBreakdown.length > 0 && (
-                <Card><CardHeader><CardTitle className="text-sm">Sub-sector Coverage</CardTitle></CardHeader><CardContent>
+            {/* Sub-Sector Coverage + Breakdown */}
+            <Card><CardHeader><CardTitle className="text-sm">{sector.level === 'sector' ? 'Related Sectors in Same Category' : 'Sub-Sector Breakdown'}</CardTitle></CardHeader><CardContent>
+              {subSectorBreakdown.length > 0 ? (
+                <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {subSectorBreakdown.map(sub => (
                       <Link key={sub.code} href={`/sectors/${sub.code}`}>
@@ -343,124 +323,67 @@ export default function SectorProfilePage() {
                       </Link>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">{subSectorBreakdown.filter(s => s.totalValue > 0).length} of {subSectorBreakdown.length} sub-sectors funded</p>
-                </CardContent></Card>
+                  <p className="text-xs text-muted-foreground">{subSectorBreakdown.filter(s => s.totalValue > 0).length} of {subSectorBreakdown.length} sub-sectors funded</p>
+                  <SubSectorBreakdown subSectors={subSectorBreakdown} themeColor={themeColor} />
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-8">No sub-sector data available</p>
               )}
+            </CardContent></Card>
 
-              {/* Top 5 Activities */}
-              {activities.length > 0 && (
-                <Card><CardHeader><CardTitle className="text-sm">Top Activities</CardTitle></CardHeader><CardContent>
-                  <div className="space-y-2">
-                    {activities.slice(0, 5).map(activity => (
-                      <Link key={activity.id} href={`/activities/${activity.id}`} className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm text-foreground truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
-                            <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
-                            {activity.sectorPercentage < 100 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{activity.sectorPercentage}% allocation</Badge>
-                            )}
+            {/* Financials */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card><CardHeader><CardTitle className="text-sm">Financial Trends</CardTitle></CardHeader><CardContent>
+                {transactionsByYear.length > 0 ? (
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={transactionsByYear} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                        <defs>
+                          <linearGradient id="secFinGradC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#4c5568" stopOpacity={0.3} /><stop offset="95%" stopColor="#4c5568" stopOpacity={0} /></linearGradient>
+                          <linearGradient id="secFinGradD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7b95a7" stopOpacity={0.3} /><stop offset="95%" stopColor="#7b95a7" stopOpacity={0} /></linearGradient>
+                        </defs>
+                        <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
+                        <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
+                          <div className={TOOLTIP_CLASSES}>
+                            <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                            {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
                           </div>
-                        </div>
-                        <div className="text-right ml-3 flex-shrink-0">
-                          <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(activity.totalValue)}</p>
-                          <p className="text-[10px] text-muted-foreground">{activity.transactionCount} tx</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </CardContent></Card>
-              )}
+                        ) : null} />
 
-              {/* Transaction Type Donut */}
-              {transactionsByType.length > 0 && (
-                <Card><CardHeader><CardTitle className="text-sm">Transaction Types</CardTitle></CardHeader><CardContent>
-                  <div className="h-64">
+                        <Area type="monotone" dataKey="commitments" name="Commitments" stroke="#4c5568" strokeWidth={2} fill="url(#secFinGradC)" />
+                        <Area type="monotone" dataKey="disbursements" name="Disbursements" stroke="#7b95a7" strokeWidth={2} fill="url(#secFinGradD)" />
+                        <Area type="monotone" dataKey="expenditures" name="Expenditures" stroke="#dc2625" strokeWidth={1.5} fill="none" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No time-series data</div>}
+              </CardContent></Card>
+
+              <Card><CardHeader><CardTitle className="text-sm">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
+                {transactionsByType.length > 0 ? (
+                  <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
-                        <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={40} outerRadius={75} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
+                        <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={50} outerRadius={90} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
                           {transactionsByType.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
                         </Pie>
                         <RechartsTooltip formatter={(value: number) => formatCurrencyShort(value)} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
+
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   </div>
-                </CardContent></Card>
-              )}
-            </TabsContent>
-
-            {/* Sub-Sectors */}
-            <TabsContent value="sub-sectors" className="space-y-6">
-              <Card><CardHeader><CardTitle className="text-sm">{sector.level === 'sector' ? 'Related Sectors in Same Category' : 'Sub-Sector Breakdown'}</CardTitle></CardHeader><CardContent>
-                {subSectorBreakdown.length > 0 ? (
-                  <SubSectorBreakdown subSectors={subSectorBreakdown} themeColor={themeColor} />
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-8">No sub-sector data available</p>
-                )}
+                ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No transaction data</div>}
               </CardContent></Card>
-            </TabsContent>
+            </div>
 
-            {/* Financials */}
-            <TabsContent value="financials" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card><CardHeader><CardTitle className="text-sm">Financial Trends</CardTitle></CardHeader><CardContent>
-                  {transactionsByYear.length > 0 ? (
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={transactionsByYear} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-                          <defs>
-                            <linearGradient id="secFinGradC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={themeColor} stopOpacity={0.3} /><stop offset="95%" stopColor={themeColor} stopOpacity={0} /></linearGradient>
-                            <linearGradient id="secFinGradD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={`${themeColor}99`} stopOpacity={0.3} /><stop offset="95%" stopColor={`${themeColor}99`} stopOpacity={0} /></linearGradient>
-                          </defs>
-                          <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
-                          <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
-                          <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
-                            <div className={TOOLTIP_CLASSES}>
-                              <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
-                              {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
-                            </div>
-                          ) : null} />
-                          <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Area type="monotone" dataKey="commitments" name="Commitments" stroke={themeColor} strokeWidth={2} fill="url(#secFinGradC)" />
-                          <Area type="monotone" dataKey="disbursements" name="Disbursements" stroke={`${themeColor}99`} strokeWidth={2} fill="url(#secFinGradD)" />
-                          <Area type="monotone" dataKey="expenditures" name="Expenditures" stroke={`${themeColor}55`} strokeWidth={1.5} fill="none" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No time-series data</div>}
-                </CardContent></Card>
-
-                <Card><CardHeader><CardTitle className="text-sm">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
-                  {transactionsByType.length > 0 ? (
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                          <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={50} outerRadius={90} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
-                            {transactionsByType.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
-                          </Pie>
-                          <RechartsTooltip formatter={(value: number) => formatCurrencyShort(value)} />
-                          <Legend wrapperStyle={{ fontSize: 11 }} />
-                        </RechartsPieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No transaction data</div>}
-                </CardContent></Card>
-              </div>
-
-              <Card><CardHeader><CardTitle className="text-sm">Financial Summary</CardTitle></CardHeader><CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div><p className="text-xs text-muted-foreground mb-1">Commitments</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.commitments)}</p></div>
-                  <div><p className="text-xs text-muted-foreground mb-1">Disbursements</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.disbursements)}</p></div>
-                  <div><p className="text-xs text-muted-foreground mb-1">Expenditures</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.expenditures)}</p></div>
-                  <div><p className="text-xs text-muted-foreground mb-1">Inflows</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.inflows)}</p></div>
-                </div>
-              </CardContent></Card>
-            </TabsContent>
+            {/* Donors */}
+            <Card><CardHeader><CardTitle className="text-sm">Donor Landscape</CardTitle></CardHeader><CardContent>
+              <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
+            </CardContent></Card>
 
             {/* Activities */}
-            <TabsContent value="activities" className="space-y-4">
+            <Card><CardHeader><CardTitle className="text-sm">Activities</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   {[
@@ -469,7 +392,7 @@ export default function SectorProfilePage() {
                     { key: '2', label: 'Active', count: activities.filter(a => a.activity_status === '2').length },
                     { key: '4', label: 'Closed', count: activities.filter(a => a.activity_status === '4' || a.activity_status === '3').length },
                   ].map(f => (
-                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-xs px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={activityStatusFilter === f.key ? { backgroundColor: themeColor } : undefined}>
+                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-xs px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={activityStatusFilter === f.key ? { backgroundColor: '#4c5568' } : undefined}>
                       {f.label} ({f.count})
                     </button>
                   ))}
@@ -509,15 +432,17 @@ export default function SectorProfilePage() {
                           <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
                           {activity.sectorPercentage < 100 && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{activity.sectorPercentage}%</Badge>}
                         </div>
-                        <h3 className="font-medium text-sm text-foreground line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
-                        {activity.iati_identifier && <code className="text-[10px] font-mono text-muted-foreground block mb-2 truncate">{activity.iati_identifier}</code>}
+                        <div className="flex items-start gap-1.5 mb-2">
+                          <h3 className="font-medium text-sm text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
+                          {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
+                        </div>
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                           <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
                           <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
                         </div>
                         {activity.commitments > 0 && (
                           <div className="w-full bg-muted rounded-full h-1 mt-2">
-                            <div className="h-1 rounded-full" style={{ width: `${Math.min((activity.disbursements / activity.commitments) * 100, 100)}%`, backgroundColor: themeColor }} />
+                            <div className="h-1 rounded-full" style={{ width: `${Math.min((activity.disbursements / activity.commitments) * 100, 100)}%`, backgroundColor: '#4c5568' }} />
                           </div>
                         )}
                       </CardContent></Card>
@@ -535,7 +460,7 @@ export default function SectorProfilePage() {
                   </tr></thead><tbody>
                     {paginatedActivities.map(activity => (
                       <tr key={activity.id} className="border-b border-border hover:bg-muted/50">
-                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link></td>
+                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline"><span className="inline-flex items-center gap-1.5">{(activity.title_narrative || 'Untitled').substring(0, 60)}{activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}</span></Link></td>
                         <td className="py-2 px-3 text-center"><Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge></td>
                         <td className="py-2 px-3 text-center text-muted-foreground">{activity.sectorPercentage}%</td>
                         <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.commitments)}</td>
@@ -553,21 +478,14 @@ export default function SectorProfilePage() {
                   <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-xs h-7">Next</Button>
                 </div>
               )}
-            </TabsContent>
-
-            {/* Donors */}
-            <TabsContent value="donors" className="space-y-6">
-              <Card><CardHeader><CardTitle className="text-sm">Donor Landscape</CardTitle></CardHeader><CardContent>
-                <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
-              </CardContent></Card>
-            </TabsContent>
+            </CardContent></Card>
 
             {/* Organizations */}
-            <TabsContent value="organizations" className="space-y-4">
+            <Card><CardHeader><CardTitle className="text-sm">Organizations</CardTitle></CardHeader><CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1">
                   {['all', 'funding', 'implementing', 'accountable'].map(role => (
-                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: themeColor } : undefined}>
+                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
                       {role === 'all' ? 'All' : role}
                     </button>
                   ))}
@@ -584,7 +502,7 @@ export default function SectorProfilePage() {
                       <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           {org.logo ? <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" /> : (
-                            <div className="w-10 h-10 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: `${themeColor}CC` }}>
+                            <div className="w-10 h-10 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: '#4c5568' }}>
                               {(org.acronym || org.name).substring(0, 2).toUpperCase()}
                             </div>
                           )}
@@ -597,7 +515,7 @@ export default function SectorProfilePage() {
                             </div>
                             {org.contributionTypes.length > 0 && (
                               <div className="flex gap-1 mt-1">
-                                {org.contributionTypes.map(ct => <span key={ct} className="text-[9px] px-1 py-0.5 rounded capitalize" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>{ct}</span>)}
+                                {org.contributionTypes.map(ct => <span key={ct} className="text-[9px] px-1 py-0.5 rounded capitalize" style={{ backgroundColor: '#4c556815', color: '#4c5568' }}>{ct}</span>)}
                               </div>
                             )}
                           </div>
@@ -606,52 +524,50 @@ export default function SectorProfilePage() {
                     </Link>
                   ))}
                 </div>
-              ) : <Card><CardContent className="p-8 text-center"><p className="text-muted-foreground text-sm">No organizations found</p></CardContent></Card>}
-            </TabsContent>
+              ) : <p className="text-muted-foreground text-sm text-center py-8">No organizations found</p>}
+            </CardContent></Card>
 
             {/* Geography */}
-            <TabsContent value="geography" className="space-y-6">
-              <Card><CardHeader><CardTitle className="text-sm">Activity Locations</CardTitle></CardHeader><CardContent>
-                <SDGGeographyMap locations={geographicDistribution} sdgColor={themeColor} />
-              </CardContent></Card>
+            <Card><CardHeader><CardTitle className="text-sm">Activity Locations</CardTitle></CardHeader><CardContent>
+              <SDGGeographyMap locations={geographicDistribution} sdgColor={themeColor} />
+            </CardContent></Card>
 
-              {geographicDistribution.length > 0 && (
-                <Card><CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">Country Rankings</CardTitle>
-                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
-                      exportChartToCSV(geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value })), `Sector ${sector.code} Countries`)
-                    }}><Download className="h-3 w-3 mr-1" />CSV</Button>
-                  </div>
-                </CardHeader><CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead><tr className="border-b border-border bg-muted">
-                        <th className="text-left py-2.5 px-3 text-muted-foreground font-medium w-8">#</th>
-                        <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Country</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Activities</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Total</th>
-                      </tr></thead>
-                      <tbody>
-                        {geographicDistribution.map((g, i) => (
-                          <tr key={g.countryCode} className="border-b border-border hover:bg-muted/50">
-                            <td className="py-2 px-3 text-muted-foreground">{i + 1}</td>
-                            <td className="py-2 px-3"><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-muted-foreground" />} /><span className="text-foreground">{g.countryName}</span><span className="text-muted-foreground">({g.countryCode})</span></div></td>
-                            <td className="py-2 px-3 text-right">{g.activityCount}</td>
-                            <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.commitments)}</td>
-                            <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.disbursements)}</td>
-                            <td className="py-2 px-3 text-right font-medium text-foreground">{formatCurrencyShort(g.value)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent></Card>
-              )}
-            </TabsContent>
-          </Tabs>
+            {geographicDistribution.length > 0 && (
+              <Card><CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm">Country Rankings</CardTitle>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
+                    exportChartToCSV(geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value })), `Sector ${sector.code} Countries`)
+                  }}><Download className="h-3 w-3 mr-1" />CSV</Button>
+                </div>
+              </CardHeader><CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead><tr className="border-b border-border bg-muted">
+                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium w-8">#</th>
+                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Country</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Activities</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Total</th>
+                    </tr></thead>
+                    <tbody>
+                      {geographicDistribution.map((g, i) => (
+                        <tr key={g.countryCode} className="border-b border-border hover:bg-muted/50">
+                          <td className="py-2 px-3 text-muted-foreground">{i + 1}</td>
+                          <td className="py-2 px-3"><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-muted-foreground" />} /><span className="text-foreground">{g.countryName}</span><span className="text-muted-foreground">({g.countryCode})</span></div></td>
+                          <td className="py-2 px-3 text-right">{g.activityCount}</td>
+                          <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.commitments)}</td>
+                          <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.disbursements)}</td>
+                          <td className="py-2 px-3 text-right font-medium text-foreground">{formatCurrencyShort(g.value)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent></Card>
+            )}
+          </div>
         </div>
       </div>
     </MainLayout>

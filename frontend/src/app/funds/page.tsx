@@ -190,7 +190,7 @@ export default function FundsPage() {
         </div>
 
         {/* Filters - shaded card like activity list */}
-        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg border border-gray-200">
+        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg ring-1 ring-border">
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-md">
             <Label className="text-xs text-muted-foreground">Search</Label>
             <div className="relative">
@@ -240,8 +240,37 @@ export default function FundsPage() {
         {/* Fund Cards */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <Skeleton key={i} className="h-64 rounded-lg" />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-0">
+                  {/* Banner */}
+                  <Skeleton className="h-28 w-full rounded-t-xl rounded-b-none" />
+                  <div className="p-4 space-y-3">
+                    {/* Title */}
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    {/* Fund manager */}
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-5 rounded-full" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    {/* Financial summary */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div><Skeleton className="h-3 w-16 mb-1" /><Skeleton className="h-5 w-20" /></div>
+                      <div><Skeleton className="h-3 w-16 mb-1" /><Skeleton className="h-5 w-20" /></div>
+                      <div><Skeleton className="h-3 w-16 mb-1" /><Skeleton className="h-5 w-20" /></div>
+                    </div>
+                    {/* Utilisation bar */}
+                    <Skeleton className="h-2 w-full rounded-full" />
+                    {/* Date range */}
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-8" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : error ? (

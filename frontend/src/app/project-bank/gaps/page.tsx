@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { AlertTriangle, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Inbox } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
 import {
@@ -123,7 +124,7 @@ export default function FundingGapsPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-md ring-1 ring-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead className="bg-surface-muted border-b border-border">
@@ -212,12 +213,14 @@ export default function FundingGapsPage() {
                         <td className="px-2 py-2 text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100"
                                 onClick={(e) => e.stopPropagation()}
-                                className="p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                               >
-                                <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                              </button>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={(e) => {

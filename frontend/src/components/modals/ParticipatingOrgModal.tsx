@@ -277,7 +277,7 @@ export function ParticipatingOrgModal({
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
           >
-            <span>Advanced IATI Fields</span>
+            <span>Advanced Fields</span>
             {showAdvanced ? (
               <ChevronUp className="h-4 w-4" />
             ) : (

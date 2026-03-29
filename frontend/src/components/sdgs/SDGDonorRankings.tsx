@@ -136,7 +136,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
                 return null
               }}
             />
-            <Bar dataKey="value" fill={sdgColor} radius={[0, 4, 4, 0]} />
+            <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch'
-import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,6 +19,7 @@ import GeneralSection from './sections/GeneralSection'
 import MembersSection from './sections/MembersSection'
 import MeetingsSection from './sections/MeetingsSection'
 import DocumentsSection from './sections/DocumentsSection'
+import SubGroupsSection from './sections/SubGroupsSection'
 
 export interface WorkingGroup {
   id?: string
@@ -39,6 +40,7 @@ interface WorkingGroupEditorProps {
   workingGroupId?: string
   initialData?: Partial<WorkingGroup>
   isCreating?: boolean
+  parentLabel?: string
   onCreate?: (workingGroupId: string) => void
   onSuccess?: () => void
 }
@@ -47,6 +49,7 @@ export function WorkingGroupEditor({
   workingGroupId,
   initialData = {},
   isCreating = false,
+  parentLabel,
   onCreate,
   onSuccess
 }: WorkingGroupEditorProps) {
@@ -173,13 +176,14 @@ export function WorkingGroupEditor({
     }
   }, [workingGroupId, workingGroup, router])
 
-  const sectionOrder = ['general', 'members', 'meetings', 'documents']
+  const sectionOrder = ['general', 'members', 'meetings', 'documents', 'sub-groups']
 
   const sectionLabels: Record<string, string> = {
     general: 'General',
     members: 'Members',
     meetings: 'Meetings',
     documents: 'Documents',
+    'sub-groups': 'Sub-Groups',
   }
 
   const currentIndex = sectionOrder.indexOf(activeSection)
@@ -222,6 +226,7 @@ export function WorkingGroupEditor({
               workingGroup={workingGroup}
               workingGroupId={currentId}
               isCreating={isCreating && !workingGroupCreated}
+              parentLabel={parentLabel}
               onSave={handleSave}
             />
           </div>
@@ -248,6 +253,16 @@ export function WorkingGroupEditor({
           </div>
         ) : null
 
+      case 'sub-groups':
+        return currentId ? (
+          <div className="h-full overflow-y-auto p-6">
+            <SubGroupsSection
+              workingGroupId={currentId}
+              workingGroupLabel={workingGroup?.label}
+            />
+          </div>
+        ) : null
+
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -256,6 +271,21 @@ export function WorkingGroupEditor({
         )
     }
   }
+
+  const handleSaveAndNext = useCallback(async () => {
+    if (!nextSectionId) return
+    const id = workingGroupId || workingGroup?.id
+    if (id) {
+      setSaving(true)
+      try {
+        // Trigger a save (autosave should handle it, but we wait briefly)
+        await new Promise(resolve => setTimeout(resolve, 300))
+      } finally {
+        setSaving(false)
+      }
+    }
+    handleNextSection()
+  }, [nextSectionId, workingGroupId, workingGroup, handleNextSection])
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-white">
@@ -269,33 +299,50 @@ export function WorkingGroupEditor({
         onDelete={() => setShowDeleteDialog(true)}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden border-l border-gray-200">
         <div className="flex-1 overflow-hidden">
           {renderSectionContent()}
         </div>
 
-        {/* Fixed footer with Back/Next navigation — matches Activity Editor */}
+        {/* Fixed footer — matches Activity Editor */}
         {workingGroupCreated && (
           <footer className="border-t bg-white px-8 py-4">
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="outline"
-                className="px-6 py-3 text-base font-semibold"
-                onClick={handlePreviousSection}
-                disabled={isFirstSection}
-              >
-                <ArrowLeft className="mr-2 h-5 w-5" />
-                Back
-              </Button>
-              <Button
-                variant="default"
-                className="px-6 py-3 text-base font-semibold min-w-[140px]"
-                onClick={handleNextSection}
-                disabled={isLastSection}
-              >
-                {nextSectionId ? sectionLabels[nextSectionId] : 'Next'}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex-1" />
+              <div className="flex items-center gap-3">
+                {/* Back */}
+                <Button
+                  variant="outline"
+                  className="px-6 py-3 text-base font-semibold"
+                  onClick={handlePreviousSection}
+                  disabled={isFirstSection || saving}
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Back
+                </Button>
+
+                {/* Next */}
+                <Button
+                  variant="outline"
+                  className="px-6 py-3 text-base font-semibold"
+                  onClick={handleNextSection}
+                  disabled={isLastSection || saving}
+                >
+                  Next
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+
+                {/* Save & Next */}
+                <Button
+                  variant="default"
+                  className="px-6 py-3 text-base font-semibold min-w-[160px]"
+                  onClick={handleSaveAndNext}
+                  disabled={isLastSection || saving}
+                >
+                  {saving ? 'Saving...' : 'Save & Next'}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </footer>
         )}

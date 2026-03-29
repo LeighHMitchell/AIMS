@@ -1,6 +1,7 @@
 "use client"
 
 import { RequiredDot } from "@/components/ui/required-dot";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import React, { useState, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -15,20 +16,21 @@ import { toast } from 'sonner'
 import type { WorkingGroup } from '../WorkingGroupEditor'
 
 const GROUP_TYPE_OPTIONS = [
-  { value: 'technical', label: 'Technical Working Group' },
-  { value: 'development_partner', label: 'Development Partner Working Group' },
-  { value: 'government', label: 'Government Working Group' },
-  { value: 'joint', label: 'Joint Working Group' },
-  { value: 'issue_specific', label: 'Issue-Specific Working Group' },
-  { value: 'coordination', label: 'Coordination Group' },
-  { value: 'thematic', label: 'Thematic Working Group' },
-  { value: 'sub_working_group', label: 'Sub-Working Group' },
+  { value: 'technical', code: '1', label: 'Technical Working Group' },
+  { value: 'development_partner', code: '2', label: 'Development Partner Working Group' },
+  { value: 'government', code: '3', label: 'Government Working Group' },
+  { value: 'joint', code: '4', label: 'Joint Working Group' },
+  { value: 'issue_specific', code: '5', label: 'Issue-Specific Working Group' },
+  { value: 'coordination', code: '6', label: 'Coordination Group' },
+  { value: 'thematic', code: '7', label: 'Thematic Working Group' },
+  { value: 'sub_working_group', code: '8', label: 'Sub-Working Group' },
 ]
 
 interface GeneralSectionProps {
   workingGroup: WorkingGroup | null
   workingGroupId?: string
   isCreating: boolean
+  parentLabel?: string
   onSave: (data: Partial<WorkingGroup>) => Promise<void>
 }
 
@@ -36,6 +38,7 @@ export default function GeneralSection({
   workingGroup,
   workingGroupId,
   isCreating,
+  parentLabel,
   onSave,
 }: GeneralSectionProps) {
   const [label, setLabel] = useState(workingGroup?.label || '')
@@ -133,26 +136,33 @@ export default function GeneralSection({
         description: description.trim() || undefined,
         group_type: groupType || undefined,
         is_active: isActive,
+        ...(workingGroup?.parent_id ? { parent_id: workingGroup.parent_id } : {}),
       })
     } catch {
       // Error handled in parent
     } finally {
       setCreating(false)
     }
-  }, [label, code, description, groupType, isActive, onSave])
+  }, [label, code, description, groupType, isActive, onSave, workingGroup?.parent_id])
 
   return (
     <div className="w-full space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">General Information</h2>
-        <p className="text-sm text-gray-500 mt-1">Basic details about this working group</p>
+      {workingGroup?.parent_id && parentLabel && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm">
+          <span className="text-muted-foreground">Creating sub-working group under</span>
+          <span className="font-medium text-foreground">{parentLabel}</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-900">General</h2>
+        <HelpTextTooltip text="Basic information about this working group including its name, code, mandate, type, and status." />
       </div>
 
       {/* Row 1: Banner Image + Icon/Logo */}
       {!isCreating && workingGroupId && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+        <div className="flex gap-8 items-start">
           {/* Banner Image */}
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1">
             <LabelSaveIndicator
               isSaving={bannerAutosave.state.isSaving}
               isSaved={!!bannerAutosave.state.lastSaved || (!isCreating && !!banner)}
@@ -184,8 +194,9 @@ export default function GeneralSection({
                 className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
                 onClick={() => bannerInputRef.current?.click()}
               >
-                <Upload className="h-6 w-6 text-gray-400 mb-1" />
-                <p className="text-sm text-gray-500">Upload banner image</p>
+                <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />
+                <p className="text-sm text-gray-500">Click or drag image to upload</p>
+                <p className="text-xs text-gray-400 mt-0.5">Max size: 5MB</p>
               </div>
             )}
             <input
@@ -201,7 +212,7 @@ export default function GeneralSection({
           </div>
 
           {/* Icon/Logo */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-32 flex-shrink-0">
             <LabelSaveIndicator
               isSaving={iconAutosave.state.isSaving}
               isSaved={!!iconAutosave.state.lastSaved || (!isCreating && !!iconUrl)}
@@ -210,32 +221,32 @@ export default function GeneralSection({
               Icon / Logo
             </LabelSaveIndicator>
             {iconUrl ? (
-              <div className="relative">
+              <div className="relative w-32 h-32">
                 <img
                   src={iconUrl}
                   alt="Icon"
-                  className="w-full h-32 object-contain rounded-lg border bg-gray-50"
+                  className="w-32 h-32 object-contain rounded-lg border bg-gray-50"
                 />
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="absolute top-2 right-2 h-7 w-7"
+                  className="absolute top-1 right-1 h-6 w-6"
                   onClick={() => {
                     setIconUrl('')
                     iconAutosave.triggerSave(null)
                   }}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3" />
                 </Button>
               </div>
             ) : (
               <div
-                className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
+                className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
                 onClick={() => iconInputRef.current?.click()}
               >
                 <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />
-                <p className="text-sm text-gray-500">Upload icon / logo</p>
-                <p className="text-xs text-gray-400 mt-0.5">Square image recommended</p>
+                <p className="text-[10px] text-gray-500 text-center">Upload icon</p>
+                <p className="text-[9px] text-gray-400 text-center">Max: 2MB</p>
               </div>
             )}
             <input
@@ -255,13 +266,16 @@ export default function GeneralSection({
       {/* Row 2: Name + Code */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
         <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={labelAutosave.state.isSaving}
-            isSaved={!!labelAutosave.state.lastSaved || (!isCreating && !!label)}
-            hasValue={!!label}
-          >
-            Name <RequiredDot />
-          </LabelSaveIndicator>
+          <div className="flex items-center gap-1">
+            <LabelSaveIndicator
+              isSaving={labelAutosave.state.isSaving}
+              isSaved={!!labelAutosave.state.lastSaved || (!isCreating && !!label)}
+              hasValue={!!label}
+            >
+              Name <RequiredDot />
+            </LabelSaveIndicator>
+            <HelpTextTooltip size="sm" text="The full name of the working group as it appears in reports and listings." />
+          </div>
           <Input
             value={label}
             onChange={(e) => {
@@ -272,13 +286,16 @@ export default function GeneralSection({
           />
         </div>
         <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={codeAutosave.state.isSaving}
-            isSaved={!!codeAutosave.state.lastSaved || (!isCreating && !!code)}
-            hasValue={!!code}
-          >
-            Code <RequiredDot />
-          </LabelSaveIndicator>
+          <div className="flex items-center gap-1">
+            <LabelSaveIndicator
+              isSaving={codeAutosave.state.isSaving}
+              isSaved={!!codeAutosave.state.lastSaved || (!isCreating && !!code)}
+              hasValue={!!code}
+            >
+              Code <RequiredDot />
+            </LabelSaveIndicator>
+            <HelpTextTooltip size="sm" text="A unique short identifier (e.g. TWG-Health, SWG-BasicEducation) used in references and exports." />
+          </div>
           <Input
             value={code}
             onChange={(e) => {
@@ -287,19 +304,21 @@ export default function GeneralSection({
             }}
             placeholder="e.g. TWG-HEALTH"
           />
-          <p className="text-xs text-gray-500">Unique identifier code for this working group</p>
         </div>
       </div>
 
       {/* Row 3: Description / Mandate — full width */}
       <div className="space-y-2">
-        <LabelSaveIndicator
-          isSaving={descAutosave.state.isSaving}
-          isSaved={!!descAutosave.state.lastSaved || (!isCreating && !!description)}
-          hasValue={!!description}
-        >
-          Description / Mandate
-        </LabelSaveIndicator>
+        <div className="flex items-center gap-1">
+          <LabelSaveIndicator
+            isSaving={descAutosave.state.isSaving}
+            isSaved={!!descAutosave.state.lastSaved || (!isCreating && !!description)}
+            hasValue={!!description}
+          >
+            Description / Mandate
+          </LabelSaveIndicator>
+          <HelpTextTooltip size="sm" text="The purpose, mandate, and scope of this working group. This appears on the profile page." />
+        </div>
         <Textarea
           value={description}
           onChange={(e) => {
@@ -312,15 +331,18 @@ export default function GeneralSection({
       </div>
 
       {/* Row 4: Working Group Type + Active Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 items-start">
         <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={groupTypeAutosave.state.isSaving}
-            isSaved={!!groupTypeAutosave.state.lastSaved || (!isCreating && !!groupType)}
-            hasValue={!!groupType}
-          >
-            Working Group Type
-          </LabelSaveIndicator>
+          <div className="flex items-center gap-1">
+            <LabelSaveIndicator
+              isSaving={groupTypeAutosave.state.isSaving}
+              isSaved={!!groupTypeAutosave.state.lastSaved || (!isCreating && !!groupType)}
+              hasValue={!!groupType}
+            >
+              Working Group Type
+            </LabelSaveIndicator>
+            <HelpTextTooltip size="sm" text="The classification of this working group (e.g. Technical, Thematic, Government). Use 'Sub-Working Group' for groups nested under a parent." />
+          </div>
           <Select
             value={groupType || 'none'}
             onValueChange={(val) => {
@@ -336,14 +358,17 @@ export default function GeneralSection({
               <SelectItem value="none">No type selected</SelectItem>
               {GROUP_TYPE_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+                  <span className="flex items-center gap-2">
+                    <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{opt.code}</code>
+                    {opt.label}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center justify-between border rounded-lg p-4">
-          <div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-1">
             <LabelSaveIndicator
               isSaving={activeAutosave.state.isSaving}
               isSaved={!!activeAutosave.state.lastSaved || !isCreating}
@@ -351,15 +376,18 @@ export default function GeneralSection({
             >
               Active Status
             </LabelSaveIndicator>
-            <p className="text-xs text-gray-500 mt-1">Whether this working group is currently active</p>
+            <HelpTextTooltip size="sm" text="Toggle whether this working group is currently active. Inactive groups are hidden from default views but data is preserved." />
           </div>
-          <Switch
-            checked={isActive}
-            onCheckedChange={(checked) => {
-              setIsActive(checked)
-              if (!isCreating) activeAutosave.triggerSave(checked)
-            }}
-          />
+          <div className="flex items-center justify-between border rounded-md h-10 px-3">
+            <span className="text-sm text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+            <Switch
+              checked={isActive}
+              onCheckedChange={(checked) => {
+                setIsActive(checked)
+                if (!isCreating) activeAutosave.triggerSave(checked)
+              }}
+            />
+          </div>
         </div>
       </div>
 

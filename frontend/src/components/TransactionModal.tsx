@@ -2,7 +2,7 @@
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag } from "lucide-react";
+import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Upload, Lock, Unlock, Loader2, Flag, X } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -440,9 +440,12 @@ export default function TransactionModal({
   const [manualClassification, setManualClassification] = useState("");
   const [showValueDate, setShowValueDate] = useState(false);
   
-  // Individual collapsible states for Advanced IATI Fields sections
+  // Advanced Fields toggle
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
+  // Individual collapsible states for Advanced Fields sections
   const [showMultipleSectors, setShowMultipleSectors] = useState(false);
   const [showMultipleAidTypes, setShowMultipleAidTypes] = useState(false);
+  const [showSystemIdentifiers, setShowSystemIdentifiers] = useState(false);
   const [showGeographicTargeting, setShowGeographicTargeting] = useState(false);
   
   // Sector inheritance choice: true = use activity sectors, false = specify custom
@@ -681,7 +684,7 @@ export default function TransactionModal({
   const valueDateAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'value_date', userId: user?.id });
   const providerOrgAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'provider_org_id', userId: user?.id });
   const receiverOrgAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'receiver_org_id', userId: user?.id });
-  const humanitarianAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'is_humanitarian', userId: user?.id });
+  const humanitarianAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'is_humanitarian', userId: user?.id, toastMessage: (v) => v ? 'Transaction flagged as humanitarian' : 'Humanitarian flag removed' });
   
   // NEW: Autosave hooks for IATI fields
   const providerActivityAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'provider_org_activity_id', userId: user?.id });
@@ -1966,12 +1969,13 @@ export default function TransactionModal({
                     </LabelWithInfoAndSave>
                     {formData.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                        <Label htmlFor="exchange_rate_mode" className={cn("text-xs cursor-pointer", exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                           {exchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
                           id="exchange_rate_mode"
                           checked={!exchangeRateManual}
+                          className={cn(exchangeRateManual && "[&:not(:checked)]:bg-orange-500 data-[state=unchecked]:bg-orange-500")}
                           onCheckedChange={(checked) => {
                             setExchangeRateManual(!checked);
                             if (checked) {
@@ -2735,42 +2739,65 @@ export default function TransactionModal({
               )}
             </div>
 
-            {/* Advanced IATI Fields Section - Individual Collapsibles */}
-            <div className="space-y-3">
-              <SectionHeader title="Advanced IATI Fields" helpText="Optional IATI fields for geographic targeting, multiple sectors, and multiple aid types. These are only needed for transactions that differ from the activity-level defaults." />
-              
+            {/* Advanced Fields */}
+            <div
+              onClick={() => setShowAdvancedFields(!showAdvancedFields)}
+              className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              <span>Advanced Fields</span>
+              {showAdvancedFields ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </div>
+
+            {showAdvancedFields && (
+            <div className="space-y-3 pt-4 border-t border-border">
               {/* Geographic Targeting - Simplified for IATI Transaction Level */}
-              <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting}>
+              <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting} className="rounded-lg border">
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg transition-colors text-left"
                     type="button"
                   >
-                    <div className="flex items-center gap-2">
-                      <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Geographic Targeting</span>
-                      {hasGeographicTargeting && (
-                        <Badge variant="secondary" className="text-xs">
-                          {formData.recipient_country_code 
-                            ? IATI_COUNTRIES.find(c => c.code === formData.recipient_country_code)?.name || formData.recipient_country_code
-                            : IATI_REGIONS.find(r => r.code === formData.recipient_region_code)?.name || formData.recipient_region_code
-                          }
-                        </Badge>
-                      )}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
+                        <span className="text-sm font-medium text-gray-700">Geographic Targeting</span>
+                        {hasGeographicTargeting && (
+                          <Badge variant="secondary" className="text-xs">
+                            {formData.recipient_country_code
+                              ? IATI_COUNTRIES.find(c => c.code === formData.recipient_country_code)?.name || formData.recipient_country_code
+                              : IATI_REGIONS.find(r => r.code === formData.recipient_region_code)?.name || formData.recipient_region_code
+                            }
+                          </Badge>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs text-gray-500">
+                        {geographyLevel === 'activity' ? 'Activity level' : 'Transaction level'}
+                      </Badge>
                     </div>
                   </button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                <CollapsibleContent>
+                  <div className="space-y-4 p-4 border-t">
                     {/* Activity-level geography message */}
                     {geographyLevel === 'activity' && (
-                      <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          Geography is set at the activity level. Transaction-level geographic targeting is disabled.
-                          To enable, change the geography level setting in the Countries &amp; Regions Allocation section.
-                        </AlertDescription>
-                      </Alert>
+                      <p className="text-xs text-muted-foreground">
+                        Geography is set at the activity level. Transaction-level geographic targeting is disabled.
+                        To change this, go to the{' '}
+                        <button
+                          type="button"
+                          className="font-semibold hover:text-foreground inline"
+                          onClick={() => {
+                            onOpenChange(false);
+                            window.location.href = `/activities/${activityId}?tab=geography`;
+                          }}
+                        >
+                          Locations tab
+                        </button>.
+                      </p>
                     )}
 
                     {/* Transaction-level geography form */}
@@ -2975,50 +3002,47 @@ export default function TransactionModal({
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Transaction Level Sector Classifications */}
-              <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors}>
+              {/* Sector Classifications */}
+              <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors} className="rounded-lg border">
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg transition-colors text-left"
                     type="button"
                   >
-                    <div className="flex items-center gap-2">
-                      <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Transaction Level Sector Classifications</span>
-                      {!useActivitySectorChoice && multipleSectorsCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
-                      )}
-                      {useActivitySectorChoice && activitySectors.length > 0 && (
-                        <Badge variant="outline" className="text-xs text-gray-500">Using activity sectors</Badge>
-                      )}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
+                        <span className="text-sm font-medium text-gray-700">Sector Classifications</span>
+                        {activitySectors.length === 0 && multipleSectorsCount > 0 && (
+                          <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs text-gray-500">
+                        {activitySectors.length > 0 ? 'Activity level' : 'Transaction level'}
+                      </Badge>
                     </div>
                   </button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                    {/* Radio group for sector source selection */}
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="radio"
-                          id="sector-activity"
-                          name="sector-source"
-                          checked={useActivitySectorChoice}
-                          onChange={() => handleSectorChoiceChange(true)}
-                          className="mt-1 h-4 w-4 accent-foreground"
-                        />
-                        <label htmlFor="sector-activity" className="flex-1 cursor-pointer">
-                          <span className="text-sm font-medium text-gray-700">Use activity sectors</span>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Inherit sector allocations from the activity level
-                          </p>
-                        </label>
-                      </div>
-                      
-                      {/* Show activity sectors preview when "Use activity sectors" is selected */}
-                      {useActivitySectorChoice && activitySectors.length > 0 && (
-                        <div className="ml-7 p-3 bg-white rounded-md border border-gray-200">
-                          <p className="text-xs font-medium text-muted-foreground mb-2">Activity sectors:</p>
+                <CollapsibleContent>
+                  <div className="space-y-4 p-4 border-t">
+                    {/* Activity-level sectors: read-only display */}
+                    {activitySectors.length > 0 && (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          Sectors are set at the activity level. Transaction-level sector classification is disabled.
+                          To change this, go to the{' '}
+                          <button
+                            type="button"
+                            className="font-semibold hover:text-foreground inline"
+                            onClick={() => {
+                              onOpenChange(false);
+                              window.location.href = `/activities/${activityId}?tab=sectors`;
+                            }}
+                          >
+                            Sectors tab
+                          </button>.
+                        </p>
+                        <div className="p-3 bg-white rounded-md border border-gray-200">
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-muted-foreground border-b">
@@ -3077,51 +3101,26 @@ export default function TransactionModal({
                             )}
                           </table>
                         </div>
-                      )}
-                      
-                      {useActivitySectorChoice && activitySectors.length === 0 && (
-                        <div className="ml-7 p-3 bg-muted/50 rounded-md border border-border">
-                          <p className="text-xs text-muted-foreground">
-                            No sectors defined at the activity level. Add sectors in the Sectors tab, or specify custom sectors for this transaction.
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="radio"
-                          id="sector-custom"
-                          name="sector-source"
-                          checked={!useActivitySectorChoice}
-                          onChange={() => handleSectorChoiceChange(false)}
-                          className="mt-1 h-4 w-4 accent-foreground"
-                        />
-                        <label htmlFor="sector-custom" className="flex-1 cursor-pointer">
-                          <span className="text-sm font-medium text-gray-700">Specify for this transaction</span>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Define custom sector allocations for this transaction
-                          </p>
-                        </label>
-                      </div>
+                      </>
+                    )}
 
-                    </div>
-
-                    {/* Show TransactionSectorManager only when custom sectors is selected */}
-                    {!useActivitySectorChoice && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
+                    {/* No activity-level sectors: allow transaction-level entry */}
+                    {activitySectors.length === 0 && (
+                      <div>
                         <p className="text-xs text-gray-600 mb-3">
-                      Add multiple sectors with percentage allocations. Percentages must sum to 100%.
-                    </p>
-                    <TransactionSectorManager
-                      sectors={formData.sectors || []}
-                      onSectorsChange={(sectors) => {
-                        setFormData({ ...formData, sectors });
-                      }}
-                      allowPercentages={true}
-                      transactionValue={formData.value || 0}
-                      transactionCurrency={formData.currency || 'USD'}
-                      calculatedUsdValue={calculatedUsdValue}
-                    />
+                          No sectors are defined at the activity level. You can specify sector allocations for this transaction below.
+                          Percentages must sum to 100%.
+                        </p>
+                        <TransactionSectorManager
+                          sectors={formData.sectors || []}
+                          onSectorsChange={(sectors) => {
+                            setFormData({ ...formData, sectors });
+                          }}
+                          allowPercentages={true}
+                          transactionValue={formData.value || 0}
+                          transactionCurrency={formData.currency || 'USD'}
+                          calculatedUsdValue={calculatedUsdValue}
+                        />
                       </div>
                     )}
                   </div>
@@ -3129,10 +3128,10 @@ export default function TransactionModal({
               </Collapsible>
 
               {/* Multiple Aid Types */}
-              <Collapsible open={showMultipleAidTypes} onOpenChange={setShowMultipleAidTypes}>
+              <Collapsible open={showMultipleAidTypes} onOpenChange={setShowMultipleAidTypes} className="rounded-lg border">
                 <CollapsibleTrigger asChild>
                   <button
-                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg border transition-colors text-left"
+                    className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
@@ -3144,8 +3143,8 @@ export default function TransactionModal({
                     </div>
                   </button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                <CollapsibleContent>
+                  <div className="space-y-4 p-4 border-t">
                     <p className="text-xs text-gray-600">
                       Specify multiple aid type classifications with different vocabularies.
                     </p>
@@ -3159,18 +3158,21 @@ export default function TransactionModal({
                 </CollapsibleContent>
               </Collapsible>
 
-            </div>
-
-            {/* System Identifiers - Always shown at bottom */}
-            <div className="mt-8 p-4 bg-white rounded-lg border border-gray-200">
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-sm font-semibold text-gray-900">System Identifiers</h3>
-                <InfoTooltipWithSaveIndicator 
-                  text="These identifiers are automatically generated by the system and cannot be edited."
-                  className="ml-1"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* System Identifiers */}
+            <Collapsible open={showSystemIdentifiers} onOpenChange={setShowSystemIdentifiers} className="rounded-lg border">
+              <CollapsibleTrigger asChild>
+                <button
+                  className="flex items-center justify-between w-full p-3 hover:bg-muted/30 rounded-lg transition-colors text-left"
+                  type="button"
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", showSystemIdentifiers && "rotate-180")} />
+                    <span className="text-sm font-medium text-gray-700">System Identifiers</span>
+                  </div>
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-t">
                 {/* Activity ID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Activity ID</label>
@@ -3282,7 +3284,12 @@ export default function TransactionModal({
                   </div>
                 </div>
               </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             </div>
+            )}
+
           </div>
         </ScrollArea>
 

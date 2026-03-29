@@ -43,6 +43,7 @@ import {
   FileText,
   FileCode,
   Loader2,
+  PenLine,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
@@ -981,7 +982,7 @@ export function TransactionTable({
                     amount: (
                       <td key="amount" className="py-3 px-4 text-right whitespace-nowrap">
                         {transaction.value != null && transaction.currency ? (
-                          <div className="font-medium"><span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(transaction.value)}</div>
+                          <div className="font-medium"><span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(transaction.value)}</div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -997,7 +998,48 @@ export function TransactionTable({
                           {usdValues[transactionId]?.loading ? (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                           ) : usdValues[transactionId]?.usd != null ? (
-                            <Tooltip><TooltipTrigger asChild><span className="font-medium cursor-help">{formatCurrency(usdValues[transactionId].usd!, 'USD')}</span></TooltipTrigger><TooltipContent><div><div>Original: {formatCurrency(transaction.value, transaction.currency)}</div><div>Rate: {usdValues[transactionId].rate}</div><div>Date: {usdValues[transactionId].date}</div></div></TooltipContent></Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="font-medium cursor-help flex items-center gap-1">
+                                  <span className="w-4 shrink-0 flex items-center justify-center">
+                                    {(transaction as any).exchange_rate_manual && (
+                                      <PenLine className="h-3.5 w-3.5 text-orange-500" />
+                                    )}
+                                  </span>
+                                  {formatCurrency(usdValues[transactionId].usd!, 'USD')}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="min-w-[200px]">
+                                <table className="text-xs w-full">
+                                  <tbody>
+                                    <tr>
+                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
+                                      <td className="text-right py-0.5">{transaction.currency} {transaction.value?.toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
+                                      <td className="text-right py-0.5">{usdValues[transactionId].rate}</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
+                                      <td className="text-right py-0.5">
+                                        {(() => {
+                                          const dateStr = usdValues[transactionId].date;
+                                          if (!dateStr) return '—';
+                                          const parsed = new Date(dateStr);
+                                          return isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMMM yyyy');
+                                        })()}
+                                      </td>
+                                    </tr>
+                                    {(transaction as any).exchange_rate_manual && (
+                                      <tr>
+                                        <td colSpan={2} className="pt-1 text-orange-500 font-medium">Manual exchange rate</td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </TooltipContent>
+                            </Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </div>
                       </td>
@@ -1005,7 +1047,7 @@ export function TransactionTable({
                     financeType: (
                       <td key="financeType" className="py-3 px-4 whitespace-nowrap">
                         {(transaction.finance_type || transaction.effective_finance_type) ? (
-                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.finance_type_inherited ? `Inherited from activity's default finance type (code ${transaction.effective_finance_type} – ${FINANCE_TYPE_LABELS[transaction.effective_finance_type || '']?.full || 'Unknown'})` : `${transaction.finance_type} – ${FINANCE_TYPE_LABELS[transaction.finance_type || '']?.full || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-xs">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${transaction.effective_finance_type || transaction.finance_type} — ${FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || 'Unknown'}`}</p></TooltipContent></Tooltip>
                         ) : <span className="text-sm font-normal text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -1154,8 +1196,8 @@ export function TransactionTable({
                                 </Badge>
                               </TooltipTrigger>
                               {transaction.finance_type_inherited && (
-                                <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default finance type</p>
+                                <TooltipContent className="max-w-[220px]">
+                                  <p className="text-xs">Inherited from activity default</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -1429,8 +1471,8 @@ export function TransactionTable({
                                 </div>
                               </TooltipTrigger>
                               {transaction.finance_type_inherited && (
-                                <TooltipContent>
-                                  <p className="text-xs">Inherited from activity's default finance type</p>
+                                <TooltipContent className="max-w-[220px]">
+                                  <p className="text-xs">Inherited from activity default</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>

@@ -402,7 +402,7 @@ export default function ProjectListPage() {
 
         {/* Table */}
         {viewMode === 'table' && (
-        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-md ring-1 ring-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse table-auto">
               <thead className="bg-surface-muted border-b border-border">
@@ -608,12 +608,14 @@ export default function ProjectListPage() {
                       <td className="px-1 py-2 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100"
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                             >
-                              <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                            </button>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={(e) => {

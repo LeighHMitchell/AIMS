@@ -7,15 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Pencil,
-  Save,
   Users,
   FileText,
   Calendar,
   Plus,
-  MoreVertical,
   Mail,
   Building,
   UserPlus,
@@ -23,15 +20,12 @@ import {
   Download,
   Clock,
   MapPin,
+  GitBranch,
+  ArrowRight,
 } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +45,9 @@ interface WorkingGroupMember {
   person_name: string
   person_email?: string
   person_organization?: string
+  job_title?: string
+  department?: string
+  avatar_url?: string
   role: string
   is_active: boolean
   joined_on: string
@@ -84,6 +81,17 @@ interface LinkedActivity {
   partner_name: string
 }
 
+interface SubWorkingGroup {
+  id: string
+  code: string
+  label: string
+  group_type?: string
+  is_active: boolean
+  status?: string
+  description?: string
+  member_count?: number
+}
+
 interface WorkingGroupDetails {
   id: string
   code: string
@@ -93,12 +101,18 @@ interface WorkingGroupDetails {
   description?: string
   is_active: boolean
   status: string
+  group_type?: string
+  banner?: string
+  icon_url?: string
+  parent_id?: string | null
+  parent?: { id: string; code: string; label: string } | null
   created_at: string
   updated_at: string
   members: WorkingGroupMember[]
   meetings: WorkingGroupMeeting[]
   documents: WorkingGroupDocument[]
   activities: LinkedActivity[]
+  sub_groups: SubWorkingGroup[]
 }
 
 const getRoleBadgeColor = (role: string) => {
@@ -146,8 +160,6 @@ export default function WorkingGroupProfilePage() {
   const router = useRouter()
   const [workingGroup, setWorkingGroup] = useState<WorkingGroupDetails | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedDescription, setEditedDescription] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -171,38 +183,17 @@ export default function WorkingGroupProfilePage() {
         members: data.members || [],
         meetings: data.meetings || [],
         documents: data.documents || [],
-        activities: data.activities || []
+        activities: data.activities || [],
+        sub_groups: data.sub_groups || [],
+        parent: data.parent || null,
       }
 
       setWorkingGroup(workingGroupData)
-      setEditedDescription(data.description || '')
     } catch (error) {
       console.error('Error fetching working group:', error)
       toast.error('Failed to load working group details')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleSaveDescription = async () => {
-    if (!workingGroup) return
-
-    try {
-      const response = await apiFetch(`/api/working-groups/${workingGroup.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ description: editedDescription }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update description')
-      }
-
-      toast.success('Description updated successfully')
-      setWorkingGroup({ ...workingGroup, description: editedDescription })
-      setIsEditing(false)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update description')
     }
   }
 
@@ -234,8 +225,21 @@ export default function WorkingGroupProfilePage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="space-y-6">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-9 w-72" />
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Skeleton key={i} className="h-10 w-28 rounded-md" />
+            ))}
+          </div>
+          <Skeleton className="h-64 w-full rounded-lg" />
         </div>
       </MainLayout>
     )
@@ -256,96 +260,74 @@ export default function WorkingGroupProfilePage() {
   return (
     <MainLayout>
       <div>
-        {/* Header */}
-        <div className="mb-8">
+        {/* Breadcrumbs */}
+        <div className="mb-4">
           <Breadcrumbs items={[
             { label: "Working Groups", href: "/working-groups" },
+            ...(workingGroup.parent ? [{ label: workingGroup.parent.label, href: `/working-groups/${workingGroup.parent.id}` }] : []),
             { label: workingGroup.label },
           ]} />
-
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-foreground">{workingGroup.label}</h1>
-                <Badge variant={workingGroup.status === 'active' ? 'default' : 'secondary'}>
-                  {workingGroup.status}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground mt-1">{workingGroup.code}</p>
-              {workingGroup.sector_code && (
-                <Badge variant="outline" className="mt-2">
-                  Sector {workingGroup.sector_code}
-                </Badge>
-              )}
-            </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push(`/working-groups/${workingGroup.id}/edit`)}>
-                  <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
-                  Edit Details
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push(`/working-groups/${workingGroup.id}/edit?section=members`)}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Members
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-red-600"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
-                  Delete Group
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
 
-        {/* Purpose/Mandate Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Purpose / Mandate</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isEditing ? (
-              <div className="space-y-4">
-                <Textarea
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  rows={6}
-                  placeholder="Enter working group purpose and mandate..."
-                />
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveDescription}><Save className="h-4 w-4 mr-2" />Save</Button>
-                  <Button variant="outline" onClick={() => {
-                    setIsEditing(false)
-                    setEditedDescription(workingGroup.description || '')
-                  }}>
-                    Cancel
-                  </Button>
+        {/* Banner */}
+        {workingGroup.banner ? (
+          <div className="relative h-48 w-full rounded-xl overflow-hidden mb-6">
+            <img src={workingGroup.banner} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <div className="flex items-end gap-4">
+                {workingGroup.icon_url && (
+                  <div className="w-16 h-16 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white flex-shrink-0">
+                    <img src={workingGroup.icon_url} alt="" className="w-full h-full object-contain p-1" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                    <h1 className="text-3xl font-bold text-white">{workingGroup.label}</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-xs font-mono bg-white/20 text-white/80 px-1.5 py-0.5 rounded">{workingGroup.code}</code>
+                    <span className="text-sm text-white/70">{workingGroup.status === 'active' ? 'Active' : 'Inactive'}</span>
+                  </div>
                 </div>
               </div>
-            ) : (
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <div className="flex items-start gap-4">
+              {workingGroup.icon_url && (
+                <div className="w-14 h-14 rounded-full border-2 border-border shadow-sm overflow-hidden bg-card flex-shrink-0">
+                  <img src={workingGroup.icon_url} alt="" className="w-full h-full object-contain p-1" />
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-foreground">{workingGroup.label}</h1>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{workingGroup.code}</code>
+                  <span className="text-sm text-muted-foreground">{workingGroup.status === 'active' ? 'Active' : 'Inactive'}</span>
+                  {workingGroup.sector_code && (
+                    <Badge variant="outline" className="text-xs">Sector {workingGroup.sector_code}</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Purpose/Mandate Section */}
+        {workingGroup.description && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Purpose / Mandate</CardTitle>
+            </CardHeader>
+            <CardContent>
               <p className="text-foreground whitespace-pre-wrap">
-                {workingGroup.description || 'No description available'}
+                {workingGroup.description}
               </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="members" className="space-y-6">
@@ -354,6 +336,12 @@ export default function WorkingGroupProfilePage() {
               <Users className="h-4 w-4" />
               Members ({workingGroup.members.length})
             </TabsTrigger>
+            {workingGroup.sub_groups.length > 0 && (
+              <TabsTrigger value="sub-groups" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <GitBranch className="h-4 w-4" />
+                Sub-Groups ({workingGroup.sub_groups.length})
+              </TabsTrigger>
+            )}
             <TabsTrigger value="meetings" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Calendar className="h-4 w-4" />
               Meetings ({workingGroup.meetings.length})
@@ -373,7 +361,7 @@ export default function WorkingGroupProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle>Members</CardTitle>
+                  <CardTitle>Members ({workingGroup.members.length})</CardTitle>
                   <Button
                     size="sm"
                     className="gap-2"
@@ -385,44 +373,122 @@ export default function WorkingGroupProfilePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {workingGroup.members.length === 0 ? (
+                {workingGroup.members.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <UserPlus className="h-12 w-12 text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground">No members yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Name</th>
+                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Role</th>
+                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Organization</th>
+                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Email</th>
+                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Joined</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {workingGroup.members.map((member) => (
+                          <tr key={member.id} className="border-b border-border/50 hover:bg-muted/30">
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                  {member.avatar_url ? (
+                                    <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                  ) : (
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      {member.person_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-medium text-foreground">{member.person_name}</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-sm text-muted-foreground">
+                              {getRoleLabel(member.role)}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="text-foreground">{member.person_organization || '—'}</div>
+                              {(member.job_title || member.department) && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {[member.department, member.job_title].filter(Boolean).join(' · ')}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-muted-foreground">
+                              {member.person_email ? (
+                                <a href={`mailto:${member.person_email}`} className="hover:text-foreground transition-colors">{member.person_email}</a>
+                              ) : '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                              {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sub-Groups Tab */}
+          <TabsContent value="sub-groups">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Sub-Working Groups</CardTitle>
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => router.push(`/working-groups/new?parent_id=${workingGroup.id}&parent_label=${encodeURIComponent(workingGroup.label)}`)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Sub-Working Group
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {workingGroup.sub_groups.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <UserPlus className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground">No members yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
+                      <GitBranch className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-sm text-muted-foreground">No sub-working groups yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">Create sub-working groups to organize specialized topics</p>
                     </div>
                   ) : (
-                    workingGroup.members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-medium">{member.person_name}</h4>
-                            <Badge className={getRoleBadgeColor(member.role)}>
-                              {getRoleLabel(member.role)}
+                    workingGroup.sub_groups.map((sg) => (
+                      <Link
+                        key={sg.id}
+                        href={`/working-groups/${sg.id}`}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <h4 className="font-medium text-foreground">{sg.label}</h4>
+                            <Badge variant={sg.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                              {sg.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
-                          <div className="mt-1 space-y-1">
-                            {member.person_organization && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Building className="h-4 w-4" />
-                                {member.person_organization}
-                              </div>
-                            )}
-                            {member.person_email && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Mail className="h-4 w-4" />
-                                {member.person_email}
-                              </div>
-                            )}
-                            {member.joined_on && (
-                              <p className="text-xs text-muted-foreground">
-                                Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
-                              </p>
-                            )}
+                          {sg.description && (
+                            <p className="text-sm text-muted-foreground mt-1 ml-6 line-clamp-1">{sg.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1.5 ml-6 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {sg.member_count || 0} members
+                            </span>
+                            <span className="font-mono">{sg.code}</span>
                           </div>
                         </div>
-                      </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+                      </Link>
                     ))
                   )}
                 </div>

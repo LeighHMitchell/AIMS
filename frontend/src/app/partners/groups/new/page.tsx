@@ -17,6 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { apiFetch } from '@/lib/api-fetch';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 interface Organization {
   id: string
@@ -131,9 +132,14 @@ export default function NewGroupPage() {
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
+        <Breadcrumbs items={[
+          { label: "Portfolios", href: "/partners" },
+          { label: "New Group" },
+        ]} />
+
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button 
+          <Button
             variant="ghost"
             onClick={() => router.back()}
             size="icon"

@@ -28,7 +28,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { UserPlus, Mail, Building, MoreVertical, Trash2, Search, User, Check, X } from 'lucide-react'
+import { UserPlus, Mail, Building, MoreVertical, Trash2, Search, User, Check, X, Download } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { apiFetch } from '@/lib/api-fetch'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
@@ -44,6 +45,8 @@ interface Member {
   person_name: string
   person_email?: string
   person_organization?: string
+  job_title?: string
+  department?: string
   contact_id?: string
   role: string
   is_active: boolean
@@ -57,6 +60,10 @@ interface RolodexPerson {
   profile_photo?: string
   first_name?: string
   last_name?: string
+  organization_name?: string
+  organization_acronym?: string
+  job_title?: string
+  department?: string
 }
 
 const ROLE_OPTIONS = [
@@ -189,7 +196,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
     setSelectedContact(person)
     setNewName(person.name || '')
     setNewEmail(person.email || '')
-    setNewOrg('')
+    setNewOrg(person.organization_name || person.organization_acronym || '')
     setContactSearchQuery('')
     setContactSearchOpen(false)
   }
@@ -280,6 +287,36 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
     }
   }
 
+  const handleExportCSV = useCallback(() => {
+    if (members.length === 0) return
+    const escCSV = (val: string) => {
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`
+      }
+      return val
+    }
+    const headers = ['Name', 'Role', 'Organization', 'Department', 'Job Title', 'Email', 'Joined', 'Status']
+    const rows = members.map(m => [
+      escCSV(m.person_name || ''),
+      escCSV(getRoleLabel(m.role)),
+      escCSV(m.person_organization || ''),
+      escCSV(m.department || ''),
+      escCSV(m.job_title || ''),
+      escCSV(m.person_email || ''),
+      m.joined_on ? format(new Date(m.joined_on), 'yyyy-MM-dd') : '',
+      m.is_active ? 'Active' : 'Inactive',
+    ])
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `working-group-members-${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success('Members exported to CSV')
+  }, [members])
+
   if (loading) {
     return <div className="animate-pulse space-y-4"><div className="h-20 bg-muted rounded" /><div className="h-20 bg-muted rounded" /></div>
   }
@@ -287,14 +324,20 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
+        <div className="flex items-center gap-2">
           <h2 className="text-xl font-semibold text-foreground">Leadership & Members</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage working group membership and roles</p>
+          <HelpTextTooltip text="Add chairs, co-chairs, and members from the Rolodex. Roles determine access levels and visibility in reports." />
         </div>
-        <Button onClick={() => { resetForm(); setShowAddDialog(true) }} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Add Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportCSV} disabled={members.length === 0}>
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button onClick={() => { resetForm(); setShowAddDialog(true) }} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Add Member
+          </Button>
+        </div>
       </div>
 
       {members.length === 0 ? (
@@ -313,9 +356,9 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
             <thead>
               <tr className="bg-muted border-b">
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Name</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Role</th>
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Organization</th>
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Email</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Role</th>
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Joined</th>
                 <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
               </tr>
@@ -324,27 +367,41 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
               {members.map((member) => (
                 <tr key={member.id} className="hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{member.person_name}</span>
-                      {!member.is_active && (
-                        <Badge variant="secondary" className="text-xs">Inactive</Badge>
-                      )}
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {(member as any).avatar_url ? (
+                          <img src={(member as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {member.person_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-foreground">{member.person_name}</span>
+                        {!member.is_active && (
+                          <Badge variant="secondary" className="text-xs ml-1.5">Inactive</Badge>
+                        )}
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.person_organization || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.person_email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{getRoleLabel(member.role)}</td>
                   <td className="px-4 py-3">
-                    <Badge className={getRoleBadgeColor(member.role)}>
-                      {getRoleLabel(member.role)}
-                    </Badge>
+                    <div className="text-sm text-foreground">{member.person_organization || '—'}</div>
+                    {(member.job_title || member.department) && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {[member.department, member.job_title].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.person_email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                     {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button variant="outline" size="icon" className="h-8 w-8">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

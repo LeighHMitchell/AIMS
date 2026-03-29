@@ -1093,7 +1093,7 @@ export function EventDetailModal({
                 </div>
               )}
               {!isEditing && (
-                <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+                <Button type="button" variant="outline" size="sm" onClick={onClose}>
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               )}

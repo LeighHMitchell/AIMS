@@ -50,6 +50,7 @@ import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
+import { GlassButton } from "@/components/ui/glass-button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -207,6 +208,7 @@ export function SidebarNav({
       items: [
         { name: "SDGs", href: "/sdgs", show: true },
         { name: "Sectors", href: "/sectors", show: true },
+        { name: "Locations", href: "/location-profiles", show: true },
         { name: "Policy Markers", href: "/policy-markers", show: true },
         { name: "Working Groups", href: "/working-groups", show: true },
       ]
@@ -395,9 +397,9 @@ export function SidebarNav({
             <div className="pb-4 border-b border-gray-200 dark:border-gray-700" data-tour="activities-create">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
+                  <GlassButton
                     className={cn(
-                      "w-full justify-center gap-2",
+                      "w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800",
                       isInActivityEditor && "opacity-50 cursor-not-allowed"
                     )}
                     disabled={isInActivityEditor}
@@ -406,7 +408,7 @@ export function SidebarNav({
                     <Plus className="h-4 w-4" />
                     {!isCollapsed && "Add New Activity"}
                     {!isCollapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
-                  </Button>
+                  </GlassButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
@@ -484,25 +486,29 @@ export function SidebarNav({
 
           {currentModule === 'project-bank' && canCreateProjects && (
             <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
-              <Button
-                className="w-full justify-center gap-2"
-                onClick={() => router.push('/project-bank/new')}
+              <GlassButton
+                asChild
+                className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
               >
-                <Plus className="h-4 w-4" />
-                {!isCollapsed && "Submit Project"}
-              </Button>
+                <Link href="/project-bank/new">
+                  <Plus className="h-4 w-4" />
+                  {!isCollapsed && "Submit Project"}
+                </Link>
+              </GlassButton>
             </div>
           )}
 
           {currentModule === 'land-bank' && canCreateParcels && (
             <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
-              <Button
-                className="w-full justify-center gap-2"
-                onClick={() => router.push('/land-bank/new')}
+              <GlassButton
+                asChild
+                className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
               >
-                <Plus className="h-4 w-4" />
-                {!isCollapsed && "Register Parcel"}
-              </Button>
+                <Link href="/land-bank/new">
+                  <Plus className="h-4 w-4" />
+                  {!isCollapsed && "Register Parcel"}
+                </Link>
+              </GlassButton>
             </div>
           )}
 

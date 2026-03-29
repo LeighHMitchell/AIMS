@@ -93,12 +93,52 @@ export async function GET(
       }));
     }
 
+    // Fetch sub-working groups
+    const { data: subGroups } = await supabase
+      .from('working_groups')
+      .select('id, code, label, group_type, is_active, status, description')
+      .eq('parent_id', id)
+      .order('label', { ascending: true });
+
+    // Enrich sub-groups with member counts
+    if (subGroups && subGroups.length > 0) {
+      const subIds = subGroups.map((sg: any) => sg.id);
+      const { data: subMemberships } = await supabase
+        .from('working_group_memberships')
+        .select('working_group_id')
+        .in('working_group_id', subIds)
+        .eq('is_active', true);
+
+      if (subMemberships) {
+        const subCountMap: Record<string, number> = {};
+        subMemberships.forEach((m: any) => {
+          subCountMap[m.working_group_id] = (subCountMap[m.working_group_id] || 0) + 1;
+        });
+        subGroups.forEach((sg: any) => {
+          sg.member_count = subCountMap[sg.id] || 0;
+        });
+      }
+    }
+
+    // Fetch parent info if this is a sub-group
+    let parent = null;
+    if (wg.parent_id) {
+      const { data: parentData } = await supabase
+        .from('working_groups')
+        .select('id, code, label')
+        .eq('id', wg.parent_id)
+        .single();
+      parent = parentData || null;
+    }
+
     return NextResponse.json({
       ...wg,
+      parent,
       members: members || [],
       meetings: meetings || [],
       documents: documents || [],
-      activities
+      activities,
+      sub_groups: subGroups || [],
     });
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);
@@ -142,6 +182,7 @@ export async function PUT(
     if (body.group_type !== undefined) updateData.group_type = body.group_type;
     if (body.banner !== undefined) updateData.banner = body.banner;
     if (body.icon_url !== undefined) updateData.icon_url = body.icon_url;
+    if (body.parent_id !== undefined) updateData.parent_id = body.parent_id;
 
     const { data, error } = await supabase
       .from('working_groups')

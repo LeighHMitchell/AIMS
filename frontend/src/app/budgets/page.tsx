@@ -22,7 +22,7 @@ import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
-import { LoadingText } from "@/components/ui/loading-text";
+import { BudgetsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -523,9 +523,7 @@ export default function BudgetsPage() {
 
         {/* Budgets Table */}
         {loading && sortedBudgets.length === 0 && !searchQuery ? (
-          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
-            <LoadingText>Loading budgets...</LoadingText>
-          </div>
+          <BudgetsListSkeleton />
         ) : error ? (
           <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
             <div className="space-y-4">
@@ -543,7 +541,7 @@ export default function BudgetsPage() {
             <p className="text-muted-foreground">No budgets found</p>
           </div>
         ) : (
-          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+          <div className="bg-card rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <BudgetTable
                 key={`budget-table-${budgets.length}-${selectedBudgetIds.size}`}

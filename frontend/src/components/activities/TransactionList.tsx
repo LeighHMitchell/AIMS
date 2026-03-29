@@ -53,7 +53,8 @@ import {
   Link as LinkIcon,
   Columns3,
   Heart,
-  Search
+  Search,
+  PenLine
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -121,7 +122,7 @@ const ACTIVITY_TRANSACTION_COLUMN_CONFIGS: ActivityTransactionColumnConfig[] = [
   { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true, sortable: true },
   { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true, sortable: true },
   { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
-  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: false, sortable: true },
   { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
   { id: 'exchangeRate', label: 'Ex. Rate', group: 'additionalDetails', defaultVisible: false, sortable: true, align: 'right' },
 
@@ -147,7 +148,7 @@ const ACTIVITY_TRANSACTION_COLUMN_GROUPS = {
 const DEFAULT_VISIBLE_ACTIVITY_COLUMNS: ActivityTransactionColumnId[] = 
   ACTIVITY_TRANSACTION_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
 
-const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns_v3';  // v3: Added Exchange Rate column
+const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns_v4';  // v4: Value Date moved under Amount by default
 
 // Column Selector Component for Activity Transaction List
 interface ActivityTransactionColumnSelectorProps {
@@ -477,6 +478,7 @@ export default function TransactionList({
   const [visibleColumns, setVisibleColumns] = useState<ActivityTransactionColumnId[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY);
+      console.log('[TransactionList] localStorage key:', ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY, 'saved:', saved);
       if (saved) {
         try {
           return JSON.parse(saved);
@@ -484,6 +486,7 @@ export default function TransactionList({
           return DEFAULT_VISIBLE_ACTIVITY_COLUMNS;
         }
       }
+      console.log('[TransactionList] Using defaults:', DEFAULT_VISIBLE_ACTIVITY_COLUMNS);
     }
     return DEFAULT_VISIBLE_ACTIVITY_COLUMNS;
   });
@@ -974,7 +977,7 @@ export default function TransactionList({
     exportData.push(
       { label: 'Transaction Type', value: `${transaction.transaction_type} - ${TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}` },
       { label: 'Validation Status', value: transaction.status === 'actual' ? 'Validated' : 'Unvalidated' },
-      { label: 'Original Value', value: transaction.value ? `${transaction.currency} ${transaction.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—' },
+      { label: 'Original Value', value: transaction.value ? `${transaction.currency} ${transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
       { label: 'USD Value', value: usdValue?.usd != null ? `USD ${usdValue.usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
       { label: 'Value Date', value: transaction.value_date ? format(new Date(transaction.value_date), 'MMM d, yyyy') : transaction.transaction_date ? format(new Date(transaction.transaction_date), 'MMM d, yyyy') : '—' },
       { label: 'Transaction Date', value: format(new Date(transaction.transaction_date), 'MMM d, yyyy') },
@@ -1800,19 +1803,14 @@ export default function TransactionList({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
-                                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                          {displayValue}
-                                        </span>
+                                      <div className="flex items-center gap-1.5 text-gray-400 opacity-70 cursor-help">
                                         <span className="text-sm">
                                           {FINANCE_TYPE_LABELS[displayValue] || displayValue}
                                         </span>
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs">
-                                        Inherited from activity's default finance type (code {displayValue} – {FINANCE_TYPE_LABELS[displayValue] || displayValue})
-                                      </p>
+                                      <p className="text-xs">Inherited from activity default</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -1821,19 +1819,25 @@ export default function TransactionList({
                             
                             // Explicit value - show in black
                             return (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                  {displayValue}
-                                </span>
-                                <span className="text-sm">
-                                  {FINANCE_TYPE_LABELS[displayValue] || displayValue}
-                                </span>
-                              </div>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 cursor-help">
+                                      <span className="text-sm">
+                                        {FINANCE_TYPE_LABELS[displayValue] || displayValue}
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{displayValue} — {FINANCE_TYPE_LABELS[displayValue] || displayValue}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             );
                           })()}
                         </TableCell>
                       )}
-                      
+
                       {/* Aid Type (optional) */}
                       {isColumnVisible('aidType') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
@@ -2024,9 +2028,20 @@ export default function TransactionList({
                       {isColumnVisible('amount') && (
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                           {transaction.value !== null && transaction.value !== undefined && !isNaN(transaction.value) ? (
-                            <span className="font-medium">
-                              <span className="text-muted-foreground">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                            </span>
+                            <div>
+                              <span className="font-medium">
+                                <span className="text-muted-foreground">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              </span>
+                              {!isColumnVisible('valueDate') && (
+                                <div className="text-[11px] text-muted-foreground">
+                                  {transaction.value_date
+                                    ? format(new Date(transaction.value_date), 'MMM d, yyyy')
+                                    : transaction.transaction_date
+                                    ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                                    : ''}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-red-600">Invalid</span>
                           )}
@@ -2057,19 +2072,43 @@ export default function TransactionList({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="font-medium cursor-help flex items-center gap-1">
+                                      <span className="w-4 shrink-0 flex items-center justify-center">
+                                        {(transaction as any).exchange_rate_manual && (
+                                          <PenLine className="h-3.5 w-3.5 text-orange-500" />
+                                        )}
+                                      </span>
                                       <span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                      {(transaction as any).exchange_rate_manual && (
-                                        <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">Manual</Badge>
-                                      )}
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent>
-                                    <div>
-                                      <div>Original: <span className="text-muted-foreground">{transaction.currency}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-                                      <div>Rate: {usdValues[transaction.uuid || transaction.id].rate}</div>
-                                      <div>Date: {usdValues[transaction.uuid || transaction.id].date}</div>
-                                      {(transaction as any).exchange_rate_manual && <div className="text-orange-500 font-medium">Manually entered rate</div>}
-                                  </div>
+                                  <TooltipContent className="min-w-[200px]">
+                                    <table className="text-xs w-full">
+                                      <tbody>
+                                        <tr>
+                                          <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
+                                          <td className="text-right py-0.5">{transaction.currency} {transaction.value?.toLocaleString()}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
+                                          <td className="text-right py-0.5">{usdValues[transaction.uuid || transaction.id].rate}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
+                                          <td className="text-right py-0.5">
+                                            {(() => {
+                                              const dateStr = usdValues[transaction.uuid || transaction.id].date;
+                                              if (!dateStr) return '—';
+                                              const parsed = new Date(dateStr);
+                                              return isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMMM yyyy');
+                                            })()}
+                                          </td>
+                                        </tr>
+                                        {(transaction as any).exchange_rate_manual && (
+                                          <tr>
+                                            <td colSpan={2} className="pt-1 text-orange-500 font-medium">Manual exchange rate</td>
+                                          </tr>
+                                        )}
+                                      </tbody>
+                                    </table>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -2175,7 +2214,7 @@ export default function TransactionList({
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
-                                  <span className="font-medium"><span className="text-muted-foreground">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                  <span className="font-medium"><span className="text-muted-foreground">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
@@ -2451,7 +2490,7 @@ export default function TransactionList({
                                       <TooltipProvider>
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className={`flex items-center gap-2 ${isInherited ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                            <div className={`flex items-center gap-1.5 cursor-help ${isInherited ? 'text-gray-400 opacity-70' : ''}`}>
                                               <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                                 {displayValue}
                                               </span>
@@ -2460,13 +2499,11 @@ export default function TransactionList({
                                               </span>
                                             </div>
                                           </TooltipTrigger>
-                                          {isInherited && (
-                                            <TooltipContent>
-                                              <p className="text-xs">
-                                                Inherited from activity's default finance type (code {displayValue} – {FINANCE_TYPE_LABELS[displayValue] || displayValue})
-                                              </p>
-                                            </TooltipContent>
-                                          )}
+                                          <TooltipContent>
+                                            <p className="text-xs">
+                                              {isInherited ? 'Inherited from activity default' : `${displayValue} — ${FINANCE_TYPE_LABELS[displayValue] || displayValue}`}
+                                            </p>
+                                          </TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
                                     </div>

@@ -3121,9 +3121,8 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Finances Tab - Consolidated */}
-              <TabsContent value="finances" className="p-6 border-0">
-                {activeTab === "finances" && (
+              {/* Finances Tab - Consolidated (kept mounted to preserve data) */}
+              <TabsContent value="finances" className="p-6 border-0" forceMount style={{ display: activeTab === "finances" ? undefined : "none" }}>
                   <div className="space-y-6">
                   {/* Budgets */}
                   <div className={`border rounded-lg ${budgets !== undefined && budgets.length === 0 ? 'opacity-50' : ''}`}>
@@ -3282,7 +3281,6 @@ export default function ActivityDetailPage() {
                     )}
                   </div>
                 </div>
-                )}
               </TabsContent>
 
               {/* Financial Analytics Tab */}

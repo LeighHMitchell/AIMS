@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSEEAssessmentWizard,
   SEE_STAGE_ORDER,
@@ -41,8 +42,27 @@ export function SEEAssessmentWizard({ transferId }: SEEAssessmentWizardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
+        {/* Progress rail skeleton */}
+        <div className="hidden lg:block">
+          <div className="space-y-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full rounded-md" />
+            ))}
+          </div>
+        </div>
+        {/* Form skeleton */}
+        <Card>
+          <CardContent className="p-6 space-y-6">
+            <Skeleton className="h-6 w-48 mb-2" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     );
   }

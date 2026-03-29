@@ -172,7 +172,6 @@ export function TransactionSectorManager({
               {totalPercentage.toFixed(1)}% (must be 100%)
             </Badge>
           )}
-          )}
         </div>
       </div>
 
@@ -512,45 +511,61 @@ export function TransactionAidTypeManager({
       </div>
       
       {/* Existing aid types */}
-      <div className="space-y-2">
-        {aidTypes.map((aidType, index) => (
-          <Card key={index} className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {aidType.code}
-            </span>
-                <span className="text-sm text-gray-700">
-                  {getAidTypeName(aidType.code)}
-                </span>
-      </div>
-          <Select 
-                value={aidType.vocabulary || '1'}
-                onValueChange={(v) => updateVocabulary(index, v)}
-          >
-                <SelectTrigger className="h-8 w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">OECD DAC</SelectItem>
-              <SelectItem value="2">Earmarking Category</SelectItem>
-              <SelectItem value="3">Earmarking Modality</SelectItem>
-              <SelectItem value="4">Cash and Voucher</SelectItem>
-            </SelectContent>
-          </Select>
-        <Button 
-          type="button" 
-                variant="ghost"
-          size="sm"
-                onClick={() => removeAidType(index)}
-                className="h-8 w-8 p-0"
-        >
-                <Trash2 className="h-4 w-4 text-red-500" />
-        </Button>
-            </div>
-      </Card>
-        ))}
-      </div>
+      {aidTypes.length > 0 && (
+        <div className="rounded-md border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Code</th>
+                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Aid Type</th>
+                <th className="text-left py-2 px-3 font-medium text-muted-foreground w-[160px]">Vocabulary</th>
+                <th className="w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {aidTypes.map((aidType, index) => (
+                <tr key={index} className="border-b last:border-b-0">
+                  <td className="py-2 px-3">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      {aidType.code}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3 text-gray-700">
+                    {getAidTypeName(aidType.code)}
+                  </td>
+                  <td className="py-2 px-3">
+                    <Select
+                      value={aidType.vocabulary || '1'}
+                      onValueChange={(v) => updateVocabulary(index, v)}
+                    >
+                      <SelectTrigger className="h-8 w-[160px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">OECD DAC</SelectItem>
+                        <SelectItem value="2">Earmarking Category</SelectItem>
+                        <SelectItem value="3">Earmarking Modality</SelectItem>
+                        <SelectItem value="4">Cash and Voucher</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-2 px-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeAidType(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       
       {/* Add new aid type with dropdown */}
       <div className="relative">

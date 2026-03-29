@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet } from 'lucide-react';
+import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -282,6 +282,8 @@ export default function ActivityBudgetsTab({
   const [modalBudget, setModalBudget] = useState<ActivityBudget | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
+  const [modalLocked, setModalLocked] = useState(false);
+  const [isReviseMode, setIsReviseMode] = useState(false);
   // isCalculatingUSD removed - USD conversion now happens server-side
   const [typePopoverOpen, setTypePopoverOpen] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
@@ -303,9 +305,6 @@ export default function ActivityBudgetsTab({
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Expandable rows state
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -315,17 +314,6 @@ export default function ActivityBudgetsTab({
     setCurrentPage(1);
   }, [statusFilter, typeFilter]);
 
-  // Expand all rows on current page
-  const expandAllRows = () => {
-    const allIds = new Set(paginatedBudgets.map(b => b.id || 'new'));
-    setExpandedRows(allIds);
-  };
-
-  // Collapse all rows
-  const collapseAllRows = () => {
-    setExpandedRows(new Set());
-  };
-  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -1215,15 +1203,34 @@ export default function ActivityBudgetsTab({
     setModalBudget(newBudget);
     setFieldErrors({});
     setIsFormDirty(false);
+    setModalLocked(false);
+    setIsReviseMode(false);
     setShowModal(true);
   }, [budgets, activityId, defaultCurrency, startDate, endDate]);
 
-  // Open modal for editing existing budget
+  // Open modal for editing existing budget (locked by default)
   const openModalForEditBudget = useCallback((budget: ActivityBudget) => {
     setModalBudget({ ...budget });
     setFieldErrors({});
     setIsFormDirty(false);
+    setModalLocked(true);
+    setIsReviseMode(false);
     // Auto-expand advanced fields if budget has budget lines
+    setShowAdvancedFields((budget.budget_lines?.length || 0) > 0);
+    setShowModal(true);
+  }, []);
+
+  // Open modal to revise an existing budget (creates new Revised budget)
+  const openModalForReviseBudget = useCallback((budget: ActivityBudget) => {
+    setModalBudget({
+      ...budget,
+      id: undefined as any, // Clear ID so it saves as a new record
+      type: '2', // Set to Revised
+    });
+    setFieldErrors({});
+    setIsFormDirty(true); // Mark as dirty since it's a new record with pre-filled data
+    setModalLocked(false);
+    setIsReviseMode(true);
     setShowAdvancedFields((budget.budget_lines?.length || 0) > 0);
     setShowModal(true);
   }, []);
@@ -1237,6 +1244,8 @@ export default function ActivityBudgetsTab({
         setFieldErrors({});
         setIsFormDirty(false);
         setShowAdvancedFields(false);
+        setModalLocked(false);
+        setIsReviseMode(false);
       }
     } else {
       setShowModal(false);
@@ -1244,6 +1253,8 @@ export default function ActivityBudgetsTab({
       setFieldErrors({});
       setIsFormDirty(false);
       setShowAdvancedFields(false);
+      setModalLocked(false);
+      setIsReviseMode(false);
     }
   }, [isFormDirty]);
 
@@ -1439,21 +1450,23 @@ export default function ActivityBudgetsTab({
         }
 
         const newBudget = await response.json();
-        setBudgets(prev => [...prev, newBudget].sort((a, b) => 
+        setBudgets(prev => [...prev, newBudget].sort((a, b) =>
           new Date(a.period_start).getTime() - new Date(b.period_start).getTime()
         ));
-        toast.success('Budget created successfully');
+        toast.success(isReviseMode ? 'Revised budget created successfully' : 'Budget created successfully');
       }
 
       setShowModal(false);
       setModalBudget(null);
       setFieldErrors({});
       setIsFormDirty(false);
+      setModalLocked(false);
+      setIsReviseMode(false);
     } catch (error) {
       console.error('Error saving budget:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save budget');
     }
-  }, [modalBudget, activityId, modalExchangeRateManual, modalExchangeRate, modalCalculatedUsdValue]);
+  }, [modalBudget, activityId, modalExchangeRateManual, modalExchangeRate, modalCalculatedUsdValue, isReviseMode]);
 
   // Granularity change handlers removed - users can now create any period length they want
 
@@ -1717,27 +1730,6 @@ export default function ActivityBudgetsTab({
                       </SelectContent>
                     </Select>
                   </div>
-                  {expandedRows.size > 0 ? (
-                    <Button
-                      variant="outline"
-                      onClick={collapseAllRows}
-                      title="Collapse all expanded rows"
-                      data-collapse-all
-                    >
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Collapse All
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={expandAllRows}
-                      title="Expand all rows"
-                      data-expand-all
-                    >
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Expand All
-                    </Button>
-                  )}
                   <Button variant="outline" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
@@ -1792,29 +1784,6 @@ export default function ActivityBudgetsTab({
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  {expandedRows.size > 0 ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={collapseAllRows}
-                      title="Collapse all expanded rows"
-                      data-collapse-all
-                    >
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Collapse All
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={expandAllRows}
-                      title="Expand all rows"
-                      data-expand-all
-                    >
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Expand All
-                    </Button>
-                  )}
                   <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
@@ -1871,29 +1840,6 @@ export default function ActivityBudgetsTab({
                   </SelectContent>
                 </Select>
               </div>
-              {expandedRows.size > 0 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={collapseAllRows}
-                  title="Collapse all expanded rows"
-                  data-collapse-all
-                >
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Collapse All
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={expandAllRows}
-                  title="Expand all rows"
-                  data-expand-all
-                >
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Expand All
-                </Button>
-              )}
               <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                 <Download className="h-4 w-4" />
               </Button>
@@ -1989,7 +1935,6 @@ export default function ActivityBudgetsTab({
             <Table aria-label="Budgets table" className="w-full">
               <TableHeader className="bg-surface-muted border-b border-border/70">
                 <TableRow>
-                  <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '50px' }}></TableHead>
                   {!readOnly && (
                     <TableHead className="text-center" style={{ width: '50px' }}>
                       <Checkbox
@@ -2018,8 +1963,7 @@ export default function ActivityBudgetsTab({
                     { label: "Type", width: 110, sortKey: "type", align: "left" },
                     { label: "Amount", width: 160, sortKey: "value", align: "right" },
                     { label: "Value Date", width: 140, sortKey: "value_date", align: "left" },
-                    { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" },
-                    { label: "Ex. Rate", width: 110, sortKey: "exchange_rate_used", align: "right" }
+                    { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
                     <TableHead
                       key={i + 2}
@@ -2052,43 +1996,16 @@ export default function ActivityBudgetsTab({
                 {
                   paginatedBudgets.map((budget, index) => {
                     const budgetId = budget.id || `budget-${index}`;
-                    const isExpanded = expandedRows.has(budgetId);
-                    
+
                     return (
                     <React.Fragment key={budgetId}>
-                    <TableRow 
+                    <TableRow
                       className={cn(
                         "border-b border-border/40 hover:bg-muted/30 transition-colors",
                         budget.hasError ? 'bg-red-50' : '',
                         selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
-                    > 
-                      {/* Chevron for expand/collapse */}
-                      <TableCell className="py-3 px-2 whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedRows(prev => {
-                              const newSet = new Set(prev);
-                              if (newSet.has(budgetId)) {
-                                newSet.delete(budgetId);
-                              } else {
-                                newSet.add(budgetId);
-                              }
-                              return newSet;
-                            });
-                          }}
-                        >
-                          {isExpanded ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TableCell>
+                    >
                       {!readOnly && (
                         <TableCell className="text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
@@ -2119,7 +2036,7 @@ export default function ActivityBudgetsTab({
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
                         <span>
-                          {safeFormatDate(budget.value_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(budget.value_date, 'd MMM yyyy', '-')}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
@@ -2130,16 +2047,44 @@ export default function ActivityBudgetsTab({
                           <TooltipProvider>
                             <UITooltip>
                               <TooltipTrigger asChild>
-                                <span className="font-medium cursor-help">
+                                <span className="font-medium cursor-help flex items-center gap-1">
+                                  <span className="w-4 shrink-0 flex items-center justify-center">
+                                    {(budget as any).exchange_rate_manual && (
+                                      <PenLine className="h-3.5 w-3.5 text-orange-500" />
+                                    )}
+                                  </span>
                                   <span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <div>
-                                  <div>Original: {budget.value} {budget.currency}</div>
-                                  <div>Rate: {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].rate}</div>
-                                  <div>Date: {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].date}</div>
-                                </div>
+                              <TooltipContent className="min-w-[200px]">
+                                <table className="text-xs w-full">
+                                  <tbody>
+                                    <tr>
+                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
+                                      <td className="text-right py-0.5">{budget.currency} {budget.value?.toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Rate</td>
+                                      <td className="text-right py-0.5">{usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].rate}</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Date</td>
+                                      <td className="text-right py-0.5">
+                                        {(() => {
+                                          const dateStr = usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].date;
+                                          if (!dateStr) return '—';
+                                          const parsed = new Date(dateStr);
+                                          return isNaN(parsed.getTime()) ? dateStr : format(parsed, 'd MMMM yyyy');
+                                        })()}
+                                      </td>
+                                    </tr>
+                                    {(budget as any).exchange_rate_manual && (
+                                      <tr>
+                                        <td colSpan={2} className="pt-1 text-orange-500 font-medium">Manual exchange rate</td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
                               </TooltipContent>
                             </UITooltip>
                           </TooltipProvider>
@@ -2165,18 +2110,6 @@ export default function ActivityBudgetsTab({
                         )}
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '110px' }}>
-                        {(budget as any).exchange_rate_used != null ? (
-                          <span className="text-sm font-mono flex items-center justify-end gap-1">
-                            {(budget as any).exchange_rate_used.toFixed(4)}
-                            {(budget as any).exchange_rate_manual && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">M</Badge>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
                       {!readOnly && (
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                           <DropdownMenu>
@@ -2189,6 +2122,9 @@ export default function ActivityBudgetsTab({
                               <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
                                 <Pencil className="h-4 w-4 mr-2 text-muted-foreground" /> Edit
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openModalForReviseBudget(budget)}>
+                                <RefreshCw className="h-4 w-4 mr-2 text-muted-foreground" /> Revise
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => duplicateForward(index)}>
                                 <Copy className="h-4 w-4 mr-2" /> Duplicate
                               </DropdownMenuItem>
@@ -2200,164 +2136,10 @@ export default function ActivityBudgetsTab({
                         </TableCell>
                       )}
                     </TableRow>
-                    
-                    {/* Expandable Detail Row */}
-                    {isExpanded && (
-                      <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
-                        <TableCell colSpan={readOnly ? 8 : 9} className="py-4 px-4 relative">
-                          {/* CSV Export Button */}
-                          <div className="absolute top-4 right-4 z-10">
-                            <TooltipProvider>
-                              <UITooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => handleExportBudget(budget)}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Export to CSV</p>
-                                </TooltipContent>
-                              </UITooltip>
-                            </TooltipProvider>
-                          </div>
-                          <div className="space-y-4 text-sm">
-                            {/* Budget Details */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Budget Details</h4>
-                              <div className="ml-4">
-                                <div className="flex flex-wrap gap-x-12 gap-y-3">
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[100px]">Type:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.type}</span>
-                                      <span className="text-xs">{budget.type === 1 ? 'Original' : 'Revised'}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[100px]">Status:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.status}</span>
-                                      <span className="text-xs">{budget.status === 1 ? 'Indicative' : 'Committed'}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-start gap-2 ml-auto">
-                                    <span className="text-muted-foreground">USD Value:</span>
-                                    <div className="text-right flex items-center gap-1">
-                                      {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
-                                        <>
-                                          <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                                          {(budget as any).exchange_rate_manual && (
-                                            <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">Manual</Badge>
-                                          )}
-                                        </>
-                                      ) : (
-                                        <span className="text-muted-foreground">—</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[100px]">Period Start:</span>
-                                    <span className="font-medium">{safeFormatDate(budget.period_start, 'MMM d, yyyy')}</span>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[100px]">Original Value:</span>
-                                    <span className="font-medium">{budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {budget.currency}</span>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[100px]">Period End:</span>
-                                    <span className="font-medium">{safeFormatDate(budget.period_end, 'MMM d, yyyy')}</span>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-muted-foreground min-w-[100px]">Value Date:</span>
-                                    <span className="font-medium">
-                                      {safeFormatDate(budget.value_date, 'MMM d, yyyy', '—')}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Budget Lines */}
-                            {budget.budget_lines && budget.budget_lines.length > 0 && (
-                              <div>
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Budget Lines</h4>
-                                <div className="ml-4 space-y-2">
-                                  {budget.budget_lines.map((line, idx) => (
-                                    <div key={idx} className="grid grid-cols-2 gap-x-12 gap-y-1 text-xs bg-muted/30 p-2 rounded">
-                                      <div>
-                                        <span className="text-muted-foreground">Ref:</span>
-                                        <span className="ml-2 font-mono">{line.ref}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground">Value:</span>
-                                        <span className="ml-2 font-medium">{line.value?.toLocaleString()} {line.currency}</span>
-                                      </div>
-                                      {line.narrative && (
-                                        <div className="col-span-2">
-                                          <span className="text-muted-foreground">Narrative:</span>
-                                          <span className="ml-2">{line.narrative}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* System Identifiers */}
-                            <div>
-                              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
-                                {budget.id && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Budget ID:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{budget.id}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(budget.id!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground min-w-[160px]">Activity ID:</span>
-                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{budget.activity_id}</span>
-                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(budget.activity_id)}>
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
                     </React.Fragment>
                     );
                   })
                 }
-                {/* Total Row */}
-                {sortedBudgets.length > 0 && (
-                  <TableRow className="bg-muted border-t-2 border-border font-semibold">
-                    <TableCell colSpan={readOnly ? 6 : 7} className="py-3 px-4 text-right">
-                      Total:
-                    </TableCell>
-                    <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                      <span className="font-semibold">
-                        <span className="text-muted-foreground">USD</span>{' '}
-                        {Object.values(usdValues)
-                          .reduce((sum, val) => sum + (val.usd || 0), 0)
-                          .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </span>
-                    </TableCell>
-                    {!readOnly && (
-                      <TableCell className="py-3 px-4"></TableCell>
-                    )}
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </div>
@@ -2451,13 +2233,46 @@ export default function ActivityBudgetsTab({
       <Dialog open={showModal} onOpenChange={(open) => !open && closeModal()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{modalBudget?.id ? 'Edit Budget' : 'Add Budget'}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>
+                {isReviseMode ? 'Revise Budget' : modalBudget?.id ? 'Edit Budget' : 'Add Budget'}
+              </DialogTitle>
+              {modalBudget?.id && !isReviseMode && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-8 px-2 gap-1.5 text-xs",
+                    modalLocked ? "text-muted-foreground" : "text-amber-600"
+                  )}
+                  onClick={() => {
+                    if (modalLocked) {
+                      if (confirm('Budgets should not normally be edited after entry. Changes may affect the audit trail. Are you sure you want to unlock?')) {
+                        setModalLocked(false);
+                      }
+                    } else {
+                      setModalLocked(true);
+                    }
+                  }}
+                >
+                  {modalLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                  {modalLocked ? 'Locked' : 'Unlocked'}
+                </Button>
+              )}
+            </div>
             <DialogDescription>
-              {modalBudget?.id ? 'Update budget information' : 'Create a new budget entry'}
+              {isReviseMode
+                ? 'Create a revised budget based on the selected budget. This will be saved as a new entry.'
+                : modalBudget?.id
+                  ? modalLocked
+                    ? 'This budget is locked. Click the lock icon to enable editing.'
+                    : 'Update budget information'
+                  : 'Create a new budget entry'}
             </DialogDescription>
           </DialogHeader>
 
           {modalBudget && (
+            <fieldset disabled={modalLocked} className={cn(modalLocked && "opacity-60")}>
             <div className="space-y-4 py-4">
               {/* Type and Status in same row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2471,10 +2286,12 @@ export default function ActivityBudgetsTab({
                   >
                     Type
                   </LabelWithInfoAndSave>
-                  <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
+                  <Popover open={isReviseMode ? false : typePopoverOpen} onOpenChange={setTypePopoverOpen}>
                     <PopoverTrigger
+                      disabled={isReviseMode}
                       className={cn(
                         "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                        isReviseMode && "bg-muted cursor-not-allowed",
                         fieldErrors.type && "border-red-500",
                         !modalBudget?.type && "text-muted-foreground"
                       )}
@@ -2756,12 +2573,13 @@ export default function ActivityBudgetsTab({
                       </Label>
                       {modalBudget.currency !== 'USD' && (
                         <div className="flex items-center gap-2">
-                          <Label htmlFor="budget_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                          <Label htmlFor="budget_exchange_rate_mode" className={cn("text-xs cursor-pointer", modalExchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                             {modalExchangeRateManual ? 'Manual' : 'Auto'}
                           </Label>
                           <Switch
                             id="budget_exchange_rate_mode"
                             checked={!modalExchangeRateManual}
+                            className={cn(modalExchangeRateManual && "[&:not(:checked)]:bg-orange-500 data-[state=unchecked]:bg-orange-500")}
                             onCheckedChange={(checked) => {
                               setModalExchangeRateManual(!checked);
                               if (checked) {
@@ -2838,12 +2656,12 @@ export default function ActivityBudgetsTab({
                 </div>
               )}
 
-              {/* Advanced IATI Fields - Budget Lines */}
-              <div 
+              {/* Advanced Fields - Budget Lines */}
+              <div
                 onClick={() => setShowAdvancedFields(!showAdvancedFields)}
                 className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
               >
-                <span>Advanced IATI Fields</span>
+                <span>Advanced Fields</span>
                 {showAdvancedFields ? (
                   <ChevronUp className="h-4 w-4" />
                 ) : (
@@ -2987,15 +2805,18 @@ export default function ActivityBudgetsTab({
                 </div>
               )}
             </div>
+            </fieldset>
           )}
 
           <DialogFooter>
             <Button variant="outline" onClick={closeModal}>
               Cancel
             </Button>
-            <Button onClick={saveBudget} disabled={Object.keys(fieldErrors).length > 0}>
-              {modalBudget?.id ? 'Update Budget' : 'Create Budget'}
-            </Button>
+            {!modalLocked && (
+              <Button onClick={saveBudget} disabled={Object.keys(fieldErrors).length > 0}>
+                {isReviseMode ? 'Create Revised Budget' : modalBudget?.id ? 'Update Budget' : 'Create Budget'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -92,32 +92,37 @@ export default function WorkingGroupEditorNavigation({
         { id: "documents", label: "Documents & Media" },
       ]
     },
+    {
+      title: "Structure",
+      sections: [
+        { id: "sub-groups", label: "Sub-Working Groups" },
+      ]
+    },
   ]
 
   return (
     <TooltipProvider>
-      <nav className="w-64 bg-white border-r border-gray-200 border-b-0 p-4 space-y-6 h-full flex flex-col">
+      <nav className="w-64 bg-white border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Working Group Header */}
         {workingGroup && workingGroup.label && (
           <div className="pb-4 border-b border-gray-200">
             <h2 className="text-lg font-bold text-slate-900 group leading-tight">
               <button
                 onClick={() => router.push(`/working-groups/${workingGroup.id}`)}
-                className="text-left hover:text-blue-700 hover:underline transition-colors"
+                className="text-left hover:text-slate-600 transition-colors"
                 title="View Working Group profile"
               >
                 {workingGroup.label}
-              </button>
-              {' '}
+              </button>{' '}
               <button
                 onClick={() => copyToClipboard(workingGroup.label || '', 'wgName')}
                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
                 title="Copy Working Group Name"
               >
                 {copiedId === 'wgName' ? (
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-3.5 h-3.5 text-green-600" />
                 ) : (
-                  <Copy className="w-4 h-4 text-slate-400" />
+                  <Copy className="w-3.5 h-3.5 text-slate-400" />
                 )}
               </button>
             </h2>

@@ -148,13 +148,13 @@ export async function GET(
       `)
       .in('id', uniqueActivityIds);
 
-    // Get organizations involved (with contribution_type for donor analysis)
+    // Get organizations involved (with role for donor analysis)
     const { data: orgContributors } = await supabase
       .from('activity_contributors')
       .select(`
         activity_id,
         organization_id,
-        contribution_type,
+        role,
         organizations:organization_id (
           id,
           name,
@@ -294,6 +294,21 @@ export async function GET(
     });
 
     // Fill organization data from contributors
+    // Build per-activity financial totals for attribution to contributor orgs
+    const activityFinancials = new Map<string, { totalValue: number; committed: number; disbursed: number }>();
+    (transactions || []).forEach(tx => {
+      const mapping = sdgMappings?.find((m: any) => m.activity_id === tx.activity_id);
+      const mult = (mapping?.contribution_percent || 100) / 100;
+      const v = (tx.value_usd || tx.value || 0) * mult;
+      if (!activityFinancials.has(tx.activity_id)) {
+        activityFinancials.set(tx.activity_id, { totalValue: 0, committed: 0, disbursed: 0 });
+      }
+      const af = activityFinancials.get(tx.activity_id)!;
+      af.totalValue += v;
+      if (tx.transaction_type === '2' || tx.transaction_type === '11') af.committed += v;
+      else if (tx.transaction_type === '3') af.disbursed += v;
+    });
+
     (orgContributors || []).forEach((contrib: any) => {
       if (contrib.organizations) {
         const orgId = contrib.organizations.id;
@@ -301,10 +316,10 @@ export async function GET(
           const orgData = organizationMap.get(orgId)!;
           orgData.organization = contrib.organizations;
           orgData.activityIds.add(contrib.activity_id);
-          if (contrib.contribution_type) orgData.contributionTypes.add(contrib.contribution_type);
+          if (contrib.role) orgData.contributionTypes.add(contrib.role);
         } else {
           const types = new Set<string>();
-          if (contrib.contribution_type) types.add(contrib.contribution_type);
+          if (contrib.role) types.add(contrib.role);
           organizationMap.set(orgId, {
             organization: contrib.organizations,
             totalValue: 0,
@@ -317,9 +332,52 @@ export async function GET(
       }
     });
 
+    // Attribute activity financials to funding orgs when transactions lack provider_org_id
+    // For each activity, find its funding contributors and attribute financial data
+    const activityFundingOrgs = new Map<string, string[]>();
+    (orgContributors || []).forEach((contrib: any) => {
+      if (contrib.organizations && (contrib.role === 'funder')) {
+        if (!activityFundingOrgs.has(contrib.activity_id)) {
+          activityFundingOrgs.set(contrib.activity_id, []);
+        }
+        activityFundingOrgs.get(contrib.activity_id)!.push(contrib.organizations.id);
+      }
+    });
+
+    activityFundingOrgs.forEach((orgIds, activityId) => {
+      const financials = activityFinancials.get(activityId);
+      if (!financials || orgIds.length === 0) return;
+
+      // Check if this activity already has org-attributed financials via provider_org_id
+      let alreadyAttributed = false;
+      orgIds.forEach(oid => {
+        const od = organizationMap.get(oid);
+        if (od && od.totalValue > 0) alreadyAttributed = true;
+      });
+      if (alreadyAttributed) return;
+
+      // Split financials equally among funding orgs for this activity
+      const share = 1 / orgIds.length;
+      orgIds.forEach(oid => {
+        const od = organizationMap.get(oid);
+        if (od) {
+          od.totalValue += financials.totalValue * share;
+          od.totalCommitted += financials.committed * share;
+          od.totalDisbursed += financials.disbursed * share;
+        }
+      });
+    });
+
     // ---- FILL GEOGRAPHIC DATA FROM ACTIVITY_LOCATIONS ----
-    // If transactions don't have recipient_country_code, use activity_locations
-    if (geographicMap.size === 0 && locations) {
+    // Use activity_locations to supplement geographic data for activities
+    // that don't have recipient_country_code on their transactions
+    if (locations && locations.length > 0) {
+      // Find which activities already have geo data from transactions
+      const activitiesWithGeo = new Set<string>();
+      geographicMap.forEach(gd => {
+        gd.activityIds.forEach(aid => activitiesWithGeo.add(aid));
+      });
+
       // Build activity total value map for proportional geo distribution
       const actValueMap = new Map<string, { totalValue: number; commitments: number; disbursements: number }>();
       (transactions || []).forEach(tx => {
@@ -338,6 +396,8 @@ export async function GET(
       (locations || []).forEach((loc: any) => {
         const cc = loc.country_code;
         if (!cc) return;
+        // Skip if this activity already has geo data from transactions
+        if (activitiesWithGeo.has(loc.activity_id)) return;
         if (!geographicMap.has(cc)) {
           geographicMap.set(cc, { totalValue: 0, commitments: 0, disbursements: 0, activityIds: new Set() });
         }

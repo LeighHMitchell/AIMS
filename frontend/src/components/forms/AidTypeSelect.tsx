@@ -244,7 +244,7 @@ export function AidTypeSelect({
             {selectedItem ? (
               <span className="flex items-start gap-2">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{selectedItem.code}</span>
-                <span className="text-sm text-foreground">{selectedItem.name}</span>
+                <span className="font-medium text-sm text-foreground">{selectedItem.name}</span>
               </span>
             ) : (
               <span className="text-muted-foreground text-sm">{placeholder}</span>

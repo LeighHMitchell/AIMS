@@ -48,10 +48,7 @@ function Calendar({
         weekday: "text-muted-foreground rounded-md w-9 h-9 font-normal text-[0.8rem] flex items-center justify-center",
         week: "flex w-full mt-2",
         day: "h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center",
-        day_button: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full"
-        ),
+        day_button: "h-9 w-9 p-0 font-normal rounded-full inline-flex items-center justify-center whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground aria-selected:!bg-black aria-selected:!text-white aria-selected:hover:!bg-black/80 aria-selected:hover:!text-white aria-selected:opacity-100",
         range_end: "day-range-end",
         selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-full",
         today: "bg-muted text-gray-900 font-semibold rounded-full",

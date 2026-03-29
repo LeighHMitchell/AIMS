@@ -206,7 +206,7 @@ export default function AdvancedLocationFields({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Advanced IATI Location Fields
+                Advanced Location Fields
               </CardTitle>
               <div className="flex items-center gap-2">
                 {localLocations.length > 0 && (

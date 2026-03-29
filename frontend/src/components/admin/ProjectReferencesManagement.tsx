@@ -576,7 +576,7 @@ export function ProjectReferencesManagement() {
                           {!isLocked && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>

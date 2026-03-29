@@ -80,6 +80,40 @@ export async function GET(request: NextRequest) {
           wg.member_count = countMap[wg.id] || 0;
         });
       }
+
+      // Enrich with meeting counts
+      const { data: meetings } = await supabase
+        .from('working_group_meetings')
+        .select('working_group_id')
+        .in('working_group_id', groupIds);
+
+      if (meetings) {
+        const meetingCountMap: Record<string, number> = {};
+        meetings.forEach((m: any) => {
+          meetingCountMap[m.working_group_id] = (meetingCountMap[m.working_group_id] || 0) + 1;
+        });
+        data.forEach((wg: any) => {
+          wg.meetings_count = meetingCountMap[wg.id] || 0;
+        });
+      }
+
+      // Count sub-groups per parent
+      const subGroupCountMap: Record<string, number> = {};
+      data.forEach((wg: any) => {
+        if (wg.parent_id) {
+          subGroupCountMap[wg.parent_id] = (subGroupCountMap[wg.parent_id] || 0) + 1;
+        }
+      });
+      data.forEach((wg: any) => {
+        wg.sub_group_count = subGroupCountMap[wg.id] || 0;
+      });
+
+      // Add parent_label for sub-groups
+      const labelMap: Record<string, string> = {};
+      data.forEach((wg: any) => { labelMap[wg.id] = wg.label; });
+      data.forEach((wg: any) => {
+        wg.parent_label = wg.parent_id ? labelMap[wg.parent_id] || null : null;
+      });
     }
 
     return NextResponse.json(data || []);
@@ -132,6 +166,7 @@ export async function POST(request: Request) {
         group_type: body.group_type || null,
         banner: body.banner || null,
         icon_url: body.icon_url || null,
+        parent_id: body.parent_id || null,
       }])
       .select()
       .single();
