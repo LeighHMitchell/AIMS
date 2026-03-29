@@ -48,3 +48,4 @@ env/
 dist/
 build/ 
 .vercel
+.claude/worktrees/
