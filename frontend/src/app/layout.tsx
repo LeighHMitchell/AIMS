@@ -10,6 +10,7 @@ import { SystemSettingsProvider } from "@/contexts/SystemSettingsContext"
 import { LoadingBarProvider } from "@/components/providers/LoadingBarProvider"
 import { TourProvider } from "@/components/tour/TourProvider"
 import { Toaster } from "sonner"
+import { MobileGate } from "@/components/MobileGate"
 
 export const metadata: Metadata = {
   title: "æther",
@@ -38,13 +39,15 @@ export default function RootLayout({
       <body className={`${GeistSans.className} ${GeistMono.variable} antialiased`}>
         <SystemSettingsProvider>
           <UserProvider>
-            <Suspense fallback={null}>
-              <LoadingBarProvider>
-                <TourProvider>
-                  {children}
-                </TourProvider>
-              </LoadingBarProvider>
-            </Suspense>
+            <MobileGate>
+              <Suspense fallback={null}>
+                <LoadingBarProvider>
+                  <TourProvider>
+                    {children}
+                  </TourProvider>
+                </LoadingBarProvider>
+              </Suspense>
+            </MobileGate>
             <Toaster 
               position="top-center" 
               richColors 

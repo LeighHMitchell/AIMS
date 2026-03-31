@@ -295,26 +295,14 @@ export default function Dashboard() {
                   </p>
                 )}
 
-                {/* Organization info with inline org logo */}
+                {/* Organization info */}
                 {user.organization && (
-                  <div className="flex items-center gap-2">
-                    {user.organization.logo ? (
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={user.organization.logo} alt={user.organization.name} className="object-cover" />
-                        <AvatarFallback className="bg-muted text-muted-foreground text-[8px] font-semibold">
-                          {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="text-base font-medium text-foreground">
+                    {user.organization.name}
+                    {user.organization.acronym && (
+                      <span> ({user.organization.acronym})</span>
                     )}
-                    <p className="text-base font-medium text-foreground">
-                      {user.organization.name}
-                      {user.organization.acronym && (
-                        <span className="text-muted-foreground"> ({user.organization.acronym})</span>
-                      )}
-                    </p>
-                  </div>
+                  </p>
                 )}
               </div>
             </div>

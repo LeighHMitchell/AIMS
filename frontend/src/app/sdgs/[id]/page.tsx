@@ -202,18 +202,24 @@ export default function SDGProfilePage() {
   const [orgSort, setOrgSort] = useState<string>('value')
 
   useEffect(() => {
+    const sdgId = params?.id
+    if (!sdgId) return
+
+    if (isNaN(Number(sdgId))) {
+      setError('Invalid SDG ID')
+      setLoading(false)
+      return
+    }
+
+    if (abortControllerRef.current) abortControllerRef.current.abort()
+    abortControllerRef.current = new AbortController()
+    setLoading(true)
+    setError(null)
+
     const fetchSDGData = async () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort()
-      abortControllerRef.current = new AbortController()
-      setLoading(true)
-      setError(null)
-
       try {
-        const sdgId = params?.id
-        if (!sdgId || isNaN(Number(sdgId))) throw new Error('Invalid SDG ID')
-
         const response = await apiFetch(`/api/sdgs/${sdgId}`, {
-          signal: abortControllerRef.current.signal
+          signal: abortControllerRef.current!.signal
         })
         if (!response.ok) {
           if (response.status === 404) throw new Error('SDG goal not found')

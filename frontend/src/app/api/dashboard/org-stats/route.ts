@@ -71,14 +71,14 @@ export async function GET(request: NextRequest) {
         .limit(1)
         .single(),
 
-      // Last activity edited
+      // Last activity edited — only activities with a non-null updated_at
       supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, updated_at, updated_by')
+        .select('id, title_narrative, iati_identifier, created_at, updated_at, updated_by')
         .eq('reporting_org_id', organizationId)
+        .not('updated_at', 'is', null)
         .order('updated_at', { ascending: false })
-        .limit(1)
-        .single(),
+        .limit(1),
 
       // Last validation event from government_endorsements
       supabase
@@ -123,7 +123,10 @@ export async function GET(request: NextRequest) {
     // Collect user IDs that need profile lookups
     const userIdsToLookup: string[] = [];
     if (lastCreatedResult.data?.created_by) userIdsToLookup.push(lastCreatedResult.data.created_by);
-    if (lastEditedResult.data?.updated_by) userIdsToLookup.push(lastEditedResult.data.updated_by);
+    // lastEditedResult is an array — collect updated_by user IDs
+    if (Array.isArray(lastEditedResult.data)) {
+      lastEditedResult.data.forEach((a: any) => { if (a.updated_by) userIdsToLookup.push(a.updated_by); });
+    }
     if (lastValidationResult.data?.updated_by) userIdsToLookup.push(lastValidationResult.data.updated_by);
 
     // Fetch all user profiles in one query
@@ -164,20 +167,24 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Process last edited activity
+    // Process last edited activity — simply use the most recently updated activity
     let lastActivityEdited: EditedRecencyItem | null = null;
-    if (lastEditedResult.data && !lastEditedResult.error) {
-      const editedByYou = userId ? lastEditedResult.data.updated_by === userId : false;
-      const editorProfile = buildProfile(lastEditedResult.data.updated_by);
-      lastActivityEdited = {
-        id: lastEditedResult.data.id,
-        title: lastEditedResult.data.title_narrative || 'Untitled Activity',
-        timestamp: lastEditedResult.data.updated_at,
-        iatiIdentifier: lastEditedResult.data.iati_identifier || undefined,
-        editedByYou,
-        editedByName: editorProfile?.name || 'Colleague',
-        editorProfile: editedByYou ? undefined : editorProfile,
-      };
+    const editedData = lastEditedResult.data;
+    if (editedData && Array.isArray(editedData) && editedData.length > 0) {
+      const lastEdited = editedData[0]; // already sorted by updated_at DESC
+      if (lastEdited) {
+        const editedByYou = userId ? lastEdited.updated_by === userId : false;
+        const editorProfile = buildProfile(lastEdited.updated_by);
+        lastActivityEdited = {
+          id: lastEdited.id,
+          title: lastEdited.title_narrative || 'Untitled Activity',
+          timestamp: lastEdited.updated_at,
+          iatiIdentifier: lastEdited.iati_identifier || undefined,
+          editedByYou,
+          editedByName: editorProfile?.name || 'Colleague',
+          editorProfile: editedByYou ? undefined : editorProfile,
+        };
+      }
     }
 
     // Process last validation event

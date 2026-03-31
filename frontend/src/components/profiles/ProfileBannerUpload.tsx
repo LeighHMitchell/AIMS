@@ -25,6 +25,7 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
   const [isSaving, setIsSaving] = useState(false)
   const onBannerChangeRef = React.useRef(onBannerChange)
   onBannerChangeRef.current = onBannerChange
+  const saveVersionRef = React.useRef(0)
 
   useEffect(() => {
     let cancelled = false
@@ -46,6 +47,7 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
   }, [profileType, profileId])
 
   const saveBanner = useCallback(async (banner: string | null, position: number) => {
+    const version = ++saveVersionRef.current
     setIsSaving(true)
     try {
       const res = await apiFetch(`/api/profile-banners/${profileType}/${profileId}`, {
@@ -55,15 +57,22 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
       })
       if (!res.ok) throw new Error('Failed to save banner')
       const data = await res.json()
-      setBannerData(data)
-      onBannerChange?.(data.banner, data.banner_position)
-      toast.success('Banner saved')
+      // Only apply response if this is still the latest save
+      if (version === saveVersionRef.current) {
+        setBannerData(data)
+        onBannerChangeRef.current?.(data.banner, data.banner_position)
+        toast.success('Banner saved')
+      }
     } catch {
-      toast.error('Failed to save banner')
+      if (version === saveVersionRef.current) {
+        toast.error('Failed to save banner')
+      }
     } finally {
-      setIsSaving(false)
+      if (version === saveVersionRef.current) {
+        setIsSaving(false)
+      }
     }
-  }, [profileType, profileId, onBannerChange])
+  }, [profileType, profileId])
 
   return (
     <>
@@ -87,11 +96,13 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange }: 
             onChange={(value) => {
               const newBanner = value || null
               setBannerData(prev => ({ ...prev, banner: newBanner }))
+              onBannerChangeRef.current?.(newBanner, bannerData.banner_position)
               saveBanner(newBanner, bannerData.banner_position)
             }}
             position={bannerData.banner_position}
             onPositionChange={(pos) => {
               setBannerData(prev => ({ ...prev, banner_position: pos }))
+              onBannerChangeRef.current?.(bannerData.banner, pos)
               saveBanner(bannerData.banner, pos)
             }}
             variant="banner"

@@ -89,7 +89,7 @@ export function EnhancedImageUpload({
         const compressionOptions = {
           maxSizeMB: variant === 'banner' ? 0.3 : 0.15, // 300KB for banners, 150KB for logos
           maxWidthOrHeight: variant === 'banner' ? 1920 : 512,
-          useWebWorker: true,
+          useWebWorker: false, // Disabled: web worker loads from cdn.jsdelivr.net which is blocked by CSP
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);

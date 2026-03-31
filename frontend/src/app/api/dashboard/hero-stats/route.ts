@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
       // Organization total planned disbursements
       activityIds.length > 0
         ? supabase
-            .from('activity_planned_disbursements')
+            .from('planned_disbursements')
             .select('*', { count: 'exact', head: true })
             .in('activity_id', activityIds)
         : Promise.resolve({ count: 0, error: null }),
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
       // User's planned disbursements
       userId && activityIds.length > 0
         ? supabase
-            .from('activity_planned_disbursements')
+            .from('planned_disbursements')
             .select('*', { count: 'exact', head: true })
             .in('activity_id', activityIds)
             .eq('created_by', userId)

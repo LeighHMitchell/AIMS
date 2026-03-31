@@ -181,27 +181,8 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
   }
 
   return (
-    <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-      {/* Card 1: Budgets & Planned Disbursements (2-col span) */}
-      <StaggerItem className="lg:col-span-2">
-        <DualMetricCard
-          title="Budgets & Planned Disbursements"
-          icon={Wallet}
-          helpText="Total budget records and planned disbursement records across all your organisation's activities. Budgets define planned spending; planned disbursements define expected fund transfers."
-          leftMetric={{
-            value: stats?.orgBudgetCount ?? 0,
-            label: 'Budgets',
-            tooltip: 'Total budget records across all your organisation\'s activities',
-          }}
-          rightMetric={{
-            value: stats?.orgPlannedDisbursementCount ?? 0,
-            label: 'Planned Disbursements',
-            tooltip: 'Total planned disbursement records across all your organisation\'s activities',
-          }}
-        />
-      </StaggerItem>
-
-      {/* Card 2: Financial Transactions */}
+    <StaggerContainer className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+      {/* Card 1: Financial Transactions */}
       <StaggerItem>
         <DualMetricCard
           title="Financial Transactions"
@@ -209,15 +190,51 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
           helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
           leftMetric={{
             value: stats?.orgTransactionCount ?? 0,
-            label: 'Organisation',
-            onClick: () => navigateToActivities('tab=transactions'),
+            label: 'Your Organisation',
             tooltip: 'All transactions involving your organisation (as reporter, provider, or receiver)',
           }}
           rightMetric={{
             value: stats?.userTransactionCount ?? 0,
-            label: 'Reported by you',
-            onClick: () => navigateToActivities('tab=transactions&createdBy=me'),
+            label: 'By you',
             tooltip: 'Transactions you have personally created or submitted',
+          }}
+        />
+      </StaggerItem>
+
+      {/* Card 2: Budgets */}
+      <StaggerItem>
+        <DualMetricCard
+          title="Budgets"
+          icon={Wallet}
+          helpText="Budget records across all your organisation's activities. Budgets define planned spending over a given period."
+          leftMetric={{
+            value: stats?.orgBudgetCount ?? 0,
+            label: 'Your Organisation',
+            tooltip: 'Total budget records across all your organisation\'s activities',
+          }}
+          rightMetric={{
+            value: stats?.userBudgetCount ?? 0,
+            label: 'By you',
+            tooltip: 'Budget records you have personally created',
+          }}
+        />
+      </StaggerItem>
+
+      {/* Card 3: Planned Disbursements */}
+      <StaggerItem>
+        <DualMetricCard
+          title="Planned Disbursements"
+          icon={Wallet}
+          helpText="Planned disbursement records across all your organisation's activities. These define expected fund transfers."
+          leftMetric={{
+            value: stats?.orgPlannedDisbursementCount ?? 0,
+            label: 'Your Organisation',
+            tooltip: 'Total planned disbursement records across all your organisation\'s activities',
+          }}
+          rightMetric={{
+            value: stats?.userPlannedDisbursementCount ?? 0,
+            label: 'By you',
+            tooltip: 'Planned disbursement records you have personally created',
           }}
         />
       </StaggerItem>
@@ -231,16 +248,13 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
           leftMetric={{
             value: stats?.pendingValidationCount ?? 0,
             label: 'Pending validation',
-            onClick: () => navigateToActivities('submissionStatuses=submitted'),
             tooltip: 'Activities submitted and awaiting government review',
           }}
           rightMetric={{
             value: stats?.validatedCount ?? 0,
             label: 'Validated',
-            onClick: () => navigateToActivities('submissionStatuses=validated'),
             tooltip: 'Activities reviewed and approved by the government',
           }}
-          onTitleClick={() => navigateToActivities('submissionStatuses=submitted,validated')}
         />
       </StaggerItem>
 
@@ -253,16 +267,13 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
           leftMetric={{
             value: stats?.publishedCount ?? 0,
             label: 'Published',
-            onClick: () => navigateToActivities('publicationStatus=published'),
             tooltip: 'Activities that have been published and are publicly visible',
           }}
           rightMetric={{
             value: stats?.draftCount ?? 0,
             label: 'Draft',
-            onClick: () => navigateToActivities('publicationStatus=draft'),
             tooltip: 'Activities still in draft form, not yet published',
           }}
-          onTitleClick={() => navigateToActivities()}
         />
       </StaggerItem>
     </StaggerContainer>

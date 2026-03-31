@@ -1,7 +1,34 @@
 {
-  "currentVersion": "3.21.0",
-  "narrativeSummary": "Version 3.21 brings a major overhaul to SDG, Sector, and Location profile pages with consistent UI, banner image uploads, unified chart palette, and streamlined single-page layouts.",
+  "currentVersion": "3.22.0",
+  "narrativeSummary": "Version 3.22 adds a mobile gate for small screens, redesigned dashboard hero cards with separated financial metrics, enhanced chart visualisations with CSV export and multiple view modes, and numerous bug fixes across the platform.",
   "releases": [
+    {
+      "version": "3.22.0",
+      "date": "2026-03-31",
+      "narrativeSummary": "Mobile-first access gate, redesigned dashboard cards, enhanced chart visualisations with CSV export, and stability fixes across the dashboard and profile pages.",
+      "changes": [
+        "<b>Mobile Screen Gate</b>",
+        "&nbsp;&nbsp;Users on small screens (below 1024px) now see a friendly message asking them to switch to a computer",
+        "&nbsp;&nbsp;The application content is only rendered on larger screens for the best experience",
+        "<b>Dashboard Hero Cards &mdash; Redesigned</b>",
+        "&nbsp;&nbsp;Financial metrics split into three separate cards: Transactions, Budgets, and Planned Disbursements",
+        "&nbsp;&nbsp;Each card shows both organisation-wide and personal (&ldquo;By you&rdquo;) counts",
+        "&nbsp;&nbsp;Clickable navigation removed from hero cards for a cleaner, information-first layout",
+        "<b>Chart Visualisations &mdash; Enhanced</b>",
+        "&nbsp;&nbsp;All dashboard charts now have a CSV export button for downloading data",
+        "&nbsp;&nbsp;Sector distribution chart now supports three view modes: horizontal bar, vertical bar, and table",
+        "&nbsp;&nbsp;Transaction bars changed from stacked to grouped for clearer comparison",
+        "&nbsp;&nbsp;Chart titles simplified &mdash; removed redundant &ldquo;(USD)&rdquo; suffix since currency is shown in values",
+        "&nbsp;&nbsp;Tooltip headers now use the standard surface-muted background for consistency",
+        "<b>Bug Fixes</b>",
+        "&nbsp;&nbsp;Fixed planned disbursements query using incorrect table name (<code>activity_planned_disbursements</code> &rarr; <code>planned_disbursements</code>)",
+        "&nbsp;&nbsp;Fixed &ldquo;last edited activity&rdquo; dashboard card crashing when no activities have been edited (null <code>updated_at</code> handling)",
+        "&nbsp;&nbsp;Fixed profile banner save race condition with versioned save tracking",
+        "&nbsp;&nbsp;Fixed SDG profile page validation logic to prevent unnecessary API calls",
+        "&nbsp;&nbsp;Fixed image compression web worker blocked by Content Security Policy &mdash; now uses main thread with jsdelivr.net added to CSP",
+        "&nbsp;&nbsp;Simplified organisation display on the dashboard welcome card"
+      ]
+    },
     {
       "version": "3.21.0",
       "date": "2026-03-29",

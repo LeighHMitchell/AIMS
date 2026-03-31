@@ -20,6 +20,7 @@ import {
 import {
   BarChart,
   Bar,
+  Cell,
   LineChart,
   Line,
   ResponsiveContainer,
@@ -46,6 +47,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { apiFetch } from '@/lib/api-fetch';
+import { exportChartToCSV } from '@/lib/chart-export';
+import { Download } from 'lucide-react';
 
 interface BudgetTrendPoint {
   year: number;
@@ -201,7 +204,7 @@ function ChartHelpIcon({ text }: { text: string }) {
 
 type ViewMode = 'bar' | 'line' | 'table';
 
-function ChartViewToggle({ mode, setMode }: { mode: ViewMode; setMode: (m: ViewMode) => void }) {
+function ChartViewToggle({ mode, setMode, onExport }: { mode: ViewMode; setMode: (m: ViewMode) => void; onExport?: () => void }) {
   const active = "bg-slate-200 text-slate-900 font-semibold";
   const inactive = "text-gray-600 hover:bg-gray-100";
   return (
@@ -215,6 +218,11 @@ function ChartViewToggle({ mode, setMode }: { mode: ViewMode; setMode: (m: ViewM
       <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${mode === 'table' ? active : inactive}`} title="Table" onClick={() => setMode('table')}>
         <TableIcon className="h-3.5 w-3.5" />
       </Button>
+      {onExport && (
+        <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${inactive}`} title="Export CSV" onClick={onExport}>
+          <Download className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -227,6 +235,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
   const [budgetViewMode, setBudgetViewMode] = useState<'bar' | 'line' | 'table'>('bar');
   const [plannedViewMode, setPlannedViewMode] = useState<'bar' | 'line' | 'table'>('bar');
   const [transactionsViewMode, setTransactionsViewMode] = useState<'bar' | 'line' | 'table'>('line');
+  const [sectorViewMode, setSectorViewMode] = useState<'bar' | 'horizontal' | 'table'>('horizontal');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -302,12 +311,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-slate-500" />
-              Total Budgets (USD)
+              Total Budgets
               <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
             </CardTitle>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-slate-900">{formatCurrency(totalBudget)}</p>
-              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} />
+              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Total Budgets')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -345,7 +354,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead>
-                                      <tr className="bg-slate-50">
+                                      <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
                                       </tr>
@@ -376,7 +385,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead>
-                                      <tr className="bg-slate-50">
+                                      <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
                                       </tr>
@@ -421,12 +430,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <CalendarClock className="h-4 w-4 text-slate-500" />
-              Planned Disbursements (USD)
+              Planned Disbursements
               <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
             </CardTitle>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPlanned)}</p>
-              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} />
+              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} onExport={() => data?.plannedBudgetTrend && exportChartToCSV(data.plannedBudgetTrend.map(p => ({ Year: p.year, 'Amount (USD)': p.amount })), 'Planned Disbursements')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -464,7 +473,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead>
-                                      <tr className="bg-slate-50">
+                                      <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
                                       </tr>
@@ -495,7 +504,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead>
-                                      <tr className="bg-slate-50">
+                                      <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
                                       </tr>
@@ -540,12 +549,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <ArrowRightLeft className="h-4 w-4 text-slate-500" />
-              Transactions by Type (USD)
+              Transactions by Type
               <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
             </CardTitle>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-slate-900">{formatCurrency(totalTransactionValue)}</p>
-              <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} />
+              <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} onExport={() => data?.transactionTrend && exportChartToCSV(data.transactionTrend.map(p => ({ Month: p.month, Count: p.count, 'Amount (USD)': p.amount })), 'Transactions by Type')} />
             </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
@@ -567,10 +576,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                               <table className="border-collapse">
                                 <thead>
-                                  <tr className="bg-slate-50">
+                                  <tr className="bg-surface-muted">
                                     <th className="px-3 py-1.5 text-left font-semibold text-slate-700" colSpan={2}>Year {label}</th>
                                   </tr>
-                                  <tr className="bg-slate-50">
+                                  <tr className="bg-surface-muted">
                                     <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
                                     <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
                                   </tr>
@@ -650,9 +659,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               <Bar
                                 key={type}
                                 dataKey={`type_${type}`}
-                                stackId="transactions"
                                 fill={getTransactionTypeColor(type, index)}
-                                radius={index === uniqueTypes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                radius={[2, 2, 0, 0]}
                                 name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                               />
                             ))
@@ -693,7 +701,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </CardContent>
         </Card>
 
-        {/* Card 4: Sectors Distribution - Stacked Horizontal Bar */}
+        {/* Card 4: Sectors Distribution */}
         <Card className="bg-white relative group">
           <Button
             variant="ghost"
@@ -709,63 +717,96 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               Sectors
               <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Hover for financial details including budgets, planned disbursements, and actual disbursements in USD." />
             </CardTitle>
-            <p className="text-lg font-bold text-slate-900">{totalSectors} sectors</p>
+            <div className="flex items-center justify-between">
+              <p className="text-lg font-bold text-slate-900">{formatCurrency(data?.sectorBreakdown?.reduce((s, sec) => s + sec.totalPlannedDisbursements, 0) || 0)}</p>
+              <div className="flex gap-0.5 ml-auto">
+                {([
+                  { key: 'horizontal' as const, icon: BarChart3, title: 'Horizontal bar' },
+                  { key: 'bar' as const, icon: BarChart3, title: 'Vertical bar', rotate: true },
+                  { key: 'table' as const, icon: TableIcon, title: 'Table' },
+                ] as const).map(({ key, icon: Icon, title, ...rest }) => (
+                  <Button key={key} variant="ghost" size="sm" className={`h-6 w-6 p-0 ${sectorViewMode === key ? 'bg-slate-200 text-slate-900 font-semibold' : 'text-gray-600 hover:bg-gray-100'}`} title={title} onClick={() => setSectorViewMode(key)}>
+                    <Icon className={`h-3.5 w-3.5 ${'rotate' in rest ? 'rotate-90' : ''}`} />
+                  </Button>
+                ))}
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-100" title="Export CSV" onClick={() => data?.sectorBreakdown && exportChartToCSV(data.sectorBreakdown.map(s => ({ Sector: s.name, Code: s.code, Activities: s.activityCount, 'Budget (USD)': s.totalBudget, 'Planned Disb. (USD)': s.totalPlannedDisbursements, 'Disbursed (USD)': s.totalDisbursements })), 'Sectors')}>
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
             <div className="h-32 overflow-y-auto">
               {data?.sectorBreakdown && data.sectorBreakdown.length > 0 ? (
                 (() => {
-                  const totalPlanned = data.sectorBreakdown.reduce((sum, s) => sum + s.totalPlannedDisbursements, 0);
+                  const sectors = data.sectorBreakdown;
+                  const totalPlanned = sectors.reduce((sum, s) => sum + s.totalPlannedDisbursements, 0);
+
+                  if (sectorViewMode === 'table') {
+                    return (
+                      <table className="w-full text-[10px]">
+                        <thead><tr className="border-b text-muted-foreground"><th className="text-left py-1 pr-2">Sector</th><th className="text-right py-1 px-1">Activities</th><th className="text-right py-1 pl-1">Planned (USD)</th></tr></thead>
+                        <tbody>
+                          {sectors.map(s => (
+                            <tr key={s.code} className="border-b border-border/50"><td className="py-1 pr-2 truncate max-w-[120px]">{s.name}</td><td className="text-right py-1 px-1">{s.activityCount}</td><td className="text-right py-1 pl-1">{formatCurrency(s.totalPlannedDisbursements)}</td></tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    );
+                  }
+
+                  if (sectorViewMode === 'bar') {
+                    return (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={sectors} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                          <XAxis dataKey="code" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v) => formatCurrency(v)} />
+                          <Tooltip content={({ active, payload }) => active && payload?.length ? (
+                            <div className="bg-white border border-border rounded-lg shadow-lg p-0 overflow-hidden text-xs">
+                              <div className="px-3 py-1.5 bg-surface-muted font-semibold border-b border-slate-200">{payload[0]?.payload?.name}</div>
+                              <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Planned (USD)</span><span className="font-medium">{formatCurrency(payload[0]?.value as number)}</span></div>
+                              <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-slate-500">Activities</span><span className="font-medium">{payload[0]?.payload?.activityCount}</span></div>
+                            </div>
+                          ) : null} />
+                          <Bar dataKey="totalPlannedDisbursements" radius={[2, 2, 0, 0]}>
+                            {sectors.map((_, i) => (
+                              <Cell key={i} fill={SECTOR_COLORS[i % SECTOR_COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    );
+                  }
+
+                  // horizontal bar (default)
                   return (
                     <TooltipProvider>
-                      <div className="space-y-2">
-                        {/* Single stacked bar */}
-                        <div className="h-5 flex rounded-full overflow-hidden bg-slate-100">
-                          {data.sectorBreakdown.map((sector, index) => {
+                      <div className="flex flex-col h-full gap-2">
+                        <div className="h-8 flex rounded-lg overflow-hidden bg-slate-100">
+                          {sectors.map((sector, index) => {
                             const pct = totalPlanned > 0 ? (sector.totalPlannedDisbursements / totalPlanned) * 100 : 0;
                             if (pct === 0) return null;
                             return (
                               <UITooltip key={sector.code}>
                                 <TooltipTrigger asChild>
-                                  <div
-                                    className="h-full cursor-default"
-                                    style={{
-                                      width: `${pct}%`,
-                                      backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length],
-                                    }}
-                                  />
+                                  <div className="h-full cursor-default" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="p-0 overflow-hidden">
                                   <div className="bg-white text-xs">
-                                    <div className="px-3 py-1.5 bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
-                                      {sector.name} ({sector.code})
-                                    </div>
-                                    <div className="px-3 py-1 flex justify-between gap-4">
-                                      <span className="text-slate-500">Planned Disb. (USD)</span>
-                                      <span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span>
-                                    </div>
-                                    <div className="px-3 py-1 flex justify-between gap-4">
-                                      <span className="text-slate-500">Share</span>
-                                      <span className="font-medium">{pct.toFixed(1)}%</span>
-                                    </div>
-                                    <div className="px-3 py-1 pb-1.5 flex justify-between gap-4">
-                                      <span className="text-slate-500">Activities</span>
-                                      <span className="font-medium">{sector.activityCount}</span>
-                                    </div>
+                                    <div className="px-3 py-1.5 bg-surface-muted font-semibold text-slate-700 border-b border-slate-200">{sector.name} ({sector.code})</div>
+                                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Planned Disb.</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
+                                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
+                                    <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-slate-500">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
                                   </div>
                                 </TooltipContent>
                               </UITooltip>
                             );
                           })}
                         </div>
-                        {/* Legend */}
-                        <div className="space-y-0.5">
-                          {data.sectorBreakdown.map((sector, index) => (
+                        <div className="flex-1 overflow-y-auto space-y-0.5">
+                          {sectors.map((sector, index) => (
                             <div key={sector.code} className="flex items-center gap-1.5 text-[10px]">
-                              <div
-                                className="w-2 h-2 rounded-sm shrink-0"
-                                style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }}
-                              />
+                              <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                               <span className="text-slate-600 truncate flex-1">{sector.name}</span>
                               <span className="text-slate-500 shrink-0">{formatCurrency(sector.totalPlannedDisbursements)}</span>
                             </div>
@@ -824,7 +865,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead>
-                              <tr className="bg-slate-50">
+                              <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-semibold">Year</th>
                                 <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
                               </tr>
@@ -856,7 +897,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead>
-                              <tr className="bg-slate-50">
+                              <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-semibold">Year</th>
                                 <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
                               </tr>
@@ -919,7 +960,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead>
-                              <tr className="bg-slate-50">
+                              <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-semibold">Year</th>
                                 <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
                               </tr>
@@ -951,7 +992,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead>
-                              <tr className="bg-slate-50">
+                              <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-semibold">Year</th>
                                 <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
                               </tr>
@@ -997,10 +1038,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                       <table className="border-collapse w-full">
                         <thead>
-                          <tr className="bg-slate-50">
+                          <tr className="bg-surface-muted">
                             <th className="px-3 py-1.5 text-left font-semibold" colSpan={2}>Year {label}</th>
                           </tr>
-                          <tr className="bg-slate-50 border-b border-slate-200">
+                          <tr className="bg-surface-muted border-b border-slate-200">
                             <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
                             <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
                           </tr>
@@ -1081,9 +1122,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       <Bar
                         key={type}
                         dataKey={`type_${type}`}
-                        stackId="transactions"
                         fill={getTransactionTypeColor(type, index)}
-                        radius={index === uniqueTypes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                        radius={[2, 2, 0, 0]}
                         name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                       />
                     ))
@@ -1155,7 +1195,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           </TooltipTrigger>
                           <TooltipContent side="top" className="p-0 overflow-hidden">
                             <div className="bg-white text-sm">
-                              <div className="px-3 py-2 bg-slate-50 font-semibold text-slate-700 border-b border-slate-200">
+                              <div className="px-3 py-2 bg-surface-muted font-semibold text-slate-700 border-b border-slate-200">
                                 {sector.name} ({sector.code})
                               </div>
                               <div className="px-3 py-1.5 flex justify-between gap-6">
