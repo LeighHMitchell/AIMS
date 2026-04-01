@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
         updated_at,
         reporting_org_id,
         iati_identifier,
-        activity_budgets(usd_value)
+        activity_budgets(usd_value),
+        activity_sectors(id)
       `)
       .limit(50) // Reduced limit to prevent cache issues
 
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
     // Filter pipeline activities past expected start
     const today = new Date()
     const pipelinePastStart = activities?.filter((activity: any) =>
-      activity.activity_status === 'pipeline' &&
+      activity.activity_status === '1' && // '1' = Pipeline/Identification
       activity.planned_start_date &&
       new Date(activity.planned_start_date) < today
     ).map((activity: any) => ({
@@ -122,44 +123,45 @@ export async function GET(request: NextRequest) {
       lastUpdated: activity.updated_at
     })) || []
 
-    // Find activities with missing data
+    // Find activities with missing data - return {id, title, field} for linking
+    interface MissingDataItem { id: string; title: string }
     const missingData = {
-      sector: [] as string[],
-      dates: [] as string[],
-      budget: [] as string[],
-      reportingOrg: [] as string[],
-      iatiId: [] as string[]
+      sector: [] as MissingDataItem[],
+      dates: [] as MissingDataItem[],
+      budget: [] as MissingDataItem[],
+      reportingOrg: [] as MissingDataItem[],
+      iatiId: [] as MissingDataItem[]
     }
 
     if (activities && Array.isArray(activities)) {
       activities.forEach((activity: any) => {
         if (!activity) return
 
-        const title = activity.title_narrative || 'Untitled Activity'
+        const item = { id: activity.id, title: activity.title_narrative || 'Untitled Activity' }
 
-        // Check for missing sectors (simplified check since we removed the join)
-        if (!activity.sector_code) {
-          missingData.sector.push(title)
+        // Check for missing sectors
+        if (!activity.activity_sectors || activity.activity_sectors.length === 0) {
+          missingData.sector.push(item)
         }
 
         // Check for missing dates
         if (!activity.planned_start_date || !activity.planned_end_date) {
-          missingData.dates.push(title)
+          missingData.dates.push(item)
         }
 
         // Check for missing budget
         if (!activity.activity_budgets || activity.activity_budgets.length === 0) {
-          missingData.budget.push(title)
+          missingData.budget.push(item)
         }
 
         // Check for missing reporting org
         if (!activity.reporting_org_id) {
-          missingData.reportingOrg.push(title)
+          missingData.reportingOrg.push(item)
         }
 
         // Check for missing IATI ID
         if (!activity.iati_identifier) {
-          missingData.iatiId.push(title)
+          missingData.iatiId.push(item)
         }
       })
     }

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useCallback } from 'react';
-import { Paperclip, Upload, X, FileText, Image, Table, File } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { Paperclip, Upload, X, FileText, Image, Table, File, Pencil, Check } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { WizardFormData } from '../useTaskWizard';
@@ -30,6 +31,9 @@ export function TaskAttachmentsStep({
   updateFormData,
 }: TaskAttachmentsStepProps) {
   const attachments = formData.attachments || [];
+  const attachmentNames = formData.attachmentNames || {};
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -84,8 +88,37 @@ export function TaskAttachmentsStep({
   const removeFile = useCallback((index: number) => {
     const newAttachments = [...attachments];
     newAttachments.splice(index, 1);
-    updateFormData({ attachments: newAttachments });
-  }, [attachments, updateFormData]);
+    // Shift attachment names for indices above the removed one
+    const newNames: Record<number, string> = {};
+    Object.entries(attachmentNames).forEach(([key, value]) => {
+      const k = parseInt(key);
+      if (k < index) newNames[k] = value;
+      else if (k > index) newNames[k - 1] = value;
+    });
+    updateFormData({ attachments: newAttachments, attachmentNames: newNames });
+  }, [attachments, attachmentNames, updateFormData]);
+
+  const startRename = (index: number) => {
+    const currentName = attachmentNames[index] || attachments[index].name;
+    // Remove file extension for editing
+    const lastDot = currentName.lastIndexOf('.');
+    setEditName(lastDot > 0 ? currentName.substring(0, lastDot) : currentName);
+    setEditingIndex(index);
+  };
+
+  const confirmRename = (index: number) => {
+    if (editName.trim()) {
+      const originalName = attachments[index].name;
+      const lastDot = originalName.lastIndexOf('.');
+      const ext = lastDot > 0 ? originalName.substring(lastDot) : '';
+      const newName = editName.trim() + ext;
+      updateFormData({
+        attachmentNames: { ...attachmentNames, [index]: newName },
+      });
+    }
+    setEditingIndex(null);
+    setEditName('');
+  };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -165,6 +198,8 @@ export function TaskAttachmentsStep({
           <div className="space-y-2">
             {attachments.map((file, index) => {
               const IconComponent = getIcon(file);
+              const displayName = attachmentNames[index] || file.name;
+              const isEditing = editingIndex === index;
               return (
                 <div
                   key={`${file.name}-${index}`}
@@ -174,7 +209,45 @@ export function TaskAttachmentsStep({
                     <IconComponent className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{file.name}</div>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') confirmRename(index);
+                            if (e.key === 'Escape') { setEditingIndex(null); setEditName(''); }
+                          }}
+                          className="h-7 text-sm"
+                          autoFocus
+                        />
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {file.name.substring(file.name.lastIndexOf('.'))}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => confirmRename(index)}
+                          className="h-7 w-7 text-green-600 hover:text-green-700"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm truncate">{displayName}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startRename(index)}
+                          className="h-6 w-6 text-muted-foreground hover:text-foreground flex-shrink-0"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground">
                       {formatFileSize(file.size)}
                     </div>

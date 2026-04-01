@@ -197,19 +197,31 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'userId and notificationId are required' }, { status: 400 });
     }
 
-    if (action === 'archive') {
-      const { error } = await supabase
+    if (action === 'archive' || action === 'unarchive') {
+      const archivedValue = action === 'archive' ? new Date().toISOString() : null;
+      console.log(`[User Notifications] ${action} notification:`, { notificationId, userId });
+
+      const { data, error } = await supabase
         .from('user_notifications')
-        .update({ archived_at: new Date().toISOString() })
+        .update({ archived_at: archivedValue })
         .eq('id', notificationId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select();
 
       if (error) {
-        console.error('[User Notifications] Error archiving:', error);
+        console.error(`[User Notifications] Error ${action}:`, error.message, error.code, error.details);
+        // If the column doesn't exist, provide a helpful message
+        if (error.message?.includes('archived_at') || error.code === '42703') {
+          return NextResponse.json(
+            { error: 'The archived_at column does not exist. Please run migration 20260219000000_add_archived_at_to_user_notifications.sql' },
+            { status: 500 }
+          );
+        }
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, message: 'Notification archived' });
+      console.log(`[User Notifications] ${action} result, rows updated:`, data?.length || 0);
+      return NextResponse.json({ success: true, message: `Notification ${action}d` });
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

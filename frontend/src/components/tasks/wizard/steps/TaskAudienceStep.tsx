@@ -167,7 +167,9 @@ export function TaskAudienceStep({
       <div className="p-4 rounded-lg border bg-muted/30">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium">Selected Recipients</span>
-          <Badge variant="secondary">{totalSelected} selected</Badge>
+          {totalSelected > 0 && (
+            <Badge variant="secondary">{totalSelected} selected</Badge>
+          )}
         </div>
 
         {totalSelected === 0 ? (
@@ -226,7 +228,7 @@ export function TaskAudienceStep({
       </div>
 
       {/* Tabs for Users, Organizations, Roles */}
-      <Tabs defaultValue="users" className="w-full">
+      <Tabs defaultValue="users" className="w-full" onValueChange={() => setSearchQuery('')}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="users" className="gap-2">
             <User className="h-4 w-4" />
@@ -380,10 +382,10 @@ export function TaskAudienceStep({
                               <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm">{org.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {org.acronym && `${org.acronym} · `}
-                                {memberCount} member{memberCount !== 1 ? 's' : ''}
+                              <div className="font-medium text-sm flex flex-wrap items-baseline gap-x-1.5">
+                                <span>{org.name}</span>
+                                {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
+                                <span className="text-xs text-muted-foreground">· {memberCount} member{memberCount !== 1 ? 's' : ''}</span>
                               </div>
                             </div>
                           </label>
@@ -417,10 +419,10 @@ export function TaskAudienceStep({
                                 <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm">{org.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {org.acronym && `${org.acronym} · `}
-                                  0 members
+                                <div className="font-medium text-sm flex flex-wrap items-baseline gap-x-1.5">
+                                  <span>{org.name}</span>
+                                  {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
+                                  <span className="text-xs text-muted-foreground">· 0 members</span>
                                 </div>
                               </div>
                             </div>

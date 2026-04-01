@@ -22,7 +22,6 @@ import {
   Building2,
   LayoutDashboard,
   Bookmark,
-  ListTodo,
   MapPin,
   ArrowRightLeft,
   ClipboardCheck,
@@ -39,8 +38,7 @@ import { HeroVisualizationCards } from "@/components/dashboard/HeroVisualization
 import { DashboardHeroCards } from "@/components/dashboard/DashboardHeroCards"
 import { RecencyCards } from "@/components/dashboard/RecencyCards"
 import { ActionsRequiredPanel } from "@/components/dashboard/ActionsRequiredPanel"
-import { OrgActivitiesTable } from "@/components/dashboard/OrgActivitiesTable"
-import { OrgTransactionsTable } from "@/components/dashboard/OrgTransactionsTable"
+import { OrgFinancialTabs } from "@/components/dashboard/OrgFinancialTabs"
 import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
 import { BookmarkedActivitiesTable } from "@/components/dashboard/BookmarkedActivitiesTable"
@@ -347,13 +345,6 @@ export default function Dashboard() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger
-                  value="activities"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <ListTodo className="h-4 w-4" />
-                  Activities
-                </TabsTrigger>
-                <TabsTrigger
                   value="locations"
                   className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
@@ -372,7 +363,7 @@ export default function Dashboard() {
                   className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <ClipboardCheck className="h-4 w-4" />
-                  Validation Rules Check
+                  Data Quality
                 </TabsTrigger>
                 <TabsTrigger
                   value="bookmarks"
@@ -415,9 +406,9 @@ export default function Dashboard() {
                 />
                 </div>
 
-                {/* Row 5: Transactions Table */}
-                <div data-tour="org-transactions">
-                  <OrgTransactionsTable organizationId={user.organizationId} />
+                {/* Row 5: Organisation Financial Data Tabs */}
+                <div data-tour="org-financial-data">
+                  <OrgFinancialTabs organizationId={user.organizationId} userId={user.id} />
                 </div>
               </TabsContent>
 
@@ -426,26 +417,6 @@ export default function Dashboard() {
                 <MyPortfolioTab userId={user.id} organizationId={user.organizationId} />
               </TabsContent>
 
-              {/* Activities Tab Content */}
-              <TabsContent value="activities" className="space-y-6">
-                {/* Main Activities Table */}
-                <OrgActivitiesTable
-                  organizationId={user.organizationId}
-                  variant="main"
-                />
-
-                {/* Recently Edited and Closing Soon */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <OrgActivitiesTable
-                    organizationId={user.organizationId}
-                    variant="recently_edited"
-                  />
-                  <OrgActivitiesTable
-                    organizationId={user.organizationId}
-                    variant="closing_soon"
-                  />
-                </div>
-              </TabsContent>
 
               {/* Locations Tab Content */}
               <TabsContent value="locations" className="space-y-6">

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/users/taskable - Get users that can be assigned tasks
 export async function GET(request: NextRequest) {
-  const { supabase, response } = await requireAuth();
+  const { response } = await requireAuth();
   if (response) return response;
-  
-  try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
 
+  const supabase = getSupabaseAdmin();
+
+  try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
     const search = searchParams.get('search') || '';

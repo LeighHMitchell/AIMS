@@ -48,6 +48,48 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status);
     }
 
+    // Apply organization filter - budgets don't have org directly, filter via activity's reporting_org_id
+    if (organizations.length > 0) {
+      const { data: orgActivities } = await supabase
+        .from('activities')
+        .select('id')
+        .in('reporting_org_id', organizations);
+      const activityIds = (orgActivities || []).map((a: any) => a.id);
+      if (activityIds.length > 0) {
+        query = query.in('activity_id', activityIds);
+      } else {
+        // No activities for this org — return empty
+        return NextResponse.json({ budgets: [], total: 0, page, limit }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'CDN-Cache-Control': 'no-store',
+            'Vercel-CDN-Cache-Control': 'no-store'
+          }
+        });
+      }
+    } else if (organization !== 'all') {
+      const { data: orgActivities } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('reporting_org_id', organization);
+      const activityIds = (orgActivities || []).map((a: any) => a.id);
+      if (activityIds.length > 0) {
+        query = query.in('activity_id', activityIds);
+      } else {
+        return NextResponse.json({ budgets: [], total: 0, page, limit }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'CDN-Cache-Control': 'no-store',
+            'Vercel-CDN-Cache-Control': 'no-store'
+          }
+        });
+      }
+    }
+
     // Apply sorting
     query = query.order(sortField, { ascending: sortOrder === 'asc' });
 
@@ -82,7 +124,7 @@ export async function GET(request: NextRequest) {
     if (allActivityIds.size > 0) {
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym')
+        .select('id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym, submission_status, created_by, updated_by')
         .in('id', Array.from(allActivityIds));
 
       if (activitiesError) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,21 @@ import {
   Bookmark,
   BookmarkX,
   ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  LayoutGrid,
+  TableIcon,
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
+import ActivityCardModern from '@/components/activities/ActivityCardModern';
+
+type ViewMode = 'card' | 'table';
+type SortField = 'title' | 'reporting_org' | 'updated_at';
+type SortDirection = 'asc' | 'desc';
 
 interface BookmarkedActivity {
   id: string;
@@ -43,6 +54,9 @@ interface BookmarkedActivity {
   reporting_org_logo?: string;
   reporting_org_name?: string;
   reporting_org_acronym?: string;
+  // Banner/icon
+  banner?: string;
+  icon?: string;
   // Budget with currency
   totalBudgetOriginal?: number;
   totalBudgetCurrency?: string;
@@ -59,12 +73,42 @@ const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> =
   '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
 };
 
-// Format currency without $ sign
-function formatCurrencyAmount(value: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
+
+function SortableHeader({
+  label,
+  field,
+  currentField,
+  currentDirection,
+  onSort,
+  className,
+}: {
+  label: string;
+  field: SortField;
+  currentField: SortField;
+  currentDirection: SortDirection;
+  onSort: (field: SortField) => void;
+  className?: string;
+}) {
+  const isActive = currentField === field;
+  return (
+    <TableHead className={className}>
+      <button
+        className="flex items-center gap-1 hover:text-foreground transition-colors -ml-1 px-1"
+        onClick={() => onSort(field)}
+      >
+        {label}
+        {isActive ? (
+          currentDirection === 'asc' ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+        )}
+      </button>
+    </TableHead>
+  );
 }
 
 export function BookmarkedActivitiesTable() {
@@ -75,6 +119,40 @@ export function BookmarkedActivitiesTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [sortField, setSortField] = useState<SortField>('updated_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedActivities = useMemo(() => {
+    const sorted = [...activities];
+    sorted.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'title':
+          cmp = (a.title_narrative || '').localeCompare(b.title_narrative || '');
+          break;
+        case 'reporting_org':
+          cmp = (a.reporting_org_name || a.created_by_org_name || '').localeCompare(
+            b.reporting_org_name || b.created_by_org_name || ''
+          );
+          break;
+        case 'updated_at':
+          cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [activities, sortField, sortDirection]);
 
   const fetchBookmarkedActivities = async () => {
     if (!user?.id) {
@@ -113,10 +191,9 @@ export function BookmarkedActivitiesTable() {
   const handleRemoveBookmark = async (e: React.MouseEvent, activityId: string) => {
     e.stopPropagation();
     setRemovingId(activityId);
-    
+
     try {
       await removeBookmark(activityId);
-      // Remove from local state for immediate feedback
       setActivities((prev) => prev.filter((a) => a.id !== activityId));
     } catch (error) {
       console.error('[BookmarkedActivitiesTable] Error removing bookmark:', error);
@@ -176,6 +253,38 @@ export function BookmarkedActivitiesTable() {
               Your saved activities for quick access
             </CardDescription>
           </div>
+          {activities.length > 0 && (
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-8 w-8 p-0',
+                  viewMode === 'card'
+                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+                onClick={() => setViewMode('card')}
+                title="Card view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-8 w-8 p-0',
+                  viewMode === 'table'
+                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+                onClick={() => setViewMode('table')}
+                title="Table view"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -187,19 +296,59 @@ export function BookmarkedActivitiesTable() {
               Bookmark activities from the activity profile or activity cards to see them here.
             </p>
           </div>
+        ) : viewMode === 'card' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedActivities.map((activity) => (
+              <ActivityCardModern
+                key={activity.id}
+                activity={{
+                  id: activity.id,
+                  title: activity.title_narrative,
+                  iati_id: activity.iati_identifier,
+                  acronym: activity.acronym,
+                  activity_status: activity.activity_status,
+                  publication_status: activity.publication_status,
+                  banner: activity.banner,
+                  icon: activity.icon,
+                  updated_at: activity.updated_at,
+                  created_by_org_name: activity.reporting_org_name || activity.created_by_org_name,
+                  created_by_org_acronym: activity.reporting_org_acronym || activity.created_by_org_acronym,
+                  totalBudget: activity.totalBudgetUSD || activity.totalBudgetOriginal || activity.totalBudget || 0,
+                }}
+              />
+            ))}
+          </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%]">Activity</TableHead>
-                <TableHead>Reported By</TableHead>
-                <TableHead className="text-right">Budget</TableHead>
-                <TableHead>Updated</TableHead>
+                <SortableHeader
+                  label="Activity"
+                  field="title"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                  className="w-[40%]"
+                />
+                <SortableHeader
+                  label="Reported By"
+                  field="reporting_org"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Updated"
+                  field="updated_at"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                />
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activities.map((activity) => (
+              {sortedActivities.map((activity) => (
                 <TableRow
                   key={activity.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -223,9 +372,9 @@ export function BookmarkedActivitiesTable() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {activity.reporting_org_logo && (
-                        <img 
-                          src={activity.reporting_org_logo} 
-                          alt="" 
+                        <img
+                          src={activity.reporting_org_logo}
+                          alt=""
                           className="h-6 w-6 rounded-full object-cover flex-shrink-0"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
@@ -239,26 +388,6 @@ export function BookmarkedActivitiesTable() {
                         )}
                       </span>
                     </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          <span className="text-xs text-gray-500 mr-1">
-                            {activity.totalBudgetCurrency || 'USD'}
-                          </span>
-                          {formatCurrencyAmount(activity.totalBudgetOriginal, activity.totalBudgetCurrency || 'USD')}
-                        </div>
-                        {activity.totalBudgetCurrency && activity.totalBudgetCurrency !== 'USD' && activity.totalBudgetUSD && activity.totalBudgetUSD > 0 && (
-                          <div className="text-xs text-slate-500">
-                            <span className="text-xs text-gray-500 mr-1">USD</span>
-                            {formatCurrencyAmount(activity.totalBudgetUSD, 'USD')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-slate-400">-</span>
-                    )}
                   </TableCell>
                   <TableCell>
                     <span className="text-xs text-slate-500" title={format(new Date(activity.updated_at), 'PPpp')}>

@@ -165,7 +165,7 @@ export function useFieldAutosave(
         field: fieldName,
         value: value,
         activityId: activityId,
-        userId: userId,
+        user: { id: userId },
         ...additionalDataRef.current
       };
 

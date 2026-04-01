@@ -264,7 +264,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
     return { weeks, maxValue }
   }, [filteredData, displayRange])
 
-  // Get month labels
+  // Get month labels — only for months that overlap with the actual display range
   const monthLabels = useMemo(() => {
     const months: Array<{ month: number; year: number; weekIndex: number; startWeek: number }> = []
     const seen = new Set<string>()
@@ -276,6 +276,13 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       const monthKey = `${firstDay.getFullYear()}-${firstDay.getMonth()}`
       if (!seen.has(monthKey)) {
         seen.add(monthKey)
+
+        // Skip months that fall entirely outside the display range
+        // (e.g. a Dec label from startOfWeek padding when range starts Jan 1)
+        const monthEnd = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0) // last day of this month
+        const monthStart = new Date(firstDay.getFullYear(), firstDay.getMonth(), 1)
+        if (monthEnd < displayRange.start || monthStart > displayRange.end) return
+
         const firstWeekOfMonth = calendarGrid.weeks.findIndex((w) => {
           const day = w[0]?.date
           return day && day.getFullYear() === firstDay.getFullYear() && day.getMonth() === firstDay.getMonth()
@@ -291,20 +298,45 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
     })
 
     return months
-  }, [calendarGrid.weeks])
+  }, [calendarGrid.weeks, displayRange])
 
   // D3 tooltip
   const tooltipRef = useRef<d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null>(null)
+  const pinnedRef = useRef<boolean>(false)
+  const pinnedCellRef = useRef<SVGRectElement | null>(null)
 
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none')
+        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50')
         .style('opacity', 0)
+        .style('pointer-events', 'none')
         .style('min-width', '280px')
         .style('max-width', '350px')
     }
+
+    // Click outside to dismiss pinned tooltip
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!pinnedRef.current) return
+      const tooltipNode = tooltipRef.current?.node()
+      const target = e.target as Node
+      if (tooltipNode && tooltipNode.contains(target)) return
+      // If clicking on an SVG cell, the click handler on the cell will handle it
+      if ((target as Element).classList?.contains('calendar-cell')) return
+      pinnedRef.current = false
+      if (tooltipRef.current) {
+        tooltipRef.current.style('opacity', 0).style('pointer-events', 'none')
+      }
+      if (pinnedCellRef.current) {
+        const cell = d3.select(pinnedCellRef.current)
+        cell.attr('stroke', 'rgba(0,0,0,0.15)').attr('stroke-width', 1)
+        pinnedCellRef.current = null
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+
     return () => {
+      document.removeEventListener('click', handleClickOutside)
       if (tooltipRef.current) {
         tooltipRef.current.remove()
         tooltipRef.current = null
@@ -312,9 +344,70 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
     }
   }, [])
 
+  // Shared tooltip renderer
+  const showTooltip = (
+    tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any>,
+    d: { data: DayData | null; hasData: boolean },
+    event: MouseEvent
+  ) => {
+    if (!d.data) return
+    const dateStr = format(d.data.date, 'EEEE, MMMM dd, yyyy')
+
+    const typeBreakdown = Object.entries(d.data.typeBreakdown)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([type, count]) => {
+        const typeLabel = getEventTypeLabel(type as ActivityEventType, count)
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+            <span style="color: #0f172a; font-weight: 600;">${typeLabel}</span>
+            <span style="color: #0f172a; font-weight: 500; margin-left: 8px;">${count}</span>
+          </div>
+        `
+      }).join('')
+
+    const recentActions = d.data.events
+      .slice(0, 3)
+      .map(e => `
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          ${e.description}
+        </div>
+      `).join('')
+
+    tooltip.html(`
+      <p style="font-weight: 600; color: #0f172a; margin-bottom: 12px; font-size: 16px;">${dateStr}</p>
+      <div style="background-color: #f8fafc; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+        <div style="font-size: 18px; font-weight: 700; color: #0f172a;">${d.data.count}</div>
+        <div style="font-size: 12px; color: #64748b;">Action${d.data.count !== 1 ? 's' : ''}</div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-bottom: 8px;">
+        <p style="font-size: 12px; font-weight: 500; color: #334155; margin-bottom: 8px;">By Type</p>
+        <div>${typeBreakdown}</div>
+      </div>
+      ${d.data.events.length > 0 ? `
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 8px;">
+          <p style="font-size: 11px; font-weight: 500; color: #94a3b8; margin-bottom: 4px;">Recent</p>
+          ${recentActions}
+          ${d.data.events.length > 3 ? `<div style="font-size: 11px; color: #94a3b8;">+${d.data.events.length - 3} more</div>` : ''}
+        </div>
+      ` : ''}
+    `)
+      .style('left', `${event.pageX}px`)
+      .style('top', `${event.pageY - 10}px`)
+      .style('transform', 'translate(-50%, -100%)')
+      .style('opacity', 1)
+  }
+
   // Render heatmap with D3
   useEffect(() => {
     if (!svgRef.current || calendarGrid.weeks.length === 0) return
+
+    // Reset pinned tooltip when grid changes
+    pinnedRef.current = false
+    pinnedCellRef.current = null
+    if (tooltipRef.current) {
+      tooltipRef.current.style('opacity', 0).style('pointer-events', 'none')
+    }
 
     d3.select(svgRef.current).selectAll('*').remove()
 
@@ -426,64 +519,19 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
         .attr('opacity', d => d.isInYearRange ? 1 : 0.2)
         .style('cursor', d => d.hasData ? 'pointer' : 'default')
         .on('mouseenter', function(event, d) {
+          if (pinnedRef.current) return // Don't override pinned tooltip on hover
           if (d.data && d.hasData) {
             d3.select(this)
               .attr('stroke', '#94a3b8')
               .attr('stroke-width', 2)
 
             if (tooltipRef.current) {
-              const tooltip = tooltipRef.current
-              const dateStr = format(d.data.date, 'EEEE, MMMM dd, yyyy')
-
-              // Build type breakdown HTML
-              const typeBreakdown = Object.entries(d.data.typeBreakdown)
-                .filter(([, count]) => count > 0)
-                .sort((a, b) => b[1] - a[1])
-                .map(([type, count]) => {
-                  const typeLabel = getEventTypeLabel(type as ActivityEventType, count)
-                  return `
-                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-                      <span style="color: #475569;">${typeLabel}</span>
-                      <span style="color: #0f172a; font-weight: 500; margin-left: 8px;">${count}</span>
-                    </div>
-                  `
-                }).join('')
-
-              // Recent actions
-              const recentActions = d.data.events
-                .slice(0, 3)
-                .map(e => `
-                  <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${e.description}
-                  </div>
-                `).join('')
-
-              tooltip.html(`
-                <p style="font-weight: 600; color: #0f172a; margin-bottom: 12px; font-size: 16px;">${dateStr}</p>
-                <div style="background-color: #f8fafc; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
-                  <div style="font-size: 18px; font-weight: 700; color: #0f172a;">${d.data.count}</div>
-                  <div style="font-size: 12px; color: #64748b;">Action${d.data.count !== 1 ? 's' : ''}</div>
-                </div>
-                <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-bottom: 8px;">
-                  <p style="font-size: 12px; font-weight: 500; color: #334155; margin-bottom: 8px;">By Type</p>
-                  <div>${typeBreakdown}</div>
-                </div>
-                ${d.data.events.length > 0 ? `
-                  <div style="border-top: 1px solid #e2e8f0; padding-top: 8px;">
-                    <p style="font-size: 11px; font-weight: 500; color: #94a3b8; margin-bottom: 4px;">Recent</p>
-                    ${recentActions}
-                    ${d.data.events.length > 3 ? `<div style="font-size: 11px; color: #94a3b8;">+${d.data.events.length - 3} more</div>` : ''}
-                  </div>
-                ` : ''}
-              `)
-                .style('left', `${event.pageX}px`)
-                .style('top', `${event.pageY - 10}px`)
-                .style('transform', 'translate(-50%, -100%)')
-                .style('opacity', 1)
+              showTooltip(tooltipRef.current, d, event)
             }
           }
         })
         .on('mousemove', function(event, d) {
+          if (pinnedRef.current) return
           if (d.data && d.hasData && tooltipRef.current) {
             tooltipRef.current
               .style('left', `${event.pageX}px`)
@@ -491,25 +539,52 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
           }
         })
         .on('mouseleave', function(event, d) {
+          if (pinnedRef.current) return // Don't dismiss pinned tooltip
           if (d.hasData) {
             d3.select(this)
-              .attr('stroke', d.hasData ? 'rgba(0,0,0,0.15)' : '#f1f5f9')
+              .attr('stroke', 'rgba(0,0,0,0.15)')
               .attr('stroke-width', 1)
           }
           if (tooltipRef.current) {
-            tooltipRef.current.style('opacity', 0)
+            tooltipRef.current.style('opacity', 0).style('pointer-events', 'none')
+          }
+        })
+        .on('click', function(event, d) {
+          if (d.data && d.hasData && tooltipRef.current) {
+            // Unpin previous cell
+            if (pinnedCellRef.current && pinnedCellRef.current !== this) {
+              const prevCell = d3.select(pinnedCellRef.current)
+              prevCell.attr('stroke', 'rgba(0,0,0,0.15)').attr('stroke-width', 1)
+            }
+
+            // Toggle pin
+            if (pinnedRef.current && pinnedCellRef.current === this) {
+              pinnedRef.current = false
+              pinnedCellRef.current = null
+              tooltipRef.current.style('opacity', 0).style('pointer-events', 'none')
+              d3.select(this).attr('stroke', 'rgba(0,0,0,0.15)').attr('stroke-width', 1)
+            } else {
+              pinnedRef.current = true
+              pinnedCellRef.current = this as SVGRectElement
+              d3.select(this).attr('stroke', '#94a3b8').attr('stroke-width', 2)
+              showTooltip(tooltipRef.current, d, event)
+              tooltipRef.current.style('pointer-events', 'auto')
+            }
           }
         })
 
   }, [calendarGrid, monthLabels, displayRange, filteredData])
 
-  // Format year label
+  // Format year label — only show two years if the FY actually crosses a calendar year boundary
   const getYearLabel = (year: number) => {
     if (yearType === 'calendar') {
       return year.toString()
-    } else {
-      return `FY ${year}/${(year + 1).toString().slice(-2)}`
     }
+    // If FY starts in January, it fits within a single calendar year
+    if (fyStartMonth === 1) {
+      return `FY ${year}`
+    }
+    return `FY ${year}/${(year + 1).toString().slice(-2)}`
   }
 
   if (events.length === 0) {

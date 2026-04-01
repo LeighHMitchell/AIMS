@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import type { TaskStatus, TaskPriority } from '@/types/task';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/tasks/assigned - Tasks assigned to current user
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
+  const supabase = getSupabaseAdmin();
 
+  try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
     const status = searchParams.get('status'); // Can be TaskStatus or 'overdue'

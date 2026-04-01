@@ -383,7 +383,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            Validation Rules Check
+            Data Quality
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -413,7 +413,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-[#7b95a7]" />
-            Validation Rules Check
+            Data Quality
           </CardTitle>
           <CardDescription>
             Activities and transactions failing data quality rules
@@ -422,7 +422,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-slate-400 mb-3" />
-            <p className="text-lg font-medium text-slate-700">All validation rules pass!</p>
+            <p className="text-lg font-medium text-slate-700">All data quality checks pass!</p>
             <p className="text-sm text-slate-500 mt-1">
               Great job! All your activities meet the data quality requirements.
             </p>
@@ -439,7 +439,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-[#7b95a7]" />
-            Validation Rules Check
+            Data Quality
             <Badge variant="destructive" className="ml-2">
               {totalIssues} {totalIssues === 1 ? 'issue' : 'issues'}
             </Badge>
@@ -482,35 +482,27 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
-                    header: 'Planned End Date',
-                    accessor: (item) => formatDate(item.planned_end_date),
+                    header: 'Planned End',
+                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.planned_end_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
-                    },
-                    className: 'w-[120px]',
-                  },
-                  {
-                    header: 'Days Past End',
+                    header: 'Overdue',
                     accessor: (item) => (
                       <Badge variant="destructive">{item.days_past_end} days</Badge>
                     ),
-                    className: 'w-[120px]',
+                    className: 'w-[110px]',
                   },
                 ]}
                 onEditClick={handleEditClick}
@@ -518,38 +510,33 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
 
               <RuleTable<ImplementationWithActualEndActivity>
                 title="Implementation With Actual End Date"
-                description="Activities in implementation status that have an actual end date set"
+                description="Activities still in implementation but already have an actual end date — update the status or remove the end date"
                 items={data.activityRules.implementationWithActualEnd}
                 columns={[
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
+                  },
+                  {
+                    header: 'Actual End Date',
+                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.actual_end_date)}</span>,
+                    className: 'w-[140px]',
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
-                  },
-                  {
-                    header: 'Actual End Date',
-                    accessor: (item) => formatDate(item.actual_end_date),
-                    className: 'w-[130px]',
-                  },
-                  {
-                    header: 'Last Updated',
-                    accessor: (item) => formatDate(item.updated_at),
                     className: 'w-[130px]',
                   },
                 ]}
@@ -564,32 +551,22 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
-                  },
-                  {
-                    header: 'Created',
-                    accessor: (item) => formatDate(item.created_at),
-                    className: 'w-[130px]',
-                  },
-                  {
-                    header: 'Last Updated',
-                    accessor: (item) => formatDate(item.updated_at),
                     className: 'w-[130px]',
                   },
                 ]}
@@ -604,32 +581,27 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
                     header: 'Planned Start',
-                    accessor: (item) => formatDate(item.planned_start_date),
+                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.planned_start_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
-                  },
-                  {
-                    header: 'Last Updated',
-                    accessor: (item) => formatDate(item.updated_at),
                     className: 'w-[130px]',
                   },
                 ]}
@@ -644,32 +616,27 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
                     header: 'Planned End',
-                    accessor: (item) => formatDate(item.planned_end_date),
+                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.planned_end_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
-                  },
-                  {
-                    header: 'Last Updated',
-                    accessor: (item) => formatDate(item.updated_at),
                     className: 'w-[130px]',
                   },
                 ]}
@@ -702,28 +669,28 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
-                    header: 'Total Transactions',
-                    accessor: (item) => item.transaction_count,
-                    className: 'w-[140px]',
+                    header: 'Other Transactions',
+                    accessor: (item) => <span className="text-sm text-slate-700">{item.transaction_count}</span>,
+                    className: 'w-[150px]',
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
+                    className: 'w-[130px]',
                   },
                 ]}
                 onEditClick={(id) => router.push(`/activities/${id}?tab=finances`)}
@@ -755,26 +722,26 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
-                  },
-                  {
-                    header: 'Total %',
-                    accessor: (item) => (
-                      <Badge variant="destructive">{item.total_percentage.toFixed(1)}%</Badge>
-                    ),
-                    className: 'w-[100px]',
                   },
                   {
                     header: 'Locations',
-                    accessor: (item) => item.location_count,
+                    accessor: (item) => <span className="text-sm text-slate-700">{item.location_count}</span>,
+                    className: 'w-[100px]',
+                  },
+                  {
+                    header: 'Total',
+                    accessor: (item) => (
+                      <Badge variant="destructive">{item.total_percentage.toFixed(1)}%</Badge>
+                    ),
                     className: 'w-[100px]',
                   },
                 ]}
@@ -789,23 +756,23 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
+                    className: 'w-[130px]',
                   },
                 ]}
                 onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
@@ -819,15 +786,20 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
+                  },
+                  {
+                    header: 'Locations',
+                    accessor: (item) => <span className="text-sm text-slate-700">{item.location_count}</span>,
+                    className: 'w-[100px]',
                   },
                   {
                     header: 'Admin Levels',
@@ -840,12 +812,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                         ))}
                       </div>
                     ),
-                    className: 'w-[150px]',
-                  },
-                  {
-                    header: 'Locations',
-                    accessor: (item) => item.location_count,
-                    className: 'w-[100px]',
+                    className: 'w-[160px]',
                   },
                 ]}
                 onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
@@ -859,23 +826,23 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
                     header: 'Location',
-                    accessor: (item) => item.location_name,
+                    accessor: (item) => <span className="text-sm text-slate-700">{item.location_name}</span>,
                     className: 'w-[200px]',
                   },
                   {
-                    header: 'Percentage',
+                    header: 'Allocation',
                     accessor: () => (
                       <Badge variant="destructive">0%</Badge>
                     ),
@@ -911,28 +878,28 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
+                  },
+                  {
+                    header: 'Other Orgs',
+                    accessor: (item) => <span className="text-sm text-slate-700">{item.participating_org_count}</span>,
+                    className: 'w-[110px]',
                   },
                   {
                     header: 'Status',
                     accessor: (item) => {
                       const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
                     },
-                    className: 'w-[120px]',
-                  },
-                  {
-                    header: 'Participating Orgs',
-                    accessor: (item) => item.participating_org_count,
-                    className: 'w-[140px]',
+                    className: 'w-[130px]',
                   },
                 ]}
                 onEditClick={(id) => router.push(`/activities/${id}?tab=stakeholders`)}
@@ -964,26 +931,26 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
-                  },
-                  {
-                    header: 'Total %',
-                    accessor: (item) => (
-                      <Badge variant="destructive">{item.total_sector_percentage.toFixed(1)}%</Badge>
-                    ),
-                    className: 'w-[100px]',
                   },
                   {
                     header: 'Sectors',
-                    accessor: (item) => item.sector_count,
+                    accessor: (item) => <span className="text-sm text-slate-700">{item.sector_count}</span>,
+                    className: 'w-[100px]',
+                  },
+                  {
+                    header: 'Total',
+                    accessor: (item) => (
+                      <Badge variant="destructive">{item.total_sector_percentage.toFixed(1)}%</Badge>
+                    ),
                     className: 'w-[100px]',
                   },
                 ]}
@@ -998,28 +965,28 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   {
                     header: 'Activity',
                     accessor: (item) => (
-                      <p className="font-medium text-slate-900">
-                        {item.title_narrative}
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
                         {item.iati_identifier && (
-                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
-                          </code></>
+                          </code>
                         )}
-                      </p>
+                      </div>
                     ),
                   },
                   {
                     header: 'Sector',
                     accessor: (item) => (
                       <div>
-                        <p className="text-slate-900">{item.sector_name}</p>
-                        <code className="text-xs font-mono text-slate-500">{item.sector_code}</code>
+                        <span className="text-sm text-slate-900">{item.sector_name}</span>
+                        <code className="text-xs font-mono text-slate-500 block mt-0.5">{item.sector_code}</code>
                       </div>
                     ),
                     className: 'w-[200px]',
                   },
                   {
-                    header: 'Percentage',
+                    header: 'Allocation',
                     accessor: () => (
                       <Badge variant="destructive">0%</Badge>
                     ),

@@ -230,7 +230,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-slate-600" />
-              Last Validation Event
+              Last Activity Validated
             </CardTitle>
           </CardHeader>
           <CardContent>

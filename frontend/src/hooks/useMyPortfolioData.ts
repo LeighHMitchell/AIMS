@@ -25,12 +25,17 @@ interface InactiveActivity {
   lastUpdated: string
 }
 
+interface MissingDataItem {
+  id: string
+  title: string
+}
+
 interface MissingDataActivity {
-  sector: string[]
-  dates: string[]
-  budget: string[]
-  reportingOrg: string[]
-  iatiId: string[]
+  sector: MissingDataItem[]
+  dates: MissingDataItem[]
+  budget: MissingDataItem[]
+  reportingOrg: MissingDataItem[]
+  iatiId: MissingDataItem[]
 }
 
 interface ValidationStatus {

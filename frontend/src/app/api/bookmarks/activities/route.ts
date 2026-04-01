@@ -61,7 +61,9 @@ export async function GET(request: NextRequest) {
         default_aid_type,
         default_finance_type,
         default_flow_type,
-        default_tied_status
+        default_tied_status,
+        banner,
+        icon
       `)
       .in('id', activityIds);
 

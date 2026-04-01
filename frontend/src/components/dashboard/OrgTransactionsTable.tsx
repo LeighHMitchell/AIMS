@@ -21,13 +21,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { ArrowRight, ArrowUpRight, ArrowDownLeft, DollarSign, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface OrgTransactionsTableProps {
   organizationId: string;
   organizationName?: string;
+  embedded?: boolean;
 }
 
 interface TransactionRow {
@@ -85,15 +86,17 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50];
 export function OrgTransactionsTable({
   organizationId,
   organizationName,
+  embedded = false,
 }: OrgTransactionsTableProps) {
   const router = useRouter();
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showExternalOnly, setShowExternalOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [sortField, setSortField] = useState('transaction_date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -104,8 +107,8 @@ export function OrgTransactionsTable({
         organizations: organizationId,
         limit: pageSize.toString(),
         page: page.toString(),
-        sortField: 'transaction_date',
-        sortOrder: 'desc',
+        sortField,
+        sortOrder,
       });
 
       const response = await apiFetch(`/api/transactions?${params.toString()}`);
@@ -157,7 +160,7 @@ export function OrgTransactionsTable({
     } finally {
       setLoading(false);
     }
-  }, [organizationId, organizationName, page, pageSize]);
+  }, [organizationId, organizationName, page, pageSize, sortField, sortOrder]);
 
   useEffect(() => {
     if (organizationId) {
@@ -169,115 +172,69 @@ export function OrgTransactionsTable({
     router.push(`/activities/${activityId}?tab=transactions`);
   };
 
-  const handleViewAll = () => {
-    router.push('/transactions');
-  };
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  const displayedTransactions = showExternalOnly
-    ? transactions.filter(t => t.isExternallyReported)
-    : transactions;
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
 
-  if (loading) {
-    return (
-      <Card className="bg-white">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-5" />
-              <Skeleton className="h-5 w-48" />
-            </div>
-            <Skeleton className="h-8 w-20" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 text-slate-400" />;
+    return sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
+  };
 
-  if (error) {
-    return (
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            My Organisation&apos;s Transactions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-red-600">Failed to load transactions: {error}</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const loadingSkeleton = (
+    <div className="space-y-2">
+      {[...Array(5)].map((_, i) => (
+        <Skeleton key={i} className="h-12 w-full" />
+      ))}
+    </div>
+  );
 
-  return (
-    <Card className="bg-white">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-slate-600" />
-              My Organisation&apos;s Transactions
-            </CardTitle>
-            <CardDescription>
-              Transactions where your organization is provider or receiver
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={showExternalOnly ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setShowExternalOnly(!showExternalOnly);
-                setPage(1);
-              }}
-              title="Show only transactions reported by other organisations"
-            >
-              <Filter className="h-4 w-4 mr-1" />
-              External
-            </Button>
-            {transactions.length > 0 && (
-              <Button variant="outline" size="sm" onClick={handleViewAll}>
-                View all
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {displayedTransactions.length === 0 ? (
-          <div className="text-center py-8">
-            <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">
-              {showExternalOnly ? 'No externally reported transactions found' : 'No transactions found'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[280px]">Activity</TableHead>
-                  <TableHead className="min-w-[120px]">Date</TableHead>
-                  <TableHead className="min-w-[120px]">Original Value</TableHead>
-                  <TableHead className="min-w-[110px]">USD Value</TableHead>
-                  <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="min-w-[120px]">Reported By</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayedTransactions.map((transaction) => (
+  const errorContent = (
+    <p className="text-sm text-red-600">Failed to load transactions: {error}</p>
+  );
+
+  const tableContent = loading ? loadingSkeleton : error ? errorContent : transactions.length === 0 ? (
+    <div className="text-center py-8">
+      <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+      <p className="text-sm text-slate-500">No transactions found</p>
+    </div>
+  ) : (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-[280px] cursor-pointer select-none" onClick={() => handleSort('activity_title')}>
+              <span className="flex items-center gap-1">Activity <SortIcon field="activity_title" /></span>
+            </TableHead>
+            <TableHead className="min-w-[120px] cursor-pointer select-none" onClick={() => handleSort('transaction_date')}>
+              <span className="flex items-center gap-1">Date <SortIcon field="transaction_date" /></span>
+            </TableHead>
+            <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('value')}>
+              <span className="flex items-center gap-1">Original Value <SortIcon field="value" /></span>
+            </TableHead>
+            <TableHead className="min-w-[110px] cursor-pointer select-none" onClick={() => handleSort('value_usd')}>
+              <span className="flex items-center gap-1">USD Value <SortIcon field="value_usd" /></span>
+            </TableHead>
+            <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => handleSort('transaction_type')}>
+              <span className="flex items-center gap-1">Type <SortIcon field="transaction_type" /></span>
+            </TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>
+              <span className="flex items-center gap-1">Status <SortIcon field="status" /></span>
+            </TableHead>
+            <TableHead className="min-w-[120px]">Reported By</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transactions.map((transaction) => (
                   <TableRow
                     key={transaction.id}
                     className="cursor-pointer hover:bg-muted/50"
@@ -411,8 +368,26 @@ export function OrgTransactionsTable({
                 </Button>
               </div>
             </div>
-          </>
-        )}
+    </>
+  );
+
+  if (embedded) {
+    return tableContent;
+  }
+
+  return (
+    <Card className="bg-white">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-slate-600" />
+          My Organisation&apos;s Transactions
+        </CardTitle>
+        <CardDescription>
+          Transactions where your organization is provider or receiver
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {tableContent}
       </CardContent>
     </Card>
   );

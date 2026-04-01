@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import type { TaskEventType } from '@/types/task';
 
 export const dynamic = 'force-dynamic';
@@ -9,14 +10,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
 
   try {
     const { id: taskId } = await params;
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
 
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
@@ -103,14 +103,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
 
   try {
     const { id: taskId } = await params;
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
 
     const body = await request.json();
     const { userId, event_type, metadata = {} } = body;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { NotificationItem } from "@/components/NotificationItem"
-import { AtSign, Bell, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { AtSign, Bell, AlertCircle, ChevronLeft, ChevronRight, HelpCircle, Archive } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -10,6 +10,8 @@ import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 import { apiFetch } from '@/lib/api-fetch';
 
 export interface Notification {
@@ -76,7 +78,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [showArchived, setShowArchived] = useState(false)
 
   // Pagination state - separate for each column
   const [mentionsPage, setMentionsPage] = useState(1)
@@ -107,9 +109,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
 
       const result = await response.json()
       const mappedNotifications = (result.data || []).map(mapApiNotification)
-      // Filter out archived notifications
-      setNotifications(mappedNotifications.filter((n: Notification) => !n.archivedAt))
-      setLastUpdated(new Date())
+      setNotifications(mappedNotifications)
     } catch (error: any) {
       console.error('Error fetching notifications:', error)
       setError(error.message || 'Failed to load notifications')
@@ -188,8 +188,11 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   }
 
   const handleArchive = async (notificationId: string) => {
-    // Optimistic removal
-    setNotifications(prev => prev.filter(n => n.id !== notificationId))
+    // Optimistic update - set archivedAt so it hides from active view
+    const now = new Date().toISOString()
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, archivedAt: now } : n)
+    )
 
     try {
       const response = await apiFetch(`/api/notifications/user`, {
@@ -238,10 +241,37 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     }
   }
 
-  const mentionNotifications = notifications.filter(n => n.type === "mention")
-  const systemNotifications = notifications.filter(n => n.type === "system")
-  const unreadMentions = mentionNotifications.filter(n => !n.isRead).length
-  const unreadSystem = systemNotifications.filter(n => !n.isRead).length
+  const handleUnarchive = async (notificationId: string) => {
+    // Optimistic update
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, archivedAt: null } : n)
+    )
+
+    try {
+      const response = await apiFetch(`/api/notifications/user`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, notificationId, action: 'unarchive' }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to unarchive notification')
+      }
+      toast.success('Notification unarchived')
+    } catch (error: any) {
+      console.error('Error unarchiving notification:', error)
+      toast.error('Failed to unarchive notification')
+      fetchNotifications(false)
+    }
+  }
+
+  const visibleNotifications = showArchived
+    ? notifications
+    : notifications.filter(n => !n.archivedAt)
+  const mentionNotifications = visibleNotifications.filter(n => n.type === "mention")
+  const systemNotifications = visibleNotifications.filter(n => n.type === "system")
+  const unreadMentions = mentionNotifications.filter(n => !n.isRead && !n.archivedAt).length
+  const unreadSystem = systemNotifications.filter(n => !n.isRead && !n.archivedAt).length
 
   // Pagination for mentions
   const mentionsTotalPages = Math.ceil(mentionNotifications.length / pageLimit)
@@ -359,10 +389,34 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          <span className="font-semibold">Last updated:</span> {lastUpdated.toLocaleTimeString()}
-        </p>
+      <div className="flex items-center justify-end gap-4">
+        <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowArchived(false)}
+            className={cn(
+              !showArchived
+                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            Active
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowArchived(true)}
+            className={cn(
+              showArchived
+                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            <Archive className="h-4 w-4 mr-1" />
+            Archived
+          </Button>
+        </div>
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-600">Per page:</label>
           <Select
@@ -391,6 +445,16 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
               <CardTitle className="text-base flex items-center gap-2">
                 <AtSign className="h-4 w-4" />
                 Mentions
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Notifications when someone @mentions you in a comment</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 {unreadMentions > 0 && (
                   <Badge variant="destructive" className="ml-1">
                     {unreadMentions}
@@ -418,6 +482,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
                     notification={notification}
                     onMarkAsRead={handleMarkAsRead}
                     onArchive={handleArchive}
+                    onUnarchive={handleUnarchive}
                     onDelete={handleDelete}
                   />
                 ))}
@@ -444,6 +509,16 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
               <CardTitle className="text-base flex items-center gap-2">
                 <Bell className="h-4 w-4" />
                 System
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Automated notifications about imports, assignments, and status changes</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 {unreadSystem > 0 && (
                   <Badge variant="destructive" className="ml-1">
                     {unreadSystem}
@@ -471,6 +546,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
                     notification={notification}
                     onMarkAsRead={handleMarkAsRead}
                     onArchive={handleArchive}
+                    onUnarchive={handleUnarchive}
                     onDelete={handleDelete}
                   />
                 ))}

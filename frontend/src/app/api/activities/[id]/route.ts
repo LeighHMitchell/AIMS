@@ -19,7 +19,7 @@ export async function PATCH(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user: authUser, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     // Handle both sync and async params (Next.js 14/15 compatibility)
@@ -180,7 +180,11 @@ export async function PATCH(
     // Update basic activity fields if any were provided
     if (Object.keys(activityFields).length > 0) {
       activityFields.updated_at = new Date().toISOString();
-      
+      const editorId = body.user?.id || authUser?.id;
+      if (editorId) {
+        activityFields.last_edited_by = editorId;
+      }
+
       console.log('[AIMS API] Updating basic activity fields:', JSON.stringify(activityFields, null, 2));
       console.log('[AIMS API] geography_level in activityFields:', activityFields.geography_level);
       
@@ -975,9 +979,14 @@ export async function PATCH(
     
     // Update activity updated_at timestamp only if no basic fields were updated
     if (Object.keys(activityFields).length === 0) {
+      const timestampData: any = { updated_at: new Date().toISOString() };
+      const editorId = body.user?.id || authUser?.id;
+      if (editorId) {
+        timestampData.last_edited_by = editorId;
+      }
       const { error: updateError } = await supabase
         .from('activities')
-        .update({ updated_at: new Date().toISOString() })
+        .update(timestampData)
         .eq('id', id);
       
       if (updateError) {

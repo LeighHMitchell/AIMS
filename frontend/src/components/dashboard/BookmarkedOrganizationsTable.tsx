@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,21 @@ import { formatDistanceToNow, format } from 'date-fns';
 import {
   Building2,
   BookmarkX,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  LayoutGrid,
+  TableIcon,
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
+import OrganizationCardModern from '@/components/organizations/OrganizationCardModern';
+
+type ViewMode = 'card' | 'table';
+type SortField = 'name' | 'type' | 'location' | 'activities' | 'updated_at';
+type SortDirection = 'asc' | 'desc';
 
 interface BookmarkedOrganization {
   id: string;
@@ -30,8 +41,11 @@ interface BookmarkedOrganization {
   organisation_type_name?: string;
   description?: string;
   logo?: string;
+  banner?: string;
   country?: string;
   country_represented?: string;
+  iati_org_id?: string;
+  website?: string;
   activeProjects?: number;
   updated_at: string;
   bookmarkedAt: string;
@@ -39,6 +53,43 @@ interface BookmarkedOrganization {
 
 interface BookmarkedOrganizationsTableProps {
   userId?: string;
+}
+
+function SortableHeader({
+  label,
+  field,
+  currentField,
+  currentDirection,
+  onSort,
+  className,
+}: {
+  label: string;
+  field: SortField;
+  currentField: SortField;
+  currentDirection: SortDirection;
+  onSort: (field: SortField) => void;
+  className?: string;
+}) {
+  const isActive = currentField === field;
+  return (
+    <TableHead className={className}>
+      <button
+        className="flex items-center gap-1 hover:text-foreground transition-colors -ml-1 px-1"
+        onClick={() => onSort(field)}
+      >
+        {label}
+        {isActive ? (
+          currentDirection === 'asc' ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+        )}
+      </button>
+    </TableHead>
+  );
 }
 
 export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedOrganizationsTableProps = {}) {
@@ -49,8 +100,50 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [sortField, setSortField] = useState<SortField>('updated_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const userId = propUserId || user?.id;
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedOrganizations = useMemo(() => {
+    const sorted = [...organizations];
+    sorted.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'name':
+          cmp = (a.name || '').localeCompare(b.name || '');
+          break;
+        case 'type':
+          cmp = (a.organisation_type_name || a.organisation_type || '').localeCompare(
+            b.organisation_type_name || b.organisation_type || ''
+          );
+          break;
+        case 'location':
+          cmp = (a.country_represented || a.country || '').localeCompare(
+            b.country_represented || b.country || ''
+          );
+          break;
+        case 'activities':
+          cmp = (a.activeProjects || 0) - (b.activeProjects || 0);
+          break;
+        case 'updated_at':
+          cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [organizations, sortField, sortDirection]);
 
   const fetchBookmarkedOrganizations = async () => {
     if (!userId) {
@@ -93,7 +186,6 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
 
     try {
       await removeBookmark(organizationId);
-      // Remove from local state for immediate feedback
       setOrganizations((prev) => prev.filter((o) => o.id !== organizationId));
     } catch (error) {
       console.error('[BookmarkedOrganizationsTable] Error removing bookmark:', error);
@@ -153,6 +245,38 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
               Your saved organizations for quick access
             </CardDescription>
           </div>
+          {organizations.length > 0 && (
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-8 w-8 p-0',
+                  viewMode === 'card'
+                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+                onClick={() => setViewMode('card')}
+                title="Card view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-8 w-8 p-0',
+                  viewMode === 'table'
+                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+                onClick={() => setViewMode('table')}
+                title="Table view"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -164,20 +288,75 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
               Bookmark organizations from the organization profile or organization cards to see them here.
             </p>
           </div>
+        ) : viewMode === 'card' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedOrganizations.map((org) => (
+              <OrganizationCardModern
+                key={org.id}
+                organization={{
+                  id: org.id,
+                  name: org.name,
+                  acronym: org.acronym,
+                  Organisation_Type_Code: org.organisation_type || '',
+                  Organisation_Type_Name: org.organisation_type_name,
+                  description: org.description,
+                  logo: org.logo,
+                  banner: org.banner,
+                  country: org.country,
+                  country_represented: org.country_represented,
+                  iati_org_id: org.iati_org_id,
+                  website: org.website,
+                  activeProjects: org.activeProjects || 0,
+                }}
+              />
+            ))}
+          </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[35%]">Organization</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead className="text-right">Activities</TableHead>
-                <TableHead>Updated</TableHead>
+                <SortableHeader
+                  label="Organization"
+                  field="name"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                  className="w-[35%]"
+                />
+                <SortableHeader
+                  label="Type"
+                  field="type"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Location"
+                  field="location"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Activities"
+                  field="activities"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                  className="text-right"
+                />
+                <SortableHeader
+                  label="Updated"
+                  field="updated_at"
+                  currentField={sortField}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                />
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {organizations.map((organization) => (
+              {sortedOrganizations.map((organization) => (
                 <TableRow
                   key={organization.id}
                   className="cursor-pointer hover:bg-muted/50"

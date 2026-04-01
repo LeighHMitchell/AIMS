@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       // Last activity edited — only activities with a non-null updated_at
       supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, created_at, updated_at, updated_by')
+        .select('id, title_narrative, iati_identifier, created_at, updated_at, last_edited_by')
         .eq('reporting_org_id', organizationId)
         .not('updated_at', 'is', null)
         .order('updated_at', { ascending: false })
@@ -123,9 +123,9 @@ export async function GET(request: NextRequest) {
     // Collect user IDs that need profile lookups
     const userIdsToLookup: string[] = [];
     if (lastCreatedResult.data?.created_by) userIdsToLookup.push(lastCreatedResult.data.created_by);
-    // lastEditedResult is an array — collect updated_by user IDs
+    // lastEditedResult is an array — collect last_edited_by user IDs
     if (Array.isArray(lastEditedResult.data)) {
-      lastEditedResult.data.forEach((a: any) => { if (a.updated_by) userIdsToLookup.push(a.updated_by); });
+      lastEditedResult.data.forEach((a: any) => { if (a.last_edited_by) userIdsToLookup.push(a.last_edited_by); });
     }
     if (lastValidationResult.data?.updated_by) userIdsToLookup.push(lastValidationResult.data.updated_by);
 
@@ -173,16 +173,19 @@ export async function GET(request: NextRequest) {
     if (editedData && Array.isArray(editedData) && editedData.length > 0) {
       const lastEdited = editedData[0]; // already sorted by updated_at DESC
       if (lastEdited) {
-        const editedByYou = userId ? lastEdited.updated_by === userId : false;
-        const editorProfile = buildProfile(lastEdited.updated_by);
+        const editorId = lastEdited.last_edited_by;
+        const editedByYou = userId ? editorId === userId : false;
+        const editorProfile = buildProfile(editorId);
+        // If no editor recorded (legacy data), assume current user edited it
+        const editorUnknown = !editorId;
         lastActivityEdited = {
           id: lastEdited.id,
           title: lastEdited.title_narrative || 'Untitled Activity',
           timestamp: lastEdited.updated_at,
           iatiIdentifier: lastEdited.iati_identifier || undefined,
-          editedByYou,
-          editedByName: editorProfile?.name || 'Colleague',
-          editorProfile: editedByYou ? undefined : editorProfile,
+          editedByYou: editedByYou || editorUnknown,
+          editedByName: editorProfile?.name || 'Unknown',
+          editorProfile: (editedByYou || editorUnknown) ? undefined : editorProfile,
         };
       }
     }

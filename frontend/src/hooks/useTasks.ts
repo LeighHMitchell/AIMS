@@ -229,7 +229,9 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       console.log('[useTasks] createTask response:', result);
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create task');
+        const errMsg = result.error || 'Failed to create task';
+        console.error('[useTasks] createTask server error:', errMsg);
+        throw new Error(errMsg);
       }
 
       // Log how many assignments were created

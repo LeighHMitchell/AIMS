@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import type { TaskStatus } from '@/types/task';
 
 export const dynamic = 'force-dynamic';
@@ -12,8 +13,10 @@ export async function PUT(
   console.log('[Task Assignment API] PUT handler entered');
 
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
 
     // Handle both sync and async params (Next.js 14/15 compatibility)
     console.log('[Task Assignment API] Resolving params...');
@@ -27,9 +30,6 @@ export async function PUT(
     }
 
     console.log('[Task Assignment API] Getting supabase admin...');
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
 
     const body = await request.json();
     const {
@@ -345,8 +345,10 @@ export async function GET(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
+
+  const supabase = getSupabaseAdmin();
 
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
@@ -355,9 +357,6 @@ export async function GET(
     if (!id) {
       console.error('[Task Assignment API] Missing assignment ID in params');
       return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
-    }
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
     const searchParams = request.nextUrl.searchParams;

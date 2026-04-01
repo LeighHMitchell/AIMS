@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { Bell, Mail, Calendar, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Mail, Calendar, Clock, CalendarIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
   Select,
@@ -12,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { WizardFormData } from '../useTaskWizard';
 
@@ -36,19 +43,9 @@ export function TaskDeliveryStep({
   errors,
 }: TaskDeliveryStepProps) {
   const hasError = errors.length > 0;
+  const [deadlinePopoverOpen, setDeadlinePopoverOpen] = useState(false);
 
-  // Format date for datetime-local input
-  const formatDateTimeLocal = (dateString: string | null): string => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
-  };
-
-  // Parse datetime-local to ISO string
-  const parseDateTimeLocal = (value: string): string | null => {
-    if (!value) return null;
-    return new Date(value).toISOString();
-  };
+  const deadlineDate = formData.deadline ? new Date(formData.deadline) : undefined;
 
   return (
     <div className="space-y-6">
@@ -123,17 +120,52 @@ export function TaskDeliveryStep({
 
       {/* Deadline */}
       <div className="space-y-2">
-        <Label htmlFor="deadline" className="text-sm font-medium flex items-center gap-2">
+        <Label className="text-sm font-medium flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           Deadline
         </Label>
-        <Input
-          id="deadline"
-          type="datetime-local"
-          value={formatDateTimeLocal(formData.deadline)}
-          onChange={(e) => updateFormData({ deadline: parseDateTimeLocal(e.target.value) })}
-          min={new Date().toISOString().slice(0, 16)}
-        />
+        <Popover open={deadlinePopoverOpen} onOpenChange={setDeadlinePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                'w-[220px] justify-start text-left font-normal',
+                !deadlineDate && 'text-muted-foreground'
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {deadlineDate ? format(deadlineDate, 'MMM d, yyyy') : 'Pick a date'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-[100]" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={deadlineDate}
+              onSelect={(date) => {
+                updateFormData({ deadline: date ? date.toISOString() : null });
+                setDeadlinePopoverOpen(false);
+              }}
+              disabled={(date) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return date < today;
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {deadlineDate && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => updateFormData({ deadline: null })}
+          >
+            Clear deadline
+          </Button>
+        )}
         <p className="text-xs text-muted-foreground">
           Optional. Set a due date for task completion.
         </p>
@@ -167,26 +199,6 @@ export function TaskDeliveryStep({
         </div>
       )}
 
-      {/* Summary Card */}
-      <div className="p-4 rounded-lg bg-muted/50 border">
-        <h4 className="text-sm font-medium mb-2">Delivery Summary</h4>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li className="flex items-center gap-2">
-            <Bell className={cn('h-4 w-4', formData.send_in_app ? 'text-green-600' : 'text-muted-foreground/50')} />
-            In-app: {formData.send_in_app ? 'Enabled' : 'Disabled'}
-          </li>
-          <li className="flex items-center gap-2">
-            <Mail className={cn('h-4 w-4', formData.send_email ? 'text-green-600' : 'text-muted-foreground/50')} />
-            Email: {formData.send_email ? 'Enabled' : 'Disabled'}
-          </li>
-          {formData.deadline && (
-            <li className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-amber-600" />
-              Due: {new Date(formData.deadline).toLocaleDateString()}
-            </li>
-          )}
-        </ul>
-      </div>
     </div>
   );
 }

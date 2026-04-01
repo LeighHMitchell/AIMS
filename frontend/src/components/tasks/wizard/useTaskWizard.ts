@@ -44,6 +44,7 @@ export interface WizardFormData {
 
   // Step 5: Attachments
   attachments: File[];
+  attachmentNames: Record<number, string>; // index -> custom display name
 
   // Metadata
   template_id: string | null;
@@ -72,6 +73,7 @@ const DEFAULT_FORM_DATA: WizardFormData = {
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   recurrence: null,
   attachments: [],
+  attachmentNames: {},
   template_id: null,
   entity_type: null,
   activity_id: null,
@@ -115,6 +117,7 @@ export interface UseTaskWizardReturn {
   validateCurrentStep: () => string[];
   isStepValid: (step: WizardStep) => boolean;
   getStepErrors: (step: WizardStep) => string[];
+  getVisibleStepErrors: (step: WizardStep) => string[];
 
   // Submission
   isSubmitting: boolean;
@@ -131,55 +134,11 @@ export function useTaskWizard(
     ...initialData,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attemptedSteps, setAttemptedSteps] = useState<Set<WizardStep>>(new Set());
 
   const currentStep = STEPS[currentStepIndex];
 
-  // Navigation
-  const goToStep = useCallback((step: WizardStep) => {
-    const index = STEPS.indexOf(step);
-    if (index !== -1) {
-      setCurrentStepIndex(index);
-    }
-  }, []);
-
-  const nextStep = useCallback(() => {
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1);
-    }
-  }, [currentStepIndex]);
-
-  const prevStep = useCallback(() => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex(currentStepIndex - 1);
-    }
-  }, [currentStepIndex]);
-
-  // Form management
-  const updateFormData = useCallback((updates: Partial<WizardFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setFormData(DEFAULT_FORM_DATA);
-    setCurrentStepIndex(0);
-  }, []);
-
-  const applyTemplate = useCallback((template: TaskTemplate) => {
-    setFormData(prev => ({
-      ...prev,
-      title: template.default_title,
-      description: template.default_body || '',
-      priority: template.default_priority,
-      task_type: template.default_task_type,
-      send_in_app: template.default_send_in_app,
-      send_email: template.default_send_email,
-      reminder_days: template.default_reminder_days,
-      target_scope: template.default_target_scope || null,
-      template_id: template.id,
-    }));
-  }, []);
-
-  // Validation
+  // Validation (defined early so navigation can reference it)
   const getStepErrors = useCallback((step: WizardStep): string[] => {
     const errors: string[] = [];
 
@@ -242,6 +201,64 @@ export function useTaskWizard(
     return errors;
   }, [formData]);
 
+  // Returns errors only for steps the user has attempted to proceed past
+  const getVisibleStepErrors = useCallback((step: WizardStep): string[] => {
+    // Always show errors on the review step
+    if (step === 'review') return getStepErrors(step);
+    // Only show errors after the user has tried to proceed past this step
+    if (!attemptedSteps.has(step)) return [];
+    return getStepErrors(step);
+  }, [getStepErrors, attemptedSteps]);
+
+  // Navigation
+  const goToStep = useCallback((step: WizardStep) => {
+    const index = STEPS.indexOf(step);
+    if (index !== -1) {
+      setCurrentStepIndex(index);
+    }
+  }, []);
+
+  const nextStep = useCallback(() => {
+    const step = STEPS[currentStepIndex];
+    // Mark step as attempted so validation errors become visible
+    setAttemptedSteps(prev => new Set(prev).add(step));
+    if (currentStepIndex < STEPS.length - 1 && getStepErrors(step).length === 0) {
+      setCurrentStepIndex(currentStepIndex + 1);
+    }
+  }, [currentStepIndex, getStepErrors]);
+
+  const prevStep = useCallback(() => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(currentStepIndex - 1);
+    }
+  }, [currentStepIndex]);
+
+  // Form management
+  const updateFormData = useCallback((updates: Partial<WizardFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setFormData(DEFAULT_FORM_DATA);
+    setCurrentStepIndex(0);
+    setAttemptedSteps(new Set());
+  }, []);
+
+  const applyTemplate = useCallback((template: TaskTemplate) => {
+    setFormData(prev => ({
+      ...prev,
+      title: template.default_title,
+      description: template.default_body || '',
+      priority: template.default_priority,
+      task_type: template.default_task_type,
+      send_in_app: template.default_send_in_app,
+      send_email: template.default_send_email,
+      reminder_days: template.default_reminder_days,
+      target_scope: template.default_target_scope || null,
+      template_id: template.id,
+    }));
+  }, []);
+
   const validateCurrentStep = useCallback(() => {
     return getStepErrors(currentStep);
   }, [currentStep, getStepErrors]);
@@ -250,10 +267,10 @@ export function useTaskWizard(
     return getStepErrors(step).length === 0;
   }, [getStepErrors]);
 
-  // Computed values
+  // Computed values - allow Next even if not yet valid (nextStep will mark as attempted and block)
   const canGoNext = useMemo(() => {
-    return currentStepIndex < STEPS.length - 1 && isStepValid(currentStep);
-  }, [currentStepIndex, currentStep, isStepValid]);
+    return currentStepIndex < STEPS.length - 1;
+  }, [currentStepIndex]);
 
   const canGoPrev = currentStepIndex > 0;
   const isFirstStep = currentStepIndex === 0;
@@ -310,6 +327,7 @@ export function useTaskWizard(
     validateCurrentStep,
     isStepValid,
     getStepErrors,
+    getVisibleStepErrors,
     isSubmitting,
     setIsSubmitting,
     getSubmissionData,

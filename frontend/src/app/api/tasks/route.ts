@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import type { CreateTaskRequest, TaskPriority, TaskType, TaskLifecycleStatus, TargetScope } from '@/types/task';
 
 export const dynamic = 'force-dynamic';
@@ -93,14 +94,12 @@ async function checkReachability(supabase: any, assignerId: string, assigneeId: 
 
 // GET /api/tasks - List tasks created by user
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
+  const supabase = getSupabaseAdmin();
 
+  try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
     const status = searchParams.get('status');
@@ -217,14 +216,12 @@ export async function GET(request: NextRequest) {
 
 // POST /api/tasks - Create task with assignments
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
+  const supabase = getSupabaseAdmin();
 
+  try {
     const body = await request.json();
     const {
       userId,

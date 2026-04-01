@@ -28,6 +28,7 @@ interface OrgActivitiesTableProps {
   organizationId: string;
   variant: ActivityTableVariant;
   limit?: number;
+  embedded?: boolean;
 }
 
 interface ActivityRow {
@@ -107,6 +108,7 @@ export function OrgActivitiesTable({
   organizationId,
   variant,
   limit = variant === 'main' ? 10 : 5,
+  embedded = false,
 }: OrgActivitiesTableProps) {
   const router = useRouter();
   const [activities, setActivities] = useState<ActivityRow[]>([]);
@@ -215,6 +217,14 @@ export function OrgActivitiesTable({
   const Icon = config.icon;
 
   if (loading) {
+    const skeleton = (
+      <div className="space-y-2">
+        {[...Array(limit > 5 ? 5 : limit)].map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
+      </div>
+    );
+    if (embedded) return skeleton;
     return (
       <Card className="bg-white">
         <CardHeader>
@@ -226,18 +236,14 @@ export function OrgActivitiesTable({
             <Skeleton className="h-8 w-20" />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[...Array(limit > 5 ? 5 : limit)].map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </CardContent>
+        <CardContent>{skeleton}</CardContent>
       </Card>
     );
   }
 
   if (error) {
+    const errorContent = <p className="text-sm text-red-600">Failed to load activities: {error}</p>;
+    if (embedded) return errorContent;
     return (
       <Card className="bg-white">
         <CardHeader>
@@ -246,39 +252,19 @@ export function OrgActivitiesTable({
             {config.title}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-red-600">Failed to load activities: {error}</p>
-        </CardContent>
+        <CardContent>{errorContent}</CardContent>
       </Card>
     );
   }
 
-  return (
-    <Card className="bg-white">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-slate-600" />
-              {config.title}
-            </CardTitle>
-            <CardDescription>{config.description}</CardDescription>
-          </div>
-          {activities.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleViewAll}>
-              View all
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          )}
+  const mainContent = (
+    <>
+      {activities.length === 0 ? (
+        <div className="text-center py-8">
+          <Icon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">{config.emptyMessage}</p>
         </div>
-      </CardHeader>
-      <CardContent>
-        {activities.length === 0 ? (
-          <div className="text-center py-8">
-            <Icon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">{config.emptyMessage}</p>
-          </div>
-        ) : (
+      ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -449,6 +435,34 @@ export function OrgActivitiesTable({
             </TableBody>
           </Table>
         )}
+    </>
+  );
+
+  if (embedded) {
+    return mainContent;
+  }
+
+  return (
+    <Card className="bg-white">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Icon className="h-5 w-5 text-slate-600" />
+              {config.title}
+            </CardTitle>
+            <CardDescription>{config.description}</CardDescription>
+          </div>
+          {activities.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleViewAll}>
+              View all
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {mainContent}
       </CardContent>
     </Card>
   );

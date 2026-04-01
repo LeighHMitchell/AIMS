@@ -5,13 +5,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Notification } from "@/components/NotificationTabs"
-import { CheckCircle, ExternalLink, AtSign, AlertCircle, CheckCheck, XCircle, Info, Archive, Trash2 } from "lucide-react"
+import { CheckCircle, ExternalLink, AtSign, AlertCircle, CheckCheck, XCircle, Info, Archive, ArchiveRestore, Trash2 } from "lucide-react"
 import Link from "next/link"
 
 interface NotificationItemProps {
   notification: Notification
   onMarkAsRead: (id: string) => void
   onArchive?: (id: string) => void
+  onUnarchive?: (id: string) => void
   onDelete?: (id: string) => void
 }
 
@@ -37,7 +38,8 @@ function parseDescription(description: string): { isKeyValue: boolean; items: { 
   return { isKeyValue: items.length >= 2, items }
 }
 
-export function NotificationItem({ notification, onMarkAsRead, onArchive, onDelete }: NotificationItemProps) {
+export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnarchive, onDelete }: NotificationItemProps) {
+  const isArchived = !!notification.archivedAt
   const timeAgo = formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })
 
   const getIcon = () => {
@@ -59,7 +61,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onDele
   }
 
   return (
-    <Card className={`transition-all ${notification.isRead ? "opacity-75" : "border-blue-200 bg-blue-50/50"}`}>
+    <Card className={`transition-all ${isArchived ? "opacity-50 bg-muted/30" : notification.isRead ? "opacity-75" : "border-blue-200 bg-blue-50/50"}`}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           {/* Icon */}
@@ -129,7 +131,17 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onDele
                     <CheckCircle className="h-3.5 w-3.5" />
                   </Button>
                 )}
-                {onArchive && (
+                {isArchived && onUnarchive ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onUnarchive(notification.id); }}
+                    className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+                    title="Unarchive"
+                  >
+                    <ArchiveRestore className="h-3.5 w-3.5" />
+                  </Button>
+                ) : !isArchived && onArchive ? (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -139,7 +151,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onDele
                   >
                     <Archive className="h-3.5 w-3.5" />
                   </Button>
-                )}
+                ) : null}
                 {onDelete && (
                   <Button
                     variant="ghost"

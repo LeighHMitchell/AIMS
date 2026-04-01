@@ -124,12 +124,12 @@ const OrgRow = memo(function OrgRow({
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <div className="font-medium">
-          {org.name}
-          {org.acronym && <span className="ml-1">({org.acronym})</span>}
-        </div>
-        <div className={cn('text-xs', hasNoMembers ? 'text-gray-500' : 'text-muted-foreground')}>
-          {hasNoMembers ? 'No members - cannot assign' : `${memberCount} member${memberCount !== 1 ? 's' : ''}`}
+        <div className="font-medium flex flex-wrap items-baseline gap-x-1.5">
+          <span>{org.name}</span>
+          {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
+          <span className={cn('text-xs', hasNoMembers ? 'text-gray-500' : 'text-muted-foreground')}>
+            · {hasNoMembers ? 'No members' : `${memberCount} member${memberCount !== 1 ? 's' : ''}`}
+          </span>
         </div>
       </div>
     </div>
@@ -188,6 +188,13 @@ function UserPickerInner({
   const [usersByOrg, setUsersByOrg] = useState<Record<string, TaskUser[]>>({});
   const [orgMemberCounts, setOrgMemberCounts] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState('users');
+
+  // Clear search when switching tabs
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearch('');
+    setOrgSearch('');
+  };
   const mountedRef = useRef(true);
   const fetchedRef = useRef(false);
 
@@ -475,7 +482,7 @@ function UserPickerInner({
       )}
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="users" className="gap-1">
             <User className="h-4 w-4" />

@@ -235,7 +235,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
   const [budgetViewMode, setBudgetViewMode] = useState<'bar' | 'line' | 'table'>('bar');
   const [plannedViewMode, setPlannedViewMode] = useState<'bar' | 'line' | 'table'>('bar');
   const [transactionsViewMode, setTransactionsViewMode] = useState<'bar' | 'line' | 'table'>('line');
-  const [sectorViewMode, setSectorViewMode] = useState<'bar' | 'horizontal' | 'table'>('horizontal');
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -702,7 +702,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         </Card>
 
         {/* Card 4: Sectors Distribution */}
-        <Card className="bg-white relative group">
+        <Card className="bg-white relative group flex flex-col">
           <Button
             variant="ghost"
             size="sm"
@@ -716,102 +716,41 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               <BarChart3 className="h-4 w-4 text-slate-500" />
               Sectors
               <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Hover for financial details including budgets, planned disbursements, and actual disbursements in USD." />
-            </CardTitle>
-            <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-slate-900">{formatCurrency(data?.sectorBreakdown?.reduce((s, sec) => s + sec.totalPlannedDisbursements, 0) || 0)}</p>
               <div className="flex gap-0.5 ml-auto">
-                {([
-                  { key: 'horizontal' as const, icon: BarChart3, title: 'Horizontal bar' },
-                  { key: 'bar' as const, icon: BarChart3, title: 'Vertical bar', rotate: true },
-                  { key: 'table' as const, icon: TableIcon, title: 'Table' },
-                ] as const).map(({ key, icon: Icon, title, ...rest }) => (
-                  <Button key={key} variant="ghost" size="sm" className={`h-6 w-6 p-0 ${sectorViewMode === key ? 'bg-slate-200 text-slate-900 font-semibold' : 'text-gray-600 hover:bg-gray-100'}`} title={title} onClick={() => setSectorViewMode(key)}>
-                    <Icon className={`h-3.5 w-3.5 ${'rotate' in rest ? 'rotate-90' : ''}`} />
-                  </Button>
-                ))}
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-100" title="Export CSV" onClick={() => data?.sectorBreakdown && exportChartToCSV(data.sectorBreakdown.map(s => ({ Sector: s.name, Code: s.code, Activities: s.activityCount, 'Budget (USD)': s.totalBudget, 'Planned Disb. (USD)': s.totalPlannedDisbursements, 'Disbursed (USD)': s.totalDisbursements })), 'Sectors')}>
                   <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </div>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 pb-3">
-            <div className="h-32 overflow-y-auto">
+          <CardContent className="pt-0 pb-3 flex-1 flex flex-col justify-center">
               {data?.sectorBreakdown && data.sectorBreakdown.length > 0 ? (
                 (() => {
                   const sectors = data.sectorBreakdown;
                   const totalPlanned = sectors.reduce((sum, s) => sum + s.totalPlannedDisbursements, 0);
 
-                  if (sectorViewMode === 'table') {
-                    return (
-                      <table className="w-full text-[10px]">
-                        <thead><tr className="border-b text-muted-foreground"><th className="text-left py-1 pr-2">Sector</th><th className="text-right py-1 px-1">Activities</th><th className="text-right py-1 pl-1">Planned (USD)</th></tr></thead>
-                        <tbody>
-                          {sectors.map(s => (
-                            <tr key={s.code} className="border-b border-border/50"><td className="py-1 pr-2 truncate max-w-[120px]">{s.name}</td><td className="text-right py-1 px-1">{s.activityCount}</td><td className="text-right py-1 pl-1">{formatCurrency(s.totalPlannedDisbursements)}</td></tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    );
-                  }
-
-                  if (sectorViewMode === 'bar') {
-                    return (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={sectors} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                          <XAxis dataKey="code" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v) => formatCurrency(v)} />
-                          <Tooltip content={({ active, payload }) => active && payload?.length ? (
-                            <div className="bg-white border border-border rounded-lg shadow-lg p-0 overflow-hidden text-xs">
-                              <div className="px-3 py-1.5 bg-surface-muted font-semibold border-b border-slate-200">{payload[0]?.payload?.name}</div>
-                              <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Planned (USD)</span><span className="font-medium">{formatCurrency(payload[0]?.value as number)}</span></div>
-                              <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-slate-500">Activities</span><span className="font-medium">{payload[0]?.payload?.activityCount}</span></div>
-                            </div>
-                          ) : null} />
-                          <Bar dataKey="totalPlannedDisbursements" radius={[2, 2, 0, 0]}>
-                            {sectors.map((_, i) => (
-                              <Cell key={i} fill={SECTOR_COLORS[i % SECTOR_COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    );
-                  }
-
-                  // horizontal bar (default)
                   return (
                     <TooltipProvider>
-                      <div className="flex flex-col h-full gap-2">
-                        <div className="h-8 flex rounded-lg overflow-hidden bg-slate-100">
-                          {sectors.map((sector, index) => {
-                            const pct = totalPlanned > 0 ? (sector.totalPlannedDisbursements / totalPlanned) * 100 : 0;
-                            if (pct === 0) return null;
-                            return (
-                              <UITooltip key={sector.code}>
-                                <TooltipTrigger asChild>
-                                  <div className="h-full cursor-default" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="p-0 overflow-hidden">
-                                  <div className="bg-white text-xs">
-                                    <div className="px-3 py-1.5 bg-surface-muted font-semibold text-slate-700 border-b border-slate-200">{sector.name} ({sector.code})</div>
-                                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Planned Disb.</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
-                                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
-                                    <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-slate-500">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
-                                  </div>
-                                </TooltipContent>
-                              </UITooltip>
-                            );
-                          })}
-                        </div>
-                        <div className="flex-1 overflow-y-auto space-y-0.5">
-                          {sectors.map((sector, index) => (
-                            <div key={sector.code} className="flex items-center gap-1.5 text-[10px]">
-                              <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
-                              <span className="text-slate-600 truncate flex-1">{sector.name}</span>
-                              <span className="text-slate-500 shrink-0">{formatCurrency(sector.totalPlannedDisbursements)}</span>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="h-10 flex rounded-lg overflow-hidden bg-slate-100">
+                        {sectors.map((sector, index) => {
+                          const pct = totalPlanned > 0 ? (sector.totalPlannedDisbursements / totalPlanned) * 100 : 0;
+                          if (pct === 0) return null;
+                          return (
+                            <UITooltip key={sector.code}>
+                              <TooltipTrigger asChild>
+                                <div className="h-full cursor-default transition-opacity hover:opacity-80" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="p-0 overflow-hidden max-w-[220px]">
+                                <div className="bg-white text-xs">
+                                  <div className="px-3 py-1.5 bg-surface-muted font-semibold text-slate-700 border-b border-slate-200 flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-slate-200 text-slate-600 text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Planned Disb.</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
+                                  <div className="px-3 py-1 flex justify-between gap-4"><span className="text-slate-500">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
+                                  <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-slate-500">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
+                                </div>
+                              </TooltipContent>
+                            </UITooltip>
+                          );
+                        })}
                       </div>
                     </TooltipProvider>
                   );
@@ -821,7 +760,6 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   No sector data
                 </div>
               )}
-            </div>
           </CardContent>
         </Card>
       </div>

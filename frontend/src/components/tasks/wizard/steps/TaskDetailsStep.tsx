@@ -2,7 +2,7 @@
 
 import { RequiredDot } from "@/components/ui/required-dot";
 import React from 'react';
-import { FileText, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { FileText, AlertTriangle, CheckCircle, Info, HelpCircle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { WizardFormData } from '../useTaskWizard';
 import type { TaskPriority, TaskType } from '@/types/task';
@@ -67,8 +73,18 @@ export function TaskDetailsStep({
     <div className="space-y-6">
       {/* Title */}
       <div className="space-y-2">
-        <Label htmlFor="title" className="text-sm font-medium">
+        <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1">
           Task Title <RequiredDot />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p className="max-w-[200px]">A descriptive title helps recipients understand the task quickly</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </Label>
         <Input
           id="title"
@@ -79,15 +95,25 @@ export function TaskDetailsStep({
           maxLength={200}
         />
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{hasError('title') ? errors.find(e => e.toLowerCase().includes('title')) : 'A descriptive title helps recipients understand the task quickly'}</span>
+          <span>{hasError('title') ? errors.find(e => e.toLowerCase().includes('title')) : ''}</span>
           <span>{formData.title.length}/200</span>
         </div>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-sm font-medium">
+        <Label htmlFor="description" className="text-sm font-medium flex items-center gap-1">
           Description
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p className="max-w-[200px]">Include any relevant details, deadlines context, or specific requirements</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </Label>
         <Textarea
           id="description"
@@ -97,9 +123,6 @@ export function TaskDetailsStep({
           rows={4}
           className="resize-none"
         />
-        <p className="text-xs text-muted-foreground">
-          Include any relevant details, deadlines context, or specific requirements
-        </p>
       </div>
 
       {/* Task Type */}
@@ -138,7 +161,19 @@ export function TaskDetailsStep({
 
       {/* Priority */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Priority</Label>
+        <Label className="text-sm font-medium flex items-center gap-1">
+          Priority
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p className="max-w-[200px]">High priority tasks appear prominently in recipient inboxes</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </Label>
         <div className="flex gap-2">
           {PRIORITIES.map((priority) => {
             const isSelected = formData.priority === priority.value;
@@ -157,9 +192,6 @@ export function TaskDetailsStep({
             );
           })}
         </div>
-        <p className="text-xs text-muted-foreground">
-          High priority tasks appear prominently in recipient inboxes
-        </p>
       </div>
     </div>
   );

@@ -129,7 +129,14 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
   // Handle task creation from wizard
   const handleCreateTask = useCallback(async (data: any, attachments: File[]) => {
     // Create the task first
-    const result = await createTask(data);
+    let result;
+    try {
+      result = await createTask(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create task';
+      toast.error(message);
+      throw err;
+    }
     if (!result) {
       toast.error('Failed to create task');
       throw new Error('Failed to create task');
@@ -395,21 +402,29 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           <div className="flex items-center gap-4">
             {/* View Toggle - Active/Archived */}
             {activeView === 'assigned' && (
-              <div className="flex">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
                 <Button
-                  variant={!showArchived ? "default" : "outline"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(false)}
-                  className="rounded-r-none"
+                  className={cn(
+                    !showArchived
+                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                      : 'text-slate-500 hover:text-slate-700'
+                  )}
                 >
                   <CheckCircle2 className="h-4 w-4 mr-1" />
                   Active
                 </Button>
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(true)}
-                  className="rounded-l-none"
+                  className={cn(
+                    showArchived
+                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                      : 'text-slate-500 hover:text-slate-700'
+                  )}
                 >
                   <Archive className="h-4 w-4 mr-1" />
                   Archived

@@ -11,20 +11,15 @@ import {
   FileText,
   AlertCircle,
   Clock,
-  Database,
-  CheckCircle,
-  XCircle,
-  Users,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
-import { SectorDistributionChart } from "@/components/charts/SectorDistributionChart"
 import { ActivityCalendarHeatmap } from "@/components/charts/ActivityCalendarHeatmap"
 import { apiFetch } from "@/lib/api-fetch"
 import { StaggerContainer, StaggerItem } from "@/components/ui/stagger"
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 
 interface MyPortfolioTabProps {
   userId: string
@@ -148,7 +143,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+              <HelpTextTooltip size="sm" content="Total number of activities you have created or are assigned to in the system." />
+            </div>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -161,7 +159,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Budgeted</CardTitle>
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-medium">Total Budgeted</CardTitle>
+              <HelpTextTooltip size="sm" content="Combined budget across all your activities, converted to USD." />
+            </div>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -174,7 +175,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Planned Disbursements</CardTitle>
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-medium">Planned Disbursements</CardTitle>
+              <HelpTextTooltip size="sm" content="Total value of planned disbursement transactions across your activities, in USD." />
+            </div>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -187,7 +191,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Commitments</CardTitle>
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-medium">Commitments</CardTitle>
+              <HelpTextTooltip size="sm" content="Total value of commitment transactions across your activities, in USD." />
+            </div>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -200,7 +207,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Disbursements</CardTitle>
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-medium">Disbursements</CardTitle>
+              <HelpTextTooltip size="sm" content="Total value of disbursement transactions across your activities, in USD." />
+            </div>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -213,7 +223,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expenditure</CardTitle>
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-medium">Expenditure</CardTitle>
+              <HelpTextTooltip size="sm" content="Total value of expenditure transactions across your activities, in USD." />
+            </div>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -230,7 +243,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Pipeline but Past Expected Start</CardTitle>
+              <div className="flex items-center gap-1">
+                <CardTitle className="text-base">Pipeline but Past Expected Start</CardTitle>
+                <HelpTextTooltip size="sm" content="Activities still in &quot;Pipeline&quot; status whose expected start date has already passed. These may need to be updated to &quot;Active&quot; or have their dates revised." />
+              </div>
               <Badge variant="secondary">{data.pipelinePastStart.length}</Badge>
             </div>
             <CardDescription>Activities that should have started</CardDescription>
@@ -257,7 +273,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Inactive for 90+ Days</CardTitle>
+              <div className="flex items-center gap-1">
+                <CardTitle className="text-base">Inactive for 90+ Days</CardTitle>
+                <HelpTextTooltip size="sm" content="Activities that haven't been updated in over 90 days. Consider reviewing these to ensure they're still current." />
+              </div>
               <Badge variant="secondary">{data.inactive90Days.length}</Badge>
             </div>
             <CardDescription>Activities needing updates</CardDescription>
@@ -283,7 +302,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Missing Required Data</CardTitle>
+              <div className="flex items-center gap-1">
+                <CardTitle className="text-base">Missing Required Data</CardTitle>
+                <HelpTextTooltip size="sm" content="Activities that are missing key fields needed for complete IATI reporting. Click a row to go directly to the relevant section in the activity editor." />
+              </div>
               <Badge variant="outline">
                 {Object.values(data.missingData).flat().length}
               </Badge>
@@ -291,134 +313,76 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <CardDescription>Activities with incomplete information</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {Object.entries(data.missingData).map(([field, activities]) => (
-                activities.length > 0 && (
-                  <div key={field} className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Database className="h-3 w-3" />
-                      <span>Missing {field}</span>
-                      <Badge variant="secondary" className="h-4 px-1">{activities.length}</Badge>
-                    </div>
-                    <div className="text-xs space-y-0.5 pl-5">
-                      {activities.slice(0, 2).map((title: string, idx: number) => (
-                        <p key={idx} className="truncate">{title}</p>
-                      ))}
-                      {activities.length > 2 && (
-                        <p className="text-muted-foreground">+{activities.length - 2} more</p>
-                      )}
-                    </div>
-                  </div>
-                )
-              ))}
+            <div className="max-h-64 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-background">
+                  <tr className="border-b text-left">
+                    <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
+                    <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Field</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(data.missingData).flatMap(([field, activities]) => {
+                    const fieldLabel: Record<string, string> = {
+                      sector: 'Sectors',
+                      dates: 'Dates',
+                      budget: 'Budget',
+                      reportingOrg: 'Reporting Org',
+                      iatiId: 'IATI Identifier',
+                    }
+                    const fieldTab: Record<string, string> = {
+                      sector: 'sectors',
+                      dates: 'finances',
+                      budget: 'finances',
+                      reportingOrg: 'partnerships',
+                      iatiId: 'finances',
+                    }
+                    return (activities as Array<{ id: string; title: string }>).map((activity) => (
+                      <tr key={`${field}-${activity.id}`} className="border-b last:border-0">
+                        <td className="py-1.5 pr-2">
+                          <Link
+                            href={`/activities/${activity.id}?tab=${fieldTab[field] || 'finances'}`}
+                            className="text-primary hover:underline truncate block max-w-[180px]"
+                            title={activity.title}
+                          >
+                            {activity.title}
+                          </Link>
+                        </td>
+                        <td className="py-1.5">
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {fieldLabel[field] || field}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))
+                  })}
+                  {Object.values(data.missingData).flat().length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">
+                        No missing data found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts and Additional Sections */}
-      <Tabs defaultValue="timeline" className="space-y-4">
-        <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-          <TabsTrigger value="timeline" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Timeline</TabsTrigger>
-          <TabsTrigger value="sectors" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Sectors</TabsTrigger>
-          <TabsTrigger value="validation" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Validation Status</TabsTrigger>
-          <TabsTrigger value="participating" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Participating Org</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="timeline" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Activity</CardTitle>
-              <CardDescription>Your contributions: activities created, transactions added, budgets updated, and more</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ActivityCalendarHeatmap events={data.userActivityEvents || []} fiscalYearConfig={fiscalYearConfig} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sectors" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sector Distribution</CardTitle>
-              <CardDescription>Activities grouped by DAC 3-digit sector codes</CardDescription>
-            </CardHeader>
-            <CardContent className="h-64 overflow-y-auto">
-              <SectorDistributionChart data={data.sectorDistribution} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="validation" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Government Review Status</CardTitle>
-              <CardDescription>Track validation progress of your activities</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">Validated</span>
-                  </div>
-                  <Badge variant="success">{data.validationStatus.validated} activities</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium">Pending Review</span>
-                  </div>
-                  <Badge variant="warning">{data.validationStatus.pending} activities</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-red-50">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-red-600" />
-                    <span className="font-medium">Rejected</span>
-                  </div>
-                  <Badge variant="destructive">{data.validationStatus.rejected} activities</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="participating" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activities Where Your Organization Participates</CardTitle>
-              <CardDescription>Activities reported by others that include your organization</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {data.participatingOrgActivities.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No activities found where your organization is a participant
-                  </p>
-                ) : (
-                  data.participatingOrgActivities.map((activity) => (
-                    <Link key={activity.id} href={`/activities/${activity.id}`}>
-                      <div className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{activity.title}</h4>
-                          <Badge variant="outline">{activity.role}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          Reported by: {activity.reportedBy}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Users className="h-3 w-3" />
-                          <span>Your role: {activity.role}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* System Activity */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-1">
+            <CardTitle>System Activity</CardTitle>
+            <HelpTextTooltip content="Your contribution activity over the past year — including activities created, transactions added, and budgets updated." />
+          </div>
+          <CardDescription>Your contributions: activities created, transactions added, budgets updated, and more</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActivityCalendarHeatmap events={data.userActivityEvents || []} fiscalYearConfig={fiscalYearConfig} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

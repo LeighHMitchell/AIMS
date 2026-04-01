@@ -36,7 +36,7 @@ function cleanUUIDValue(value: any): string | null {
 }
 
 export async function POST(request: Request) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user: authUser, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   if (!supabase) {
@@ -78,12 +78,20 @@ export async function POST(request: Request) {
       );
     }
     
+    // Normalize user ID: support body.user.id, body.userId, or fall back to auth session
+    if (!body.user?.id && body.userId) {
+      body.user = { id: body.userId };
+    } else if (!body.user?.id && authUser?.id) {
+      body.user = { id: authUser.id };
+    }
+
     console.log('[Field API] ============ POST /api/activities/field ============');
     console.log('[Field API] Timestamp:', new Date().toISOString());
     console.log('[Field API] Activity ID:', body.activityId);
     console.log('[Field API] Field:', body.field);
     console.log('[Field API] Value:', JSON.stringify(body.value));
-    
+    console.log('[Field API] User ID:', body.user?.id || 'not provided');
+
     // Validate required fields
     if (!body.activityId) {
       clearTimeout(timeoutId);
@@ -1052,7 +1060,7 @@ export async function POST(request: Request) {
     if (Object.keys(updateData).length > 0) {
       updateData.updated_at = new Date().toISOString();
       if (body.user?.id) {
-        updateData.updated_by = body.user.id;
+        updateData.last_edited_by = body.user.id;
       }
     }
 
@@ -1112,7 +1120,7 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString()
       };
       if (body.user?.id) {
-        timestampUpdate.updated_by = body.user.id;
+        timestampUpdate.last_edited_by = body.user.id;
       }
       
       const fetchResult = await supabase

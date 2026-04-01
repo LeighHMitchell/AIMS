@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,13 +10,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string; attachmentId: string }> }
 ) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
+  const supabase = getSupabaseAdmin();
+
     const { id: taskId, attachmentId } = await params;
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
 
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');

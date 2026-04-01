@@ -89,7 +89,15 @@ export function TaskCreationWizard({
 
     try {
       const data = wizard.getSubmissionData();
-      await onSubmit(data, wizard.formData.attachments);
+      // Apply custom names to attachments by creating new File objects
+      const attachments = wizard.formData.attachments.map((file, index) => {
+        const customName = wizard.formData.attachmentNames?.[index];
+        if (customName && customName !== file.name) {
+          return new File([file], customName, { type: file.type });
+        }
+        return file;
+      });
+      await onSubmit(data, attachments);
       wizard.resetForm();
       onOpenChange(false);
     } catch (err) {
@@ -114,7 +122,7 @@ export function TaskCreationWizard({
           <TaskDetailsStep
             formData={wizard.formData}
             updateFormData={wizard.updateFormData}
-            errors={wizard.getStepErrors('details')}
+            errors={wizard.getVisibleStepErrors('details')}
           />
         );
       case 'audience':
@@ -122,7 +130,7 @@ export function TaskCreationWizard({
           <TaskAudienceStep
             formData={wizard.formData}
             updateFormData={wizard.updateFormData}
-            errors={wizard.getStepErrors('audience')}
+            errors={wizard.getVisibleStepErrors('audience')}
             users={taskableUsers}
             organizations={taskableOrgs}
             orgMemberCounts={orgMemberCounts}
@@ -134,7 +142,7 @@ export function TaskCreationWizard({
           <TaskDeliveryStep
             formData={wizard.formData}
             updateFormData={wizard.updateFormData}
-            errors={wizard.getStepErrors('delivery')}
+            errors={wizard.getVisibleStepErrors('delivery')}
           />
         );
       case 'schedule':
@@ -142,7 +150,7 @@ export function TaskCreationWizard({
           <TaskScheduleStep
             formData={wizard.formData}
             updateFormData={wizard.updateFormData}
-            errors={wizard.getStepErrors('schedule')}
+            errors={wizard.getVisibleStepErrors('schedule')}
           />
         );
       case 'attachments':
