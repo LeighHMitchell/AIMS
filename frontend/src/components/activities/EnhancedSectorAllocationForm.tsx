@@ -591,7 +591,7 @@ export default function EnhancedSectorAllocationForm({
       {/* Success Message */}
       {validation.isValid && localAllocations.length > 0 && (
         <Alert className="border-green-200 bg-green-50">
-          <Info className="h-4 w-4 text-green-600" />
+          <Info className="h-4 w-4 text-[hsl(var(--success-icon))]" />
           <AlertDescription className="text-green-700">
             Sector allocation is valid and totals 100%. 
             {allowPublish && ' Ready for publication.'}

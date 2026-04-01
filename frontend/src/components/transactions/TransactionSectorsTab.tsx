@@ -362,7 +362,7 @@ export default function TransactionSectorsTab({
                   <span>Total Allocation</span>
                   <span className={cn(
                     "font-medium",
-                    validation?.isValid ? "text-green-600" : "text-red-600"
+                    validation?.isValid ? "text-[hsl(var(--success-icon))]" : "text-red-600"
                   )}>
                     {validation?.totalPercentage.toFixed(1)}% of 100%
                   </span>
@@ -397,8 +397,8 @@ export default function TransactionSectorsTab({
                 <div className="flex items-center gap-2">
                   {validation.isValid ? (
                     <>
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-600 font-medium">
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+                      <span className="text-sm text-[hsl(var(--success-icon))] font-medium">
                         Valid allocation (100%)
                       </span>
                     </>

@@ -2053,7 +2053,7 @@ export default function ActivityBudgetsTab({
                                       <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                     )}
                                   </span>
-                                  <span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  <span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="min-w-[200px]">
@@ -2103,7 +2103,7 @@ export default function ActivityBudgetsTab({
                             <Loader2 className="h-3 w-3 animate-spin text-orange-500" aria-label="Saving..." />
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'saved' && (
-                            <CheckCircle className="h-3 w-3 text-green-600" aria-label="Saved" />
+                            <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" aria-label="Saved" />
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'error' && (
                             <span className="text-xs text-red-500">Failed</span>

@@ -88,7 +88,7 @@ const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
 
   return (
     <>
-      <span className="text-muted-foreground">USD</span> {formattedValue}
+      <span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}
     </>
   );
 };

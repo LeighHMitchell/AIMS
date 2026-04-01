@@ -118,7 +118,7 @@ const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: Vis
     case 'hidden':
       return <EyeOff className={`${className} text-red-600`} />;
     default:
-      return <Globe className={`${className} text-green-600`} />;
+      return <Globe className={`${className} text-[hsl(var(--success-icon))]`} />;
   }
 };
 
@@ -655,7 +655,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             </div>
             
             {isSelected && (
-              <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
             )}
           </div>
           
@@ -1152,7 +1152,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     variant={selectedInType > 0 ? "default" : "secondary"} 
                     className={`ml-2 text-xs ${
                       selectedInType > 0 
-                        ? 'bg-green-100 text-green-700 border-green-200' 
+                        ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]'
                         : 'bg-gray-100 text-gray-700'
                     }`}
                   >

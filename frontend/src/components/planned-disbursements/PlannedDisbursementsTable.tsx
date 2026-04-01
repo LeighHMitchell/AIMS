@@ -244,7 +244,7 @@ export function PlannedDisbursementsTable({
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
+      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 

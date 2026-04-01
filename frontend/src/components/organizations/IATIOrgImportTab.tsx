@@ -611,7 +611,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                     <div className="flex items-start gap-3">
                       {budgetCoverage.countryBudgets.hasHomeCountryBudget ? (
                         <>
-                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                          <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))] mt-0.5" />
                           <div className="flex-1">
                             <p className="font-medium text-green-900">Country-Specific Budget Available</p>
                             <p className="text-sm text-green-700 mt-1">
@@ -698,7 +698,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
 
           {importStatus === 'complete' && (
             <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               <AlertDescription className="text-green-800">
                 Import completed successfully! You can now review the imported data in other tabs.
               </AlertDescription>

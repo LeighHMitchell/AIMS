@@ -274,7 +274,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                               </TooltipContent>
                             </Tooltip>
                             {score > 0 && (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <CheckCircle className="w-4 h-4 text-[hsl(var(--success-icon))]" />
                             )}
                           </h4>
                         </div>
@@ -350,7 +350,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                           <h4 className="font-medium text-gray-900 flex items-center gap-2">
                             {marker.name}
                             {score > 0 && (
-                              <CheckCircle className="w-5 h-5 text-green-600" />
+                              <CheckCircle className="w-5 h-5 text-[hsl(var(--success-icon))]" />
                             )}
                             <Tooltip>
                               <TooltipTrigger>
@@ -434,7 +434,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                           <h4 className="font-medium text-gray-900 flex items-center gap-2">
                             {marker.name}
                             {score > 0 && (
-                              <CheckCircle className="w-5 h-5 text-green-600" />
+                              <CheckCircle className="w-5 h-5 text-[hsl(var(--success-icon))]" />
                             )}
                             <Tooltip>
                               <TooltipTrigger>

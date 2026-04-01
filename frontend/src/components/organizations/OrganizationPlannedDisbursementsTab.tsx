@@ -538,7 +538,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                       </TableCell>
                       <TableCell className="py-2 px-4 text-right">
                         <span className="font-medium">
-                          <span className="text-muted-foreground">USD</span>{' '}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
                           {group.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
@@ -599,7 +599,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                           {disbursement.usd_amount != null ? (
                             <span className="font-medium">
-                              <span className="text-muted-foreground">USD</span>{' '}
+                              <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
                               {disbursement.usd_amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           ) : (
@@ -675,7 +675,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                       {disbursement.usd_amount != null ? (
                         <span className="font-medium">
-                          <span className="text-muted-foreground">USD</span>{' '}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
                           {disbursement.usd_amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       ) : (

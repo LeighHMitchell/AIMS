@@ -361,7 +361,7 @@ export default function SectorAllocationForm({
           
           {/* Total percentage display */}
           <div className={`text-lg font-medium ${
-            validation.isValid ? 'text-green-600' : 
+            validation.isValid ? 'text-[hsl(var(--success-icon))]' : 
             validation.totalPercentage > 100 ? 'text-red-600' : 'text-yellow-600'
           }`}>
             Total: {validation.totalPercentage}%

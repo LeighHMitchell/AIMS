@@ -113,7 +113,7 @@ export function SupabaseSelect({
       return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
     if (state.lastUpdated && !isOptimistic) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
     }
     return null;
   };
@@ -155,7 +155,7 @@ export function SupabaseSelect({
 
       {/* Success message */}
       {state.lastUpdated && !state.error && !state.isUpdating && !isOptimistic && showStatus && (
-        <div className="mt-1 text-xs text-green-600">
+        <div className="mt-1 text-xs text-[hsl(var(--success-icon))]">
           Saved at {state.lastUpdated.toLocaleTimeString()}
         </div>
       )}

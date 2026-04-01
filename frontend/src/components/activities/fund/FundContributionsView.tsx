@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { apiFetch } from "@/lib/api-fetch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { BarChart3, PieChart as PieChartIcon, Calendar } from "lucide-react"
 
@@ -45,6 +45,17 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
   const [error, setError] = useState<string | null>(null)
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar')
   const [showYearPivot, setShowYearPivot] = useState(false)
+  const [sortField, setSortField] = useState<'name' | 'pledged' | 'committed' | 'received' | 'total'>('total')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -88,6 +99,27 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
       </div>
     )
   }
+
+  const sortedDonors = useMemo(() => {
+    if (!data) return []
+    return [...data.donors].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1
+      switch (sortField) {
+        case 'name':
+          return dir * a.name.localeCompare(b.name)
+        case 'pledged':
+          return dir * (a.pledged - b.pledged)
+        case 'committed':
+          return dir * (a.committed - b.committed)
+        case 'received':
+          return dir * (a.received - b.received)
+        case 'total':
+          return dir * (a.total - b.total)
+        default:
+          return 0
+      }
+    })
+  }, [data, sortField, sortDirection])
 
   const chartData = data.donors.map(d => ({
     name: d.name.length > 25 ? d.name.substring(0, 22) + '...' : d.name,
@@ -181,13 +213,40 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className="font-semibold">Donor</TableHead>
+              <TableHead className={`font-semibold ${!showYearPivot ? sortableHeaderClasses : ''}`} onClick={!showYearPivot ? () => handleSort('name') : undefined}>
+                <div className="flex items-center gap-1">
+                  Donor
+                  {!showYearPivot && getSortIcon('name', sortField, sortDirection)}
+                </div>
+              </TableHead>
               {!showYearPivot ? (
                 <>
-                  {data.totals.pledged > 0 && <TableHead className="text-right font-semibold">Pledged</TableHead>}
-                  <TableHead className="text-right font-semibold">Committed</TableHead>
-                  <TableHead className="text-right font-semibold">Received</TableHead>
-                  <TableHead className="text-right font-semibold">Total</TableHead>
+                  {data.totals.pledged > 0 && (
+                    <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('pledged')}>
+                      <div className="flex items-center justify-end gap-1">
+                        Pledged
+                        {getSortIcon('pledged', sortField, sortDirection)}
+                      </div>
+                    </TableHead>
+                  )}
+                  <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('committed')}>
+                    <div className="flex items-center justify-end gap-1">
+                      Committed
+                      {getSortIcon('committed', sortField, sortDirection)}
+                    </div>
+                  </TableHead>
+                  <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('received')}>
+                    <div className="flex items-center justify-end gap-1">
+                      Received
+                      {getSortIcon('received', sortField, sortDirection)}
+                    </div>
+                  </TableHead>
+                  <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('total')}>
+                    <div className="flex items-center justify-end gap-1">
+                      Total
+                      {getSortIcon('total', sortField, sortDirection)}
+                    </div>
+                  </TableHead>
                 </>
               ) : (
                 data.years.map(y => (
@@ -197,7 +256,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.donors.map((donor, i) => (
+            {sortedDonors.map((donor, i) => (
               <TableRow key={i}>
                 <TableCell className="font-medium">{donor.name}</TableCell>
                 {!showYearPivot ? (

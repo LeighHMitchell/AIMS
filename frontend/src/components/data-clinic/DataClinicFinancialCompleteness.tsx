@@ -150,7 +150,7 @@ export function DataClinicFinancialCompleteness() {
     return (
       <Card className="border-green-200 bg-green-50">
         <CardContent className="flex items-center gap-3 py-8">
-          <CheckCircle2 className="h-10 w-10 text-green-600" />
+          <CheckCircle2 className="h-10 w-10 text-[hsl(var(--success-icon))]" />
           <div>
             <p className="font-semibold text-green-900 text-lg">
               No financial completeness issues detected.

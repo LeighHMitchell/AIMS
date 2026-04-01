@@ -79,27 +79,27 @@ export function HierarchicalSectorSelectDemo() {
         <CardContent>
           <ul className="space-y-2 text-sm">
             <li className="flex items-start gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>3-Level Hierarchy:</strong> Categories → 3-digit Sectors → 5-digit Subsectors</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>Visual Distinction:</strong> Bold categories, indented sectors, further indented subsectors</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>Selective Interaction:</strong> Only 5-digit codes are selectable</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>Smart Search:</strong> Filter across 5-digit codes and names only</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>Accessibility:</strong> Proper ARIA roles and keyboard navigation</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-green-600">✓</span>
+              <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>Selection Management:</strong> Individual remove, clear all, max limits</span>
             </li>
           </ul>

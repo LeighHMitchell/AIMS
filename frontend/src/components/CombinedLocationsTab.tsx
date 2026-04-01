@@ -153,11 +153,11 @@ export default function CombinedLocationsTab({
         <TabsList className="p-1 h-auto bg-background gap-1 border mb-4 flex flex-wrap">
           <TabsTrigger value="activity-locations" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
             Activity Sites
-            {hasValidLocations && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
+            {hasValidLocations && <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] ml-1" />}
           </TabsTrigger>
           <TabsTrigger value="subnational-breakdown" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
             Subnational Allocation
-            {hasSubnationalData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
+            {hasSubnationalData && <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] ml-1" />}
           </TabsTrigger>
         </TabsList>
         

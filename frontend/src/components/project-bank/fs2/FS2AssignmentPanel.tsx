@@ -254,7 +254,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               <div>
                 <span className="text-muted-foreground text-xs">Status</span>
                 <p className="font-medium capitalize flex items-center gap-1.5">
-                  {assignment.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />}
+                  {assignment.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />}
                   {assignment.status === "in_progress" && <Clock className="h-3.5 w-3.5 text-blue-600" />}
                   {assignment.status === "overdue" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
                   {assignment.status.replace(/_/g, " ")}

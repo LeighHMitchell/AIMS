@@ -468,7 +468,7 @@ export function DataClinicDuplicates() {
           {duplicates.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--success-icon))]" />
                 <h3 className="text-lg font-medium mb-2">No Activity Duplicates Found</h3>
                 <p className="text-muted-foreground">
                   {confidenceFilter !== 'all' || detectionTypeFilter !== 'all'
@@ -495,7 +495,7 @@ export function DataClinicDuplicates() {
           {duplicates.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--success-icon))]" />
                 <h3 className="text-lg font-medium mb-2">No Organization Duplicates Found</h3>
                 <p className="text-muted-foreground">
                   {confidenceFilter !== 'all' || detectionTypeFilter !== 'all'

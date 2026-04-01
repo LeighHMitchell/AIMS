@@ -26,7 +26,7 @@ const CATEGORY_CARDS: { value: CategoryDecision; label: string; description: str
     label: "Category A — Full Private",
     description: "Commercially viable. Project proceeds to competitive tendering for private sector delivery.",
     icon: Building,
-    color: "text-green-600",
+    color: "text-[hsl(var(--success-icon))]",
   },
   {
     value: "category_b",
@@ -114,7 +114,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <CheckCircle2 className="h-5 w-5 text-[hsl(var(--success-icon))]" />
           <h3 className="text-lg font-semibold">Categorization Complete</h3>
         </div>
         <div className="border border-border rounded-lg p-4 space-y-2">

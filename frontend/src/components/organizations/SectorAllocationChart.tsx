@@ -116,7 +116,7 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
           <p className="font-semibold text-gray-900 mb-1">{data.name}</p>
           <p className="text-sm text-gray-600">Code: {data.code}</p>
           <p className="text-sm text-blue-600">Allocation: {data.value.toFixed(1)}%</p>
-          <p className="text-sm text-green-600">Activities: {data.activityCount}</p>
+          <p className="text-sm text-[hsl(var(--success-icon))]">Activities: {data.activityCount}</p>
           <p className="text-sm text-purple-600">Share: {data.percentage.toFixed(1)}%</p>
         </div>
       );
@@ -165,9 +165,9 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
               <p className="text-xs text-blue-600">Sectors</p>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
-              <TrendingUp className="h-6 w-6 mx-auto mb-1 text-green-600" />
+              <TrendingUp className="h-6 w-6 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
               <p className="text-xl font-bold text-green-900">{sectorData.activitiesWithSectors}</p>
-              <p className="text-xs text-green-600">Activities with Sectors</p>
+              <p className="text-xs text-[hsl(var(--success-icon))]">Activities with Sectors</p>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-lg">
               <PieChartIcon className="h-6 w-6 mx-auto mb-1 text-purple-600" />

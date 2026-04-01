@@ -208,7 +208,7 @@ export function ResolveOrganizationModal({
                       <div className="flex-shrink-0">
                         {isResolved ? (
                           <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                            <ChevronRight className="h-3 w-3 text-green-600" />
+                            <ChevronRight className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                           </div>
                         ) : (
                           <div className="h-5 w-5 rounded-full bg-gray-200" />

@@ -5,12 +5,14 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  getSortIcon,
+  sortableHeaderClasses
 } from '@/components/ui/table';
 import { ActivityResult, ResultReference, REFERENCE_VOCABULARIES } from '@/types/results';
 import { Search, ExternalLink, Target, BookOpen } from 'lucide-react';
@@ -75,6 +77,19 @@ const getLocalizedString = (value: any, lang: string = 'en'): string => {
 
 export function ReferencesSummaryTable({ results, className }: ReferencesSummaryTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
+
+  type SortField = 'framework' | 'code' | 'indicators' | 'achievement';
+  const [sortField, setSortField] = useState<SortField>('framework');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   // Aggregate references from all results and indicators
   const aggregatedReferences = useMemo(() => {
@@ -187,6 +202,28 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
     );
   }, [aggregatedReferences, searchTerm]);
 
+  const sortedReferences = useMemo(() => {
+    const sorted = [...filteredReferences].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'framework':
+          cmp = a.vocabularyLabel.localeCompare(b.vocabularyLabel);
+          break;
+        case 'code':
+          cmp = a.code.localeCompare(b.code);
+          break;
+        case 'indicators':
+          cmp = a.linkedIndicators.length - b.linkedIndicators.length;
+          break;
+        case 'achievement':
+          cmp = (a.avgAchievement || 0) - (b.avgAchievement || 0);
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filteredReferences, sortField, sortDirection]);
+
   // Group by vocabulary for summary stats
   const vocabularySummary = useMemo(() => {
     const summary = new Map<string, { count: number; avgAchievement: number | null }>();
@@ -256,14 +293,22 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className="font-semibold">Framework</TableHead>
-              <TableHead className="font-semibold">Code</TableHead>
-              <TableHead className="font-semibold">Linked Indicators</TableHead>
-              <TableHead className="font-semibold text-right">Avg Achievement</TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('framework')}>
+                <span className="flex items-center gap-1">Framework {getSortIcon('framework', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('code')}>
+                <span className="flex items-center gap-1">Code {getSortIcon('code', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('indicators')}>
+                <span className="flex items-center gap-1">Linked Indicators {getSortIcon('indicators', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold text-right ${sortableHeaderClasses}`} onClick={() => handleSort('achievement')}>
+                <span className="flex items-center justify-end gap-1">Avg Achievement {getSortIcon('achievement', sortField, sortDirection)}</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredReferences.map((ref, index) => (
+            {sortedReferences.map((ref, index) => (
               <TableRow key={`${ref.vocabulary}-${ref.code}-${index}`}>
                 <TableCell>
                   <div className="flex items-center gap-2">

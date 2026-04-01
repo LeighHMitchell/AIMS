@@ -54,7 +54,7 @@ export function ContributorDisplay({
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'funder': return 'bg-blue-100 text-blue-700 hover:bg-blue-200';
-      case 'implementer': return 'bg-green-100 text-green-700 hover:bg-green-200';
+      case 'implementer': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]/80';
       case 'coordinator': return 'bg-purple-100 text-purple-700 hover:bg-purple-200';
       case 'partner': return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
       default: return 'bg-gray-100 text-gray-700 hover:bg-gray-200';

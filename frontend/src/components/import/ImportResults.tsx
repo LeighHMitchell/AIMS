@@ -80,7 +80,7 @@ export function ImportResults({
               <p className="text-sm text-green-700">Successfully Imported</p>
               <p className="text-2xl font-bold text-green-700">{successful}</p>
             </div>
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <CheckCircle2 className="h-8 w-8 text-[hsl(var(--success-icon))]" />
           </div>
         </Card>
 

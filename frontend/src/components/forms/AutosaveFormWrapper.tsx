@@ -146,7 +146,7 @@ export function AutosaveFormWrapper({
 
     if (state.lastSaved) {
       return (
-        <Badge variant="outline" className="text-green-600 border-green-300">
+        <Badge variant="outline" className="text-[hsl(var(--success-icon))] border-green-300">
           <CheckCircle className="h-3 w-3 mr-1" />
           Saved {formatTimeAgo(state.lastSaved)}
         </Badge>

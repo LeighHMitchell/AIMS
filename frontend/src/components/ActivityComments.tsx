@@ -635,7 +635,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                   
                   {comment.status === 'Resolved' && !isExpanded && comment.resolvedAt && (
                     <div className="text-sm text-gray-600">
-                      <CheckCircle className="h-3 w-3 inline mr-1 text-green-600" />
+                      <CheckCircle className="h-3 w-3 inline mr-1 text-[hsl(var(--success-icon))]" />
                       Resolved by {comment.resolvedBy?.name} • {formatDistanceToNow(new Date(comment.resolvedAt), { addSuffix: true })}
                     </div>
                   )}
@@ -655,7 +655,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 {comment.status === 'Open' ? (
                   <Circle className="h-4 w-4 text-gray-400" />
                 ) : (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                 )}
               </div>
             </div>
@@ -688,11 +688,11 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 {comment.status === 'Resolved' && comment.resolutionNote && comment.resolvedAt && (
                   <div className="bg-green-50 border border-green-200 rounded p-3 mb-3">
                     <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-green-800">Resolution</p>
                         <p className="text-sm text-green-700 mt-1">{comment.resolutionNote}</p>
-                        <p className="text-xs text-green-600 mt-1">
+                        <p className="text-xs text-[hsl(var(--success-icon))] mt-1">
                           by {comment.resolvedBy?.name} • {format(new Date(comment.resolvedAt), 'MMM d, yyyy h:mm a')}
                         </p>
                       </div>

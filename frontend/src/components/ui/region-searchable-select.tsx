@@ -175,7 +175,7 @@ export function RegionSearchableSelect({
               )}
               <div className={cn(
                 "text-sm font-medium",
-                isValidTotal ? "text-green-600" : totalPercentage > 100 ? "text-red-600" : "text-amber-600"
+                isValidTotal ? "text-[hsl(var(--success-icon))]" : totalPercentage > 100 ? "text-red-600" : "text-amber-600"
               )}>
                 Total: {totalPercentage.toFixed(1)}%
               </div>
@@ -225,7 +225,7 @@ export function RegionSearchableSelect({
                           <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
                         )}
                         {shouldShowGreenTick && shouldShowGreenTick(regionName) && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         {allocationStatus[regionName] === 'error' && (
                           <AlertCircle className="h-4 w-4 text-red-600" />

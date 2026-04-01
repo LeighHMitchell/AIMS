@@ -136,7 +136,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'Published': return 'bg-green-100 text-green-800';
+      case 'Published': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
       case 'Active': return 'bg-blue-100 text-blue-800';
       case 'Completed': return 'bg-gray-100 text-gray-800';
       case 'Draft – Internal Only': return 'bg-yellow-100 text-yellow-800';
@@ -214,7 +214,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                   <p className="text-sm text-gray-600">Published</p>
                   <p className="text-2xl font-bold">{publishedStrategies.length}</p>
                 </div>
-                <Eye className="h-8 w-8 text-green-600" />
+                <Eye className="h-8 w-8 text-[hsl(var(--success-icon))]" />
               </div>
             </CardContent>
           </Card>

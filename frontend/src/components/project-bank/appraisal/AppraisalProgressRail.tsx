@@ -44,7 +44,7 @@ function GateIndicator({ status }: GateIndicatorProps) {
   const configs: Record<GateStatus, { icon: typeof Clock; label: string; textClass: string; bgClass: string }> = {
     locked: { icon: Lock, label: 'Requires review board approval', textClass: 'text-gray-400', bgClass: 'bg-gray-100' },
     awaiting_review: { icon: Clock, label: 'Awaiting Review', textClass: 'text-gray-700', bgClass: 'bg-gray-200' },
-    approved: { icon: ShieldCheck, label: 'Approved', textClass: 'text-green-600', bgClass: 'bg-green-50' },
+    approved: { icon: ShieldCheck, label: 'Approved', textClass: 'text-[hsl(var(--success-icon))]', bgClass: 'bg-green-50' },
     returned: { icon: RotateCcw, label: 'Returned', textClass: 'text-amber-600', bgClass: 'bg-amber-50' },
     rejected: { icon: XCircle, label: 'Rejected', textClass: 'text-red-600', bgClass: 'bg-red-50' },
   };

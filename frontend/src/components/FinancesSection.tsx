@@ -295,7 +295,7 @@ export default function FinancesSection({
             Defaults
             {/* Show checkmark if all default fields are completed */}
             {allDefaultsCompleted && (
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             )}
           </TabsTrigger>
         </TabsList>

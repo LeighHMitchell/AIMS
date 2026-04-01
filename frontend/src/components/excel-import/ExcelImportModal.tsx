@@ -164,7 +164,7 @@ export function ExcelImportModal({
           {stats && (
             <div className="flex items-center gap-3 mt-3">
               <div className="flex items-center gap-1.5 text-xs">
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />
                 <span className="text-green-700">{stats.valid} matched</span>
               </div>
               {stats.warnings > 0 && (

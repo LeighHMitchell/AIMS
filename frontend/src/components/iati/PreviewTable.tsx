@@ -45,8 +45,9 @@ import {
   EyeOff,
   AlertTriangle,
   CheckCircle,
-  Info
+  Info,
 } from 'lucide-react';
+import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
 
 interface Activity {
   id?: string;
@@ -111,6 +112,31 @@ export function PreviewTable({
   });
   const [showIssuesOnly, setShowIssuesOnly] = useState(false);
 
+  type ActivitySortField = 'iati_id' | 'title' | 'start_date' | 'end_date';
+  type TransactionSortField = 'activity' | 'type' | 'date' | 'value' | 'provider' | 'receiver';
+  const [activitySortField, setActivitySortField] = useState<ActivitySortField>('iati_id');
+  const [activitySortDir, setActivitySortDir] = useState<'asc' | 'desc'>('asc');
+  const [txnSortField, setTxnSortField] = useState<TransactionSortField>('date');
+  const [txnSortDir, setTxnSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleActivitySort = (field: ActivitySortField) => {
+    if (activitySortField === field) {
+      setActivitySortDir(activitySortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setActivitySortField(field);
+      setActivitySortDir('asc');
+    }
+  };
+
+  const handleTxnSort = (field: TransactionSortField) => {
+    if (txnSortField === field) {
+      setTxnSortDir(txnSortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTxnSortField(field);
+      setTxnSortDir('asc');
+    }
+  };
+
   // Filter activities
   const filteredActivities = useMemo(() => {
     return activities.filter(activity => {
@@ -127,17 +153,65 @@ export function PreviewTable({
   // Filter transactions
   const filteredTransactions = useMemo(() => {
     return (transactions || []).filter(transaction => {
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.activityRef?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.provider_org_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.receiver_org_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesFilter = !showIssuesOnly || transaction._hasIssues;
-      
+
       return matchesSearch && matchesFilter && !transaction._skipImport;
     });
   }, [transactions, searchTerm, showIssuesOnly]);
+
+  // Sort activities
+  const sortedActivities = useMemo(() => {
+    return [...filteredActivities].sort((a, b) => {
+      const dir = activitySortDir === 'asc' ? 1 : -1;
+      switch (activitySortField) {
+        case 'iati_id':
+          return dir * a.iati_id.localeCompare(b.iati_id);
+        case 'title':
+          return dir * a.title.localeCompare(b.title);
+        case 'start_date': {
+          const da = a.planned_start_date || a.actual_start_date || '';
+          const db = b.planned_start_date || b.actual_start_date || '';
+          return dir * da.localeCompare(db);
+        }
+        case 'end_date': {
+          const da = a.planned_end_date || a.actual_end_date || '';
+          const db = b.planned_end_date || b.actual_end_date || '';
+          return dir * da.localeCompare(db);
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [filteredActivities, activitySortField, activitySortDir]);
+
+  // Sort transactions
+  const sortedTransactions = useMemo(() => {
+    return [...filteredTransactions].sort((a, b) => {
+      const dir = txnSortDir === 'asc' ? 1 : -1;
+      switch (txnSortField) {
+        case 'activity':
+          return dir * (a.activityRef || '').localeCompare(b.activityRef || '');
+        case 'type':
+          return dir * a.transaction_type.localeCompare(b.transaction_type);
+        case 'date':
+          return dir * (a.transaction_date || '').localeCompare(b.transaction_date || '');
+        case 'value':
+          return dir * ((a.value || 0) - (b.value || 0));
+        case 'provider':
+          return dir * (a.provider_org_name || '').localeCompare(b.provider_org_name || '');
+        case 'receiver':
+          return dir * (a.receiver_org_name || '').localeCompare(b.receiver_org_name || '');
+        default:
+          return 0;
+      }
+    });
+  }, [filteredTransactions, txnSortField, txnSortDir]);
 
   const handleSelectAll = (type: 'activities' | 'transactions') => {
     const items = type === 'activities' ? filteredActivities : filteredTransactions;
@@ -376,15 +450,23 @@ export function PreviewTable({
                     <TableRow>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>IATI ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleActivitySort('iati_id')}>
+                        <div className="flex items-center gap-1">IATI ID {getSortIcon('iati_id', activitySortField, activitySortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleActivitySort('title')}>
+                        <div className="flex items-center gap-1">Title {getSortIcon('title', activitySortField, activitySortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleActivitySort('start_date')}>
+                        <div className="flex items-center gap-1">Start Date {getSortIcon('start_date', activitySortField, activitySortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleActivitySort('end_date')}>
+                        <div className="flex items-center gap-1">End Date {getSortIcon('end_date', activitySortField, activitySortDir)}</div>
+                      </TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredActivities.map((activity, index) => (
+                    {sortedActivities.map((activity, index) => (
                       <TableRow key={index} className={activity._hasIssues ? 'bg-red-50' : ''}>
                         <TableCell>
                           <Checkbox
@@ -402,7 +484,7 @@ export function PreviewTable({
                             {activity._hasIssues ? (
                               <AlertTriangle className="h-4 w-4 text-red-500" />
                             ) : (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                             )}
                           </div>
                         </TableCell>
@@ -464,17 +546,29 @@ export function PreviewTable({
                     <TableRow>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Activity</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Receiver</TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('activity')}>
+                        <div className="flex items-center gap-1">Activity {getSortIcon('activity', txnSortField, txnSortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('type')}>
+                        <div className="flex items-center gap-1">Type {getSortIcon('type', txnSortField, txnSortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('date')}>
+                        <div className="flex items-center gap-1">Date {getSortIcon('date', txnSortField, txnSortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('value')}>
+                        <div className="flex items-center gap-1">Value {getSortIcon('value', txnSortField, txnSortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('provider')}>
+                        <div className="flex items-center gap-1">Provider {getSortIcon('provider', txnSortField, txnSortDir)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('receiver')}>
+                        <div className="flex items-center gap-1">Receiver {getSortIcon('receiver', txnSortField, txnSortDir)}</div>
+                      </TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTransactions.map((transaction, index) => (
+                    {sortedTransactions.map((transaction, index) => (
                       <TableRow key={index} className={transaction._hasIssues ? 'bg-red-50' : ''}>
                         <TableCell>
                           <Checkbox
@@ -486,7 +580,7 @@ export function PreviewTable({
                           {transaction._hasIssues ? (
                             <AlertTriangle className="h-4 w-4 text-red-500" />
                           ) : (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">

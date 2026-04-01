@@ -31,7 +31,7 @@ const importOptions = [
     icon: Building2,
     href: '/import/organizations',
     fields: ['Organization Name', 'IATI ID', 'Country', 'Organization Type'],
-    color: 'bg-green-50 text-green-700 border-green-200',
+    color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]',
   },
   {
     id: 'transactions',

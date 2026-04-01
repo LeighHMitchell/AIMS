@@ -155,7 +155,7 @@ function ResultAvatar({
     case 'organisation':
       return (
         <div className={cn(sizeClasses, 'bg-green-100 rounded-full flex items-center justify-center flex-shrink-0')}>
-          <Building2 className={cn(iconSize, 'text-green-600')} />
+          <Building2 className={cn(iconSize, 'text-[hsl(var(--success-icon))]')} />
         </div>
       )
     case 'user':

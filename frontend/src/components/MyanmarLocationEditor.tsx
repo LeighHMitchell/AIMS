@@ -264,12 +264,12 @@ export default function MyanmarLocationEditor({
               <div className="absolute inset-0 opacity-10">
                 <svg viewBox="0 0 100 100" className="w-full h-full">
                   <path d="M20,30 Q30,20 40,25 Q50,15 60,20 Q70,10 80,25 Q85,35 80,45 Q75,55 70,65 Q60,75 50,70 Q40,80 30,75 Q20,65 15,55 Q10,45 15,35 Z" 
-                        fill="currentColor" className="text-green-600" />
+                        fill="currentColor" className="text-[hsl(var(--success-icon))]" />
                 </svg>
               </div>
               <div className="text-center relative z-10">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-8 w-8 text-green-600" />
+                  <MapPin className="h-8 w-8 text-[hsl(var(--success-icon))]" />
                 </div>
                 <p className="text-sm font-medium text-gray-700">Myanmar National Coverage</p>
                 <p className="text-xs text-gray-500 mt-1">Activity covers the entire country</p>

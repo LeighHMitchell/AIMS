@@ -46,7 +46,7 @@ export default function EnhancedCommentsDemo() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="p-6 text-center">
-              <ThumbsUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <ThumbsUp className="h-8 w-8 text-[hsl(var(--success-icon))] mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Reactions</h3>
               <p className="text-sm text-muted-foreground">👍 👎 ❤️ 🎉 😕</p>
             </CardContent>
@@ -102,7 +102,7 @@ export default function EnhancedCommentsDemo() {
                     
                     <div className="space-y-3">
                       <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                        <ThumbsUp className="h-5 w-5 text-green-600 mt-0.5" />
+                        <ThumbsUp className="h-5 w-5 text-[hsl(var(--success-icon))] mt-0.5" />
                         <div>
                           <h4 className="font-medium">React to Comments</h4>
                           <p className="text-sm text-muted-foreground">Give thumbs up/down, hearts, celebrate, or show confusion</p>
@@ -312,7 +312,7 @@ export default function EnhancedCommentsDemo() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                   Complete Activity Editor with Comments
                 </CardTitle>
               </CardHeader>

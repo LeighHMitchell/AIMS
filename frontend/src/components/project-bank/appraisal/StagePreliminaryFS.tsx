@@ -34,7 +34,7 @@ function CharacterSuggestion({ value, min = 200 }: { value: string | null | unde
   const remaining = min - len;
   if (remaining <= 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-green-600">
+      <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--success-icon))]">
         <CheckCircle className="h-3.5 w-3.5" />
         {len} characters
       </span>

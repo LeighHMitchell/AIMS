@@ -69,7 +69,7 @@ export function ActivityMetadataPanel({
                       onClick={() => copyToClipboard(systemUUID, 'UUID')}
                     >
                       {copiedField === 'UUID' ? (
-                        <Check className="h-3 w-3 text-green-600" />
+                        <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       ) : (
                         <Copy className="h-3 w-3 text-gray-500" />
                       )}
@@ -104,7 +104,7 @@ export function ActivityMetadataPanel({
                       onClick={() => copyToClipboard(activityPartnerID, 'Partner ID')}
                     >
                       {copiedField === 'Partner ID' ? (
-                        <Check className="h-3 w-3 text-green-600" />
+                        <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       ) : (
                         <Copy className="h-3 w-3 text-gray-500" />
                       )}
@@ -139,7 +139,7 @@ export function ActivityMetadataPanel({
                       onClick={() => copyToClipboard(iatiIdentifier, 'IATI Identifier')}
                     >
                       {copiedField === 'IATI Identifier' ? (
-                        <Check className="h-3 w-3 text-green-600" />
+                        <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       ) : (
                         <Copy className="h-3 w-3 text-gray-500" />
                       )}

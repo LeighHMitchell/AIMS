@@ -150,7 +150,7 @@ export function BudgetTable({
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
+      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -364,7 +364,7 @@ export function BudgetTable({
                         title="Copy Activity Title"
                       >
                         {copiedId === `${budgetId}-title` ? (
-                          <Check className="w-3 h-3 text-green-500" />
+                          <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                         ) : (
                           <Copy className="w-3 h-3" />
                         )}
@@ -385,7 +385,7 @@ export function BudgetTable({
                           title="Copy IATI Identifier"
                         >
                           {copiedId === `${budgetId}-iati` ? (
-                            <Check className="w-3 h-3 text-green-500" />
+                            <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                           ) : (
                             <Copy className="w-3 h-3" />
                           )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -10,11 +11,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { Trophy, Medal, Award, Clock, AlertTriangle } from 'lucide-react';
 import { formatResponseTime, getCompletionRateColor } from '@/hooks/useTaskAnalytics';
 import { getTaskUserDisplayName } from '@/types/task';
 import type { TaskPerformerStats } from '@/types/task';
+
+type SortField = 'user' | 'assigned' | 'completed' | 'completion_rate' | 'avg_time' | 'overdue';
+type SortDirection = 'asc' | 'desc';
 
 interface TopPerformersTableProps {
   performers: TaskPerformerStats[];
@@ -44,6 +50,40 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
     }
   };
 
+  const [sortField, setSortField] = useState<SortField>('completion_rate');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedPerformers = useMemo(() => {
+    return [...performers].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'user':
+          return dir * getTaskUserDisplayName(a.user).localeCompare(getTaskUserDisplayName(b.user));
+        case 'assigned':
+          return dir * (a.assigned_count - b.assigned_count);
+        case 'completed':
+          return dir * (a.completed_count - b.completed_count);
+        case 'completion_rate':
+          return dir * (a.completion_rate - b.completion_rate);
+        case 'avg_time':
+          return dir * ((a.avg_response_time || 0) - (b.avg_response_time || 0));
+        case 'overdue':
+          return dir * (a.overdue_count - b.overdue_count);
+        default:
+          return 0;
+      }
+    });
+  }, [performers, sortField, sortDirection]);
+
   const getInitials = (performer: TaskPerformerStats): string => {
     const first = performer.user.first_name?.[0] || '';
     const last = performer.user.last_name?.[0] || '';
@@ -57,26 +97,36 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]">Rank</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead className="text-center">Assigned</TableHead>
-            <TableHead className="text-center">Completed</TableHead>
-            <TableHead>Completion Rate</TableHead>
-            <TableHead className="text-center">
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('user')}>
+              <div className="flex items-center gap-1">User {getSortIcon('user', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('assigned')}>
+              <div className="flex items-center justify-center gap-1">Assigned {getSortIcon('assigned', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('completed')}>
+              <div className="flex items-center justify-center gap-1">Completed {getSortIcon('completed', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('completion_rate')}>
+              <div className="flex items-center gap-1">Completion Rate {getSortIcon('completion_rate', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('avg_time')}>
               <div className="flex items-center justify-center gap-1">
                 <Clock className="h-4 w-4" />
                 <span>Avg Time</span>
+                {getSortIcon('avg_time', sortField, sortDirection)}
               </div>
             </TableHead>
-            <TableHead className="text-center">
+            <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('overdue')}>
               <div className="flex items-center justify-center gap-1">
                 <AlertTriangle className="h-4 w-4" />
                 <span>Overdue</span>
+                {getSortIcon('overdue', sortField, sortDirection)}
               </div>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {performers.map((performer, index) => (
+          {sortedPerformers.map((performer, index) => (
             <TableRow key={performer.user.id}>
               <TableCell>
                 <div className="flex justify-center">{getRankIcon(index)}</div>

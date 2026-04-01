@@ -1669,7 +1669,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
                 {formData.uploadedDocument ? (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-green-600">
+                    <div className="flex items-center justify-center gap-2 text-[hsl(var(--success-icon))]">
                       <CheckCircle className="h-5 w-5" />
                       <span className="text-sm font-medium">{formData.uploadedDocument}</span>
                     </div>

@@ -670,8 +670,8 @@ export default function SDGProfilePage() {
                               {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
                             </div>
                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                              <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
-                              <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
+                              <div><p className="text-xs text-muted-foreground font-normal">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
+                              <div><p className="text-xs text-muted-foreground font-normal">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
                             </div>
                             {activity.commitments > 0 && (
                               <div className="w-full bg-muted rounded-full h-1 mt-2">
@@ -717,8 +717,8 @@ export default function SDGProfilePage() {
                                 </div>
                               </td>
                               <td className="py-2 px-3 text-muted-foreground">{getStatusLabel(activity.activity_status)}</td>
-                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.commitments)} <span className="text-[10px] text-muted-foreground">USD</span></td>
-                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.disbursements)} <span className="text-[10px] text-muted-foreground">USD</span></td>
+                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.commitments)} <span className="text-xs text-muted-foreground font-normal">USD</span></td>
+                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.disbursements)} <span className="text-xs text-muted-foreground font-normal">USD</span></td>
                               <td className="py-2 px-3 text-right text-muted-foreground">{pct}{pct !== '—' ? '%' : ''}</td>
                             </tr>
                           )
@@ -775,10 +775,10 @@ export default function SDGProfilePage() {
                               )}
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-medium text-sm text-foreground truncate">{org.name}</h3>
-                                {org.acronym && <p className="text-[10px] text-muted-foreground">{org.acronym}</p>}
+                                {org.acronym && <p className="text-xs text-muted-foreground font-normal">{org.acronym}</p>}
                                 <div className="flex items-center gap-3 mt-1.5">
                                   <span className="text-xs font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
-                                  <span className="text-[10px] text-muted-foreground">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
+                                  <span className="text-xs text-muted-foreground font-normal">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
                                 </div>
                                 {org.contributionTypes.length > 0 && (
                                   <div className="flex gap-1 mt-1">

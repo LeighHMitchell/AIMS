@@ -313,7 +313,7 @@ export default function SDGAlignmentSection({
             </div>
           )}
           {!isSaving && lastSaved && (
-            <div className="flex items-center gap-1.5 text-green-600">
+            <div className="flex items-center gap-1.5 text-[hsl(var(--success-icon))]">
               <CheckCircle className="h-4 w-4" />
               <span className="text-sm">Saved</span>
             </div>
@@ -407,7 +407,7 @@ export default function SDGAlignmentSection({
                           <span className="font-medium">
                             Goal {goalId}: {goal.name}
                             {isGoalSaved(goalId) && (
-                              <CheckCircle className="h-4 w-4 text-green-500 inline-block ml-1.5 align-text-bottom" />
+                              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] inline-block ml-1.5 align-text-bottom" />
                             )}
                           </span>
                         </div>

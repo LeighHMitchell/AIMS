@@ -49,7 +49,7 @@ const IATI_SIGNIFICANCE_LABELS = {
 };
 
 const MARKER_TYPE_ICONS = {
-  environmental: <Leaf className="w-4 h-4 text-green-600" />,
+  environmental: <Leaf className="w-4 h-4 text-[hsl(var(--success-icon))]" />,
   social_governance: <Users className="w-4 h-4 text-blue-600" />,
   other: <Wrench className="w-4 h-4 text-purple-600" />
 };
@@ -299,7 +299,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
           {/* Selection Status */}
           {isSelected && (
             <div className="ml-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
             </div>
           )}
         </div>

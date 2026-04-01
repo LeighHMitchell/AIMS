@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  getSortIcon,
+  sortableHeaderClasses
 } from '@/components/ui/table';
 import {
   Select,
@@ -93,7 +95,7 @@ const getFormatIcon = (format?: string) => {
   const f = format.toLowerCase();
   if (f.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
   if (f.includes('xls') || f.includes('spreadsheet') || f.includes('csv')) {
-    return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    return <FileSpreadsheet className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
   }
   if (f.includes('image') || f.includes('png') || f.includes('jpg') || f.includes('jpeg')) {
     return <FileImage className="h-4 w-4 text-blue-500" />;
@@ -142,6 +144,19 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  type SortField = 'title' | 'format' | 'category' | 'attachedTo' | 'date';
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   // Flatten all documents from results hierarchy
   const flattenedDocuments = useMemo(() => {
@@ -310,6 +325,31 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
     });
   }, [flattenedDocuments, searchTerm, categoryFilter, typeFilter]);
 
+  const sortedDocuments = useMemo(() => {
+    const sorted = [...filteredDocuments].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'title':
+          cmp = a.title.localeCompare(b.title);
+          break;
+        case 'format':
+          cmp = (a.format || '').localeCompare(b.format || '');
+          break;
+        case 'category':
+          cmp = (a.categoryCode || '').localeCompare(b.categoryCode || '');
+          break;
+        case 'attachedTo':
+          cmp = a.attachedTo.localeCompare(b.attachedTo);
+          break;
+        case 'date':
+          cmp = (a.documentDate || '').localeCompare(b.documentDate || '');
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filteredDocuments, sortField, sortDirection]);
+
   if (flattenedDocuments.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 text-muted-foreground", className)}>
@@ -368,16 +408,26 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className="font-semibold w-[300px]">Document</TableHead>
-              <TableHead className="font-semibold">Format</TableHead>
-              <TableHead className="font-semibold">Category</TableHead>
-              <TableHead className="font-semibold">Attached To</TableHead>
-              <TableHead className="font-semibold">Date</TableHead>
+              <TableHead className={`font-semibold w-[300px] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                <span className="flex items-center gap-1">Document {getSortIcon('title', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('format')}>
+                <span className="flex items-center gap-1">Format {getSortIcon('format', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('category')}>
+                <span className="flex items-center gap-1">Category {getSortIcon('category', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('attachedTo')}>
+                <span className="flex items-center gap-1">Attached To {getSortIcon('attachedTo', sortField, sortDirection)}</span>
+              </TableHead>
+              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
+                <span className="flex items-center gap-1">Date {getSortIcon('date', sortField, sortDirection)}</span>
+              </TableHead>
               <TableHead className="font-semibold w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredDocuments.map((doc) => (
+            {sortedDocuments.map((doc) => (
               <TableRow key={doc.id}>
                 <TableCell>
                   <div className="flex items-start gap-2">

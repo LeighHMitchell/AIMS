@@ -124,7 +124,7 @@ function StatusCell({
     case 'valid':
       return (
         <div className="flex items-center gap-2">
-          <Check className="h-4 w-4 text-green-600 shrink-0" />
+          <Check className="h-4 w-4 text-[hsl(var(--success-icon))] shrink-0" />
           <span className="text-green-700">
             {importedValue.resolvedName
               ? `${importedValue.resolved} - ${importedValue.resolvedName}`

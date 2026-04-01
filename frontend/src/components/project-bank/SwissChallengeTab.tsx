@@ -159,7 +159,7 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
                     {isComplete ? <CheckCircle className="h-4 w-4" /> : idx + 1}
                   </div>
                   <div className="ml-1.5 min-w-0">
-                    <div className={cn("text-[11px] font-medium truncate", isCurrent ? "text-[#5f7f7a]" : isComplete ? "text-green-600" : "text-muted-foreground")}>
+                    <div className={cn("text-[11px] font-medium truncate", isCurrent ? "text-[#5f7f7a]" : isComplete ? "text-[hsl(var(--success-icon))]" : "text-muted-foreground")}>
                       {PROPOSAL_STATUS_LABELS[step]}
                     </div>
                   </div>
@@ -277,7 +277,7 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
                           </Button>
                           {b.status === 'submitted' && (
                             <Button variant="ghost" size="sm" onClick={() => updateBidderStatus(b.id, 'shortlisted')}>
-                              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                              <CheckCircle className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />
                             </Button>
                           )}
                           {b.status !== 'winner' && b.status !== 'rejected' && (

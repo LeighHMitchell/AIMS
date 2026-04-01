@@ -713,7 +713,7 @@ export default function IATIImportEnhancedPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
+                  <CheckCircle className="h-6 w-6 text-[hsl(var(--success-icon))] mr-2" />
                   Import Complete
                 </CardTitle>
                 <CardDescription>

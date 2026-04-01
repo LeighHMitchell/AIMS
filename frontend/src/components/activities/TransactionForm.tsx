@@ -599,7 +599,7 @@ export default function TransactionForm({
   // Helper to render icon
   const renderFieldIcon = (field: string) => {
     if (fieldStatus[field] === "saving") return <Loader2 className="inline h-4 w-4 text-orange-500 animate-spin ml-2" />;
-    if (fieldStatus[field] === "saved") return <CheckCircle className="inline h-4 w-4 text-green-500 ml-2" />;
+    if (fieldStatus[field] === "saved") return <CheckCircle className="inline h-4 w-4 text-[hsl(var(--success-icon))] ml-2" />;
     if (fieldStatus[field] === "error") return <AlertTriangle className="inline h-4 w-4 text-red-500 ml-2" />;
     return null;
   };
@@ -612,7 +612,7 @@ export default function TransactionForm({
       label: TRANSACTION_TYPE_LABELS[type],
       direction,
       isIncoming,
-      color: isIncoming ? 'text-green-600' : 'text-blue-600',
+      color: isIncoming ? 'text-[hsl(var(--success-icon))]' : 'text-blue-600',
       bgColor: isIncoming ? 'bg-green-50' : 'bg-blue-50',
       hint: isIncoming
         ? 'Your organisation is receiving these funds.'
@@ -887,7 +887,7 @@ export default function TransactionForm({
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     USD Conversion
                   </CardTitle>
                   <div className="flex items-center gap-2">
@@ -907,7 +907,7 @@ export default function TransactionForm({
                     {exchangeRateManual ? (
                       <Unlock className="h-4 w-4 text-orange-500" />
                     ) : (
-                      <Lock className="h-4 w-4 text-green-600" />
+                      <Lock className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     )}
                   </div>
                 </div>
@@ -1030,7 +1030,7 @@ export default function TransactionForm({
                 <CardTitle className="text-sm flex items-center gap-2">
                   Receiver Organization
                   {typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId && (
-                    <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-600 font-normal">
+                    <Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] font-normal">
                       Auto-filled
                     </Badge>
                   )}

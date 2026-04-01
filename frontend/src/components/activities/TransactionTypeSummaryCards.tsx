@@ -73,7 +73,7 @@ export function TransactionTypeSummaryCards({
                   maximumFractionDigits: 2
                 })}`,
                 icon: DollarSign,
-                iconClassName: "text-green-600"
+                iconClassName: "text-[hsl(var(--success-icon))]"
               },
               {
                 label: "Count",

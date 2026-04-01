@@ -207,7 +207,7 @@ export function OrgTypeMappingModal({
                           {option.label}
                         </span>
                         {isSuggested && (
-                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                          <Badge variant="secondary" className="text-xs bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                             Suggested
                           </Badge>
                         )}

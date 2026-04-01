@@ -1207,7 +1207,7 @@ export default function ProjectDetailPage() {
                 <CardContent className="space-y-2.5">
                   <div className="p-2.5 bg-surface-muted rounded-lg">
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] shrink-0" />
                       <span className="text-sm font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
                     </div>
                     {project.category_recommendation && project.category_recommendation !== project.category_decision && (

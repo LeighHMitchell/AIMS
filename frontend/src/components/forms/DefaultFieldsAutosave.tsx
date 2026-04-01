@@ -364,7 +364,7 @@ export function DefaultFieldsAutosave({
                 <HelpTextTooltip content="Provides an overarching classification that combines aid type, flow type, finance type, and tied status. It offers a simplified summary view of how resources are structured and delivered by default across an activity." />
                 {/* Show green tick when both Finance Type and Aid Type are completed (required for modality calculation) */}
                 {fieldCompletionStatus.defaultFinanceType && fieldCompletionStatus.defaultAidType && (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                 )}
               </CardTitle>
             </CardHeader>

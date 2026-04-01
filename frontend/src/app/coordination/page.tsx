@@ -140,7 +140,7 @@ export default function CoordinationPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-100 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-emerald-600" />
+                  <DollarSign className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Budget</p>

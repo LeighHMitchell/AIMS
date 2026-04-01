@@ -396,7 +396,7 @@ function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
             <div className="flex justify-center items-center h-full">
               {isValidated ? (
                 <>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                   <span className="sr-only">Validated Transaction</span>
                 </>
               ) : (
@@ -421,7 +421,7 @@ function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
       {/* Status badges */}
       <div className="flex flex-col items-center gap-1">
         {isValidated && (
-          <Badge variant="outline" className="w-fit text-xs bg-green-50 border-green-200 text-green-700">
+          <Badge variant="outline" className="w-fit text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))]">
             Validated
           </Badge>
         )}
@@ -1151,7 +1151,7 @@ export default function TransactionList({
 
   const getTransactionTypeColor = (type: string) => {
     const isIncoming = ['1', '12'].includes(type);
-    return isIncoming ? 'text-green-600' : 'text-blue-600';
+    return isIncoming ? 'text-[hsl(var(--success-icon))]' : 'text-blue-600';
   };
 
   // Helper to get org acronym or name by ID or ref (with alias resolution)
@@ -2077,7 +2077,7 @@ export default function TransactionList({
                                           <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                         )}
                                       </span>
-                                      <span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                      <span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent className="min-w-[200px]">
@@ -2201,7 +2201,7 @@ export default function TransactionList({
                                   <div className="flex items-center gap-2">
                                     {transaction.status === 'actual' ? (
                                       <>
-                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                                         <span className="text-xs text-green-700 font-medium">Validated</span>
                                       </>
                                     ) : (
@@ -2219,7 +2219,7 @@ export default function TransactionList({
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
                                   {usdValues[transaction.uuid || transaction.id]?.usd != null ? (
-                                    <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                    <span className="font-medium"><span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                   ) : (
                                     <span className="text-gray-400">—</span>
                                   )}

@@ -542,7 +542,7 @@ export function TransactionTable({
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
+      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -882,7 +882,7 @@ export function TransactionTable({
                           <div className="flex items-start gap-1">
                             <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
                               {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
-                              <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity', 'title', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-title` ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy activity title</p></TooltipContent></Tooltip>
+                              <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity', 'title', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-title` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy activity title</p></TooltipContent></Tooltip>
                             </div>
                           </div>
                         </div>
@@ -936,7 +936,7 @@ export function TransactionTable({
                         {transaction.acceptance_status === 'pending' && transaction.transaction_source === 'linked' ? (
                           <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200 text-yellow-700 px-1 cursor-help"><Clock className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Pending Acceptance</p></TooltipContent></Tooltip>
                         ) : transaction.acceptance_status === 'accepted' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700 px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Accepted Transaction</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Accepted Transaction</p></TooltipContent></Tooltip>
                         ) : transaction.acceptance_status === 'rejected' ? (
                           <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-red-50 border-red-200 text-red-700 px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
@@ -1096,7 +1096,7 @@ export function TransactionTable({
                     validatedStatus: (
                       <td key="validatedStatus" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.validated_by ? (
-                          <Tooltip><TooltipTrigger asChild><CheckCircle className="h-4 w-4 text-green-500 inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Validated by {transaction.validated_by}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Validated by {transaction.validated_by}</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -1665,7 +1665,7 @@ export function TransactionTable({
                           {/* Validated By */}
                           {transaction.validated_by && (
                             <div className="flex items-center gap-2">
-                              <UserCheck className="h-3 w-3 text-green-600" />
+                              <UserCheck className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                               <span className="text-xs text-muted-foreground">Validated by:</span>
                               <span className="text-xs font-medium text-green-700">{transaction.validated_by}</span>
                               {transaction.validated_at && (

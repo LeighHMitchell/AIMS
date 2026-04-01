@@ -68,7 +68,7 @@ const getStatusIcon = (status: FAQQuestionStatus) => {
     case 'in_progress':
       return { icon: Edit, color: 'text-blue-500' };
     case 'published':
-      return { icon: CheckCircle, color: 'text-green-500' };
+      return { icon: CheckCircle, color: 'text-[hsl(var(--success-icon))]' };
     case 'rejected':
       return { icon: XCircle, color: 'text-red-500' };
     case 'duplicate':

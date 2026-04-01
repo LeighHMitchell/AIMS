@@ -255,7 +255,7 @@ export function EnhancedFinancesSection({
             <Settings className="h-4 w-4" />
             Defaults
             {allFieldsCompleted && (
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             )}
           </TabsTrigger>
           {general?.is_pooled_fund === true && (
@@ -319,7 +319,7 @@ export function EnhancedFinancesSection({
                   <CardTitle className="flex items-center gap-2">
                     Default Values
                     {allFieldsCompleted && (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     )}
                   </CardTitle>
                 </CardHeader>
@@ -330,7 +330,7 @@ export function EnhancedFinancesSection({
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Aid Type
                         {fieldCompletion.aidType && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <HelpTextTooltip content="The type of aid for this activity" />
                       </label>
@@ -350,7 +350,7 @@ export function EnhancedFinancesSection({
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Currency
                         {fieldCompletion.currency && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <HelpTextTooltip content="The default currency for financial transactions" />
                       </label>
@@ -370,7 +370,7 @@ export function EnhancedFinancesSection({
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Flow Type
                         {fieldCompletion.flowType && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <HelpTextTooltip content="The flow type for this activity" />
                       </label>
@@ -390,7 +390,7 @@ export function EnhancedFinancesSection({
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Tied Status
                         {fieldCompletion.tiedStatus && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <HelpTextTooltip content="The tied status for this activity" />
                       </label>
@@ -410,7 +410,7 @@ export function EnhancedFinancesSection({
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Finance Type
                         {fieldCompletion.financeType && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <HelpTextTooltip content="The finance type for this activity" />
                       </label>
@@ -431,7 +431,7 @@ export function EnhancedFinancesSection({
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Disbursement Channel
                         {fieldCompletion.disbursementChannel && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies." />
                       </label>
@@ -457,7 +457,7 @@ export function EnhancedFinancesSection({
                   <CardTitle className="flex items-center gap-2">
                     Default Modality
                     {fieldCompletion.modality && (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     )}
                     <HelpTextTooltip content="The default aid modality for this activity" />
                   </CardTitle>

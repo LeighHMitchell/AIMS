@@ -120,7 +120,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
   if (submitted) {
     return (
       <div className="text-center py-12 space-y-4">
-        <CheckCircle className="h-16 w-16 mx-auto text-green-500" />
+        <CheckCircle className="h-16 w-16 mx-auto text-[hsl(var(--success-icon))]" />
         <h3 className="text-xl font-bold">Project Submitted</h3>
         <p className="text-muted-foreground max-w-md mx-auto">
           The project has been routed to <strong>{routing.label}</strong>.

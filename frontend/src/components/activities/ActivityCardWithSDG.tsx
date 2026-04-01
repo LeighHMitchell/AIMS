@@ -152,7 +152,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         maximumFractionDigits: 0,
       }).format(value);
     }
-    return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
+    return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
   };
 
 

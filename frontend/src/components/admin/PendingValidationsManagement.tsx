@@ -92,7 +92,7 @@ const getStatusBadge = (status: string | null) => {
   const statusColors: Record<string, string> = {
     '1': 'bg-gray-100 text-gray-800', // Pipeline/Identification
     '2': 'bg-blue-100 text-blue-800', // Implementation
-    '3': 'bg-green-100 text-green-800', // Finalisation
+    '3': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]', // Finalisation
     '4': 'bg-purple-100 text-purple-800', // Closed
     '5': 'bg-red-100 text-red-800', // Cancelled
     '6': 'bg-yellow-100 text-yellow-800', // Suspended
@@ -451,7 +451,7 @@ export function PendingValidationsManagement() {
               </div>
             ) : activities.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                <CheckCircle className="h-12 w-12 text-[hsl(var(--success-icon))] mb-4" />
                 <p className="text-lg font-medium">All caught up!</p>
                 <p className="text-sm">No activities pending validation</p>
               </div>
@@ -494,7 +494,7 @@ export function PendingValidationsManagement() {
               </div>
             ) : transactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                <CheckCircle className="h-12 w-12 text-[hsl(var(--success-icon))] mb-4" />
                 <p className="text-lg font-medium">All caught up!</p>
                 <p className="text-sm">No transactions pending validation</p>
               </div>

@@ -55,7 +55,7 @@ const ROLE_LABELS = {
 
 const ROLE_COLORS = {
   extending: 'bg-blue-100 text-blue-800',
-  implementing: 'bg-green-100 text-green-800',
+  implementing: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   government: 'bg-purple-100 text-purple-800',
   funding: 'bg-yellow-100 text-yellow-800'
 };

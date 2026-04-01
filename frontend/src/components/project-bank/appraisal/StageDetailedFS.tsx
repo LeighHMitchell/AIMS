@@ -92,7 +92,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             )}
           </div>
           <div className="flex items-center gap-1.5 text-xs">
-            {assignment.status === 'completed' && <Check className="h-3 w-3 text-green-600" />}
+            {assignment.status === 'completed' && <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />}
             {assignment.status === 'in_progress' && <Clock className="h-3 w-3 text-blue-600" />}
             <span className="capitalize text-muted-foreground">{assignment.status.replace(/_/g, ' ')}</span>
           </div>

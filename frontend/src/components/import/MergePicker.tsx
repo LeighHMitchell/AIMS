@@ -145,7 +145,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
       case 'active':
       case 'published':
       case 'implementation':
-        return 'bg-green-100 text-green-800';
+        return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
       case 'draft':
       case 'pipeline_preparation':
         return 'bg-yellow-100 text-yellow-800';

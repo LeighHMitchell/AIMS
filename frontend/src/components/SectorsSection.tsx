@@ -293,7 +293,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
             <div className="mt-4 pt-4 border-t">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Total Allocation:</span>
-                <span className={`text-sm font-bold ${totalPercentage === 100 ? 'text-green-600' : 'text-amber-600'}`}>
+                <span className={`text-sm font-bold ${totalPercentage === 100 ? 'text-[hsl(var(--success-icon))]' : 'text-amber-600'}`}>
                   {totalPercentage}%
                 </span>
               </div>

@@ -208,7 +208,7 @@ export function TaskCreationWizard({
                     disabled={wizard.isSubmitting}
                     className={cn(
                       'flex flex-col items-center gap-1 transition-colors',
-                      isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground',
+                      isActive ? 'text-primary' : isCompleted ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground',
                       !wizard.isSubmitting && 'hover:text-primary cursor-pointer'
                     )}
                   >

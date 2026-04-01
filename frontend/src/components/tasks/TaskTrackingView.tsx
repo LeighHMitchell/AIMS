@@ -387,7 +387,7 @@ export function TaskTrackingView({
                           </Badge>
                         )}
                         {completed > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 border-green-200 bg-green-50 text-green-700">
+                          <Badge variant="outline" className="text-xs gap-1 border-[hsl(var(--success-border))] bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]">
                             <CheckCircle2 className="h-3 w-3" />
                             {completed}
                           </Badge>
@@ -413,7 +413,7 @@ export function TaskTrackingView({
                           </div>
                           <span className={cn(
                             'text-xs font-medium tabular-nums',
-                            progressPercent === 100 && 'text-green-600'
+                            progressPercent === 100 && 'text-[hsl(var(--success-icon))]'
                           )}>
                             {progressPercent}%
                           </span>

@@ -62,7 +62,7 @@ export function TransactionActionMenu({
         {showAcceptReject && (
           <>
             {onAccept && (
-              <DropdownMenuItem onClick={onAccept} className="text-green-600 focus:text-green-600">
+              <DropdownMenuItem onClick={onAccept} className="text-[hsl(var(--success-icon))] focus:text-[hsl(var(--success-icon))]">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Accept Transaction
               </DropdownMenuItem>

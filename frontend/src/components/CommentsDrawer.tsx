@@ -465,7 +465,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                         {comment.type}
                       </Badge>
                       {comment.status === 'Resolved' && (
-                        <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
+                        <Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                           Resolved
                         </Badge>
                       )}

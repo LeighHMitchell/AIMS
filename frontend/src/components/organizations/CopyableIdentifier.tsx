@@ -37,7 +37,7 @@ export function CopyableIdentifier({ value, label }: CopyableIdentifierProps) {
         className={`h-6 w-6 p-0 hover:bg-slate-100 transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
       >
         {copied ? (
-          <Check className="h-3 w-3 text-green-600" />
+          <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
         ) : (
           <Copy className="h-3 w-3 text-slate-600" />
         )}

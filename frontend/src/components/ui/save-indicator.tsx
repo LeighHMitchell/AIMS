@@ -33,7 +33,7 @@ export function SaveIndicator({
   if (isSaved) {
     return (
       <CheckCircle 
-        className={`${iconSize} text-green-600 ${className}`} 
+        className={`${iconSize} text-[hsl(var(--success-icon))] ${className}`} 
       />
     );
   }
@@ -90,7 +90,7 @@ export function LabelSaveIndicator({
     // 1. Field has been saved (isSaved = true)
     // 2. Field has a non-empty value (hasValue = true)
     if (isSaved && hasValue) {
-      return <CheckCircle className="w-4 h-4 text-green-600 ml-2" />;
+      return <CheckCircle className="w-4 h-4 text-[hsl(var(--success-icon))] ml-2" />;
     }
     
     // No indicator for idle state or saved with empty value

@@ -248,19 +248,19 @@ export function ActivityEditorFieldAutosave({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div>
               <span className="font-medium">Title:</span>
-              <span className={`ml-1 ${titleAutosave.state.isSaving ? 'text-blue-600' : 'text-green-600'}`}>
+              <span className={`ml-1 ${titleAutosave.state.isSaving ? 'text-blue-600' : 'text-[hsl(var(--success-icon))]'}`}>
                 {titleAutosave.state.isSaving ? 'Saving...' : 'Saved'}
               </span>
             </div>
             <div>
               <span className="font-medium">Status:</span>
-              <span className={`ml-1 ${statusAutosave.state.isSaving ? 'text-blue-600' : 'text-green-600'}`}>
+              <span className={`ml-1 ${statusAutosave.state.isSaving ? 'text-blue-600' : 'text-[hsl(var(--success-icon))]'}`}>
                 {statusAutosave.state.isSaving ? 'Saving...' : 'Saved'}
               </span>
             </div>
             <div>
               <span className="font-medium">Aid Type:</span>
-              <span className={`ml-1 ${aidTypeAutosave.state.isSaving ? 'text-blue-600' : 'text-green-600'}`}>
+              <span className={`ml-1 ${aidTypeAutosave.state.isSaving ? 'text-blue-600' : 'text-[hsl(var(--success-icon))]'}`}>
                 {aidTypeAutosave.state.isSaving ? 'Saving...' : 'Saved'}
               </span>
             </div>

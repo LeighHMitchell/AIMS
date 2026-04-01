@@ -78,7 +78,7 @@ export function AutosaveStatus({
         icon: <CheckCircle className="h-3 w-3" />,
         text: `Saved ${formatTimeAgo(lastSaved)}`,
         variant: 'outline' as const,
-        className: 'text-green-600 border-green-300 bg-green-50'
+        className: 'text-[hsl(var(--success-text))] border-[hsl(var(--success-border))] bg-[hsl(var(--success-bg))]'
       };
     }
 
@@ -159,7 +159,7 @@ export function AutosaveStatusCompact({
 
   if (lastSaved) {
     return (
-      <div className="flex items-center gap-1 text-green-600">
+      <div className="flex items-center gap-1 text-[hsl(var(--success-icon))]">
         <CheckCircle className="h-3 w-3" />
         <span className="text-xs">Saved</span>
       </div>

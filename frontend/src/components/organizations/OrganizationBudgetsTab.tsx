@@ -535,7 +535,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                       </TableCell>
                       <TableCell className="py-2 px-4 text-right">
                         <span className="font-medium">
-                          <span className="text-muted-foreground">USD</span>{' '}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
                           {group.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
@@ -571,7 +571,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '130px' }}>
                           {budget.usd_value != null ? (
                             <span className="font-medium">
-                              <span className="text-muted-foreground">USD</span>{' '}
+                              <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
                               {budget.usd_value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           ) : (
@@ -622,7 +622,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '130px' }}>
                       {budget.usd_value != null ? (
                         <span className="font-medium">
-                          <span className="text-muted-foreground">USD</span>{' '}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
                           {budget.usd_value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       ) : (

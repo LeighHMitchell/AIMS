@@ -841,7 +841,7 @@ export function AdminUserTable() {
                                 className="h-5 w-5 p-0"
                                 onClick={() => saveEmailEdit(user.id)}
                               >
-                                <Check className="h-3 w-3 text-green-600" />
+                                <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                               </Button>
                               <Button
                                 variant="ghost"

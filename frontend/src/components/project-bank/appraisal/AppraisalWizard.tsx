@@ -256,7 +256,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         text: 'Intake approved. You can now begin the Preliminary Feasibility Study.',
         bgClass: 'bg-green-50 border-green-200',
         textClass: 'text-green-800',
-        iconClass: 'text-green-600',
+        iconClass: 'text-[hsl(var(--success-icon))]',
       };
     }
     if (projectStage === 'fs1_approved') {
@@ -265,7 +265,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         text: 'Feasibility study approved. The project will proceed to the Detailed Feasibility Study.',
         bgClass: 'bg-green-50 border-green-200',
         textClass: 'text-green-800',
-        iconClass: 'text-green-600',
+        iconClass: 'text-[hsl(var(--success-icon))]',
       };
     }
     if (projectStage === 'fs2_completed' || projectStage === 'fs2_desk_reviewed' || projectStage === 'fs2_senior_reviewed') {
@@ -292,7 +292,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         text: `Detailed Feasibility Study approved and categorized. The project may now proceed to ${getFs3Label(wizard.formData.category_decision as CategoryDecision | null)}.`,
         bgClass: 'bg-green-50 border-green-200',
         textClass: 'text-green-800',
-        iconClass: 'text-green-600',
+        iconClass: 'text-[hsl(var(--success-icon))]',
       };
     }
     return null;

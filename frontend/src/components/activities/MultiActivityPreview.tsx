@@ -170,7 +170,7 @@ export function MultiActivityPreview({
           <div className="text-sm">
             <span className="font-medium">Total:</span> {stats.total}
           </div>
-          <div className="text-sm text-green-600">
+          <div className="text-sm text-[hsl(var(--success-icon))]">
             <span className="font-medium">New:</span> {stats.newCount}
           </div>
           <div className="text-sm text-blue-600">

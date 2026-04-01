@@ -574,7 +574,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
               )}
               {!saving && lastSaved && linkedActivities.length > 0 && (
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </h3>
           </div>
@@ -632,7 +632,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               </span>
                             </>
                           )}
-                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                         </div>
 
                         {/* Second line: Narrative or relationship description */}

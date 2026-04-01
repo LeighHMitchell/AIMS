@@ -1252,7 +1252,7 @@ function ImprovedSectorAllocationFormInner({
                                 <Loader2 className="h-3 w-3 animate-spin text-orange-500" />
                               )}
                               {shouldShowGreenTick(allocation) && (
-                                <CheckCircle className="h-3 w-3 text-green-600" />
+                                <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                               )}
                               {allocationStatus[allocation.id] === 'error' && (
                                 <AlertCircle className="h-3 w-3 text-[#DC2625]" />

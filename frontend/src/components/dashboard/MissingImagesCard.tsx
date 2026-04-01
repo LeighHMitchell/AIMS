@@ -371,7 +371,7 @@ export function MissingImagesCard({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-green-500" />
+            <Sparkles className="h-5 w-5 text-[hsl(var(--success-icon))]" />
             Activities Missing Images
           </CardTitle>
           <CardDescription>
@@ -380,7 +380,7 @@ export function MissingImagesCard({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500 mb-3" />
+            <CheckCircle2 className="h-12 w-12 text-[hsl(var(--success-icon))] mb-3" />
             <p className="text-lg font-medium text-slate-700">All activities have images!</p>
             <p className="text-sm text-slate-500 mt-1">
               Great job! All your activities have banners and logos.

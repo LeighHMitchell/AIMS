@@ -223,7 +223,7 @@ export function AssignOrganizationsModal({
                             )}
                           </div>
                           {!needsProvider && !needsReceiver && (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                           )}
                         </div>
 
@@ -235,7 +235,7 @@ export function AssignOrganizationsModal({
                             <div className="col-span-9">
                               {tx.provider_org_id ? (
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                                   <span className="text-sm">{tx.provider_org_name || tx.provider_org_ref}</span>
                                 </div>
                               ) : (
@@ -273,7 +273,7 @@ export function AssignOrganizationsModal({
                             <div className="col-span-9">
                               {tx.receiver_org_id ? (
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                                   <span className="text-sm">{tx.receiver_org_name || tx.receiver_org_ref}</span>
                                 </div>
                               ) : (

@@ -346,7 +346,7 @@ export function ProjectReferencesManagement() {
   const getTypeBadgeColor = (type: ReferenceType) => {
     switch (type) {
       case "government":
-        return "border-green-300 text-green-700 bg-green-50";
+        return "border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]";
       case "donor":
         return "border-blue-300 text-blue-700 bg-blue-50";
       case "internal":

@@ -173,7 +173,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-lg">{currentMeta.fileName}</h3>
-                    <Badge variant="outline" className="bg-green-50 text-green-700">Ready</Badge>
+                    <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]">Ready</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>

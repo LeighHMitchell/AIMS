@@ -1259,7 +1259,7 @@ export default function TransactionModal({
     <Label className="text-sm font-medium flex items-center gap-2">
       {children}
       {isSaving && <span className="text-xs text-blue-500">(saving...)</span>}
-      {isSaved && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+      {isSaved && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
     </Label>
   );
 
@@ -1803,7 +1803,7 @@ export default function TransactionModal({
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
-                          ? 'bg-green-100 text-green-700' 
+                          ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
                           : 'bg-muted text-gray-600'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Pending'}

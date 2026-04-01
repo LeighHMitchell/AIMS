@@ -248,7 +248,7 @@ export default function SDGAlignmentSectionSimplified({
     
     if (lastSaved) {
       return (
-        <div className="flex items-center gap-1 text-green-600">
+        <div className="flex items-center gap-1 text-[hsl(var(--success-icon))]">
           <CheckCircle className="h-3 w-3" />
           <span className="text-xs">Saved {formatTimeAgo(lastSaved)}</span>
         </div>
@@ -347,7 +347,7 @@ export default function SDGAlignmentSectionSimplified({
                         <div className="flex items-center gap-2">
                           <h4 className="font-semibold text-lg">Goal {goal.id}: {goal.name}</h4>
                           {isGoalSaved(goalId) && (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
@@ -357,7 +357,7 @@ export default function SDGAlignmentSectionSimplified({
                             </span>
                           )}
                           {isGoalSaved(goalId) && (
-                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                            <Badge variant="secondary" className="text-xs bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                               Saved
                             </Badge>
                           )}

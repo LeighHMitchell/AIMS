@@ -237,7 +237,7 @@ export default function LocationEditor({
                   <AlertCircle className="h-4 w-4 text-red-500" title={errors[location.id]} />
                 )}
                 {!errors[location.id] && validateLocation(location) === null && (
-                  <CheckCircle className="h-4 w-4 text-green-500" title="Valid location" />
+                  <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" title="Valid location" />
                 )}
                 <Button
                   variant="ghost"
@@ -446,7 +446,7 @@ export default function LocationEditor({
                           {index + 1}. {location.name || 'Unnamed Location'}
                         </span>
                         {isValid ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         ) : (
                           <AlertCircle className="h-4 w-4 text-red-500" />
                         )}

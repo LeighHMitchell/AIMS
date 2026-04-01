@@ -304,7 +304,7 @@ export default function GovernmentEndorsementTab({
     
     if (lastSaved) {
       return (
-        <div className="flex items-center gap-2 text-green-600">
+        <div className="flex items-center gap-2 text-[hsl(var(--success-icon))]">
           <CheckCircle className="h-4 w-4" />
           <span className="text-sm">
             Saved {format(lastSaved, 'HH:mm:ss')}
@@ -397,7 +397,7 @@ export default function GovernmentEndorsementTab({
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 {formData.validation_status === 'validated' && (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                 )}
                 {formData.validation_status === 'rejected' && (
                   <AlertCircle className="h-5 w-5 text-red-600" />

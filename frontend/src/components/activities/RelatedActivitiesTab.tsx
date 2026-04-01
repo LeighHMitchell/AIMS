@@ -15,6 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import RelatedActivitiesNetworkGraph from './RelatedActivitiesNetworkGraph';
 import { AddLinkedActivityModal } from '@/components/modals/AddLinkedActivityModal';
@@ -48,7 +50,7 @@ const getStatusColor = (status?: string) => {
   if (!status) return 'bg-muted text-foreground';
   
   const statusNum = parseInt(status);
-  if (statusNum === 2) return 'bg-green-100 text-green-800'; // Active
+  if (statusNum === 2) return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'; // Active
   if (statusNum === 3) return 'bg-blue-100 text-blue-800'; // Completed
   if (statusNum === 1) return 'bg-yellow-100 text-yellow-800'; // Pipeline
   if (statusNum === 5) return 'bg-red-100 text-red-800'; // Cancelled
@@ -77,6 +79,39 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   const [viewMode, setViewMode] = useState<'table' | 'graph'>('table');
   const [showAddModal, setShowAddModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [sortField, setSortField] = useState<'activity' | 'iati_id' | 'organization' | 'status' | 'relationship' | 'source'>('activity');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedActivities = useMemo(() => {
+    return [...relatedActivities].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'activity':
+          return dir * a.title.localeCompare(b.title);
+        case 'iati_id':
+          return dir * (a.iatiIdentifier || '').localeCompare(b.iatiIdentifier || '');
+        case 'organization':
+          return dir * (a.organizationName || '').localeCompare(b.organizationName || '');
+        case 'status':
+          return dir * (a.status || '').localeCompare(b.status || '');
+        case 'relationship':
+          return dir * a.relationshipType.localeCompare(b.relationshipType);
+        case 'source':
+          return dir * a.source.localeCompare(b.source);
+        default:
+          return 0;
+      }
+    });
+  }, [relatedActivities, sortField, sortDirection]);
 
   useEffect(() => {
     const fetchRelatedActivities = async () => {
@@ -318,21 +353,33 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                   <TableHeader>
                     <TableRow className="bg-muted">
                       <TableHead className="w-[50px]">Direction</TableHead>
-                      <TableHead>Activity</TableHead>
-                      <TableHead>IATI Identifier</TableHead>
-                      <TableHead>Organization</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Relationship</TableHead>
-                      <TableHead>Source</TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleSort('activity')}>
+                        <div className="flex items-center gap-1">Activity {getSortIcon('activity', sortField, sortDirection)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleSort('iati_id')}>
+                        <div className="flex items-center gap-1">IATI Identifier {getSortIcon('iati_id', sortField, sortDirection)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleSort('organization')}>
+                        <div className="flex items-center gap-1">Organization {getSortIcon('organization', sortField, sortDirection)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleSort('status')}>
+                        <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleSort('relationship')}>
+                        <div className="flex items-center gap-1">Relationship {getSortIcon('relationship', sortField, sortDirection)}</div>
+                      </TableHead>
+                      <TableHead className={sortableHeaderClasses} onClick={() => handleSort('source')}>
+                        <div className="flex items-center gap-1">Source {getSortIcon('source', sortField, sortDirection)}</div>
+                      </TableHead>
                       {!readOnly && <TableHead className="w-[80px]">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {relatedActivities.map((activity) => (
+                    {sortedActivities.map((activity) => (
                       <TableRow key={activity.id} className="hover:bg-muted/50">
                         <TableCell>
                           {activity.direction === 'incoming' ? (
-                            <ArrowLeft className="h-4 w-4 text-green-600" title="Incoming" />
+                            <ArrowLeft className="h-4 w-4 text-[hsl(var(--success-icon))]" title="Incoming" />
                           ) : (
                             <ArrowRight className="h-4 w-4 text-blue-600" title="Outgoing" />
                           )}

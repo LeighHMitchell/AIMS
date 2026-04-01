@@ -264,7 +264,7 @@ function HistoryTab() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>
+        return <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>
       case 'failed':
         return <Badge variant="outline" className="bg-red-50 text-red-700"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
       case 'importing':
@@ -1425,7 +1425,7 @@ export default function IATIImportPage() {
                             <li>Fetch data from public IATI XML endpoints</li>
                             <li>Automatically update from scheduled URLs</li>
                           </ul>
-                          <p className="mt-2 text-sm text-emerald-600">
+                          <p className="mt-2 text-sm text-[hsl(var(--success-icon))]">
                             Enter a URL above and click &quot;Fetch and Parse&quot; to begin.
                           </p>
                         </AlertDescription>
@@ -1532,7 +1532,7 @@ export default function IATIImportPage() {
                     <Card>
                       <CardContent className="pt-6">
                         <div className="text-center">
-                          <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                          <Activity className="h-8 w-8 mx-auto mb-2 text-[hsl(var(--success-icon))]" />
                           <p className="text-3xl font-bold">{parsedData.activities.length}</p>
                           <p className="text-sm text-muted-foreground">Activities</p>
                           <div className="mt-2 text-xs text-muted-foreground">
@@ -1634,7 +1634,7 @@ export default function IATIImportPage() {
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">{parsedData.activities.length}</p>
+                        <p className="text-2xl font-bold text-[hsl(var(--success-icon))]">{parsedData.activities.length}</p>
                         <p className="text-sm text-muted-foreground">Activities</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {parsedData.activities.filter(a => !a.matched).length} new
@@ -1739,7 +1739,7 @@ export default function IATIImportPage() {
 
                   {importState.organizations.phase === 'done' && (
                     <Alert className="bg-green-50">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                       <AlertDescription>
                         Successfully imported {importState.organizations.imported.length} organizations
                       </AlertDescription>
@@ -1865,7 +1865,7 @@ export default function IATIImportPage() {
 
                   {importState.activities.phase === 'done' && (
                     <Alert className="bg-green-50">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                       <AlertDescription>
                         Successfully imported {importState.activities.imported.length} activities
                       </AlertDescription>
@@ -1971,7 +1971,7 @@ export default function IATIImportPage() {
 
                   {importState.transactions.phase === 'done' && (
                     <Alert className="bg-green-50">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                       <AlertDescription>
                         Successfully imported {importState.transactions.imported.length} transactions
                       </AlertDescription>
@@ -1993,7 +1993,7 @@ export default function IATIImportPage() {
                 <CardContent>
                   <div className="space-y-4">
                     <Alert className="bg-green-50 border-green-200">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                       <AlertDescription className="text-green-800">
                         Import process completed successfully!
                       </AlertDescription>

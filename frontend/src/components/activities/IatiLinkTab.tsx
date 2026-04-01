@@ -135,7 +135,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
   // Field comparison component
   const FieldComparison = ({ field }: { field: any }) => {
     const statusColors = {
-      match: 'text-green-600',
+      match: 'text-[hsl(var(--success-icon))]',
       conflict: 'text-orange-600',
       missing: 'text-gray-400'
     };

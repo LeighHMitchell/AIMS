@@ -48,7 +48,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
     }
 
     if (notification.title.includes("Validated")) {
-      return <CheckCheck className="h-5 w-5 text-green-500" />
+      return <CheckCheck className="h-5 w-5 text-[hsl(var(--success-icon))]" />
     }
     if (notification.title.includes("Rejected")) {
       return <XCircle className="h-5 w-5 text-red-500" />

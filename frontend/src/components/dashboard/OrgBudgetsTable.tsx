@@ -58,7 +58,7 @@ const BUDGET_TYPE_LABELS: Record<number, string> = {
 const VALIDATION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   draft: { label: 'Draft', color: 'bg-gray-100 text-gray-700' },
   submitted: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-  validated: { label: 'Validated', color: 'bg-green-100 text-green-700' },
+  validated: { label: 'Validated', color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
   more_info_requested: { label: 'Info Requested', color: 'bg-orange-100 text-orange-700' },
 };
@@ -234,7 +234,7 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <span className="font-medium text-slate-700">
-                          <span className="text-xs text-gray-500 mr-1 font-normal">{budget.currency}</span>
+                          <span className="text-xs text-muted-foreground mr-1 font-normal">{budget.currency}</span>
                           {formatCurrency(budget.value)}
                         </span>
                       </div>
@@ -243,7 +243,7 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
                       {budget.value_usd != null ? (
                         <div className="flex items-center gap-1">
                           <span className="font-medium text-slate-700">
-                            <span className="text-xs text-gray-500 mr-1 font-normal">USD</span>
+                            <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
                             {formatCurrency(budget.value_usd)}
                           </span>
                         </div>

@@ -13458,7 +13458,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-6">
-                <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                <CheckCircle className="h-16 w-16 text-[hsl(var(--success-icon))] mx-auto mb-4" />
                 <h3 className="text-2xl font-semibold mb-2">Import Completed Successfully!</h3>
                 <p className="text-gray-600 mb-6">
                   {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.
@@ -14786,7 +14786,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                           Original: {items[0].originalPercentage}%
                         </Badge>
                         {isExact ? (
-                          <CheckCircle className="h-4 w-4 text-green-600 transition-colors duration-200" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] transition-colors duration-200" />
                         ) : isOverAllocated ? (
                           <Badge variant="outline" className="text-xs text-red-600 border-red-600 transition-colors duration-200 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
@@ -14942,7 +14942,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                 {totalPercentage.toFixed(0)}%
               </span>
               {Math.abs(totalPercentage - 100) < 0.01 ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               ) : (
                 <span className="text-xs text-amber-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />

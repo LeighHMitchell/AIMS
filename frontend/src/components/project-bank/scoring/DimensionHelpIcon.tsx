@@ -207,7 +207,7 @@ export function DimensionHelpIcon({ dimension, stage, subScores }: DimensionHelp
                 <li key={i} className="text-[10px] flex items-start gap-1">
                   {hasScores ? (
                     isFull ? (
-                      <Check className="h-2.5 w-2.5 text-emerald-500 mt-px flex-shrink-0" />
+                      <Check className="h-2.5 w-2.5 text-[hsl(var(--success-icon))] mt-px flex-shrink-0" />
                     ) : isPartial ? (
                       <span className="text-amber-500 mt-px flex-shrink-0">&#9679;</span>
                     ) : (
@@ -219,7 +219,7 @@ export function DimensionHelpIcon({ dimension, stage, subScores }: DimensionHelp
                   <span className={`flex-1 ${isFull ? 'text-muted-foreground/40 line-through' : isPartial ? 'text-amber-600/70' : ''}`}>
                     {item.label}
                   </span>
-                  <span className={`flex-shrink-0 tabular-nums ${isFull ? 'text-emerald-500/60' : isPartial ? 'text-amber-500' : 'text-muted-foreground/60'}`}>
+                  <span className={`flex-shrink-0 tabular-nums ${isFull ? 'text-[hsl(var(--success-icon))]/60' : isPartial ? 'text-amber-500' : 'text-muted-foreground/60'}`}>
                     {hasScores ? `${earnedPts}/${item.pts}` : item.pts}
                   </span>
                 </li>

@@ -525,7 +525,7 @@ export default function RolodexPage() {
                                   title="Copy email"
                                 >
                                   {copiedEmail === person.email ? (
-                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                    <Check className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />
                                   ) : (
                                     <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                                   )}

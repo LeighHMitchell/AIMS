@@ -14,7 +14,7 @@ interface OrganisationHealthCardProps {
 
 export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCardProps) {
   const getHealthStatus = (percent: number) => {
-    if (percent <= 20) return { color: 'text-green-600', bgColor: 'bg-green-50', icon: CheckCircle, label: 'Good' }
+    if (percent <= 20) return { color: 'text-[hsl(var(--success-icon))]', bgColor: 'bg-green-50', icon: CheckCircle, label: 'Good' }
     if (percent <= 50) return { color: 'text-yellow-600', bgColor: 'bg-yellow-50', icon: AlertCircle, label: 'Fair' }
     return { color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle, label: 'Poor' }
   }

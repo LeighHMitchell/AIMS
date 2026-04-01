@@ -106,7 +106,7 @@ export function LockedOrganizationField({
                   disabled={saving}
                 >
                   {isUnlocked ? (
-                    <Unlock className="h-3 w-3 text-green-600" />
+                    <Unlock className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                   ) : (
                     <Lock className="h-3 w-3 text-gray-500" />
                   )}

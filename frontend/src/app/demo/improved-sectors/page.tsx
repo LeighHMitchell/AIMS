@@ -94,7 +94,7 @@ export default function ImprovedSectorsDemoPage() {
                 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-green-600">2</span>
+                    <span className="text-sm font-bold text-[hsl(var(--success-icon))]">2</span>
                   </div>
                   <div>
                     <p className="font-medium text-sm">Visual Progress Bars</p>

@@ -215,7 +215,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                   <span className="text-sm font-semibold">{formatCurrency(rVal)}</span>
                 </div>
                 {pVal > 0 && diff !== 0 && (
-                  <div className={cn('text-xs mt-0.5', diff > 0 ? (key === 'revenue' ? 'text-green-600' : 'text-red-600') : (key === 'revenue' ? 'text-red-600' : 'text-green-600'))}>
+                  <div className={cn('text-xs mt-0.5', diff > 0 ? (key === 'revenue' ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : (key === 'revenue' ? 'text-red-600' : 'text-[hsl(var(--success-icon))]'))}>
                     {diff > 0 ? '+' : ''}{pctChange.toFixed(1)}% from preliminary
                   </div>
                 )}
@@ -345,10 +345,10 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                       {s.label}
                       <HelpTooltip text={SENSITIVITY_SCENARIOS[i].tooltip} />
                     </td>
-                    <td className={cn('p-2 text-right tabular-nums text-sm', s.firr !== null && s.firr >= 10 ? 'text-green-600' : 'text-amber-600')}>
+                    <td className={cn('p-2 text-right tabular-nums text-sm', s.firr !== null && s.firr >= 10 ? 'text-[hsl(var(--success-icon))]' : 'text-amber-600')}>
                       {s.firr !== null ? `${s.firr.toFixed(1)}%` : 'N/A'}
                     </td>
-                    <td className={cn('p-2 text-right tabular-nums text-sm', s.npv >= 0 ? 'text-green-600' : 'text-red-600')}>
+                    <td className={cn('p-2 text-right tabular-nums text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600')}>
                       {formatCurrency(s.npv)}
                     </td>
                   </tr>

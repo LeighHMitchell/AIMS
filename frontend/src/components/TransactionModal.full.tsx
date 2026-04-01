@@ -760,7 +760,7 @@ export default function TransactionModal({
     <Label className="text-sm font-medium">
       {children}
       {isSaving && <span className="text-xs text-blue-500 ml-1">(saving...)</span>}
-      {isSaved && <span className="text-xs text-green-500 ml-1">(saved)</span>}
+      {isSaved && <span className="text-xs text-[hsl(var(--success-icon))] ml-1">(saved)</span>}
     </Label>
   );
 
@@ -1239,7 +1239,7 @@ export default function TransactionModal({
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
                         formData.status === 'actual' 
-                          ? 'bg-green-100 text-green-700' 
+                          ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
                           : 'bg-gray-100 text-gray-600'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
@@ -1257,8 +1257,8 @@ export default function TransactionModal({
                         </span>
                       </div>
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                        formData.status === 'actual' 
-                          ? 'bg-green-100 text-green-700' 
+                        formData.status === 'actual'
+                          ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
                           : 'bg-gray-100 text-gray-600'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}

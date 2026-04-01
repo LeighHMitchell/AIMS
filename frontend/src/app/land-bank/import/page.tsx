@@ -214,7 +214,7 @@ export default function ImportParcelsPage() {
                 FeatureCollection with <code className="bg-muted px-1 rounded">parcel_code</code> in properties
               </p>
               {geometries.size > 0 && (
-                <p className="text-xs text-green-600 mt-2">{geometries.size} geometries loaded</p>
+                <p className="text-xs text-[hsl(var(--success-icon))] mt-2">{geometries.size} geometries loaded</p>
               )}
               <input
                 ref={geoJsonInputRef}
@@ -257,7 +257,7 @@ export default function ImportParcelsPage() {
           <Card>
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2">Import Complete</h3>
-              <p className="text-sm text-green-600 mb-1">{result.success} parcels imported successfully</p>
+              <p className="text-sm text-[hsl(var(--success-icon))] mb-1">{result.success} parcels imported successfully</p>
               {result.errors.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm text-destructive flex items-center gap-1 mb-1">

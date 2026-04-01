@@ -72,7 +72,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
             {/* Status breakdown */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                 <span className="text-sm text-gray-600">
                   <span className="font-medium">{progress.completed}</span> Completed
                 </span>
@@ -128,7 +128,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                 >
                   <div className="flex items-center gap-2">
                     {stage.signoff ? (
-                      <Award className="h-4 w-4 text-green-600" />
+                      <Award className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     ) : stage.progress.percentage === 100 ? (
                       <CheckCircle className="h-4 w-4 text-blue-600" />
                     ) : stage.progress.percentage > 0 ? (
@@ -154,7 +154,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                       }
                     </span>
                     {stage.signoff && (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     )}
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
 
         {isComplete && allStagesSigned && (
           <div className="mt-4 p-3 bg-green-100 border border-green-200 rounded-lg flex items-start gap-2">
-            <Award className="h-5 w-5 text-green-600 mt-0.5" />
+            <Award className="h-5 w-5 text-[hsl(var(--success-icon))] mt-0.5" />
             <div>
               <p className="text-sm font-medium text-green-800">
                 Readiness checklist is complete

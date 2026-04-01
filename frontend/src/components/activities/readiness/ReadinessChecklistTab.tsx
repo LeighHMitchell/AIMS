@@ -508,7 +508,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                                   ? XCircle
                                   : HelpCircle;
                               const iconColor = option.value === 'validated'
-                                ? 'text-green-600'
+                                ? 'text-[hsl(var(--success-icon))]'
                                 : option.value === 'rejected'
                                   ? 'text-red-600'
                                   : 'text-amber-600';
@@ -619,7 +619,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                       {/* Show validation status badge if validated */}
                       {endorsementForm.validation_status === 'validated' && (
                         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                           <span className="text-green-700 font-medium">This activity has been validated by the government</span>
                         </div>
                       )}

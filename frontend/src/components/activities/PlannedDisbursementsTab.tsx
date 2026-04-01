@@ -1909,7 +1909,7 @@ export default function PlannedDisbursementsTab({
                                             <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                           )}
                                         </span>
-                                        <span className="text-muted-foreground">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        <span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent className="min-w-[200px]">
@@ -1959,7 +1959,7 @@ export default function PlannedDisbursementsTab({
                                 <Loader2 className="h-3 w-3 animate-spin text-orange-500" aria-label="Saving..." />
                               )}
                               {saveStatus[disbursement.id || ''] === 'saved' && (
-                                <CheckCircle className="h-3 w-3 text-green-600" aria-label="Saved" />
+                                <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" aria-label="Saved" />
                               )}
                               {saveStatus[disbursement.id || ''] === 'error' && (
                                 <span className="text-xs text-red-500">Failed</span>

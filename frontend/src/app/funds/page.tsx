@@ -288,7 +288,7 @@ export default function FundsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredFunds.map(fund => {
-              const balanceColor = fund.balance > 0 ? 'text-green-600' : fund.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
+              const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
               const utilisation = fund.totalContributions > 0
                 ? ((fund.totalDisbursements / fund.totalContributions) * 100).toFixed(0)
                 : '0'

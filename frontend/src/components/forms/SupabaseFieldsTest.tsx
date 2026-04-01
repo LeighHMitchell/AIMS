@@ -85,7 +85,7 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
       return <Badge variant="outline" className="text-red-600"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>;
     }
     if (fieldState.lastUpdated) {
-      return <Badge variant="outline" className="text-green-600"><CheckCircle className="h-3 w-3 mr-1" />Connected</Badge>;
+      return <Badge variant="outline" className="text-[hsl(var(--success-icon))]"><CheckCircle className="h-3 w-3 mr-1" />Connected</Badge>;
     }
     return <Badge variant="outline">Ready</Badge>;
   };

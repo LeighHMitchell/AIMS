@@ -312,7 +312,7 @@ export default function FocalPointsTab({
         );
       case 'accepted':
         return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
             <Check className="h-3 w-3 mr-1" />
             Active
           </Badge>
@@ -527,7 +527,7 @@ export default function FocalPointsTab({
               <Building2 className="h-5 w-5 text-slate-600" />
               Government Focal Points
               {governmentFocalPoints.length > 0 && (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </CardTitle>
             <CardDescription className="text-xs">
@@ -554,7 +554,7 @@ export default function FocalPointsTab({
               <Users className="h-5 w-5 text-slate-600" />
               Development Partner Focal Points
               {developmentPartnerFocalPoints.length > 0 && (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </CardTitle>
             <CardDescription className="text-xs">

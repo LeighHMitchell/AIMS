@@ -291,7 +291,7 @@ function CommentItem({
                 • {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
               </time>
               {comment.status === 'Resolved' && (
-                <Badge variant="outline" className="h-4 text-[10px] bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="h-4 text-[10px] bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                   <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
                   Resolved
                 </Badge>

@@ -89,7 +89,7 @@ const ACTIVITY_SECTIONS = [
 ];
 
 const REACTION_TYPES = [
-  { type: 'thumbs_up', icon: ThumbsUp, label: 'Thumbs Up', color: 'text-green-600' },
+  { type: 'thumbs_up', icon: ThumbsUp, label: 'Thumbs Up', color: 'text-[hsl(var(--success-icon))]' },
   { type: 'thumbs_down', icon: ThumbsDown, label: 'Thumbs Down', color: 'text-red-600' },
   { type: 'heart', icon: Heart, label: 'Love', color: 'text-pink-600' },
   { type: 'celebrate', icon: Zap, label: 'Celebrate', color: 'text-yellow-600' },
@@ -967,7 +967,7 @@ function CommentCard({
                 </Badge>
                 
                 {comment.status === 'Resolved' && (
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Badge variant="outline" className="text-[hsl(var(--success-icon))] border-green-600">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Resolved
                   </Badge>

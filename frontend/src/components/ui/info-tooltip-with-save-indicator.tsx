@@ -44,7 +44,7 @@ export function InfoTooltipWithSaveIndicator({
         <CircleDashed className="w-3 h-3 text-orange-600 animate-spin" />
       )}
       {!isSaving && showGreenTick && (
-        <CheckCircle className="w-3 h-3 text-green-600" />
+        <CheckCircle className="w-3 h-3 text-[hsl(var(--success-icon))]" />
       )}
     </div>
   );

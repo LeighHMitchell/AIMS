@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import {
@@ -64,7 +66,7 @@ const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> =
 const VALIDATION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   draft: { label: 'Draft', color: 'bg-gray-100 text-gray-700' },
   submitted: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-  validated: { label: 'Validated', color: 'bg-green-100 text-green-700' },
+  validated: { label: 'Validated', color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
   more_info_requested: { label: 'Info Requested', color: 'bg-orange-100 text-orange-700' },
 };
@@ -114,6 +116,47 @@ export function OrgActivitiesTable({
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  type SortField = 'title' | 'activityStatus' | 'status' | 'validationStatus' | 'budget' | 'plannedDisb' | 'updated' | 'endDate' | 'daysRemaining';
+  const [sortField, setSortField] = useState<SortField>('updated');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedActivities = useMemo(() => {
+    return [...activities].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'title':
+          return dir * a.title.localeCompare(b.title);
+        case 'activityStatus':
+          return dir * (a.activityStatus || '').localeCompare(b.activityStatus || '');
+        case 'status':
+          return dir * a.status.localeCompare(b.status);
+        case 'validationStatus':
+          return dir * (a.validationStatus || '').localeCompare(b.validationStatus || '');
+        case 'budget':
+          return dir * ((a.totalBudget || 0) - (b.totalBudget || 0));
+        case 'plannedDisb':
+          return dir * ((a.totalPlannedDisbursements || 0) - (b.totalPlannedDisbursements || 0));
+        case 'updated':
+          return dir * (a.lastUpdated || '').localeCompare(b.lastUpdated || '');
+        case 'endDate':
+          return dir * (a.plannedEndDate || '').localeCompare(b.plannedEndDate || '');
+        case 'daysRemaining':
+          return dir * ((a.daysRemaining || 0) - (b.daysRemaining || 0));
+        default:
+          return 0;
+      }
+    });
+  }, [activities, sortField, sortDirection]);
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -268,33 +311,53 @@ export function OrgActivitiesTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className={variant === 'main' ? 'w-[30%]' : 'w-[35%]'}>Activity</TableHead>
+                <TableHead className={`${variant === 'main' ? 'w-[30%]' : 'w-[35%]'} ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                  <div className="flex items-center gap-1">Activity {getSortIcon('title', sortField, sortDirection)}</div>
+                </TableHead>
                 {variant === 'main' && (
                   <>
-                    <TableHead>Activity Status</TableHead>
-                    <TableHead>Publication Status</TableHead>
-                    <TableHead>Validation Status</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
-                    <TableHead className="text-right">Planned Disb.</TableHead>
-                    <TableHead>Updated</TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('activityStatus')}>
+                      <div className="flex items-center gap-1">Activity Status {getSortIcon('activityStatus', sortField, sortDirection)}</div>
+                    </TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('status')}>
+                      <div className="flex items-center gap-1">Publication Status {getSortIcon('status', sortField, sortDirection)}</div>
+                    </TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('validationStatus')}>
+                      <div className="flex items-center gap-1">Validation Status {getSortIcon('validationStatus', sortField, sortDirection)}</div>
+                    </TableHead>
+                    <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('budget')}>
+                      <div className="flex items-center justify-end gap-1">Budget {getSortIcon('budget', sortField, sortDirection)}</div>
+                    </TableHead>
+                    <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('plannedDisb')}>
+                      <div className="flex items-center justify-end gap-1">Planned Disb. {getSortIcon('plannedDisb', sortField, sortDirection)}</div>
+                    </TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('updated')}>
+                      <div className="flex items-center gap-1">Updated {getSortIcon('updated', sortField, sortDirection)}</div>
+                    </TableHead>
                   </>
                 )}
                 {variant === 'recently_edited' && (
                   <>
-                    <TableHead>Last Updated</TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('updated')}>
+                      <div className="flex items-center gap-1">Last Updated {getSortIcon('updated', sortField, sortDirection)}</div>
+                    </TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </>
                 )}
                 {variant === 'closing_soon' && (
                   <>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Days Left</TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('endDate')}>
+                      <div className="flex items-center gap-1">End Date {getSortIcon('endDate', sortField, sortDirection)}</div>
+                    </TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => handleSort('daysRemaining')}>
+                      <div className="flex items-center gap-1">Days Left {getSortIcon('daysRemaining', sortField, sortDirection)}</div>
+                    </TableHead>
                   </>
                 )}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activities.map((activity) => (
+              {sortedActivities.map((activity) => (
                 <TableRow
                   key={activity.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -334,21 +397,21 @@ export function OrgActivitiesTable({
                         {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
                           <div className="flex flex-col items-end">
                             <span className="font-medium">
-                              <span className="text-xs text-gray-500 mr-1 font-normal">
+                              <span className="text-xs text-muted-foreground mr-1 font-normal">
                                 {activity.currency}
                               </span>
                               {formatCurrency(activity.totalBudgetOriginal, activity.currency)}
                             </span>
                             {activity.totalBudget && activity.totalBudget > 0 && (
-                              <span className="text-xs text-gray-500 mt-0.5">
-                                <span className="mr-1">USD</span>
+                              <span className="text-xs text-muted-foreground mt-0.5">
+                                <span className="mr-1 font-normal">USD</span>
                                 {formatCurrency(activity.totalBudget, 'USD')}
                               </span>
                             )}
                           </div>
                         ) : activity.totalBudget && activity.totalBudget > 0 ? (
                           <span className="font-medium">
-                            <span className="text-xs text-gray-500 mr-1 font-normal">USD</span>
+                            <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
                             {formatCurrency(activity.totalBudget, 'USD')}
                           </span>
                         ) : (
@@ -359,21 +422,21 @@ export function OrgActivitiesTable({
                         {activity.totalPlannedDisbursementsOriginal && activity.totalPlannedDisbursementsOriginal > 0 ? (
                           <div className="flex flex-col items-end">
                             <span className="font-medium">
-                              <span className="text-xs text-gray-500 mr-1 font-normal">
+                              <span className="text-xs text-muted-foreground mr-1 font-normal">
                                 {activity.currency}
                               </span>
                               {formatCurrency(activity.totalPlannedDisbursementsOriginal, activity.currency)}
                             </span>
                             {activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 && (
-                              <span className="text-xs text-gray-500 mt-0.5">
-                                <span className="mr-1">USD</span>
+                              <span className="text-xs text-muted-foreground mt-0.5">
+                                <span className="mr-1 font-normal">USD</span>
                                 {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
                               </span>
                             )}
                           </div>
                         ) : activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 ? (
                           <span className="font-medium">
-                            <span className="text-xs text-gray-500 mr-1 font-normal">USD</span>
+                            <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
                             {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
                           </span>
                         ) : (

@@ -473,7 +473,7 @@ export default function ProjectListPage() {
                               title="Copy Project Title"
                             >
                               {copiedId === `${p.id}-name` ? (
-                                <Check className="w-3 h-3 text-green-500" />
+                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                               ) : (
                                 <Copy className="w-3 h-3 text-muted-foreground" />
                               )}
@@ -492,7 +492,7 @@ export default function ProjectListPage() {
                                 title="Copy Project ID"
                               >
                                 {copiedId === `${p.id}-code` ? (
-                                  <Check className="w-3 h-3 text-green-500" />
+                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                 ) : (
                                   <Copy className="w-3 h-3 text-muted-foreground" />
                                 )}

@@ -339,7 +339,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
               User Created Successfully
             </DialogTitle>
             <DialogDescription>

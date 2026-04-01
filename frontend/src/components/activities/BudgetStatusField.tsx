@@ -45,7 +45,7 @@ const StatusIcon = ({ status }: { status: BudgetStatusType }) => {
   const iconClass = "h-4 w-4";
   switch (status) {
     case "on_budget":
-      return <CheckCircle2 className={`${iconClass} text-green-600`} />;
+      return <CheckCircle2 className={`${iconClass} text-[hsl(var(--success-icon))]`} />;
     case "off_budget":
       return <XCircle className={`${iconClass} text-red-600`} />;
     case "partial":

@@ -129,7 +129,7 @@ export default function SDGDemoPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-[hsl(var(--success-icon))]" />
               <CardTitle className="text-lg">SDG Icons</CardTitle>
             </div>
           </CardHeader>

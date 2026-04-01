@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import {
 import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
 import { BUDGET_TYPE_LABELS, BUDGET_STATUS_LABELS } from "@/types/budget";
+import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 
 type Budget = {
   id: string;
@@ -64,6 +65,45 @@ export function DataClinicBudgets() {
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
   const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
+  const [sortField, setSortField] = useState<'activity' | 'start' | 'end' | 'type' | 'status' | 'currency' | 'value' | 'valueDate' | 'usd'>('activity');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedBudgets = useMemo(() => {
+    return [...filteredBudgets].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'activity':
+          return dir * (a.activityTitle || '').localeCompare(b.activityTitle || '');
+        case 'start':
+          return dir * (a.period_start || '').localeCompare(b.period_start || '');
+        case 'end':
+          return dir * (a.period_end || '').localeCompare(b.period_end || '');
+        case 'type':
+          return dir * String(a.type || '').localeCompare(String(b.type || ''));
+        case 'status':
+          return dir * String(a.status || '').localeCompare(String(b.status || ''));
+        case 'currency':
+          return dir * (a.currency || '').localeCompare(b.currency || '');
+        case 'value':
+          return dir * ((a.value || 0) - (b.value || 0));
+        case 'valueDate':
+          return dir * (a.value_date || '').localeCompare(b.value_date || '');
+        case 'usd':
+          return dir * ((a.value_usd || a.usd_value || 0) - (b.value_usd || b.usd_value || 0));
+        default:
+          return 0;
+      }
+    });
+  }, [filteredBudgets, sortField, sortDirection]);
 
   const isSuperUser = user?.role === 'super_user';
 
@@ -489,15 +529,33 @@ export function DataClinicBudgets() {
                       />
                     </th>
                   )}
-                  <th className="p-4 text-left text-sm font-medium">Activity</th>
-                  <th className="p-4 text-left text-sm font-medium">Start Date</th>
-                  <th className="p-4 text-left text-sm font-medium">End Date</th>
-                  <th className="p-4 text-left text-sm font-medium">Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Status</th>
-                  <th className="p-4 text-left text-sm font-medium">Currency</th>
-                  <th className="p-4 text-right text-sm font-medium">Value</th>
-                  <th className="p-4 text-left text-sm font-medium">Value Date</th>
-                  <th className="p-4 text-right text-sm font-medium">USD Value</th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
+                    <div className="flex items-center gap-1">Activity {getSortIcon('activity', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
+                    <div className="flex items-center gap-1">Start Date {getSortIcon('start', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('end')}>
+                    <div className="flex items-center gap-1">End Date {getSortIcon('end', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                    <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
+                    <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('currency')}>
+                    <div className="flex items-center gap-1">Currency {getSortIcon('currency', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-right text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                    <div className="flex items-center justify-end gap-1">Value {getSortIcon('value', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('valueDate')}>
+                    <div className="flex items-center gap-1">Value Date {getSortIcon('valueDate', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-right text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('usd')}>
+                    <div className="flex items-center justify-end gap-1">USD Value {getSortIcon('usd', sortField, sortDirection)}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -508,7 +566,7 @@ export function DataClinicBudgets() {
                     </td>
                   </tr>
                 ) : (
-                  filteredBudgets.map((budget) => (
+                  sortedBudgets.map((budget) => (
                     <tr key={budget.id} className="border-b hover:bg-muted/50">
                       {isSuperUser && (
                         <td className="p-4">

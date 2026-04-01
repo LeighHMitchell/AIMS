@@ -64,7 +64,7 @@ export function LockedField({
                   className="h-6 w-6 p-0 hover:bg-muted"
                 >
                   {isUnlocked ? (
-                    <Unlock className="h-3 w-3 text-green-600" />
+                    <Unlock className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                   ) : (
                     <Lock className="h-3 w-3 text-gray-500" />
                   )}

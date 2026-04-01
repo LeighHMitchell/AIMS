@@ -184,7 +184,7 @@ export function IndicatorCard({
 
     switch (indicator.status.color) {
       case 'green':
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
       case 'yellow':
         return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       case 'red':

@@ -635,7 +635,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                           <div className="mt-1 font-mono">
                             <span className="text-red-600">- {JSON.stringify(log.details.metadata.oldValue)}</span>
                             <br />
-                            <span className="text-green-600">+ {JSON.stringify(log.details.metadata.newValue)}</span>
+                            <span className="text-[hsl(var(--success-icon))]">+ {JSON.stringify(log.details.metadata.newValue)}</span>
                           </div>
                         )}
                       </div>

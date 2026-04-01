@@ -212,7 +212,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-green-600 font-medium">Reporting Organization</p>
+            <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Reporting Organization</p>
             <p className="text-lg font-bold text-green-900">
               {creatorOrg.acronym || creatorOrg.code || creatorOrg.name}
             </p>
@@ -223,7 +223,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
             )}
           </div>
           <div>
-            <p className="text-sm text-green-600 font-medium">Reported by</p>
+            <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Reported by</p>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-green-700" />
               <p className="text-sm font-semibold text-green-800">

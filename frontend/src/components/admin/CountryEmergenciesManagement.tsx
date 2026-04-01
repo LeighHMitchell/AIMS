@@ -390,7 +390,7 @@ export function CountryEmergenciesManagement() {
                             variant="outline"
                             className={
                               emergency.isActive
-                                ? "border-green-300 text-green-700 bg-green-50"
+                                ? "border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]"
                                 : "border-gray-300 text-gray-500 bg-gray-50"
                             }
                           >

@@ -89,7 +89,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
   if (submitted) {
     return (
       <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-        <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto mb-3" />
+        <CheckCircle2 className="h-8 w-8 text-[hsl(var(--success-icon))] mx-auto mb-3" />
         <h3 className="text-lg font-semibold text-green-800">FS-1 Narrative Submitted</h3>
         <p className="text-sm text-green-700 mt-1">
           Your narrative has been submitted for desk review. You will be notified of the outcome.
@@ -134,7 +134,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
           <div key={section.key} className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">{section.label}</Label>
-              <span className={`text-xs ${isValid ? "text-green-600" : "text-muted-foreground"}`}>
+              <span className={`text-xs ${isValid ? "text-[hsl(var(--success-icon))]" : "text-muted-foreground"}`}>
                 {charCount} / {MIN_CHARS} min
                 {isValid && <CheckCircle2 className="inline h-3 w-3 ml-1" />}
               </span>

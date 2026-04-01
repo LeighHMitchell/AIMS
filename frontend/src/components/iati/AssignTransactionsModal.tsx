@@ -255,7 +255,7 @@ export function AssignTransactionsModal({
                           </div>
                         </div>
                         {assignments[index] && (
-                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                         )}
                       </div>
 

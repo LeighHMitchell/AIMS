@@ -326,7 +326,7 @@ export default function ContributorsSection({
           <label className="text-sm font-medium flex items-center gap-2">
             Current Contributors
             {contributors.length > 0 && (
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             )}
           </label>
           {contributors.length === 0 ? (
@@ -379,7 +379,7 @@ export default function ContributorsSection({
                             return contributor.organization_name;
                           })()}
                         </p>
-                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {(() => {

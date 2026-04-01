@@ -57,7 +57,7 @@ export function FieldSaveStatus({
     return (
       <div className={`flex items-center gap-1 ${className}`}>
         <CheckCircle 
-          className={`${iconSize} text-green-600`} 
+          className={`${iconSize} text-[hsl(var(--success-icon))]`} 
           aria-label="Saved"
         />
       </div>

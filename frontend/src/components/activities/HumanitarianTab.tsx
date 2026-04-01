@@ -280,7 +280,7 @@ export function HumanitarianTab({
                         <TableCell className="font-medium align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             {scope.id && (
-                              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
                             {getScopeTypeName(scope.type)}
                           </div>

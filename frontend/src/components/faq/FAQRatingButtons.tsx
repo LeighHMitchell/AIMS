@@ -142,7 +142,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
           onClick={() => submitRating(true)}
           className={cn(
             'flex items-center gap-2',
-            userRating === true && 'bg-green-50 border-green-300 text-green-700'
+            userRating === true && 'bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))]'
           )}
         >
           <ThumbsUp className={cn('h-4 w-4', userRating === true && 'fill-green-500')} />

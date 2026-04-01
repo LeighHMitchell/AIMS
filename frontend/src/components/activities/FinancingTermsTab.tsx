@@ -268,7 +268,7 @@ export function FinancingTermsTab({
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-muted-foreground" />
             Loan Terms
-            {loanTermsSaved && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+            {loanTermsSaved && <CheckCircle2 className="h-5 w-5 text-[hsl(var(--success-icon))]" />}
           </CardTitle>
           <CardDescription>
             Interest rates, repayment schedule, and commitment dates

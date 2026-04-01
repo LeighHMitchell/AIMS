@@ -96,7 +96,7 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
         {/* Completion Status */}
         {completionPercentage === 100 ? (
           <Alert className="border-green-200 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             <AlertDescription className="text-green-800 font-medium">
               Excellent! All activity fields are completed.
             </AlertDescription>

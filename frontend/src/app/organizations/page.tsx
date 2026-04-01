@@ -1135,7 +1135,7 @@ const OrganizationListView: React.FC<{
                   e.stopPropagation()
                   router.push(`/organizations/${org.id}`)
                 }}
-                className="text-muted-foreground hover:text-green-600"
+                className="text-muted-foreground hover:text-[hsl(var(--success-icon))]"
               >
                 <Eye className="h-4 w-4" />
               </Button>

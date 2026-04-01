@@ -51,7 +51,7 @@ function getDocumentIcon(url: string, format?: string) {
     lowerFormat.includes('spreadsheet') ||
     lowerFormat.includes('excel')
   ) {
-    return <FileSpreadsheet className="h-10 w-10 text-green-600" />
+    return <FileSpreadsheet className="h-10 w-10 text-[hsl(var(--success-icon))]" />
   }
 
   // Check for presentations

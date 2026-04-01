@@ -225,7 +225,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-green-600 font-medium">Total Activities</p>
+            <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Total Activities</p>
             <p className="text-2xl font-bold text-green-900">
               {activityMetrics.total}
             </p>
@@ -233,15 +233,15 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="text-center">
               <p className="font-semibold text-green-800">{activityMetrics.active}</p>
-              <p className="text-green-600">Active</p>
+              <p className="text-[hsl(var(--success-icon))]">Active</p>
             </div>
             <div className="text-center">
               <p className="font-semibold text-green-800">{activityMetrics.completed}</p>
-              <p className="text-green-600">Completed</p>
+              <p className="text-[hsl(var(--success-icon))]">Completed</p>
             </div>
             <div className="text-center">
               <p className="font-semibold text-green-800">{activityMetrics.pipeline}</p>
-              <p className="text-green-600">Pipeline</p>
+              <p className="text-[hsl(var(--success-icon))]">Pipeline</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-1">

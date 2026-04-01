@@ -322,13 +322,13 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
           {/* Import Summary */}
           {importSummary && (
             <Alert className={importSummary.failed > 0 ? "border-yellow-200 bg-yellow-50" : "border-green-200 bg-green-50"}>
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               <AlertDescription>
                 <div className="space-y-1">
                   <p className="font-medium">Import completed</p>
                   <div className="text-sm space-y-1">
                     <p>Total records: {importSummary.total}</p>
-                    <p className="text-green-600">Successful: {importSummary.success}</p>
+                    <p className="text-[hsl(var(--success-icon))]">Successful: {importSummary.success}</p>
                     {importSummary.failed > 0 && (
                       <p className="text-red-600">Failed: {importSummary.failed}</p>
                     )}

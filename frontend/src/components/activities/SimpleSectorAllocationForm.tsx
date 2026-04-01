@@ -348,7 +348,7 @@ export default function SimpleSectorAllocationForm({
               <CardTitle className="text-base">Percentage Allocation</CardTitle>
               <div className="flex items-center gap-2 text-sm">
                 <span className={`font-medium ${
-                  validation.totalPercentage === 100 ? 'text-green-600' : 
+                  validation.totalPercentage === 100 ? 'text-[hsl(var(--success-icon))]' : 
                   validation.totalPercentage > 100 ? 'text-red-600' : 'text-amber-600'
                 }`}>
                   Total: {formatPercentage(validation.totalPercentage)}%
@@ -441,7 +441,7 @@ export default function SimpleSectorAllocationForm({
       {/* Success Message */}
       {validation.isValid && allocations.length > 0 && (
         <Alert className="border-green-200 bg-green-50">
-          <Info className="h-4 w-4 text-green-600" />
+          <Info className="h-4 w-4 text-[hsl(var(--success-icon))]" />
           <AlertDescription className="text-green-700">
             Sector allocation is valid and totals 100%. 
             {allowPublish && ' Ready for publication.'}

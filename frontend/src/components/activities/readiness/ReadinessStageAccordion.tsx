@@ -57,7 +57,7 @@ export function ReadinessStageAccordion({
 
   const getStatusIcon = () => {
     if (isStageSigned) {
-      return <Award className="h-5 w-5 text-green-600" />;
+      return <Award className="h-5 w-5 text-[hsl(var(--success-icon))]" />;
     }
     if (isComplete) {
       return <CheckCircle className="h-5 w-5 text-blue-600" />;

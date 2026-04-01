@@ -503,7 +503,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     
     if (lastSave) {
       return (
-        <div className="flex items-center gap-1 text-green-600 text-xs">
+        <div className="flex items-center gap-1 text-[hsl(var(--success-icon))] text-xs">
           <CheckCircle className="h-3 w-3" />
           Saved {lastSave.toLocaleTimeString()}
         </div>
@@ -609,7 +609,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                     <Badge 
                       className={
                         ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Implementation" ? "bg-blue-100 text-blue-800" :
-                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Finalisation" ? "bg-green-100 text-green-800" :
+                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Finalisation" ? "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]" :
                         ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Closed" ? "bg-gray-100 text-gray-800" :
                         ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Cancelled" ? "bg-red-100 text-red-800" : 
                         "bg-slate-100 text-slate-800"
@@ -671,14 +671,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   )}
                   {formData.actual_start_date && (
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3 text-green-500" />
+                      <Calendar className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       <span className="font-medium text-gray-900">Actual Start:</span>
                       <span className="text-gray-700">{formData.actual_start_date}</span>
                     </div>
                   )}
                   {formData.actual_end_date && (
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3 text-green-500" />
+                      <Calendar className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       <span className="font-medium text-gray-900">Actual End:</span>
                       <span className="text-gray-700">{formData.actual_end_date}</span>
                     </div>
@@ -1133,7 +1133,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         </div>
                       )}
                       {lastSaved.other_identifiers && !saving.other_identifiers && (
-                        <div className="flex items-center gap-2 text-green-600 text-sm">
+                        <div className="flex items-center gap-2 text-[hsl(var(--success-icon))] text-sm">
                           <CheckCircle className="h-4 w-4" />
                           Saved {lastSaved.other_identifiers.toLocaleTimeString()}
                         </div>

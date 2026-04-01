@@ -73,7 +73,7 @@ export function GateDocumentUploadItem({
       <div className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-green-50 text-sm">
         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="truncate flex-1">{uploadedName}</span>
-        <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+        <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] shrink-0" />
       </div>
     )
   }

@@ -99,7 +99,7 @@ export function TransactionValueDisplay({
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
+      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -148,7 +148,7 @@ export function TransactionValueDisplay({
       return {
         status: 'converted',
         badge: isManual ? 'Manual' : 'Converted',
-        color: isManual ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800',
+        color: isManual ? 'bg-orange-100 text-orange-800' : 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
         icon: <CheckCircle className="h-3 w-3" />,
         tooltip: isManual 
           ? `Manually entered exchange rate${exchangeRateDisplay ? `: ${exchangeRateDisplay}` : ''}`
@@ -217,8 +217,8 @@ export function TransactionValueDisplay({
   if (variant === 'usd-only' && conversionData.usd_amount !== null) {
     return (
       <div className="flex items-center space-x-2">
-        {!monotone && <DollarSign className="h-4 w-4 text-green-600" />}
-        <span className={monotone ? "font-medium text-foreground" : "font-medium text-green-600"}>
+        {!monotone && <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
+        <span className={monotone ? "font-medium text-foreground" : "font-medium text-[hsl(var(--success-icon))]"}>
           {formatCurrency(conversionData.usd_amount, 'USD')}
         </span>
       </div>
@@ -231,7 +231,7 @@ export function TransactionValueDisplay({
         <span className={monotone ? "font-medium text-foreground" : "font-medium"}>{formatOriginalValue()}</span>
         
         {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
-          <span className={monotone ? "text-sm text-foreground" : "text-sm text-green-600"}>
+          <span className={monotone ? "text-sm text-foreground" : "text-sm text-[hsl(var(--success-icon))]"}>
             ({formatCurrency(conversionData.usd_amount, 'USD')})
           </span>
         )}
@@ -277,8 +277,8 @@ export function TransactionValueDisplay({
       {/* USD Value */}
       {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
         <div className="flex items-center space-x-2">
-          {!monotone && <DollarSign className="h-4 w-4 text-green-600" />}
-          <span className={monotone ? "text-lg font-semibold text-foreground" : "text-lg font-semibold text-green-600"}>
+          {!monotone && <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
+          <span className={monotone ? "text-lg font-semibold text-foreground" : "text-lg font-semibold text-[hsl(var(--success-icon))]"}>
             {formatCurrency(conversionData.usd_amount, 'USD')}
           </span>
           

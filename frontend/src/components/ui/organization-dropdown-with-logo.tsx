@@ -120,7 +120,7 @@ export function OrganizationDropdownWithLogo({
         )}
       </div>
       
-      {isSelected && <Check className="h-4 w-4 text-green-600" />}
+      {isSelected && <Check className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
     </div>
   )
 

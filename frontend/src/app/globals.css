@@ -236,6 +236,7 @@ select:focus {
     --info-bg: 214 95% 93%;
     --info-text: 224 71% 30%;
     --info-border: 214 93% 85%;
+    --success-icon: 143 64% 24%;  /* green-800: #166534 — matches --success-text */
 
     /* Calendar Color Scheme */
     --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */

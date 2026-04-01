@@ -1,7 +1,7 @@
 "use client"
 
 import { RequiredDot } from "@/components/ui/required-dot";
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table'
 import { apiFetch } from '@/lib/api-fetch'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { toast } from 'sonner'
@@ -81,7 +82,7 @@ const getRoleBadgeColor = (role: string) => {
     case 'co_chair': return 'bg-indigo-100 text-indigo-800'
     case 'deputy_chair': return 'bg-violet-100 text-violet-800'
     case 'secretariat': return 'bg-blue-100 text-blue-800'
-    case 'member': return 'bg-green-100 text-green-800'
+    case 'member': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
     case 'observer': return 'bg-muted text-gray-800'
     default: return 'bg-muted text-gray-800'
   }
@@ -101,6 +102,45 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null)
   const [saving, setSaving] = useState(false)
+
+  type SortField = 'name' | 'role' | 'organization' | 'email' | 'joined';
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedMembers = useMemo(() => {
+    const roleWeight: Record<string, number> = { chair: 1, co_chair: 2, deputy_chair: 3, secretariat: 4, member: 5, observer: 6 };
+    const sorted = [...members].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'name':
+          cmp = a.person_name.localeCompare(b.person_name);
+          break;
+        case 'role':
+          cmp = (roleWeight[a.role] || 99) - (roleWeight[b.role] || 99);
+          break;
+        case 'organization':
+          cmp = (a.person_organization || '').localeCompare(b.person_organization || '');
+          break;
+        case 'email':
+          cmp = (a.person_email || '').localeCompare(b.person_email || '');
+          break;
+        case 'joined':
+          cmp = (a.joined_on || '').localeCompare(b.joined_on || '');
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [members, sortField, sortDirection]);
 
   // Contact search (same pattern as calendar EventCreateModal)
   const [contactSearchOpen, setContactSearchOpen] = useState(false)
@@ -355,16 +395,26 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
           <table className="w-full">
             <thead>
               <tr className="bg-muted border-b">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Name</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Role</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Organization</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Email</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Joined</th>
+                <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
+                  <span className="flex items-center gap-1">Name {getSortIcon('name', sortField, sortDirection)}</span>
+                </th>
+                <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('role')}>
+                  <span className="flex items-center gap-1">Role {getSortIcon('role', sortField, sortDirection)}</span>
+                </th>
+                <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('organization')}>
+                  <span className="flex items-center gap-1">Organization {getSortIcon('organization', sortField, sortDirection)}</span>
+                </th>
+                <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('email')}>
+                  <span className="flex items-center gap-1">Email {getSortIcon('email', sortField, sortDirection)}</span>
+                </th>
+                <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('joined')}>
+                  <span className="flex items-center gap-1">Joined {getSortIcon('joined', sortField, sortDirection)}</span>
+                </th>
                 <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {members.map((member) => (
+              {sortedMembers.map((member) => (
                 <tr key={member.id} className="hover:bg-muted/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">

@@ -90,7 +90,7 @@ export default function ActionMenuDemoPage() {
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          item.status === 'Active' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Active' ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' :
                           item.status === 'Draft' ? 'bg-muted text-foreground' :
                           item.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
                           'bg-orange-100 text-orange-800'

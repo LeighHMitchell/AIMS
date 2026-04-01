@@ -50,6 +50,22 @@ interface DisbursementRow {
   } | null;
 }
 
+function getOrgAcronym(name: string | null): string {
+  if (!name) return '-';
+  // If already short (<=8 chars), show as-is
+  if (name.length <= 8) return name;
+  // Check if it looks like an acronym is embedded (e.g. "UNDP", "WHO")
+  const allCapsMatch = name.match(/\b[A-Z]{2,}\b/);
+  if (allCapsMatch) return allCapsMatch[0];
+  // Otherwise, take first letters of each word
+  const words = name.split(/\s+/).filter(w => w.length > 0 && w[0] !== '(');
+  if (words.length >= 2) {
+    return words.map(w => w[0].toUpperCase()).join('');
+  }
+  // Single long word — truncate
+  return name.slice(0, 8) + '…';
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
@@ -173,8 +189,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
                 <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('period_start')}>
                   <span className="flex items-center gap-1">Period <SortIcon field="period_start" /></span>
                 </TableHead>
-                <TableHead className="min-w-[140px]">Provider</TableHead>
-                <TableHead className="min-w-[140px]">Receiver</TableHead>
+                <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
                 <TableHead className="min-w-[140px] cursor-pointer select-none" onClick={() => handleSort('amount')}>
                   <span className="flex items-center gap-1">Value <SortIcon field="amount" /></span>
                 </TableHead>
@@ -206,25 +221,22 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" title={`${d.provider_org_name || '-'} → ${d.receiver_org_name || '-'}`}>
                       <OrganizationLogo logo={d.provider_org_logo} name={d.provider_org_name || 'Unknown'} size="sm" />
-                      <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                        {d.provider_org_name || '-'}
+                      <span className="text-sm text-slate-600">
+                        {getOrgAcronym(d.provider_org_name)}
                       </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-400">→</span>
                       <OrganizationLogo logo={d.receiver_org_logo} name={d.receiver_org_name || 'Unknown'} size="sm" />
-                      <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                        {d.receiver_org_name || '-'}
+                      <span className="text-sm text-slate-600">
+                        {getOrgAcronym(d.receiver_org_name)}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <span className="font-medium text-slate-700">
-                        <span className="text-xs text-gray-500 mr-1 font-normal">{d.currency}</span>
+                        <span className="text-xs text-muted-foreground mr-1 font-normal">{d.currency}</span>
                         {formatCurrency(d.amount)}
                       </span>
                     </div>
@@ -233,7 +245,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
                     {d.usd_amount != null ? (
                       <div className="flex items-center gap-1">
                         <span className="font-medium text-slate-700">
-                          <span className="text-xs text-gray-500 mr-1 font-normal">USD</span>
+                          <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
                           {formatCurrency(d.usd_amount)}
                         </span>
                       </div>

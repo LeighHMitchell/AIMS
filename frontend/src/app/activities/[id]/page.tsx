@@ -1423,7 +1423,7 @@ export default function ActivityDetailPage() {
         )}
         {isClosed && activity.actualEndDate && (
           <div className="flex items-center gap-2">
-            <Calendar className="h-3 w-3 text-green-500" />
+            <Calendar className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             <span className="font-medium text-foreground">Actual End:</span>
             <span className="text-foreground">{formatDate(activity.actualEndDate)}</span>
           </div>
@@ -1851,7 +1851,7 @@ export default function ActivityDetailPage() {
                           title="Copy Activity Title"
                         >
                           {copiedId === 'activityTitle' ? (
-                            <Check className="w-5 h-5 text-green-600" />
+                            <Check className="w-5 h-5 text-[hsl(var(--success-icon))]" />
                           ) : (
                             <Copy className="w-5 h-5 text-muted-foreground" />
                           )}
@@ -1872,7 +1872,7 @@ export default function ActivityDetailPage() {
                                 title="Copy Activity ID"
                               >
                                 {copiedId === 'activityId' ? (
-                                  <Check className="w-3 h-3 text-green-600" />
+                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                 ) : (
                                   <Copy className="w-3 h-3" />
                                 )}
@@ -1890,7 +1890,7 @@ export default function ActivityDetailPage() {
                                 title="Copy IATI Identifier"
                               >
                                 {copiedId === 'iatiIdentifier' ? (
-                                  <Check className="w-3 h-3 text-green-600" />
+                                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                 ) : (
                                   <Copy className="w-3 h-3" />
                                 )}
@@ -1907,7 +1907,7 @@ export default function ActivityDetailPage() {
                             <Badge 
                               className={
                                 activity.publicationStatus === 'published' 
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                  ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]/80'
                                   : 'bg-muted text-foreground hover:bg-muted'
                               }
                             >
@@ -1929,7 +1929,7 @@ export default function ActivityDetailPage() {
                                     >
                                       {activity.autoSync && activity.syncStatus === 'live' ? (
                                         <>
-                                          <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
+                                          <RefreshCw className="h-3 w-3 mr-1 text-[hsl(var(--success-icon))]" />
                                           IATI Synced
                                         </>
                                       ) : activity.autoSync && activity.syncStatus === 'outdated' ? (
@@ -1952,7 +1952,7 @@ export default function ActivityDetailPage() {
                                         <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
                                       )}
                                       {activity.autoSync && (
-                                        <p className="text-green-600">Auto-sync enabled</p>
+                                        <p className="text-[hsl(var(--success-icon))]">Auto-sync enabled</p>
                                       )}
                                     </div>
                                   </TooltipContent>
@@ -3616,7 +3616,7 @@ export default function ActivityDetailPage() {
                       1: 'bg-yellow-100 text-yellow-800 border-yellow-300',     // Funding
                       2: 'bg-purple-100 text-purple-800 border-purple-300',     // Accountable/Government
                       3: 'bg-blue-100 text-blue-800 border-blue-300',           // Extending
-                      4: 'bg-green-100 text-green-800 border-green-300'         // Implementing
+                      4: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]'         // Implementing
                     };
                     return colors[roleCode] || 'bg-muted text-foreground border-border';
                   };

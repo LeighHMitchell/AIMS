@@ -142,7 +142,7 @@ export default function OrganizationEditorNavigation({
                 title="Copy Organization Name"
               >
                 {copiedId === 'orgName' ? (
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-[hsl(var(--success-icon))]" />
                 ) : (
                   <Copy className="w-4 h-4 text-slate-400" />
                 )}
@@ -160,7 +160,7 @@ export default function OrganizationEditorNavigation({
                     title="Copy IATI Org ID"
                   >
                     {copiedId === 'iatiOrgId' ? (
-                      <Check className="w-3 h-3 text-green-600" />
+                      <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                     ) : (
                       <Copy className="w-3 h-3 text-slate-400" />
                     )}

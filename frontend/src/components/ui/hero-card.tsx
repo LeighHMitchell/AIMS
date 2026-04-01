@@ -199,7 +199,7 @@ export function HeroCard<T = any>({
       case 'success':
         return {
           cardClass: 'bg-green-50',
-          valueClass: 'text-green-600'
+          valueClass: 'text-[hsl(var(--success-icon))]'
         };
       default:
         return {
@@ -249,7 +249,7 @@ export function HeroCard<T = any>({
                 {justUpdated && !isUpdating && !isAnimating && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <CheckCircle className="h-4 w-4 text-green-500 animate-pulse" />
+                      <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] animate-pulse" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Total updated!</p>
@@ -272,7 +272,7 @@ export function HeroCard<T = any>({
               "text-2xl font-bold transition-all duration-500",
               valueClass,
               (isUpdating || isAnimating) && "scale-105 text-gray-900",
-              justUpdated && !isUpdating && !isAnimating && "scale-105 text-green-600"
+              justUpdated && !isUpdating && !isAnimating && "scale-105 text-[hsl(var(--success-icon))]"
             )}>
               {formatValue(animate ? currentValue : calculatedValue)}
             </p>

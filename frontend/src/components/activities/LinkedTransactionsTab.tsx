@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { 
-  ArrowDownRight, 
-  ArrowUpRight, 
-  Download, 
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Download,
   ExternalLink,
   Building2,
   Calendar,
   DollarSign
 } from 'lucide-react';
+import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
 
 interface LinkedTransaction {
   id: string;
@@ -49,6 +50,17 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
   const [totalsByCurrency, setTotalsByCurrency] = useState<Record<string, number>>({});
   const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [sortField, setSortField] = useState<'type' | 'value' | 'provider' | 'receiver' | 'date' | 'activity'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   // Fetch linked transactions
   const fetchLinkedTransactions = async () => {
@@ -78,6 +90,28 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
     if (selectedType !== 'all' && t.transactionType !== selectedType) return false;
     return true;
   });
+
+  const sortedTransactions = useMemo(() => {
+    return [...filteredTransactions].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'type':
+          return dir * a.transactionTypeLabel.localeCompare(b.transactionTypeLabel);
+        case 'value':
+          return dir * (a.value - b.value);
+        case 'provider':
+          return dir * (a.providerOrg.name || '').localeCompare(b.providerOrg.name || '');
+        case 'receiver':
+          return dir * (a.receiverOrg.name || '').localeCompare(b.receiverOrg.name || '');
+        case 'date':
+          return dir * a.transactionDate.localeCompare(b.transactionDate);
+        case 'activity':
+          return dir * a.activityTitle.localeCompare(b.activityTitle);
+        default:
+          return 0;
+      }
+    });
+  }, [filteredTransactions, sortField, sortDirection]);
 
   // Get unique currencies and transaction types for filters
   const currencies = Array.from(new Set(transactions.map(t => t.currency)));
@@ -154,7 +188,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
       case '1':
       case '2':
       case '12':
-        return <ArrowDownRight className="w-4 h-4 text-green-600" />;
+        return <ArrowDownRight className="w-4 h-4 text-[hsl(var(--success-icon))]" />;
       case '3':
       case '4':
         return <ArrowUpRight className="w-4 h-4 text-red-600" />;
@@ -275,28 +309,28 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Type
+                <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                  <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Amount
+                <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                  <div className="flex items-center gap-1">Amount {getSortIcon('value', sortField, sortDirection)}</div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Provider
+                <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('provider')}>
+                  <div className="flex items-center gap-1">Provider {getSortIcon('provider', sortField, sortDirection)}</div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Receiver
+                <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('receiver')}>
+                  <div className="flex items-center gap-1">Receiver {getSortIcon('receiver', sortField, sortDirection)}</div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Date
+                <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
+                  <div className="flex items-center gap-1">Date {getSortIcon('date', sortField, sortDirection)}</div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Source Activity
+                <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
+                  <div className="flex items-center gap-1">Source Activity {getSortIcon('activity', sortField, sortDirection)}</div>
                 </th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
-              {filteredTransactions.map((transaction) => (
+              {sortedTransactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-muted/50 opacity-75">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">

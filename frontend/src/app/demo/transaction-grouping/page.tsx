@@ -115,7 +115,7 @@ export default function TransactionGroupingDemoPage() {
                         <TableCell>{transaction.transaction_date}</TableCell>
                         <TableCell>
                           <Badge className={group === 'commitments' ? 'bg-blue-100 text-blue-800' :
-                                            group === 'disbursements' ? 'bg-green-100 text-green-800' :
+                                            group === 'disbursements' ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' :
                                             group === 'returns' ? 'bg-orange-100 text-orange-800' :
                                             'bg-gray-100 text-gray-800'}>
                             {group.charAt(0).toUpperCase() + group.slice(1)}

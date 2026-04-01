@@ -229,7 +229,7 @@ export function TaskAttachmentsStep({
                           variant="ghost"
                           size="icon"
                           onClick={() => confirmRename(index)}
-                          className="h-7 w-7 text-green-600 hover:text-green-700"
+                          className="h-7 w-7 text-[hsl(var(--success-icon))] hover:text-green-700"
                         >
                           <Check className="h-3.5 w-3.5" />
                         </Button>

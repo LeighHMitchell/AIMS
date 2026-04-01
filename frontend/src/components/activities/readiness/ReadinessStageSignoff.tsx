@@ -62,7 +62,7 @@ export function ReadinessStageSignoff({
         <CardContent className="pt-4">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <Award className="h-6 w-6 text-green-600" />
+              <Award className="h-6 w-6 text-[hsl(var(--success-icon))]" />
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-green-800">Stage Signed Off</h4>
@@ -88,7 +88,7 @@ export function ReadinessStageSignoff({
                 )}
               </div>
             </div>
-            <CheckCircle className="h-6 w-6 text-green-600" />
+            <CheckCircle className="h-6 w-6 text-[hsl(var(--success-icon))]" />
           </div>
         </CardContent>
       </Card>

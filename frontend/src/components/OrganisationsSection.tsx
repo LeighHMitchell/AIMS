@@ -396,7 +396,7 @@ export default function OrganisationsSection({
                                 </span>
                               )}
                               {participatingOrg.id && (
-                                <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                               )}
                             </div>
                           </div>

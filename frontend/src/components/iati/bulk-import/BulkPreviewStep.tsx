@@ -833,7 +833,7 @@ export default function BulkPreviewStep({
                         ) : hasWarnings ? (
                           <AlertTriangle className="h-4 w-4 text-yellow-500 mx-auto" />
                         ) : (
-                          <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] mx-auto" />
                         )}
                       </div>
                     </div>

@@ -316,7 +316,7 @@ export function TaskDetailModal({
                           <div className="flex items-center gap-2">
                             <Bell className={cn(
                               'h-4 w-4',
-                              task.send_in_app ? 'text-green-600' : 'text-muted-foreground'
+                              task.send_in_app ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground'
                             )} />
                             <span className="text-sm">
                               In-app: {task.send_in_app ? 'Enabled' : 'Disabled'}
@@ -325,7 +325,7 @@ export function TaskDetailModal({
                           <div className="flex items-center gap-2">
                             <Mail className={cn(
                               'h-4 w-4',
-                              task.send_email ? 'text-green-600' : 'text-muted-foreground'
+                              task.send_email ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground'
                             )} />
                             <span className="text-sm">
                               Email: {task.send_email ? 'Enabled' : 'Disabled'}

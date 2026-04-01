@@ -197,10 +197,10 @@ export default function IATIImportPage() {
               </div>
               
               <div className="bg-green-50 p-4 rounded">
-                <p className="text-sm text-green-600 font-medium">Organizations</p>
+                <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Organizations</p>
                 <p className="text-2xl font-bold text-green-900">{parseResult.organizations.length}</p>
                 {parseResult.organizations.filter(o => o.matched).length > 0 && (
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-[hsl(var(--success-icon))] mt-1">
                     {parseResult.organizations.filter(o => o.matched).length} existing
                   </p>
                 )}
@@ -225,7 +225,7 @@ export default function IATIImportPage() {
                   {parseResult.activities.slice(0, 5).map((activity, idx) => (
                     <li key={idx} className="flex items-center">
                       {activity.matched ? (
-                        <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                        <CheckCircle className="w-4 h-4 text-[hsl(var(--success-icon))] mr-2" />
                       ) : (
                         <XCircle className="w-4 h-4 text-muted-foreground mr-2" />
                       )}
@@ -267,7 +267,7 @@ export default function IATIImportPage() {
             
             {importResult.success ? (
               <div className="space-y-2">
-                <div className="flex items-center text-green-600">
+                <div className="flex items-center text-[hsl(var(--success-icon))]">
                   <CheckCircle className="w-5 h-5 mr-2" />
                   <span className="font-medium">Import completed successfully!</span>
                 </div>

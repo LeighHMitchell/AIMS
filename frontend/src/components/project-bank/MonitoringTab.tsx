@@ -236,7 +236,7 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
                           </Button>
                         )}
                         {r.status === 'reviewed' && (
-                          <CheckCircle className="h-4 w-4 text-green-500 inline" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] inline" />
                         )}
                       </td>
                     </tr>

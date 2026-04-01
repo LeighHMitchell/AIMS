@@ -130,7 +130,7 @@ export default function TestFeedbackUploadPage() {
               {uploadResult && (
                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                     <h3 className="font-medium text-green-800">Upload Successful!</h3>
                   </div>
                   <div className="text-sm text-green-700">

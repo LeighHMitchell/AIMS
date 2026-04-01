@@ -1285,7 +1285,7 @@ const router = useRouter();
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="cursor-help border-b border-dotted border-muted-foreground/50">{children}</span>
+            <span className="cursor-help">{children}</span>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
             <p className="text-sm">{description}</p>
@@ -2625,7 +2625,7 @@ const router = useRouter();
                                   title={activity.acronym ? "Copy Activity Title and Acronym" : "Copy Activity Title"}
                                 >
                                   {copiedId === `${activity.id}-title` ? (
-                                    <Check className="w-3 h-3 text-green-500" />
+                                    <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                   ) : (
                                     <Copy className="w-3 h-3" />
                                   )}
@@ -2646,7 +2646,7 @@ const router = useRouter();
                                       title="Copy Activity ID"
                                     >
                                       {copiedId === `${activity.id}-partnerId` ? (
-                                        <Check className="w-3 h-3 text-green-500" />
+                                        <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                       ) : (
                                         <Copy className="w-3 h-3" />
                                       )}
@@ -2667,7 +2667,7 @@ const router = useRouter();
                                       title="Copy IATI Identifier"
                                     >
                                       {copiedId === `${activity.id}-iatiIdentifier` ? (
-                                        <Check className="w-3 h-3 text-green-500" />
+                                        <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                                       ) : (
                                         <Copy className="w-3 h-3" />
                                       )}
@@ -2745,7 +2745,7 @@ const router = useRouter();
                                               if (parent) {
                                                 parent.innerHTML = `
                                                   <div class="w-5 h-5 bg-green-100 rounded-sm flex items-center justify-center">
-                                                    <span class="text-green-600 font-semibold text-xs">O</span>
+                                                    <span class="text-[hsl(var(--success-icon))] font-semibold text-xs">O</span>
                                                   </div>
                                                 `;
                                               }
@@ -2793,7 +2793,7 @@ const router = useRouter();
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
+                              <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
@@ -2809,7 +2809,7 @@ const router = useRouter();
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
+                              <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left whitespace-normal">
                               <p className="text-sm text-gray-600 font-normal">
@@ -2981,122 +2981,122 @@ const router = useRouter();
                           ),
                           totalIncomingCommitments: (
 <td key="totalIncomingCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
                         </td>
                           ),
                           totalCommitments: (
 <td key="totalCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitments || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}
                         </td>
                           ),
                           totalDisbursements: (
 <td key="totalDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.disbursements || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.disbursements || 0)}
                         </td>
                           ),
                           totalExpenditures: (
 <td key="totalExpenditures" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.expenditures || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.expenditures || 0)}
                         </td>
                           ),
                           totalInterestRepayment: (
 <td key="totalInterestRepayment" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.interestRepayment || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.interestRepayment || 0)}
                         </td>
                           ),
                           totalLoanRepayment: (
 <td key="totalLoanRepayment" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.loanRepayment || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.loanRepayment || 0)}
                         </td>
                           ),
                           totalReimbursement: (
 <td key="totalReimbursement" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.reimbursement || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.reimbursement || 0)}
                         </td>
                           ),
                           totalPurchaseOfEquity: (
 <td key="totalPurchaseOfEquity" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
                         </td>
                           ),
                           totalSaleOfEquity: (
 <td key="totalSaleOfEquity" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
                         </td>
                           ),
                           totalCreditGuarantee: (
 <td key="totalCreditGuarantee" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
                         </td>
                           ),
                           totalIncomingFunds: (
 <td key="totalIncomingFunds" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingFunds || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingFunds || 0)}
                         </td>
                           ),
                           totalCommitmentCancellation: (
 <td key="totalCommitmentCancellation" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
                         </td>
                           ),
                           totalOutgoingPledge: (
 <td key="totalOutgoingPledge" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
                         </td>
                           ),
                           totalIncomingPledge: (
 <td key="totalIncomingPledge" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingPledge || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingPledge || 0)}
                         </td>
                           ),
                           flowTypeODATotal: (
 <td key="flowTypeODATotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
                         </td>
                           ),
                           flowTypeOOFTotal: (
 <td key="flowTypeOOFTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
                         </td>
                           ),
                           flowTypeNonExportOOFTotal: (
 <td key="flowTypeNonExportOOFTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
                         </td>
                           ),
                           flowTypeExportCreditsTotal: (
 <td key="flowTypeExportCreditsTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
                         </td>
                           ),
                           flowTypePrivateGrantsTotal: (
 <td key="flowTypePrivateGrantsTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
                         </td>
                           ),
                           flowTypePrivateMarketTotal: (
 <td key="flowTypePrivateMarketTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
                         </td>
                           ),
                           flowTypePrivateFDITotal: (
 <td key="flowTypePrivateFDITotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
                         </td>
                           ),
                           flowTypeOtherPrivateTotal: (
 <td key="flowTypeOtherPrivateTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
                         </td>
                           ),
                           flowTypeNonFlowTotal: (
 <td key="flowTypeNonFlowTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
                         </td>
                           ),
                           flowTypeOtherTotal: (
 <td key="flowTypeOtherTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
+                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
                         </td>
                           ),
                           isPublished: (
@@ -3291,7 +3291,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency(((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3312,7 +3312,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency(((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3333,7 +3333,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency((activity.commitments || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.commitments || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3354,7 +3354,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency((activity.disbursements || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3556,11 +3556,11 @@ const router = useRouter();
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Committed</td>
-                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency(activity.commitments || 0)}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}</td>
                                         </tr>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
-                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
                                         </tr>
                                         <tr>
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
@@ -3597,11 +3597,11 @@ const router = useRouter();
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Budget</td>
-                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency((activity as any).totalBudget || 0)}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</td>
                                         </tr>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
-                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
                                         </tr>
                                         <tr>
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>

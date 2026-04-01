@@ -126,7 +126,7 @@ export function IATIOrgImportFieldsTable({
   // Get status badge
   const getStatusBadge = (field: OrgImportField) => {
     if (field.isNew) {
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">NEW</Badge>
+      return <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">NEW</Badge>
     }
     if (field.hasConflict) {
       return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">DIFF</Badge>

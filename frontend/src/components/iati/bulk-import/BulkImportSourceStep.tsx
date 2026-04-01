@@ -1366,22 +1366,22 @@ export default function BulkImportSourceStep({
 
                       {/* Phase indicators */}
                       <div className="flex items-center gap-2 text-xs">
-                        <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-gray-900 font-medium' : fetchProgress >= 5 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-gray-900 font-medium' : fetchProgress >= 5 ? 'text-[hsl(var(--success-icon))]' : 'text-gray-400'}`}>
                           {fetchProgress >= 5 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
                           Connecting
                         </div>
                         <div className="w-4 h-px bg-gray-300" />
-                        <div className={`flex items-center gap-1 ${fetchPhase === 'fetching' ? 'text-gray-900 font-medium' : fetchProgress >= 80 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'fetching' ? 'text-gray-900 font-medium' : fetchProgress >= 80 ? 'text-[hsl(var(--success-icon))]' : 'text-gray-400'}`}>
                           {fetchProgress >= 80 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
                           Fetching
                         </div>
                         <div className="w-4 h-px bg-gray-300" />
-                        <div className={`flex items-center gap-1 ${fetchPhase === 'enriching' ? 'text-gray-900 font-medium' : fetchProgress >= 95 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'enriching' ? 'text-gray-900 font-medium' : fetchProgress >= 95 ? 'text-[hsl(var(--success-icon))]' : 'text-gray-400'}`}>
                           {fetchProgress >= 95 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
                           Enriching
                         </div>
                         <div className="w-4 h-px bg-gray-300" />
-                        <div className={`flex items-center gap-1 ${fetchPhase === 'processing' ? 'text-gray-900 font-medium' : fetchProgress >= 100 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'processing' ? 'text-gray-900 font-medium' : fetchProgress >= 100 ? 'text-[hsl(var(--success-icon))]' : 'text-gray-400'}`}>
                           {fetchProgress >= 100 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
                           Processing
                         </div>
@@ -1577,7 +1577,7 @@ export default function BulkImportSourceStep({
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-green-50 rounded-lg">
-                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    <CheckCircle2 className="h-8 w-8 text-[hsl(var(--success-icon))]" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-green-800">

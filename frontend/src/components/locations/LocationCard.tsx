@@ -235,7 +235,7 @@ export default function LocationCard({
                 <div className="text-sm text-gray-600 flex items-start gap-1.5">
                   <span>{location.activity_location_description}</span>
                   {location.id && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0 mt-0.5" />
                   )}
                 </div>
               )}

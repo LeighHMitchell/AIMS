@@ -46,7 +46,7 @@ export function SimpleSaveIndicator({
     }
     
     if (forceGreenTick) {
-      return <CheckCircle className="w-4 h-4 text-green-600 ml-2" />;
+      return <CheckCircle className="w-4 h-4 text-[hsl(var(--success-icon))] ml-2" />;
     }
     
     return null; // No indicator

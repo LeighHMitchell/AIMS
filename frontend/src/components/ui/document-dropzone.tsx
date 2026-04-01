@@ -52,7 +52,7 @@ function getFileIcon(mimeType: string) {
     mimeType.includes("excel") ||
     mimeType.includes("csv")
   )
-    return <FileSpreadsheet className="h-4 w-4 text-green-500" />;
+    return <FileSpreadsheet className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
   return <File className="h-4 w-4 text-slate-500" />;
 }
 

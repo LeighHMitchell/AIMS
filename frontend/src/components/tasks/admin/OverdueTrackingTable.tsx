@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,16 +10,62 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { AlertTriangle, ExternalLink, Users } from 'lucide-react';
 import { getPriorityLabel, getPriorityColor, getTaskTypeLabel, getTaskUserDisplayName } from '@/types/task';
 import type { OverdueTaskDetail } from '@/types/task';
+
+type SortField = 'task' | 'type' | 'priority' | 'days_overdue' | 'progress' | 'creator';
+type SortDirection = 'asc' | 'desc';
 
 interface OverdueTrackingTableProps {
   tasks: OverdueTaskDetail[];
 }
 
 export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
+  const [sortField, setSortField] = useState<SortField>('days_overdue');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedTasks = useMemo(() => {
+    const priorityOrder: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+    return [...tasks].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'task':
+          return dir * a.task_title.localeCompare(b.task_title);
+        case 'type':
+          return dir * (a.task_type || '').localeCompare(b.task_type || '');
+        case 'priority':
+          return dir * ((priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0));
+        case 'days_overdue':
+          return dir * (a.days_overdue - b.days_overdue);
+        case 'progress': {
+          const rateA = a.assignee_count > 0 ? a.completed_count / a.assignee_count : 0;
+          const rateB = b.assignee_count > 0 ? b.completed_count / b.assignee_count : 0;
+          return dir * (rateA - rateB);
+        }
+        case 'creator': {
+          const nameA = a.creator ? getTaskUserDisplayName(a.creator) : '';
+          const nameB = b.creator ? getTaskUserDisplayName(b.creator) : '';
+          return dir * nameA.localeCompare(nameB);
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [tasks, sortField, sortDirection]);
+
   if (tasks.length === 0) {
     return (
       <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
@@ -34,17 +81,29 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Task</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Days Overdue</TableHead>
-            <TableHead>Progress</TableHead>
-            <TableHead>Creator</TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('task')}>
+              <div className="flex items-center gap-1">Task {getSortIcon('task', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('type')}>
+              <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('priority')}>
+              <div className="flex items-center gap-1">Priority {getSortIcon('priority', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('days_overdue')}>
+              <div className="flex items-center gap-1">Days Overdue {getSortIcon('days_overdue', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('progress')}>
+              <div className="flex items-center gap-1">Progress {getSortIcon('progress', sortField, sortDirection)}</div>
+            </TableHead>
+            <TableHead className={sortableHeaderClasses} onClick={() => handleSort('creator')}>
+              <div className="flex items-center gap-1">Creator {getSortIcon('creator', sortField, sortDirection)}</div>
+            </TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tasks.map((task) => (
+          {sortedTasks.map((task) => (
             <TableRow key={task.task_id}>
               <TableCell>
                 <div className="max-w-[200px]">

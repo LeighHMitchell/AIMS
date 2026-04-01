@@ -147,7 +147,7 @@ export default function TransparencyIndexPage() {
   })
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600 bg-green-50 border-green-200"
+    if (score >= 80) return "text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))]"
     if (score >= 40) return "text-yellow-600 bg-yellow-50 border-yellow-200"
     return "text-red-600 bg-red-50 border-red-200"
   }
@@ -214,7 +214,7 @@ export default function TransparencyIndexPage() {
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-lg">
-              <ShieldCheck className="h-6 w-6 text-green-600" />
+              <ShieldCheck className="h-6 w-6 text-[hsl(var(--success-icon))]" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">In "Good" Standing</p>
@@ -291,7 +291,7 @@ export default function TransparencyIndexPage() {
                     <div className="lg:col-span-5 mb-2 flex items-center gap-2 text-sm">
                       <span className="font-medium text-foreground">Timeliness Multiplier:</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        project.breakdown.multiplier === 1.0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        project.breakdown.multiplier === 1.0 ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' : 'bg-red-100 text-red-700'
                       }`}>
                         x{project.breakdown.multiplier}
                       </span>

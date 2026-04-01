@@ -255,7 +255,7 @@ export function PeriodRow({
       <div className="flex items-center gap-1">
         <StatusIcon className={cn(
           "h-3 w-3",
-          status.color === 'green' && "text-green-600",
+          status.color === 'green' && "text-[hsl(var(--success-icon))]",
           status.color === 'yellow' && "text-yellow-600",
           status.color === 'red' && "text-red-600",
           status.color === 'gray' && "text-gray-400"

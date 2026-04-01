@@ -8,5 +8,5 @@ export function FieldCheck({ value }: { value: unknown }) {
     ? value.length > 0
     : value !== null && value !== undefined && value !== '' && value !== 0;
   if (!filled) return null;
-  return <CheckCircle2 className="inline-block h-3.5 w-3.5 text-green-600 ml-1.5 align-middle" />;
+  return <CheckCircle2 className="inline-block h-3.5 w-3.5 text-[hsl(var(--success-icon))] ml-1.5 align-middle" />;
 }

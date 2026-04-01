@@ -259,7 +259,7 @@ export function CashFlowTable({
                   {showNet && (
                     <td className={cn(
                       'p-1.5 text-right tabular-nums text-sm font-medium',
-                      net >= 0 ? 'text-green-600' : 'text-red-600',
+                      net >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
                     )}>
                       {formatNum(net)}
                     </td>
@@ -290,7 +290,7 @@ export function CashFlowTable({
                 {showNet && (
                   <td className={cn(
                     'p-2 tabular-nums text-sm font-medium',
-                    totals.revenue - totals.capex - totals.opex >= 0 ? 'text-green-600' : 'text-red-600',
+                    totals.revenue - totals.capex - totals.opex >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
                   )} style={{ textAlign: 'right' }}>
                     {formatNum(totals.revenue - totals.capex - totals.opex)}
                   </td>
@@ -375,7 +375,7 @@ function CashFlowTooltip({ active, payload, label }: any) {
             </div>
             <span className={cn(
               'text-sm font-medium',
-              entry.dataKey === 'Net' ? (entry.value >= 0 ? 'text-green-600' : 'text-red-600') : 'text-slate-900',
+              entry.dataKey === 'Net' ? (entry.value >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : 'text-slate-900',
             )}>
               {Math.abs(entry.value).toLocaleString('en-US')}
               {entry.value < 0 ? ' (deficit)' : ''}

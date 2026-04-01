@@ -178,16 +178,16 @@ export default function FundingGapsPage() {
                         {/* Total Cost — USD styled */}
                         <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
                           {p.estimated_cost != null ? (
-                            <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(p.estimated_cost)}</span>
+                            <span><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCostUSD(p.estimated_cost)}</span>
                           ) : '—'}
                         </td>
                         {/* Secured — USD styled */}
                         <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
-                          <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(secured)}</span>
+                          <span><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCostUSD(secured)}</span>
                         </td>
                         {/* Gap — USD styled, red */}
                         <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-semibold" style={{ color: '#dc2625' }}>
-                          <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(p.funding_gap)}</span>
+                          <span><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCostUSD(p.funding_gap)}</span>
                         </td>
                         {/* Progress bar — palette colours */}
                         <td className="px-4 py-2">

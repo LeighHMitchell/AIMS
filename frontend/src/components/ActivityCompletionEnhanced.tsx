@@ -146,7 +146,7 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
             Activity Data Quality
           </CardTitle>
           {evaluation.isPublishable && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
               Publishable
             </Badge>
           )}

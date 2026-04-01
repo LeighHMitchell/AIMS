@@ -184,8 +184,8 @@ export default function BulkValidationStep({
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <CheckCircle2 className="h-6 w-6 mx-auto mb-1 text-green-600" />
-              <p className="text-3xl font-bold text-green-600">{summary.valid}</p>
+              <CheckCircle2 className="h-6 w-6 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
+              <p className="text-3xl font-bold text-[hsl(var(--success-icon))]">{summary.valid}</p>
               <p className="text-sm text-gray-600">Valid</p>
             </div>
           </CardContent>
@@ -254,7 +254,7 @@ export default function BulkValidationStep({
                         ) : hasWarnings ? (
                           <AlertTriangle className="h-4 w-4 text-yellow-500" />
                         ) : (
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <div>
                           <p className="font-medium text-sm">{activity.title || activity.iatiIdentifier}</p>
@@ -273,7 +273,7 @@ export default function BulkValidationStep({
                           </Badge>
                         )}
                         {!hasErrors && !hasWarnings && (
-                          <Badge variant="outline" className="text-xs text-green-700 bg-green-50">Valid</Badge>
+                          <Badge variant="outline" className="text-xs text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]">Valid</Badge>
                         )}
                       </div>
                     </button>

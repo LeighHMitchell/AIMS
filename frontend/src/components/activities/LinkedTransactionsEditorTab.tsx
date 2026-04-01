@@ -162,7 +162,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
       case '1':
       case '2':
       case '12':
-        return <ArrowDownRight className="w-4 h-4 text-green-600" />;
+        return <ArrowDownRight className="w-4 h-4 text-[hsl(var(--success-icon))]" />;
       case '3':
       case '4':
         return <ArrowUpRight className="w-4 h-4 text-red-600" />;

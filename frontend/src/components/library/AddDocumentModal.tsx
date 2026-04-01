@@ -329,7 +329,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
             >
               {file ? (
                 <div className="flex items-center justify-center gap-3">
-                  <FileText className="h-8 w-8 text-green-600" />
+                  <FileText className="h-8 w-8 text-[hsl(var(--success-icon))]" />
                   <div className="text-left">
                     <p className="font-medium">{file.name}</p>
                     <p className="text-sm text-muted-foreground">

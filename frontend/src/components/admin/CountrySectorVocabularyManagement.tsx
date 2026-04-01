@@ -1061,7 +1061,7 @@ export function CountrySectorVocabularyManagement() {
                               </div>
                             </div>
                             {isSelected && (
-                              <Check className="h-4 w-4 text-green-600 shrink-0" />
+                              <Check className="h-4 w-4 text-[hsl(var(--success-icon))] shrink-0" />
                             )}
                           </div>
                         );

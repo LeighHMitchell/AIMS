@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, ArrowRight, MapPin, List, LayoutGrid, Activity } from 'lucide-react'
+import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
 import { formatCurrencyShort } from '@/lib/format'
@@ -60,7 +60,7 @@ export default function LocationProfilesPage() {
   const [totalActivities, setTotalActivities] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -138,31 +138,29 @@ export default function LocationProfilesPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center border rounded-md">
+              <div className="flex items-center border rounded-md flex-shrink-0">
                 <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-r-none gap-1"
+                  onClick={() => setViewMode("table")}
+                  className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
                 >
-                  <List className="h-4 w-4" />
-                  List
+                  <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="rounded-l-none gap-1"
+                  onClick={() => setViewMode("card")}
+                  className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
                 >
                   <LayoutGrid className="h-4 w-4" />
-                  Cards
                 </Button>
               </div>
             </div>
           </div>
 
           {/* List/Table View */}
-          {viewMode === 'list' && (
+          {viewMode === 'table' && (
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -201,7 +199,7 @@ export default function LocationProfilesPage() {
           )}
 
           {/* Grid/Card View */}
-          {viewMode === 'grid' && (
+          {viewMode === 'card' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {regions.map(region => (
                 <CardShell

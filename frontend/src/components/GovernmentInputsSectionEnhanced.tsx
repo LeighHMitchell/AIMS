@@ -77,13 +77,13 @@ const RISK_CATEGORIES = [
 ];
 
 const RISK_LEVELS = [
-  { value: 1, label: "Low", color: "text-green-700 bg-green-50 border-green-200" },
+  { value: 1, label: "Low", color: "text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))]" },
   { value: 2, label: "Medium", color: "text-amber-700 bg-amber-50 border-amber-200" },
   { value: 3, label: "High", color: "text-red-700 bg-red-50 border-red-200" },
 ];
 
 function getRiskLevel(score: number): { label: string; color: string; badgeClass: string } {
-  if (score <= 1.5) return { label: "Low", color: "text-green-700", badgeClass: "bg-green-100 text-green-800 border-green-200" };
+  if (score <= 1.5) return { label: "Low", color: "text-[hsl(var(--success-text))]", badgeClass: "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]" };
   if (score <= 2.2) return { label: "Medium", color: "text-amber-700", badgeClass: "bg-amber-100 text-amber-800 border-amber-200" };
   return { label: "High", color: "text-red-700", badgeClass: "bg-red-100 text-red-800 border-red-200" };
 }
@@ -597,7 +597,7 @@ export function GovernmentInputsSectionEnhanced({
                               {rgc.exchangeRateManual ? (
                                 <Unlock className="h-4 w-4 text-orange-500" />
                               ) : (
-                                <Lock className="h-4 w-4 text-green-600" />
+                                <Lock className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                               )}
                             </div>
                           </div>

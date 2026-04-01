@@ -120,7 +120,7 @@ export default function WorkingGroupEditorNavigation({
                 title="Copy Working Group Name"
               >
                 {copiedId === 'wgName' ? (
-                  <Check className="w-3.5 h-3.5 text-green-600" />
+                  <Check className="w-3.5 h-3.5 text-[hsl(var(--success-icon))]" />
                 ) : (
                   <Copy className="w-3.5 h-3.5 text-slate-400" />
                 )}
@@ -137,7 +137,7 @@ export default function WorkingGroupEditorNavigation({
                   title="Copy Code"
                 >
                   {copiedId === 'wgCode' ? (
-                    <Check className="w-3 h-3 text-green-600" />
+                    <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                   ) : (
                     <Copy className="w-3 h-3 text-slate-400" />
                   )}

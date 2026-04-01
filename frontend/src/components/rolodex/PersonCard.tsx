@@ -520,7 +520,7 @@ export function PersonCard({
                     title="Copy email"
                   >
                     {copiedEmail === person.email ? (
-                      <Check className="h-3 w-3 text-green-500" />
+                      <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                     ) : (
                       <Copy className="h-3 w-3 text-slate-400 hover:text-slate-600" />
                     )}
@@ -542,7 +542,7 @@ export function PersonCard({
                     title="Copy email"
                   >
                     {copiedEmail === person.secondary_email ? (
-                      <Check className="h-3 w-3 text-green-500" />
+                      <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                     ) : (
                       <Copy className="h-3 w-3 text-slate-400 hover:text-slate-600" />
                     )}

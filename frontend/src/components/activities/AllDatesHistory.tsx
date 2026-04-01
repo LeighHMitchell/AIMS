@@ -471,7 +471,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                   <div key={diffIndex} className="flex items-start gap-2 text-xs">
                                     {diffItem.type === 'added' && (
                                       <>
-                                        <Plus className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                        <Plus className="h-3 w-3 text-[hsl(var(--success-icon))] mt-0.5 flex-shrink-0" />
                                         <span className="text-green-700">
                                           Added <span className="font-medium">{diffItem.label}</span>: {formatDateValue(diffItem.newDate || null)}
                                         </span>

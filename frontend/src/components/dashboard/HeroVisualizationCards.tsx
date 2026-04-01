@@ -107,7 +107,7 @@ interface HeroVisualizationCardsProps {
 
 // Color palette
 const BAR_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'];
-const SECTOR_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#8b5cf6', '#059669', '#d97706', '#6366f1'];
+const SECTOR_COLORS = ['#4c5568', '#7b95a7', '#dc2625', '#cfd0d5', '#64748b', '#94a3b8', '#334155', '#475569'];
 
 const TRANSACTION_TYPE_COLOR_PALETTE = [
   '#dc2625', '#cfd0d5', '#4c5568', '#7b95a7', '#f1f4f8',

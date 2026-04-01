@@ -217,7 +217,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
         )}>
           <div className="flex items-center gap-2">
             {ndpAligned ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
             ) : (
               <AlertTriangle className="h-5 w-5 text-amber-600" />
             )}
@@ -369,7 +369,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                 const remaining = 200 - len;
                 if (remaining <= 0) {
                   return (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                    <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--success-icon))]">
                       <CheckCircle className="h-3.5 w-3.5" />
                       {len} characters
                     </span>

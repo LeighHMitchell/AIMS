@@ -105,7 +105,7 @@ export function FixOrphanedTransactionsStep({
         {/* Status Summary */}
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-green-50 rounded-lg">
-            <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-green-600" />
+            <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
             <p className="text-sm font-medium">{resolvedCount}</p>
             <p className="text-xs text-gray-600">Resolved</p>
           </div>
@@ -151,7 +151,7 @@ export function FixOrphanedTransactionsStep({
                     <span className="text-sm font-mono">{orphan.activityRef}</span>
                   </div>
                   <div>
-                    {isResolved && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                    {isResolved && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
                     {isSkipped && <SkipForward className="h-4 w-4 text-gray-500" />}
                     {isCurrent && !isResolved && !isSkipped && (
                       <ArrowRight className="h-4 w-4 text-primary animate-pulse" />

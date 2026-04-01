@@ -59,8 +59,8 @@ const STATUS_LABELS: { [key: string]: string } = {
 };
 
 const STATUS_COLORS: { [key: string]: string } = {
-  '2': 'bg-green-100 text-green-800',
-  'active': 'bg-green-100 text-green-800',
+  '2': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
+  'active': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   '1': 'bg-blue-100 text-blue-800',
   'pipeline': 'bg-blue-100 text-blue-800',
   '3': 'bg-gray-100 text-gray-800',

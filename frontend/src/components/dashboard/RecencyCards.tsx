@@ -24,7 +24,7 @@ const VALIDATION_EVENT_CONFIG: Record<ValidationEventType, {
 }> = {
   validated: {
     icon: CheckCircle,
-    color: 'text-green-600',
+    color: 'text-[hsl(var(--success-icon))]',
     bgColor: 'bg-green-50',
     label: 'Validated',
   },

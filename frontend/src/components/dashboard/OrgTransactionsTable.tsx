@@ -52,6 +52,18 @@ interface TransactionRow {
   isExternallyReported: boolean;
 }
 
+function getOrgAcronym(name: string | null): string {
+  if (!name) return '-';
+  if (name.length <= 8) return name;
+  const allCapsMatch = name.match(/\b[A-Z]{2,}\b/);
+  if (allCapsMatch) return allCapsMatch[0];
+  const words = name.split(/\s+/).filter(w => w.length > 0 && w[0] !== '(');
+  if (words.length >= 2) {
+    return words.map(w => w[0].toUpperCase()).join('');
+  }
+  return name.slice(0, 8) + '…';
+}
+
 // Transaction type labels
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   '1': 'Incoming Funds',
@@ -291,8 +303,8 @@ export function OrgTransactionsTable({
                           name={transaction.providerOrgName}
                           size="sm"
                         />
-                        <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                          {transaction.providerOrgName}
+                        <span className="text-sm text-slate-600">
+                          {getOrgAcronym(transaction.providerOrgName)}
                         </span>
                         <span className="text-slate-400">→</span>
                         <OrganizationLogo
@@ -300,8 +312,8 @@ export function OrgTransactionsTable({
                           name={transaction.receiverOrgName}
                           size="sm"
                         />
-                        <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                          {transaction.receiverOrgName}
+                        <span className="text-sm text-slate-600">
+                          {getOrgAcronym(transaction.receiverOrgName)}
                         </span>
                       </div>
                     </TableCell>

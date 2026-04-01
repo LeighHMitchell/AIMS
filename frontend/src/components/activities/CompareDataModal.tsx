@@ -119,7 +119,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
                 </Badge>
               )}
               {!hasLocalData && hasIatiData && (
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Badge variant="outline" className="text-[hsl(var(--success-icon))] border-green-600">
                   New data
                 </Badge>
               )}
@@ -288,7 +288,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
               )
             ) : (
               <Alert className="border-green-200 bg-green-50">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                 <AlertDescription className="text-green-800">
                   Successfully fetched IATI data for activity <span className="font-mono font-semibold">{iatiData.iati_identifier}</span>
                 </AlertDescription>

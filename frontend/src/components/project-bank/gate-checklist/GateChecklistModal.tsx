@@ -143,7 +143,7 @@ export function GateChecklistModal({
           <div className="space-y-1.5 pt-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{checkedCount} / {totalCount} requirements met</span>
-              {allChecked && <span className="text-green-600 font-medium">All complete</span>}
+              {allChecked && <span className="text-[hsl(var(--success-icon))] font-medium">All complete</span>}
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div

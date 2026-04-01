@@ -250,7 +250,7 @@ export function MapCodesModal({
                                   {code || '<empty>'}
                                 </code>
                                 {isMapped && (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                                 )}
                               </div>
                             </div>

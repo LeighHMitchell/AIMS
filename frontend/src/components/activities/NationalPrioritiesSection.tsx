@@ -369,7 +369,7 @@ export function NationalPrioritiesSection({
               <div className="flex items-center justify-between pt-3 border-t">
                 <div className="flex items-center gap-2">
                   {isValid ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                   ) : isOverAllocated ? (
                     <AlertCircle className="h-4 w-4 text-red-600" />
                   ) : (

@@ -249,7 +249,7 @@ export function SystemsSettings() {
                 content="The default country for maps and other system defaults."
               />
               {settings && localHomeCountry && (
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </div>
             <SearchableSelect
@@ -299,7 +299,7 @@ export function SystemsSettings() {
                 content="The default language for the system interface."
               />
               {settings && localLanguage && (
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </div>
             <SearchableSelect
@@ -349,7 +349,7 @@ export function SystemsSettings() {
                 content="The default currency for displaying financial amounts."
               />
               {settings && localCurrency && (
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </div>
             <SearchableSelect

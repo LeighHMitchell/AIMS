@@ -153,11 +153,11 @@ export function TaskReviewStep({ formData, errors, goToStep }: TaskReviewStepPro
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Bell className={cn('h-4 w-4', formData.send_in_app ? 'text-green-600' : 'text-muted-foreground')} />
+              <Bell className={cn('h-4 w-4', formData.send_in_app ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground')} />
               <span className="text-sm">In-App: {formData.send_in_app ? 'Yes' : 'No'}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Mail className={cn('h-4 w-4', formData.send_email ? 'text-green-600' : 'text-muted-foreground')} />
+              <Mail className={cn('h-4 w-4', formData.send_email ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground')} />
               <span className="text-sm">Email: {formData.send_email ? 'Yes' : 'No'}</span>
             </div>
           </div>
@@ -238,7 +238,7 @@ export function TaskReviewStep({ formData, errors, goToStep }: TaskReviewStepPro
 
       {/* Ready to Submit */}
       {!hasErrors && (
-        <div className="p-4 rounded-lg bg-green-50 border border-green-200 text-green-800">
+        <div className="p-4 rounded-lg bg-[hsl(var(--success-bg))] border border-[hsl(var(--success-border))] text-[hsl(var(--success-text))]">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500" />
             <span className="font-medium text-sm">Ready to create task</span>

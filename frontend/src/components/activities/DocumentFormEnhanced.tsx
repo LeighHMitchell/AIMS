@@ -379,7 +379,7 @@ export function DocumentFormEnhanced({
                       </p>
                     )}
                     {formData.thumbnailUrl && !thumbnailLoading && (
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-[hsl(var(--success-icon))] mt-1">
                         ✓ Thumbnail generated successfully
                       </p>
                     )}

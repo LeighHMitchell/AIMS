@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Search, Columns, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
+import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
 import {
   formatCurrencyFull,
   formatPercentage,
@@ -41,6 +42,8 @@ interface FinancialCompletenessTableProps {
 }
 
 type ColumnKey = 'title' | 'iati_identifier' | 'organization' | 'budgeted' | 'disbursed' | 'overspend' | 'percentage' | 'budget_periods' | 'duration';
+type SortField = ColumnKey | 'severity';
+type SortDirection = 'asc' | 'desc';
 
 const COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean }[] = [
   { key: 'title', label: 'Activity Title', defaultVisible: true },
@@ -87,11 +90,23 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnKey>>(
     new Set(COLUMNS.filter(c => c.defaultVisible).map(c => c.key))
   );
+  const [sortField, setSortField] = useState<SortField>('percentage');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
 
   // Filter data by search query
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return data;
-    
+
     const query = searchQuery.toLowerCase();
     return data.filter(item =>
       item.title.toLowerCase().includes(query) ||
@@ -100,12 +115,47 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
     );
   }, [data, searchQuery]);
 
+  // Sort data
+  const sortedData = useMemo(() => {
+    return [...filteredData].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'title':
+          return dir * a.title.localeCompare(b.title);
+        case 'iati_identifier':
+          return dir * (a.iati_identifier || '').localeCompare(b.iati_identifier || '');
+        case 'organization':
+          return dir * (a.reporting_org_name || '').localeCompare(b.reporting_org_name || '');
+        case 'budgeted':
+          return dir * (a.total_budgeted_usd - b.total_budgeted_usd);
+        case 'disbursed':
+          return dir * (a.total_disbursed_usd - b.total_disbursed_usd);
+        case 'overspend':
+          return dir * (a.overspend_usd - b.overspend_usd);
+        case 'percentage':
+          return dir * (a.percentage_spent - b.percentage_spent);
+        case 'budget_periods':
+          return dir * (a.budget_period_count - b.budget_period_count);
+        case 'duration':
+          return dir * (a.duration_years - b.duration_years);
+        case 'severity': {
+          const severityOrder: Record<string, number> = { mild: 1, moderate: 2, severe: 3 };
+          const sa = severityOrder[getSeverity(a.percentage_spent) || ''] || 0;
+          const sb = severityOrder[getSeverity(b.percentage_spent) || ''] || 0;
+          return dir * (sa - sb);
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [filteredData, sortField, sortDirection]);
+
   // Paginate data
-  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const totalPages = Math.ceil(sortedData.length / PAGE_SIZE);
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredData.slice(start, start + PAGE_SIZE);
-  }, [filteredData, currentPage]);
+    return sortedData.slice(start, start + PAGE_SIZE);
+  }, [sortedData, currentPage]);
 
   // Reset to first page when search changes
   const handleSearchChange = (value: string) => {
@@ -164,33 +214,53 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
           <TableHeader>
             <TableRow className="sticky top-0 bg-white z-10">
               {visibleColumns.has('title') && (
-                <TableHead className="bg-white min-w-[200px]">Activity Title</TableHead>
+                <TableHead className={`bg-white min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                  <div className="flex items-center gap-1">Activity Title {getSortIcon('title', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('iati_identifier') && (
-                <TableHead className="bg-white">IATI Identifier</TableHead>
+                <TableHead className={`bg-white ${sortableHeaderClasses}`} onClick={() => handleSort('iati_identifier')}>
+                  <div className="flex items-center gap-1">IATI Identifier {getSortIcon('iati_identifier', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('organization') && (
-                <TableHead className="bg-white">Organisation</TableHead>
+                <TableHead className={`bg-white ${sortableHeaderClasses}`} onClick={() => handleSort('organization')}>
+                  <div className="flex items-center gap-1">Organisation {getSortIcon('organization', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('budgeted') && (
-                <TableHead className="bg-white text-right">Budgeted USD</TableHead>
+                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('budgeted')}>
+                  <div className="flex items-center justify-end gap-1">Budgeted USD {getSortIcon('budgeted', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('disbursed') && (
-                <TableHead className="bg-white text-right">Disbursed USD</TableHead>
+                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('disbursed')}>
+                  <div className="flex items-center justify-end gap-1">Disbursed USD {getSortIcon('disbursed', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('overspend') && (
-                <TableHead className="bg-white text-right">Overspend USD</TableHead>
+                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('overspend')}>
+                  <div className="flex items-center justify-end gap-1">Overspend USD {getSortIcon('overspend', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('percentage') && (
-                <TableHead className="bg-white text-right">% Spent</TableHead>
+                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('percentage')}>
+                  <div className="flex items-center justify-end gap-1">% Spent {getSortIcon('percentage', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('budget_periods') && (
-                <TableHead className="bg-white text-center">Budget Periods</TableHead>
+                <TableHead className={`bg-white text-center ${sortableHeaderClasses}`} onClick={() => handleSort('budget_periods')}>
+                  <div className="flex items-center justify-center gap-1">Budget Periods {getSortIcon('budget_periods', sortField, sortDirection)}</div>
+                </TableHead>
               )}
               {visibleColumns.has('duration') && (
-                <TableHead className="bg-white text-center">Duration (Years)</TableHead>
+                <TableHead className={`bg-white text-center ${sortableHeaderClasses}`} onClick={() => handleSort('duration')}>
+                  <div className="flex items-center justify-center gap-1">Duration (Years) {getSortIcon('duration', sortField, sortDirection)}</div>
+                </TableHead>
               )}
-              <TableHead className="bg-white text-center">Severity</TableHead>
+              <TableHead className={`bg-white text-center ${sortableHeaderClasses}`} onClick={() => handleSort('severity')}>
+                <div className="flex items-center justify-center gap-1">Severity {getSortIcon('severity', sortField, sortDirection)}</div>
+              </TableHead>
               <TableHead className="bg-white w-10"></TableHead>
             </TableRow>
           </TableHeader>
@@ -265,7 +335,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
                       </TableCell>
                     )}
                     <TableCell className="text-center">
-                      <SeverityBadge severity={severity} />
+                      {severity && <SeverityBadge severity={severity} />}
                     </TableCell>
                     <TableCell>
                       <Link
@@ -288,7 +358,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">
-            Showing {((currentPage - 1) * PAGE_SIZE) + 1} to {Math.min(currentPage * PAGE_SIZE, filteredData.length)} of {filteredData.length} results
+            Showing {((currentPage - 1) * PAGE_SIZE) + 1} to {Math.min(currentPage * PAGE_SIZE, sortedData.length)} of {sortedData.length} results
           </p>
           <div className="flex items-center gap-2">
             <Button

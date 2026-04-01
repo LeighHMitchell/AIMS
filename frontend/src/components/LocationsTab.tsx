@@ -469,7 +469,7 @@ export default function LocationsTab({
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{location.location_name || 'Unnamed Location'}</span>
                         {location.id && (
-                          <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                         )}
                       </div>
                       {location.latitude && location.longitude && (

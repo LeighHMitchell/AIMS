@@ -231,7 +231,7 @@ export function ScoringRubricManagement() {
                   </td>
                   <td className="py-2">
                     {v.is_active ? (
-                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>
+                      <Badge className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]">Active</Badge>
                     ) : (
                       <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                     )}
@@ -310,7 +310,7 @@ export function ScoringRubricManagement() {
                 <CardTitle>
                   v{selectedVersion.version_number}: {selectedVersion.label}
                   {selectedVersion.is_active && (
-                    <Badge className="ml-2 bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>
+                    <Badge className="ml-2 bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]">Active</Badge>
                   )}
                 </CardTitle>
                 {selectedVersion.description && (
@@ -338,7 +338,7 @@ export function ScoringRubricManagement() {
                         const total = getStageWeightTotal(s)
                         const isValid = Math.abs(total - 100) < 0.01
                         return (
-                          <span className={`ml-1.5 text-[10px] ${isValid ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`ml-1.5 text-[10px] ${isValid ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}`}>
                             ({total.toFixed(0)}%)
                           </span>
                         )

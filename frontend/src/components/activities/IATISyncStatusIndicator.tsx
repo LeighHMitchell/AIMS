@@ -40,7 +40,7 @@ export function IATISyncStatusIndicator({
         return {
           icon: CheckCircle2,
           label: 'Synced',
-          color: 'text-green-600',
+          color: 'text-[hsl(var(--success-icon))]',
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200',
           description: lastSyncTime 
@@ -158,7 +158,7 @@ export function IATISyncStatusBadge({
   const getStatusIcon = () => {
     switch (status) {
       case 'live':
-        return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
+        return <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />;
       case 'outdated':
         return <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />;
       case 'error':

@@ -78,7 +78,7 @@ export function EventManagement() {
       case 'pending':
         return <Badge variant="outline" className="text-[#4c5568] border-[#cfd0d5] bg-[#f1f4f8]">Pending</Badge>
       case 'approved':
-        return <Badge variant="outline" className="text-green-600 border-green-600">Approved</Badge>
+        return <Badge variant="outline" className="text-[hsl(var(--success-icon))] border-green-600">Approved</Badge>
       case 'rejected':
         return <Badge variant="outline" className="text-[#dc2625] border-[#dc2625]">Rejected</Badge>
       default:

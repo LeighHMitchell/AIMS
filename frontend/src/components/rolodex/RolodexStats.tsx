@@ -68,7 +68,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
       case 'activity_contact':
         return 'bg-purple-100 text-purple-800';
       case 'organization_contact':
-        return 'bg-green-100 text-green-800';
+        return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
       default:
         return 'bg-gray-100 text-gray-800';
     }

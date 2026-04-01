@@ -118,7 +118,7 @@ export function ProgressTimeline({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'green':
-        return <CheckCircle2 className="h-3 w-3 text-green-600" />;
+        return <CheckCircle2 className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
       case 'yellow':
         return <AlertCircle className="h-3 w-3 text-yellow-600" />;
       case 'red':
@@ -136,7 +136,7 @@ export function ProgressTimeline({
     const previous = segments[index - 1].achievementRate;
     
     if (current > previous + 5) {
-      return <TrendingUp className="h-3 w-3 text-green-600" />;
+      return <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
     } else if (current < previous - 5) {
       return <TrendingDown className="h-3 w-3 text-red-600" />;
     } else {
@@ -248,7 +248,7 @@ export function ProgressTimeline({
                   variant={segment.status === 'green' ? 'default' : 'secondary'}
                   className={cn(
                     "text-xs",
-                    segment.status === 'green' && "bg-green-100 text-green-700",
+                    segment.status === 'green' && "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]",
                     segment.status === 'yellow' && "bg-yellow-100 text-yellow-700",
                     segment.status === 'red' && "bg-red-100 text-red-700",
                     segment.status === 'gray' && "bg-gray-100 text-gray-700"

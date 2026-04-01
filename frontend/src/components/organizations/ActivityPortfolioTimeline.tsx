@@ -89,7 +89,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
     switch (status.toLowerCase()) {
       case 'completed':
       case 'completion':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
       case 'implementation':
       case 'active':
         return <Activity className="h-4 w-4 text-blue-600" />;
@@ -125,7 +125,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
       case 'reporting':
         return 'bg-purple-100 text-purple-800 border-purple-300';
       case 'funding':
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]';
       case 'implementing':
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'extending':

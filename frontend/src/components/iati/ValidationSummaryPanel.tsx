@@ -143,8 +143,8 @@ export function ValidationSummaryPanel({
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">
+              <CheckCircle2 className="h-5 w-5 text-[hsl(var(--success-icon))]" />
+              <span className="text-2xl font-bold text-[hsl(var(--success-icon))]">
                 {summary.validTransactions}
               </span>
             </div>
@@ -216,7 +216,7 @@ export function ValidationSummaryPanel({
         </Alert>
       ) : summary.totalTransactions > 0 ? (
         <Alert className="border-green-200 bg-green-50 flex items-start">
-          <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-1" />
+          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0 mt-1" />
           <div className="ml-2">
             <h4 className="font-semibold">Ready to Import</h4>
             <AlertDescription>

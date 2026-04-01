@@ -9721,7 +9721,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-6">
-                <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                <CheckCircle className="h-16 w-16 text-[hsl(var(--success-icon))] mx-auto mb-4" />
                 <h3 className="text-2xl font-semibold mb-2">Import Completed Successfully!</h3>
                 <p className="text-gray-600 mb-6">
                   {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.

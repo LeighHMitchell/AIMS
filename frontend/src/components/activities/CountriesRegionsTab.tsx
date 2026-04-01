@@ -1414,7 +1414,7 @@ export default function CountriesRegionsTab({
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{countryAllocation.country?.name}</span>
                             {countryAllocation.id && (
-                              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
                           </div>
                         </TableCell>
@@ -1473,7 +1473,7 @@ export default function CountriesRegionsTab({
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{regionAllocation.region?.name}</span>
                             {regionAllocation.id && (
-                              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
                           </div>
                         </TableCell>

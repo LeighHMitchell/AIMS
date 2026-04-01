@@ -1472,7 +1472,7 @@ export default function Atlas() {
                             <div className="flex justify-between">
                               <span className="text-slate-500">Wheelchair Access</span>
                               <span className={`capitalize ${
-                                selectedFacility.facility.wheelchair === 'yes' ? 'text-green-600' :
+                                selectedFacility.facility.wheelchair === 'yes' ? 'text-[hsl(var(--success-icon))]' :
                                 selectedFacility.facility.wheelchair === 'no' ? 'text-red-600' :
                                 'text-slate-700'
                               }`}>

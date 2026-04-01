@@ -1,8 +1,9 @@
 'use client';
 
 import { RequiredDot } from "@/components/ui/required-dot";
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -654,22 +655,62 @@ function ContactsTable({
   onDelete: (id: string) => void;
   organization?: OrganizationInfo;
 }) {
+  const [sortField, setSortField] = useState<'name' | 'role' | 'email' | 'type'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedContacts = useMemo(() => {
+    return [...contacts].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      const nameA = `${a.firstName} ${a.lastName}`.trim();
+      const nameB = `${b.firstName} ${b.lastName}`.trim();
+      switch (sortField) {
+        case 'name':
+          return dir * nameA.localeCompare(nameB);
+        case 'role':
+          return dir * (a.jobTitle || '').localeCompare(b.jobTitle || '');
+        case 'email':
+          return dir * (a.email || '').localeCompare(b.email || '');
+        case 'type':
+          return dir * (a.type || '').localeCompare(b.type || '');
+        default:
+          return 0;
+      }
+    });
+  }, [contacts, sortField, sortDirection]);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
+            <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
+              <div className="flex items-center gap-1">Contact {getSortIcon('name', sortField, sortDirection)}</div>
+            </th>
+            <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('role')}>
+              <div className="flex items-center gap-1">Role {getSortIcon('role', sortField, sortDirection)}</div>
+            </th>
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Organization</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
+            <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('email')}>
+              <div className="flex items-center gap-1">Email {getSortIcon('email', sortField, sortDirection)}</div>
+            </th>
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
+            <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+              <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
+            </th>
             <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {contacts.map((contact) => {
+          {sortedContacts.map((contact) => {
             const typeInfo = validateIatiContactType(contact.type);
             const fullName = `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim();
             const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ');

@@ -1375,7 +1375,7 @@ export default function OrganizationProfilePage() {
                           title="Copy Organization Name"
                         >
                           {copiedId === 'orgName' ? (
-                            <Check className="w-5 h-5 text-green-600" />
+                            <Check className="w-5 h-5 text-[hsl(var(--success-icon))]" />
                           ) : (
                             <Copy className="w-5 h-5 text-muted-foreground" />
                           )}
@@ -1395,7 +1395,7 @@ export default function OrganizationProfilePage() {
                               title="Copy IATI Org ID"
                             >
                               {copiedId === 'iatiOrgId' ? (
-                                <Check className="w-3 h-3 text-green-600" />
+                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                               ) : (
                                 <Copy className="w-3 h-3" />
                               )}
@@ -1422,7 +1422,7 @@ export default function OrganizationProfilePage() {
                           </Badge>
                         )}
                         {organization.iati_org_id && (
-                          <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700">
+                          <Badge variant="outline" className="border-[hsl(var(--success-border))] bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]">
                             Reporting to IATI
                           </Badge>
                         )}
@@ -3248,7 +3248,7 @@ export default function OrganizationProfilePage() {
                       'Funding': 'bg-yellow-100 text-yellow-800 border-yellow-300',
                       'Accountable': 'bg-purple-100 text-purple-800 border-purple-300',
                       'Extending': 'bg-blue-100 text-blue-800 border-blue-300',
-                      'Implementing': 'bg-green-100 text-green-800 border-green-300',
+                      'Implementing': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]',
                     };
                     return colors[role] || 'bg-muted text-foreground border-border';
                   };

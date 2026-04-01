@@ -5447,9 +5447,9 @@ function NewActivityPageContent() {
                     <div className="mt-2 flex items-center gap-2">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
                         general.submissionStatus === 'submitted' ? 'text-blue-600 bg-blue-100' :
-                        general.submissionStatus === 'validated' ? 'text-green-600 bg-green-100' :
+                        general.submissionStatus === 'validated' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' :
                         general.submissionStatus === 'rejected' ? 'text-red-600 bg-red-100' :
-                        general.submissionStatus === 'published' ? 'text-green-600 bg-green-100' : 'text-muted-foreground bg-muted'
+                        general.submissionStatus === 'published' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' : 'text-muted-foreground bg-muted'
                       }`}>
                         {(() => {
                           switch (general.submissionStatus) {
@@ -5587,7 +5587,7 @@ function NewActivityPageContent() {
                          (!general.title?.trim() || !general.description?.trim() ||
                           !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
                        }
-                       className="data-[state=checked]:bg-green-600 scale-125"
+                       className="data-[state=checked]:bg-[hsl(var(--success-icon))] scale-125"
                        title="Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date"
                      />
                      <span className="text-base font-semibold text-foreground">Published</span>

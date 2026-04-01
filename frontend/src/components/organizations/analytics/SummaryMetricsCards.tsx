@@ -63,11 +63,11 @@ export function SummaryMetricsCards({
         {previousYear.activeProjects > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs">
             {projectsDelta.isPositive ? (
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
               <TrendingDown className="h-3 w-3 text-red-600" />
             )}
-            <span className={projectsDelta.isPositive ? 'text-green-600' : 'text-red-600'}>
+            <span className={projectsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
               {projectsDelta.display} from previous year
             </span>
           </div>
@@ -87,11 +87,11 @@ export function SummaryMetricsCards({
         {previousYear.commitments > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs">
             {commitmentsDelta.isPositive ? (
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
               <TrendingDown className="h-3 w-3 text-red-600" />
             )}
-            <span className={commitmentsDelta.isPositive ? 'text-green-600' : 'text-red-600'}>
+            <span className={commitmentsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
               {commitmentsDelta.isPositive ? '+' : ''}{commitmentsDelta.deltaPercent.toFixed(1)}% from 2024
             </span>
           </div>
@@ -111,11 +111,11 @@ export function SummaryMetricsCards({
         {previousYear.disbursements > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs">
             {disbursementsDelta.isPositive ? (
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
               <TrendingDown className="h-3 w-3 text-red-600" />
             )}
-            <span className={disbursementsDelta.isPositive ? 'text-green-600' : 'text-red-600'}>
+            <span className={disbursementsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
               {disbursementsDelta.isPositive ? '+' : ''}{disbursementsDelta.deltaPercent.toFixed(1)}% from 2024
             </span>
           </div>
@@ -135,11 +135,11 @@ export function SummaryMetricsCards({
         {previousYear.expenditures > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs">
             {expendituresDelta.isPositive ? (
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
               <TrendingDown className="h-3 w-3 text-red-600" />
             )}
-            <span className={expendituresDelta.isPositive ? 'text-green-600' : 'text-red-600'}>
+            <span className={expendituresDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
               {expendituresDelta.isPositive ? '+' : ''}{expendituresDelta.deltaPercent.toFixed(1)}% from 2024
             </span>
           </div>

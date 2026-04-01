@@ -104,7 +104,7 @@ export function DefaultFieldsSection({
       return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
     if (lastUpdated) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
     }
     return null;
   };
@@ -124,7 +124,7 @@ export function DefaultFieldsSection({
             <CardTitle className="text-lg font-semibold">Default Values</CardTitle>
             <HelpTextTooltip content="These defaults will be automatically applied to new transactions in this activity." />
             {coreFieldsCompleted && (
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -336,7 +336,7 @@ export function DefaultFieldsSection({
         {lastUpdated && !error && !isUpdating && (
           <div className="bg-green-50 border border-green-200 rounded-md p-3">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               <span className="text-sm text-green-700">
                 Default values saved successfully at {lastUpdated.toLocaleTimeString()}
               </span>

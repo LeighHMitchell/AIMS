@@ -79,7 +79,7 @@ export function ReadinessValidationWarning({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isComplete && allStagesSigned ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
             ) : (
               <AlertTriangle className="h-5 w-5 text-yellow-600" />
             )}
@@ -130,7 +130,7 @@ export function ReadinessValidationWarning({
                     >
                       <div className="flex items-center gap-2">
                         {stage.signoff ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         ) : stage.progress.percentage === 100 ? (
                           <Clock className="h-4 w-4 text-blue-600" />
                         ) : (
@@ -164,7 +164,7 @@ export function ReadinessValidationWarning({
               </Alert>
             ) : (
               <Alert className="bg-green-50 border-green-200">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                 <AlertDescription className="text-green-800">
                   All readiness checklist items are complete and all stages have been signed off.
                 </AlertDescription>
