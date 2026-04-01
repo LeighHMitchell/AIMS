@@ -74,9 +74,9 @@ export const BUDGET_STATUS_OPTIONS: BudgetStatusOption[] = [
  * Budget status color classes for badges and indicators
  */
 export const BUDGET_STATUS_COLORS: Record<BudgetStatusType, string> = {
-  on_budget: 'bg-green-100 text-green-800 border-green-200',
-  off_budget: 'bg-red-100 text-red-800 border-red-200',
-  partial: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  on_budget: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]',
+  off_budget: 'bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))] border-[hsl(var(--error-border))]',
+  partial: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border-[hsl(var(--warning-border))]',
   unknown: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 

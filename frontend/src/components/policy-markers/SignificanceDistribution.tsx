@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 
 interface SignificanceItem {
   significance: number
@@ -17,16 +18,6 @@ interface SignificanceDistributionProps {
   distribution: SignificanceItem[]
   themeColor: string
   compact?: boolean
-}
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
 }
 
 export function SignificanceDistribution({ distribution, themeColor, compact = false }: SignificanceDistributionProps) {

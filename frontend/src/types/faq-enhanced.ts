@@ -392,10 +392,10 @@ export const FAQ_QUESTION_STATUS_LABELS: Record<FAQQuestionStatus, string> = {
 };
 
 export const FAQ_QUESTION_STATUS_COLORS: Record<FAQQuestionStatus, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  published: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
+  pending: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))]',
+  in_progress: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))]',
+  published: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
+  rejected: 'bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))]',
   duplicate: 'bg-gray-100 text-gray-800',
 };
 
@@ -407,7 +407,7 @@ export const FAQ_STATUS_LABELS: Record<FAQStatus, string> = {
 
 export const FAQ_STATUS_COLORS: Record<FAQStatus, string> = {
   draft: 'bg-gray-100 text-gray-800',
-  published: 'bg-green-100 text-green-800',
+  published: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   archived: 'bg-orange-100 text-orange-800',
 };
 

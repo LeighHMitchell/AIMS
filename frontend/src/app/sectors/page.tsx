@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, Search, PieChart, List, LayoutGrid, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
+import { formatCurrencyShort } from '@/lib/format'
 
 // Color palette for sector groups
 const SECTOR_COLORS: Record<string, string> = {
@@ -51,16 +52,6 @@ interface SummaryData {
     activeSectors: number
     totalSectorCodes: number
   }
-}
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
 }
 
 export default function SectorsListingPage() {
@@ -360,7 +351,7 @@ export default function SectorsListingPage() {
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
-                    <code className="text-xs font-mono font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{group.code}</code>
+                    <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{group.code}</code>
                     <Link
                       href={`/sectors/${group.code}`}
                       className="font-semibold text-foreground text-sm flex-1 text-left hover:text-blue-600"

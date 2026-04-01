@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 
 interface SubSectorItem {
   code: string
@@ -20,16 +21,6 @@ interface SubSectorBreakdownProps {
   subSectors: SubSectorItem[]
   themeColor: string
   compact?: boolean
-}
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
 }
 
 export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: SubSectorBreakdownProps) {

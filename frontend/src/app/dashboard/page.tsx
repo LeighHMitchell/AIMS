@@ -250,8 +250,8 @@ export default function Dashboard() {
               <div className="space-y-1.5 min-w-0">
                 {/* Welcome message with role badge on same line */}
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl tracking-tight text-foreground">
-                    Welcome, <span className="font-semibold">
+                  <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                    Welcome, <span>
                       {user.firstName || user.name.split(' ')[0]}
                     </span>
                   </h1>

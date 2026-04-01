@@ -11,8 +11,8 @@ const badgeVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
-        success: "bg-green-100 text-green-700 hover:bg-green-200",
-        warning: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
+        success: "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]/80",
+        warning: "bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] hover:bg-[hsl(var(--warning-bg))]/80",
         
         // High contrast variants with darker text
         gray: "bg-slate-200 text-slate-900 border border-slate-300 hover:bg-slate-300",

@@ -216,7 +216,7 @@ export default function PolicyMarkersListingPage() {
                                 <Badge className="text-[10px] px-1.5 py-0 bg-white/20 text-white border-0">IATI</Badge>
                               )}
                               {marker.iati_code && (
-                                <code className="text-[10px] px-1 py-0.5 bg-white/10 text-white/80 rounded font-mono">{marker.iati_code}</code>
+                                <code className="text-xs px-1.5 py-0.5 bg-white/20 text-white/90 rounded font-mono">{marker.iati_code}</code>
                               )}
                             </div>
                             <h2 className="text-sm font-bold text-white leading-tight">

@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Download, Table as TableIcon, PieChart as PieChartIcon } from "lucide-react";
 import financeTypes from "@/data/finance-types.json";
+import { formatCurrencyShort } from '@/lib/format';
 
 interface Transaction {
   transaction_type: string;
@@ -35,17 +36,6 @@ const COLOR_PALETTE = [
   "#cfd0d5", // Pale Slate
   "#f1f4f8", // Platinum
 ];
-
-// Format currency in short form with two decimals
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0.00';
-  const abs = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(2)}B`;
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(2)}k`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
 
 export default function FinanceTypeDonut({
   transactions,

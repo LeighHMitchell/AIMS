@@ -20,6 +20,7 @@ import {
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { getIconForMarker, getSignificanceLabel, MARKER_TYPE_COLORS, MARKER_TYPE_BADGE_CLASSES, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
@@ -63,16 +64,6 @@ interface PolicyMarkerData {
 }
 
 // ---- Helpers ----
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
-}
-
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value)
 }
@@ -217,10 +208,10 @@ export default function PolicyMarkerProfilePage() {
                   <IconComponent className="w-8 h-8" style={{ color: themeColor }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold text-foreground mb-1">{marker.name}</h1>
+                  <h1 className="text-3xl font-bold text-foreground mb-1">{marker.name}</h1>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">{marker.description}</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <code className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded font-mono border border-border">
+                    <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                       {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
                     </code>
                     <Badge className={badgeClass}>{getMarkerTypeLabel(marker.marker_type)}</Badge>
@@ -241,7 +232,7 @@ export default function PolicyMarkerProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Funding Trends */}
             <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Funding Trends</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-sm font-medium text-foreground">Funding Trends</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {transactionsByYear.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -272,7 +263,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Significance Distribution mini */}
             <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Significance Distribution</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-sm font-medium text-foreground">Significance Distribution</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 <SignificanceDistribution distribution={significanceDistribution} themeColor={themeColor} compact />
               </CardContent>
@@ -280,7 +271,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Top Donors mini */}
             <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Top Donors</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-sm font-medium text-foreground">Top Donors</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {donorRankings.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -301,7 +292,7 @@ export default function PolicyMarkerProfilePage() {
 
             {/* Geographic Spread mini */}
             <Card className="border-border">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Geographic Spread</CardTitle></CardHeader>
+              <CardHeader className="py-2 px-3"><CardTitle className="text-sm font-medium text-foreground">Geographic Spread</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {geographicDistribution.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -369,7 +360,7 @@ export default function PolicyMarkerProfilePage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm text-foreground truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
-                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
+                            {activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>}
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">{getSignificanceLabel(activity.significance, isRMNCH)}</Badge>
                           </div>
                         </div>
@@ -518,7 +509,7 @@ export default function PolicyMarkerProfilePage() {
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">Sig {activity.significance}</Badge>
                           </div>
                           <h3 className="font-medium text-sm text-foreground line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
-                          {activity.iati_identifier && <code className="text-[10px] font-mono text-muted-foreground block mb-2 truncate">{activity.iati_identifier}</code>}
+                          {activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded block mb-2 truncate">{activity.iati_identifier}</code>}
                           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                             <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
                             <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>

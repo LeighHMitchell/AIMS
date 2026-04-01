@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, ArrowRight, MapPin, List, LayoutGrid, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
+import { formatCurrencyShort } from '@/lib/format'
 
 // Static map thumbnail for each state/region using OpenStreetMap static tiles
 function getMapThumbnail(pcode: string): string {
@@ -46,16 +47,6 @@ interface RegionListItem {
   activityCount: number
   commitments: number
   disbursements: number
-}
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -192,7 +183,7 @@ export default function LocationProfilesPage() {
                             <Link href={`/location-profiles/${region.st_pcode}`} className="hover:underline">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-foreground">{region.name}</span>
-                                <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{region.st_pcode}</code>
+                                <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{region.st_pcode}</code>
                               </div>
                             </Link>
                           </td>

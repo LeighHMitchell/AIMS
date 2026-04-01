@@ -20,6 +20,7 @@ import {
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { getSectorColor } from '@/lib/sector-colors'
 import { CHART_COLOR_PALETTE } from '@/lib/chart-colors'
@@ -62,16 +63,6 @@ interface SectorData {
 }
 
 // ---- Helpers ----
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
-}
-
 function formatNumber(value: number): string { return new Intl.NumberFormat('en-US').format(value) }
 
 function getStatusLabel(status?: string): string {
@@ -221,9 +212,9 @@ export default function SectorProfilePage() {
                 {sector.code}
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground">{sector.name}</h1>
+                <h1 className="text-3xl font-bold text-foreground">{sector.name}</h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <code className="text-[11px] font-mono font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded">DAC CRS</code>
+                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">DAC CRS</code>
                   {sector.groupName && sector.level !== 'group' && (
                     <span className="text-xs font-semibold text-muted-foreground">{sector.groupName}</span>
                   )}
@@ -434,7 +425,7 @@ export default function SectorProfilePage() {
                         </div>
                         <div className="flex items-start gap-1.5 mb-2">
                           <h3 className="font-medium text-sm text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
-                          {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
+                          {activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
                         </div>
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                           <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
@@ -460,7 +451,7 @@ export default function SectorProfilePage() {
                   </tr></thead><tbody>
                     {paginatedActivities.map(activity => (
                       <tr key={activity.id} className="border-b border-border hover:bg-muted/50">
-                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline"><span className="inline-flex items-center gap-1.5">{(activity.title_narrative || 'Untitled').substring(0, 60)}{activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}</span></Link></td>
+                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline"><span className="inline-flex items-center gap-1.5">{(activity.title_narrative || 'Untitled').substring(0, 60)}{activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>}</span></Link></td>
                         <td className="py-2 px-3 text-center"><Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge></td>
                         <td className="py-2 px-3 text-center text-muted-foreground">{activity.sectorPercentage}%</td>
                         <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.commitments)}</td>

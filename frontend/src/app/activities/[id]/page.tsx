@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyShort } from '@/lib/format';
 import { cn } from '@/lib/utils'
 import {
   ArrowLeft,
@@ -337,16 +338,6 @@ function formatCompactNumber(value: number): string {
   if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}m`;
   if (abs >= 1_000) return `${(value / 1_000).toFixed(2)}k`;
   return `${value.toFixed(2)}`;
-}
-
-// Format currency in short form with two decimals: 10308 -> $10.31k, 10308000 -> $10.31M
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0.00';
-  const abs = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(value / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000) return `${sign}$${(value / 1_000).toFixed(2)}k`;
-  return `${sign}$${value.toFixed(2)}`;
 }
 
 // Helper function to get activity scope label from code

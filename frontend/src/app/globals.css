@@ -220,8 +220,22 @@ select:focus {
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --surface-muted: #f6f5f3;
+
+    /* Semantic feedback colors */
+    --success-bg: 142 76% 93%;
+    --success-text: 143 64% 24%;
+    --success-border: 142 69% 84%;
+    --warning-bg: 48 96% 89%;
+    --warning-text: 41 96% 25%;
+    --warning-border: 48 96% 77%;
+    --error-bg: 0 93% 94%;
+    --error-text: 0 63% 31%;
+    --error-border: 0 93% 87%;
+    --info-bg: 214 95% 93%;
+    --info-text: 224 71% 30%;
+    --info-border: 214 93% 85%;
 
     /* Calendar Color Scheme */
     --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */

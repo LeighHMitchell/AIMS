@@ -26,6 +26,7 @@ import {
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { getTargetsForGoal } from '@/data/sdg-targets'
 import { MiniChartCard } from '@/components/profiles/MiniChartCard'
@@ -145,16 +146,6 @@ interface SDGData {
 }
 
 // ---- Helpers ----
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
-}
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value)
@@ -509,7 +500,7 @@ export default function SDGProfilePage() {
 
             {/* ======== Target Coverage ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">Target Coverage</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm font-medium">Target Coverage</CardTitle></CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {targetBreakdown.filter(t => t.targetId !== 'general').map(target => (
@@ -540,7 +531,7 @@ export default function SDGProfilePage() {
             {/* ======== Financials ======== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
-                <CardHeader><CardTitle className="text-sm">Financial Trends</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-sm font-medium">Financial Trends</CardTitle></CardHeader>
                 <CardContent>
                   {transactionsByYear.length > 0 ? (
                     <div className="h-72">
@@ -589,7 +580,7 @@ export default function SDGProfilePage() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-sm">Transaction Type Breakdown</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-sm font-medium">Transaction Type Breakdown</CardTitle></CardHeader>
                 <CardContent>
                   {transactionsByType.length > 0 ? (
                     <div className="h-72">
@@ -613,7 +604,7 @@ export default function SDGProfilePage() {
 
             {/* ======== Donors ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">Donor Landscape</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm font-medium">Donor Landscape</CardTitle></CardHeader>
               <CardContent>
                 <SDGDonorRankings donors={donorRankings} sdgColor={sdg.color} />
               </CardContent>
@@ -623,7 +614,7 @@ export default function SDGProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-sm">Activities</CardTitle>
+                  <CardTitle className="text-sm font-medium">Activities</CardTitle>
                   <div className="flex items-center gap-2">
                     {[
                       { key: 'all', label: 'All', count: activities.length },
@@ -751,7 +742,7 @@ export default function SDGProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-sm">Organizations</CardTitle>
+                  <CardTitle className="text-sm font-medium">Organizations</CardTitle>
                   <div className="flex items-center gap-2">
                     {['all', 'funding', 'implementing', 'accountable'].map(role => (
                       <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
@@ -811,7 +802,7 @@ export default function SDGProfilePage() {
 
             {/* ======== Geography ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">Activity Locations</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm font-medium">Activity Locations</CardTitle></CardHeader>
               <CardContent>
                 <SDGGeographyMap locations={geographicDistribution} sdgColor={sdg.color} />
               </CardContent>
@@ -821,7 +812,7 @@ export default function SDGProfilePage() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">Country Rankings</CardTitle>
+                    <CardTitle className="text-sm font-medium">Country Rankings</CardTitle>
                     <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
                       const exportData = geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value }))
                       exportChartToCSV(exportData, `SDG ${sdg.id} Countries`)

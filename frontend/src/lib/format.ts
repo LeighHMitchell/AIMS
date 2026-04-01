@@ -8,25 +8,26 @@ export function formatCurrency(value: number): string {
 }
 
 /**
- * Format currency value in abbreviated form (e.g., $43.3k, $23.4m, $1.2b)
+ * Format currency value in abbreviated form (e.g., $43.3k, $23.4M, $1.2B)
  * Used for tooltips and compact displays
+ * @deprecated Use formatCurrencyShort instead
  */
 export function formatCurrencyAbbreviated(value: number): string {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
+  return formatCurrencyShort(value)
+}
 
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
+/**
+ * Format currency in short abbreviated form: $18.0M, $1.2B, $43.3k
+ * Canonical implementation — import this instead of defining locally.
+ */
+export function formatCurrencyShort(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return '$0'
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
+  return `${sign}$${abs.toFixed(0)}`
 }
 
 export function formatDate(date: Date | string): string {

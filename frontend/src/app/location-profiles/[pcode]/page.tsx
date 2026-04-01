@@ -24,6 +24,7 @@ import {
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 // Map thumbnail used as banner instead of uploaded images
 import { MiniChartCard } from '@/components/profiles/MiniChartCard'
@@ -144,16 +145,6 @@ interface LocationProfileData {
 }
 
 // ---- Helpers ----
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
-}
 
 function formatAmountShort(value: number): string {
   if (value === null || value === undefined || isNaN(value)) return '0'
@@ -657,7 +648,7 @@ export default function LocationProfileDetailPage() {
                       >
                         <div className="col-span-5 flex items-center gap-2">
                           <span className="text-sm font-medium text-foreground">{township.name}</span>
-                          <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{township.ts_pcode}</code>
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{township.ts_pcode}</code>
                         </div>
                         <div className="col-span-2 text-right text-sm text-foreground">
                           {township.activityCount}
@@ -840,7 +831,7 @@ export default function LocationProfileDetailPage() {
                               <div className="flex items-center gap-1.5">
                                 <p className="font-medium text-foreground truncate max-w-xs">{activity.title_narrative || 'Untitled'}</p>
                                 {activity.iati_identifier && (
-                                  <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
+                                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
                                 )}
                               </div>
                             </Link>
@@ -907,7 +898,7 @@ export default function LocationProfileDetailPage() {
                             <td className="py-2 px-3">
                               <div className="flex items-center gap-2">
                                 <p className="font-medium text-foreground truncate max-w-xs">{org.name}</p>
-                                {org.acronym && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{org.acronym}</code>}
+                                {org.acronym && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{org.acronym}</code>}
                               </div>
                             </td>
                             <td className="py-2 px-3">

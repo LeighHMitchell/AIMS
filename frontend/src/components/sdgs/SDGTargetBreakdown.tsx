@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { formatCurrency } from '@/lib/chart-utils'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { formatCurrencyShort } from '@/lib/format'
 
 interface TargetData {
   targetId: string
@@ -18,16 +19,6 @@ interface SDGTargetBreakdownProps {
   targets: TargetData[]
   sdgColor: string
   compact?: boolean
-}
-
-function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
-  return `${sign}$${abs.toFixed(0)}`
 }
 
 export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTargetBreakdownProps) {

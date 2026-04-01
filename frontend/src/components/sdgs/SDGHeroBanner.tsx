@@ -47,7 +47,7 @@ export function SDGHeroBanner({ sdg }: SDGHeroBannerProps) {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-foreground">{sdg.name}</h1>
+          <h1 className="text-3xl font-bold text-foreground">{sdg.name}</h1>
           <p className="text-sm font-medium text-foreground/80 mt-1">
             {sdg.description}
           </p>

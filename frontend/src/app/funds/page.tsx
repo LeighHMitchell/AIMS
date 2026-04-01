@@ -521,7 +521,7 @@ export default function FundsPage() {
                                               <span className="text-muted-foreground ml-0.5">({child.acronym})</span>
                                             )}
                                           </span>
-                                          <span className="shrink-0 font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded text-[11px]">
+                                          <span className="shrink-0 font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs">
                                             {child.identifier}
                                           </span>
                                         </Link>
