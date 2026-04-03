@@ -36,6 +36,8 @@ import {
   ArrowLeft,
   MapPin,
   ShieldCheck,
+  FileSearch,
+  UsersRound,
 } from "lucide-react"
 import {
   HomeIcon,
@@ -163,6 +165,7 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
+        { name: "5W Dashboard", href: "/5w-dashboard", show: true },
         { name: "Atlas", href: "/atlas", show: true },
         { name: "Search", href: "/search", show: true },
         { name: "Portfolios", href: "/partners", show: true },
@@ -198,6 +201,7 @@ export function SidebarNav({
       items: [
         { name: "Organizations", href: "/organizations", show: true },
         { name: "Rolodex", href: "/rolodex", show: true },
+        { name: "Community Directory", href: "/community-directory", show: true },
       ]
     },
     {
@@ -230,8 +234,10 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Calendar", href: "/calendar", show: true },
+        { name: "Coordination Calendar", href: "/coordination/calendar", show: true },
         { name: "Data Clinic", href: "/data-clinic", show: true },
         { name: "Library", href: "/library", show: true },
+        { name: "Assessments", href: "/assessments", show: true },
         { name: "Build History", href: "/build-history", show: true },
       ]
     },
