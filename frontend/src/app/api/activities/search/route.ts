@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
     if (authResponse) return authResponse;
 
     const searchParams = request.nextUrl.searchParams;

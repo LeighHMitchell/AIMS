@@ -14,7 +14,14 @@ import {
   GitMerge,
   Receipt,
   Users,
+  HelpCircle,
 } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import type { ImportRules, ImportSourceMode, ParsedActivity, ImpactPreview } from './types'
 
 interface BulkImportRulesStepProps {
@@ -25,6 +32,21 @@ interface BulkImportRulesStepProps {
   sourceMode?: ImportSourceMode
 }
 
+function HelpTip({ text }: { text: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors" onClick={(e) => e.stopPropagation()}>
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-xs">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 function RadioOption({
   name,
   value,
@@ -33,6 +55,7 @@ function RadioOption({
   label,
   description,
   icon: Icon,
+  helpTip,
 }: {
   name: string
   value: string
@@ -41,6 +64,7 @@ function RadioOption({
   label: string
   description: string
   icon: React.ElementType
+  helpTip?: string
 }) {
   return (
     <label
@@ -60,7 +84,10 @@ function RadioOption({
       />
       <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${checked ? 'text-gray-900' : 'text-gray-400'}`} />
       <div className="flex-1 min-w-0">
-        <span className={`text-sm ${checked ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{label}</span>
+        <div className="flex items-center gap-1">
+          <span className={`text-sm ${checked ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{label}</span>
+          {helpTip && <HelpTip text={helpTip} />}
+        </div>
         <p className="text-xs mt-0.5 text-gray-500">{description}</p>
       </div>
     </label>
@@ -100,6 +127,7 @@ export default function BulkImportRulesStep({
   }, [activities, selectedIds, rules])
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
       {/* Three hero cards in a row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -110,9 +138,12 @@ export default function BulkImportRulesStep({
               <div className="p-2 bg-gray-100 rounded-lg">
                 <GitMerge className="h-5 w-5 text-gray-700" />
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Activity Matching</h3>
-                <p className="text-xs text-gray-500">Handle existing activities</p>
+              <div className="flex items-center gap-1.5">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Activity Matching</h3>
+                  <p className="text-xs text-gray-500">Handle existing activities</p>
+                </div>
+                <HelpTip text="Controls what happens when an imported activity already exists in your system (matched by IATI identifier). Choose how to handle duplicates." />
               </div>
             </div>
             <div className="space-y-2">
@@ -124,6 +155,7 @@ export default function BulkImportRulesStep({
                 label="Update Existing"
                 description="Merge with existing data"
                 icon={RefreshCw}
+                helpTip="If an activity with the same IATI identifier already exists, its fields will be overwritten with the imported data. Any locally-added data not in the import will be preserved."
               />
               <RadioOption
                 name="activityMatching"
@@ -133,6 +165,7 @@ export default function BulkImportRulesStep({
                 label="Skip Existing"
                 description="Only import new ones"
                 icon={SkipForward}
+                helpTip="Activities that already exist in your system will be left untouched. Only activities with new IATI identifiers will be created."
               />
               <RadioOption
                 name="activityMatching"
@@ -142,6 +175,7 @@ export default function BulkImportRulesStep({
                 label="Create New Version"
                 description="Always create new"
                 icon={Plus}
+                helpTip="A new activity record is always created, even if one with the same IATI identifier exists. Use this if you want to keep parallel versions for comparison."
               />
             </div>
           </CardContent>
@@ -154,9 +188,12 @@ export default function BulkImportRulesStep({
               <div className="p-2 bg-gray-100 rounded-lg">
                 <Receipt className="h-5 w-5 text-gray-700" />
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Transaction Handling</h3>
-                <p className="text-xs text-gray-500">Handle transaction data</p>
+              <div className="flex items-center gap-1.5">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Transaction Handling</h3>
+                  <p className="text-xs text-gray-500">Handle transaction data</p>
+                </div>
+                <HelpTip text="Controls how financial transactions (disbursements, commitments, expenditures) are imported for each activity." />
               </div>
             </div>
             <div className="space-y-2">
@@ -168,6 +205,7 @@ export default function BulkImportRulesStep({
                 label="Replace All"
                 description="Clear and re-import"
                 icon={ArrowRightLeft}
+                helpTip="All existing transactions for the activity will be deleted first, then the imported transactions will be added. Use this to get a clean copy from the source."
               />
               <RadioOption
                 name="transactionHandling"
@@ -177,6 +215,7 @@ export default function BulkImportRulesStep({
                 label="Append New"
                 description="Add without removing"
                 icon={Plus}
+                helpTip="Imported transactions will be added alongside any existing ones. Existing transactions will not be removed or modified. This may result in duplicates if run multiple times."
               />
               <RadioOption
                 name="transactionHandling"
@@ -186,6 +225,7 @@ export default function BulkImportRulesStep({
                 label="Skip Transactions"
                 description="Don't import any"
                 icon={SkipForward}
+                helpTip="No transactions will be imported. Only the activity metadata (title, description, dates, sectors, locations, etc.) will be brought in."
               />
             </div>
           </CardContent>
@@ -198,9 +238,12 @@ export default function BulkImportRulesStep({
               <div className="p-2 bg-gray-100 rounded-lg">
                 <Users className="h-5 w-5 text-gray-700" />
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Organization Resolution</h3>
-                <p className="text-xs text-gray-500">Match referenced orgs</p>
+              <div className="flex items-center gap-1.5">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Organization Resolution</h3>
+                  <p className="text-xs text-gray-500">Match referenced orgs</p>
+                </div>
+                <HelpTip text="IATI data references organizations by name and ID. This setting controls whether to automatically link them to organizations in your system, or create new ones." />
               </div>
             </div>
             <div
@@ -248,13 +291,16 @@ export default function BulkImportRulesStep({
             >
               <div className="flex items-center gap-3">
                 <RefreshCw className={`h-4 w-4 ${rules.enableAutoSync ? 'text-gray-900' : 'text-gray-400'}`} />
-                <div>
-                  <Label className={`text-sm cursor-pointer ${rules.enableAutoSync ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
-                    Enable Auto-Sync
-                  </Label>
-                  <p className="text-xs mt-0.5 text-gray-500">
-                    Keep these activities synchronized with the IATI Datastore
-                  </p>
+                <div className="flex items-center gap-1.5">
+                  <div>
+                    <Label className={`text-sm cursor-pointer ${rules.enableAutoSync ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                      Enable Auto-Sync
+                    </Label>
+                    <p className="text-xs mt-0.5 text-gray-500">
+                      Keep these activities synchronized with the IATI Datastore
+                    </p>
+                  </div>
+                  <HelpTip text="When enabled, these activities will be periodically checked against the IATI Datastore for updates. If the publisher updates their data, your local copy can be refreshed automatically or manually via the Sync panel on each activity." />
                 </div>
               </div>
               <Switch
@@ -272,7 +318,10 @@ export default function BulkImportRulesStep({
       {/* Impact Preview - monochrome */}
       <Card className="border-gray-300 bg-gray-50">
         <CardContent className="p-5">
-          <h3 className="font-semibold text-gray-900 mb-4">Import Impact Preview</h3>
+          <div className="flex items-center gap-1.5 mb-4">
+            <h3 className="font-semibold text-gray-900">Import Impact Preview</h3>
+            <HelpTip text="A summary of what will happen when you start the import, based on your selected activities and the rules above. These numbers update as you change settings." />
+          </div>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
               <Plus className="h-5 w-5 mx-auto mb-1 text-gray-700" />
@@ -298,5 +347,6 @@ export default function BulkImportRulesStep({
         </CardContent>
       </Card>
     </div>
+    </TooltipProvider>
   )
 }

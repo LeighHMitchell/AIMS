@@ -23,12 +23,16 @@ import {
 import { format } from 'date-fns';
 import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { TableRowActionMenu } from './TableRowActionMenu';
 import { apiFetch } from '@/lib/api-fetch';
+import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 
 interface OrgTransactionsTableProps {
   organizationId: string;
   organizationName?: string;
+  userId?: string;
   embedded?: boolean;
+  filterConfig?: TableFilterConfig;
 }
 
 interface TransactionRow {
@@ -39,29 +43,24 @@ interface TransactionRow {
   currency: string;
   valueUsd?: number;
   transactionDate: string;
+  valueDate?: string | null;
   activityId: string;
   activityIatiIdentifier: string | null;
   activityTitle: string;
   providerOrgName: string;
+  providerOrgAcronym?: string | null;
   receiverOrgName: string;
+  receiverOrgAcronym?: string | null;
   providerOrgLogo?: string | null;
   receiverOrgLogo?: string | null;
   status: string;
   isProvider: boolean;
   reportedByOrgName: string;
+  reportedByOrgLogo?: string | null;
+  reportedByOrgAcronym?: string | null;
   isExternallyReported: boolean;
-}
-
-function getOrgAcronym(name: string | null): string {
-  if (!name) return '-';
-  if (name.length <= 8) return name;
-  const allCapsMatch = name.match(/\b[A-Z]{2,}\b/);
-  if (allCapsMatch) return allCapsMatch[0];
-  const words = name.split(/\s+/).filter(w => w.length > 0 && w[0] !== '(');
-  if (words.length >= 2) {
-    return words.map(w => w[0].toUpperCase()).join('');
-  }
-  return name.slice(0, 8) + '…';
+  createdBy?: string | null;
+  updatedBy?: string | null;
 }
 
 // Transaction type labels
@@ -98,7 +97,9 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50];
 export function OrgTransactionsTable({
   organizationId,
   organizationName,
+  userId,
   embedded = false,
+  filterConfig,
 }: OrgTransactionsTableProps) {
   const router = useRouter();
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
@@ -109,6 +110,7 @@ export function OrgTransactionsTable({
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('transaction_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const reportedBy = filterConfig?.defaultFilter ?? 'all';
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -122,6 +124,15 @@ export function OrgTransactionsTable({
         sortField,
         sortOrder,
       });
+
+      // Pass the reported-by filter to the API for server-side filtering
+      if (reportedBy === 'my_org') {
+        params.set('reportedByOrg', 'self');
+      } else if (reportedBy === 'other_orgs') {
+        params.set('reportedByOrg', 'other');
+      } else if (reportedBy === 'me' && userId) {
+        params.set('reportedByUser', userId);
+      }
 
       const response = await apiFetch(`/api/transactions?${params.toString()}`);
 
@@ -151,28 +162,36 @@ export function OrgTransactionsTable({
             currency: t.currency || 'USD',
             valueUsd: t.value_usd || (t.currency === 'USD' ? t.value : undefined),
             transactionDate: t.transaction_date,
+            valueDate: t.value_date || null,
             activityId: t.activity_id,
             activityIatiIdentifier: t.activity?.iati_identifier || null,
             activityTitle: t.activity?.title_narrative || t.activity_title || 'Unknown Activity',
             providerOrgName: t.provider_org_name || t.provider_organization?.name || 'Unknown',
+            providerOrgAcronym: t.provider_org_acronym || t.provider_organization?.acronym || null,
             receiverOrgName: t.receiver_org_name || t.receiver_organization?.name || 'Unknown',
+            receiverOrgAcronym: t.receiver_org_acronym || t.receiver_organization?.acronym || null,
             providerOrgLogo: t.provider_org_logo || t.provider_organization?.logo,
             receiverOrgLogo: t.receiver_org_logo || t.receiver_organization?.logo,
             status: t.status || 'actual',
             isProvider,
             reportedByOrgName: reportingOrgName,
+            reportedByOrgLogo: t.reporting_org_logo || null,
+            reportedByOrgAcronym: t.reporting_org_acronym || t.activity?.created_by_org_acronym || null,
             isExternallyReported,
+            createdBy: t.created_by || null,
+            updatedBy: t.updated_by || null,
           };
         });
 
       setTransactions(processedTransactions);
+      setTotalCount(total);
     } catch (err) {
       console.error('[OrgTransactionsTable] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load transactions');
     } finally {
       setLoading(false);
     }
-  }, [organizationId, organizationName, page, pageSize, sortField, sortOrder]);
+  }, [organizationId, organizationName, userId, page, pageSize, sortField, sortOrder, reportedBy]);
 
   useEffect(() => {
     if (organizationId) {
@@ -224,25 +243,26 @@ export function OrgTransactionsTable({
         <TableHeader>
           <TableRow>
             <TableHead className="min-w-[280px] cursor-pointer select-none" onClick={() => handleSort('activity_title')}>
-              <span className="flex items-center gap-1">Activity <SortIcon field="activity_title" /></span>
+              <span className="flex items-center gap-1">Activity Title <SortIcon field="activity_title" /></span>
             </TableHead>
-            <TableHead className="min-w-[120px] cursor-pointer select-none" onClick={() => handleSort('transaction_date')}>
-              <span className="flex items-center gap-1">Date <SortIcon field="transaction_date" /></span>
-            </TableHead>
-            <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('value')}>
-              <span className="flex items-center gap-1">Original Value <SortIcon field="value" /></span>
-            </TableHead>
-            <TableHead className="min-w-[110px] cursor-pointer select-none" onClick={() => handleSort('value_usd')}>
-              <span className="flex items-center gap-1">USD Value <SortIcon field="value_usd" /></span>
-            </TableHead>
-            <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
             <TableHead className="cursor-pointer select-none" onClick={() => handleSort('transaction_type')}>
               <span className="flex items-center gap-1">Type <SortIcon field="transaction_type" /></span>
             </TableHead>
             <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>
               <span className="flex items-center gap-1">Status <SortIcon field="status" /></span>
             </TableHead>
+            <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
+            <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('value')}>
+              <span className="flex items-center gap-1">Original Value <SortIcon field="value" /></span>
+            </TableHead>
+            <TableHead className="min-w-[100px] cursor-pointer select-none" onClick={() => handleSort('value_date')}>
+              <span className="flex items-center gap-1">Value Date <SortIcon field="value_date" /></span>
+            </TableHead>
+            <TableHead className="min-w-[110px] cursor-pointer select-none" onClick={() => handleSort('value_usd')}>
+              <span className="flex items-center gap-1">USD Value <SortIcon field="value_usd" /></span>
+            </TableHead>
             <TableHead className="min-w-[120px]">Reported By</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -268,14 +288,42 @@ export function OrgTransactionsTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-slate-600 whitespace-nowrap">
-                        {transaction.transactionDate ? format(new Date(transaction.transactionDate), 'd MMMM yyyy') : '-'}
+                      <span className="text-sm">{transaction.transactionTypeName}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-slate-700">
+                        {capitalizeFirst(transaction.status)}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 flex-wrap" title={`${transaction.providerOrgName} → ${transaction.receiverOrgName}`}>
+                        <span className="flex items-center gap-1.5 flex-shrink-0">
+                          <OrganizationLogo
+                            logo={transaction.providerOrgLogo}
+                            name={transaction.providerOrgName}
+                            size="sm"
+                          />
+                          <span className="text-sm text-slate-600 whitespace-nowrap">
+                            {transaction.providerOrgAcronym || transaction.providerOrgName}
+                          </span>
+                          <span className="text-slate-400">→</span>
+                        </span>
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <OrganizationLogo
+                            logo={transaction.receiverOrgLogo}
+                            name={transaction.receiverOrgName}
+                            size="sm"
+                          />
+                          <span className="text-sm text-slate-600 whitespace-nowrap">
+                            {transaction.receiverOrgAcronym || transaction.receiverOrgName}
+                          </span>
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <span className="font-medium text-slate-700">
-                          <span className="text-xs text-gray-500 mr-1 font-normal">
+                          <span className="text-xs text-muted-foreground mr-1 font-normal">
                             {transaction.currency}
                           </span>
                           {formatCurrency(transaction.value)}
@@ -283,10 +331,15 @@ export function OrgTransactionsTable({
                       </div>
                     </TableCell>
                     <TableCell>
+                      <span className="text-sm text-slate-600 whitespace-nowrap">
+                        {transaction.valueDate ? format(new Date(transaction.valueDate), 'dd MMM yyyy') : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       {transaction.valueUsd != null ? (
                         <div className="flex items-center gap-1">
                           <span className="font-medium text-slate-700">
-                            <span className="text-xs text-gray-500 mr-1 font-normal">
+                            <span className="text-xs text-muted-foreground mr-1 font-normal">
                               USD
                             </span>
                             {formatCurrency(transaction.valueUsd)}
@@ -297,39 +350,19 @@ export function OrgTransactionsTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5" title={`${transaction.providerOrgName} → ${transaction.receiverOrgName}`}>
-                        <OrganizationLogo
-                          logo={transaction.providerOrgLogo}
-                          name={transaction.providerOrgName}
-                          size="sm"
-                        />
-                        <span className="text-sm text-slate-600">
-                          {getOrgAcronym(transaction.providerOrgName)}
-                        </span>
-                        <span className="text-slate-400">→</span>
-                        <OrganizationLogo
-                          logo={transaction.receiverOrgLogo}
-                          name={transaction.receiverOrgName}
-                          size="sm"
-                        />
-                        <span className="text-sm text-slate-600">
-                          {getOrgAcronym(transaction.receiverOrgName)}
+                      <div className="flex items-center gap-1.5" title={transaction.reportedByOrgName}>
+                        <OrganizationLogo logo={transaction.reportedByOrgLogo} name={transaction.reportedByOrgName} size="sm" />
+                        <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                          {transaction.reportedByOrgAcronym || transaction.reportedByOrgName}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{transaction.transactionTypeName}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-slate-700">
-                        {capitalizeFirst(transaction.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-slate-600 break-words" title={transaction.reportedByOrgName}>
-                        {transaction.reportedByOrgName}
-                      </span>
-                    </TableCell>
+                    {!transaction.isExternallyReported && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableRowActionMenu activityId={transaction.activityId} entityType="transaction" entityId={transaction.id} onDelete={() => {/* TODO: implement delete */}} />
+                      </TableCell>
+                    )}
+                    {transaction.isExternallyReported && <TableCell />}
                   </TableRow>
                 ))}
               </TableBody>

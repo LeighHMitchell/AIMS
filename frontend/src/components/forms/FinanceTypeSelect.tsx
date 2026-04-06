@@ -118,7 +118,7 @@ export function FinanceTypeSelect({
                   className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Clear selection"
                 >
-                  <X className="h-3 w-3 text-gray-500" />
+                  <X className="h-3 w-3 text-muted-foreground" />
                 </span>
               )}
               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />

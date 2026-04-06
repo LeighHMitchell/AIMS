@@ -61,6 +61,16 @@ export function FundingSourceBreakdown({
         setLoading(true)
         setError(null)
 
+        // Early return if no activities exist
+        const { count: activityCount } = await supabase
+          .from('activities')
+          .select('id', { count: 'exact', head: true })
+        if (!activityCount) {
+          setFundingSourceData([])
+          setLoading(false)
+          return
+        }
+
         // Fetch transactions with provider organization info
         let transactionsQuery = supabase
           .from('transactions')

@@ -125,7 +125,7 @@ export function CardShell({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, type: 'spring', bounce: 0.3 }}
       whileHover={disableHover ? undefined : { y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border bg-card ${className}`}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 ${href ? 'cursor-pointer' : ''} isolate overflow-hidden border bg-card ${className}`}
       role="article"
       aria-label={ariaLabel}
     >

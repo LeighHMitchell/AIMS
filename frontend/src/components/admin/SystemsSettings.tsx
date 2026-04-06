@@ -143,7 +143,7 @@ export function SystemsSettings() {
     setSavingLanguage(true)
     try {
       const success = await updateSettings({
-        homeCountry: settings?.homeCountry || "RW",
+        homeCountry: settings?.homeCountry || "MM",
         defaultLanguage: localLanguage,
         defaultCurrency: settings?.defaultCurrency || "USD"
       })
@@ -164,7 +164,7 @@ export function SystemsSettings() {
     setSavingCurrency(true)
     try {
       const success = await updateSettings({
-        homeCountry: settings?.homeCountry || "RW",
+        homeCountry: settings?.homeCountry || "MM",
         defaultLanguage: settings?.defaultLanguage || "en",
         defaultCurrency: localCurrency
       })

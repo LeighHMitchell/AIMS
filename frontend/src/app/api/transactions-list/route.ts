@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 /**
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
 
   if (authResponse) return authResponse;
 

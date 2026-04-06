@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 import { CustomYearRow, toCustomYear } from "@/types/custom-years";
 
 // Disable caching to ensure fresh data
@@ -12,7 +12,7 @@ export const revalidate = 0;
  * Returns all active custom years with the system default identified
  */
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {

@@ -469,7 +469,7 @@ export function TransactionDocumentUpload({
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => doc.externalUrl ? window.open(doc.externalUrl, '_blank') : doc.fileUrl && window.open(doc.fileUrl, '_blank')}>
                           {doc.externalUrl ? <ExternalLink className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600" onClick={() => removeDocument(doc.id)} disabled={disabled}>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-red-700" onClick={() => removeDocument(doc.id)} disabled={disabled}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>

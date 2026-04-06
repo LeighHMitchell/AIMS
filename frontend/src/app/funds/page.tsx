@@ -277,7 +277,7 @@ export default function FundsPage() {
           <div className="text-center py-12 text-muted-foreground"><p>{error}</p></div>
         ) : filteredFunds.length === 0 ? (
           <EmptyState
-            icon={<Wallet className="h-10 w-10 text-muted-foreground" />}
+            illustration="/images/empty-loom.png"
             title="No pooled funds found"
             message={
               searchQuery || statusFilter !== 'all'

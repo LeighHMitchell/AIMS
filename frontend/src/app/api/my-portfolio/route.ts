@@ -3,15 +3,19 @@ import { requireAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    if (!supabase) {
+    if (!supabase || !user) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }
 
-    // Get only essential fields to reduce response size
-    const { data: activities, error } = await supabase
+    const userId = user.id
+    const { searchParams } = new URL(request.url)
+    const organizationId = searchParams.get('organizationId')
+
+    // Get activities created by this user within their organisation
+    let query = supabase
       .from('activities')
       .select(`
         id,
@@ -25,7 +29,13 @@ export async function GET(request: NextRequest) {
         activity_budgets(usd_value),
         activity_sectors(id)
       `)
-      .limit(50) // Reduced limit to prevent cache issues
+      .eq('created_by', userId)
+
+    if (organizationId) {
+      query = query.eq('reporting_org_id', organizationId)
+    }
+
+    const { data: activities, error } = await query
 
     if (error) {
       console.error('[MyPortfolio API] Database error:', error)
@@ -37,65 +47,98 @@ export async function GET(request: NextRequest) {
 
     const [
       disbursementsResult,
+      transactionsResult,
       activityEventsResult,
       transactionEventsResult,
       budgetEventsResult,
       disbursementEventsResult,
       logEventsResult,
     ] = await Promise.all([
-      // Planned disbursements (depends on activityIds)
+      // Planned disbursements on user's activities
       activityIds.length > 0
         ? supabase
             .from('planned_disbursements')
             .select('activity_id, usd_amount')
             .in('activity_id', activityIds)
         : Promise.resolve({ data: null }),
+      // Transactions on user's activities
+      activityIds.length > 0
+        ? supabase
+            .from('transactions')
+            .select('transaction_type, usd_value')
+            .in('activity_id', activityIds)
+        : Promise.resolve({ data: null }),
       // Activity events for contribution calendar
       supabase
         .from('activities')
         .select('id, title_narrative, created_at, updated_at')
+        .eq('created_by', userId)
         .order('created_at', { ascending: false })
         .limit(500),
-      // Transaction events
-      supabase
-        .from('transactions')
-        .select('id, description, created_at, transaction_type')
-        .order('created_at', { ascending: false })
-        .limit(500),
-      // Budget events
-      supabase
-        .from('activity_budgets')
-        .select('id, created_at, value, currency')
-        .order('created_at', { ascending: false })
-        .limit(500),
-      // Planned disbursement events
-      supabase
-        .from('planned_disbursements')
-        .select('id, created_at, amount, currency')
-        .order('created_at', { ascending: false })
-        .limit(500),
-      // Activity logs
-      supabase
-        .from('activity_logs')
-        .select('id, action, details, created_at')
-        .order('created_at', { ascending: false })
-        .limit(500),
+      // Transaction events on user's activities
+      activityIds.length > 0
+        ? supabase
+            .from('transactions')
+            .select('id, description, created_at, transaction_type')
+            .in('activity_id', activityIds)
+            .order('created_at', { ascending: false })
+            .limit(500)
+        : Promise.resolve({ data: null }),
+      // Budget events on user's activities
+      activityIds.length > 0
+        ? supabase
+            .from('activity_budgets')
+            .select('id, created_at, value, currency')
+            .in('activity_id', activityIds)
+            .order('created_at', { ascending: false })
+            .limit(500)
+        : Promise.resolve({ data: null }),
+      // Planned disbursement events on user's activities
+      activityIds.length > 0
+        ? supabase
+            .from('planned_disbursements')
+            .select('id, created_at, amount, currency')
+            .in('activity_id', activityIds)
+            .order('created_at', { ascending: false })
+            .limit(500)
+        : Promise.resolve({ data: null }),
+      // Activity logs on user's activities
+      activityIds.length > 0
+        ? supabase
+            .from('activity_logs')
+            .select('id, action, details, created_at')
+            .in('activity_id', activityIds)
+            .order('created_at', { ascending: false })
+            .limit(500)
+        : Promise.resolve({ data: null }),
     ])
 
     const plannedDisbursementsTotal = disbursementsResult.data?.reduce((sum: number, d: any) =>
       sum + (d.usd_amount || 0), 0) || 0
 
+    // Calculate transaction totals by type
+    const transactions = transactionsResult.data || []
+    const totalCommitments = transactions
+      .filter((t: any) => t.transaction_type === 'commitment' || t.transaction_type === '2')
+      .reduce((sum: number, t: any) => sum + (t.usd_value || 0), 0)
+    const totalDisbursements = transactions
+      .filter((t: any) => t.transaction_type === 'disbursement' || t.transaction_type === '3')
+      .reduce((sum: number, t: any) => sum + (t.usd_value || 0), 0)
+    const totalExpenditure = transactions
+      .filter((t: any) => t.transaction_type === 'expenditure' || t.transaction_type === '4')
+      .reduce((sum: number, t: any) => sum + (t.usd_value || 0), 0)
+
     // Calculate summary statistics
     const summary = {
       totalActivities: activities?.length || 0,
       totalBudget: activities?.reduce((sum: number, activity: any) => {
-        const budget = activity.activity_budgets?.[0]?.usd_value || 0
-        return sum + budget
+        const budgetTotal = activity.activity_budgets?.reduce((bSum: number, b: any) => bSum + (b.usd_value || 0), 0) || 0
+        return sum + budgetTotal
       }, 0) || 0,
       totalPlannedDisbursements: plannedDisbursementsTotal,
-      totalCommitments: 0, // Will add back when we fix transaction column names
-      totalDisbursements: 0, // Will add back when we fix transaction column names
-      totalExpenditure: 0 // Will add back when we fix transaction column names
+      totalCommitments,
+      totalDisbursements,
+      totalExpenditure,
     }
 
     // Filter pipeline activities past expected start

@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import type { User, SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 /**
  * Authentication helper for API routes.
@@ -54,9 +55,13 @@ export async function requireAuth(): Promise<{
     }
   )
   
-  const { data: { user }, error } = await supabase.auth.getUser()
+  // Use getSession() for local JWT validation instead of getUser() which makes
+  // a network call to Supabase auth server on every request. This prevents
+  // rate-limiting/timeout issues when many API routes are called concurrently
+  // (e.g. dashboard load). The middleware already refreshes sessions via getSession().
+  const { data: { session }, error } = await supabase.auth.getSession()
 
-  if (!user || error) {
+  if (!session?.user || error) {
     return {
       supabase: null,
       user: null,
@@ -67,7 +72,55 @@ export async function requireAuth(): Promise<{
     }
   }
 
-  return { supabase, user, response: null }
+  return { supabase, user: session.user, response: null }
+}
+
+/**
+ * Authentication helper for API routes that also allows visitor (read-only) access.
+ * Visitors have no Supabase session, so this falls back to the admin client for GET requests
+ * when the X-Visitor-Mode header is present.
+ *
+ * Usage:
+ * ```typescript
+ * export async function GET(request: NextRequest) {
+ *   const { supabase, user, response, isVisitor } = await requireAuthOrVisitor(request)
+ *   if (response) return response
+ *   // ... your logic here (isVisitor = true means read-only visitor)
+ * }
+ * ```
+ */
+export async function requireAuthOrVisitor(request: NextRequest): Promise<{
+  supabase: SupabaseClient | null
+  user: User | null
+  response: NextResponse | null
+  isVisitor: boolean
+}> {
+  // Try normal auth first
+  const authResult = await requireAuth()
+
+  if (!authResult.response) {
+    // Normal authenticated user
+    return { ...authResult, isVisitor: false }
+  }
+
+  // Auth failed — check if this is a visitor making a GET request
+  const isVisitorMode = request.headers.get('X-Visitor-Mode') === 'true'
+  const isGetRequest = request.method === 'GET'
+
+  if (isVisitorMode && isGetRequest) {
+    const adminClient = getSupabaseAdmin()
+    if (adminClient) {
+      return {
+        supabase: adminClient,
+        user: null,
+        response: null,
+        isVisitor: true,
+      }
+    }
+  }
+
+  // Not a valid visitor request — return the original 401
+  return { ...authResult, isVisitor: false }
 }
 
 /**

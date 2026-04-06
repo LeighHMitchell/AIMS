@@ -23,10 +23,13 @@ import { format } from 'date-fns';
 import { Banknote, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { apiFetch } from '@/lib/api-fetch';
+import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
+import { TableRowActionMenu } from './TableRowActionMenu';
 
 interface OrgPlannedDisbursementsTableProps {
   organizationId: string;
   userId: string;
+  filterConfig?: TableFilterConfig;
 }
 
 interface DisbursementRow {
@@ -35,35 +38,26 @@ interface DisbursementRow {
   amount: number;
   currency: string;
   usd_amount: number | null;
+  value_date?: string | null;
   period_start: string;
   period_end: string;
   provider_org_name: string | null;
+  provider_org_acronym: string | null;
   provider_org_logo: string | null;
   receiver_org_name: string | null;
+  receiver_org_acronym: string | null;
   receiver_org_logo: string | null;
+  reporting_org_name: string | null;
+  reporting_org_acronym: string | null;
+  reporting_org_logo: string | null;
   created_by?: string;
   updated_by?: string;
   activity: {
     id: string;
     title_narrative: string;
     iati_identifier: string | null;
+    reporting_org_id?: string | null;
   } | null;
-}
-
-function getOrgAcronym(name: string | null): string {
-  if (!name) return '-';
-  // If already short (<=8 chars), show as-is
-  if (name.length <= 8) return name;
-  // Check if it looks like an acronym is embedded (e.g. "UNDP", "WHO")
-  const allCapsMatch = name.match(/\b[A-Z]{2,}\b/);
-  if (allCapsMatch) return allCapsMatch[0];
-  // Otherwise, take first letters of each word
-  const words = name.split(/\s+/).filter(w => w.length > 0 && w[0] !== '(');
-  if (words.length >= 2) {
-    return words.map(w => w[0].toUpperCase()).join('');
-  }
-  // Single long word — truncate
-  return name.slice(0, 8) + '…';
 }
 
 function formatCurrency(value: number): string {
@@ -75,7 +69,7 @@ function formatCurrency(value: number): string {
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
-export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlannedDisbursementsTableProps) {
+export function OrgPlannedDisbursementsTable({ organizationId, userId, filterConfig }: OrgPlannedDisbursementsTableProps) {
   const router = useRouter();
   const [disbursements, setDisbursements] = useState<DisbursementRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +79,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('period_start');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [reportedBy, setReportedBy] = useState<'my_org' | 'me'>('my_org');
+  const reportedBy = filterConfig?.defaultFilter ?? 'all';
 
   const fetchDisbursements = useCallback(async () => {
     try {
@@ -100,20 +94,23 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
         sortOrder,
       });
 
+      // Pass the reported-by filter to the API for server-side filtering
+      if (reportedBy === 'my_org') {
+        params.set('reportedByOrg', 'self');
+      } else if (reportedBy === 'other_orgs') {
+        params.set('reportedByOrg', 'other');
+      } else if (reportedBy === 'me' && userId) {
+        params.set('reportedByUser', userId);
+      }
+
       const response = await apiFetch(`/api/planned-disbursements/list?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch planned disbursements');
 
       const data = await response.json();
-      let rows: DisbursementRow[] = data.disbursements || [];
-
-      if (reportedBy === 'me') {
-        rows = rows.filter(
-          (d) => d.created_by === userId || d.updated_by === userId
-        );
-      }
+      const rows: DisbursementRow[] = data.disbursements || [];
 
       setDisbursements(rows);
-      setTotalCount(reportedBy === 'me' ? rows.length : (data.total || 0));
+      setTotalCount(data.total || 0);
     } catch (err) {
       console.error('[OrgPlannedDisbursementsTable] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load planned disbursements');
@@ -159,20 +156,6 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
 
   return (
     <>
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-sm text-slate-500">Reported by:</span>
-        <Select value={reportedBy} onValueChange={(val: 'my_org' | 'me') => { setReportedBy(val); setPage(1); }}>
-          <SelectTrigger className="w-[140px] h-8">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="my_org">My Organisation</SelectItem>
-            <SelectItem value="me">By Me</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {disbursements.length === 0 ? (
         <div className="text-center py-8">
           <Banknote className="h-12 w-12 text-slate-300 mx-auto mb-3" />
@@ -184,16 +167,21 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-[280px] cursor-pointer select-none" onClick={() => handleSort('activity_id')}>
-                  <span className="flex items-center gap-1">Activity <SortIcon field="activity_id" /></span>
+                  <span className="flex items-center gap-1">Activity Title <SortIcon field="activity_id" /></span>
                 </TableHead>
+                <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
                 <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('period_start')}>
                   <span className="flex items-center gap-1">Period <SortIcon field="period_start" /></span>
                 </TableHead>
-                <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
                 <TableHead className="min-w-[140px] cursor-pointer select-none" onClick={() => handleSort('amount')}>
-                  <span className="flex items-center gap-1">Value <SortIcon field="amount" /></span>
+                  <span className="flex items-center gap-1">Original Value <SortIcon field="amount" /></span>
+                </TableHead>
+                <TableHead className="min-w-[100px] cursor-pointer select-none" onClick={() => handleSort('value_date')}>
+                  <span className="flex items-center gap-1">Value Date <SortIcon field="value_date" /></span>
                 </TableHead>
                 <TableHead className="min-w-[120px]">USD Value</TableHead>
+                <TableHead className="min-w-[150px]">Reported By</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -214,24 +202,28 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
                     </span>
                   </TableCell>
                   <TableCell>
+                    <div className="flex items-center gap-1.5 flex-wrap" title={`${d.provider_org_name || '-'} → ${d.receiver_org_name || '-'}`}>
+                      <span className="flex items-center gap-1.5 flex-shrink-0">
+                        <OrganizationLogo logo={d.provider_org_logo} name={d.provider_org_name || 'Unknown'} size="sm" />
+                        <span className="text-sm text-slate-600 whitespace-nowrap">
+                          {d.provider_org_acronym || d.provider_org_name || '-'}
+                        </span>
+                        <span className="text-slate-400">→</span>
+                      </span>
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <OrganizationLogo logo={d.receiver_org_logo} name={d.receiver_org_name || 'Unknown'} size="sm" />
+                        <span className="text-sm text-slate-600 whitespace-nowrap">
+                          {d.receiver_org_acronym || d.receiver_org_name || '-'}
+                        </span>
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <span className="text-sm text-slate-600 whitespace-nowrap">
                       {d.period_start ? format(new Date(d.period_start), 'MMM yyyy') : '-'}
                       {' — '}
                       {d.period_end ? format(new Date(d.period_end), 'MMM yyyy') : '-'}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5" title={`${d.provider_org_name || '-'} → ${d.receiver_org_name || '-'}`}>
-                      <OrganizationLogo logo={d.provider_org_logo} name={d.provider_org_name || 'Unknown'} size="sm" />
-                      <span className="text-sm text-slate-600">
-                        {getOrgAcronym(d.provider_org_name)}
-                      </span>
-                      <span className="text-slate-400">→</span>
-                      <OrganizationLogo logo={d.receiver_org_logo} name={d.receiver_org_name || 'Unknown'} size="sm" />
-                      <span className="text-sm text-slate-600">
-                        {getOrgAcronym(d.receiver_org_name)}
-                      </span>
-                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -240,6 +232,11 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
                         {formatCurrency(d.amount)}
                       </span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                      {d.value_date ? format(new Date(d.value_date), 'dd MMM yyyy') : '-'}
+                    </span>
                   </TableCell>
                   <TableCell>
                     {d.usd_amount != null ? (
@@ -253,6 +250,21 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId }: OrgPlan
                       <span className="text-sm text-slate-400">-</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5" title={d.reporting_org_name || '-'}>
+                      <OrganizationLogo logo={d.reporting_org_logo} name={d.reporting_org_name || 'Unknown'} size="sm" />
+                      <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                        {d.reporting_org_acronym || d.reporting_org_name || '-'}
+                      </span>
+                    </div>
+                  </TableCell>
+                  {(!d.activity?.reporting_org_id || d.activity.reporting_org_id === organizationId) ? (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableRowActionMenu activityId={d.activity_id} entityType="planned-disbursement" entityId={d.id} onDelete={() => {/* TODO: implement delete */}} />
+                    </TableCell>
+                  ) : (
+                    <TableCell />
+                  )}
                 </TableRow>
               ))}
             </TableBody>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSystemHomeCountryName } from '@/lib/system-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,13 +91,13 @@ const PARTNER_GROUPS = [
   }
 ];
 
-// Myanmar-specific cooperation modality calculation (Partner Origin)
-const deriveCooperationModality = (orgTypeCode: string, country: string): string => {
+// Cooperation modality calculation based on system home country (Partner Origin)
+const deriveCooperationModality = (orgTypeCode: string, country: string, homeCountryName: string): string => {
   const typeCode = orgTypeCode?.trim();
   const countryValue = country?.trim().toLowerCase();
-  
-  // Updated logic to work with type codes
-  if (typeCode === '10' && countryValue !== 'myanmar' && countryValue !== 'global / not country-specific' && countryValue !== 'global') {
+  const homeCountry = homeCountryName.toLowerCase();
+
+  if (typeCode === '10' && countryValue !== homeCountry && countryValue !== 'global / not country-specific' && countryValue !== 'global') {
     // Government (code 10) from foreign country
     return 'External';
   } else if (
@@ -104,8 +105,8 @@ const deriveCooperationModality = (orgTypeCode: string, country: string): string
     countryValue === 'global / not country-specific' || countryValue === 'global'
   ) {
     return 'Multilateral';
-  } else if (typeCode === '15' && countryValue === 'myanmar') {
-    // NGO (code 15) based in Myanmar
+  } else if (typeCode === '15' && countryValue === homeCountry) {
+    // NGO (code 15) based in home country
     return 'Internal';
   } else if (typeCode === '23') {
     // Bilateral (code 23) - typically external
@@ -116,36 +117,37 @@ const deriveCooperationModality = (orgTypeCode: string, country: string): string
 }
 
 // Derive Category based on organization type and country (Partner Classification)
-const deriveCategory = (orgTypeCode: string, country: string): string => {
+const deriveCategory = (orgTypeCode: string, country: string, homeCountryName: string): string => {
   const c = country?.toLowerCase()?.trim();
-  const isMyanmar = c === "myanmar";
+  const homeCountry = homeCountryName.toLowerCase();
+  const isHomeCountry = c === homeCountry;
   const isGlobal = c?.includes("global");
 
   switch (orgTypeCode) {
     case "10": // Government
-      if (isMyanmar) return "National Government";
+      if (isHomeCountry) return "National Government";
       if (isGlobal) return "Intergovernmental / Regional Body";
       return "External Government";
     case "11":
-      return isMyanmar ? "Subnational Government" : "External Subnational Government";
+      return isHomeCountry ? "Subnational Government" : "External Subnational Government";
     case "15":
-      if (isMyanmar) return "Other National Public Sector";
+      if (isHomeCountry) return "Other National Public Sector";
       if (isGlobal) return "Other Public Sector (Global)";
       return "Other External Public Sector";
     case "21": case "22": case "23": case "24":
-      return isMyanmar ? "Local/Partner Country NGO" : "International/Regional NGO";
+      return isHomeCountry ? "Local/Partner Country NGO" : "International/Regional NGO";
     case "30":
-      return isMyanmar ? "PPP (Myanmar-based)" : (isGlobal ? "PPP (Global)" : "PPP (Foreign-based)");
+      return isHomeCountry ? "PPP (Domestic)" : (isGlobal ? "PPP (Global)" : "PPP (Foreign-based)");
     case "40":
       return "Multilateral";
     case "60":
-      return isMyanmar ? "Domestic Foundation" : (isGlobal ? "Global Foundation" : "Foreign Foundation");
+      return isHomeCountry ? "Domestic Foundation" : (isGlobal ? "Global Foundation" : "Foreign Foundation");
     case "70": case "71": case "72": case "73":
-      return isMyanmar ? "Domestic Private Sector" : (isGlobal ? "Private Sector (Global)" : "Foreign Private Sector");
+      return isHomeCountry ? "Domestic Private Sector" : (isGlobal ? "Private Sector (Global)" : "Foreign Private Sector");
     case "80":
-      return isMyanmar ? "Myanmar Academic Institution" : (isGlobal ? "Academic Institution (Global)" : "Foreign Academic Institution");
+      return isHomeCountry ? "Domestic Academic Institution" : (isGlobal ? "Academic Institution (Global)" : "Foreign Academic Institution");
     case "90":
-      return isMyanmar ? "Other (Myanmar)" : (isGlobal ? "Other (Global)" : "Other (External)");
+      return isHomeCountry ? "Other (Domestic)" : (isGlobal ? "Other (Global)" : "Other (External)");
     default:
       return "Uncategorised";
   }
@@ -162,6 +164,7 @@ export async function GET(request: NextRequest) {
 
   try {
     console.log('[AIMS] GET /api/partners/summary - Starting request');
+    const homeCountryName = await getSystemHomeCountryName(supabase);
 
     // Get search parameters
     const { searchParams } = new URL(request.url);
@@ -421,8 +424,8 @@ export async function GET(request: NextRequest) {
         acronym: org.acronym,                                        // Use acronym
         organisationType: orgType,                                   // Use organisation_type if available
         countryRepresented: country,                                 // Use country_represented if available
-        cooperationModality: deriveCooperationModality(orgType, country),  // Partner Origin
-        derivedCategory: deriveCategory(orgType, country)               // Partner Classification
+        cooperationModality: deriveCooperationModality(orgType, country, homeCountryName),  // Partner Origin
+        derivedCategory: deriveCategory(orgType, country, homeCountryName)               // Partner Classification
       };
     });
 
@@ -582,14 +585,14 @@ export async function GET(request: NextRequest) {
           // Map IATI code to group
           const mappedGroup = IATI_TYPE_TO_GROUP[orgType] || 'other';
           
-          // Special filtering for bilateral partners: exclude Myanmar government organizations
+          // Special filtering for bilateral partners: exclude home country government organizations
           if (group.id === 'bilateral' && mappedGroup === 'bilateral') {
             const orgCountry = (org.country_represented || org.country || '').toLowerCase().trim();
-            const isMyanmarGov = (orgType === '10' || orgType === '11') && orgCountry === 'myanmar';
-            
+            const isHomeGov = (orgType === '10' || orgType === '11') && orgCountry === homeCountryName.toLowerCase();
+
             // Only include external government organizations in bilateral partners
-            if (isMyanmarGov) {
-              console.log(`[AIMS] Excluding Myanmar government org from bilateral: ${org.name}`);
+            if (isHomeGov) {
+              console.log(`[AIMS] Excluding home country government org from bilateral: ${org.name}`);
               return false;
             }
           }

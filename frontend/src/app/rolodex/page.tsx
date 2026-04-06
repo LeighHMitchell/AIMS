@@ -28,7 +28,6 @@ import {
   Table as TableIcon,
   RefreshCw,
   Download,
-  Users,
   ChevronLeft,
   ChevronRight,
   AlertCircle,
@@ -411,7 +410,7 @@ export default function RolodexPage() {
           </Card>
         ) : people.length === 0 && !loading ? (
           <EmptyState
-            icon={<Users className="h-10 w-10 text-muted-foreground" />}
+            illustration="/images/empty-badges.png"
             title="No people found"
             message={
               filters.search || filters.organization || filters.activity || filters.orgType || filters.role

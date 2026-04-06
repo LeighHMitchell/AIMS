@@ -276,7 +276,7 @@ export function TransactionSectorManager({
                           variant="ghost"
                           size="sm"
                           onClick={() => removeSector(index)}
-                          className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                          className="h-7 w-7 p-0 text-destructive hover:text-red-700"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

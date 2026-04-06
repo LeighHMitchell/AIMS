@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 
 interface SectorSummary {
   sectorCode: string;
@@ -74,7 +74,7 @@ function calculateProRataAllocation(
 }
 
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {

@@ -39,11 +39,11 @@ const AVAILABLE_ROLES = [
 ];
 
 const ROLE_DISPLAY_NAMES: Record<string, string> = {
-  super_user: 'Super User',
-  dev_partner_tier_1: 'Dev Partner (Tier 1)',
-  dev_partner_tier_2: 'Dev Partner (Tier 2)',
-  gov_partner_tier_1: 'Gov Partner (Tier 1)',
-  gov_partner_tier_2: 'Gov Partner (Tier 2)',
+  super_user: 'Administrator',
+  dev_partner_tier_1: 'Partner Manager',
+  dev_partner_tier_2: 'Partner Editor',
+  gov_partner_tier_1: 'Government Manager',
+  gov_partner_tier_2: 'Government Editor',
 };
 
 // Memoized row components to prevent re-renders

@@ -2,29 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { calculateCooperationModality } from '@/components/OrganizationFieldHelpers';
+import { getSystemHomeCountry } from '@/lib/system-settings';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
-
-// Get system home country from database
-async function getSystemHomeCountry(supabaseAdmin: any): Promise<string> {
-  try {
-    const { data: settings, error } = await supabaseAdmin
-      .from('system_settings')
-      .select('home_country')
-      .single();
-
-    if (error) {
-      console.log('Error fetching system settings, using default:', error.message);
-      return 'RW'; // Default fallback
-    }
-
-    return settings?.home_country || 'RW';
-  } catch (error) {
-    console.log('System settings not found, using default');
-    return 'RW'; // Default fallback
-  }
-}
 
 // Create Supabase admin client
 function supabase() {

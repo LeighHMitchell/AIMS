@@ -4,6 +4,7 @@ import { User, UserRole, UserPermissions, getUserPermissions, USER_ROLES, Organi
 import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabase';
 import { apiFetch } from '@/lib/api-fetch';
+import { isVisitorUser, exitVisitorMode } from '@/lib/visitor';
 import dynamic from "next/dynamic";
 
 const OnboardingModal = dynamic(() => import("@/components/onboarding/OnboardingModal"), { ssr: false });
@@ -60,6 +61,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
             // Check if we already have a user loaded (from email/password login)
             const currentStoredUser = localStorage.getItem('aims_user');
             const authSource = localStorage.getItem('aims_auth_source');
+
+            // Don't process auth events when in visitor mode
+            if (authSource === 'visitor') {
+              console.log('[useUser] In visitor mode, ignoring Supabase auth event');
+              return;
+            }
             
             if (currentStoredUser) {
               try {
@@ -180,6 +187,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // For visitors, just clear visitor state — no Supabase session to sign out of
+    if (isVisitorUser(user)) {
+      exitVisitorMode(handleSetUser);
+      router.push('/login');
+      return;
+    }
+
     try {
       // Call Supabase logout endpoint
       await apiFetch('/api/auth/logout', {
@@ -188,10 +202,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('[useUser] Logout error:', error);
     }
-    
+
     // Clear auth source tracking
     localStorage.removeItem('aims_auth_source');
-    
+
     handleSetUser(null);
     router.push('/login');
   };

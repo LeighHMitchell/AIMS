@@ -9,6 +9,89 @@ import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
+function YearGridDropdown({ value, onChange, options, className, ...props }: any) {
+  const [showGrid, setShowGrid] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const gridRef = React.useRef<HTMLDivElement>(null)
+
+  // Determine if this is the year dropdown (options have 4-digit numeric values)
+  const isYearDropdown = options?.length > 0 && options[0]?.value >= 1900
+
+  React.useEffect(() => {
+    if (showGrid && gridRef.current) {
+      const selected = gridRef.current.querySelector('[data-selected="true"]')
+      if (selected) {
+        selected.scrollIntoView({ block: 'center', behavior: 'instant' })
+      }
+    }
+  }, [showGrid])
+
+  React.useEffect(() => {
+    if (!showGrid) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowGrid(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showGrid])
+
+  if (!isYearDropdown) {
+    // Month dropdown — keep as native select
+    return (
+      <select value={value} onChange={onChange} className={className} {...props}>
+        {options?.map((opt: any) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    )
+  }
+
+  const selectedLabel = options?.find((opt: any) => String(opt.value) === String(value))?.label || value
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setShowGrid(!showGrid)}
+        className={cn(className, "text-center")}
+      >
+        {selectedLabel}
+      </button>
+      {showGrid && (
+        <div
+          ref={gridRef}
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 max-h-[200px] overflow-y-auto overscroll-contain"
+          style={{ width: '270px' }}
+        >
+          <div className="grid grid-cols-5 gap-1">
+            {options?.map((opt: any) => (
+              <button
+                key={opt.value}
+                type="button"
+                data-selected={String(opt.value) === String(value)}
+                onClick={() => {
+                  onChange?.({ target: { value: String(opt.value) } } as any)
+                  setShowGrid(false)
+                }}
+                className={cn(
+                  "px-1 py-1.5 text-xs rounded-md text-center transition-colors",
+                  String(opt.value) === String(value)
+                    ? "bg-black text-white font-semibold"
+                    : "hover:bg-muted text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Calendar({
   className,
   classNames,
@@ -17,7 +100,7 @@ function Calendar({
   ...props
 }: CalendarProps) {
   const isDropdown = captionLayout === "dropdown";
-  
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -59,14 +142,15 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Chevron: ({ orientation }) => 
-          orientation === "left" ? 
-            <ChevronLeft className="h-4 w-4" /> : 
+        Chevron: ({ orientation }) =>
+          orientation === "left" ?
+            <ChevronLeft className="h-4 w-4" /> :
             <ChevronRight className="h-4 w-4" />,
+        ...(isDropdown ? { Dropdown: YearGridDropdown } : {}),
       }}
       {...props}
     />
   )
 }
 Calendar.displayName = "Calendar"
-export { Calendar } 
+export { Calendar }

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 import type { DashboardHeroStats } from '@/types/dashboard';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ function isValidUUID(uuid: string): boolean {
 }
 
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Get all activity IDs for this organization
     const { data: orgActivities, error: orgActivitiesError } = await supabase
       .from('activities')
-      .select('id, publication_status, submission_status')
+      .select('id, publication_status, submission_status, activity_status')
       .eq('reporting_org_id', organizationId);
 
     if (orgActivitiesError) {
@@ -64,6 +64,10 @@ export async function GET(request: NextRequest) {
       a => a.submission_status === 'validated'
     ).length;
 
+    const rejectedCount = (orgActivities || []).filter(
+      a => a.submission_status === 'rejected'
+    ).length;
+
     // Calculate publication status counts
     const publishedCount = (orgActivities || []).filter(
       a => a.publication_status === 'published' || a.publication_status === 'public'
@@ -72,6 +76,14 @@ export async function GET(request: NextRequest) {
     const draftCount = (orgActivities || []).filter(
       a => a.publication_status === 'draft' || a.publication_status === 'unpublished' || !a.publication_status
     ).length;
+
+    // Calculate activity status counts (IATI codes: 1=Pipeline, 2=Implementation, 3=Finalisation, 4=Closed, 5=Cancelled, 6=Suspended)
+    const pipelineCount = (orgActivities || []).filter(a => a.activity_status === '1').length;
+    const implementationCount = (orgActivities || []).filter(a => a.activity_status === '2').length;
+    const finalisationCount = (orgActivities || []).filter(a => a.activity_status === '3').length;
+    const closedCount = (orgActivities || []).filter(a => a.activity_status === '4').length;
+    const cancelledCount = (orgActivities || []).filter(a => a.activity_status === '5').length;
+    const suspendedCount = (orgActivities || []).filter(a => a.activity_status === '6').length;
 
     // Fetch transaction, budget, and planned disbursement counts in parallel
     // For transactions, query both own-activity transactions AND transactions where
@@ -144,15 +156,29 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Deduplicate transaction counts by uuid (same approach as org-hero-stats)
-    const txUuids = new Set<string>();
-    (orgTransactionsOnActivitiesResult.data || []).forEach((tx: { uuid: string }) => txUuids.add(tx.uuid));
-    (orgTransactionsAsPartyResult.data || []).forEach((tx: { uuid: string }) => txUuids.add(tx.uuid));
-    const orgTransactionCount = txUuids.size;
+    const ownTxUuids = new Set<string>();
+    (orgTransactionsOnActivitiesResult.data || []).forEach((tx: { uuid: string }) => ownTxUuids.add(tx.uuid));
+    const allTxUuids = new Set<string>(ownTxUuids);
+    (orgTransactionsAsPartyResult.data || []).forEach((tx: { uuid: string }) => allTxUuids.add(tx.uuid));
+    const orgTransactionCount = allTxUuids.size;
+    // "Other orgs" = transactions where org is provider/receiver but NOT on org's own activities
+    const otherOrgTransactionCount = (orgTransactionsAsPartyResult.data || [])
+      .filter((tx: { uuid: string }) => !ownTxUuids.has(tx.uuid)).length;
     const userTransactionCount = userTransactionsResult.count || 0;
     const orgBudgetCount = orgBudgetsResult.count || 0;
     const userBudgetCount = userBudgetsResult.count || 0;
     const orgPlannedDisbursementCount = orgPlannedDisbursementsResult.count || 0;
     const userPlannedDisbursementCount = userPlannedDisbursementsResult.count || 0;
+
+    // "Other orgs" planned disbursements — where org is provider/receiver but on another org's activity
+    // Query planned disbursements where org is provider or receiver on non-org activities
+    let otherOrgPlannedDisbursementCount = 0;
+    const { count: otherOrgPDCount } = await supabase
+      .from('planned_disbursements')
+      .select('*', { count: 'exact', head: true })
+      .or(`provider_org_id.eq.${organizationId},receiver_org_id.eq.${organizationId}`)
+      .not('activity_id', 'in', activityIds.length > 0 ? `(${activityIds.join(',')})` : '()');
+    otherOrgPlannedDisbursementCount = otherOrgPDCount || 0;
 
     // Construct response
     const stats: DashboardHeroStats = {
@@ -162,9 +188,17 @@ export async function GET(request: NextRequest) {
       // Activities card
       publishedCount,
       draftCount,
+      rejectedCount,
+      pipelineCount,
+      implementationCount,
+      finalisationCount,
+      closedCount,
+      cancelledCount,
+      suspendedCount,
       // Financial Transactions card
       orgTransactionCount,
       userTransactionCount,
+      otherOrgTransactionCount,
       // Budgets & Planned Disbursements card
       orgBudgetCount,
       orgPlannedDisbursementCount,
@@ -172,6 +206,7 @@ export async function GET(request: NextRequest) {
       userBudgetCount,
       userPlannedDisbursementCount,
       userBudgetAndDisbursementCount: userBudgetCount + userPlannedDisbursementCount,
+      otherOrgPlannedDisbursementCount,
     };
 
     return NextResponse.json(stats);

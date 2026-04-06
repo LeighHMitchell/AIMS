@@ -13,6 +13,7 @@ import { Download, ChevronLeft, ChevronRight, FileText, ShieldCheck, Building2, 
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { BudgetTable, BudgetColumnSelector, DEFAULT_VISIBLE_BUDGET_COLUMNS, BUDGET_COLUMNS_LOCALSTORAGE_KEY, type BudgetColumnId } from "@/components/budgets/BudgetTable";
 import { useBudgets } from "@/hooks/useBudgets";
 import { Budget, BudgetFilter } from "@/types/budget";
@@ -537,9 +538,11 @@ export default function BudgetsPage() {
             </div>
           </div>
         ) : sortedBudgets.length === 0 ? (
-          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
-            <p className="text-muted-foreground">No budgets found</p>
-          </div>
+          <EmptyState
+            illustration="/images/empty-aqueduct.png"
+            title="No budgets found"
+            message="There are no budgets in the system yet."
+          />
         ) : (
           <div className="bg-card rounded-lg overflow-hidden">
             <div className="overflow-x-auto">

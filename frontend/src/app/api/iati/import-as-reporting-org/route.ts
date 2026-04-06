@@ -8,6 +8,7 @@ import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
+import { getSystemHomeCountry } from '@/lib/system-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   console.log('[Import as Reporting Org] 🚀 POST handler called');
+  const homeCountryCode = await getSystemHomeCountry(supabase);
   try {
     const { xmlContent, userId, userRole, replaceActivityIds, activityId, fields, iati_data, selectedReportingOrgId, acronyms } = await request.json();
     console.log('[Import as Reporting Org] Request received:', { 
@@ -602,7 +604,7 @@ export async function POST(request: NextRequest) {
           name: reportingOrgName,
           iati_org_id: reportingOrgRef,
           type: '90', // Default type (IATI code for "Other"), can be updated later
-          country: 'MM', // Default country
+          country: homeCountryCode, // Default to system home country
           alias_refs: [reportingOrgRef]
         })
         .select('id, name, acronym')

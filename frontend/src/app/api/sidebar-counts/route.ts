@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuthOrVisitor } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +8,8 @@ let cachedCounts: Record<string, number> | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-export async function GET() {
-  const { supabase, response: authResponse } = await requireAuth();
+export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   if (!supabase) {

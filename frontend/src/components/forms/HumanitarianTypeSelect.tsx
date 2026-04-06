@@ -108,7 +108,7 @@ export function HumanitarianTypeSelect({
               )}
             </div>
             <CommandList>
-              <CommandGroup>
+              <CommandGroup className="p-0">
                 {filteredTypes.map((type) => (
                   <CommandItem
                     key={type.code}
@@ -117,18 +117,13 @@ export function HumanitarianTypeSelect({
                       setIsOpen(false);
                       setSearchQuery("");
                     }}
-                    className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    className="cursor-pointer py-3 px-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors rounded-none"
                   >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === type.code ? "opacity-100" : "opacity-0"
-                      )}
-                    />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
                         <span className="font-medium text-foreground">{type.name}</span>
+                        {value === type.code && <Check className="h-4 w-4 text-foreground" />}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
                         {type.description}

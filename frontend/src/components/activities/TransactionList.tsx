@@ -118,7 +118,7 @@ interface ActivityTransactionColumnConfig {
 
 const ACTIVITY_TRANSACTION_COLUMN_CONFIGS: ActivityTransactionColumnConfig[] = [
   // Default columns (visible by default)
-  { id: 'transactionDate', label: 'Date', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'transactionDate', label: 'Transaction Date', group: 'default', defaultVisible: true, sortable: true },
   { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true, sortable: true },
   { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true, sortable: true },
   { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
@@ -1544,7 +1544,7 @@ export default function TransactionList({
                     {isColumnVisible('transactionDate') && (
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
                         <div className="flex items-center gap-1">
-                          <span>Date</span>
+                          <span>Transaction Date</span>
                           {getSortIcon('transaction_date')}
                         </div>
                       </TableHead>

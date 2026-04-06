@@ -46,6 +46,17 @@ export async function apiFetch(
   // Don't set Content-Type for FormData - browser will set it automatically with boundary
   const isFormData = body instanceof FormData;
 
+  // Check if in visitor mode
+  const isVisitor = typeof window !== 'undefined' && localStorage.getItem('aims_auth_source') === 'visitor';
+
+  // Block non-GET requests for visitors (defense in depth)
+  if (isVisitor && !isReadRequest) {
+    return new Response(JSON.stringify({ error: 'Visitors cannot modify data' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const finalHeaders: HeadersInit = isFormData
     ? (headers instanceof Headers
         ? Object.fromEntries(headers.entries())
@@ -56,6 +67,11 @@ export async function apiFetch(
           ? Object.fromEntries(headers.entries())
           : headers),
       };
+
+  // Add visitor mode header so API routes can use requireAuthOrVisitor()
+  if (isVisitor) {
+    (finalHeaders as Record<string, string>)['X-Visitor-Mode'] = 'true';
+  }
 
   // For read requests, create an abort controller so they can be cancelled by saves
   if (isReadRequest) {

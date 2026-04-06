@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {
+    // Create admin client inline to bypass RLS for activity/org lookups
+    // Note: getSupabaseAdmin() can return null due to module-level env var timing issues
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
     const searchParams = request.nextUrl.searchParams;
 
     // Pagination
@@ -50,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Apply organization filter - budgets don't have org directly, filter via activity's reporting_org_id
     if (organizations.length > 0) {
-      const { data: orgActivities } = await supabase
+      const { data: orgActivities } = await adminSupabase
         .from('activities')
         .select('id')
         .in('reporting_org_id', organizations);
@@ -70,7 +79,7 @@ export async function GET(request: NextRequest) {
         });
       }
     } else if (organization !== 'all') {
-      const { data: orgActivities } = await supabase
+      const { data: orgActivities } = await adminSupabase
         .from('activities')
         .select('id')
         .eq('reporting_org_id', organization);
@@ -113,6 +122,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Now fetch all related activities in one query
+    // Use admin client to bypass RLS — the user-scoped client may not have access to all activities
     const budgets = budgetsData || [];
     const allActivityIds = new Set<string>();
 
@@ -122,7 +132,7 @@ export async function GET(request: NextRequest) {
 
     let activitiesMap: Record<string, any> = {};
     if (allActivityIds.size > 0) {
-      const { data: activitiesData, error: activitiesError } = await supabase
+      const { data: activitiesData, error: activitiesError } = await adminSupabase
         .from('activities')
         .select('id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym, submission_status, created_by, updated_by')
         .in('id', Array.from(allActivityIds));
@@ -149,7 +159,7 @@ export async function GET(request: NextRequest) {
 
     let organizationsMap: Record<string, any> = {};
     if (reportingOrgIds.size > 0) {
-      const { data: organizationsData, error: orgsError } = await supabase
+      const { data: organizationsData, error: orgsError } = await adminSupabase
         .from('organizations')
         .select('id, name, acronym, iati_org_id, logo')
         .in('id', Array.from(reportingOrgIds));

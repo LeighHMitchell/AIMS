@@ -45,18 +45,17 @@ export function getRoleDisplayLabel(role: string | undefined | null): string {
   
   // Import ROLE_LABELS dynamically to avoid circular dependencies
   const roleLabelsMap: Record<string, string> = {
-    [USER_ROLES.SUPER_USER]: "Super User",
-    [USER_ROLES.DEV_PARTNER_TIER_1]: "Development Partner - Tier 1",
-    [USER_ROLES.DEV_PARTNER_TIER_2]: "Development Partner - Tier 2",
-    [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner - Tier 1",
-    [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner - Tier 2",
-    [USER_ROLES.PUBLIC_USER]: "Public User",
+    [USER_ROLES.SUPER_USER]: "Administrator",
+    [USER_ROLES.DEV_PARTNER_TIER_1]: "Partner Manager",
+    [USER_ROLES.DEV_PARTNER_TIER_2]: "Partner Editor",
+    [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Manager",
+    [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Editor",
+    [USER_ROLES.PUBLIC_USER]: "Viewer",
     'admin': "Administrator",
-    'development_partner_tier_1': "Development Partner - Tier 1",
-    'development_partner_tier_2': "Development Partner - Tier 2",
-    'government_partner_tier_1': "Government Partner - Tier 1",
-    'government_partner_tier_2': "Government Partner - Tier 2",
-    'public_user': "Public User",
+    'development_partner_tier_1': "Partner Manager",
+    'development_partner_tier_2': "Partner Editor",
+    'government_partner_tier_1': "Government Manager",
+    'government_partner_tier_2': "Government Editor",
     'orphan': "Unassigned User"
   };
   

@@ -71,7 +71,7 @@ export function ActivityMetadataPanel({
                       {copiedField === 'UUID' ? (
                         <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       ) : (
-                        <Copy className="h-3 w-3 text-gray-500" />
+                        <Copy className="h-3 w-3 text-muted-foreground" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -106,7 +106,7 @@ export function ActivityMetadataPanel({
                       {copiedField === 'Partner ID' ? (
                         <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                       ) : (
-                        <Copy className="h-3 w-3 text-gray-500" />
+                        <Copy className="h-3 w-3 text-muted-foreground" />
                       )}
                     </Button>
                   </TooltipTrigger>

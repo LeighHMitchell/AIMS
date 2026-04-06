@@ -57,12 +57,21 @@ export interface DashboardHeroStats {
   // Validation Status card
   pendingValidationCount: number;
   validatedCount: number;
+  rejectedCount: number;
   // Activities card
   publishedCount: number;
   draftCount: number;
+  // Activity status breakdown
+  pipelineCount: number;
+  implementationCount: number;
+  finalisationCount: number;
+  closedCount: number;
+  cancelledCount: number;
+  suspendedCount: number;
   // Financial Transactions card
   orgTransactionCount: number;
   userTransactionCount: number;
+  otherOrgTransactionCount: number;
   // Budgets & Planned Disbursements card
   orgBudgetCount: number;
   orgPlannedDisbursementCount: number;
@@ -70,6 +79,16 @@ export interface DashboardHeroStats {
   userBudgetCount: number;
   userPlannedDisbursementCount: number;
   userBudgetAndDisbursementCount: number;
+  otherOrgPlannedDisbursementCount: number;
+}
+
+// Reported-by filter for dashboard tables
+export type ReportedByFilter = 'all' | 'my_org' | 'me' | 'other_orgs';
+
+export interface TableFilterConfig {
+  allowedFilters: ReportedByFilter[];
+  defaultFilter: ReportedByFilter;
+  filterLabels: Partial<Record<ReportedByFilter, string>>;
 }
 
 // Action types for the actions required panel

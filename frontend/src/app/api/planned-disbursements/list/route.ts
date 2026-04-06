@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {
@@ -24,8 +25,10 @@ export async function GET(request: NextRequest) {
     const organizations = searchParams.get('organizations')?.split(',').filter(Boolean) || [];
     const sortField = searchParams.get('sortField') || 'period_start';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const reportedByOrg = searchParams.get('reportedByOrg'); // 'self' | 'other'
+    const reportedByUser = searchParams.get('reportedByUser'); // userId
 
-    console.log('[Planned Disbursements List API] Query params:', { page, limit, search, types, organizations, sortField, sortOrder });
+    console.log('[Planned Disbursements List API] Query params:', { page, limit, search, types, organizations, sortField, sortOrder, reportedByOrg, reportedByUser });
 
     // Build query - fetch disbursements first
     let query = supabase
@@ -39,12 +42,48 @@ export async function GET(request: NextRequest) {
       query = query.eq('type', type);
     }
 
-    // Apply organization filter - support both array and single value
-    if (organizations.length > 0) {
-      const orgConditions = organizations.map(org => `provider_org_id.eq.${org},receiver_org_id.eq.${org}`).join(',');
-      query = query.or(orgConditions);
-    } else if (organization !== 'all') {
-      query = query.or(`provider_org_id.eq.${organization},receiver_org_id.eq.${organization}`);
+    // Pre-fetch reporting org activity IDs for org-based filters
+    let reportingActivityIds: string[] = [];
+    const orgList = organizations.length > 0 ? organizations : (organization !== 'all' ? [organization] : []);
+    if (orgList.length > 0) {
+      const { data: reportingOrgActivities } = await supabase
+        .from('activities')
+        .select('id')
+        .in('reporting_org_id', orgList);
+      reportingActivityIds = (reportingOrgActivities || []).map((a: { id: string }) => a.id);
+    }
+
+    // Apply organization + reportedByOrg filter
+    if (orgList.length > 0) {
+      if (reportedByOrg === 'self') {
+        // Only PDs on the org's own activities
+        if (reportingActivityIds.length > 0) {
+          query = query.in('activity_id', reportingActivityIds);
+        } else {
+          query = query.in('activity_id', ['__none__']);
+        }
+      } else if (reportedByOrg === 'other') {
+        // Only PDs where org is provider/receiver but NOT on their own activities
+        const orgConditions = orgList.map(org => `provider_org_id.eq.${org},receiver_org_id.eq.${org}`).join(',');
+        query = query.or(orgConditions);
+        if (reportingActivityIds.length > 0) {
+          query = query.not('activity_id', 'in', `(${reportingActivityIds.join(',')})`);
+        }
+      } else {
+        // 'all' — include PDs on own activities + where org is provider/receiver
+        if (reportingActivityIds.length > 0) {
+          const orgConditions = orgList.map(org => `provider_org_id.eq.${org},receiver_org_id.eq.${org}`).join(',');
+          query = query.or(`${orgConditions},activity_id.in.(${reportingActivityIds.join(',')})`);
+        } else {
+          const orgConditions = orgList.map(org => `provider_org_id.eq.${org},receiver_org_id.eq.${org}`).join(',');
+          query = query.or(orgConditions);
+        }
+      }
+    }
+
+    // Filter by specific user
+    if (reportedByUser) {
+      query = query.eq('created_by', reportedByUser);
     }
 
     // Apply sorting
@@ -63,7 +102,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Now fetch all related activities and organizations in parallel
+    // Fetch related data sequentially: disbursements -> activities -> organizations
+    // (sequential so reporting_org_ids from activities can be included in the org lookup)
     const disbursements = disbursementsData || [];
     const allActivityIds = new Set<string>();
     const allOrgIds = new Set<string>();
@@ -77,26 +117,22 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('[Planned Disbursements List API] Looking up activity IDs:', Array.from(allActivityIds).slice(0, 3));
-    console.log('[Planned Disbursements List API] Looking up org IDs:', Array.from(allOrgIds).slice(0, 3));
 
     let activitiesMap: Record<string, any> = {};
     let organizationsMap: Record<string, any> = {};
 
-    // Fetch activities and organizations in parallel
-    const [activitiesResult, organizationsResult] = await Promise.all([
-      allActivityIds.size > 0
-        ? supabase
-            .from('activities')
-            .select('id, title_narrative, iati_identifier')
-            .in('id', Array.from(allActivityIds))
-        : Promise.resolve({ data: null, error: null }),
-      allOrgIds.size > 0
-        ? supabase
-            .from('organizations')
-            .select('id, name, acronym, logo')
-            .in('id', Array.from(allOrgIds))
-        : Promise.resolve({ data: null, error: null })
-    ]);
+    // Step 1: Fetch activities first (use admin client to bypass RLS)
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    const activitiesResult = allActivityIds.size > 0
+      ? await adminSupabase
+          .from('activities')
+          .select('id, title_narrative, iati_identifier, reporting_org_id')
+          .in('id', Array.from(allActivityIds))
+      : { data: null, error: null };
 
     if (activitiesResult.error) {
       console.error('[Planned Disbursements List API] Error fetching activities:', activitiesResult.error);
@@ -108,9 +144,24 @@ export async function GET(request: NextRequest) {
       activitiesMap = Object.fromEntries(
         activitiesResult.data.map(a => [a.id, a])
       );
+
+      // Add reporting_org_ids from activities to the org lookup set
+      activitiesResult.data.forEach((a: any) => {
+        if (a?.reporting_org_id) allOrgIds.add(a.reporting_org_id);
+      });
     } else {
       console.log('[Planned Disbursements List API] No activities found!');
     }
+
+    console.log('[Planned Disbursements List API] Looking up org IDs:', Array.from(allOrgIds).slice(0, 3));
+
+    // Step 2: Fetch organizations (now includes reporting_org_ids) — use admin client
+    const organizationsResult = allOrgIds.size > 0
+      ? await adminSupabase
+          .from('organizations')
+          .select('id, name, acronym, logo')
+          .in('id', Array.from(allOrgIds))
+      : { data: null, error: null };
 
     if (organizationsResult.error) {
       console.error('[Planned Disbursements List API] Error fetching organizations:', organizationsResult.error);
@@ -130,6 +181,8 @@ export async function GET(request: NextRequest) {
     const data = disbursements.map((disbursement: any) => {
       const providerOrg = disbursement?.provider_org_id ? organizationsMap[disbursement.provider_org_id] : null;
       const receiverOrg = disbursement?.receiver_org_id ? organizationsMap[disbursement.receiver_org_id] : null;
+      const reportingOrgId = activitiesMap[disbursement.activity_id]?.reporting_org_id;
+      const reportingOrg = reportingOrgId ? organizationsMap[reportingOrgId] : null;
 
       return {
         ...disbursement,
@@ -142,6 +195,10 @@ export async function GET(request: NextRequest) {
         receiver_org_acronym: receiverOrg?.acronym || disbursement.receiver_org_acronym || null,
         receiver_org_name: receiverOrg?.name || disbursement.receiver_org_name || null,
         receiver_org_logo: receiverOrg?.logo || null,
+        reporting_org_id: reportingOrgId || null,
+        reporting_org_name: reportingOrg?.name || null,
+        reporting_org_acronym: reportingOrg?.acronym || null,
+        reporting_org_logo: reportingOrg?.logo || null,
       };
     });
 

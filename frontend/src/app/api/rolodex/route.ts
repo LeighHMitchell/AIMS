@@ -21,6 +21,7 @@ export interface RolodexPerson {
   organization_id?: string;
   organization_name?: string;
   organization_acronym?: string;
+  organization_logo?: string;
   org_type?: string;
   activity_id?: string;
   activity_title?: string;
@@ -125,7 +126,8 @@ export async function GET(request: NextRequest) {
           id,
           name,
           acronym,
-          type
+          type,
+          logo
         )
       `)
       .not('email', 'is', null)
@@ -182,7 +184,8 @@ export async function GET(request: NextRequest) {
           id,
           name,
           acronym,
-          type
+          type,
+          logo
         )
       `);
 
@@ -273,6 +276,7 @@ export async function GET(request: NextRequest) {
           organization_id: user.organization_id,
           organization_name: user.organizations?.name,
           organization_acronym: user.organizations?.acronym,
+          organization_logo: user.organizations?.logo,
           org_type: user.organizations?.type,
           activity_id: undefined,
           position: user.job_title,
@@ -317,6 +321,7 @@ export async function GET(request: NextRequest) {
           organization_id: contact.organisation_id,
           organization_name: contact.organizations?.name || contact.organisation,
           organization_acronym: contact.organizations?.acronym,
+          organization_logo: contact.organizations?.logo,
           org_type: contact.organizations?.type,
           activity_id: activityIds[0] || undefined,
           position: contact.position,

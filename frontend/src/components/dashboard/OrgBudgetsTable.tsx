@@ -22,10 +22,13 @@ import {
 import { format } from 'date-fns';
 import { Wallet, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
+import { TableRowActionMenu } from './TableRowActionMenu';
 
 interface OrgBudgetsTableProps {
   organizationId: string;
   userId: string;
+  filterConfig?: TableFilterConfig;
 }
 
 interface BudgetRow {
@@ -38,6 +41,7 @@ interface BudgetRow {
   value: number;
   currency: string;
   value_usd: number | null;
+  value_date?: string | null;
   created_by?: string;
   updated_by?: string;
   activity: {
@@ -55,14 +59,6 @@ const BUDGET_TYPE_LABELS: Record<number, string> = {
   2: 'Revised',
 };
 
-const VALIDATION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'bg-gray-100 text-gray-700' },
-  submitted: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-  validated: { label: 'Validated', color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' },
-  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
-  more_info_requested: { label: 'Info Requested', color: 'bg-orange-100 text-orange-700' },
-};
-
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
@@ -72,7 +68,7 @@ function formatCurrency(value: number): string {
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
-export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps) {
+export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBudgetsTableProps) {
   const router = useRouter();
   const [budgets, setBudgets] = useState<BudgetRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +78,7 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('period_start');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [reportedBy, setReportedBy] = useState<'my_org' | 'me'>('my_org');
+  const [reportedBy, setReportedBy] = useState<ReportedByFilter>(filterConfig?.defaultFilter ?? 'my_org');
 
   const fetchBudgets = useCallback(async () => {
     try {
@@ -112,6 +108,7 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
             b.activity?.updated_by === userId
         );
       }
+      // 'all' and 'my_org' show everything (data is already org-scoped)
 
       setBudgets(rows);
       setTotalCount(reportedBy === 'me' ? rows.length : (data.total || 0));
@@ -160,19 +157,23 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
 
   return (
     <>
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-sm text-slate-500">Reported by:</span>
-        <Select value={reportedBy} onValueChange={(val: 'my_org' | 'me') => { setReportedBy(val); setPage(1); }}>
-          <SelectTrigger className="w-[140px] h-8">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="my_org">My Organisation</SelectItem>
-            <SelectItem value="me">By Me</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Filters — only shown when filterConfig is provided */}
+      {filterConfig && (
+        <div className="flex items-center gap-3 mb-4">
+          <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => { setReportedBy(val); setPage(1); }}>
+            <SelectTrigger className="w-[280px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filterConfig.allowedFilters.map((filter) => (
+                <SelectItem key={filter} value={filter}>
+                  {filterConfig.filterLabels[filter] || filter}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {budgets.length === 0 ? (
         <div className="text-center py-8">
@@ -185,7 +186,7 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-[280px] cursor-pointer select-none" onClick={() => handleSort('activity_id')}>
-                  <span className="flex items-center gap-1">Activity <SortIcon field="activity_id" /></span>
+                  <span className="flex items-center gap-1">Activity Title <SortIcon field="activity_id" /></span>
                 </TableHead>
                 <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('period_start')}>
                   <span className="flex items-center gap-1">Period <SortIcon field="period_start" /></span>
@@ -194,17 +195,17 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
                   <span className="flex items-center gap-1">Type <SortIcon field="type" /></span>
                 </TableHead>
                 <TableHead className="min-w-[140px] cursor-pointer select-none" onClick={() => handleSort('value')}>
-                  <span className="flex items-center gap-1">Value <SortIcon field="value" /></span>
+                  <span className="flex items-center gap-1">Original Value <SortIcon field="value" /></span>
+                </TableHead>
+                <TableHead className="min-w-[100px] cursor-pointer select-none" onClick={() => handleSort('value_date')}>
+                  <span className="flex items-center gap-1">Value Date <SortIcon field="value_date" /></span>
                 </TableHead>
                 <TableHead className="min-w-[120px]">USD Value</TableHead>
-                <TableHead>Activity Status</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {budgets.map((budget) => {
-                const statusInfo = budget.activity?.submission_status
-                  ? VALIDATION_STATUS_LABELS[budget.activity.submission_status]
-                  : null;
                 return (
                   <TableRow
                     key={budget.id}
@@ -240,6 +241,11 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
                       </div>
                     </TableCell>
                     <TableCell>
+                      <span className="text-sm text-slate-600 whitespace-nowrap">
+                        {budget.value_date ? format(new Date(budget.value_date), 'dd MMM yyyy') : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       {budget.value_usd != null ? (
                         <div className="flex items-center gap-1">
                           <span className="font-medium text-slate-700">
@@ -251,14 +257,8 @@ export function OrgBudgetsTable({ organizationId, userId }: OrgBudgetsTableProps
                         <span className="text-sm text-slate-400">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {statusInfo ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                          {statusInfo.label}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-slate-400">-</span>
-                      )}
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableRowActionMenu activityId={budget.activity_id} entityType="budget" entityId={budget.id} onDelete={() => {/* TODO: implement delete */}} />
                     </TableCell>
                   </TableRow>
                 );

@@ -39,6 +39,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useRouter } from 'next/navigation';
 import { EditContactModal } from './EditContactModal';
 import { UserEditModal } from './UserEditModal';
+import { CardShell, CardShellRipLine } from '@/components/ui/card-shell';
 
 interface PersonCardProps {
   person: RolodexPerson;
@@ -354,243 +355,203 @@ export function PersonCard({
     );
   }
 
+  // Color palette — matches org/activity cards
+  const colors = {
+    paleSlate: 'hsl(var(--brand-pale-slate))',
+    blueSlate: 'hsl(var(--brand-blue-slate))',
+    coolSteel: 'hsl(var(--brand-cool-steel))',
+  };
+
+  // Action menu (shared between banner and dropdown contexts)
+  const actionMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20">
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {person.organization_id && (
+          <DropdownMenuItem onClick={handleOrganizationClick}>
+            <Building2 className="mr-2 h-4 w-4" />
+            View Organization
+          </DropdownMenuItem>
+        )}
+        {person.activity_ids && person.activity_ids.length > 1 ? (
+          person.activity_ids.map((actId, idx) => (
+            <DropdownMenuItem key={actId} onClick={() => onActivityClick?.(actId)}>
+              <FileText className="mr-2 h-4 w-4" />
+              View Activity {idx + 1}
+            </DropdownMenuItem>
+          ))
+        ) : person.activity_id ? (
+          <DropdownMenuItem onClick={handleActivityClick}>
+            <FileText className="mr-2 h-4 w-4" />
+            View Activity
+          </DropdownMenuItem>
+        ) : null}
+        {person.email && (
+          <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
+            <Mail className="mr-2 h-4 w-4" />
+            Send Email
+          </DropdownMenuItem>
+        )}
+        {onDelete && person.source === 'activity_contact' && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDeleteContact}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+              Delete Contact
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
-    <Card className="hover:shadow-md transition-all duration-200 border-slate-200">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col space-y-3">
-          {/* Top row: Avatar (top-left) and Source Badge (top-right) */}
-          <div className="flex items-start justify-between">
-            <UserAvatar
-              src={person.profile_photo}
-              seed={person.id || person.email || displayName}
-              name={displayName}
-              size="md"
-              initials={getInitials(displayName)}
-            />
-            
-            {/* Source Badge in top-right */}
-            <div className="flex items-center space-x-2">
-              {/* Super User Badge - only for super users */}
-              {isPersonSuperUser && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs flex-shrink-0 text-white border-0"
-                  style={{ backgroundColor: '#DC2625' }}
-                >
-                  Super User
-                </Badge>
-              )}
-              
-              <Badge
-                variant="secondary"
-                className="text-xs flex-shrink-0"
-                style={{
-                  backgroundColor: person.source === 'user' ? '#4C5568' : '#DC2625',
-                  color: 'white'
-                }}
-              >
-                {person.source === 'user' ? 'User Contact' : 'Activity Contact'}
-              </Badge>
-              {(person.activity_count ?? 0) > 1 && (
-                <Badge variant="outline" className="text-xs flex-shrink-0">
-                  <Layers className="h-3 w-3 mr-1" />
-                  {person.activity_count} activities
-                </Badge>
-              )}
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {person.organization_id && (
-                    <DropdownMenuItem onClick={handleOrganizationClick}>
-                      <Building2 className="mr-2 h-4 w-4" />
-                      View Organization
-                    </DropdownMenuItem>
-                  )}
-                  {person.activity_ids && person.activity_ids.length > 1 ? (
-                    person.activity_ids.map((actId, idx) => (
-                      <DropdownMenuItem key={actId} onClick={() => onActivityClick?.(actId)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        View Activity {idx + 1}
-                      </DropdownMenuItem>
-                    ))
-                  ) : person.activity_id ? (
-                    <DropdownMenuItem onClick={handleActivityClick}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      View Activity
-                    </DropdownMenuItem>
-                  ) : null}
-                  {person.email && (
-                    <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Email
-                    </DropdownMenuItem>
-                  )}
-                  {onDelete && person.source === 'activity_contact' && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={handleDeleteContact}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                        Delete Contact
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Content area with proper text wrapping */}
-          <div className="min-w-0 space-y-1">
-            <h3 className="text-base font-semibold text-slate-900 leading-tight break-words">
-              {displayName}
-            </h3>
-            
-            {/* Job/Position Info */}
+    <CardShell
+      ariaLabel={`Contact: ${displayName}`}
+      bannerImage={person.profile_photo}
+      bannerIcon={User}
+      bannerActions={actionMenu}
+      bannerOverlay={
+        <>
+          <h2 className="text-lg font-bold text-white mb-1 line-clamp-2">
+            {displayName}
+          </h2>
+          <div className="flex items-center gap-2 text-xs flex-wrap" style={{ color: colors.paleSlate }}>
             {jobInfo && (
-              <div className="text-xs text-slate-600">
-                <span className="break-words">{jobInfo}</span>
-              </div>
+              <span className="flex items-center gap-1">
+                <Briefcase className="w-3 h-3" />
+                {jobInfo}
+              </span>
             )}
-
-            {/* Department Info - separate line for users */}
+            {jobInfo && departmentInfo && <span>•</span>}
             {departmentInfo && (
-              <div className="text-xs text-slate-600">
-                <span className="break-words">{departmentInfo}</span>
-              </div>
+              <span className="flex items-center gap-1">
+                {departmentInfo}
+              </span>
             )}
-
-            {/* Organization Info */}
-            {organizationInfo && (
-              <div className="text-xs text-slate-600">
-                <button
-                  onClick={handleOrganizationClick}
-                  className="hover:text-blue-600 transition-colors text-left break-words w-full"
-                  disabled={!person.organization_id}
-                  title={organizationInfo}
-                >
-                  <span className="break-words">{organizationInfo}</span>
-                  {person.organization_id && (
-                    <ExternalLink className="h-3 w-3 ml-1 inline text-slate-400 flex-shrink-0" />
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Role Badge - only for Users (but not super users since they have their own badge) */}
-            {person.source === 'user' && person.role && !isPersonSuperUser && (
-              <div className="flex items-center space-x-2 flex-wrap">
-                <Badge 
-                  variant={getRoleBadgeVariant(person.role)} 
-                  className="text-xs"
+            {person.source === 'user' && person.role && (
+              <>
+                {(jobInfo || departmentInfo) && <span>•</span>}
+                <Badge
+                  variant={getRoleBadgeVariant(person.role)}
+                  className="text-[10px] px-1.5 py-0"
                 >
                   {getRoleDisplayLabel(person.role)}
                 </Badge>
-              </div>
+              </>
             )}
           </div>
-        </div>
-      </CardHeader>
+        </>
+      }
+    >
+      {/* Body */}
+      <div className="relative flex-1 p-5 flex flex-col bg-card">
+        <div className="flex-1">
+          {/* Role badge */}
+          {person.source === 'user' && person.role && (
+            <div className="mb-3">
+              <Badge
+                variant={getRoleBadgeVariant(person.role)}
+                className="text-xs"
+              >
+                {getRoleDisplayLabel(person.role)}
+              </Badge>
+            </div>
+          )}
 
-      <CardContent className="pt-0 space-y-2">
-        {/* Contact Information */}
-        <div className="space-y-1">
-          {/* Email Section */}
-          {(person.email || person.secondary_email) && (
-            <div className="space-y-1">
-              {person.email && (
-                <div className="group/email flex items-center space-x-2 text-xs">
-                  <Mail className="h-3 w-3 text-slate-400 flex-shrink-0" />
+          {/* Contact details — single column */}
+          <div className="space-y-2">
+            <div className="group/email flex items-center gap-2">
+              <Mail className="w-4 h-4 shrink-0" style={{ color: colors.coolSteel }} />
+              {person.email ? (
+                <>
                   <button
                     onClick={() => handleEmailClick(person.email)}
-                    className="text-slate-600 truncate"
+                    className="font-medium text-sm break-all hover:underline text-left"
+                    style={{ color: colors.blueSlate }}
                   >
                     {person.email}
                   </button>
                   <button
                     onClick={(e) => handleCopyEmail(e, person.email!)}
-                    className="opacity-0 group-hover/email:opacity-100 transition-opacity flex-shrink-0"
+                    className="opacity-0 group-hover/email:opacity-100 transition-opacity shrink-0"
                     title="Copy email"
                   >
                     {copiedEmail === person.email ? (
                       <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                     ) : (
-                      <Copy className="h-3 w-3 text-slate-400 hover:text-slate-600" />
+                      <Copy className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                     )}
                   </button>
-                </div>
-              )}
-              {person.secondary_email && (
-                <div className="group/email2 flex items-center space-x-2 text-xs ml-4">
-                  <span className="text-slate-400">|</span>
-                  <button
-                    onClick={() => handleEmailClick(person.secondary_email)}
-                    className="text-slate-600 truncate"
-                  >
-                    {person.secondary_email}
-                  </button>
-                  <button
-                    onClick={(e) => handleCopyEmail(e, person.secondary_email!)}
-                    className="opacity-0 group-hover/email2:opacity-100 transition-opacity flex-shrink-0"
-                    title="Copy email"
-                  >
-                    {copiedEmail === person.secondary_email ? (
-                      <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
-                    ) : (
-                      <Copy className="h-3 w-3 text-slate-400 hover:text-slate-600" />
-                    )}
-                  </button>
-                </div>
+                </>
+              ) : (
+                <span className="text-sm" style={{ color: colors.coolSteel }}>—</span>
               )}
             </div>
-          )}
-          
-          {/* Phone Section */}
-          {((person.phone && isValidPhoneNumber(person.phone)) || person.fax) && (
-            <div className="space-y-1">
-              {person.phone && isValidPhoneNumber(person.phone) && (
-                <div className="flex items-center space-x-2 text-xs">
-                  <Phone className="h-3 w-3 text-slate-400" />
-                  <button
-                    onClick={handlePhoneClick}
-                    className="text-slate-600"
-                  >
-                    {person.phone}
-                  </button>
-                </div>
-              )}
-              {person.fax && (
-                <div className="flex items-center space-x-2 text-xs ml-4">
-                  <span className="text-slate-400">|</span>
-                  <button
-                    onClick={handleFaxClick}
-                    className="text-slate-600"
-                  >
-                    <Printer className="h-3 w-3 mr-1 inline" />
-                    {person.fax}
-                  </button>
-                </div>
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 shrink-0" style={{ color: colors.coolSteel }} />
+              {person.phone && isValidPhoneNumber(person.phone) ? (
+                <button
+                  onClick={handlePhoneClick}
+                  className="font-medium text-sm break-all hover:underline text-left"
+                  style={{ color: colors.blueSlate }}
+                >
+                  {person.phone}
+                </button>
+              ) : (
+                <span className="text-sm" style={{ color: colors.coolSteel }}>—</span>
               )}
             </div>
-          )}
+            {(person.activity_count ?? 0) > 0 && (
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 shrink-0" style={{ color: colors.coolSteel }} />
+                <span className="font-medium text-sm" style={{ color: colors.blueSlate }}>
+                  {person.activity_count} {person.activity_count === 1 ? 'activity' : 'activities'}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Notes if available */}
-        {person.notes && (
-          <div className="pt-1 border-t border-slate-100">
-            <div className="text-xs">
-              <p className="text-slate-600 text-xs leading-snug">{person.notes}</p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        {/* Rip Line */}
+        <div className="my-4">
+          <CardShellRipLine />
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
+            {person.organization_logo && (
+              <img
+                src={person.organization_logo}
+                alt=""
+                className="w-4 h-4 rounded-full object-contain"
+              />
+            )}
+            {person.organization_acronym || person.organization_name || (person.source === 'user' ? 'System User' : 'Activity Contact')}
+          </span>
+          {person.organization_id && organizationInfo && (
+            <a
+              href={`/organizations/${person.organization_id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              className="flex items-center gap-1 text-[10px] hover:underline relative z-10"
+              style={{ color: colors.blueSlate }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              View Organization
+            </a>
+          )}
+        </div>
+      </div>
+    </CardShell>
   );
 }

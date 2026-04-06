@@ -198,7 +198,7 @@ export function HumanitarianTab({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Humanitarian Flag Section - Fieldset Style with Label */}
-      <div className="relative border-2 border-red-300 rounded-lg p-6 bg-red-50/30">
+      <div className="relative border-2 border-red-300 rounded-lg p-6">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export function HumanitarianTab({
               checked={humanitarian}
               onCheckedChange={handleHumanitarianToggle}
               disabled={readOnly || isSaving || activityId === 'NEW'}
-              className="mt-3 data-[state=checked]:bg-red-600 data-[state=unchecked]:bg-red-200"
+              className="mt-3 data-[state=checked]:bg-red-600"
             />
           </div>
           {humanitarian && !readOnly && activityId !== 'NEW' && (
@@ -270,7 +270,6 @@ export function HumanitarianTab({
                       <TableHead className="whitespace-nowrap">Code</TableHead>
                       <TableHead className="whitespace-nowrap">Location</TableHead>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
-                      <TableHead>Response Description</TableHead>
                       {!readOnly && <TableHead className="w-[100px]">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -329,20 +328,6 @@ export function HumanitarianTab({
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <div className="space-y-1">
-                            {scope.narratives.map((narrative, idx) => (
-                              <div key={idx} className="text-sm">
-                                {scope.narratives.length > 1 && (
-                                  <span className="font-medium text-muted-foreground">
-                                    {formatLanguageDisplay(narrative.language)}:
-                                  </span>
-                                )}{' '}
-                                <span className="text-foreground">{narrative.narrative}</span>
-                              </div>
-                            ))}
-                          </div>
                         </TableCell>
                         {!readOnly && (
                           <TableCell className="align-top">

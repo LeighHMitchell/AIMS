@@ -188,7 +188,7 @@ export function BudgetTable({
   }
 
   if (budgets.length === 0) {
-    return <EmptyState message="No budgets found" />;
+    return <EmptyState illustration="/images/empty-aqueduct.png" message="No budgets found" />;
   }
 
   // Build header map

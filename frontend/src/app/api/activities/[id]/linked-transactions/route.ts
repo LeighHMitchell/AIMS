@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 

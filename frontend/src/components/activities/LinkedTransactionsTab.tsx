@@ -322,7 +322,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
                   <div className="flex items-center gap-1">Receiver {getSortIcon('receiver', sortField, sortDirection)}</div>
                 </th>
                 <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
-                  <div className="flex items-center gap-1">Date {getSortIcon('date', sortField, sortDirection)}</div>
+                  <div className="flex items-center gap-1">Transaction Date {getSortIcon('date', sortField, sortDirection)}</div>
                 </th>
                 <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
                   <div className="flex items-center gap-1">Source Activity {getSortIcon('activity', sortField, sortDirection)}</div>

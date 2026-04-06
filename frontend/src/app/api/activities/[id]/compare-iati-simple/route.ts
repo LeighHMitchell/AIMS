@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSystemHomeCountry } from '@/lib/system-settings';
+import { IATI_COUNTRIES } from '@/data/iati-countries';
 
 // IATI Datastore configuration
 const IATI_API_BASE_URL = process.env.IATI_API_BASE_URL || 'https://api.iatistandard.org/datastore';
@@ -117,6 +119,9 @@ export async function POST(
     const body: CompareRequest = await request.json();
     
     console.log('[IATI Compare Simple] Starting comparison for activity:', activityId);
+    const homeCountryCode = await getSystemHomeCountry(supabase!);
+    const homeCountryEntry = IATI_COUNTRIES.find(c => c.code === homeCountryCode);
+    const homeCountryName = homeCountryEntry?.name || homeCountryCode;
     
     // Fetch activity from database - simplified query
     const { data: activity, error: activityError } = await supabase
@@ -283,8 +288,8 @@ export async function POST(
           }
         ],
         recipient_country: {
-          code: 'MM',
-          narrative: 'Myanmar'
+          code: homeCountryCode,
+          narrative: homeCountryName
         },
         transactions: [
           {

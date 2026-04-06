@@ -74,34 +74,27 @@ interface MyPortfolioData {
   userActivityEvents: UserActivityEvent[]
 }
 
-export function useMyPortfolioData() {
+export function useMyPortfolioData(organizationId?: string) {
   const { user } = useUser()
   const [data, setData] = useState<MyPortfolioData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    console.log('[MyPortfolio] Hook mounted, user:', user)
-    
-    if (!user?.id) {
-      console.log('[MyPortfolio] No user ID, skipping fetch')
+    if (!user?.id || !organizationId) {
       setLoading(false)
       return
     }
 
     const fetchPortfolioData = async () => {
       try {
-        console.log('[MyPortfolio] Fetching data for user ID:', user.id)
-        
-        const response = await apiFetch('/api/my-portfolio')
+        const response = await apiFetch(`/api/my-portfolio?organizationId=${organizationId}`)
         if (!response.ok) {
           const errorData = await response.json()
           throw new Error(errorData.error || 'Failed to fetch portfolio data')
         }
-        
+
         const data = await response.json()
-        console.log('[MyPortfolio] API response:', data)
-        
         setData(data)
       } catch (err) {
         console.error('[MyPortfolio] Error fetching portfolio data:', err)
@@ -113,7 +106,7 @@ export function useMyPortfolioData() {
     }
 
     fetchPortfolioData()
-  }, [user?.id])
+  }, [user?.id, organizationId])
 
   return { data, loading, error }
 }

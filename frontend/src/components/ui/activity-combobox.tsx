@@ -260,7 +260,7 @@ export function ActivityCombobox({
                 aria-label="Clear selection"
                 tabIndex={-1}
               >
-                <X className="h-3 w-3 text-gray-500" />
+                <X className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />

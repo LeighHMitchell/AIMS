@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuthOrVisitor } from '@/lib/auth';
 import { MYANMAR_REGIONS } from '@/data/myanmar-regions';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const { supabase, response: authResponse } = await requireAuth();
+export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {

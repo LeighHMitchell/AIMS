@@ -341,7 +341,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
                       <Link
                         href={`/activities/${item.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Link>

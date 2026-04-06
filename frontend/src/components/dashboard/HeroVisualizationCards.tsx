@@ -192,7 +192,7 @@ function ChartHelpIcon({ text }: { text: string }) {
     <TooltipProvider>
       <UITooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
           <p className="text-sm">{text}</p>

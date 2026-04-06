@@ -34,11 +34,11 @@ interface UserEditModalProps {
 }
 
 const USER_ROLES = [
-  { value: 'super_user', label: 'Super User' },
-  { value: 'government_partner_tier_1', label: 'Government Partner T1' },
-  { value: 'government_partner_tier_2', label: 'Government Partner T2' },
-  { value: 'development_partner_tier_1', label: 'Data Submission' },
-  { value: 'development_partner_tier_2', label: 'Review & Approval' },
+  { value: 'super_user', label: 'Administrator' },
+  { value: 'government_partner_tier_1', label: 'Government Manager' },
+  { value: 'government_partner_tier_2', label: 'Government Editor' },
+  { value: 'development_partner_tier_1', label: 'Partner Manager' },
+  { value: 'development_partner_tier_2', label: 'Partner Editor' },
   { value: 'orphan', label: 'Unassigned User' },
 ];
 

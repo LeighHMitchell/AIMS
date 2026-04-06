@@ -116,13 +116,13 @@ export default function WorkingGroupEditorNavigation({
               </button>{' '}
               <button
                 onClick={() => copyToClipboard(workingGroup.label || '', 'wgName')}
-                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground inline-flex items-center align-middle"
                 title="Copy Working Group Name"
               >
                 {copiedId === 'wgName' ? (
                   <Check className="w-3.5 h-3.5 text-[hsl(var(--success-icon))]" />
                 ) : (
-                  <Copy className="w-3.5 h-3.5 text-slate-400" />
+                  <Copy className="w-3.5 h-3.5" />
                 )}
               </button>
             </h2>
@@ -133,13 +133,13 @@ export default function WorkingGroupEditorNavigation({
                 </code>
                 <button
                   onClick={() => copyToClipboard(workingGroup.code || '', 'wgCode')}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground flex-shrink-0"
                   title="Copy Code"
                 >
                   {copiedId === 'wgCode' ? (
                     <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
                   ) : (
-                    <Copy className="w-3 h-3 text-slate-400" />
+                    <Copy className="w-3 h-3" />
                   )}
                 </button>
               </div>

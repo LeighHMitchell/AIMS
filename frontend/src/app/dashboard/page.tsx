@@ -28,6 +28,7 @@ import {
   Briefcase,
   ClipboardList,
   Bell,
+  Users,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
@@ -50,7 +51,9 @@ import { MyPortfolioTab } from "@/components/dashboard/MyPortfolioTab"
 import { ValidationRulesCard } from "@/components/data-clinic/ValidationRulesCard"
 import { TaskingTab } from "@/components/tasks/TaskingTab"
 import { NotificationTabs } from "@/components/NotificationTabs"
+import { MyTeamTab } from "@/components/dashboard/MyTeamTab"
 import { apiFetch } from '@/lib/api-fetch';
+import { isVisitorUser, VISITOR_BLOCKED_DASHBOARD_TABS } from '@/lib/visitor';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -60,11 +63,17 @@ export default function Dashboard() {
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
 
+  const isVisitor = isVisitorUser(user);
+
   // Sync tab with URL search params (e.g. when navigating from nav bar)
+  // For visitors, force blocked tabs to 'overview'
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab') || 'overview';
+    let tabFromUrl = searchParams.get('tab') || 'overview';
+    if (isVisitor && VISITOR_BLOCKED_DASHBOARD_TABS.includes(tabFromUrl)) {
+      tabFromUrl = 'overview';
+    }
     setActiveTab(tabFromUrl);
-  }, [searchParams]);
+  }, [searchParams, isVisitor]);
 
   // Fetch unread notification count for the tab badge
   useEffect(() => {
@@ -178,8 +187,8 @@ export default function Dashboard() {
     );
   }
 
-  // Orphan user view (no organization assigned)
-  if (!user.organizationId) {
+  // Orphan user view (no organization assigned) — skip for visitors
+  if (!user.organizationId && !isVisitor) {
     return (
       <MainLayout>
         <div className="min-h-screen">
@@ -325,25 +334,38 @@ export default function Dashboard() {
                   <LayoutDashboard className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger
-                  value="my-portfolio"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  My Portfolio
-                </TabsTrigger>
-                <TabsTrigger
-                  value="notifications"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <Bell className="h-4 w-4" />
-                  Notifications
-                  {unreadNotificationCount > 0 && (
-                    <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-xs">
-                      {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
-                    </Badge>
-                  )}
-                </TabsTrigger>
+                {!isVisitor && (
+                  <TabsTrigger
+                    value="my-portfolio"
+                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    My Portfolio
+                  </TabsTrigger>
+                )}
+                {!isVisitor && (
+                  <TabsTrigger
+                    value="my-team"
+                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Users className="h-4 w-4" />
+                    My Team
+                  </TabsTrigger>
+                )}
+                {!isVisitor && (
+                  <TabsTrigger
+                    value="notifications"
+                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Bell className="h-4 w-4" />
+                    Notifications
+                    {unreadNotificationCount > 0 && (
+                      <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-xs justify-center">
+                        {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                )}
                 <TabsTrigger
                   value="locations"
                   className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
@@ -365,20 +387,24 @@ export default function Dashboard() {
                   <ClipboardCheck className="h-4 w-4" />
                   Data Quality
                 </TabsTrigger>
-                <TabsTrigger
-                  value="bookmarks"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <Bookmark className="h-4 w-4" />
-                  Bookmarks
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tasks"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  Tasking
-                </TabsTrigger>
+                {!isVisitor && (
+                  <TabsTrigger
+                    value="bookmarks"
+                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    Bookmarks
+                  </TabsTrigger>
+                )}
+                {!isVisitor && (
+                  <TabsTrigger
+                    value="tasks"
+                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    Tasking
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               {/* Overview Tab Content */}
@@ -408,7 +434,7 @@ export default function Dashboard() {
 
                 {/* Row 5: Organisation Financial Data Tabs */}
                 <div data-tour="org-financial-data">
-                  <OrgFinancialTabs organizationId={user.organizationId} userId={user.id} />
+                  <OrgFinancialTabs organizationId={user.organizationId} userId={user.id} context="overview" />
                 </div>
               </TabsContent>
 
@@ -456,6 +482,11 @@ export default function Dashboard() {
                   canCreateTasks={user.role === USER_ROLES.SUPER_USER || permissions?.canManageOrganizations}
                   canViewAnalytics={user.role === USER_ROLES.SUPER_USER || permissions?.canManageOrganizations}
                 />
+              </TabsContent>
+
+              {/* My Team Tab Content */}
+              <TabsContent value="my-team" className="space-y-6">
+                <MyTeamTab organizationId={user.organizationId} />
               </TabsContent>
 
               {/* Notifications Tab Content */}

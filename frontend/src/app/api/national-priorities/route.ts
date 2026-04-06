@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireAuthOrVisitor } from '@/lib/auth';
 import { 
   NationalPriorityRow, 
   nationalPriorityFromRow,
@@ -12,12 +12,12 @@ import {
  * List all national priorities (optionally as a tree structure)
  */
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {
     const searchParams = request.nextUrl.searchParams;
-    
+
     // Query parameters
     const includeInactive = searchParams.get('includeInactive') === 'true';
     const asTree = searchParams.get('asTree') !== 'false'; // Default to tree

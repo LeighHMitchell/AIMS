@@ -39,6 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ActivityStatusFilterSelect } from "@/components/forms/ActivityStatusFilterSelect";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
@@ -1874,17 +1875,14 @@ const router = useRouter();
           </div>
         </div>
       ) : showEmptyState ? (
-        <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
-          <div className="space-y-4">
-            <div className="text-slate-500">No activities found</div>
-            <p className="text-sm text-slate-400">
-              {filterStatus !== "all" || filterValidation !== "all" ? 
-                "Try adjusting your filters to see more results." : 
-                "There are no activities in the system yet."
-              }
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          title="No activities found"
+          message={
+            filterStatus !== "all" || filterValidation !== "all"
+              ? "Try adjusting your filters to see more results."
+              : "There are no activities in the system yet."
+          }
+        />
       ) : viewMode === 'table' ? (
         <div className="fade-in" data-tour="activities-table">
           <div className="overflow-x-auto rounded-md ring-1 ring-border bg-card">

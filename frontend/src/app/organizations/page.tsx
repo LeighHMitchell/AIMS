@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -2130,25 +2131,21 @@ function OrganizationsPageContent() {
                       </div>
                     </div>
                   ) : searchTerm || activeFilter !== 'all' ? (
-                    <div>
-                      <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <h3 className="mt-2 text-sm font-medium text-foreground">No organizations found</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {searchTerm ? 'Try adjusting your search terms.' : 'No organizations match the current filter.'}
-                      </p>
-                    </div>
+                    <EmptyState
+                      illustration="/images/empty-roundtable.png"
+                      title="No organizations found"
+                      message={searchTerm ? 'Try adjusting your search terms.' : 'No organizations match the current filter.'}
+                    />
                   ) : (
-                    <div className="space-y-4">
-                      <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">No organizations yet</h3>
-                        <p className="text-muted-foreground mb-4">Get started by adding your first organization.</p>
-                        <Button className="mt-4" onClick={handleAddOrganization}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Organization
-                        </Button>
-                      </div>
-                    </div>
+                    <EmptyState
+                      illustration="/images/empty-roundtable.png"
+                      title="No organizations yet"
+                      message="Get started by adding your first organization."
+                      action={{
+                        label: "Add Organization",
+                        onClick: handleAddOrganization,
+                      }}
+                    />
                   )}
                 </div>
               )

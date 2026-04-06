@@ -56,6 +56,14 @@ export async function GET(request: NextRequest) {
 
     console.log('[Funding Source Breakdown] Request params:', { dateFrom, dateTo, sourceType, transactionTypes })
 
+    // Early return if no activities exist
+    const { count: activityCount } = await supabase
+      .from('activities')
+      .select('id', { count: 'exact', head: true })
+    if (!activityCount) {
+      return NextResponse.json({ providers: [], receivers: [], flows: [] })
+    }
+
     if (sourceType === 'planned') {
       // Fetch planned disbursements for all activities
       let plannedQuery = supabase

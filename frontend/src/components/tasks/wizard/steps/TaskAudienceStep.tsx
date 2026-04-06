@@ -22,11 +22,11 @@ interface TaskAudienceStepProps {
 }
 
 const AVAILABLE_ROLES = [
-  { value: 'dev_partner_tier_1', label: 'Development Partner (Tier 1)' },
-  { value: 'dev_partner_tier_2', label: 'Development Partner (Tier 2)' },
-  { value: 'gov_partner_tier_1', label: 'Government Partner (Tier 1)' },
-  { value: 'gov_partner_tier_2', label: 'Government Partner (Tier 2)' },
-  { value: 'super_user', label: 'Super User' },
+  { value: 'dev_partner_tier_1', label: 'Partner Manager' },
+  { value: 'dev_partner_tier_2', label: 'Partner Editor' },
+  { value: 'gov_partner_tier_1', label: 'Government Manager' },
+  { value: 'gov_partner_tier_2', label: 'Government Editor' },
+  { value: 'super_user', label: 'Administrator' },
 ];
 
 export function TaskAudienceStep({

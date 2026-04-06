@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell, Bookmark, FolderKanban, BarChart3, MapPin } from "lucide-react"
+import { LogOut, LogIn, UserPlus, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell, Bookmark, FolderKanban, BarChart3, MapPin } from "lucide-react"
 import { toast } from "sonner"
 import { USER_ROLES } from "@/types/user"
+import { isVisitorUser } from "@/lib/visitor"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { getCurrentModule } from "@/lib/navigation-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
@@ -106,19 +107,40 @@ export function TopNav({ user, onLogout }: TopNavProps) {
             onExpandedChange={setIsSearchExpanded}
           />
 
-          {/* Page tour */}
-          {user && <TourButton />}
+          {/* Page tour - hidden for visitors */}
+          {user && !isVisitorUser(user) && <TourButton />}
 
-          {/* Notification Bell */}
-          {user && (
+          {/* Notification Bell - hidden for visitors */}
+          {user && !isVisitorUser(user) && (
             <NotificationBell
               userId={user.id}
               onOpen={() => setIsSearchExpanded(false)}
             />
           )}
 
-          {/* User Menu */}
-          {user && (
+          {/* Visitor: Sign In / Create Account buttons */}
+          {user && isVisitorUser(user) && (
+            <div className="flex items-center gap-2">
+              <Link href="/login">
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-sm font-medium text-neutral-700 transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </button>
+              </Link>
+              <Link href="/register">
+                <button className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-neutral-900 hover:bg-black text-sm font-medium text-white transition-colors">
+                  <UserPlus className="h-4 w-4" />
+                  Create Account
+                </button>
+              </Link>
+            </div>
+          )}
+
+          {/* User Menu - only for authenticated (non-visitor) users */}
+          {user && !isVisitorUser(user) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-2 h-10 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
@@ -257,8 +279,8 @@ export function TopNav({ user, onLogout }: TopNavProps) {
             </DropdownMenu>
           )}
 
-          {/* Share Button - hidden on admin, profile, and settings pages */}
-          {user && showShareButton && (
+          {/* Share Button - hidden on admin, profile, settings pages, and for visitors */}
+          {user && !isVisitorUser(user) && showShareButton && (
             <button
               onClick={handleShare}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"

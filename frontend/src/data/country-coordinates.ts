@@ -231,20 +231,22 @@ export const COUNTRY_COORDINATES: Record<string, CountryCoordinates> = {
   TV: { code: "TV", name: "Tuvalu", center: [-7.1095, 179.1940], zoom: 10 },
 };
 
-// Default coordinates to use as fallback (Myanmar)
-export const DEFAULT_MAP_CENTER: [number, number] = [21.9162, 95.9560];
-export const DEFAULT_MAP_ZOOM = 6;
+// Generic world-center fallback when no country code is provided or found
+export const DEFAULT_MAP_CENTER: [number, number] = [20.0, 96.0];
+export const DEFAULT_MAP_ZOOM = 2;
 
 /**
- * Get map center coordinates for a country code
+ * Get map center coordinates for a country code.
+ * Callers should pass the system home country code from settings
+ * rather than relying on the generic fallback.
  * @param countryCode ISO 3166-1 alpha-2 country code
- * @returns Country coordinates or default (Myanmar) if not found
+ * @returns Country coordinates or generic world-center fallback
  */
 export function getCountryCoordinates(countryCode: string | undefined | null): CountryCoordinates {
   if (!countryCode) {
     return {
-      code: "MM",
-      name: "Myanmar",
+      code: "",
+      name: "World",
       center: DEFAULT_MAP_CENTER,
       zoom: DEFAULT_MAP_ZOOM,
     };
@@ -255,7 +257,7 @@ export function getCountryCoordinates(countryCode: string | undefined | null): C
     return coords;
   }
 
-  // Return default if country not found
+  // Return generic fallback if country code not in lookup table
   return {
     code: countryCode,
     name: countryCode,

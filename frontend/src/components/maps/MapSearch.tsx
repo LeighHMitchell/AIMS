@@ -185,7 +185,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                 className="absolute right-1 h-6 w-6 p-0 hover:bg-gray-100"
                 onClick={handleClear}
               >
-                <X className="h-3.5 w-3.5 text-gray-500" />
+                <X className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             )}
           </div>

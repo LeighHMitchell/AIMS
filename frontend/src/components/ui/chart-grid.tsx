@@ -15,7 +15,7 @@ interface ChartGridProps {
 export function ChartGrid({ children, className }: ChartGridProps) {
   return (
     <div className={cn(
-      "grid grid-cols-1 md:grid-cols-2 gap-6",
+      "grid grid-cols-1 md:grid-cols-2 gap-6 [&>*]:h-full",
       className
     )}>
       {children}

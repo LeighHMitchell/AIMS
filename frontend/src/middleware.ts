@@ -2,6 +2,30 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+// Visitor mode: paths that are blocked for unauthenticated visitors
+const VISITOR_BLOCKED_PATH_PATTERNS = [
+  /\/new(\/|$)/,        // Any /new route (activities/new, organizations/new, etc.)
+  /\/edit(\/|$)/,        // Any /edit route
+  /^\/admin/,            // Admin pages
+  /^\/profile/,          // User profile
+  /^\/iati-import/,      // IATI import
+  /^\/notifications/,    // Notifications redirect
+  /^\/activity-logs/,    // User activity logs
+]
+
+const VISITOR_BLOCKED_DASHBOARD_TABS = ['my-portfolio', 'my-team', 'notifications', 'bookmarks', 'tasks']
+
+function isVisitorPathBlocked(pathname: string, searchParams: URLSearchParams): boolean {
+  for (const pattern of VISITOR_BLOCKED_PATH_PATTERNS) {
+    if (pattern.test(pathname)) return true
+  }
+  if (pathname === '/dashboard') {
+    const tab = searchParams.get('tab')
+    if (tab && VISITOR_BLOCKED_DASHBOARD_TABS.includes(tab)) return true
+  }
+  return false
+}
+
 const ALLOWED_ORIGINS = new Set(
   (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000')
     .split(',')
@@ -23,6 +47,16 @@ export async function middleware(request: NextRequest) {
   })
 
   const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+  const pathname = request.nextUrl.pathname
+
+  // Visitor mode route protection
+  const isVisitor = request.cookies.get('aims_visitor_mode')?.value === 'true'
+  if (isVisitor && !isApiRoute) {
+    const isBlocked = isVisitorPathBlocked(pathname, request.nextUrl.searchParams)
+    if (isBlocked) {
+      return NextResponse.redirect(new URL('/visitor', request.url))
+    }
+  }
 
   // Refresh Supabase session cookies so server-side auth stays valid.
   // Use a 5s timeout to prevent MIDDLEWARE_INVOCATION_TIMEOUT on slow edges.

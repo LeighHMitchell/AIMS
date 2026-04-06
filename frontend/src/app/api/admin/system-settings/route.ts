@@ -27,7 +27,7 @@ export async function GET() {
       if (error.code === 'PGRST116' || error.message.includes('relation "system_settings" does not exist')) {
         console.log('[System Settings] Table does not exist, returning defaults')
         return NextResponse.json({
-          homeCountry: 'RW',
+          homeCountry: 'MM',
           defaultLanguage: 'en',
           defaultCurrency: 'USD'
         })
@@ -43,7 +43,7 @@ export async function GET() {
     if (!settings) {
       console.log('[System Settings] No settings found, returning defaults')
       return NextResponse.json({
-        homeCountry: 'RW',
+        homeCountry: 'MM',
         defaultLanguage: 'en',
         defaultCurrency: 'USD'
       })
@@ -52,14 +52,14 @@ export async function GET() {
     console.log('[System Settings] Successfully fetched settings:', settings)
     // Handle case where new columns might not exist yet
     return NextResponse.json({
-      homeCountry: settings.home_country || 'RW',
+      homeCountry: settings.home_country || 'MM',
       defaultLanguage: settings.default_language || 'en',
       defaultCurrency: settings.default_currency || 'USD'
     })
   } catch (error) {
     console.error('[System Settings] Unexpected error in GET:', error)
     return NextResponse.json(
-      { homeCountry: 'RW', defaultLanguage: 'en', defaultCurrency: 'USD' }, // Return defaults on any error
+      { homeCountry: 'MM', defaultLanguage: 'en', defaultCurrency: 'USD' }, // Return defaults on any error
       { status: 200 }
     )
   }

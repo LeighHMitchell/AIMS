@@ -15,23 +15,27 @@ interface GlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   asChild?: boolean
 }
 
-function GlassButton({ children, size, asChild = false, className, ...props }: GlassButtonProps) {
-  return (
-    <Button
-      size={size}
-      asChild={asChild}
-      className={cn(
-        'glass-button',
-        size === 'lg' && 'text-base',
-        'relative inline-flex shrink-0 rounded-lg !text-white',
+const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
+  ({ children, size, asChild = false, className, ...props }, ref) => {
+    return (
+      <Button
+        ref={ref}
+        size={size}
+        asChild={asChild}
+        className={cn(
+          'glass-button',
+          size === 'lg' && 'text-base',
+          'relative inline-flex shrink-0 rounded-lg !text-white',
 
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </Button>
-  )
-}
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </Button>
+    )
+  }
+)
+GlassButton.displayName = 'GlassButton'
 
 export { GlassButton, type GlassButtonProps }

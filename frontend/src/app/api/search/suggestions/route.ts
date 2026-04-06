@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
+import { requireAuthOrVisitor } from '@/lib/auth'
 import { createSupabaseClient } from '@/lib/supabase-simple'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
@@ -27,7 +27,7 @@ interface RPCSuggestion {
 }
 
 export async function GET(request: NextRequest) {
-  const { response: authResponse } = await requireAuth()
+  const { response: authResponse } = await requireAuthOrVisitor(request)
   if (authResponse) return authResponse
 
   const startTime = Date.now()

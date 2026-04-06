@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireAuthOrVisitor } from '@/lib/auth';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -13,7 +13,7 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   if (!supabase) {

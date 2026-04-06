@@ -5,15 +5,17 @@ export const USER_ROLES = {
   GOV_PARTNER_TIER_1: "gov_partner_tier_1", 
   GOV_PARTNER_TIER_2: "gov_partner_tier_2",
   PUBLIC_USER: "public_user", // Read-only access for OAuth users
+  VISITOR: "visitor", // Unauthenticated read-only browsing
 } as const;
 
 export const ROLE_LABELS = {
-  [USER_ROLES.SUPER_USER]: "Super User",
-  [USER_ROLES.DEV_PARTNER_TIER_1]: "Development Partner - Tier 1",
-  [USER_ROLES.DEV_PARTNER_TIER_2]: "Development Partner - Tier 2",
-  [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner - Tier 1",
-  [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner - Tier 2",
-  [USER_ROLES.PUBLIC_USER]: "Public User",
+  [USER_ROLES.SUPER_USER]: "Administrator",
+  [USER_ROLES.DEV_PARTNER_TIER_1]: "Partner Manager",
+  [USER_ROLES.DEV_PARTNER_TIER_2]: "Partner Editor",
+  [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Manager",
+  [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Editor",
+  [USER_ROLES.PUBLIC_USER]: "Viewer",
+  [USER_ROLES.VISITOR]: "Visitor",
   'admin': "Administrator", // Legacy admin role
 } as const;
 
@@ -178,6 +180,20 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageOrganizations: false,
         canEditAllActivities: false,
         canViewAllActivities: true,
+        canCreateProjects: false,
+        canCreateParcels: false,
+        canManageParcels: false,
+        canRequestAllocation: false,
+      };
+
+    case USER_ROLES.VISITOR:
+      return {
+        canCreateActivities: false,
+        canValidateActivities: false,
+        canManageUsers: false,
+        canManageOrganizations: false,
+        canEditAllActivities: false,
+        canViewAllActivities: false,
         canCreateProjects: false,
         canCreateParcels: false,
         canManageParcels: false,

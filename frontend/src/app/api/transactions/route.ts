@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { TransactionType } from '@/types/transaction';
 import { createSupabaseClient } from '@/lib/supabase-simple';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
@@ -73,7 +74,8 @@ async function fetchAllLinkedTransactions(
           default_flow_type,
           default_tied_status,
           created_by_org_name,
-          created_by_org_acronym
+          created_by_org_acronym,
+          reporting_org_id
         ),
         provider_organization:organizations!provider_org_id (
           id,
@@ -154,6 +156,8 @@ export async function GET(request: Request) {
     const dateTo = searchParams.get('dateTo');
     const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
     const transactionSource = searchParams.get('transactionSource') || 'all';
+    const reportedByOrg = searchParams.get('reportedByOrg'); // 'self' | 'other' — filter by reporting org
+    const reportedByUser = searchParams.get('reportedByUser'); // userId — filter by created_by
     
     // Find activity IDs matching the search term (for activity title search)
     // SECURITY: Escape ILIKE wildcards to prevent filter injection
@@ -187,7 +191,8 @@ export async function GET(request: Request) {
           default_flow_type,
           default_tied_status,
           created_by_org_name,
-          created_by_org_acronym
+          created_by_org_acronym,
+          reporting_org_id
         ),
         provider_organization:organizations!provider_org_id (
           id,
@@ -226,9 +231,45 @@ export async function GET(request: Request) {
       query = query.eq('status', status);
     }
 
-    // Organization filter - filter by provider or receiver org
+    // Organization filter - include transactions where org is provider, receiver, OR reporting org
+    let reportingActivityIds: string[] = [];
     if (organizations.length > 0) {
-      query = query.or(`provider_org_id.in.(${organizations.join(',')}),receiver_org_id.in.(${organizations.join(',')})`);
+      // Find activity IDs where the org is the reporting org
+      const { data: reportingOrgActivities } = await supabase
+        .from('activities')
+        .select('id')
+        .in('reporting_org_id', organizations);
+      reportingActivityIds = (reportingOrgActivities || []).map((a: { id: string }) => a.id);
+
+      // Apply reportedByOrg filter: 'self' = only own activities, 'other' = only where org is party but not reporter
+      if (reportedByOrg === 'self') {
+        // Only transactions on the org's own activities
+        if (reportingActivityIds.length > 0) {
+          query = query.in('activity_id', reportingActivityIds);
+        } else {
+          query = query.in('activity_id', ['__none__']); // No results
+        }
+      } else if (reportedByOrg === 'other') {
+        // Only transactions where org is provider/receiver but NOT on their own activities
+        query = query.or(`provider_org_id.in.(${organizations.join(',')}),receiver_org_id.in.(${organizations.join(',')})`);
+        if (reportingActivityIds.length > 0) {
+          query = query.not('activity_id', 'in', `(${reportingActivityIds.join(',')})`);
+        }
+      } else {
+        // 'all' — include everything involving this org
+        if (reportingActivityIds.length > 0) {
+          query = query.or(
+            `provider_org_id.in.(${organizations.join(',')}),receiver_org_id.in.(${organizations.join(',')}),activity_id.in.(${reportingActivityIds.join(',')})`
+          );
+        } else {
+          query = query.or(`provider_org_id.in.(${organizations.join(',')}),receiver_org_id.in.(${organizations.join(',')})`);
+        }
+      }
+    }
+
+    // Filter by specific user (created_by)
+    if (reportedByUser) {
+      query = query.eq('created_by', reportedByUser);
     }
     
     if (dateFrom) {
@@ -401,6 +442,51 @@ export async function GET(request: Request) {
       }
     }
 
+    // Fallback: fetch activities via admin client for any transactions where the RLS-scoped join returned null
+    const adminSupabase = getSupabaseAdmin();
+    const missingActivityIds = Array.from(new Set(
+      paginatedTransactions
+        .filter((t: any) => !t.activity && t.activity_id)
+        .map((t: any) => t.activity_id)
+    )) as string[];
+
+    if (missingActivityIds.length > 0) {
+      const { data: fallbackActivities } = await adminSupabase
+        .from('activities')
+        .select('id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym')
+        .in('id', missingActivityIds);
+
+      if (fallbackActivities) {
+        const fallbackMap = Object.fromEntries(fallbackActivities.map((a: any) => [a.id, a]));
+        paginatedTransactions.forEach((t: any) => {
+          if (!t.activity && t.activity_id && fallbackMap[t.activity_id]) {
+            t.activity = fallbackMap[t.activity_id];
+          }
+        });
+      }
+    }
+
+    // Batch-fetch reporting organizations for all transactions
+    const reportingOrgIds = Array.from(new Set(
+      paginatedTransactions
+        .map((t: any) => t.activity?.reporting_org_id)
+        .filter(Boolean)
+    )) as string[];
+
+    let reportingOrgsMap: Record<string, { id: string; name: string; acronym: string | null; logo: string | null }> = {};
+    if (reportingOrgIds.length > 0) {
+      const { data: reportingOrgs } = await adminSupabase
+        .from('organizations')
+        .select('id, name, acronym, logo')
+        .in('id', reportingOrgIds);
+
+      if (reportingOrgs) {
+        reportingOrgs.forEach((org: any) => {
+          reportingOrgsMap[org.id] = org;
+        });
+      }
+    }
+
     // Transform the data for frontend compatibility
     const transformedTransactions = paginatedTransactions.map((t: any) => ({
       ...t,
@@ -417,6 +503,11 @@ export async function GET(request: Request) {
       // Include organization logos
       provider_org_logo: t.provider_organization?.logo,
       receiver_org_logo: t.receiver_organization?.logo,
+      // Include reporting organization info
+      reporting_org_id: t.activity?.reporting_org_id || null,
+      reporting_org_name: reportingOrgsMap[t.activity?.reporting_org_id]?.name || null,
+      reporting_org_acronym: reportingOrgsMap[t.activity?.reporting_org_id]?.acronym || null,
+      reporting_org_logo: reportingOrgsMap[t.activity?.reporting_org_id]?.logo || null,
       // Include sector lines and aid type lines
       sectors: sectorLinesMap[t.uuid] || [],
       aid_types: aidTypeLinesMap[t.uuid] || [],

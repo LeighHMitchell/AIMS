@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -1375,10 +1375,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                         otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                       }}
-                      className="p-1 hover:bg-muted rounded"
+                      className="p-1 hover:bg-red-50 rounded"
                       title="Delete identifier"
                     >
-                      <X className="w-3.5 h-3.5 text-muted-foreground hover:text-red-600" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
                     </button>
                   </div>
                 </div>
@@ -1394,7 +1394,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           size="sm"
           onClick={() => {
             setEditingIdentifierIndex(null);
-            setOtherIdentifierForm({ label: '', code: '', type: '', ownerOrgId: '', ownerOrgNarrative: '', ownerOrgRef: '' });
+            const userOrgId = user?.organizationId || '';
+            const userOrg = userOrgId ? organizations.find((o: any) => o.id === userOrgId) : null;
+            setOtherIdentifierForm({
+              label: '',
+              code: '',
+              type: '',
+              ownerOrgId: userOrgId,
+              ownerOrgNarrative: userOrg ? (userOrg.name || '') : '',
+              ownerOrgRef: userOrg ? (userOrg.iati_org_id || userOrg.iati_identifier || '') : ''
+            });
             setShowIdentifierTypeDropdown(false);
             setShowOtherIdentifierModal(true);
           }}
@@ -1411,14 +1420,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         setShowOtherIdentifierModal(open);
         if (!open) setShowIdentifierTypeDropdown(false);
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl min-h-[60vh] max-h-[95vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{editingIdentifierIndex !== null ? 'Edit Other Identifier' : 'Add Other Identifier'}</DialogTitle>
             <DialogDescription>
               Enter the details for this identifier.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground flex items-center gap-1">
                 Label/Name
@@ -1448,18 +1457,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 Identifier Type
                 <HelpTextTooltip>The IATI classification for this identifier. Common types include internal activity identifiers (A1), CRS activity identifiers (A2), and previous activity identifiers (A3).</HelpTextTooltip>
               </label>
-              <div
-                className="relative"
-                onBlur={(e) => {
-                  // Close dropdown if focus moves outside the container
-                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                    setShowIdentifierTypeDropdown(false);
-                  }
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowIdentifierTypeDropdown(!showIdentifierTypeDropdown)}
+              <Popover open={showIdentifierTypeDropdown} onOpenChange={setShowIdentifierTypeDropdown}>
+                <PopoverTrigger
                   className="relative flex h-10 w-full items-center rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted/50"
                 >
                   {otherIdentifierForm.type ? (
@@ -1475,39 +1474,26 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     <span className="text-muted-foreground">Select identifier type...</span>
                   )}
                   <ChevronDown className={`absolute right-3 h-4 w-4 text-muted-foreground transition-transform ${showIdentifierTypeDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                {showIdentifierTypeDropdown && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowIdentifierTypeDropdown(false)}
-                    />
-                    <div
-                      className="absolute top-full left-0 right-0 mt-1 bg-card rounded-md shadow-lg z-50 max-h-60 overflow-y-auto"
-                      style={{ border: '1px solid #d1d5db' }}
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 max-h-[400px] overflow-y-auto" align="start" sideOffset={4}>
+                  {OTHER_IDENTIFIER_TYPES.map((type) => (
+                    <button
+                      key={type.code}
+                      type="button"
+                      onClick={() => {
+                        setOtherIdentifierForm(prev => ({ ...prev, type: type.code }));
+                        setShowIdentifierTypeDropdown(false);
+                      }}
+                      className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm rounded-md hover:bg-muted ${otherIdentifierForm.type === type.code ? 'bg-muted' : ''}`}
                     >
-                      <div className="p-1">
-                        {OTHER_IDENTIFIER_TYPES.map((type) => (
-                          <button
-                            key={type.code}
-                            type="button"
-                            onClick={() => {
-                              setOtherIdentifierForm(prev => ({ ...prev, type: type.code }));
-                              setShowIdentifierTypeDropdown(false);
-                            }}
-                            className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm rounded-md hover:bg-muted ${otherIdentifierForm.type === type.code ? 'bg-muted' : ''}`}
-                          >
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                              {type.code}
-                            </span>
-                            <span className="text-foreground">{type.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {type.code}
+                      </span>
+                      <span className="text-foreground">{type.name}</span>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground flex items-center gap-1">
@@ -1528,20 +1514,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }}
                 placeholder="Select organisation..."
                 searchPlaceholder="Search organisations..."
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
-                Owner Organisation Ref
-                <HelpTextTooltip>The organisation identifier (e.g. IATI org ID) of the organisation that owns this identifier. This is automatically filled when you select an organisation above.</HelpTextTooltip>
-              </label>
-              <Input
-                type="text"
-                value={otherIdentifierForm.ownerOrgRef}
-                onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, ownerOrgRef: e.target.value }))}
-                placeholder="e.g., XM-DAC-5-1"
-                readOnly
-                className="bg-muted/50"
               />
             </div>
           </div>
@@ -2518,7 +2490,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <div className="relative">
                     <Input
                       type="text"
-                      value={customDate.date ? format(new Date(customDate.date), 'dd MMM yyyy') : ''}
+                      value={customDate.date ? format(new Date(customDate.date), 'd MMMM yyyy') : ''}
                       readOnly
                       className="cursor-pointer pr-14"
                       placeholder="No date set"
@@ -2558,10 +2530,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                           setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
                           customDatesAutosave.triggerFieldSave(updatedDates);
                         }}
-                        className="p-1 hover:bg-muted rounded"
+                        className="p-1 hover:bg-red-50 rounded"
                         title="Delete date"
                       >
-                        <X className="w-3.5 h-3.5 text-muted-foreground hover:text-red-600" />
+                        <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
                       </button>
                     </div>
                   </div>
@@ -2614,10 +2586,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Date</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={activityDateForm.date}
-                onChange={(e) => setActivityDateForm(prev => ({ ...prev, date: e.target.value }))}
+                onChange={(value) => setActivityDateForm(prev => ({ ...prev, date: value }))}
+                placeholder="Select date"
               />
             </div>
             <div className="space-y-2">
@@ -5373,38 +5345,49 @@ function NewActivityPageContent() {
             <div className="bg-card p-4">
               <div className="space-y-2 text-sm">
                 <div className="mb-3">
-                    <Link
-                      href={`/activities/${general.id}`}
-                      className="text-lg font-semibold text-foreground leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
-                      title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
-                    >
-                      {general.title || 'Untitled Activity'}
-                      {general.acronym && <span> ({general.acronym})</span>}
-                    </Link>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const titleText = `${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`;
-                        navigator.clipboard.writeText(titleText);
-                        toast.success('Activity title copied to clipboard');
-                      }}
-                      className="ml-1 p-1 hover:bg-muted rounded transition-colors inline-flex items-center align-middle"
-                      title="Copy activity title"
-                    >
-                      <Copy className="h-4 w-4 text-muted-foreground" />
-                    </button>
+                    <span className="group/title inline">
+                      <Link
+                        href={`/activities/${general.id}`}
+                        className="text-lg font-semibold text-foreground leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
+                        title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
+                      >
+                        {general.title || 'Untitled Activity'}
+                        {general.acronym && <span> ({general.acronym})</span>}
+                      </Link>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const titleText = `${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`;
+                          navigator.clipboard.writeText(titleText);
+                          toast.success('Activity title copied to clipboard');
+                        }}
+                        className="ml-1 p-1 hover:bg-muted rounded transition-colors inline-flex items-center align-middle opacity-0 group-hover/title:opacity-100"
+                        title="Copy activity title"
+                      >
+                        <Copy className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </span>
                     {/* Activity Identifier and IATI ID */}
-                    <div className="mt-2 space-y-1">
-                      {general.partner_id && (
-                        <div className="text-xs">
-                          <span className="text-muted-foreground">Activity Identifier: </span>
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap text-xs">
+                      {(general.otherIdentifier || general.partner_id) && (
+                        <span className="group/actid inline-flex items-center gap-0.5">
                           <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
-                            {general.partner_id}
+                            {general.otherIdentifier || general.partner_id}
                           </code>
-                        </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(general.otherIdentifier || general.partner_id);
+                              toast.success('Activity ID copied to clipboard');
+                            }}
+                            className="p-1 hover:bg-muted rounded transition-colors inline-flex items-center opacity-0 group-hover/actid:opacity-100"
+                            title="Copy Activity ID"
+                          >
+                            <Copy className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        </span>
                       )}
                       {general.iatiIdentifier && (
-                        <div className="text-xs">
+                        <span className="group/iatiid inline-flex items-center gap-0.5">
                           <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
                             {general.iatiIdentifier}
                           </code>
@@ -5413,22 +5396,15 @@ function NewActivityPageContent() {
                               navigator.clipboard.writeText(general.iatiIdentifier);
                               toast.success('IATI ID copied to clipboard');
                             }}
-                            className="ml-1 p-1 hover:bg-muted rounded transition-colors inline-flex items-center align-middle"
+                            className="p-1 hover:bg-muted rounded transition-colors inline-flex items-center opacity-0 group-hover/iatiid:opacity-100"
                             title="Copy IATI ID"
                           >
                             <Copy className="h-3 w-3 text-muted-foreground" />
                           </button>
-                        </div>
+                        </span>
                       )}
                     </div>
-                    <button
-                      onClick={() => setShowActivityMetadata(!showActivityMetadata)}
-                      className="text-xs text-muted-foreground hover:text-foreground mt-2"
-                    >
-                      {showActivityMetadata ? 'Show less' : 'Show more'}
-                    </button>
                   </div>
-                  {/* Autosave Status Indicator removed per UX request */}
                   {/* Publication Status Badge */}
                   <div className="mt-2 flex items-center gap-2">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
@@ -5467,36 +5443,35 @@ function NewActivityPageContent() {
                     </div>
                   )}
                   {showActivityMetadata && (
-                    <div className="space-y-3 text-sm">
-                      <div>
-                        <p className="font-semibold">
-                          Reported by {(() => {
-                            if (general.created_by_org_name && general.created_by_org_acronym) {
-                              return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
-                            }
-                            return general.created_by_org_name || general.created_by_org_acronym || "Unknown Organization";
-                          })()}
-                        </p>
-                        <p className="text-muted-foreground mt-1">
-                          Submitted by {(() => {
-                            // Format user name with position/role
-                            if (general.createdBy?.name) {
-                              const name = general.createdBy.name;
-                              const position = (general.createdBy as any)?.jobTitle || (general.createdBy as any)?.title;
-                              return position ? `${name}, ${position}` : name;
-                            }
-                            // Fallback to current user info with position/role
-                            if (user?.name) {
-                              const name = user.name;
-                              const position = (user as any)?.jobTitle || (user as any)?.title;
-                              return position ? `${name}, ${position}` : name;
-                            }
-                            return "Unknown User";
-                          })()} on {general.createdAt ? format(new Date(general.createdAt), "d MMMM yyyy") : "Unknown date"}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Created by {general.createdBy?.name || user?.name || "Unknown User"}
+                      {(() => {
+                        const jobTitle = (general.createdBy as any)?.jobTitle || (general.createdBy as any)?.title || user?.jobTitle || (user as any)?.title;
+                        const department = (general.createdBy as any)?.department || user?.department;
+                        const parts = [jobTitle, department].filter(Boolean);
+                        return parts.length > 0 ? `, ${parts.join(', ')}` : '';
+                      })()}
+                      {(() => {
+                        const acronym = general.created_by_org_acronym;
+                        const fullName = general.created_by_org_name;
+                        const displayName = acronym || fullName;
+                        if (!displayName) return null;
+                        if (acronym && fullName && acronym !== fullName) {
+                          return (
+                            <>, <TooltipProvider><Tooltip><TooltipTrigger asChild><span className="cursor-help">{acronym}</span></TooltipTrigger><TooltipContent><p>{fullName}</p></TooltipContent></Tooltip></TooltipProvider></>
+                          );
+                        }
+                        return <>, {displayName}</>;
+                      })()}
+                      {general.createdAt ? ` on ${format(new Date(general.createdAt), "d MMMM yyyy 'at' h:mm a")}` : ''}
+                    </p>
                   )}
+                  <button
+                    onClick={() => setShowActivityMetadata(!showActivityMetadata)}
+                    className="text-xs text-muted-foreground hover:text-foreground mt-2"
+                  >
+                    {showActivityMetadata ? 'Show less' : 'Show more'}
+                  </button>
                 </div>
               </div>
             )}

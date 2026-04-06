@@ -34,7 +34,7 @@ interface HeroCardProps<T = any> {
   className?: string;
   animate?: boolean;
   onValueChange?: (newValue: number) => void;
-  variant?: 'default' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'error-text';
   helpText?: string;
   // Legacy support for simple value prop
   value?: string | number;
@@ -191,6 +191,11 @@ export function HeroCard<T = any>({
           cardClass: 'bg-red-50',
           valueClass: 'text-red-600'
         };
+      case 'error-text':
+        return {
+          cardClass: 'bg-white',
+          valueClass: 'text-red-600'
+        };
       case 'warning':
         return {
           cardClass: 'bg-yellow-50',
@@ -227,7 +232,7 @@ export function HeroCard<T = any>({
                 {helpText && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                      <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <div className="text-sm whitespace-pre-line">{helpText}</div>

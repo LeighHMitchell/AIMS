@@ -127,7 +127,7 @@ export function LanguageSelect({
             <CommandList>
               {searchQuery ? (
                 // Flat filtered list when searching
-                <CommandGroup>
+                <CommandGroup className="p-0">
                   {filteredLanguages.map((lang) => (
                     <CommandItem
                       key={lang.code}
@@ -136,17 +136,12 @@ export function LanguageSelect({
                         setIsOpen(false);
                         setSearchQuery("");
                       }}
-                      className="cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left"
+                      className="cursor-pointer py-2 px-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left rounded-none"
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === lang.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{lang.code.toUpperCase()}</span>
                         <span className="font-medium text-foreground">{lang.name}</span>
+                        {value === lang.code && <Check className="h-4 w-4 text-foreground" />}
                       </div>
                     </CommandItem>
                   ))}
@@ -156,8 +151,8 @@ export function LanguageSelect({
                   {/* Common Languages section */}
                   {pinnedLanguages.length > 0 && (
                     <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">Common Languages</div>
-                      <CommandGroup>
+                      <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">Common Languages</div>
+                      <CommandGroup className="p-0">
                         {pinnedLanguages.map((lang) => (
                           <CommandItem
                             key={lang.code}
@@ -166,17 +161,12 @@ export function LanguageSelect({
                               setIsOpen(false);
                               setSearchQuery("");
                             }}
-                            className="cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left"
+                            className="cursor-pointer py-2 px-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left rounded-none"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                value === lang.code ? "opacity-100" : "opacity-0"
-                              )}
-                            />
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{lang.code.toUpperCase()}</span>
                               <span className="font-medium text-foreground">{lang.name}</span>
+                              {value === lang.code && <Check className="h-4 w-4 text-foreground" />}
                             </div>
                           </CommandItem>
                         ))}
@@ -185,8 +175,8 @@ export function LanguageSelect({
                     </>
                   )}
                   {/* All Languages section */}
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">All Languages</div>
-                  <CommandGroup>
+                  <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">All Languages</div>
+                  <CommandGroup className="p-0">
                     {otherLanguages.map((lang) => (
                       <CommandItem
                         key={lang.code}
@@ -195,17 +185,12 @@ export function LanguageSelect({
                           setIsOpen(false);
                           setSearchQuery("");
                         }}
-                        className="cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left"
+                        className="cursor-pointer py-2 px-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left rounded-none"
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === lang.code ? "opacity-100" : "opacity-0"
-                          )}
-                        />
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{lang.code.toUpperCase()}</span>
                           <span className="font-medium text-foreground">{lang.name}</span>
+                          {value === lang.code && <Check className="h-4 w-4 text-foreground" />}
                         </div>
                       </CommandItem>
                     ))}

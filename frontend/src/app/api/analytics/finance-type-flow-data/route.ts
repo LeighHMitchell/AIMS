@@ -80,6 +80,19 @@ export async function GET(request: NextRequest) {
 
     console.log('[FinanceTypeFlowData API] Fetching data with params:', { dateFrom, dateTo, organizationId })
 
+    // Early return if no activities exist
+    const { count: activityCount } = await supabase
+      .from('activities')
+      .select('id', { count: 'exact', head: true })
+    if (!activityCount) {
+      return NextResponse.json({
+        transactions: [],
+        flowTypes: [],
+        financeTypes: [],
+        totalCount: 0
+      })
+    }
+
     // If organizationId provided, get activity IDs where org is reporting org
     let activityIds: string[] | null = null
     if (organizationId) {

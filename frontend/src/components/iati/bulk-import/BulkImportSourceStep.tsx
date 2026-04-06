@@ -1011,9 +1011,6 @@ export default function BulkImportSourceStep({
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gray-100 rounded-full">
-                      <Globe className="h-6 w-6 text-gray-600" />
-                    </div>
                     <div>
                       <h3 className="font-semibold text-lg text-gray-900">
                         Fetch IATI Activities
@@ -1066,7 +1063,7 @@ export default function BulkImportSourceStep({
                                     className="p-1 hover:bg-gray-100 rounded"
                                     title="Clear country filter"
                                   >
-                                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                    <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                   </button>
                                 )}
                                 <ChevronsUpDown className="h-4 w-4 opacity-50" />
@@ -1529,7 +1526,7 @@ export default function BulkImportSourceStep({
               {isSuperUser ? (
                 <span className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="text-xs text-white border-0" style={{ backgroundColor: '#DC2625' }}>
-                    {ROLE_LABELS[user?.role as keyof typeof ROLE_LABELS] || 'Super User'}
+                    {ROLE_LABELS[user?.role as keyof typeof ROLE_LABELS] || 'Administrator'}
                   </Badge>
                   You can fetch IATI activities for any organisation with an IATI identifier.
                   Select an organisation above and click <strong>Fetch Activities</strong> to search the IATI Registry.

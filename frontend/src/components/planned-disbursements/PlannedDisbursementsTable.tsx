@@ -282,11 +282,7 @@ export function PlannedDisbursementsTable({
   }
 
   if (disbursements.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-gray-600">No planned disbursements found</p>
-      </div>
-    );
+    return <EmptyState illustration="/images/empty-hourglass.png" message="No planned disbursements found" />;
   }
 
   // Build header map

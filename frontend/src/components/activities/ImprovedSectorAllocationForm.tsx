@@ -283,6 +283,7 @@ function ImprovedSectorAllocationFormInner({
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [showVisualization, setShowVisualization] = useState(false);
 
   // User action tracking for toast notifications
   const userActionInProgressRef = useRef(false);
@@ -646,10 +647,6 @@ function ImprovedSectorAllocationFormInner({
   const calculateValidation = (allocs: SectorAllocation[], showEmptyWarning: boolean = true): SectorValidation => {
     const errors: string[] = [];
     const totalPercentage = allocs.reduce((sum, a) => sum + (a.percentage || 0), 0);
-
-    if (showEmptyWarning && allocs.length === 0) {
-      errors.push('At least one sector must be selected');
-    }
 
     if (allocs.length > 0 && totalPercentage === 0) {
       errors.push('At least one sector must have a percentage greater than 0');
@@ -1048,7 +1045,7 @@ function ImprovedSectorAllocationFormInner({
                 currency=""
                 suffix="%"
                 subtitle="Remaining allocation"
-                variant={totalUnallocated > 0 ? 'error' : 'default'}
+                variant={totalUnallocated > 0 ? 'error-text' : 'default'}
               />
             </TooltipTrigger>
             <TooltipContent>
@@ -1312,11 +1309,11 @@ function ImprovedSectorAllocationFormInner({
 
         {/* Visualization - Interactive Charts (collapsed by default) */}
         {allocations.length > 0 && (
-          <Collapsible>
+          <Collapsible onOpenChange={setShowVisualization}>
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <BarChart2 className="h-4 w-4" />
-                Show Allocation Visualization
+                {showVisualization ? 'Hide Allocation Visualization' : 'Show Allocation Visualization'}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">

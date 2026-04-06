@@ -121,7 +121,7 @@ export function CompactChartCard({
   return (
     <>
       {/* Compact Card View */}
-      <Card className={cn("bg-white border-slate-200", className)}>
+      <Card className={cn("bg-white border-slate-200 flex flex-col", className)}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -143,8 +143,8 @@ export function CompactChartCard({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div style={{ height: compactHeight }} className="overflow-hidden">
+        <CardContent className="pt-0 flex-1">
+          <div style={{ minHeight: compactHeight }} className="overflow-hidden">
             {renderChart(true)}
           </div>
         </CardContent>

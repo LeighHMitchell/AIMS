@@ -61,7 +61,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
   }
 
   return (
-    <Card className={`transition-all ${isArchived ? "opacity-50 bg-muted/30" : notification.isRead ? "opacity-75" : "border-blue-200 bg-blue-50/50"}`}>
+    <Card className={`transition-all ${isArchived ? "opacity-50 bg-muted/30" : notification.isRead ? "opacity-75" : "border-border bg-muted/40"}`}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           {/* Icon */}
@@ -96,26 +96,6 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     </p>
                   )
                 })()}
-                {notification.activityId && (
-                  <Link
-                    href={`/activities/${notification.activityId}`}
-                    className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-                  >
-                    View Activity
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                )}
-                {!notification.activityId && notification.link && (
-                  <Link
-                    href={notification.link}
-                    className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-                  >
-                    {notification.link.includes('/tasks') ? 'View Task' :
-                     notification.link.includes('/admin') ? 'View in Admin' :
-                     'View Details'}
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                )}
               </div>
 
               {/* Actions */}
@@ -136,7 +116,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     variant="ghost"
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); onUnarchive(notification.id); }}
-                    className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                     title="Unarchive"
                   >
                     <ArchiveRestore className="h-3.5 w-3.5" />
@@ -146,7 +126,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     variant="ghost"
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); onArchive(notification.id); }}
-                    className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                     title="Archive"
                   >
                     <Archive className="h-3.5 w-3.5" />
@@ -157,27 +137,49 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     variant="ghost"
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}
-                    className="h-7 w-7 p-0 text-slate-400 hover:text-red-600"
+                    className="h-7 w-7 p-0 text-destructive hover:text-red-700"
                     title="Delete permanently"
                   >
-                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* Meta */}
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-gray-500">{timeAgo}</span>
-              {notification.isRead ? (
-                <Badge variant="outline" className="text-xs h-5">
-                  Read
-                </Badge>
-              ) : (
-                <Badge variant="default" className="text-xs h-5">
-                  New
-                </Badge>
-              )}
+            {/* Footer: View link + meta */}
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2">
+                {notification.activityId && (
+                  <Link
+                    href={`/activities/${notification.activityId}`}
+                    className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                  >
+                    View Activity
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+                {!notification.activityId && notification.link && (
+                  <Link
+                    href={notification.link}
+                    className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                  >
+                    {notification.link.includes('/tasks') ? 'View Task' :
+                     notification.link.includes('/admin') ? 'View in Admin' :
+                     'View Details'}
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+                {notification.isRead ? (
+                  <Badge variant="outline" className="text-xs h-5">
+                    Read
+                  </Badge>
+                ) : (
+                  <Badge variant="default" className="text-xs h-5">
+                    New
+                  </Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">{timeAgo}</span>
             </div>
           </div>
         </div>

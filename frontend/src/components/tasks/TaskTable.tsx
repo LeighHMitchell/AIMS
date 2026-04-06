@@ -226,7 +226,7 @@ export function TaskTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[35%]">
+            <TableHead className="w-[30%]">
               <Button
                 variant="ghost"
                 size="sm"
@@ -237,7 +237,7 @@ export function TaskTable({
                 <SortIcon field="task" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[90px]">
               <Button
                 variant="ghost"
                 size="sm"
@@ -248,7 +248,7 @@ export function TaskTable({
                 <SortIcon field="priority" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[110px]">
               <Button
                 variant="ghost"
                 size="sm"
@@ -259,7 +259,7 @@ export function TaskTable({
                 <SortIcon field="status" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[120px]">
               <Button
                 variant="ghost"
                 size="sm"
@@ -270,7 +270,7 @@ export function TaskTable({
                 <SortIcon field="deadline" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[20%]">
               <Button
                 variant="ghost"
                 size="sm"
@@ -281,8 +281,8 @@ export function TaskTable({
                 <SortIcon field="person" />
               </Button>
             </TableHead>
-            <TableHead className="w-[120px]">Attachments</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableHead className="w-[80px]">Attachments</TableHead>
+            <TableHead className="w-[60px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -345,18 +345,22 @@ export function TaskTable({
                 </TableCell>
 
                 <TableCell>
-                  <Badge variant="outline" className={cn('text-xs', getPriorityColor(task.priority))}>
+                  <span className={cn('text-sm', {
+                    'text-[#DC2625] font-medium': task.priority === 'high',
+                    'text-foreground': task.priority === 'medium',
+                    'text-muted-foreground': task.priority === 'low',
+                  })}>
                     {getPriorityLabel(task.priority)}
-                  </Badge>
+                  </span>
                 </TableCell>
 
                 <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Badge variant="outline" className={cn('text-xs', getStatusColor(assignment.status))}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">
                       {getStatusLabel(assignment.status)}
-                    </Badge>
+                    </span>
                     {isOverdue && (
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
                     )}
                   </div>
                 </TableCell>
@@ -395,19 +399,14 @@ export function TaskTable({
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <span className="text-sm block">{personName}</span>
-                      {getPersonRole() && (
-                        <span className="text-xs text-muted-foreground block">
-                          {getPersonRole()}
-                        </span>
-                      )}
-                      {getPersonDepartment() && (
-                        <span className="text-xs text-muted-foreground block">
-                          {getPersonDepartment()}
+                      <span className="text-sm block truncate">{personName}</span>
+                      {(getPersonRole() || getPersonDepartment()) && (
+                        <span className="text-xs text-muted-foreground block truncate">
+                          {[getPersonRole(), getPersonDepartment()].filter(Boolean).join(', ')}
                         </span>
                       )}
                       {getPersonOrganization() && (
-                        <span className="text-xs text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block truncate">
                           {getPersonOrganization()}
                         </span>
                       )}

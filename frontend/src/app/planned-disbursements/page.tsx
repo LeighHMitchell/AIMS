@@ -13,6 +13,7 @@ import { Download, ChevronLeft, ChevronRight, FileText, Building2, CalendarClock
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { 
   PlannedDisbursementsTable, 
   PlannedDisbursementColumnSelector,
@@ -505,9 +506,11 @@ export default function PlannedDisbursementsPage() {
         {loading && disbursements.length === 0 ? (
           <PlannedDisbursementsListSkeleton />
         ) : disbursements.length === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
-            <p className="text-slate-500">No planned disbursements found</p>
-          </div>
+          <EmptyState
+            illustration="/images/empty-hourglass.png"
+            title="No planned disbursements found"
+            message="There are no planned disbursements in the system yet."
+          />
         ) : (
           <div className="bg-white rounded-md overflow-hidden">
             <div className="overflow-x-auto">

@@ -11,15 +11,25 @@ import {
   FileText,
   AlertCircle,
   Clock,
+  Maximize2,
+  Pencil,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { ActivityCalendarHeatmap } from "@/components/charts/ActivityCalendarHeatmap"
 import { apiFetch } from "@/lib/api-fetch"
 import { StaggerContainer, StaggerItem } from "@/components/ui/stagger"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
+import { OrgFinancialTabs } from "./OrgFinancialTabs"
 
 interface MyPortfolioTabProps {
   userId: string
@@ -34,8 +44,9 @@ interface FiscalYearConfig {
 }
 
 export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) {
-  const { data, loading: isLoading, error } = useMyPortfolioData()
+  const { data, loading: isLoading, error } = useMyPortfolioData(organizationId)
   const [fiscalYearConfig, setFiscalYearConfig] = useState<FiscalYearConfig | undefined>(undefined)
+  const [modalCard, setModalCard] = useState<string | null>(null)
 
   // Fetch the org's default fiscal year config
   useEffect(() => {
@@ -145,7 +156,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-1">
               <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
-              <HelpTextTooltip size="sm" content="Total number of activities you have created or are assigned to in the system." />
+              <HelpTextTooltip size="sm" content="Total number of activities you have created in the system." />
             </div>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -167,7 +178,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalBudget)}</div>
-            <p className="text-xs text-muted-foreground">Sum of budgets (USD)</p>
+            <p className="text-xs text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -183,7 +194,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalPlannedDisbursements)}</div>
-            <p className="text-xs text-muted-foreground">Planned total (USD)</p>
+            <p className="text-xs text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -199,7 +210,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalCommitments)}</div>
-            <p className="text-xs text-muted-foreground">Committed total (USD)</p>
+            <p className="text-xs text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -215,7 +226,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalDisbursements)}</div>
-            <p className="text-xs text-muted-foreground">Disbursed total (USD)</p>
+            <p className="text-xs text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
@@ -231,11 +242,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalExpenditure)}</div>
-            <p className="text-xs text-muted-foreground">Spent total (USD)</p>
+            <p className="text-xs text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
         </StaggerItem>
       </StaggerContainer>
+
+      {/* Financial Data Tables */}
+      <OrgFinancialTabs organizationId={organizationId} userId={userId} context="portfolio" />
 
       {/* Smart Filter Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -247,25 +261,38 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Pipeline but Past Expected Start</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities still in &quot;Pipeline&quot; status whose expected start date has already passed. These may need to be updated to &quot;Active&quot; or have their dates revised." />
               </div>
-              <Badge variant="secondary">{data.pipelinePastStart.length}</Badge>
+              <button onClick={() => setModalCard('pipeline')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+                <Maximize2 className="h-4 w-4" />
+              </button>
             </div>
             <CardDescription>Activities that should have started</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {data.pipelinePastStart.slice(0, 3).map((activity) => (
-                <Link key={activity.id} href={`/activities/${activity.id}`}>
-                  <div className="text-sm space-y-1 p-2 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors cursor-pointer">
-                    <p className="font-medium">{activity.title}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <AlertCircle className="h-3 w-3" />
-                      <span>Expected: {new Date(activity.expectedStart).toLocaleDateString()}</span>
-                      <Badge variant="secondary" className="h-5">Pipeline</Badge>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b text-left">
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Expected Start</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pipelinePastStart.slice(0, 3).map((activity) => (
+                  <tr key={activity.id} className="border-b last:border-0">
+                    <td className="py-1.5 pr-2">
+                      <Link href={`/activities/${activity.id}`} className="text-primary hover:underline line-clamp-2 block" title={activity.title}>
+                        {activity.title}
+                      </Link>
+                    </td>
+                    <td className="py-1.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(activity.expectedStart).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+                {data.pipelinePastStart.length === 0 && (
+                  <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">No activities found</td></tr>
+                )}
+              </tbody>
+            </table>
           </CardContent>
         </Card>
 
@@ -277,24 +304,38 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Inactive for 90+ Days</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities that haven't been updated in over 90 days. Consider reviewing these to ensure they're still current." />
               </div>
-              <Badge variant="secondary">{data.inactive90Days.length}</Badge>
+              <button onClick={() => setModalCard('inactive')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+                <Maximize2 className="h-4 w-4" />
+              </button>
             </div>
             <CardDescription>Activities needing updates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {data.inactive90Days.slice(0, 3).map((activity) => (
-                <Link key={activity.id} href={`/activities/${activity.id}`}>
-                  <div className="text-sm space-y-1 p-2 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors cursor-pointer">
-                    <p className="font-medium">{activity.title}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>Last updated: {new Date(activity.lastUpdated).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b text-left">
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Last Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.inactive90Days.slice(0, 3).map((activity) => (
+                  <tr key={activity.id} className="border-b last:border-0">
+                    <td className="py-1.5 pr-2">
+                      <Link href={`/activities/${activity.id}`} className="text-primary hover:underline line-clamp-2 block" title={activity.title}>
+                        {activity.title}
+                      </Link>
+                    </td>
+                    <td className="py-1.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(activity.lastUpdated).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+                {data.inactive90Days.length === 0 && (
+                  <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">No activities found</td></tr>
+                )}
+              </tbody>
+            </table>
           </CardContent>
         </Card>
 
@@ -306,9 +347,9 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Missing Required Data</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities that are missing key fields needed for complete IATI reporting. Click a row to go directly to the relevant section in the activity editor." />
               </div>
-              <Badge variant="outline">
-                {Object.values(data.missingData).flat().length}
-              </Badge>
+              <button onClick={() => setModalCard('missing')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+                <Maximize2 className="h-4 w-4" />
+              </button>
             </div>
             <CardDescription>Activities with incomplete information</CardDescription>
           </CardHeader>
@@ -319,49 +360,39 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                   <tr className="border-b text-left">
                     <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                     <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Field</th>
+                    <th className="pb-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(data.missingData).flatMap(([field, activities]) => {
                     const fieldLabel: Record<string, string> = {
-                      sector: 'Sectors',
-                      dates: 'Dates',
-                      budget: 'Budget',
-                      reportingOrg: 'Reporting Org',
-                      iatiId: 'IATI Identifier',
+                      sector: 'Sectors', dates: 'Dates', budget: 'Budget',
+                      reportingOrg: 'Reporting Org', iatiId: 'IATI Identifier',
                     }
                     const fieldTab: Record<string, string> = {
-                      sector: 'sectors',
-                      dates: 'finances',
-                      budget: 'finances',
-                      reportingOrg: 'partnerships',
-                      iatiId: 'finances',
+                      sector: 'sectors', dates: 'finances', budget: 'finances',
+                      reportingOrg: 'partnerships', iatiId: 'finances',
                     }
-                    return (activities as Array<{ id: string; title: string }>).map((activity) => (
+                    return (activities as Array<{ id: string; title: string }>).slice(0, 5).map((activity) => (
                       <tr key={`${field}-${activity.id}`} className="border-b last:border-0">
                         <td className="py-1.5 pr-2">
-                          <Link
-                            href={`/activities/${activity.id}?tab=${fieldTab[field] || 'finances'}`}
-                            className="text-primary hover:underline truncate block max-w-[180px]"
-                            title={activity.title}
-                          >
+                          <span className="line-clamp-2 block text-foreground" title={activity.title}>
                             {activity.title}
-                          </Link>
+                          </span>
                         </td>
-                        <td className="py-1.5">
-                          <Badge variant="secondary" className="text-xs font-normal">
-                            {fieldLabel[field] || field}
-                          </Badge>
+                        <td className="py-1.5 text-xs text-muted-foreground">
+                          {fieldLabel[field] || field}
+                        </td>
+                        <td className="py-1.5 pl-2">
+                          <Link href={`/activities/${activity.id}?tab=${fieldTab[field] || 'finances'}`} className="text-muted-foreground hover:text-foreground" title="Edit activity">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Link>
                         </td>
                       </tr>
                     ))
                   })}
                   {Object.values(data.missingData).flat().length === 0 && (
-                    <tr>
-                      <td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">
-                        No missing data found
-                      </td>
-                    </tr>
+                    <tr><td colSpan={3} className="py-4 text-center text-muted-foreground text-xs">No missing data found</td></tr>
                   )}
                 </tbody>
               </table>
@@ -369,6 +400,129 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardContent>
         </Card>
       </div>
+
+      {/* Expand Modals */}
+      <Dialog open={modalCard === 'pipeline'} onOpenChange={(open) => !open && setModalCard(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4">
+            <DialogTitle>Pipeline but Past Expected Start</DialogTitle>
+            <DialogDescription>Activities still in Pipeline status whose expected start date has passed</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b text-left">
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Expected Start</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pipelinePastStart.map((activity) => (
+                  <tr key={activity.id} className="border-b last:border-0">
+                    <td className="py-2 pr-4">
+                      <Link href={`/activities/${activity.id}`} className="text-primary hover:underline">
+                        {activity.title}
+                      </Link>
+                    </td>
+                    <td className="py-2 text-sm text-muted-foreground whitespace-nowrap">
+                      {new Date(activity.expectedStart).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+                {data.pipelinePastStart.length === 0 && (
+                  <tr><td colSpan={2} className="py-8 text-center text-muted-foreground">No activities found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalCard === 'inactive'} onOpenChange={(open) => !open && setModalCard(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4">
+            <DialogTitle>Inactive for 90+ Days</DialogTitle>
+            <DialogDescription>Activities that haven't been updated in over 90 days</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b text-left">
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Last Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.inactive90Days.map((activity) => (
+                  <tr key={activity.id} className="border-b last:border-0">
+                    <td className="py-2 pr-4">
+                      <Link href={`/activities/${activity.id}`} className="text-primary hover:underline">
+                        {activity.title}
+                      </Link>
+                    </td>
+                    <td className="py-2 text-sm text-muted-foreground whitespace-nowrap">
+                      {new Date(activity.lastUpdated).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+                {data.inactive90Days.length === 0 && (
+                  <tr><td colSpan={2} className="py-8 text-center text-muted-foreground">No activities found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalCard === 'missing'} onOpenChange={(open) => !open && setModalCard(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4">
+            <DialogTitle>Missing Required Data</DialogTitle>
+            <DialogDescription>Activities with incomplete information needed for IATI reporting</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b text-left">
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Field</th>
+                  <th className="pb-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(data.missingData).flatMap(([field, activities]) => {
+                  const fieldLabel: Record<string, string> = {
+                    sector: 'Sectors', dates: 'Dates', budget: 'Budget',
+                    reportingOrg: 'Reporting Org', iatiId: 'IATI Identifier',
+                  }
+                  const fieldTab: Record<string, string> = {
+                    sector: 'sectors', dates: 'finances', budget: 'finances',
+                    reportingOrg: 'partnerships', iatiId: 'finances',
+                  }
+                  return (activities as Array<{ id: string; title: string }>).map((activity) => (
+                    <tr key={`${field}-${activity.id}`} className="border-b last:border-0">
+                      <td className="py-2 pr-4 text-foreground">
+                        {activity.title}
+                      </td>
+                      <td className="py-2 text-sm text-muted-foreground">
+                        {fieldLabel[field] || field}
+                      </td>
+                      <td className="py-2 pl-2">
+                        <Link href={`/activities/${activity.id}?tab=${fieldTab[field] || 'finances'}`} className="text-muted-foreground hover:text-foreground" title="Edit activity">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                })}
+                {Object.values(data.missingData).flat().length === 0 && (
+                  <tr><td colSpan={3} className="py-8 text-center text-muted-foreground">No missing data found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* System Activity */}
       <Card>

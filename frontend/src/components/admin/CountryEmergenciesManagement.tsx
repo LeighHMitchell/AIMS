@@ -28,6 +28,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/date-picker";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -387,10 +389,10 @@ export function CountryEmergenciesManagement() {
                         </td>
                         <td className="p-4 text-center">
                           <Badge
-                            variant="outline"
+                            variant={emergency.isActive ? "default" : "outline"}
                             className={
                               emergency.isActive
-                                ? "border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]"
+                                ? "bg-green-800"
                                 : "border-gray-300 text-gray-500 bg-gray-50"
                             }
                           >
@@ -449,54 +451,50 @@ export function CountryEmergenciesManagement() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name <RequiredDot /></Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="e.g., Cyclone Mocha 2023"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name <RequiredDot /></Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="e.g., Cyclone Mocha 2023"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="code">Code <RequiredDot /></Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
-                  }
-                  placeholder="e.g., MMR-CYCLONE-2023"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="code">Code <RequiredDot /></Label>
+              <Input
+                id="code"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
+                placeholder="e.g., MMR-CYCLONE-2023"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  type="date"
+                <Label>Start Date</Label>
+                <DatePicker
                   value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
+                  onChange={(value) =>
+                    setFormData({ ...formData, startDate: value })
                   }
+                  placeholder="Select start date"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  type="date"
+                <Label>End Date</Label>
+                <DatePicker
                   value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
+                  onChange={(value) =>
+                    setFormData({ ...formData, endDate: value })
                   }
+                  placeholder="Select end date"
                 />
               </div>
             </div>
@@ -534,7 +532,10 @@ export function CountryEmergenciesManagement() {
                   setFormData({ ...formData, isActive: checked })
                 }
               />
-              <Label htmlFor="isActive">Active (available for selection in activity editor)</Label>
+              <Label htmlFor="isActive" className="flex items-center gap-1">
+                Active
+                <HelpTextTooltip content="When active, this emergency will be available for selection in the activity editor." />
+              </Label>
             </div>
           </div>
 

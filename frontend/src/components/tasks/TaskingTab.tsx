@@ -335,7 +335,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
               <p className="text-2xl font-bold mt-1">{currentStats.declined}</p>
             </CardContent>
           </Card>
-          <Card className={currentStats.overdue > 0 ? 'border-destructive/20 bg-destructive/10' : ''}>
+          <Card>
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />

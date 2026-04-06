@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { AuthGuard } from "@/components/AuthGuard"
 import { useUser } from "@/hooks/useUser"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
@@ -13,6 +13,9 @@ import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch"
 import { getHomeRoute } from "@/lib/navigation-utils"
 import { TourOverlay } from "@/components/tour/TourOverlay"
+import { isVisitorUser, exitVisitorMode } from "@/lib/visitor"
+import { UserPlus, LogIn } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -20,7 +23,9 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
-  const { user, permissions, logout, isLoading } = useUser();
+  const { user, permissions, logout, isLoading, setUser } = useUser();
+  const isVisitor = isVisitorUser(user);
+  const router = useRouter();
   const pathname = usePathname();
 
   // Initialize smart pre-caching based on current path (data caching)
@@ -116,6 +121,40 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
           user={user}
           onLogout={logout}
         />
+
+        {/* Visitor Banner */}
+        {isVisitor && (
+          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between">
+            <p className="text-sm text-amber-800">
+              You are browsing as a visitor. Sign up for full access to create and manage activities.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-amber-800 hover:text-amber-900 hover:bg-amber-100"
+                onClick={() => {
+                  exitVisitorMode(setUser);
+                  router.push('/login');
+                }}
+              >
+                <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                Sign In
+              </Button>
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+                onClick={() => {
+                  exitVisitorMode(setUser);
+                  router.push('/register');
+                }}
+              >
+                <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                Create Account
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Page Content */}
         <div className="pt-8 px-8 border-0">

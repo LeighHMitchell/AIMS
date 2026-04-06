@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthOrVisitor } from '@/lib/auth';
 import type { ActionItem, ActionType } from '@/types/dashboard';
 import { ACTION_PRIORITY, IATI_FIELD_LABELS } from '@/types/dashboard';
 
@@ -18,7 +18,7 @@ function generateActionId(type: ActionType, activityId: string, extra?: string):
 }
 
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAuthOrVisitor(request);
   if (authResponse) return authResponse;
 
   try {

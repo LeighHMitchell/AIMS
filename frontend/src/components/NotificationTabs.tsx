@@ -266,7 +266,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   }
 
   const visibleNotifications = showArchived
-    ? notifications
+    ? notifications.filter(n => !!n.archivedAt)
     : notifications.filter(n => !n.archivedAt)
   const mentionNotifications = visibleNotifications.filter(n => n.type === "mention")
   const systemNotifications = visibleNotifications.filter(n => n.type === "system")

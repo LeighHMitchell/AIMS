@@ -181,26 +181,43 @@ export function SectorHierarchyFilter({
       .filter(group => group.categories.length > 0);
   }, [hierarchicalSectors, availableSectorCodes]);
 
+  // Filter out inactive sectors when toggle is on
+  const activeFilteredHierarchy = React.useMemo(() => {
+    if (!showOnlyActiveSectors) return filteredHierarchy;
+
+    return filteredHierarchy
+      .map(group => ({
+        ...group,
+        categories: group.categories
+          .map(category => ({
+            ...category,
+            sectors: category.sectors.filter(sector => (activityCounts[sector.code] || 0) > 0)
+          }))
+          .filter(category => category.sectors.length > 0 || (aggregatedCounts.categoryCounts[category.code] || 0) > 0)
+      }))
+      .filter(group => group.categories.length > 0);
+  }, [filteredHierarchy, showOnlyActiveSectors, activityCounts, aggregatedCounts]);
+
   // Search filter
   const searchFilteredHierarchy = React.useMemo(() => {
     if (!searchQuery.trim()) {
-      return filteredHierarchy;
+      return activeFilteredHierarchy;
     }
 
     const query = searchQuery.toLowerCase();
-    
-    return filteredHierarchy
+
+    return activeFilteredHierarchy
       .map(group => {
-        const groupMatches = group.name.toLowerCase().includes(query) || 
+        const groupMatches = group.name.toLowerCase().includes(query) ||
                             group.code.includes(query);
-        
+
         const filteredCategories = group.categories
           .map(category => {
-            const categoryMatches = category.name.toLowerCase().includes(query) || 
+            const categoryMatches = category.name.toLowerCase().includes(query) ||
                                    category.code.includes(query);
-            
+
             const filteredSectors = category.sectors.filter(sector =>
-              sector.name.toLowerCase().includes(query) || 
+              sector.name.toLowerCase().includes(query) ||
               sector.code.includes(query)
             );
 
@@ -225,7 +242,7 @@ export function SectorHierarchyFilter({
         return null;
       })
       .filter(Boolean) as HierarchicalSector[];
-  }, [filteredHierarchy, searchQuery]);
+  }, [activeFilteredHierarchy, searchQuery]);
 
   const handleToggleSectorCategory = (code: string) => {
     const newSelection = selected.sectorCategories.includes(code)

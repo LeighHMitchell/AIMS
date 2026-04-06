@@ -377,12 +377,10 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
   const filteredLocations = useMemo(() => {
     let filtered = validLocations;
 
-    // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(loc => loc.activity?.status === statusFilter);
     }
 
-    // Sector filter
     const hasSectorFilter =
       sectorFilter.sectorCategories.length > 0 ||
       sectorFilter.sectors.length > 0 ||
@@ -504,79 +502,114 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
   return (
     <Card className="bg-white">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-slate-600" />
-              Activity Locations
-            </CardTitle>
-            <CardDescription>
-              {filteredLocations.length} location{filteredLocations.length !== 1 ? 's' : ''} from your activities
-              {statusFilter !== 'all' || sectorFilter.sectorCategories.length > 0 || sectorFilter.sectors.length > 0 || sectorFilter.subSectors.length > 0
-                ? ` (filtered from ${validLocations.length} total)`
-                : ''}
-            </CardDescription>
-          </div>
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-slate-600" />
+          Activity Locations
+        </CardTitle>
+        <div className="flex items-center gap-3">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[340px] text-xs h-10">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="pl-2">All Statuses</SelectItem>
+                {ACTIVITY_STATUS_GROUPS.map((group) => (
+                  <React.Fragment key={group.label}>
+                    {group.options.map((status) => (
+                      <SelectItem key={status.code} value={status.code} className="pl-2">
+                        <span className="inline-flex items-center gap-2">
+                          <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono">{status.code}</code>
+                          <span>{status.name}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <div className="flex justify-end">
-            <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
-              <TabsList>
-                <TabsTrigger value="map" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Map View
-                </TabsTrigger>
-                <TabsTrigger value="subnational" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Sub-national Breakdown
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+            <SectorHierarchyFilter
+              selected={sectorFilter}
+              onChange={setSectorFilter}
+              activityCounts={sectorActivityCounts}
+              showOnlyActiveSectors={showOnlyActiveSectors}
+              onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
+              className="w-[240px] h-10 text-xs"
+            />
+
+            <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
+              <SelectTrigger className="w-[400px] text-xs h-10">
+                <SelectValue placeholder="Map style" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(MAP_STYLES).map(([key, style], index) => (
+                  <SelectItem key={key} value={key} className="pl-2">
+                    <span className="inline-flex items-center gap-2">
+                      <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono">{index + 1}</code>
+                      <span>{style.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={handleReset}
+              variant="ghost"
+              size="icon"
+              title="Reset map view"
+              className="h-10 w-10"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+
+            <Button
+              onClick={() => setViewMode('markers')}
+              variant="ghost"
+              size="icon"
+              title="Show markers"
+              className="h-10 w-10"
+            >
+              <CircleDot className={`${viewMode === 'markers' ? 'h-6 w-6 stroke-[2.5]' : 'h-5 w-5'}`} />
+            </Button>
+            <Button
+              onClick={() => setViewMode('heatmap')}
+              variant="ghost"
+              size="icon"
+              title="Show heatmap"
+              className="h-10 w-10"
+            >
+              <Flame className={`${viewMode === 'heatmap' ? 'h-6 w-6 stroke-[2.5]' : 'h-5 w-5'}`} />
+            </Button>
+
+            <Button
+              onClick={is3D ? handle2DView : handle3DView}
+              variant="outline"
+              title={is3D ? '2D View' : '3D View'}
+              className="h-10 px-6 inline-flex items-center gap-2"
+            >
+              <Mountain className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-medium">{is3D ? '2D' : '3D'}</span>
+            </Button>
+
+            <div className="ml-auto">
+              <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
+                <TabsList>
+                  <TabsTrigger value="map" className="text-xs px-3">
+                    Map View
+                  </TabsTrigger>
+                  <TabsTrigger value="subnational" className="text-xs px-3">
+                    Sub-national
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
         </div>
       </CardHeader>
       <CardContent>
         <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
           {/* Map View Tab */}
           <TabsContent value="map" className="space-y-4">
-            {/* Filters Bar - Above the map */}
-            <div className="flex items-end gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[160px] text-xs h-9">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    {ACTIVITY_STATUS_GROUPS.map((group) => (
-                      <React.Fragment key={group.label}>
-                        {group.options.map((status) => (
-                          <SelectItem key={status.code} value={status.code}>
-                            <span className="inline-flex items-center gap-2">
-                              <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono">{status.code}</code>
-                              <span>{status.name}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </React.Fragment>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Sector</label>
-                <SectorHierarchyFilter
-                  selected={sectorFilter}
-                  onChange={setSectorFilter}
-                  activityCounts={sectorActivityCounts}
-                  showOnlyActiveSectors={showOnlyActiveSectors}
-                  onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                  className="w-[200px] h-9 text-xs"
-                />
-              </div>
-            </div>
-
             {validLocations.length === 0 ? (
               <div className="h-[700px] flex items-center justify-center bg-slate-50 rounded-lg">
                 <div className="text-center">
@@ -589,77 +622,6 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               </div>
             ) : (
               <div className="h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
-                {/* Map controls overlay - inside the map */}
-                <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5">
-                  <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-                    <SelectTrigger className="w-[180px] bg-white shadow-md border-gray-300 text-xs h-9">
-                      <SelectValue placeholder="Map style" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999]">
-                      {Object.entries(MAP_STYLES).map(([key, style]) => (
-                        <SelectItem key={key} value={key}>
-                          {style.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Button
-                    onClick={handleReset}
-                    variant="outline"
-                    size="sm"
-                    title="Reset map view"
-                    className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-
-                  <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
-                    <Button
-                      onClick={() => setViewMode('markers')}
-                      variant="ghost"
-                      size="sm"
-                      title="Show markers"
-                      className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
-                    >
-                      <CircleDot className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => setViewMode('heatmap')}
-                      variant="ghost"
-                      size="sm"
-                      title="Show heatmap"
-                      className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
-                    >
-                      <Flame className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {is3D ? (
-                    <Button
-                      onClick={handle2DView}
-                      variant="outline"
-                      size="sm"
-                      title="2D View"
-                      className="bg-white shadow-md border-gray-300 h-9 px-2.5"
-                    >
-                      <MapIcon className="h-4 w-4 mr-1.5" />
-                      <span className="text-xs">2D</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handle3DView}
-                      variant="outline"
-                      size="sm"
-                      title="3D View"
-                      className="bg-white shadow-md border-gray-300 h-9 px-2.5"
-                    >
-                      <Mountain className="h-4 w-4 mr-1.5" />
-                      <span className="text-xs">3D</span>
-                    </Button>
-                  )}
-                </div>
-
                 {/* MapLibre Map */}
                 <Map
                   key={`org-map-${organizationId}-${mapStyle}`}
@@ -708,18 +670,6 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                   <MapBoundsHandler bounds={mapBounds} shouldReset={shouldResetMap} />
                 </Map>
 
-                {/* No results overlay */}
-                {filteredLocations.length === 0 && validLocations.length > 0 && (
-                  <div className="absolute inset-0 bg-gray-50/90 flex items-center justify-center z-[500]">
-                    <div className="text-center">
-                      <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="font-medium text-gray-600">No locations match filters</p>
-                      <p className="text-sm text-gray-500">
-                        Try adjusting your status or sector filters
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </TabsContent>

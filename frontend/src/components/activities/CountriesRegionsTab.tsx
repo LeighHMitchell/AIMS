@@ -942,8 +942,7 @@ export default function CountriesRegionsTab({
           >
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
+                <DialogTitle>
                   {editingId ? 'Edit Allocation' : 'Add Country or Region'}
                 </DialogTitle>
                 <DialogDescription>
@@ -1095,9 +1094,9 @@ export default function CountriesRegionsTab({
                     )}
                   </div>
 
-                  {/* Item Selection */}
+                  {/* Country/Region Selection */}
                   <div className="space-y-2">
-                    <Label>Item <RequiredDot /></Label>
+                    <Label>{selectedType === 'region' ? 'Region' : 'Country'} <RequiredDot /></Label>
                     {selectedType === 'custom' ? (
                       <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
                         Custom Geography fields below
@@ -1373,7 +1372,14 @@ export default function CountriesRegionsTab({
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Current Allocations</h3>
               {canEdit && (
-                <Button onClick={() => setShowAddForm(true)}>
+                <Button onClick={() => {
+                  cancelEdit();
+                  if (homeCountryCode) {
+                    setSelectedType('country');
+                    setSelectedItem(homeCountryCode);
+                  }
+                  setShowAddForm(true);
+                }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Country or Region
                 </Button>

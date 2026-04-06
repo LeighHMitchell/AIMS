@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { FilterBar } from "@/components/ui/filter-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ColumnSelector } from "@/components/ui/column-selector";
 import {
   TransactionColumnId,
@@ -874,7 +875,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Transactions Table */}
-        {loading || (transactions?.total || 0) === 0 ? (
+        {loading ? (
           <TransactionsListSkeleton />
         ) : error ? (
           <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
@@ -889,9 +890,17 @@ export default function TransactionsPage() {
             </div>
           </div>
         ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionTypes.length > 0 || filters.statuses.length > 0 || filters.organizations.length > 0 || filters.financeTypes.length > 0) ? (
-          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
-            <div className="text-muted-foreground">No matching transactions found</div>
-          </div>
+          <EmptyState
+            illustration="/images/empty-piggybank.png"
+            title="No matching transactions found"
+            message="Try adjusting your filters to see more results."
+          />
+        ) : sortedTransactions.length === 0 ? (
+          <EmptyState
+            illustration="/images/empty-piggybank.png"
+            title="No transactions found"
+            message="There are no transactions in the system yet."
+          />
         ) : (
           <div className="bg-card rounded-lg overflow-hidden" data-tour="transactions-table">
             <div className="overflow-x-auto">

@@ -672,18 +672,6 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
           />
         ))}
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
-        <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-slate-900">{stats.totalActions.toLocaleString()}</div>
-          <div className="text-xs text-slate-500 mt-1">Total Actions</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-slate-900">{stats.totalActiveDays.toLocaleString()}</div>
-          <div className="text-xs text-slate-500 mt-1">Active Days</div>
-        </div>
-      </div>
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
 import { iatiAnalytics } from '@/lib/analytics';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
+import { getSystemHomeCountry } from '@/lib/system-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,6 +117,9 @@ export async function POST(request: NextRequest) {
           errors: [] as string[]
         };
 
+        // Fetch system home country for org defaults
+        const homeCountryCode = await getSystemHomeCountry(supabase);
+
         // Import organizations first (if provided)
         if (Array.isArray(organizations) && organizations.length > 0) {
           // Map IATI organization type codes to database type values
@@ -167,7 +171,7 @@ export async function POST(request: NextRequest) {
                 const insertData: any = {
                   name: (org as any).name,
                   type: dbType || null,
-                  country: (org as any).country || 'MM',
+                  country: (org as any).country || homeCountryCode,
                   iati_org_id: (org as any).ref,
                   acronym: (org as any).acronym
                 };
@@ -701,7 +705,7 @@ export async function POST_LEGACY(request: NextRequest) {
           const insertData: any = {
             name: org.name,
             type: dbType || null, // Use null if no valid type found
-            country: org.country || 'MM', // Default to Myanmar
+            country: org.country || homeCountryCode, // Default to system home country
             iati_org_id: org.ref,
             acronym: org.acronym
           };

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, LogIn } from "lucide-react";
+import { AlertCircle, Eye, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { GmailLogin } from "@/components/auth/GmailLogin";
@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { WavesBackground } from "@/components/landing/WavesBackground";
 import { getHomeRouteFromApiData } from "@/lib/navigation-utils";
 import { apiFetch } from '@/lib/api-fetch';
+import { enterVisitorMode } from '@/lib/visitor';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -173,6 +174,22 @@ export default function LoginPage() {
 
           {/* Google Sign-In */}
           <GmailLogin redirectTo="/auth/callback" />
+
+          {/* Browse as Visitor */}
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                enterVisitorMode(setUser);
+                router.push('/visitor');
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Browse as Visitor
+            </Button>
+          </div>
 
           {/* Create Account Link */}
           <div className="mt-6 text-center text-sm text-muted-foreground">

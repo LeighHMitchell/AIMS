@@ -24,13 +24,17 @@ import {
   AlertTriangle,
   Pencil,
 } from 'lucide-react';
-import type { ActivityTableVariant } from '@/types/dashboard';
+import type { ActivityTableVariant, TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
+import { TableRowActionMenu } from './TableRowActionMenu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface OrgActivitiesTableProps {
   organizationId: string;
   variant: ActivityTableVariant;
   limit?: number;
   embedded?: boolean;
+  userId?: string;
+  filterConfig?: TableFilterConfig;
 }
 
 interface ActivityRow {
@@ -49,6 +53,7 @@ interface ActivityRow {
   validationStatus?: string;
   lastUpdated: string;
   updatedBy?: string;
+  createdBy?: string;
   daysRemaining?: number;
 }
 
@@ -111,11 +116,15 @@ export function OrgActivitiesTable({
   variant,
   limit = variant === 'main' ? 10 : 5,
   embedded = false,
+  userId,
+  filterConfig,
 }: OrgActivitiesTableProps) {
   const router = useRouter();
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [reportedBy, setReportedBy] = useState<ReportedByFilter>(filterConfig?.defaultFilter ?? 'all');
 
   type SortField = 'title' | 'activityStatus' | 'status' | 'validationStatus' | 'budget' | 'plannedDisb' | 'updated' | 'endDate' | 'daysRemaining';
   const [sortField, setSortField] = useState<SortField>('updated');
@@ -157,6 +166,17 @@ export function OrgActivitiesTable({
       }
     });
   }, [activities, sortField, sortDirection]);
+
+  const filteredActivities = useMemo(() => {
+    if (reportedBy === 'me' && userId) {
+      return sortedActivities.filter((a) => a.createdBy === userId || a.updatedBy === userId);
+    }
+    if (reportedBy === 'other_orgs') {
+      return [];
+    }
+    // 'all' and 'my_org' show everything (API already filters by org)
+    return sortedActivities;
+  }, [sortedActivities, reportedBy, userId]);
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -212,6 +232,7 @@ export function OrgActivitiesTable({
             validationStatus: activity.submission_status,
             lastUpdated: activity.updated_at,
             updatedBy: activity.updated_by,
+            createdBy: activity.created_by || activity.updated_by,
             daysRemaining,
           };
         });
@@ -302,6 +323,22 @@ export function OrgActivitiesTable({
 
   const mainContent = (
     <>
+      {filterConfig && (
+        <div className="flex items-center gap-3 mb-4">
+          <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => { setReportedBy(val); }}>
+            <SelectTrigger className="w-[280px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filterConfig.allowedFilters.map((filter) => (
+                <SelectItem key={filter} value={filter}>
+                  {filterConfig.filterLabels[filter] || filter}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {activities.length === 0 ? (
         <div className="text-center py-8">
           <Icon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
@@ -312,7 +349,7 @@ export function OrgActivitiesTable({
             <TableHeader>
               <TableRow>
                 <TableHead className={`${variant === 'main' ? 'w-[30%]' : 'w-[35%]'} ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
-                  <div className="flex items-center gap-1">Activity {getSortIcon('title', sortField, sortDirection)}</div>
+                  <div className="flex items-center gap-1">Activity Title {getSortIcon('title', sortField, sortDirection)}</div>
                 </TableHead>
                 {variant === 'main' && (
                   <>
@@ -326,14 +363,15 @@ export function OrgActivitiesTable({
                       <div className="flex items-center gap-1">Validation Status {getSortIcon('validationStatus', sortField, sortDirection)}</div>
                     </TableHead>
                     <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('budget')}>
-                      <div className="flex items-center justify-end gap-1">Budget {getSortIcon('budget', sortField, sortDirection)}</div>
+                      <div className="flex items-center justify-end gap-1">Total Budget {getSortIcon('budget', sortField, sortDirection)}</div>
                     </TableHead>
                     <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('plannedDisb')}>
-                      <div className="flex items-center justify-end gap-1">Planned Disb. {getSortIcon('plannedDisb', sortField, sortDirection)}</div>
+                      <div className="flex items-center justify-end gap-1">Total Planned Disbursements {getSortIcon('plannedDisb', sortField, sortDirection)}</div>
                     </TableHead>
                     <TableHead className={sortableHeaderClasses} onClick={() => handleSort('updated')}>
-                      <div className="flex items-center gap-1">Updated {getSortIcon('updated', sortField, sortDirection)}</div>
+                      <div className="flex items-center gap-1">Last Updated {getSortIcon('updated', sortField, sortDirection)}</div>
                     </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </>
                 )}
                 {variant === 'recently_edited' && (
@@ -357,7 +395,7 @@ export function OrgActivitiesTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedActivities.map((activity) => (
+              {filteredActivities.map((activity) => (
                 <TableRow
                   key={activity.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -447,6 +485,9 @@ export function OrgActivitiesTable({
                         <span className="text-xs text-slate-500" title={format(new Date(activity.lastUpdated), 'PPpp')}>
                           {formatDistanceToNow(new Date(activity.lastUpdated), { addSuffix: true })}
                         </span>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableRowActionMenu activityId={activity.id} entityType="activity" onDelete={() => {/* TODO: implement delete */}} />
                       </TableCell>
                     </>
                   )}
