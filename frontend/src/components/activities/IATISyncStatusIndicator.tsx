@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle2, AlertCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, AlertCircle, XCircle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export type SyncStatus = 'live' | 'outdated' | 'never' | 'error';
@@ -38,7 +38,7 @@ export function IATISyncStatusIndicator({
     switch (status) {
       case 'live':
         return {
-          icon: CheckCircle2,
+          icon: CheckCircle,
           label: 'Synced',
           color: 'text-[hsl(var(--success-icon))]',
           bgColor: 'bg-green-50',
@@ -158,7 +158,7 @@ export function IATISyncStatusBadge({
   const getStatusIcon = () => {
     switch (status) {
       case 'live':
-        return <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />;
+        return <CheckCircle className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />;
       case 'outdated':
         return <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />;
       case 'error':

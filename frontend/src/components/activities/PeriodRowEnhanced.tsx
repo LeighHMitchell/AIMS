@@ -9,7 +9,7 @@ import {
   Trash2, 
   Save, 
   X,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
   XCircle,
   Clock,
@@ -113,7 +113,7 @@ export function PeriodRowEnhanced({
     }
     
     if (rate >= STATUS_THRESHOLDS.GREEN) {
-      return { color: 'gray-900', label: 'On track', icon: CheckCircle2 };
+      return { color: 'gray-900', label: 'On track', icon: CheckCircle };
     } else if (rate >= STATUS_THRESHOLDS.YELLOW) {
       return { color: 'gray-600', label: 'Needs attention', icon: AlertCircle };
     } else {

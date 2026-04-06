@@ -24,7 +24,7 @@ import {
   BarChart3,
   Trash2,
   Pencil,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
   XCircle,
   Clock,

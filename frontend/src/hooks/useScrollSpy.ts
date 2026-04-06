@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef, RefObject } from 'react'
+import { useEffect, useState, useCallback, useRef, RefObject, useTransition } from 'react'
 
 export interface SectionRef {
   id: string
@@ -44,9 +44,9 @@ export function useScrollSpy(
   options: UseScrollSpyOptions = {}
 ): UseScrollSpyReturn {
   const {
-    rootMargin = '-10% 0px -70% 0px', // Triggers when section is in upper 30% of viewport
+    rootMargin = '-10% 0px -60% 0px', // Triggers when section is in upper 40% of viewport
     threshold = 0,
-    debounceMs = 100,
+    debounceMs = 150,
     root = null,
     initialSection = null,
   } = options
@@ -54,6 +54,9 @@ export function useScrollSpy(
   const [activeSection, setActiveSection] = useState<string | null>(
     initialSection || (sections.length > 0 ? sections[0].id : null)
   )
+
+  // Use transition for scroll-spy-driven updates so they don't block scrolling
+  const [, startTransition] = useTransition()
 
   // Track which sections are currently intersecting and their ratios
   const intersectingMap = useRef<Map<string, number>>(new Map())
@@ -133,7 +136,11 @@ export function useScrollSpy(
       }
 
       if (topMostSection && topMostSection !== activeSectionRef.current) {
-        setActiveSection(topMostSection)
+        // Use startTransition so this non-urgent sidebar highlight update
+        // doesn't block the browser from rendering smooth scroll frames
+        startTransition(() => {
+          setActiveSection(topMostSection)
+        })
       }
     }, debounceMs)
   }, [sections, debounceMs])

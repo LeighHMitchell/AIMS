@@ -12,7 +12,7 @@ import {
   UserPlus, 
   HandPlatter, 
   Check,
-  CheckCircle2,
+  CheckCircle,
   X,
   Users, 
   Building2,
@@ -527,7 +527,7 @@ export default function FocalPointsTab({
               <Building2 className="h-5 w-5 text-slate-600" />
               Government Focal Points
               {governmentFocalPoints.length > 0 && (
-                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </CardTitle>
             <CardDescription className="text-xs">
@@ -554,7 +554,7 @@ export default function FocalPointsTab({
               <Users className="h-5 w-5 text-slate-600" />
               Development Partner Focal Points
               {developmentPartnerFocalPoints.length > 0 && (
-                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
               )}
             </CardTitle>
             <CardDescription className="text-xs">

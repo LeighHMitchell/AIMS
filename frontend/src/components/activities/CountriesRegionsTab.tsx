@@ -23,7 +23,6 @@ import {
   MapPin,
   AlertCircle,
   CheckCircle,
-  CheckCircle2,
   Search,
   X,
   Loader2,
@@ -1378,6 +1377,8 @@ export default function CountriesRegionsTab({
                     setSelectedType('country');
                     setSelectedItem(homeCountryCode);
                   }
+                  setVocabulary('A4');
+                  setPercentage('100');
                   setShowAddForm(true);
                 }}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -1420,7 +1421,7 @@ export default function CountriesRegionsTab({
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{countryAllocation.country?.name}</span>
                             {countryAllocation.id && (
-                              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
                           </div>
                         </TableCell>
@@ -1479,7 +1480,7 @@ export default function CountriesRegionsTab({
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{regionAllocation.region?.name}</span>
                             {regionAllocation.id && (
-                              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
                           </div>
                         </TableCell>

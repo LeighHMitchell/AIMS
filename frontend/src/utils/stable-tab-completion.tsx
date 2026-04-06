@@ -38,7 +38,7 @@ export function StableTabCompletionIndicator({
     : currentStatus;
 
   if (displayStatus?.isComplete) {
-    return <CheckCircle className="h-4 w-4 text-green-500" />
+    return <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
   }
   
   if (displayStatus?.isInProgress || isLoading) {

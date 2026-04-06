@@ -2152,14 +2152,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
-                      className={`p-1 rounded transition-colors ${
-                        general.plannedStartDescription?.trim()
-                          ? 'text-primary hover:bg-primary/10'
-                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
-                      }`}
+                      className="p-1 rounded transition-colors text-muted-foreground hover:bg-muted"
                       title={general.plannedStartDescription?.trim() ? general.plannedStartDescription : 'Add context'}
                     >
-                      {general.plannedStartDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                      <Pencil className="h-3.5 w-3.5" />
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
@@ -2240,14 +2236,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
-                      className={`p-1 rounded transition-colors ${
-                        general.plannedEndDescription?.trim()
-                          ? 'text-primary hover:bg-primary/10'
-                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
-                      }`}
+                      className="p-1 rounded transition-colors text-muted-foreground hover:bg-muted"
                       title={general.plannedEndDescription?.trim() ? general.plannedEndDescription : 'Add context'}
                     >
-                      {general.plannedEndDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                      <Pencil className="h-3.5 w-3.5" />
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
@@ -2328,14 +2320,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
-                      className={`p-1 rounded transition-colors ${
-                        general.actualStartDescription?.trim()
-                          ? 'text-primary hover:bg-primary/10'
-                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
-                      }`}
+                      className="p-1 rounded transition-colors text-muted-foreground hover:bg-muted"
                       title={general.actualStartDescription?.trim() ? general.actualStartDescription : 'Add context'}
                     >
-                      {general.actualStartDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                      <Pencil className="h-3.5 w-3.5" />
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
@@ -2416,14 +2404,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
-                      className={`p-1 rounded transition-colors ${
-                        general.actualEndDescription?.trim()
-                          ? 'text-primary hover:bg-primary/10'
-                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
-                      }`}
+                      className="p-1 rounded transition-colors text-muted-foreground hover:bg-muted"
                       title={general.actualEndDescription?.trim() ? general.actualEndDescription : 'Add context'}
                     >
-                      {general.actualEndDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                      <Pencil className="h-3.5 w-3.5" />
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>

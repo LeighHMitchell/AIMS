@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { SafeHtml } from "@/components/ui/safe-html"
 import { htmlToPlainText } from "@/lib/sanitize"
-import { Search, Loader2, AlertCircle, Calendar, DollarSign, CheckCircle2, ArrowLeft, FileText, Check, ChevronsUpDown, Copy, Network, PieChart, MapPinned, Building2, ChevronDown, ChevronUp, ExternalLink, DownloadCloud } from "lucide-react"
+import { Search, Loader2, AlertCircle, Calendar, DollarSign, CheckCircle, ArrowLeft, FileText, Check, ChevronsUpDown, Copy, Network, PieChart, MapPinned, Building2, ChevronDown, ChevronUp, ExternalLink, DownloadCloud } from "lucide-react"
 import { countries } from "@/data/countries"
 import { CountryCombobox } from "@/components/ui/country-combobox"
 import { toast } from "sonner"

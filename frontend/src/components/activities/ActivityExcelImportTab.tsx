@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, FileSpreadsheet, Info, Loader2, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, Info, Loader2, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -477,7 +477,7 @@ export function ActivityExcelImportTab({
           {/* Stats */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+              <CheckCircle className="h-3.5 w-3.5" />
               <span>{stats?.valid} matched</span>
             </div>
             {(stats?.warnings ?? 0) > 0 && (

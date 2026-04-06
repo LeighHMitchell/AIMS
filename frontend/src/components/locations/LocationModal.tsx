@@ -1168,15 +1168,34 @@ const autoPopulateIatiFields = useCallback((params: {
                         setMapCenter(homeCountryCenter);
                         setMapZoom(homeCountryZoom);
                         setMarkerPosition(null);
-                        // Actually move the map to the new center
                         if (mapRef.current) {
                           mapRef.current.setView(homeCountryCenter, homeCountryZoom);
+                          mapRef.current.setPitch?.(0);
+                          mapRef.current.setBearing?.(0);
                         }
                       }}
-                      className="flex items-center gap-2"
+                      className="h-8 w-8 p-0"
+                      title="Reset View"
                     >
                       <RefreshCw className="h-4 w-4" />
-                      Reset View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (mapRef.current) {
+                          const currentPitch = (mapRef.current as any).getPitch?.() || 0;
+                          if (currentPitch > 0) {
+                            (mapRef.current as any).easeTo?.({ pitch: 0, bearing: 0, duration: 1000 });
+                          } else {
+                            (mapRef.current as any).easeTo?.({ pitch: 60, bearing: -20, duration: 1000 });
+                          }
+                        }
+                      }}
+                      className="h-8 px-2.5 text-xs"
+                      title="Toggle 3D View"
+                    >
+                      3D
                     </Button>
                   </div>
                 </div>
@@ -1231,6 +1250,7 @@ const autoPopulateIatiFields = useCallback((params: {
                         
                         {searchResults.map((result, index) => (
                           <button
+                            type="button"
                             key={index}
                             onClick={() => handleSelectSearchResult(result)}
                             className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"

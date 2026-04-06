@@ -13,7 +13,7 @@ import {
   MessageSquare,
   Send,
   RefreshCw,
-  CheckCircle2,
+  CheckCircle,
   Heart,
   MoreHorizontal,
   CornerDownRight,
@@ -292,7 +292,7 @@ function CommentItem({
               </time>
               {comment.status === 'Resolved' && (
                 <Badge variant="outline" className="h-4 text-[10px] bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
-                  <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
+                  <CheckCircle className="h-2.5 w-2.5 mr-0.5" />
                   Resolved
                 </Badge>
               )}
@@ -311,7 +311,7 @@ function CommentItem({
               <DropdownMenuContent align="end">
                 {comment.status === 'Open' && onResolve && !isReply && (
                   <DropdownMenuItem onClick={() => onResolve(comment.id)}>
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-2" />
+                    <CheckCircle className="h-3.5 w-3.5 mr-2" />
                     Mark Resolved
                   </DropdownMenuItem>
                 )}

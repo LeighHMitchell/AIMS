@@ -9,7 +9,7 @@ import {
   Trash2, 
   Save, 
   X,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
   XCircle,
   Clock
@@ -100,7 +100,7 @@ export function PeriodRow({
     if (rate === 0) {
       return { color: 'gray', icon: Clock, label: 'No progress' };
     } else if (rate >= STATUS_THRESHOLDS.GREEN) {
-      return { color: 'green', icon: CheckCircle2, label: 'On track' };
+      return { color: 'green', icon: CheckCircle, label: 'On track' };
     } else if (rate >= STATUS_THRESHOLDS.YELLOW) {
       return { color: 'yellow', icon: AlertCircle, label: 'Attention needed' };
     } else {

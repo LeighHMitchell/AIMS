@@ -158,7 +158,7 @@ function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; 
   if (!isLoaded) return null;
 
   return (
-    <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5">
+    <div className="absolute bottom-3 left-3 z-[100] flex items-center gap-1.5">
       {is3DMode ? (
         <button
           type="button"
@@ -227,7 +227,6 @@ function LocationMapComponent({
       <MapControls position="top-right" showZoom />
       <MapRefHandler mapRef={mapRef} />
       <MapClickHandler onMapClick={onMapClick} />
-      <Map3DController mapCenter={mapLibreCenter} mapZoom={mapZoom} />
       
       {/* Existing location markers */}
       {existingLocations

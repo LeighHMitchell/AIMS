@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
-  CheckCircle2, 
+  CheckCircle,
   AlertCircle, 
   Plus, 
   RefreshCw,
@@ -222,7 +222,7 @@ export function MultiActivityPreview({
       {/* Bulk Actions */}
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={selectAll}>
-          <CheckCircle2 className="h-3 w-3 mr-1" />
+          <CheckCircle className="h-3 w-3 mr-1" />
           Select All
         </Button>
         <Button variant="outline" size="sm" onClick={selectNewOnly}>

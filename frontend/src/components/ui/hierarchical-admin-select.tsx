@@ -321,12 +321,14 @@ export function HierarchicalAdminSelect({
                               }}
                               tabIndex={0}
                             >
-                              <Check
-                                className={cn("mr-2 h-4 w-4", isParentSelected ? "opacity-100" : "opacity-0")}
-                                aria-hidden="true"
-                              />
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{parentUnit.name}</span>
+                                {isParentSelected && (
+                                  <Check
+                                    className="h-4 w-4 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                )}
                                 {hasSelectedChildren && !isParentSelected && (
                                   <Badge variant="outline" className="text-xs">
                                     {group.children.filter(c => selected.includes(c.id)).length} townships
@@ -361,15 +363,17 @@ export function HierarchicalAdminSelect({
                                     }
                                   }}
                                 >
-                                  <Check
-                                    className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
-                                    aria-hidden="true"
-                                  />
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm">{unit.name}</span>
                                     <Badge variant="outline" className="text-xs text-muted-foreground">
                                       Township
                                     </Badge>
+                                    {isSelected && (
+                                      <Check
+                                        className="h-4 w-4 shrink-0"
+                                        aria-hidden="true"
+                                      />
+                                    )}
                                   </div>
                                 </div>
                               )
@@ -390,7 +394,7 @@ export function HierarchicalAdminSelect({
                         aria-selected={isSelected}
                         tabIndex={0}
                         className={cn(
-                          "flex cursor-pointer items-center px-6 py-3 transition-colors",
+                          "flex cursor-pointer items-center px-4 py-3 transition-colors",
                           "hover:bg-accent/50 focus:bg-accent/50",
                           isSelected && "bg-accent"
                         )}
@@ -402,12 +406,14 @@ export function HierarchicalAdminSelect({
                           }
                         }}
                       >
-                        <Check
-                          className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
-                          aria-hidden="true"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground">{unit.fullName}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{unit.fullName}</span>
+                          {isSelected && (
+                            <Check
+                              className="h-4 w-4 shrink-0"
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
                       </div>
                     )

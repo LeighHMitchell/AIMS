@@ -1,10 +1,11 @@
 "use client"
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Download, RotateCcw, CircleDot, Flame, Map as MapIcon, Mountain } from 'lucide-react'
+import { MapPin, Download, RotateCcw, CircleDot, Flame, Map as MapIcon, Mountain, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -15,7 +16,7 @@ import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/d
 import { apiFetch } from '@/lib/api-fetch';
 
 // mapcn map components
-import { Map, MapControls, useMap } from '@/components/ui/map'
+import { Map, useMap } from '@/components/ui/map'
 
 // Dynamic import for MapLibre-based layers
 const ActivityMarkersLayer = dynamic(() => import('../maps-v2/ActivityMarkersLayer'), { ssr: false })
@@ -139,12 +140,15 @@ const MAP_STYLES: Record<MapStyleKey, { name: string; light: string | object; da
 const STYLE_PREFERENCE_KEY = 'aims-activity-map-style-preference'
 
 // Map 3D Controller Component (uses useMap inside Map context)
-function Map3DController({ 
-  homeCountryCenter, 
-  homeCountryZoom 
-}: { 
+// Renders into an external portal container so controls appear outside the map
+function Map3DController({
+  homeCountryCenter,
+  homeCountryZoom,
+  portalContainer,
+}: {
   homeCountryCenter: [number, number]
   homeCountryZoom: number
+  portalContainer: HTMLElement | null
 }) {
   const { map, isLoaded } = useMap()
   const [pitch, setPitch] = useState(0)
@@ -194,9 +198,9 @@ function Map3DController({
 
   const is3DMode = pitch !== 0 || bearing !== 0
 
-  if (!isLoaded) return null
+  if (!isLoaded || !portalContainer) return null
 
-  return (
+  return ReactDOM.createPortal(
     <div className="flex items-center gap-1.5">
       {is3DMode ? (
         <Button
@@ -204,10 +208,10 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="2D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="h-8 px-2.5 text-xs"
         >
-          <MapIcon className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">2D</span>
+          <MapIcon className="h-3.5 w-3.5 mr-1" />
+          2D
         </Button>
       ) : (
         <Button
@@ -215,10 +219,10 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="3D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="h-8 px-2.5 text-xs"
         >
-          <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">3D</span>
+          <Mountain className="h-3.5 w-3.5 mr-1" />
+          3D
         </Button>
       )}
       <Button
@@ -226,17 +230,62 @@ function Map3DController({
         variant="outline"
         size="sm"
         title="Reset view"
-        className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+        className="h-8 w-8 p-0"
       >
-        <RotateCcw className="h-4 w-4" />
+        <RotateCcw className="h-3.5 w-3.5" />
       </Button>
       {is3DMode && (
-        <div className="rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2">
-          <span className="text-gray-600">Pitch: {pitch}°</span>
-          <span className="text-gray-600">Bearing: {bearing}°</span>
+        <div className="rounded-md bg-muted px-2 py-1 text-[10px] font-mono flex gap-2">
+          <span className="text-muted-foreground">Pitch: {pitch}°</span>
+          <span className="text-muted-foreground">Bearing: {bearing}°</span>
         </div>
       )}
-    </div>
+    </div>,
+    portalContainer
+  )
+}
+
+// Map Zoom Controller (uses useMap inside Map context, renders into portal)
+function MapZoomController({
+  portalContainer,
+}: {
+  portalContainer: HTMLElement | null
+}) {
+  const { map, isLoaded } = useMap()
+
+  const handleZoomIn = useCallback(() => {
+    map?.zoomTo(map.getZoom() + 1, { duration: 300 })
+  }, [map])
+
+  const handleZoomOut = useCallback(() => {
+    map?.zoomTo(map.getZoom() - 1, { duration: 300 })
+  }, [map])
+
+  const handleFullscreen = useCallback(() => {
+    const container = map?.getContainer()
+    if (!container) return
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      container.requestFullscreen()
+    }
+  }, [map])
+
+  if (!isLoaded || !portalContainer) return null
+
+  return ReactDOM.createPortal(
+    <div className="flex items-center gap-1">
+      <Button onClick={handleZoomIn} variant="outline" size="sm" title="Zoom in" className="h-8 w-8 p-0">
+        <span className="text-base font-medium">+</span>
+      </Button>
+      <Button onClick={handleZoomOut} variant="outline" size="sm" title="Zoom out" className="h-8 w-8 p-0">
+        <span className="text-base font-medium">−</span>
+      </Button>
+      <Button onClick={handleFullscreen} variant="outline" size="sm" title="Fullscreen" className="h-8 w-8 p-0">
+        <Maximize2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>,
+    portalContainer
   )
 }
 
@@ -251,6 +300,14 @@ export default function ActivityLocationsHeatmap({
   const [isExporting, setIsExporting] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('markers')
   const mapContainerRef = useRef<HTMLDivElement>(null)
+  const threeDPortalRef = useRef<HTMLDivElement>(null)
+  const zoomPortalRef = useRef<HTMLDivElement>(null)
+  const [portalsReady, setPortalsReady] = useState(false)
+
+  // Signal that portal containers are mounted so children can render into them
+  useEffect(() => {
+    setPortalsReady(true)
+  }, [])
 
   // Home country coordinates from system settings
   const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER)
@@ -372,8 +429,78 @@ export default function ActivityLocationsHeatmap({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4">
+        {/* Controls toolbar — outside the map */}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {/* Map tile style selector */}
+          <Select value={mapStyle} onValueChange={(value) => handleStyleChange(value as MapStyleKey)}>
+            <SelectTrigger className="w-44 text-xs h-8">
+              <SelectValue placeholder="Select map style" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(MAP_STYLES).map(([key, style]) => (
+                <SelectItem key={key} value={key}>
+                  {style.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* View mode toggle (markers / heatmap) */}
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5">
+            <Button
+              onClick={() => setViewMode('markers')}
+              variant="ghost"
+              size="sm"
+              title="Show markers"
+              className={cn(
+                "h-7 w-7 p-0",
+                viewMode === 'markers'
+                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                  : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              <CircleDot className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              onClick={() => setViewMode('heatmap')}
+              variant="ghost"
+              size="sm"
+              title="Show heatmap"
+              className={cn(
+                "h-7 w-7 p-0",
+                viewMode === 'heatmap'
+                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                  : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              <Flame className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          {/* Export */}
+          <Button
+            onClick={exportToJPEG}
+            disabled={isExporting}
+            variant="outline"
+            size="sm"
+            title={isExporting ? 'Exporting...' : 'Export JPEG'}
+            className="h-8 w-8 p-0"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* 3D / Reset controls portal target */}
+          <div ref={threeDPortalRef} className="flex items-center gap-1.5" />
+
+          {/* Zoom / Fullscreen controls portal target */}
+          <div ref={zoomPortalRef} className="flex items-center gap-1" />
+        </div>
+
+        {/* Map container */}
         <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-gray-200">
-          {/* MapLibre Map */}
           <Map
             styles={{
               light: MAP_STYLES[mapStyle].light as string | object,
@@ -385,81 +512,14 @@ export default function ActivityLocationsHeatmap({
             maxZoom={18}
             scrollZoom={false}
           >
-            {/* Controls Bar - positioned above map */}
-            <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
-              <Select value={mapStyle} onValueChange={(value) => handleStyleChange(value as MapStyleKey)}>
-                <SelectTrigger className="w-48 bg-white shadow-md border-gray-300 text-xs h-9">
-                  <SelectValue placeholder="Select map style" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(MAP_STYLES).map(([key, style]) => (
-                    <SelectItem key={key} value={key}>
-                      {style.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button
-                onClick={exportToJPEG}
-                disabled={isExporting}
-                variant="outline"
-                size="sm"
-                title={isExporting ? 'Exporting...' : 'Export JPEG'}
-                className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-
-              {/* View Mode Toggle */}
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
-                <Button
-                  onClick={() => setViewMode('markers')}
-                  variant="ghost"
-                  size="sm"
-                  title="Show markers"
-                  className={cn(
-                    "h-9 w-9 p-0",
-                    viewMode === 'markers'
-                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                      : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  <CircleDot className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={() => setViewMode('heatmap')}
-                  variant="ghost"
-                  size="sm"
-                  title="Show heatmap"
-                  className={cn(
-                    "h-9 w-9 p-0",
-                    viewMode === 'heatmap'
-                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                      : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  <Flame className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* 3D Controls */}
-              <Map3DController 
-                homeCountryCenter={homeCountryCenter} 
-                homeCountryZoom={homeCountryZoom} 
-              />
-            </div>
-
-            {/* Map Controls (zoom, compass, etc.) */}
-            <MapControls 
-              position="bottom-right" 
-              showZoom={true} 
-              showCompass={true}
-              showLocate={true}
-              showFullscreen={true}
+            {/* These components use useMap() and render via portals into the toolbar above */}
+            <Map3DController
+              homeCountryCenter={homeCountryCenter}
+              homeCountryZoom={homeCountryZoom}
+              portalContainer={threeDPortalRef.current}
+            />
+            <MapZoomController
+              portalContainer={zoomPortalRef.current}
             />
 
             {/* Markers Mode */}

@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
   XCircle,
   Clock,
@@ -118,7 +118,7 @@ export function ProgressTimeline({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'green':
-        return <CheckCircle2 className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
+        return <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
       case 'yellow':
         return <AlertCircle className="h-3 w-3 text-yellow-600" />;
       case 'red':

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { 
-  CheckCircle2, 
+  CheckCircle,
   Info, 
   AlertCircle, 
   Plus, 
@@ -268,7 +268,7 @@ export function FinancingTermsTab({
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-muted-foreground" />
             Loan Terms
-            {loanTermsSaved && <CheckCircle2 className="h-5 w-5 text-[hsl(var(--success-icon))]" />}
+            {loanTermsSaved && <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />}
           </CardTitle>
           <CardDescription>
             Interest rates, repayment schedule, and commitment dates

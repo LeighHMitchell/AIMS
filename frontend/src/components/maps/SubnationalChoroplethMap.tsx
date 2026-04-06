@@ -903,13 +903,13 @@ function SubnationalChoroplethMapComponent({
               </Button>
             </div>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="h-8 w-8 p-0"
               onClick={() => setIsExpanded(true)}
               title="Expand"
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>

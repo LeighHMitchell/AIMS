@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, Info, AlertCircle, ChevronDown, Building2, Repeat } from 'lucide-react';
+import { CheckCircle, Info, AlertCircle, ChevronDown, Building2, Repeat } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { supabase } from '@/lib/supabase';

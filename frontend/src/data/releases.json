@@ -1,7 +1,36 @@
 {
-  "currentVersion": "3.25.0",
-  "narrativeSummary": "Version 3.25 introduces Visitor Mode &mdash; anyone can now browse the platform read-only without signing in, via a new &ldquo;Browse as Visitor&rdquo; button on the login page. The dashboard gains a My Team tab showing your organisation&rsquo;s colleagues, the hero cards are redesigned with an activity lifecycle breakdown and &ldquo;other organisations&rdquo; transaction counts, and the calendar year picker is now a visual grid instead of a long dropdown. Authentication has been optimised to use local session validation instead of a network call on every request, and 30+ API routes now support visitor read-only access. Empty states across the platform now use hand-drawn illustrations, and the default home country has been changed from Rwanda to Myanmar.",
+  "currentVersion": "3.26.0",
+  "narrativeSummary": "Version 3.26 moves all map controls out of the map overlay and into a clean toolbar above the map, making the Activity Locations Map much easier to use. The Select component across the entire platform now shows checkmarks on the right side of items instead of the left, matching modern UI conventions. Scroll-spy navigation in the Activity Editor has been refined with smarter re-scroll logic that only corrects if layout shifts actually moved the target section. Several icon inconsistencies have been cleaned up, and the IATI select dropdowns now capitalise option names for readability.",
   "releases": [
+    {
+      "version": "3.26.0",
+      "date": "2026-04-06",
+      "narrativeSummary": "This release focuses on map usability, select component polish, and Activity Editor scroll reliability. The Activity Locations Map controls (tile selector, markers/heatmap toggle, 3D view, reset, zoom, fullscreen, and export) are all moved from an overlay on top of the map to a dedicated toolbar row above it, so controls never obscure the map content. The global Select component now places checkmarks on the right side of options instead of the left. The IATI Select and hierarchical admin selector follow the same pattern. All six Activity Editor section groups get smarter scroll-to-section logic that detects whether layout shifts actually displaced the target and only re-scrolls when needed, replacing the old blind 800ms timeout. Several CheckCircle2 icons have been swapped to CheckCircle for visual consistency across the Activity Editor tabs.",
+      "changes": [
+        "<b>Activity Locations Map &mdash; Controls Moved to Toolbar</b>",
+        "&nbsp;&nbsp;Map tile selector, markers/heatmap toggle, and export button now sit in a toolbar row above the map instead of overlaying it",
+        "&nbsp;&nbsp;3D/Reset and zoom/fullscreen controls also moved to the toolbar using React portals (they need map context internally)",
+        "&nbsp;&nbsp;The map surface is now completely unobstructed &mdash; no floating controls",
+        "&nbsp;&nbsp;Location Modal map: 3D toggle and reset buttons compacted; map-internal 3D controller removed in favour of toolbar buttons",
+        "<b>Select Component &mdash; Right-Side Checkmarks</b>",
+        "&nbsp;&nbsp;The global Select component now shows the selected-item checkmark on the right side instead of the left",
+        "&nbsp;&nbsp;Left padding reduced and right padding added to accommodate the new layout",
+        "&nbsp;&nbsp;IATI Select dropdown: checkmark moved from the left margin to inline on the right of the option text",
+        "&nbsp;&nbsp;Hierarchical admin select (regions/townships): same right-side checkmark treatment",
+        "<b>IATI Select &mdash; Capitalised Option Names</b>",
+        "&nbsp;&nbsp;Option names in SelectIATI now use <code>capitalize</code> for cleaner readability",
+        "<b>Activity Editor &mdash; Smarter Scroll-to-Section</b>",
+        "&nbsp;&nbsp;All six section groups (Overview, Stakeholders, Funding &amp; Delivery, Strategic Alignment, Supporting Info, Advanced) now use layout-shift-aware re-scroll logic",
+        "&nbsp;&nbsp;Instead of blindly re-scrolling after 800ms, the system measures whether the target element actually moved and only re-scrolls if it shifted by more than 5px",
+        "&nbsp;&nbsp;Scroll-spy root margin tightened from 60% to 50% with debounce increased from 100ms to 150ms for more stable section tracking",
+        "<b>Location Card &mdash; Saved Indicator Moved</b>",
+        "&nbsp;&nbsp;The green checkmark indicating a saved location now appears next to the location name instead of next to the description",
+        "<b>Date Description Icons &mdash; Simplified</b>",
+        "&nbsp;&nbsp;Date description popover triggers in the New Activity form now always show a pencil icon with neutral styling, removing the conditional sticky-note icon",
+        "<b>Icon Consistency</b>",
+        "&nbsp;&nbsp;Replaced <code>CheckCircle2</code> with <code>CheckCircle</code> across Comments, Compare Data, Results, and Indicator components for a consistent single-ring style"
+      ]
+    },
     {
       "version": "3.25.0",
       "date": "2026-04-06",

@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, AlertCircle, Heart, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, AlertCircle, Heart, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { HumanitarianScope } from '@/types/humanitarian';
 import { CountryEmergency } from '@/types/country-emergency';
@@ -279,7 +279,7 @@ export function HumanitarianTab({
                         <TableCell className="font-medium align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             {scope.id && (
-                              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
                             {getScopeTypeName(scope.type)}
                           </div>

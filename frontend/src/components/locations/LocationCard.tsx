@@ -192,10 +192,13 @@ export default function LocationCard({
           <div className="flex-1 min-w-0 flex flex-col h-full">
             <div className="flex-1 space-y-2">
               {/* 1. Location Name */}
-              <div>
+              <div className="flex items-center gap-1.5">
                 <h4 className="font-semibold text-gray-900 truncate">
                   {location.location_name}
                 </h4>
+                {location.id && (
+                  <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                )}
               </div>
 
               {/* 2. Location Description */}
@@ -232,11 +235,8 @@ export default function LocationCard({
 
               {/* 3. Activity Description */}
               {location.activity_location_description && (
-                <div className="text-sm text-gray-600 flex items-start gap-1.5">
+                <div className="text-sm text-gray-600">
                   <span>{location.activity_location_description}</span>
-                  {location.id && (
-                    <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0 mt-0.5" />
-                  )}
                 </div>
               )}
 

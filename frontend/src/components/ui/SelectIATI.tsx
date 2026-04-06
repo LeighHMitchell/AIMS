@@ -135,7 +135,7 @@ export function SelectIATI({
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                   {selectedOption.code}
                 </span>
-                <span className="font-medium">{selectedOption.name}</span>
+                <span className="font-medium capitalize">{selectedOption.name}</span>
               </span>
             ) : (
               placeholder
@@ -225,18 +225,15 @@ export function SelectIATI({
                       }}
                       className="px-3 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          value === option.code ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {option.code}
                           </span>
-                          <span className="font-medium text-foreground">{option.name}</span>
+                          <span className="font-medium text-foreground capitalize">{option.name}</span>
+                          {value === option.code && (
+                            <Check className="h-4 w-4 shrink-0" />
+                          )}
                         </div>
                         {option.description && (
                           <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">

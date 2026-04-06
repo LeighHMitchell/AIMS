@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import {
   RefreshCw,
   Globe,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
   ChevronDown,
   Loader2,
@@ -150,7 +150,7 @@ export function IATISyncPanel({
     switch (syncStatus) {
       case 'live':
         return {
-          icon: <CheckCircle2 className="h-4 w-4" />,
+          icon: <CheckCircle className="h-4 w-4" />,
           text: 'Synced',
           variant: 'success' as const,
           color: 'text-[hsl(var(--success-icon))]'
@@ -395,7 +395,7 @@ export function IATISyncPanel({
       return {
         bg: 'bg-green-50 border-green-200',
         text: 'text-green-700',
-        icon: <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
+        icon: <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
         label: `Last synced ${relative}`,
         detail: exact,
       };
@@ -658,7 +658,7 @@ export function IATISyncPanel({
                     >
                       <div className="flex items-center gap-2">
                         {log.import_status === 'success' ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))] shrink-0" />
+                          <CheckCircle className="h-3.5 w-3.5 text-[hsl(var(--success-icon))] shrink-0" />
                         ) : (
                           <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                         )}

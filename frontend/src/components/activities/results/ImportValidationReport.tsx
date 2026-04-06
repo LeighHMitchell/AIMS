@@ -4,7 +4,7 @@ import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
-  CheckCircle2, 
+  CheckCircle,
   AlertCircle, 
   XCircle, 
   FileCode,
@@ -201,7 +201,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
       {/* Success Message */}
       {summary.errors.length === 0 && (
         <Alert className="border-border bg-muted">
-          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          <CheckCircle className="h-4 w-4 text-muted-foreground" />
           <AlertDescription className="text-foreground">
             <p className="font-semibold">Import Completed Successfully!</p>
             <p className="text-sm mt-1">

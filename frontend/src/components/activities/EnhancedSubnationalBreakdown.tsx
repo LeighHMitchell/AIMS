@@ -8,7 +8,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
-import { MapPin, Trash2, Sparkles, Loader2 } from 'lucide-react'
+import { MapPin, Trash2, Loader2 } from 'lucide-react'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import dynamic from 'next/dynamic'
@@ -661,34 +661,25 @@ export function EnhancedSubnationalBreakdown({
           </CardHeader>
           <CardContent className="space-y-6 flex-1 overflow-y-auto">
             {/* Hierarchical Admin Select Dropdown */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Select Administrative Units:
-                {viewLevel === 'township' && (
-                  <span className="text-xs text-muted-foreground ml-2">(includes townships)</span>
-                )}
-              </label>
-              <HierarchicalAdminSelect
-                allAdminUnits={filteredAdminUnits}
-                selected={selectedUnits}
-                onChange={handleSelectionChange}
-                placeholder={viewLevel === 'region'
-                  ? "Select states, regions, or union territories..."
-                  : "Select regions or townships..."}
-                disabled={!canEdit}
-              />
-            </div>
+            <HierarchicalAdminSelect
+              allAdminUnits={filteredAdminUnits}
+              selected={selectedUnits}
+              onChange={handleSelectionChange}
+              placeholder={viewLevel === 'region'
+                ? "Select states, regions, or union territories..."
+                : "Select regions or townships..."}
+              disabled={!canEdit}
+            />
 
             {/* Action Buttons */}
             {entries.length > 0 && canEdit && (
               <div className="flex justify-end gap-2">
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   onClick={distributeEqually}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                  className="text-xs bg-foreground hover:bg-foreground/90 text-white"
                 >
-                  <Sparkles className="h-3 w-3 mr-1" />
                   Distribute Equally
                 </Button>
                 <Button
@@ -705,7 +696,7 @@ export function EnhancedSubnationalBreakdown({
 
             {/* Percentage Allocation Table */}
             {entries.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #d1d5db' }}>
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>

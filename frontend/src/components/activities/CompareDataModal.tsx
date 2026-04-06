@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, ArrowRight, Info, Calendar, Hash, FileText, Users, Coins, Globe } from 'lucide-react';
+import { AlertCircle, CheckCircle, ArrowRight, Info, Calendar, Hash, FileText, Users, Coins, Globe } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -288,7 +288,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
               )
             ) : (
               <Alert className="border-green-200 bg-green-50">
-                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                 <AlertDescription className="text-green-800">
                   Successfully fetched IATI data for activity <span className="font-mono font-semibold">{iatiData.iati_identifier}</span>
                 </AlertDescription>

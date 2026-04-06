@@ -7,7 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useOrgDashboardStats } from '@/hooks/useOrgDashboardStats';
 import { useUser } from '@/hooks/useUser';
 import { formatDistanceToNow, format } from 'date-fns';
-import { Plus, Pencil, CheckCircle, XCircle, HelpCircle, FileText } from 'lucide-react';
+import { Plus, Pencil, CheckCircle, XCircle, HelpCircle, FileText, ExternalLink, MoreVertical, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { ValidationEventType } from '@/types/dashboard';
 import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 
@@ -119,12 +121,35 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
           <CardContent>
             {lastCreated ? (
               <div>
-                <p className="font-medium text-slate-900 leading-snug" title={lastCreated.title}>
-                  {lastCreated.title}
-                  {lastCreated.iatiIdentifier && (
-                    <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastCreated.iatiIdentifier}</code></>
-                  )}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-slate-900 leading-snug" title={lastCreated.title}>
+                    {lastCreated.title}
+                    {lastCreated.iatiIdentifier && (
+                      <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastCreated.iatiIdentifier}</code></>
+                    )}
+                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 shrink-0"
+                      >
+                        <MoreVertical className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                      <DropdownMenuItem onClick={() => { window.location.href = `/activities/new?id=${lastCreated.id}`; }}>
+                        <Pencil className="h-3.5 w-3.5 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { window.location.href = `/activities/${lastCreated.id}`; }}>
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 {lastCreated.creatorProfile && (
                   <div className="mt-2 text-xs text-slate-500">
                     <span className="font-medium text-slate-600">{lastCreated.creatorProfile.name}</span>
@@ -174,12 +199,35 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
           <CardContent>
             {lastEdited ? (
               <>
-                <p className="font-medium text-slate-900 leading-snug" title={lastEdited.title}>
-                  {lastEdited.title}
-                  {lastEdited.iatiIdentifier && (
-                    <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastEdited.iatiIdentifier}</code></>
-                  )}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-slate-900 leading-snug" title={lastEdited.title}>
+                    {lastEdited.title}
+                    {lastEdited.iatiIdentifier && (
+                      <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastEdited.iatiIdentifier}</code></>
+                    )}
+                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 shrink-0"
+                      >
+                        <MoreVertical className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                      <DropdownMenuItem onClick={() => { window.location.href = `/activities/new?id=${lastEdited.id}`; }}>
+                        <Pencil className="h-3.5 w-3.5 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { window.location.href = `/activities/${lastEdited.id}`; }}>
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 {/* Editor details */}
                 <div className="mt-2 text-xs text-slate-500">
                   {lastEdited.editedByYou ? (
@@ -240,14 +288,37 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   <p className="font-medium text-slate-900 leading-snug flex-1" title={lastValidation.activityTitle}>
                     {lastValidation.activityTitle}
                   </p>
-                  {(() => {
-                    const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
-                    return (
-                      <Badge className={`text-xs shrink-0 ${config.bgColor} ${config.color} border-0`}>
-                        {config.label}
-                      </Badge>
-                    );
-                  })()}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {(() => {
+                      const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
+                      return (
+                        <Badge className={`text-xs ${config.bgColor} ${config.color} border-0`}>
+                          {config.label}
+                        </Badge>
+                      );
+                    })()}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 shrink-0"
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                        <DropdownMenuItem onClick={() => { window.location.href = `/activities/new?id=${lastValidation.activityId}`; }}>
+                          <Pencil className="h-3.5 w-3.5 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { window.location.href = `/activities/${lastValidation.activityId}`; }}>
+                          <Trash2 className="h-3.5 w-3.5 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 {lastValidation.iatiIdentifier && (
                   <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">

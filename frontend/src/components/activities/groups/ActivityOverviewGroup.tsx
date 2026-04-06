@@ -168,8 +168,8 @@ export function ActivityOverviewGroup({
   
   // Use scroll spy to track visible section
   const { activeSection, scrollToSection, setActiveSection, lockScrollSpy } = useScrollSpy(sectionRefs, {
-    rootMargin: '-80px 0px -60% 0px', // Account for sticky headers
-    debounceMs: 100,
+    rootMargin: '-80px 0px -50% 0px', // Active zone: top 50% minus header offset
+    debounceMs: 150,
     initialSection: initialSection && isActivityOverviewSection(initialSection) ? initialSection : null,
   })
 
@@ -194,12 +194,17 @@ export function ActivityOverviewGroup({
       if (initialSection !== 'general' || prevInitialSection.current !== initialSection) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
-          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          if (!el) return
+          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          // Only re-scroll if layout shifts moved the element
+          const initialTop = el.getBoundingClientRect().top
+          setTimeout(() => {
+            const currentTop = el.getBoundingClientRect().top
+            if (Math.abs(currentTop - initialTop) > 5) {
+              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+            }
+          }, 600)
         })
-        setTimeout(() => {
-          const el = document.getElementById(initialSection)
-          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-        }, 800)
       }
       prevInitialSection.current = initialSection
     }
