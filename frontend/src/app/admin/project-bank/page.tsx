@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Shield, Layers, FolderTree, Plus, Trash2, GripVertical, Pencil, Check, X, ChevronDown, ChevronRight } from "lucide-react"
+import { Shield, Layers, FolderTree, Plus, Trash2, GripVertical, Pencil, Check, X, ChevronDown, ChevronRight, Save } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { apiFetch } from "@/lib/api-fetch"
 import { LoadingText } from "@/components/ui/loading-text"
@@ -124,7 +124,7 @@ function ProjectTypesTab() {
               <label className="text-xs text-muted-foreground">Name</label>
               <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Infrastructure" />
             </div>
-            <Button size="sm" onClick={handleAdd}>Save</Button>
+            <Button size="sm" onClick={handleAdd}><Save className="h-4 w-4 mr-1.5" />Save</Button>
             <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
           </div>
         )}
@@ -265,7 +265,7 @@ function SectorsTab() {
               <label className="text-xs text-muted-foreground">Name</label>
               <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Transport" />
             </div>
-            <Button size="sm" onClick={handleAddSector}>Save</Button>
+            <Button size="sm" onClick={handleAddSector}><Save className="h-4 w-4 mr-1.5" />Save</Button>
             <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
           </div>
         )}

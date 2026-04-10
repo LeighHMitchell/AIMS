@@ -476,6 +476,10 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory footer */}
+          <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+            This chart displays the top executing agencies managing budgets on behalf of funders. Switch between commitments and disbursements using the dropdown, and toggle between bar, pie, and table views to analyze the distribution of resources.
+          </p>
           {renderControls(false)}
         </CardContent>
       </Card>

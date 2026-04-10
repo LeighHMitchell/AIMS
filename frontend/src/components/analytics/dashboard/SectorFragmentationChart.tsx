@@ -140,6 +140,11 @@ export function SectorFragmentationChart({
           Swap Axes
         </Button>
       </div>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This heatmap shows how each donor distributes their funding across sectors. Darker cells indicate a higher concentration of a donor's funding in that sector. Use the swap axes button to reverse rows and columns for an alternative perspective.
+      </p>
     </div>
   );
 }

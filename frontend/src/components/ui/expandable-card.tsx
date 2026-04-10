@@ -76,7 +76,7 @@ export function ExpandableCard({
           <TableHeader>
             <TableRow>
               {headers.map((header) => (
-                <TableHead key={header} className="font-semibold">
+                <TableHead key={header} className="font-medium">
                   {header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')}
                 </TableHead>
               ))}

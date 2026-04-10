@@ -447,6 +447,10 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart shows implementing agencies -- organizations responsible for the physical delivery of assistance on the ground. Compare their relative financial shares to understand which organizations carry out the most implementation work.
+          </p>
         </CardContent>
       </Card>
 

@@ -19,6 +19,10 @@ interface DisbursementChannelSelectProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  /** Controlled open state */
+  open?: boolean;
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function DisbursementChannelSelect({
@@ -27,9 +31,13 @@ export function DisbursementChannelSelect({
   placeholder = 'Select disbursement channel',
   disabled = false,
   className = '',
-  id
+  id,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: DisbursementChannelSelectProps) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
 
   const selectedLabel = value ? DISBURSEMENT_CHANNEL_SHORT_LABELS[value as DisbursementChannel] : null;
 

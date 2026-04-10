@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
@@ -408,13 +408,20 @@ export function SDGConcentrationChart({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  {customYears.map(cy => (
+                  {sortCustomYearsCalendarFirst(customYears).map(cy => (
                     <DropdownMenuItem
                       key={cy.id}
                       className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
                       onClick={() => setCalendarType(cy.id)}
                     >
-                      {cy.name}
+                      <span className="flex items-center gap-2">
+                        {cy.shortName && (
+                          <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                            {cy.shortName.trim()}
+                          </span>
+                        )}
+                        {cy.name}
+                      </span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -568,9 +575,9 @@ export function SDGConcentrationChart({
           </LineChart>
         </ResponsiveContainer>
 
-        {/* Explanatory paragraph */}
+        {/* Explanatory text */}
         <div className="mt-6">
-          <p className="text-sm text-slate-500 leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             This chart tracks how many SDGs are typically assigned to each activity over time, helping assess the
             organization&apos;s approach to SDG alignment. Activities mapped to just one or two SDGs suggest targeted,
             focused interventions, while those mapped to five or more SDGs may indicate cross-cutting programs or

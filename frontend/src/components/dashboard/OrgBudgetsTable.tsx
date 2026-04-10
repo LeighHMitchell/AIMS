@@ -18,9 +18,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Wallet, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
@@ -136,10 +138,6 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
     setPage(1);
   };
 
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 text-slate-400" />;
-    return sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
-  };
 
   if (loading) {
     return (
@@ -185,20 +183,20 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[280px] cursor-pointer select-none" onClick={() => handleSort('activity_id')}>
-                  <span className="flex items-center gap-1">Activity Title <SortIcon field="activity_id" /></span>
+                <TableHead className={`min-w-[280px] ${sortableHeaderClasses}`} onClick={() => handleSort('activity_id')}>
+                  <div className="flex items-center gap-1">Activity Title {getSortIcon('activity_id', sortField, sortOrder)}</div>
                 </TableHead>
-                <TableHead className="min-w-[160px] cursor-pointer select-none" onClick={() => handleSort('period_start')}>
-                  <span className="flex items-center gap-1">Period <SortIcon field="period_start" /></span>
+                <TableHead className={`min-w-[160px] ${sortableHeaderClasses}`} onClick={() => handleSort('period_start')}>
+                  <div className="flex items-center gap-1">Period {getSortIcon('period_start', sortField, sortOrder)}</div>
                 </TableHead>
-                <TableHead className="cursor-pointer select-none" onClick={() => handleSort('type')}>
-                  <span className="flex items-center gap-1">Type <SortIcon field="type" /></span>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('type')}>
+                  <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortOrder)}</div>
                 </TableHead>
-                <TableHead className="min-w-[140px] cursor-pointer select-none" onClick={() => handleSort('value')}>
-                  <span className="flex items-center gap-1">Original Value <SortIcon field="value" /></span>
+                <TableHead className={`min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                  <div className="flex items-center gap-1">Original Value {getSortIcon('value', sortField, sortOrder)}</div>
                 </TableHead>
-                <TableHead className="min-w-[100px] cursor-pointer select-none" onClick={() => handleSort('value_date')}>
-                  <span className="flex items-center gap-1">Value Date <SortIcon field="value_date" /></span>
+                <TableHead className={`min-w-[100px] ${sortableHeaderClasses}`} onClick={() => handleSort('value_date')}>
+                  <div className="flex items-center gap-1">Value Date {getSortIcon('value_date', sortField, sortOrder)}</div>
                 </TableHead>
                 <TableHead className="min-w-[120px]">USD Value</TableHead>
                 <TableHead className="w-[50px]"></TableHead>

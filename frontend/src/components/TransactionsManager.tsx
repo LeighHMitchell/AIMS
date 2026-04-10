@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Pencil, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle, Loader2, Columns3, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Pencil, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle, Loader2, Columns3, ChevronDown, ArrowLeftRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -94,7 +94,7 @@ const ACTIVITY_EDITOR_COLUMN_CONFIGS: ActivityEditorColumnConfig[] = [
   { id: 'transactionDate', label: 'Date', group: 'default', defaultVisible: true },
   { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true },
   { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true },
-  { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true },
+  { id: 'amount', label: 'Original Value', group: 'default', defaultVisible: true },
   { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true },
   { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true },
   { id: 'financeType', label: 'Finance Type', group: 'default', defaultVisible: true },
@@ -183,7 +183,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" className="gap-2">
           <Columns3 className="h-4 w-4" />
           <span className="hidden sm:inline">Columns</span>
           <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
@@ -1042,9 +1042,9 @@ export default function TransactionsManager({
                 Manage IATI-compliant financial transactions
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3 items-center">
               {transactions.length > 0 && (
-                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+                <div className="flex items-center gap-2">
                   <Switch
                     id="grouped-view"
                     checked={groupedView}
@@ -1056,11 +1056,13 @@ export default function TransactionsManager({
                 </div>
               )}
               
-              {/* Column Selector */}
-              <ActivityEditorColumnSelector 
-                visibleColumns={visibleColumns} 
-                onColumnsChange={setVisibleColumns} 
-              />
+              {/* Column Selector - hidden when no transactions */}
+              {transactions.length > 0 && (
+                <ActivityEditorColumnSelector
+                  visibleColumns={visibleColumns}
+                  onColumnsChange={setVisibleColumns}
+                />
+              )}
               
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" />
@@ -1117,10 +1119,18 @@ export default function TransactionsManager({
               </Table>
             </div>
           ) : filteredTransactions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {transactions.length === 0 
-                ? "No transactions have been added yet." 
-                : "No transactions match the current filters."}
+            <div className="text-center py-12">
+              {transactions.length === 0 ? (
+                <>
+                  <img src="/images/empty-dormouse.png" alt="No transactions" className="h-32 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">No transactions</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Use the button above to add your first transaction.
+                  </p>
+                </>
+              ) : (
+                <p className="text-muted-foreground">No transactions match the current filters.</p>
+              )}
             </div>
           ) : (
             <>

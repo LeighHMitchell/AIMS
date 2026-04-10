@@ -697,6 +697,11 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
           </div>
         </div>
       </ExpandableCard>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This Sankey diagram visualises how organisations flow across IATI participation roles, from Funding through Extending and Accountable to Implementing. The width of each link represents the number of activities (or budget value) shared between two organisations in consecutive roles. Use the metric toggle to switch between activity count and budget value, and export the data as CSV or JPG for reporting.
+      </p>
     </div>
   )
 }

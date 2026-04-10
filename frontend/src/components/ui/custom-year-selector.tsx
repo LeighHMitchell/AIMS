@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CustomYear } from "@/types/custom-years";
+import { CustomYear, sortCustomYearsCalendarFirst, crossesCalendarYear } from "@/types/custom-years";
 import { cn } from "@/lib/utils";
 
 interface CustomYearSelectorProps {
@@ -79,15 +79,44 @@ export function CustomYearSelector({
         )}
       >
         <SelectValue placeholder={placeholder}>
-          {selectedYear?.name || placeholder}
+          {selectedYear ? (
+            <span className="flex items-center gap-2">
+              {selectedYear.shortName ? (
+                <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                  {selectedYear.shortName.trim()}
+                </span>
+              ) : (
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: crossesCalendarYear(selectedYear) ? '#f59e0b' : '#3b82f6' }}
+                />
+              )}
+              {selectedYear.name}
+            </span>
+          ) : placeholder}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {customYears.map((cy) => (
-          <SelectItem key={cy.id} value={cy.id} className="text-xs">
-            {cy.name}
-          </SelectItem>
-        ))}
+        {sortCustomYearsCalendarFirst(customYears).map((cy) => {
+          const isFiscal = crossesCalendarYear(cy);
+          return (
+            <SelectItem key={cy.id} value={cy.id} className="text-xs">
+              <span className="flex items-center gap-2">
+                {cy.shortName ? (
+                  <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                    {cy.shortName.trim()}
+                  </span>
+                ) : (
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: isFiscal ? '#f59e0b' : '#3b82f6' }}
+                  />
+                )}
+                {cy.name}
+              </span>
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );

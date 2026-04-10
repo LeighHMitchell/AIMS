@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getRoleDisplayLabel } from '@/lib/role-badge-utils';
-import { Users, Search, X, LayoutGrid, Table2, Mail, Phone, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, Search, X, LayoutGrid, Table2, Mail, Phone, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { apiFetch } from '@/lib/api-fetch';
 import type { RolodexPerson } from '@/app/api/rolodex/route';
@@ -114,10 +114,10 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
   };
 
   const SortIcon = ({ column }: { column: string }) => {
-    if (sortColumn !== column) return <ArrowUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
+    if (sortColumn !== column) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
     return sortDirection === 'asc'
-      ? <ArrowUp className="h-3.5 w-3.5 ml-1" />
-      : <ArrowDown className="h-3.5 w-3.5 ml-1" />;
+      ? <ChevronUp className="h-3.5 w-3.5 ml-1" />
+      : <ChevronDown className="h-3.5 w-3.5 ml-1" />;
   };
 
   const handleRefetch = () => {

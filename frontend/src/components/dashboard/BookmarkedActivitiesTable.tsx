@@ -13,15 +13,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
   Bookmark,
   BookmarkX,
   ArrowRight,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
   LayoutGrid,
   TableIcon,
 } from 'lucide-react';
@@ -73,43 +72,6 @@ const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> =
   '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
 };
 
-
-function SortableHeader({
-  label,
-  field,
-  currentField,
-  currentDirection,
-  onSort,
-  className,
-}: {
-  label: string;
-  field: SortField;
-  currentField: SortField;
-  currentDirection: SortDirection;
-  onSort: (field: SortField) => void;
-  className?: string;
-}) {
-  const isActive = currentField === field;
-  return (
-    <TableHead className={className}>
-      <button
-        className="flex items-center gap-1 hover:text-foreground transition-colors -ml-1 px-1"
-        onClick={() => onSort(field)}
-      >
-        {label}
-        {isActive ? (
-          currentDirection === 'asc' ? (
-            <ArrowUp className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
-          )
-        ) : (
-          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
-        )}
-      </button>
-    </TableHead>
-  );
-}
 
 export function BookmarkedActivitiesTable() {
   const router = useRouter();
@@ -322,28 +284,24 @@ export function BookmarkedActivitiesTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHeader
-                  label="Activity"
-                  field="title"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                  className="w-[40%]"
-                />
-                <SortableHeader
-                  label="Reported By"
-                  field="reporting_org"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableHeader
-                  label="Updated"
-                  field="updated_at"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                />
+                <TableHead className={`w-[40%] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                  <div className="flex items-center gap-1">
+                    Activity
+                    {getSortIcon('title', sortField, sortDirection)}
+                  </div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('reporting_org')}>
+                  <div className="flex items-center gap-1">
+                    Reported By
+                    {getSortIcon('reporting_org', sortField, sortDirection)}
+                  </div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('updated_at')}>
+                  <div className="flex items-center gap-1">
+                    Updated
+                    {getSortIcon('updated_at', sortField, sortDirection)}
+                  </div>
+                </TableHead>
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>

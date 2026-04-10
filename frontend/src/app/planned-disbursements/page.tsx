@@ -279,12 +279,6 @@ export default function PlannedDisbursementsPage() {
     toast.success("Planned disbursements exported successfully");
   };
 
-  const handleRowClick = (disbursementId: string) => {
-    const disbursement = disbursements.find(d => d.id === disbursementId);
-    if (disbursement && disbursement.activity_id) {
-      router.push(`/activities/new?id=${disbursement.activity_id}&section=finances&tab=planned-disbursements`);
-    }
-  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -428,8 +422,8 @@ export default function PlannedDisbursementsPage() {
                 <Label className="text-xs text-muted-foreground">Type</Label>
                 <MultiSelectFilter
                   options={[
-                    { value: "1", label: "Original", code: "1" },
-                    { value: "2", label: "Revised", code: "2" },
+                    { value: "1", label: "Original", code: "1", color: "#3b82f6" },
+                    { value: "2", label: "Revised", code: "2", color: "#f59e0b" },
                   ]}
                   value={filters.types}
                   onChange={(value) => setFilters({...filters, types: value})}
@@ -522,7 +516,6 @@ export default function PlannedDisbursementsPage() {
                 sortField={sortField}
                 sortOrder={sortOrder}
                 onSort={handleSort}
-                onRowClick={handleRowClick}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 selectedIds={selectedDisbursementIds}

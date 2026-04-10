@@ -45,7 +45,7 @@ const PALETTE_ARRAY = [
   BRAND_PALETTE.paleSlate,
   BRAND_PALETTE.platinum,
 ]
-import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format, parseISO } from 'date-fns'
 import {
   splitBudgetAcrossYears,
@@ -685,9 +685,9 @@ export function FinancialTotalsBarChart({
           <table className="w-full text-sm">
             <thead className="bg-muted sticky top-0">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-foreground border-b">Year</th>
+                <th className="text-left px-4 py-3 font-medium text-foreground border-b">Year</th>
                 {activeDataKeys.map(key => (
-                  <th key={key} className="text-right px-4 py-3 font-semibold text-foreground border-b">
+                  <th key={key} className="text-right px-4 py-3 font-medium text-foreground border-b">
                     <div className="flex items-center justify-end gap-2">
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -697,7 +697,7 @@ export function FinancialTotalsBarChart({
                     </div>
                   </th>
                 ))}
-                <th className="text-right px-4 py-3 font-semibold text-foreground border-b">Total</th>
+                <th className="text-right px-4 py-3 font-medium text-foreground border-b">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -901,13 +901,20 @@ export function FinancialTotalsBarChart({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  {customYears.map(cy => (
+                  {sortCustomYearsCalendarFirst(customYears).map(cy => (
                     <DropdownMenuItem
                       key={cy.id}
                       className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                       onClick={() => setCalendarType(cy.id)}
                     >
-                      {cy.name}
+                      <span className="flex items-center gap-2">
+                        {cy.shortName && (
+                          <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                            {cy.shortName.trim()}
+                          </span>
+                        )}
+                        {cy.name}
+                      </span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

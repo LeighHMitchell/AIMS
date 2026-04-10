@@ -147,7 +147,7 @@ export function AdvancedGroup({
       // Lock long enough to survive the preloading layout shift (500ms preload + render time)
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (initialSection !== 'linked_activities' || prevInitialSection.current !== initialSection) {
+      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'linked_activities')) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
@@ -176,6 +176,7 @@ export function AdvancedGroup({
   useEffect(() => {
     if (isFirstRender.current) return
     if (activeSection && isAdvancedSection(activeSection)) {
+      prevInitialSection.current = activeSection
       onActiveSectionChangeRef.current(activeSection)
     }
   }, [activeSection])
@@ -196,6 +197,7 @@ export function AdvancedGroup({
     const handleScrollToSection = (event: CustomEvent<string>) => {
       const sectionId = event.detail
       if (isAdvancedSection(sectionId)) {
+        prevInitialSection.current = sectionId
         scrollToSection(sectionId)
         activateSection(sectionId)
       }

@@ -262,10 +262,10 @@ export function Top10ActiveProjectsChart({
         </div>
       )}
 
-      <p className="text-sm text-slate-600 leading-relaxed">
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
         This chart ranks development partners by the number of activities where they are listed as a funding or implementing organization.
-        Use this to identify the most active partners in your country's development landscape and to facilitate coordination
-        with key stakeholders who have significant operational presence.
+        Use this to identify the most active partners in your country's development landscape and to facilitate coordination with key stakeholders who have significant operational presence.
       </p>
     </div>
   )

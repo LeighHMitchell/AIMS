@@ -350,16 +350,11 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         </div>
       )}
 
-      {/* Explanatory text - only show when expanded and has data, no card wrapper */}
+      {/* Explanatory text */}
       {!compact && !hasNoData && (
-        <p className="mt-4 text-sm text-slate-500 leading-relaxed">
-          This chart displays the top 10 activities ranked by community voting. Users can upvote activities
-          they find valuable or impactful, and downvote those they consider less effective. The <strong className="text-slate-600">Net Score</strong> view
-          shows the overall sentiment (upvotes minus downvotes), helping identify activities with the strongest
-          community support. The <strong className="text-slate-600">Pyramid</strong> view separates upvotes and downvotes, revealing activities
-          that may be controversial (high votes on both sides) versus those with clear consensus. This crowdsourced
-          feedback mechanism helps aid practitioners and analysts identify which interventions are perceived as
-          most effective, enabling better resource allocation decisions and knowledge sharing across the development community.
+        <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+          This chart displays the top 10 activities ranked by community voting. The Net Score view shows overall sentiment (upvotes minus downvotes), while the Pyramid view separates upvotes and downvotes to reveal controversial activities versus those with clear consensus.
+          Use this to identify which interventions the community considers most effective and to inform resource allocation decisions.
         </p>
       )}
     </div>

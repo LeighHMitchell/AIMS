@@ -100,18 +100,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
     <StaggerContainer className="grid gap-4 md:grid-cols-3">
       {/* Last Activity Created */}
       <StaggerItem>
-      <a
-        href={lastCreated ? `/activities/${lastCreated.id}` : undefined}
-        className={lastCreated ? '' : 'pointer-events-none'}
-        onClick={(e) => {
-          if (!lastCreated) e.preventDefault();
-        }}
-      >
-        <Card
-          className={`bg-white transition-all h-full ${
-            lastCreated ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
-          }`}
-        >
+        <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <Plus className="h-4 w-4 text-slate-600" />
@@ -122,12 +111,12 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastCreated ? (
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium text-slate-900 leading-snug" title={lastCreated.title}>
+                  <a href={`/activities/new?id=${lastCreated.id}`} className="font-medium text-slate-900 leading-snug hover:text-primary hover:underline" title={lastCreated.title}>
                     {lastCreated.title}
                     {lastCreated.iatiIdentifier && (
                       <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastCreated.iatiIdentifier}</code></>
                     )}
-                  </p>
+                  </a>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       <Button
@@ -152,7 +141,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                 </div>
                 {lastCreated.creatorProfile && (
                   <div className="mt-2 text-xs text-slate-500">
-                    <span className="font-medium text-slate-600">{lastCreated.creatorProfile.name}</span>
+                    <span>{lastCreated.creatorProfile.name}</span>
                     {lastCreated.creatorProfile.jobTitle && (
                       <span> · {lastCreated.creatorProfile.jobTitle}</span>
                     )}
@@ -173,23 +162,11 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             )}
           </CardContent>
         </Card>
-      </a>
       </StaggerItem>
 
       {/* Last Activity Edited */}
       <StaggerItem>
-      <a
-        href={lastEdited ? `/activities/${lastEdited.id}` : undefined}
-        className={lastEdited ? '' : 'pointer-events-none'}
-        onClick={(e) => {
-          if (!lastEdited) e.preventDefault();
-        }}
-      >
-        <Card
-          className={`bg-white transition-all h-full ${
-            lastEdited ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
-          }`}
-        >
+        <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <Pencil className="h-4 w-4 text-slate-500" />
@@ -200,12 +177,12 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastEdited ? (
               <>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium text-slate-900 leading-snug" title={lastEdited.title}>
+                  <a href={`/activities/new?id=${lastEdited.id}`} className="font-medium text-slate-900 leading-snug hover:text-primary hover:underline" title={lastEdited.title}>
                     {lastEdited.title}
                     {lastEdited.iatiIdentifier && (
                       <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastEdited.iatiIdentifier}</code></>
                     )}
-                  </p>
+                  </a>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       <Button
@@ -231,10 +208,10 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                 {/* Editor details */}
                 <div className="mt-2 text-xs text-slate-500">
                   {lastEdited.editedByYou ? (
-                    <span className="font-medium text-slate-600">Edited by you</span>
+                    <span>Edited by you</span>
                   ) : (
                     <>
-                      <span className="font-medium text-slate-600">
+                      <span>
                         {lastEdited.editorProfile?.name || lastEdited.editedByName || 'Colleague'}
                       </span>
                       {lastEdited.editorProfile?.jobTitle && (
@@ -258,23 +235,11 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             )}
           </CardContent>
         </Card>
-      </a>
       </StaggerItem>
 
       {/* Last Validation Event */}
       <StaggerItem>
-      <a
-        href={lastValidation ? `/activities/${lastValidation.activityId}?tab=government-endorsement` : undefined}
-        className={lastValidation ? '' : 'pointer-events-none'}
-        onClick={(e) => {
-          if (!lastValidation) e.preventDefault();
-        }}
-      >
-        <Card
-          className={`bg-white transition-all h-full ${
-            lastValidation ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
-          }`}
-        >
+        <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-slate-600" />
@@ -285,9 +250,9 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastValidation ? (
               <>
                 <div className="flex items-start gap-2">
-                  <p className="font-medium text-slate-900 leading-snug flex-1" title={lastValidation.activityTitle}>
+                  <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="font-medium text-slate-900 leading-snug flex-1 hover:text-primary hover:underline" title={lastValidation.activityTitle}>
                     {lastValidation.activityTitle}
-                  </p>
+                  </a>
                   <div className="flex items-center gap-1 shrink-0">
                     {(() => {
                       const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
@@ -327,7 +292,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                 )}
                 {lastValidation.validatorName && (
                   <p className="text-xs text-slate-500 mt-1.5">
-                    by <span className="font-medium text-slate-600">{lastValidation.validatorName}</span>
+                    by <span>{lastValidation.validatorName}</span>
                   </p>
                 )}
                 {lastValidation.rejectionReason && (
@@ -347,7 +312,6 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             )}
           </CardContent>
         </Card>
-      </a>
       </StaggerItem>
     </StaggerContainer>
   );

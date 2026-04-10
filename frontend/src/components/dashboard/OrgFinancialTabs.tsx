@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, ListTodo, Wallet, Banknote } from 'lucide-react';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { OrgTransactionsTable } from './OrgTransactionsTable';
 import { OrgActivitiesTable } from './OrgActivitiesTable';
 import { OrgBudgetsTable } from './OrgBudgetsTable';
@@ -66,12 +67,10 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
         <CardTitle className="flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-slate-600" />
           {isPortfolio ? 'My Financial Data' : "My Organisation\u2019s Data"}
-        </CardTitle>
-        <CardDescription>
-          {isPortfolio
+          <HelpTextTooltip size="sm" content={isPortfolio
             ? 'Activities and financial records you have entered'
-            : 'Financial data and activities for your organisation'}
-        </CardDescription>
+            : 'Financial data and activities for your organisation'} />
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

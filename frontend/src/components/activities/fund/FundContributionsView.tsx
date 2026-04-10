@@ -213,7 +213,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className={`font-semibold ${!showYearPivot ? sortableHeaderClasses : ''}`} onClick={!showYearPivot ? () => handleSort('name') : undefined}>
+              <TableHead className={`font-medium ${!showYearPivot ? sortableHeaderClasses : ''}`} onClick={!showYearPivot ? () => handleSort('name') : undefined}>
                 <div className="flex items-center gap-1">
                   Donor
                   {!showYearPivot && getSortIcon('name', sortField, sortDirection)}
@@ -222,26 +222,26 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
               {!showYearPivot ? (
                 <>
                   {data.totals.pledged > 0 && (
-                    <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('pledged')}>
+                    <TableHead className={`text-right font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('pledged')}>
                       <div className="flex items-center justify-end gap-1">
                         Pledged
                         {getSortIcon('pledged', sortField, sortDirection)}
                       </div>
                     </TableHead>
                   )}
-                  <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('committed')}>
+                  <TableHead className={`text-right font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('committed')}>
                     <div className="flex items-center justify-end gap-1">
                       Committed
                       {getSortIcon('committed', sortField, sortDirection)}
                     </div>
                   </TableHead>
-                  <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('received')}>
+                  <TableHead className={`text-right font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('received')}>
                     <div className="flex items-center justify-end gap-1">
                       Received
                       {getSortIcon('received', sortField, sortDirection)}
                     </div>
                   </TableHead>
-                  <TableHead className={`text-right font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('total')}>
+                  <TableHead className={`text-right font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('total')}>
                     <div className="flex items-center justify-end gap-1">
                       Total
                       {getSortIcon('total', sortField, sortDirection)}
@@ -250,7 +250,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
                 </>
               ) : (
                 data.years.map(y => (
-                  <TableHead key={y} className="text-right font-semibold">{y}</TableHead>
+                  <TableHead key={y} className="text-right font-medium">{y}</TableHead>
                 ))
               )}
             </TableRow>

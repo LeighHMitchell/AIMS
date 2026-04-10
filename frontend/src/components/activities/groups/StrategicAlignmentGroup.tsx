@@ -146,7 +146,7 @@ export function StrategicAlignmentGroup({
       // Lock long enough to survive the preloading layout shift (preload + render time)
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (initialSection !== 'sdg' || prevInitialSection.current !== initialSection) {
+      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'sdg')) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
@@ -172,6 +172,7 @@ export function StrategicAlignmentGroup({
   useEffect(() => {
     if (isFirstRender.current) return
     if (activeSection && isStrategicAlignmentSection(activeSection)) {
+      prevInitialSection.current = activeSection
       onActiveSectionChangeRef.current(activeSection)
     }
   }, [activeSection])
@@ -194,6 +195,7 @@ export function StrategicAlignmentGroup({
     const handleScrollToSection = (event: CustomEvent<string>) => {
       const sectionId = event.detail
       if (isStrategicAlignmentSection(sectionId)) {
+        prevInitialSection.current = sectionId
         scrollToSection(sectionId)
         activateSection(sectionId)
       }

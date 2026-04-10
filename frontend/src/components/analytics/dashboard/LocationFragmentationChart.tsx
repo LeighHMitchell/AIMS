@@ -141,6 +141,11 @@ export function LocationFragmentationChart({
           Swap Axes
         </Button>
       </div>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This heatmap shows how each donor distributes their funding across geographic locations. Darker cells indicate a higher concentration of a donor's funding in that location. Use the swap axes button to view the data from the location perspective instead.
+      </p>
     </div>
   );
 }

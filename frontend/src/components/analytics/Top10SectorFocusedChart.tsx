@@ -284,10 +284,10 @@ export function Top10SectorFocusedChart({
         </div>
       )}
 
-      <p className="text-sm text-slate-600 leading-relaxed">
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
         This chart shows the top development partners by financial value for activities in {sectorName}.
-        Use this to identify key funders in specific sectors and understand funding concentration patterns
-        to inform sector coordination and resource mobilization strategies.
+        Use this to identify key funders in specific sectors and understand funding concentration patterns to inform sector coordination and resource mobilization strategies.
       </p>
     </div>
   )

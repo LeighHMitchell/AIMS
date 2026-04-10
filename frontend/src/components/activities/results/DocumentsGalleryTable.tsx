@@ -408,22 +408,22 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className={`font-semibold w-[300px] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+              <TableHead className={`font-medium w-[300px] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
                 <span className="flex items-center gap-1">Document {getSortIcon('title', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('format')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('format')}>
                 <span className="flex items-center gap-1">Format {getSortIcon('format', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('category')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('category')}>
                 <span className="flex items-center gap-1">Category {getSortIcon('category', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('attachedTo')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('attachedTo')}>
                 <span className="flex items-center gap-1">Attached To {getSortIcon('attachedTo', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
                 <span className="flex items-center gap-1">Date {getSortIcon('date', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className="font-semibold w-[80px]"></TableHead>
+              <TableHead className="font-medium w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

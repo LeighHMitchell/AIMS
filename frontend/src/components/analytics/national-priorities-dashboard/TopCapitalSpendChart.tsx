@@ -504,6 +504,10 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart ranks the top activities by their capital spend value. Each bar shows the absolute capital expenditure amount, calculated by applying the activity's capital spend percentage to its base financial value. Use the metric and time range selectors to adjust the view.
+          </p>
         </CardContent>
       </Card>
 

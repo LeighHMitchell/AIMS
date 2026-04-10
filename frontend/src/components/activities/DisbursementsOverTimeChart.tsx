@@ -279,7 +279,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                       </div>
                     </TableHead>
                   ))}
-                  <TableHead className="text-right font-semibold">Total</TableHead>
+                  <TableHead className="text-right font-medium">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

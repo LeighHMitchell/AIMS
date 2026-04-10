@@ -282,6 +282,11 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
           />
         </LineChart>
       </ResponsiveContainer>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart plots commitments and disbursements over time, making it easy to compare funding promises against actual spending. Use the period selector to group by calendar year, financial year, or quarter. A growing gap between the two lines may indicate delivery bottlenecks or pipeline delays worth investigating.
+      </p>
     </div>
   )
 } 

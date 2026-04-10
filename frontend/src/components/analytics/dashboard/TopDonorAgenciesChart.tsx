@@ -120,7 +120,10 @@ export function TopDonorAgenciesChart({
           </div>
         ))}
       </div>
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart ranks the top individual donor agencies by funding value. Each bar represents a specific development partner organization, showing their relative contribution to the overall aid portfolio. Hover over bars to see the full organization name and country.
+      </p>
     </div>
   );
 }
-

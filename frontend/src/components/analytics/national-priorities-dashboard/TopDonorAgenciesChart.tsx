@@ -470,6 +470,10 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart shows the top 5 individual development partner organizations by financial contribution, with remaining donors aggregated. Use the metric and time range selectors to analyze funding patterns across different measures and periods.
+          </p>
         </CardContent>
       </Card>
 

@@ -34,9 +34,6 @@ import {
   Filter,
   RefreshCw,
   Info,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Globe,
   FileText,
   Users,
@@ -357,10 +354,10 @@ export default function PartnersPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground" />;
+    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 ml-1 text-muted-foreground" />;
     return sortOrder === 'asc' 
-      ? <ArrowUp className="h-3 w-3 ml-1 text-muted-foreground" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-muted-foreground" />;
+      ? <ChevronUp className="h-3 w-3 ml-1 text-muted-foreground" />
+      : <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground" />;
   };
 
   // Sort organizations within a group

@@ -226,7 +226,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-semibold text-foreground">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-medium text-foreground">Participating Organisations</CardTitle>
             </div>
             <div className="h-9 w-40 bg-muted animate-pulse rounded-md" />
           </div>
@@ -290,7 +290,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-semibold text-foreground">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-medium text-foreground">Participating Organisations</CardTitle>
               <HelpTextTooltip content={getSectionHelpText('organisations')}>
                 <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
@@ -317,7 +317,7 @@ export default function OrganisationsSection({
                   <TableHeader>
                     <TableRow className="bg-muted">
                       <TableHead
-                        className="w-[40%] font-semibold cursor-pointer hover:bg-muted select-none"
+                        className="w-[40%] font-medium cursor-pointer hover:bg-muted select-none"
                         onClick={() => handleSort('organization')}
                       >
                         <div className="flex items-center">
@@ -326,7 +326,7 @@ export default function OrganisationsSection({
                         </div>
                       </TableHead>
                       <TableHead
-                        className="w-[20%] font-semibold cursor-pointer hover:bg-muted select-none"
+                        className="w-[20%] font-medium cursor-pointer hover:bg-muted select-none"
                         onClick={() => handleSort('role')}
                       >
                         <div className="flex items-center">
@@ -335,7 +335,7 @@ export default function OrganisationsSection({
                         </div>
                       </TableHead>
                       <TableHead
-                        className="w-[26%] font-semibold cursor-pointer hover:bg-muted select-none"
+                        className="w-[26%] font-medium cursor-pointer hover:bg-muted select-none"
                         onClick={() => handleSort('type')}
                       >
                         <div className="flex items-center">
@@ -343,7 +343,7 @@ export default function OrganisationsSection({
                           {getSortIcon('type')}
                         </div>
                       </TableHead>
-                      <TableHead className="w-[14%] text-right font-semibold">Actions</TableHead>
+                      <TableHead className="w-[14%] text-right font-medium">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -369,7 +369,7 @@ export default function OrganisationsSection({
                                 </div>
                               )}
                             </div>
-                            <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <div className="min-w-0 flex-1">
                                 {participatingOrg.organization_id ? (
                                   <Link
                                     href={`/organizations/${participatingOrg.organization_id}`}
@@ -390,13 +390,15 @@ export default function OrganisationsSection({
                                      ` (${participatingOrg.organization.acronym})`}
                                   </span>
                                 )}
+                              {' '}
                               {(participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id) && (
-                                <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
+                                <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded whitespace-nowrap inline-block align-middle">
                                   {participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
                                 </span>
                               )}
+                              {' '}
                               {participatingOrg.id && (
-                                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] inline-block align-middle" />
                               )}
                             </div>
                           </div>
@@ -414,10 +416,10 @@ export default function OrganisationsSection({
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={() => handleEdit(participatingOrg)}
                               className="hover:bg-blue-50 hover:text-blue-600"
                             >
@@ -425,7 +427,7 @@ export default function OrganisationsSection({
                             </Button>
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={() => handleDelete(participatingOrg)}
                               className="text-red-600 hover:bg-red-50 hover:text-red-700"
                             >

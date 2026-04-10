@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, SlidersHorizontal, Check, Search } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -852,13 +852,20 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      {customYears.map(cy => (
+                      {sortCustomYearsCalendarFirst(customYears).map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
                           className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
-                          {cy.name}
+                          <span className="flex items-center gap-2">
+                            {cy.shortName && (
+                              <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                {cy.shortName.trim()}
+                              </span>
+                            )}
+                            {cy.name}
+                          </span>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -995,13 +1002,20 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    {customYears.map(cy => (
+                    {sortCustomYearsCalendarFirst(customYears).map(cy => (
                       <DropdownMenuItem
                         key={cy.id}
                         className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
                         onClick={() => setCalendarType(cy.id)}
                       >
-                        {cy.name}
+                        <span className="flex items-center gap-2">
+                          {cy.shortName && (
+                            <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                              {cy.shortName.trim()}
+                            </span>
+                          )}
+                          {cy.name}
+                        </span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -1339,12 +1353,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Table>
               <TableHeader>
                 <TableRow className="sticky top-0 bg-white z-10">
-                  <TableHead className="bg-white">Organization</TableHead>
-                  <TableHead className="bg-white">Type</TableHead>
-                  <TableHead className="text-right bg-white">Total Budgets</TableHead>
-                  <TableHead className="text-right bg-white">Planned Disbursements</TableHead>
-                  <TableHead className="text-right bg-white">Commitments</TableHead>
-                  <TableHead className="text-right bg-white">Actual Disbursements</TableHead>
+                  <TableHead>Organization</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Total Budgets</TableHead>
+                  <TableHead className="text-right">Planned Disbursements</TableHead>
+                  <TableHead className="text-right">Commitments</TableHead>
+                  <TableHead className="text-right">Actual Disbursements</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1489,12 +1503,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         )}
       </div>
 
-      {/* Explanatory Text */}
-      <p className="text-sm text-slate-500 leading-relaxed">
-        This chart ranks funding organizations by their financial contributions, helping stakeholders understand
-        the development assistance landscape. Compare organizations by total budgets, planned disbursements,
-        commitments, or actual disbursements (aggregated by provider organization). The stacked view groups
-        donors by organization type, showing individual organizations as segments within each bar.
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart ranks funding organizations by their financial contributions, helping stakeholders understand the development assistance landscape. Compare organizations by total budgets, planned disbursements, commitments, or actual disbursements.
+        The stacked view groups donors by organization type, showing individual organizations as segments within each bar for quick identification of major contributors.
       </p>
     </div>
   )

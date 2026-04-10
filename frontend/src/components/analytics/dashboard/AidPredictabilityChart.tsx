@@ -356,6 +356,11 @@ export function AidPredictabilityChart() {
         Comparing planned disbursements against actual disbursements to measure aid predictability
       </div>
 
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A high predictability ratio indicates that disbursements are closely aligned with plans, supporting more effective resource allocation. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.
+      </p>
+
       {/* Expanded Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">

@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
         last_name,
         email,
         avatar_url,
+        job_title,
+        department,
         organization_id,
         organizations!users_organization_id_fkey (
           id,
@@ -66,6 +68,8 @@ export async function GET(request: NextRequest) {
         email: user.email,
         avatarUrl: user.avatar_url || null,
         organizationId: user.organization_id,
+        jobTitle: user.job_title || '',
+        department: user.department || '',
         organization: orgName,
         value: user.id,
         label: orgName

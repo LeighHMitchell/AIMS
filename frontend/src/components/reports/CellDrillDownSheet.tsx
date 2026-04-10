@@ -19,7 +19,7 @@ import {
   TrendingUp,
   Hash,
   FileText,
-  ArrowUpDown
+  ChevronsUpDown
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -241,7 +241,7 @@ export function CellDrillDownSheet({
 
   // Sort indicator
   const SortIndicator = ({ field }: { field: SortField }) => (
-    <ArrowUpDown 
+    <ChevronsUpDown 
       className={`h-3 w-3 ml-1 inline ${sortField === field ? 'text-foreground' : 'text-muted-foreground/50'}`} 
     />
   )

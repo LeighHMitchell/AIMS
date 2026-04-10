@@ -71,6 +71,14 @@ export function LocationFragmentationChart({
     );
   }
 
-  return <FragmentationHeatmap data={data} />;
+  return (
+    <div>
+      <FragmentationHeatmap data={data} />
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        This heatmap shows how each donor distributes their funding across geographic locations. Darker cells indicate a higher concentration of a donor's funding in that location, helping to identify geographic focus areas and potential coverage gaps.
+      </p>
+    </div>
+  );
 }
 

@@ -25,17 +25,10 @@ interface InactiveActivity {
   lastUpdated: string
 }
 
-interface MissingDataItem {
+interface MissingDataActivity {
   id: string
   title: string
-}
-
-interface MissingDataActivity {
-  sector: MissingDataItem[]
-  dates: MissingDataItem[]
-  budget: MissingDataItem[]
-  reportingOrg: MissingDataItem[]
-  iatiId: MissingDataItem[]
+  missingFields: string[]
 }
 
 interface ValidationStatus {
@@ -61,7 +54,7 @@ interface MyPortfolioData {
   summary: ActivitySummary
   pipelinePastStart: PipelineActivity[]
   inactive90Days: InactiveActivity[]
-  missingData: MissingDataActivity
+  missingData: MissingDataActivity[]
   validationStatus: ValidationStatus
   participatingOrgActivities: ParticipatingOrgActivity[]
   sectorDistribution: Record<string, number>

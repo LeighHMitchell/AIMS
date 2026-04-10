@@ -2585,27 +2585,27 @@ export default function FinancialAnalyticsTab({
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-card z-10">
                       <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Period</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Period</th>
                         {activeSeries.has('Incoming Funds') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Incoming Funds</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Incoming Funds</th>
                         )}
                         {activeSeries.has('Incoming Commitments') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Incoming Commitments</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Incoming Commitments</th>
                         )}
                         {activeSeries.has('Outgoing Commitments') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Outgoing Commitments</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Outgoing Commitments</th>
                         )}
                         {activeSeries.has('Disbursements') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Disbursements</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Disbursements</th>
                         )}
                         {activeSeries.has('Expenditures') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Expenditures</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Expenditures</th>
                         )}
                         {activeSeries.has('Planned Disbursements') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Planned Disbursements</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Planned Disbursements</th>
                         )}
                         {activeSeries.has('Budgets') && (
-                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Budgets</th>
+                          <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Budgets</th>
                         )}
                       </tr>
                     </thead>
@@ -3208,9 +3208,9 @@ export default function FinancialAnalyticsTab({
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-card z-10">
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Period</th>
-                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Budget</th>
-                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Actual Spending</th>
+                      <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Period</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Budget</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Actual Spending</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3470,10 +3470,10 @@ export default function FinancialAnalyticsTab({
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-card z-10">
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Provider</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Receiver</th>
-                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Amount (USD)</th>
-                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Percentage</th>
+                      <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Provider</th>
+                      <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Receiver</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Amount (USD)</th>
+                      <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Percentage</th>
                     </tr>
                   </thead>
                   <tbody>

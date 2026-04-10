@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Download, RotateCcw, CircleDot, Flame, Map as MapIcon, Mountain, Maximize2 } from 'lucide-react'
+import { MapPin, Download, RotateCcw, CircleDot, Flame, Mountain, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -210,7 +210,7 @@ function Map3DController({
           title="2D View"
           className="h-8 px-2.5 text-xs"
         >
-          <MapIcon className="h-3.5 w-3.5 mr-1" />
+          <Mountain className="h-3.5 w-3.5 mr-1" />
           2D
         </Button>
       ) : (

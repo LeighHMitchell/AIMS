@@ -267,12 +267,6 @@ export default function BudgetsPage() {
     toast.success("Budgets exported successfully");
   };
 
-  const handleRowClick = (budgetId: string) => {
-    const budget = sortedBudgets.find(b => b.id === budgetId);
-    if (budget && budget.activity_id) {
-      router.push(`/activities/new?id=${budget.activity_id}&section=finances&tab=budgets`);
-    }
-  };
 
   const handleEdit = (budget: Budget) => {
     if (budget && budget.activity_id) {
@@ -431,8 +425,8 @@ export default function BudgetsPage() {
                 <Label className="text-xs text-muted-foreground">Type</Label>
                 <MultiSelectFilter
                   options={[
-                    { value: "1", label: "Original", code: "1" },
-                    { value: "2", label: "Revised", code: "2" },
+                    { value: "1", label: "Original", code: "1", color: "#3b82f6" },
+                    { value: "2", label: "Revised", code: "2", color: "#f59e0b" },
                   ]}
                   value={filters.types}
                   onChange={(value) => setFilters({...filters, types: value})}
@@ -448,8 +442,8 @@ export default function BudgetsPage() {
                 <Label className="text-xs text-muted-foreground">Status</Label>
                 <MultiSelectFilter
                   options={[
-                    { value: "1", label: "Indicative", code: "1" },
-                    { value: "2", label: "Committed", code: "2" },
+                    { value: "1", label: "Indicative", code: "1", color: "#94a3b8" },
+                    { value: "2", label: "Committed", code: "2", color: "#22c55e" },
                   ]}
                   value={filters.statuses}
                   onChange={(value) => setFilters({...filters, statuses: value})}
@@ -554,7 +548,6 @@ export default function BudgetsPage() {
                 sortField={sortField}
                 sortOrder={sortOrder}
                 onSort={handleSort}
-                onRowClick={handleRowClick}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 selectedIds={selectedBudgetIds}

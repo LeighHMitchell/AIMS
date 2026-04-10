@@ -92,7 +92,7 @@ export function TransactionValueDisplay({
       }).format(value);
       
       // Return as JSX with gray currency code
-      return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-xs">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[TransactionValueDisplay] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {

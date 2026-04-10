@@ -295,7 +295,7 @@ export default function Dashboard() {
 
                 {/* Position and department */}
                 {(user.jobTitle || user.department) && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base font-medium text-foreground">
                     {user.jobTitle && user.department
                       ? <>{user.jobTitle} <span>&middot;</span> {user.department}</>
                       : user.jobTitle || user.department}

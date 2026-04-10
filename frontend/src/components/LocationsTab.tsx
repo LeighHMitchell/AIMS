@@ -253,7 +253,7 @@ export default function LocationsTab({
   // Handle delete location
   const handleDeleteLocation = useCallback(async (locationId: string) => {
     try {
-      const response = await apiFetch(`/api/activities/${activityId}/locations/${locationId}`, {
+      const response = await apiFetch(`/api/locations/${locationId}`, {
         method: 'DELETE',
       });
 
@@ -275,40 +275,6 @@ export default function LocationsTab({
     }
   }, [activityId, loadLocations]);
 
-  // Handle duplicate location
-  const handleDuplicateLocation = useCallback(async (location: LocationSchema) => {
-    try {
-      const duplicateData = {
-        ...location,
-        id: undefined, // Remove ID to create new location
-        location_name: `${location.location_name} (Copy)`,
-      };
-
-      const response = await apiFetch(`/api/activities/${activityId}/locations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(duplicateData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to duplicate location');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success('Location duplicated successfully');
-        await loadLocations();
-      } else {
-        throw new Error(result.error || 'Failed to duplicate location');
-      }
-    } catch (err) {
-      console.error('Error duplicating location:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to duplicate location');
-    }
-  }, [activityId, loadLocations]);
 
   // Handle edit location
   const handleEditLocation = useCallback((location: LocationSchema) => {
@@ -429,7 +395,7 @@ export default function LocationsTab({
               location={location}
               onEdit={handleEditLocation}
               onDelete={handleDeleteLocation}
-              onDuplicate={handleDuplicateLocation}
+
               canEdit={canEdit}
             />
           ))}

@@ -54,9 +54,8 @@ import {
   Check,
   Search,
   Calendar,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronUp,
+  ChevronDown,
   LayoutGrid,
   Table as TableIcon,
 } from "lucide-react";
@@ -278,11 +277,11 @@ export function DomesticBudgetManagement() {
   // Get sort icon for column
   const getSortIcon = (column: string) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return <ChevronsUpDown className="h-4 w-4 ml-1 opacity-50" />;
     }
     return sortDirection === "asc"
-      ? <ArrowUp className="h-4 w-4 ml-1" />
-      : <ArrowDown className="h-4 w-4 ml-1" />;
+      ? <ChevronUp className="h-4 w-4 ml-1" />
+      : <ChevronDown className="h-4 w-4 ml-1" />;
   };
 
   // Get selected classification

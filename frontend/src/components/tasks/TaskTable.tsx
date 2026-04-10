@@ -8,15 +8,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertTriangle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   FileText,
   FileSpreadsheet,
   FileImage,
@@ -194,15 +192,6 @@ export function TaskTable({
     });
   }, [assignments, sortField, sortDirection, isCreatorView]);
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
-    }
-    return sortDirection === 'asc'
-      ? <ArrowUp className="ml-1 h-3 w-3" />
-      : <ArrowDown className="ml-1 h-3 w-3" />;
-  };
-
   if (loading) {
     return (
       <div className="space-y-2">
@@ -226,60 +215,35 @@ export function TaskTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[30%]">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-3 h-8 font-medium hover:bg-transparent"
-                onClick={() => handleSort('task')}
-              >
+            <TableHead className={cn("w-[30%]", sortableHeaderClasses)} onClick={() => handleSort('task')}>
+              <div className="flex items-center gap-1">
                 Task
-                <SortIcon field="task" />
-              </Button>
+                {getSortIcon('task', sortField || '', sortDirection)}
+              </div>
             </TableHead>
-            <TableHead className="w-[90px]">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-3 h-8 font-medium hover:bg-transparent"
-                onClick={() => handleSort('priority')}
-              >
+            <TableHead className={cn("w-[90px]", sortableHeaderClasses)} onClick={() => handleSort('priority')}>
+              <div className="flex items-center gap-1">
                 Priority
-                <SortIcon field="priority" />
-              </Button>
+                {getSortIcon('priority', sortField || '', sortDirection)}
+              </div>
             </TableHead>
-            <TableHead className="w-[110px]">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-3 h-8 font-medium hover:bg-transparent"
-                onClick={() => handleSort('status')}
-              >
+            <TableHead className={cn("w-[110px]", sortableHeaderClasses)} onClick={() => handleSort('status')}>
+              <div className="flex items-center gap-1">
                 Status
-                <SortIcon field="status" />
-              </Button>
+                {getSortIcon('status', sortField || '', sortDirection)}
+              </div>
             </TableHead>
-            <TableHead className="w-[120px]">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-3 h-8 font-medium hover:bg-transparent"
-                onClick={() => handleSort('deadline')}
-              >
+            <TableHead className={cn("w-[120px]", sortableHeaderClasses)} onClick={() => handleSort('deadline')}>
+              <div className="flex items-center gap-1">
                 Deadline
-                <SortIcon field="deadline" />
-              </Button>
+                {getSortIcon('deadline', sortField || '', sortDirection)}
+              </div>
             </TableHead>
-            <TableHead className="w-[20%]">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-3 h-8 font-medium hover:bg-transparent"
-                onClick={() => handleSort('person')}
-              >
+            <TableHead className={cn("w-[20%]", sortableHeaderClasses)} onClick={() => handleSort('person')}>
+              <div className="flex items-center gap-1">
                 {isCreatorView ? 'Assignee' : 'Assigned by'}
-                <SortIcon field="person" />
-              </Button>
+                {getSortIcon('person', sortField || '', sortDirection)}
+              </div>
             </TableHead>
             <TableHead className="w-[80px]">Attachments</TableHead>
             <TableHead className="w-[60px]">Actions</TableHead>

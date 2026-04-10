@@ -59,8 +59,8 @@ import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
-  Plus, Download, Pencil, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, LayoutGrid, TableIcon, Search, MoreVertical, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, ChevronUp, Heart,
+  Plus, Download, Pencil, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Users, LayoutGrid, TableIcon, Search, MoreVertical, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, Heart,
   Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck, Activity as ActivityIcon
 } from "lucide-react";
 import { exportActivityToPDF, exportActivityToExcel } from "@/lib/activity-export";
@@ -365,6 +365,7 @@ type Activity = {
   creatorProfile?: {
     name: string;
     department: string | null;
+    jobTitle: string | null;
   } | null;
 };
 
@@ -1271,11 +1272,11 @@ const router = useRouter();
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
     }
     return sortOrder === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-gray-400" />
-      : <ArrowDown className="h-4 w-4 text-gray-400" />;
+      ? <ChevronUp className="h-4 w-4 text-gray-400" />
+      : <ChevronDown className="h-4 w-4 text-gray-400" />;
   };
 
   // Helper to render column header text with tooltip
@@ -1694,12 +1695,12 @@ const router = useRouter();
           <Label className="text-xs text-muted-foreground">Status</Label>
           <MultiSelectFilter
             options={[
-              { value: "1", label: "Pipeline/identification", code: "1" },
-              { value: "2", label: "Implementation", code: "2" },
-              { value: "3", label: "Completion", code: "3" },
-              { value: "4", label: "Post-completion", code: "4" },
-              { value: "5", label: "Cancelled", code: "5" },
-              { value: "6", label: "Suspended", code: "6" },
+              { value: "1", label: "Pipeline/identification", code: "1", color: "#94a3b8" },
+              { value: "2", label: "Implementation", code: "2", color: "#3b82f6" },
+              { value: "3", label: "Completion", code: "3", color: "#22c55e" },
+              { value: "4", label: "Post-completion", code: "4", color: "#10b981" },
+              { value: "5", label: "Cancelled", code: "5", color: "#ef4444" },
+              { value: "6", label: "Suspended", code: "6", color: "#f59e0b" },
             ]}
             value={filterStatuses}
             onChange={setFilterStatuses}
@@ -1719,9 +1720,9 @@ const router = useRouter();
           <Label className="text-xs text-muted-foreground">Validation</Label>
           <MultiSelectFilter
             options={[
-              { value: "validated", label: "Validated" },
-              { value: "rejected", label: "Rejected" },
-              { value: "pending", label: "Not Validated" },
+              { value: "validated", label: "Validated", color: "#22c55e" },
+              { value: "rejected", label: "Rejected", color: "#ef4444" },
+              { value: "pending", label: "Not Validated", color: "#94a3b8" },
             ]}
             value={filterValidations}
             onChange={setFilterValidations}
@@ -2310,7 +2311,7 @@ const router = useRouter();
                         voteScore: (
                           <SortableTableHeader key="voteScore" id="voteScore" className="py-3 text-center min-w-[80px]">
                             <div className="flex items-center justify-center gap-1">
-                              <ArrowUpDown className="h-4 w-4" />
+                              <ChevronsUpDown className="h-4 w-4" />
                               <ColumnHeaderText columnId="voteScore">Score</ColumnHeaderText>
                             </div>
                           </SortableTableHeader>
@@ -2690,7 +2691,7 @@ const router = useRouter();
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-muted-foreground hover:text-primary cursor-pointer`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                                <DatabaseZap className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-2 p-1">
@@ -2763,22 +2764,22 @@ const router = useRouter();
                               sideOffset={8}
                             >
                               <div className="text-sm">
-                                <p className="font-semibold">
-                                  Reported by {formatReportedBy({ 
-                                    name: activity.created_by_org_name || "Unknown Organization", 
-                                    shortName: activity.created_by_org_acronym 
-                                  })}
-                                  {user && (
-                                    <span className="text-gray-600 font-normal">
-                                      {' '}Submitted by {formatSubmittedBy({
-                                        title: user.title,
-                                        firstName: user.firstName || '',
-                                        middleName: user.middleName,
-                                        lastName: user.lastName || '',
-                                        jobTitle: user.jobTitle
-                                      })} on {format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}
-                                    </span>
-                                  )}
+                                <p>
+                                  Created by {activity.creatorProfile?.name || activity.createdBy?.name || user?.name || 'Unknown User'}
+                                  {(() => {
+                                    const jobTitle = activity.creatorProfile?.jobTitle || user?.jobTitle;
+                                    const department = activity.creatorProfile?.department || user?.department;
+                                    const parts = [jobTitle, department].filter(Boolean);
+                                    return parts.length > 0 ? `, ${parts.join(', ')}` : '';
+                                  })()}
+                                  {(() => {
+                                    const acronym = activity.created_by_org_acronym;
+                                    const fullName = activity.created_by_org_name;
+                                    if (acronym && fullName && acronym !== fullName) return `, ${acronym}`;
+                                    if (fullName) return `, ${fullName}`;
+                                    return '';
+                                  })()}
+                                  {activity.createdAt ? ` on ${format(new Date(activity.createdAt), "d MMMM yyyy 'at' h:mm a")}` : ''}
                                 </p>
                               </div>
                             </TooltipContent>

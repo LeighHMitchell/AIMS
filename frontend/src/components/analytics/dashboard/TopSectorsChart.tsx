@@ -136,7 +136,10 @@ export function TopSectorsChart({
           </div>
         ))}
       </div>
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart shows the top sectors by financial allocation, using the OECD DAC sector classification. Each bar represents a sector with its DAC code, helping to identify where development funds are concentrated. Hover over bars for sector names and values.
+      </p>
     </div>
   );
 }
-

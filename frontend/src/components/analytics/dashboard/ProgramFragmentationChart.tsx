@@ -146,6 +146,11 @@ export function ProgramFragmentationChart({
           Swap Axes
         </Button>
       </div>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This heatmap shows how each donor distributes their funding across national priority programs. Darker cells indicate a higher share of a donor's total funding allocated to that program. Use swap axes to view from the program perspective.
+      </p>
     </div>
   );
 }

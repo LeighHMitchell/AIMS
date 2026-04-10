@@ -189,13 +189,13 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-semibold">Activity</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="text-right font-semibold">Committed</TableHead>
-                <TableHead className="text-right font-semibold">Disbursed</TableHead>
-                {data.totals.planned > 0 && <TableHead className="text-right font-semibold">Planned</TableHead>}
-                <TableHead className="font-semibold">Sectors</TableHead>
-                <TableHead className="font-semibold">Regions</TableHead>
+                <TableHead className="font-medium">Activity</TableHead>
+                <TableHead className="font-medium">Status</TableHead>
+                <TableHead className="text-right font-medium">Committed</TableHead>
+                <TableHead className="text-right font-medium">Disbursed</TableHead>
+                {data.totals.planned > 0 && <TableHead className="text-right font-medium">Planned</TableHead>}
+                <TableHead className="font-medium">Sectors</TableHead>
+                <TableHead className="font-medium">Regions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -249,10 +249,10 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-semibold">Sector</TableHead>
-                <TableHead className="text-right font-semibold">Committed</TableHead>
-                <TableHead className="text-right font-semibold">Disbursed</TableHead>
-                <TableHead className="text-right font-semibold">Activities</TableHead>
+                <TableHead className="font-medium">Sector</TableHead>
+                <TableHead className="text-right font-medium">Committed</TableHead>
+                <TableHead className="text-right font-medium">Disbursed</TableHead>
+                <TableHead className="text-right font-medium">Activities</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -272,10 +272,10 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-semibold">Region / Country</TableHead>
-                <TableHead className="text-right font-semibold">Committed</TableHead>
-                <TableHead className="text-right font-semibold">Disbursed</TableHead>
-                <TableHead className="text-right font-semibold">Activities</TableHead>
+                <TableHead className="font-medium">Region / Country</TableHead>
+                <TableHead className="text-right font-medium">Committed</TableHead>
+                <TableHead className="text-right font-medium">Disbursed</TableHead>
+                <TableHead className="text-right font-medium">Activities</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

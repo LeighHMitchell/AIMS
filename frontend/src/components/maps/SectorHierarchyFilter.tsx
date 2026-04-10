@@ -408,16 +408,16 @@ export function SectorHierarchyFilter({
                         <CommandItem
                           value={`category-${category.code}`}
                           onSelect={() => handleToggleSector(category.code)}
-                          className={cn("pl-4 font-medium bg-muted/30", categoryInactive && "opacity-50")}
+                          className={cn("pl-4 font-medium bg-muted/30 !items-start", categoryInactive && "opacity-50")}
                         >
                           <Check
                             className={cn(
-                              'mr-2 h-4 w-4 shrink-0',
+                              'mr-2 h-4 w-4 shrink-0 mt-0.5',
                               selected.sectors.includes(category.code) ? 'opacity-100' : 'opacity-0'
                             )}
                           />
                           <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
-                          <span className={cn("truncate", categoryInactive && "text-gray-400")}>{category.name}</span>
+                          <span className={cn("min-w-0 whitespace-normal", categoryInactive && "text-gray-400")}>{category.name}</span>
                           <span className="text-gray-500 ml-1">({categoryCount})</span>
                         </CommandItem>
                         
@@ -430,16 +430,16 @@ export function SectorHierarchyFilter({
                             key={sector.code}
                             value={`subsector-${sector.code}`}
                             onSelect={() => handleToggleSubSector(sector.code)}
-                            className={cn("pl-8", sectorInactive && "opacity-50")}
+                            className={cn("pl-8 !items-start", sectorInactive && "opacity-50")}
                           >
                             <Check
                               className={cn(
-                                'mr-2 h-4 w-4 shrink-0',
+                                'mr-2 h-4 w-4 shrink-0 mt-0.5',
                                 selected.subSectors.includes(sector.code) ? 'opacity-100' : 'opacity-0'
                               )}
                             />
                             <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
-                            <span className={cn("truncate", sectorInactive && "text-gray-400")}>{sector.name}</span>
+                            <span className={cn("min-w-0 whitespace-normal", sectorInactive && "text-gray-400")}>{sector.name}</span>
                             <span className="text-gray-500 ml-1">({sectorCount})</span>
                           </CommandItem>
                           );

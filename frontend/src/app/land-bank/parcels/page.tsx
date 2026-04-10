@@ -38,7 +38,7 @@ export default function ParcelsListPage() {
   const { permissions } = useUser()
   const [parcels, setParcels] = useState<LandParcel[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<"table" | "grid" | "map">("table")
+  const [viewMode, setViewMode] = useState<"list" | "card" | "map">("list")
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("all")
@@ -185,31 +185,28 @@ export default function ParcelsListPage() {
             {/* View toggle */}
             <div className="flex items-center border rounded-md">
               <Button
-                variant={viewMode === "table" ? "default" : "ghost"}
+                variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode("table")}
-                className="rounded-r-none gap-1"
+                onClick={() => setViewMode("list")}
+                className="rounded-r-none h-9"
               >
                 <List className="h-4 w-4" />
-                Table
               </Button>
               <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
+                variant={viewMode === "card" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode("grid")}
-                className="rounded-none gap-1"
+                onClick={() => setViewMode("card")}
+                className="rounded-none h-9"
               >
                 <LayoutGrid className="h-4 w-4" />
-                Cards
               </Button>
               <Button
                 variant={viewMode === "map" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("map")}
-                className="rounded-l-none gap-1"
+                className="rounded-l-none h-9"
               >
                 <MapIcon className="h-4 w-4" />
-                Map
               </Button>
             </div>
 
@@ -361,7 +358,7 @@ export default function ParcelsListPage() {
             parcels={filtered}
             onParcelClick={(p) => router.push(`/land-bank/${p.id}`)}
           />
-        ) : viewMode === "grid" ? (
+        ) : viewMode === "card" ? (
           <>
             {/* Grid/Cards view */}
             {loading ? (

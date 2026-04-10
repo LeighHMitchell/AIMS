@@ -12,14 +12,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
   Building2,
   BookmarkX,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
   LayoutGrid,
   TableIcon,
 } from 'lucide-react';
@@ -53,43 +52,6 @@ interface BookmarkedOrganization {
 
 interface BookmarkedOrganizationsTableProps {
   userId?: string;
-}
-
-function SortableHeader({
-  label,
-  field,
-  currentField,
-  currentDirection,
-  onSort,
-  className,
-}: {
-  label: string;
-  field: SortField;
-  currentField: SortField;
-  currentDirection: SortDirection;
-  onSort: (field: SortField) => void;
-  className?: string;
-}) {
-  const isActive = currentField === field;
-  return (
-    <TableHead className={className}>
-      <button
-        className="flex items-center gap-1 hover:text-foreground transition-colors -ml-1 px-1"
-        onClick={() => onSort(field)}
-      >
-        {label}
-        {isActive ? (
-          currentDirection === 'asc' ? (
-            <ArrowUp className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
-          )
-        ) : (
-          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
-        )}
-      </button>
-    </TableHead>
-  );
 }
 
 export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedOrganizationsTableProps = {}) {
@@ -315,43 +277,36 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHeader
-                  label="Organization"
-                  field="name"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                  className="w-[35%]"
-                />
-                <SortableHeader
-                  label="Type"
-                  field="type"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableHeader
-                  label="Location"
-                  field="location"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableHeader
-                  label="Activities"
-                  field="activities"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                  className="text-right"
-                />
-                <SortableHeader
-                  label="Updated"
-                  field="updated_at"
-                  currentField={sortField}
-                  currentDirection={sortDirection}
-                  onSort={handleSort}
-                />
+                <TableHead className={`w-[35%] ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
+                  <div className="flex items-center gap-1">
+                    Organization
+                    {getSortIcon('name', sortField, sortDirection)}
+                  </div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('type')}>
+                  <div className="flex items-center gap-1">
+                    Type
+                    {getSortIcon('type', sortField, sortDirection)}
+                  </div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('location')}>
+                  <div className="flex items-center gap-1">
+                    Location
+                    {getSortIcon('location', sortField, sortDirection)}
+                  </div>
+                </TableHead>
+                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('activities')}>
+                  <div className="flex items-center gap-1 justify-end">
+                    Activities
+                    {getSortIcon('activities', sortField, sortDirection)}
+                  </div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('updated_at')}>
+                  <div className="flex items-center gap-1">
+                    Updated
+                    {getSortIcon('updated_at', sortField, sortDirection)}
+                  </div>
+                </TableHead>
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>

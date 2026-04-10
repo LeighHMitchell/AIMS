@@ -127,12 +127,12 @@ export default function PolicyMarkersListingPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center border rounded-md">
-              <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none gap-1">
-                <List className="h-4 w-4" /> List
+            <div className="flex items-center border rounded-md flex-shrink-0">
+              <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none h-9">
+                <List className="h-4 w-4" />
               </Button>
-              <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none gap-1">
-                <LayoutGrid className="h-4 w-4" /> Cards
+              <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none h-9">
+                <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
           </div>

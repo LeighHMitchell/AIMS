@@ -450,23 +450,23 @@ export default function SDGAlignmentSection({
                       </TableCell>
                       {canEdit && (
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={(e) => { e.stopPropagation(); setModalGoalId(goalId); }}
-                              className="p-1.5 rounded hover:bg-gray-100"
-                              title="Edit"
+                              className="hover:bg-blue-50 hover:text-blue-600"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
-                            </button>
-                            <button
-                              type="button"
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={(e) => { e.stopPropagation(); removeGoal(goalId); }}
-                              className="p-1.5 rounded hover:bg-gray-100"
-                              title="Remove"
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
-                            </button>
+                            </Button>
                           </div>
                         </TableCell>
                       )}
@@ -721,10 +721,12 @@ export default function SDGAlignmentSection({
 
       {/* Empty state */}
       {selectedGoalIds.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-          <Target className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No SDGs selected</p>
-          <p className="text-sm">Click on the SDG icons above to get started</p>
+        <div className="text-center py-12">
+          <img src="/images/empty-sparrow.png" alt="No SDGs" className="h-32 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium mb-2">No SDGs selected</h3>
+          <p className="text-muted-foreground mb-4">
+            Click on the SDG icons above to get started.
+          </p>
         </div>
       )}
     </div>

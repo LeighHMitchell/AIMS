@@ -59,6 +59,7 @@ export async function GET(
           id,
           role,
           job_title,
+          department,
           title,
           organization_id,
           organizations:organization_id (
@@ -93,6 +94,7 @@ export async function GET(
         organisation: a.organisation,
         role: user?.role || a.position || 'Focal Point',
         job_title: user?.job_title,
+        department: user?.department,
         title: user?.title || a.title,
         type: a.type,
         avatar_url: a.profile_photo,

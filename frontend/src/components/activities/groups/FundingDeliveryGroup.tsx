@@ -141,7 +141,7 @@ export function FundingDeliveryGroup({
     if (initialSection && isFundingDeliverySection(initialSection) && activityCreated) {
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (initialSection !== 'finances' || prevInitialSection.current !== initialSection) {
+      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'finances')) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
@@ -168,6 +168,7 @@ export function FundingDeliveryGroup({
   useEffect(() => {
     if (isFirstRender.current) return
     if (activeSection && isFundingDeliverySection(activeSection)) {
+      prevInitialSection.current = activeSection
       onActiveSectionChangeRef.current(activeSection)
     }
   }, [activeSection])
@@ -190,6 +191,7 @@ export function FundingDeliveryGroup({
     const handleScrollToSection = (event: CustomEvent<string>) => {
       const sectionId = event.detail
       if (isFundingDeliverySection(sectionId)) {
+        prevInitialSection.current = sectionId
         scrollToSection(sectionId)
         activateSection(sectionId)
       }

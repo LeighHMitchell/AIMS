@@ -293,16 +293,16 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('framework')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('framework')}>
                 <span className="flex items-center gap-1">Framework {getSortIcon('framework', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('code')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('code')}>
                 <span className="flex items-center gap-1">Code {getSortIcon('code', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold ${sortableHeaderClasses}`} onClick={() => handleSort('indicators')}>
+              <TableHead className={`font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('indicators')}>
                 <span className="flex items-center gap-1">Linked Indicators {getSortIcon('indicators', sortField, sortDirection)}</span>
               </TableHead>
-              <TableHead className={`font-semibold text-right ${sortableHeaderClasses}`} onClick={() => handleSort('achievement')}>
+              <TableHead className={`font-medium text-right ${sortableHeaderClasses}`} onClick={() => handleSort('achievement')}>
                 <span className="flex items-center justify-end gap-1">Avg Achievement {getSortIcon('achievement', sortField, sortDirection)}</span>
               </TableHead>
             </TableRow>

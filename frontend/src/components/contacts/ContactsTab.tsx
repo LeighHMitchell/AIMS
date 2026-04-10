@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2 } from 'lucide-react';
+import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy } from 'lucide-react';
 import ContactForm from './ContactForm';
 import ContactSearchBar from './ContactSearchBar';
 import { PersonCard } from '@/components/rolodex/PersonCard';
@@ -28,6 +28,7 @@ interface Contact {
   organisation?: string;
   organisationId?: string;
   organisationAcronym?: string;
+  organisationLogo?: string;
   email?: string;
   phone?: string;
   phoneNumber?: string;
@@ -72,7 +73,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [contactsView, setContactsView] = useState<'table' | 'cards'>('table');
-  const [orgLogos, setOrgLogos] = useState<Record<string, string>>({});
   const saveInProgressRef = useRef(false);
   const lastNotifiedCountRef = useRef<number>(-1);
 
@@ -148,33 +148,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contacts, isLoading]); // Intentionally exclude onContactsChange to prevent infinite loops
-
-  // Fetch org logos for contacts
-  useEffect(() => {
-    const orgIds = contacts
-      .map(c => c.organisationId)
-      .filter((id): id is string => !!id && !orgLogos[id]);
-    const uniqueIds = Array.from(new Set(orgIds));
-    if (uniqueIds.length === 0) return;
-
-    (async () => {
-      try {
-        const response = await apiFetch(`/api/organizations?ids=${uniqueIds.join(',')}&fields=id,logo`);
-        if (response.ok) {
-          const data = await response.json();
-          const logos: Record<string, string> = {};
-          (Array.isArray(data) ? data : data.data || []).forEach((org: any) => {
-            if (org.logo) logos[org.id] = org.logo;
-          });
-          if (Object.keys(logos).length > 0) {
-            setOrgLogos(prev => ({ ...prev, ...logos }));
-          }
-        }
-      } catch {
-        // Silently fail — logos are optional
-      }
-    })();
-  }, [contacts]);
 
   // Save contacts to database
   const saveContacts = async (newContacts: Contact[]) => {
@@ -353,6 +326,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     organization_id: contact.organisationId,
     organization_name: contact.organisation,
     organization_acronym: contact.organisationAcronym,
+    organization_logo: contact.organisationLogo,
     phone: contact.phoneNumber || contact.phone,
     country_code: contact.countryCode,
     profile_photo: contact.profilePhoto,
@@ -513,7 +487,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                             {initials}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{fullName || 'Unknown Contact'}</span>
+                        <span>{fullName || 'Unknown Contact'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -523,7 +497,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                       {orgDisplay ? (
                         <div className="flex items-center gap-2">
                           <OrganizationLogo
-                            logo={contact.organisationId ? orgLogos[contact.organisationId] : undefined}
+                            logo={contact.organisationLogo}
                             name={orgDisplay}
                             size="sm"
                           />
@@ -532,7 +506,22 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                       ) : '-'}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {contact.email || '-'}
+                      {contact.email ? (
+                        <div className="flex items-center gap-1 group/email">
+                          <span>{contact.email}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(contact.email!);
+                              toast.success('Email copied');
+                            }}
+                            className="p-1 rounded hover:bg-muted opacity-0 group-hover/email:opacity-100 transition-opacity"
+                            title="Copy email"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                        </div>
+                      ) : '-'}
                     </TableCell>
                     {!readOnly && (
                       <TableCell>

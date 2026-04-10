@@ -372,6 +372,10 @@ export function CoordinationCirclePack({
         </div>
       )}
 
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This circle pack visualisation groups organisations and sectors into nested bubbles to reveal coordination patterns. The size of each bubble reflects the total financial value, while the nesting shows how entities cluster within broader categories. Hover over any bubble to see detailed breakdowns including activity counts and total spending.
+      </p>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
+import { generateNextReference } from '@/lib/reference-helpers';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -185,8 +186,12 @@ export async function POST(
       }
     }
 
+    // Auto-generate reference
+    const reference = await generateNextReference(supabase, 'activity_budgets', activityId, 'BUD');
+
     const budgetData = {
       activity_id: activityId,
+      reference,
       type: Number(body.type),
       status: Number(body.status),
       period_start: body.period_start,

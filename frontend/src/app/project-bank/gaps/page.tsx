@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
-import { AlertTriangle, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Inbox } from "lucide-react"
+import { AlertTriangle, MoreVertical, ChevronsUpDown, ChevronUp, ChevronDown, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FullPagination } from "@/components/ui/full-pagination"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -88,10 +88,10 @@ export default function FundingGapsPage() {
   }
 
   const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
     return sortDir === "asc"
-      ? <ArrowUp className="h-3.5 w-3.5 text-foreground" />
-      : <ArrowDown className="h-3.5 w-3.5 text-foreground" />
+      ? <ChevronUp className="h-3.5 w-3.5 text-foreground" />
+      : <ChevronDown className="h-3.5 w-3.5 text-foreground" />
   }
 
   const SortHeader = ({ field, children, className }: { field: string; children: React.ReactNode; className?: string }) => {

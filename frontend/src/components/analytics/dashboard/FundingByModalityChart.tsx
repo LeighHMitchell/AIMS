@@ -594,6 +594,10 @@ export function FundingByModalityChart() {
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart breaks down funding over time by aid modality (grant, loan, technical assistance, etc.). Use the stacked view to see total volumes and the grouped view to compare modalities side by side. Switch between bar, line, and area chart types for different perspectives.
+          </p>
         </CardContent>
       </Card>
 

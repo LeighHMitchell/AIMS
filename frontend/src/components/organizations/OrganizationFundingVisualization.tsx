@@ -560,11 +560,11 @@ export default function OrganizationFundingVisualization({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr style={{ backgroundColor: COLORS.platinum }}>
-                      <th className="border p-3 text-left font-semibold" style={{ color: COLORS.blueSlate }}>Year</th>
-                      <th className="border p-3 text-right font-semibold" style={{ color: COLORS.blueSlate }}>Total Funding</th>
-                      <th className="border p-3 text-right font-semibold" style={{ color: COLORS.blueSlate }}>Past (Actual)</th>
-                      <th className="border p-3 text-right font-semibold" style={{ color: COLORS.blueSlate }}>Current</th>
-                      <th className="border p-3 text-right font-semibold" style={{ color: COLORS.blueSlate }}>Future (Indicative)</th>
+                      <th className="border p-3 text-left font-medium" style={{ color: COLORS.blueSlate }}>Year</th>
+                      <th className="border p-3 text-right font-medium" style={{ color: COLORS.blueSlate }}>Total Funding</th>
+                      <th className="border p-3 text-right font-medium" style={{ color: COLORS.blueSlate }}>Past (Actual)</th>
+                      <th className="border p-3 text-right font-medium" style={{ color: COLORS.blueSlate }}>Current</th>
+                      <th className="border p-3 text-right font-medium" style={{ color: COLORS.blueSlate }}>Future (Indicative)</th>
                     </tr>
                   </thead>
                   <tbody>

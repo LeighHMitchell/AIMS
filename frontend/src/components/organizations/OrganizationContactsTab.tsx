@@ -2,7 +2,7 @@
 
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, List } from 'lucide-react';
 import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
@@ -104,7 +104,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
   const { settings } = useSystemSettings();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -429,31 +429,23 @@ export default function OrganizationContactsTab({ organizationId, organization }
             </p>
           </div>
           {contacts.length > 0 && (
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('table')}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  viewMode === 'table'
-                    ? "bg-card shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                title="Table view"
+            <div className="flex items-center border rounded-md flex-shrink-0">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-r-none h-9"
               >
-                <TableIcon className="h-4 w-4" />
-              </button>
-              <button
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
+                size="sm"
                 onClick={() => setViewMode('card')}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  viewMode === 'card'
-                    ? "bg-card shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                title="Card view"
+                className="rounded-l-none h-9"
               >
                 <LayoutGrid className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           )}
         </div>

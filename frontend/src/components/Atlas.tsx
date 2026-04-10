@@ -16,11 +16,9 @@ import {
   ChevronsUpDown,
   Check,
   Building2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  ChevronRight,
+  ChevronUp,
   ChevronDown,
+  ChevronRight,
   Mountain,
   X,
   Cross,
@@ -49,7 +47,8 @@ import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/d
 import { useLoadingBar } from '@/hooks/useLoadingBar';
 
 // mapcn map components
-import { Map, MapControls, useMap, MapPopup } from '@/components/ui/map';
+import { Map, MapPopup, useMap } from '@/components/ui/map';
+import type { Map as MapLibreMap } from 'maplibre-gl';
 
 // Dynamic import for SubnationalChoroplethMap (MapLibre-based with township support)
 const SubnationalChoroplethMap = dynamic(() => import('@/components/maps/SubnationalChoroplethMap'), { ssr: false });
@@ -263,21 +262,31 @@ function MapPositionTracker({
   return null;
 }
 
-// Map 3D Controller Component (uses useMap inside Map context)
-function Map3DController({ 
-  homeCountryCenter, 
-  homeCountryZoom 
-}: { 
-  homeCountryCenter: [number, number]; 
+// Bridge component to expose map instance from Map context to parent
+function MapBridge({ onMap }: { onMap: (map: MapLibreMap | null) => void }) {
+  const { map, isLoaded } = useMap();
+  useEffect(() => {
+    onMap(isLoaded ? map : null);
+  }, [map, isLoaded, onMap]);
+  return null;
+}
+
+// Map 3D Controller Component (accepts map instance via prop)
+function Map3DController({
+  map,
+  homeCountryCenter,
+  homeCountryZoom
+}: {
+  map: MapLibreMap | null;
+  homeCountryCenter: [number, number];
   homeCountryZoom: number;
 }) {
-  const { map, isLoaded } = useMap();
   const [pitch, setPitch] = useState(0);
   const [bearing, setBearing] = useState(0);
   const [zoom, setZoom] = useState(homeCountryZoom);
 
   useEffect(() => {
-    if (!map || !isLoaded) return;
+    if (!map) return;
 
     const handleMove = () => {
       setPitch(Math.round(map.getPitch()));
@@ -291,7 +300,7 @@ function Map3DController({
     return () => {
       map.off('move', handleMove);
     };
-  }, [map, isLoaded]);
+  }, [map]);
 
   const handle3DView = useCallback(() => {
     map?.easeTo({
@@ -323,7 +332,7 @@ function Map3DController({
 
   const is3DMode = pitch !== 0 || bearing !== 0;
 
-  if (!isLoaded) return null;
+  if (!map) return null;
 
   return (
     <div className="flex items-center gap-2">
@@ -334,7 +343,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="2D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="h-9 px-2.5"
         >
           <MapIcon className="h-4 w-4 mr-1.5" />
           <span className="text-xs">2D</span>
@@ -345,7 +354,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="3D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
           <span className="text-xs">3D</span>
@@ -358,20 +367,20 @@ function Map3DController({
         variant="outline"
         size="sm"
         title="Reset view"
-        className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+        className="h-9 w-9 p-0"
       >
         <RotateCcw className="h-4 w-4" />
       </Button>
 
       {/* Stats Display */}
-      <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-gray-300 shadow-md flex items-center gap-3 whitespace-nowrap">
-        <span className="text-gray-600">Zoom: {zoom}</span>
+      <div className="rounded-md px-2.5 py-1.5 text-[10px] font-mono border flex items-center gap-3 whitespace-nowrap">
+        <span className="text-muted-foreground">Zoom: {zoom}</span>
         {is3DMode && (
           <>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-600">Pitch: {pitch}°</span>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-600">Bearing: {bearing}°</span>
+            <span className="text-muted-foreground/50">|</span>
+            <span className="text-muted-foreground">Pitch: {pitch}°</span>
+            <span className="text-muted-foreground/50">|</span>
+            <span className="text-muted-foreground">Bearing: {bearing}°</span>
           </>
         )}
       </div>
@@ -380,6 +389,10 @@ function Map3DController({
 }
 
 export default function Atlas() {
+  const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
+  const handleMapReady = useCallback((map: MapLibreMap | null) => {
+    setMapInstance(map);
+  }, []);
   const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light');
   const [viewMode, setViewMode] = useState<ViewMode>('markers');
   const [tabMode, setTabMode] = useState<TabMode>('map');
@@ -839,7 +852,7 @@ export default function Atlas() {
           <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
             <TabsContent value="map" className="space-y-4">
               {/* Filters Bar - Above the map */}
-              <div className="flex items-end gap-4">
+              <div className="flex items-end gap-2">
                 {/* Status Filter */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-muted-foreground">Status</label>
@@ -908,7 +921,7 @@ export default function Atlas() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={orgFilterOpen}
-                        className="w-[360px] justify-between text-xs h-9 font-normal"
+                        className="w-[180px] justify-between text-xs h-9 font-normal"
                       >
                         <span className="truncate">
                           {orgFilter.length === 0
@@ -992,79 +1005,64 @@ export default function Atlas() {
                     activityCounts={sectorActivityCounts}
                     showOnlyActiveSectors={showOnlyActiveSectors}
                     onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                    className="w-[320px] h-9 text-xs"
+                    className="w-[160px] h-9 text-xs"
+                  />
+                </div>
+
+                {/* Search */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Search</label>
+                  <MapSearch
+                    onLocationSelect={handleLocationSearch}
+                    className="w-[130px]"
+                    placeholder="Search..."
+                  />
+                </div>
+
+                {/* 3D / View Controls */}
+                <div className="flex items-center gap-2 self-end">
+                  <Map3DController
+                    map={mapInstance}
+                    homeCountryCenter={homeCountryCenter}
+                    homeCountryZoom={homeCountryZoom}
                   />
                 </div>
 
                 <div className="flex-1" />
-              </div>
 
-              {/* Map Container */}
-              <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
-                {/* MapLibre Map */}
-                <Map
-                  key="atlas-map"
-                  styles={{
-                    light: MAP_STYLES[mapStyle].light as string | object,
-                    dark: MAP_STYLES[mapStyle].dark as string | object,
-                  }}
-                  center={[homeCountryCenter[1], homeCountryCenter[0]]} // MapLibre uses [lng, lat]
-                  zoom={homeCountryZoom}
-                  minZoom={2}
-                  maxZoom={mapStyle === 'satellite_imagery' || mapStyle === 'hot' ? 18 : 18}
-                  scrollZoom={false}
-                >
-                  {/* Top Controls Bar - inside Map for useMap() access */}
-                  <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
-                    {/* Search */}
-                    <MapSearch
-                      onLocationSelect={handleLocationSearch}
-                      className="w-[200px]"
-                      placeholder="Search location..."
-                    />
+                {/* Map Style & Controls */}
+                <div className="flex items-center gap-2 self-end shrink-0">
+                  <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
+                    <SelectTrigger className="w-[140px] text-xs h-9">
+                      <SelectValue placeholder="Map style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(MAP_STYLES).map(([key, style]) => (
+                        <SelectItem key={key} value={key}>
+                          {style.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                    {/* Spacer */}
-                    <div className="flex-1" />
-
-                    {/* 3D Controls - on the right */}
-                    <Map3DController
-                      homeCountryCenter={homeCountryCenter}
-                      homeCountryZoom={homeCountryZoom}
-                    />
-
-                    {/* Map Style & Controls */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-                        <SelectTrigger className="w-[320px] bg-white shadow-md border-gray-300 text-xs h-9">
-                          <SelectValue placeholder="Map style" />
-                        </SelectTrigger>
-                        <SelectContent className="z-[9999]">
-                          {Object.entries(MAP_STYLES).map(([key, style]) => (
-                            <SelectItem key={key} value={key}>
-                              {style.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      {/* Layers Popover */}
-                      <Popover open={layersPopoverOpen} onOpenChange={handleLayersPopoverOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`bg-white shadow-md border-gray-300 h-9 px-3 gap-2 ${(showHealthFacilities || showPowerGrid || showFloodRisk) ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
-                          >
-                            <Layers className="h-4 w-4" />
-                            <span className="text-xs">Layers</span>
-                            {(showHealthFacilities || showPowerGrid || showFloodRisk) && (
-                              <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
-                                {[showHealthFacilities, showPowerGrid, showFloodRisk].filter(Boolean).length}
-                              </span>
-                            )}
-                            <ChevronsUpDown className="h-3 w-3 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
+                  {/* Layers Popover */}
+                  <Popover open={layersPopoverOpen} onOpenChange={handleLayersPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-9 px-3 gap-2 ${(showHealthFacilities || showPowerGrid || showFloodRisk) ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
+                      >
+                        <Layers className="h-4 w-4" />
+                        <span className="text-xs">Layers</span>
+                        {(showHealthFacilities || showPowerGrid || showFloodRisk) && (
+                          <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                            {[showHealthFacilities, showPowerGrid, showFloodRisk].filter(Boolean).length}
+                          </span>
+                        )}
+                        <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0" align="end">
                           <div className="p-3 border-b">
                             <h4 className="font-medium text-sm">Data Layers</h4>
@@ -1374,17 +1372,25 @@ export default function Atlas() {
                           <Flame className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  </div>
+                </div>
+              </div>
 
-                  <MapControls
-                    position="top-left"
-                    showZoom={true}
-                    showCompass={true}
-                    showLocate={true}
-                    showFullscreen={true}
-                    className="!top-14"
-                  />
+              {/* Map Container */}
+              <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+                {/* MapLibre Map */}
+                <Map
+                  key="atlas-map"
+                  styles={{
+                    light: MAP_STYLES[mapStyle].light as string | object,
+                    dark: MAP_STYLES[mapStyle].dark as string | object,
+                  }}
+                  center={[homeCountryCenter[1], homeCountryCenter[0]]}
+                  zoom={homeCountryZoom}
+                  minZoom={2}
+                  maxZoom={18}
+                  scrollZoom={false}
+                >
+                  <MapBridge onMap={handleMapReady} />
 
                   {/* Markers Mode */}
                   {viewMode === 'markers' && filteredLocations.length > 0 && (
@@ -1602,9 +1608,9 @@ export default function Atlas() {
                               <div className="flex items-center gap-1">
                                 Region
                                 {sortColumn === 'region' ? (
-                                  sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                  sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                 ) : (
-                                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </div>
                             </TableHead>
@@ -1622,9 +1628,9 @@ export default function Atlas() {
                               <div className="flex items-center justify-end gap-1">
                                 Activities
                                 {sortColumn === 'activities' ? (
-                                  sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                  sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                 ) : (
-                                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </div>
                             </TableHead>
@@ -1642,9 +1648,9 @@ export default function Atlas() {
                               <div className="flex items-center justify-end gap-1">
                                 Allocation %
                                 {sortColumn === 'allocation' ? (
-                                  sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                  sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                 ) : (
-                                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </div>
                             </TableHead>
@@ -1662,9 +1668,9 @@ export default function Atlas() {
                               <div className="flex items-center justify-end gap-1">
                                 Coverage %
                                 {sortColumn === 'coverage' ? (
-                                  sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                  sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                 ) : (
-                                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </div>
                             </TableHead>

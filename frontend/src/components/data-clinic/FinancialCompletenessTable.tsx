@@ -214,54 +214,54 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
           <TableHeader>
             <TableRow className="sticky top-0 bg-white z-10">
               {visibleColumns.has('title') && (
-                <TableHead className={`bg-white min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                <TableHead className={`min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
                   <div className="flex items-center gap-1">Activity Title {getSortIcon('title', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('iati_identifier') && (
-                <TableHead className={`bg-white ${sortableHeaderClasses}`} onClick={() => handleSort('iati_identifier')}>
+                <TableHead className={`${sortableHeaderClasses}`} onClick={() => handleSort('iati_identifier')}>
                   <div className="flex items-center gap-1">IATI Identifier {getSortIcon('iati_identifier', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('organization') && (
-                <TableHead className={`bg-white ${sortableHeaderClasses}`} onClick={() => handleSort('organization')}>
+                <TableHead className={`${sortableHeaderClasses}`} onClick={() => handleSort('organization')}>
                   <div className="flex items-center gap-1">Organisation {getSortIcon('organization', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('budgeted') && (
-                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('budgeted')}>
+                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('budgeted')}>
                   <div className="flex items-center justify-end gap-1">Budgeted USD {getSortIcon('budgeted', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('disbursed') && (
-                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('disbursed')}>
+                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('disbursed')}>
                   <div className="flex items-center justify-end gap-1">Disbursed USD {getSortIcon('disbursed', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('overspend') && (
-                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('overspend')}>
+                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('overspend')}>
                   <div className="flex items-center justify-end gap-1">Overspend USD {getSortIcon('overspend', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('percentage') && (
-                <TableHead className={`bg-white text-right ${sortableHeaderClasses}`} onClick={() => handleSort('percentage')}>
+                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('percentage')}>
                   <div className="flex items-center justify-end gap-1">% Spent {getSortIcon('percentage', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('budget_periods') && (
-                <TableHead className={`bg-white text-center ${sortableHeaderClasses}`} onClick={() => handleSort('budget_periods')}>
+                <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('budget_periods')}>
                   <div className="flex items-center justify-center gap-1">Budget Periods {getSortIcon('budget_periods', sortField, sortDirection)}</div>
                 </TableHead>
               )}
               {visibleColumns.has('duration') && (
-                <TableHead className={`bg-white text-center ${sortableHeaderClasses}`} onClick={() => handleSort('duration')}>
+                <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('duration')}>
                   <div className="flex items-center justify-center gap-1">Duration (Years) {getSortIcon('duration', sortField, sortDirection)}</div>
                 </TableHead>
               )}
-              <TableHead className={`bg-white text-center ${sortableHeaderClasses}`} onClick={() => handleSort('severity')}>
+              <TableHead className={`text-center ${sortableHeaderClasses}`} onClick={() => handleSort('severity')}>
                 <div className="flex items-center justify-center gap-1">Severity {getSortIcon('severity', sortField, sortDirection)}</div>
               </TableHead>
-              <TableHead className="bg-white w-10"></TableHead>
+              <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

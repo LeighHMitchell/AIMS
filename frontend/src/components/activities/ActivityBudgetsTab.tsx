@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine } from 'lucide-react';
+import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet, PenLine, X } from 'lucide-react';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,7 +47,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { BUDGET_STATUSES } from '@/data/budget-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { exportToCSV } from '@/lib/csv-export';
@@ -281,6 +282,7 @@ export default function ActivityBudgetsTab({
   const [showModal, setShowModal] = useState(false);
   const [modalBudget, setModalBudget] = useState<ActivityBudget | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [validationAlert, setValidationAlert] = useState<string | null>(null);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [modalLocked, setModalLocked] = useState(false);
   const [isReviseMode, setIsReviseMode] = useState(false);
@@ -290,6 +292,7 @@ export default function ActivityBudgetsTab({
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [isEditingValue, setIsEditingValue] = useState(false);
+  const [editingValueDisplay, setEditingValueDisplay] = useState('');
   
   // Exchange rate state for modal
   const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false);
@@ -1201,7 +1204,7 @@ export default function ActivityBudgetsTab({
     };
 
     setModalBudget(newBudget);
-    setFieldErrors({});
+    setFieldErrors({}); setValidationAlert(null);
     setIsFormDirty(false);
     setModalLocked(false);
     setIsReviseMode(false);
@@ -1211,7 +1214,7 @@ export default function ActivityBudgetsTab({
   // Open modal for editing existing budget (locked by default)
   const openModalForEditBudget = useCallback((budget: ActivityBudget) => {
     setModalBudget({ ...budget });
-    setFieldErrors({});
+    setFieldErrors({}); setValidationAlert(null);
     setIsFormDirty(false);
     setModalLocked(true);
     setIsReviseMode(false);
@@ -1227,7 +1230,7 @@ export default function ActivityBudgetsTab({
       id: undefined as any, // Clear ID so it saves as a new record
       type: '2', // Set to Revised
     });
-    setFieldErrors({});
+    setFieldErrors({}); setValidationAlert(null);
     setIsFormDirty(true); // Mark as dirty since it's a new record with pre-filled data
     setModalLocked(false);
     setIsReviseMode(true);
@@ -1241,7 +1244,7 @@ export default function ActivityBudgetsTab({
       if (confirm('You have unsaved changes. Are you sure you want to close?')) {
         setShowModal(false);
         setModalBudget(null);
-        setFieldErrors({});
+        setFieldErrors({}); setValidationAlert(null);
         setIsFormDirty(false);
         setShowAdvancedFields(false);
         setModalLocked(false);
@@ -1250,7 +1253,7 @@ export default function ActivityBudgetsTab({
     } else {
       setShowModal(false);
       setModalBudget(null);
-      setFieldErrors({});
+      setFieldErrors({}); setValidationAlert(null);
       setIsFormDirty(false);
       setShowAdvancedFields(false);
       setModalLocked(false);
@@ -1352,7 +1355,7 @@ export default function ActivityBudgetsTab({
     } finally {
       setIsLoadingModalRate(false);
     }
-  }, [modalBudget]);
+  }, [modalBudget?.currency, modalBudget?.value_date, modalBudget?.period_start]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate modal USD value
   const modalCalculatedUsdValue = modalBudget?.value && modalExchangeRate 
@@ -1408,6 +1411,7 @@ export default function ActivityBudgetsTab({
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setValidationAlert('Please fill in all required fields before saving.');
       return;
     }
 
@@ -1458,7 +1462,7 @@ export default function ActivityBudgetsTab({
 
       setShowModal(false);
       setModalBudget(null);
-      setFieldErrors({});
+      setFieldErrors({}); setValidationAlert(null);
       setIsFormDirty(false);
       setModalLocked(false);
       setIsReviseMode(false);
@@ -1578,7 +1582,7 @@ export default function ActivityBudgetsTab({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {['Period', 'Type', 'Status', 'Amount', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
+                    {['Period', 'Type', 'Status', 'Original Value', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
                       <TableHead key={i} className="font-medium">
                         <Skeleton className="h-4 w-16" />
                       </TableHead>
@@ -1662,29 +1666,10 @@ export default function ActivityBudgetsTab({
             {hideSummaryCards && <div />}
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="bg-foreground hover:bg-foreground/90 text-white">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Budget
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => openModalForNewBudget('month')}>
-                      Monthly Budget
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openModalForNewBudget('quarter')}>
-                      Quarterly Budget
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openModalForNewBudget('half-year')}>
-                      Semi-Annual Budget
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openModalForNewBudget('year')}>
-                      Annual Budget
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button onClick={() => openModalForNewBudget('quarter')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Budget
+                </Button>
               )}
               {!hideSummaryCards && budgets.length > 0 && !loading && (
                 <>
@@ -1924,7 +1909,7 @@ export default function ActivityBudgetsTab({
           {/* Budget table */}
           {paginatedBudgets.length === 0 ? (
             <div className="text-center py-12">
-              <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <img src="/images/empty-squirrel.png" alt="No budgets" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No budgets</h3>
               <p className="text-muted-foreground mb-4">
                 Use the button above to add your first budget period.
@@ -1933,7 +1918,7 @@ export default function ActivityBudgetsTab({
           ) : (
           <div className="rounded-md border w-full">
             <Table aria-label="Budgets table" className="w-full">
-              <TableHeader className="bg-surface-muted border-b border-border/70">
+              <TableHeader>
                 <TableRow>
                   {!readOnly && (
                     <TableHead className="text-center" style={{ width: '50px' }}>
@@ -1945,29 +1930,29 @@ export default function ActivityBudgetsTab({
                       />
                     </TableHead>
                   )}
-                  <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ width: '200px' }}>
+                  <TableHead className="py-3 px-4" style={{ width: '200px' }}>
                     <div
                       className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                       onClick={() => handleSort('period_start')}
                     >
                       Period
                       {sortColumn === 'period_start' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                        sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                        <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                       )}
                     </div>
                   </TableHead>
                   {[
                     { label: "Status", width: 120, sortKey: "status", align: "left" },
                     { label: "Type", width: 110, sortKey: "type", align: "left" },
-                    { label: "Amount", width: 160, sortKey: "value", align: "right" },
+                    { label: "Original Value", width: 160, sortKey: "value", align: "right" },
                     { label: "Value Date", width: 140, sortKey: "value_date", align: "left" },
                     { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
                     <TableHead
                       key={i + 2}
-                      className={`text-sm font-medium text-foreground/90 py-3 px-4 ${header.align === 'right' ? 'text-right' : ''}`}
+                      className={`py-3 px-4 ${header.align === 'right' ? 'text-right' : ''}`}
                       style={{ width: `${header.width}px` }}
                     >
                       {header.sortKey ? (
@@ -1977,9 +1962,9 @@ export default function ActivityBudgetsTab({
                         >
                           {header.label}
                           {sortColumn === header.sortKey ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       ) : (
@@ -2017,6 +2002,9 @@ export default function ActivityBudgetsTab({
                         </TableCell>
                       )}
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '200px' }}>
+                        {budget.reference && (
+                          <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{budget.reference}</code>
+                        )}
                         <span className="font-medium">
                           {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                         </span>
@@ -2031,7 +2019,7 @@ export default function ActivityBudgetsTab({
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '160px' }}>
                         <span className="font-medium">
-                          <span className="text-muted-foreground">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          <span className="text-muted-foreground text-xs">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
@@ -2274,6 +2262,16 @@ export default function ActivityBudgetsTab({
           {modalBudget && (
             <fieldset disabled={modalLocked} className={cn(modalLocked && "opacity-60")}>
             <div className="space-y-4 py-4">
+              {/* Validation Alert */}
+              {validationAlert && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                  <span>{validationAlert}</span>
+                  <button onClick={() => setValidationAlert(null)} className="ml-auto text-red-500 hover:text-red-700">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {/* Type and Status in same row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Type */}
@@ -2284,7 +2282,7 @@ export default function ActivityBudgetsTab({
                     isSaved={false}
                     hasValue={!!modalBudget?.type}
                   >
-                    Type
+                    Type <RequiredDot />
                   </LabelWithInfoAndSave>
                   <Popover open={isReviseMode ? false : typePopoverOpen} onOpenChange={setTypePopoverOpen}>
                     <PopoverTrigger
@@ -2364,7 +2362,7 @@ export default function ActivityBudgetsTab({
                     isSaved={false}
                     hasValue={!!modalBudget?.status}
                   >
-                    Status
+                    Status <RequiredDot />
                   </LabelWithInfoAndSave>
                   <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
                     <PopoverTrigger
@@ -2444,12 +2442,13 @@ export default function ActivityBudgetsTab({
                     isSaved={false}
                     hasValue={!!modalBudget.period_start}
                   >
-                    Period Start Date
+                    Period Start Date <RequiredDot />
                   </LabelWithInfoAndSave>
                   <DatePicker
                     value={modalBudget.period_start || ''}
-                    onChange={(value) => updateFormField('period_start', value)}
+                    onChange={(value) => { updateFormField('period_start', value); setValidationAlert(null); }}
                     placeholder="Select start date"
+                    dropdownId="budget-modal-period-start"
                   />
                   {fieldErrors.period_start && (
                     <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
@@ -2462,12 +2461,13 @@ export default function ActivityBudgetsTab({
                     isSaved={false}
                     hasValue={!!modalBudget.period_end}
                   >
-                    Period End Date
+                    Period End Date <RequiredDot />
                   </LabelWithInfoAndSave>
                   <DatePicker
                     value={modalBudget.period_end || ''}
                     onChange={(value) => updateFormField('period_end', value)}
                     placeholder="Select end date"
+                    dropdownId="budget-modal-period-end"
                   />
                   {fieldErrors.period_end && (
                     <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
@@ -2483,7 +2483,7 @@ export default function ActivityBudgetsTab({
                   isSaved={false}
                   hasValue={!!modalBudget?.currency}
                 >
-                  Currency
+                  Currency <RequiredDot />
                 </LabelWithInfoAndSave>
                 <CurrencySelector
                   value={modalBudget?.currency || null}
@@ -2504,24 +2504,35 @@ export default function ActivityBudgetsTab({
                     isSaved={false}
                     hasValue={!!modalBudget.value && modalBudget.value > 0}
                   >
-                    Value
+                    Value <RequiredDot />
                   </LabelWithInfoAndSave>
                   <Input
                     id="value"
                     type="text"
-                    value={isEditingValue ? (modalBudget.value || '').toString() : (modalBudget.value ? modalBudget.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
+                    value={isEditingValue ? editingValueDisplay : (modalBudget.value ? modalBudget.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
                     onChange={(e) => {
-                      const rawValue = e.target.value.replace(/[^\d.]/g, '');
-                      const numValue = parseFloat(rawValue);
+                      const raw = e.target.value.replace(/[^\d.]/g, '');
+                      const parts = raw.split('.');
+                      const intPart = parts[0] ? parseInt(parts[0], 10) : 0;
+                      const formatted = isNaN(intPart) ? '' : intPart.toLocaleString() + (parts.length > 1 ? '.' + parts[1] : '');
+                      setEditingValueDisplay(formatted);
+                      const numValue = parseFloat(raw);
                       if (!isNaN(numValue)) {
                         updateFormField('value', numValue);
-                      } else if (rawValue === '' || rawValue === '.') {
+                      } else if (raw === '' || raw === '.') {
                         updateFormField('value', 0);
                       }
                     }}
-                    onFocus={(e) => {
+                    onFocus={() => {
                       setIsEditingValue(true);
-                      e.target.select();
+                      if (modalBudget.value && modalBudget.value > 0) {
+                        const raw = modalBudget.value.toString();
+                        const parts = raw.split('.');
+                        const intPart = parseInt(parts[0], 10);
+                        setEditingValueDisplay(intPart.toLocaleString() + (parts.length > 1 ? '.' + parts[1] : ''));
+                      } else {
+                        setEditingValueDisplay('');
+                      }
                     }}
                     onBlur={() => {
                       setIsEditingValue(false);
@@ -2540,12 +2551,13 @@ export default function ActivityBudgetsTab({
                     isSaved={false}
                     hasValue={!!modalBudget.value_date}
                   >
-                    Value Date
+                    Value Date <RequiredDot />
                   </LabelWithInfoAndSave>
                   <DatePicker
                     value={modalBudget.value_date || ''}
                     onChange={(value) => updateFormField('value_date', value)}
                     placeholder="Select date"
+                    dropdownId="budget-modal-value-date"
                   />
                   {fieldErrors.value_date && (
                     <p className="text-xs text-red-500">{fieldErrors.value_date}</p>

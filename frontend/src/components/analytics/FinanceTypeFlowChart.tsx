@@ -28,7 +28,7 @@ import {
   getFiscalYearForDate
 } from '@/utils/year-allocation'
 import { TRANSACTION_TYPE_CHART_COLORS } from '@/components/analytics/sectors/sectorColorMap'
-import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -917,13 +917,20 @@ export function FinanceTypeFlowChart({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
-                        {customYears.map(cy => (
+                        {sortCustomYearsCalendarFirst(customYears).map(cy => (
                           <DropdownMenuItem
                             key={cy.id}
                             className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                             onClick={() => setCalendarType(cy.id)}
                           >
-                            {cy.name}
+                            <span className="flex items-center gap-2">
+                              {cy.shortName && (
+                                <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                  {cy.shortName.trim()}
+                                </span>
+                              )}
+                              {cy.name}
+                            </span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
@@ -1593,6 +1600,11 @@ export function FinanceTypeFlowChart({
           </div>
         </div>
       )}
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed px-6 pb-6">
+        This chart visualises financial flows by finance type (such as ODA grants, loans, and equity), showing how different instruments are used across your portfolio over time. Use the transaction type filter to focus on specific flow types, and switch between chart styles to compare trends or cumulative totals.
+      </p>
     </Card>
   )
 }

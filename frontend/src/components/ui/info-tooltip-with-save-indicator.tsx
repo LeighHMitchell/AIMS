@@ -31,10 +31,10 @@ export function InfoTooltipWithSaveIndicator({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="h-3 w-3 text-muted-foreground" />
+            <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
           </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <p className="text-sm">{text}</p>
+          <TooltipContent>
+            <p>{text}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

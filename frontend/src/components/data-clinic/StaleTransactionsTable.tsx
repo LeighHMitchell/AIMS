@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon, sortableHeaderClasses } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Clock, Pencil, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react'
+import { Clock, Pencil, AlertCircle, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { differenceInDays, format, parseISO } from 'date-fns'
@@ -249,16 +249,6 @@ export function StaleTransactionsTable() {
     link.click();
   };
 
-  // Sort icon component
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
-    }
-    return sortDirection === 'asc'
-      ? <ArrowUp className="h-4 w-4 ml-1" />
-      : <ArrowDown className="h-4 w-4 ml-1" />;
-  };
-
   // Loading state
   if (loading) {
     return (
@@ -360,59 +350,59 @@ export function StaleTransactionsTable() {
           <div className="rounded-md border overflow-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow>
                   <TableHead
-                    className="min-w-[250px] cursor-pointer hover:bg-slate-100"
+                    className={`min-w-[250px] ${sortableHeaderClasses}`}
                     onClick={() => handleSort('title')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Activity
-                      <SortIcon field="title" />
+                      {getSortIcon('title', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="min-w-[180px] cursor-pointer hover:bg-slate-100"
+                    className={`min-w-[180px] ${sortableHeaderClasses}`}
                     onClick={() => handleSort('reporting_org')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Reporting Organisation
-                      <SortIcon field="reporting_org" />
+                      {getSortIcon('reporting_org', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-slate-100"
+                    className={sortableHeaderClasses}
                     onClick={() => handleSort('last_transaction_date')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Last Transaction
-                      <SortIcon field="last_transaction_date" />
+                      {getSortIcon('last_transaction_date', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-slate-100"
+                    className={sortableHeaderClasses}
                     onClick={() => handleSort('transaction_type')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Type
-                      <SortIcon field="transaction_type" />
+                      {getSortIcon('transaction_type', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className={`text-right ${sortableHeaderClasses}`}
                     onClick={() => handleSort('value')}
                   >
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center gap-1 justify-end">
                       Original Amount
-                      <SortIcon field="value" />
+                      {getSortIcon('value', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className={`text-right ${sortableHeaderClasses}`}
                     onClick={() => handleSort('value_usd')}
                   >
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center gap-1 justify-end">
                       USD Amount
-                      <SortIcon field="value_usd" />
+                      {getSortIcon('value_usd', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead className="w-10"></TableHead>

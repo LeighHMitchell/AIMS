@@ -351,8 +351,10 @@ export default function FocalPointsTab({
               )}
               {getStatusBadge(focalPoint.status)}
             </div>
-            {focalPoint.job_title && (
-              <div className="text-xs text-slate-500 mt-0.5">{focalPoint.job_title}</div>
+            {(focalPoint.job_title || focalPoint.department) && (
+              <div className="text-xs text-slate-500 mt-0.5">
+                {[focalPoint.job_title, focalPoint.department].filter(Boolean).join(' · ')}
+              </div>
             )}
             {orgDisplay && (
               <div className="text-xs text-slate-500">{orgDisplay}</div>
@@ -393,18 +395,18 @@ export default function FocalPointsTab({
               )}
               {showRemoveButton && (
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="ghost"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 backdrop-blur-sm bg-white/50 rounded-full"
                   onClick={() => handleRemove(focalPoint)}
                   disabled={isLoading}
+                  title="Remove focal point"
                 >
                   {isLoading && actionLoading?.startsWith('remove') ? (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Trash2 className="h-4 w-4 mr-1 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   )}
-                  Remove
                 </Button>
               )}
             </div>

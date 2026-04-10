@@ -7,7 +7,7 @@ import type maplibregl from 'maplibre-gl';
 import type { GeoJSON, Feature, Geometry } from 'geojson';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Download, Maximize2, Layers, Mountain, Map as MapIcon, RotateCcw } from 'lucide-react';
+import { MapPin, Download, Maximize2, Layers, Mountain, RotateCcw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -705,7 +705,7 @@ function Map3DController({
           title="2D View"
           className="bg-card shadow-md border-border h-9 px-2.5"
         >
-          <MapIcon className="h-4 w-4 mr-1.5" />
+          <Mountain className="h-4 w-4 mr-1.5" />
           <span className="text-xs">2D</span>
         </Button>
       ) : (

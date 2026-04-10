@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format } from 'date-fns'
 import {
   AreaChart,
@@ -974,13 +974,20 @@ export function SectorDisbursementOverTime({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      {customYears.map(cy => (
+                      {sortCustomYearsCalendarFirst(customYears).map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
                           className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
-                          {cy.name}
+                          <span className="flex items-center gap-2">
+                            {cy.shortName && (
+                              <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                {cy.shortName.trim()}
+                              </span>
+                            )}
+                            {cy.name}
+                          </span>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -1378,11 +1385,11 @@ export function SectorDisbursementOverTime({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold text-gray-700 sticky left-0 bg-muted/50">
+                    <TableHead className="font-medium text-gray-700 sticky left-0 bg-muted/50">
                       Year
                     </TableHead>
                     {visibleItemData.map(item => (
-                      <TableHead key={item.code} className="text-right font-semibold text-gray-700 min-w-[120px]">
+                      <TableHead key={item.code} className="text-right font-medium text-gray-700 min-w-[120px]">
                         <div className="flex flex-col items-end">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground mb-1">
                             {item.code}
@@ -1391,7 +1398,7 @@ export function SectorDisbursementOverTime({
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-right font-semibold text-gray-700">Total</TableHead>
+                    <TableHead className="text-right font-medium text-gray-700">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1458,13 +1465,10 @@ export function SectorDisbursementOverTime({
           )}
         </div>
 
-        {/* Explanatory Text */}
-        <p className="text-xs text-gray-500 mt-4">
-          This chart shows sector disbursement trends over time. Toggle between Planned Disbursements and Actual Disbursements
-          using the Planned/Actual buttons. View data at different aggregation levels: Sector Category (DAC 1-digit),
-          Sector (DAC 3-digit), or Sub-sector (DAC 5-digit). The stacked area chart shows cumulative values across all sectors;
-          switch to line view to compare individual sector trends. Hover over the chart to see a breakdown by sector for each year.
-          Year labels adjust based on the selected calendar type (e.g., &ldquo;CY 2025&rdquo; for Calendar Year, &ldquo;FY 2024-25&rdquo; for Fiscal Year).
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This chart shows how sector disbursements have changed over time. Toggle between planned and actual disbursements, and view data at Sector Category, Sector, or Sub-sector levels.
+          Use the stacked area chart to see cumulative totals across sectors, or switch to line view to compare individual sector trends. Hover over any point to see a detailed breakdown by sector for that year.
         </p>
     </div>
   )

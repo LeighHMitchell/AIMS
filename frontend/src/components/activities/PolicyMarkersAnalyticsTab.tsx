@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { ArrowUpDown, ArrowUp, ArrowDown, Leaf, Wind, Waves, TreePine, MountainSnow, Sparkles, Shield, Handshake, Baby, AlertCircle, Heart, Droplets, Wrench } from 'lucide-react';
+import { ChevronsUpDown, ChevronUp, ChevronDown, Leaf, Wind, Waves, TreePine, MountainSnow, Sparkles, Shield, Handshake, Baby, AlertCircle, Heart, Droplets, Wrench } from 'lucide-react';
 
 interface PolicyMarkerDetails {
   uuid: string;
@@ -257,8 +257,8 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
 
   // Get sort icon
   const getSortIcon = (field: string) => {
-    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
-    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+    if (sortField !== field) return <ChevronsUpDown className="h-4 w-4" />;
+    return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
   // Significance distribution data
@@ -319,7 +319,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted">
-                  <TableHead className="font-semibold text-foreground">
+                  <TableHead className="font-medium text-foreground">
                     <button
                       onClick={() => handleSort('name')}
                       className="flex items-center gap-2 hover:text-foreground"
@@ -328,7 +328,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                       {getSortIcon('name')}
                     </button>
                   </TableHead>
-                  <TableHead className="font-semibold text-foreground">
+                  <TableHead className="font-medium text-foreground">
                     <button
                       onClick={() => handleSort('category')}
                       className="flex items-center gap-2 hover:text-foreground"
@@ -337,7 +337,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                       {getSortIcon('category')}
                     </button>
                   </TableHead>
-                  <TableHead className="font-semibold text-foreground">
+                  <TableHead className="font-medium text-foreground">
                     <button
                       onClick={() => handleSort('significance')}
                       className="flex items-center gap-2 hover:text-foreground"
@@ -346,7 +346,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                       {getSortIcon('significance')}
                     </button>
                   </TableHead>
-                  <TableHead className="font-semibold text-foreground">Rationale</TableHead>
+                  <TableHead className="font-medium text-foreground">Rationale</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -107,12 +107,6 @@ export function FlowTypeSelect({
     return groups;
   }, [filteredOptions]);
 
-  const COMMONLY_USED_FLOW_CODES = ["10"];
-  const commonlyUsedFlowTypes = filteredOptions.filter(opt => COMMONLY_USED_FLOW_CODES.includes(opt.code));
-  const otherGroupedOptions = Object.entries(groupedOptions).reduce((acc, [group, options]) => {
-    acc[group] = options.filter(opt => !COMMONLY_USED_FLOW_CODES.includes(opt.code));
-    return acc;
-  }, {} as typeof groupedOptions);
 
   return (
     <div className={cn("relative w-full", className)} ref={popoverRef}>
@@ -194,35 +188,7 @@ export function FlowTypeSelect({
               />
             </div>
             <CommandList>
-              {commonlyUsedFlowTypes.length > 0 && (
-                <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                    Commonly Used
-                  </div>
-                  {commonlyUsedFlowTypes.map(option => (
-                    <CommandItem
-                      key={option.code}
-                      onSelect={() => {
-                        onValueChange?.(option.code === value ? null : option.code);
-                        setOpen(false);
-                        setSearchQuery("");
-                      }}
-                      className={cn("cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors", value === option.code && "bg-accent")}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
-                          <span className="font-medium text-foreground">{option.name}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                          {option.description}
-                        </div>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-              {Object.entries(otherGroupedOptions).map(([groupName, options]) => options.length > 0 && (
+              {Object.entries(groupedOptions).map(([groupName, options]) => options.length > 0 && (
                 <CommandGroup key={groupName}>
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
                     {groupName}

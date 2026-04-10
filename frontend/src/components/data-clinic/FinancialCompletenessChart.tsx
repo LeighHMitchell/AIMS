@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AlertCircle, BarChart3, Table as TableIcon, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { AlertCircle, BarChart3, Table as TableIcon, ExternalLink, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
   formatCurrencyCompact,
@@ -154,11 +154,11 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
   // Get sort icon for column header
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return <ChevronsUpDown className="h-4 w-4 ml-1 opacity-50" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="h-4 w-4 ml-1" />
-      : <ArrowDown className="h-4 w-4 ml-1" />;
+      ? <ChevronUp className="h-4 w-4 ml-1" />
+      : <ChevronDown className="h-4 w-4 ml-1" />;
   };
 
   // Prepare and sort chart data

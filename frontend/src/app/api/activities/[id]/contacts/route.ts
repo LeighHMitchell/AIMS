@@ -56,13 +56,15 @@ export async function GET(
           organizations:organisation_id (
             id,
             name,
-            acronym
+            acronym,
+            logo
           )
         ),
         organizations:organisation_id (
           id,
           name,
-          acronym
+          acronym,
+          logo
         )
       `, { count: 'exact' });
 
@@ -100,6 +102,7 @@ export async function GET(
         organisation: orgData?.name || c?.organisation || contact.organisation_name || contact.organisation,
         organisationId: c?.organisation_id || contact.organisation_id,
         organisationAcronym: orgData?.acronym || contact.organisation_acronym,
+        organisationLogo: orgData?.logo || null,
         email: c?.email || contact.primary_email || contact.email,
         phone: c?.phone_number || c?.phone || contact.phone_number || contact.phone,
         phoneNumber: c?.phone_number || contact.phone_number || contact.phone,

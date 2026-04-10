@@ -1,29 +1,30 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Info, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight, Globe, Plus, X, Trash2, Building2, EyeOff } from 'lucide-react';
+import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { PolicyMarkerScoreSelectIATI } from '@/components/forms/PolicyMarkerScoreSelectIATI';
-import { HelpText } from '@/components/ui/help-text';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { usePolicyMarkersAutosave } from '@/hooks/use-policy-markers-autosave';
 import { useUser } from '@/hooks/useUser';
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
 
 // Types
 type VisibilityLevel = 'public' | 'organization' | 'hidden';
 
 interface IATIPolicyMarker {
-  id: string; // Keep for backward compatibility
-  uuid: string; // The actual UUID used for references
+  id: string;
+  uuid: string;
   code: string;
   name: string;
   description: string;
@@ -40,7 +41,7 @@ interface ActivityPolicyMarker {
   policy_marker_id: string;
   significance: 0 | 1 | 2 | 3 | 4;
   rationale?: string;
-  visibility?: VisibilityLevel | null; // null means inherit from default
+  visibility?: VisibilityLevel | null;
 }
 
 interface PolicyMarkersSectionProps {
@@ -51,9 +52,9 @@ interface PolicyMarkersSectionProps {
   readOnly?: boolean;
 }
 
-// Helper function to get significance label based on marker type
-const getSignificanceLabel = (isRMNCH: boolean, significance: number): string => {
-  if (isRMNCH) {
+// Significance labels
+const getSignificanceLabel = (markerCode: string, significance: number): string => {
+  if (markerCode === '9') {
     switch (significance) {
       case 0: return "Negligible or no funding";
       case 1: return "At least a quarter of funding";
@@ -67,50 +68,40 @@ const getSignificanceLabel = (isRMNCH: boolean, significance: number): string =>
       case 0: return "Not targeted";
       case 1: return "Significant objective";
       case 2: return "Principal objective";
-      case 3: return "Most funding targeted"; // IATI level 3
-      case 4: return "Explicit primary objective"; // IATI level 4 (should only be for RMNCH)
+      case 3: return "Most funding targeted";
+      case 4: return "Explicit primary objective";
       default: return "Unknown";
     }
   }
 };
 
-const MARKER_TYPE_ICONS = {
-  environmental: <Leaf className="w-4 h-4 text-gray-600" />,
-  social_governance: <Users className="w-4 h-4 text-gray-600" />,
-  other: <Wrench className="w-4 h-4 text-gray-600" />,
-  custom: <Plus className="w-4 h-4 text-gray-600" />
+// Get max significance allowed for a marker
+const getMaxSignificance = (marker: IATIPolicyMarker): number => {
+  if (marker.iati_code === '9' || !marker.is_iati_standard) return 4;
+  if (marker.iati_code === '8') return 3;
+  return 2;
 };
 
-const MARKER_TYPE_LABELS = {
+const MARKER_TYPE_ICONS: Record<string, React.ReactNode> = {
+  environmental: <Leaf className="w-4 h-4 text-muted-foreground" />,
+  social_governance: <Users className="w-4 h-4 text-muted-foreground" />,
+  other: <Wrench className="w-4 h-4 text-muted-foreground" />,
+  custom: <Plus className="w-4 h-4 text-muted-foreground" />
+};
+
+const MARKER_TYPE_LABELS: Record<string, string> = {
   environmental: 'Environmental',
-  social_governance: 'Social & Governance', 
+  social_governance: 'Social & Governance',
   other: 'Other Cross-Cutting Issues',
   custom: 'Custom Policy Markers'
 };
 
-const VOCABULARY_LABELS = {
-  '1': 'OECD DAC CRS',
-  '99': 'Custom Organization'
-};
-
-const HELP_CONTENT = {
-  title: "IATI Policy Markers",
-  description: "Policy markers flag cross-cutting themes such as gender, environment, and reproductive health. Each marker includes its significance rating according to IATI standards.",
-  examples: [
-    "Gender equality (principal objective)",
-    "RMNCH health (explicit primary objective)", 
-    "Custom organisation-defined marker"
-  ]
-};
-
-// Visibility options for custom policy markers
 const VISIBILITY_OPTIONS: { value: VisibilityLevel; label: string; description: string }[] = [
   { value: 'public', label: 'Public', description: 'Visible to everyone including external viewers' },
   { value: 'organization', label: 'Organization-only', description: 'Visible to logged-in users only' },
   { value: 'hidden', label: 'Hidden', description: 'Visible to activity editors and admins only' }
 ];
 
-// Visibility icon component
 const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: VisibilityLevel | null | undefined; className?: string }) => {
   switch (visibility) {
     case 'organization':
@@ -122,7 +113,6 @@ const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: Vis
   }
 };
 
-// Get visibility label
 const getVisibilityLabel = (visibility: VisibilityLevel | null | undefined): string => {
   switch (visibility) {
     case 'organization': return 'Organization-only';
@@ -133,1060 +123,788 @@ const getVisibilityLabel = (visibility: VisibilityLevel | null | undefined): str
 
 // Fallback IATI markers (12 official ones)
 const FALLBACK_IATI_MARKERS: IATIPolicyMarker[] = [
-  // Environmental (Rio Markers)
-  { id: '2', code: '2', name: 'Aid to Environment', description: 'Activities that support environmental protection or enhancement', marker_type: 'environmental', vocabulary: '1', iati_code: '2', is_iati_standard: true },
-  { id: '5', code: '5', name: 'Aid Targeting the Objectives of the Convention on Biological Diversity', description: 'Activities that target biodiversity conservation objectives', marker_type: 'environmental', vocabulary: '1', iati_code: '5', is_iati_standard: true },
-  { id: '6', code: '6', name: 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Mitigation', description: 'Activities that contribute to climate change mitigation', marker_type: 'environmental', vocabulary: '1', iati_code: '6', is_iati_standard: true },
-  { id: '7', code: '7', name: 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Adaptation', description: 'Activities that contribute to climate change adaptation', marker_type: 'environmental', vocabulary: '1', iati_code: '7', is_iati_standard: true },
-  { id: '8', code: '8', name: 'Aid Targeting the Objectives of the Convention to Combat Desertification', description: 'Activities that target desertification objectives', marker_type: 'environmental', vocabulary: '1', iati_code: '8', is_iati_standard: true },
-  
-  // Social & Governance
-  { id: '1', code: '1', name: 'Gender Equality', description: 'Activities that promote gender equality and women\'s empowerment', marker_type: 'social_governance', vocabulary: '1', iati_code: '1', is_iati_standard: true },
-  { id: '3', code: '3', name: 'Participatory Development/Good Governance', description: 'Activities that promote participatory development and good governance', marker_type: 'social_governance', vocabulary: '1', iati_code: '3', is_iati_standard: true },
-  
-  // Other Cross-Cutting Issues
-  { id: '4', code: '4', name: 'Trade Development', description: 'Activities that promote trade development', marker_type: 'other', vocabulary: '1', iati_code: '4', is_iati_standard: true },
-  { id: '9', code: '9', name: 'Reproductive, Maternal, Newborn and Child Health (RMNCH)', description: 'Activities that address reproductive, maternal, newborn and child health', marker_type: 'other', vocabulary: '1', iati_code: '9', is_iati_standard: true },
-  { id: '10', code: '10', name: 'Disaster Risk Reduction (DRR)', description: 'Activities that address disaster risk reduction', marker_type: 'other', vocabulary: '1', iati_code: '10', is_iati_standard: true },
-  { id: '11', code: '11', name: 'Disability', description: 'Activities that promote inclusion of persons with disabilities', marker_type: 'other', vocabulary: '1', iati_code: '11', is_iati_standard: true },
-  { id: '12', code: '12', name: 'Nutrition', description: 'Activities that address nutrition outcomes', marker_type: 'other', vocabulary: '1', iati_code: '12', is_iati_standard: true }
+  { id: '2', uuid: '2', code: '2', name: 'Aid to Environment', description: 'Activities that support environmental protection or enhancement', marker_type: 'environmental', vocabulary: '1', iati_code: '2', is_iati_standard: true },
+  { id: '5', uuid: '5', code: '5', name: 'Biodiversity Convention', description: 'Activities that target biodiversity conservation objectives', marker_type: 'environmental', vocabulary: '1', iati_code: '5', is_iati_standard: true },
+  { id: '6', uuid: '6', code: '6', name: 'Climate Mitigation', description: 'Activities that contribute to climate change mitigation', marker_type: 'environmental', vocabulary: '1', iati_code: '6', is_iati_standard: true },
+  { id: '7', uuid: '7', code: '7', name: 'Climate Adaptation', description: 'Activities that contribute to climate change adaptation', marker_type: 'environmental', vocabulary: '1', iati_code: '7', is_iati_standard: true },
+  { id: '8', uuid: '8', code: '8', name: 'Desertification Convention', description: 'Activities that target desertification objectives', marker_type: 'environmental', vocabulary: '1', iati_code: '8', is_iati_standard: true },
+  { id: '1', uuid: '1', code: '1', name: 'Gender Equality', description: 'Activities that promote gender equality', marker_type: 'social_governance', vocabulary: '1', iati_code: '1', is_iati_standard: true },
+  { id: '3', uuid: '3', code: '3', name: 'Participatory Development/Good Governance', description: 'Activities that promote participatory development and good governance', marker_type: 'social_governance', vocabulary: '1', iati_code: '3', is_iati_standard: true },
+  { id: '9', uuid: '9', code: '9', name: 'RMNCH', description: 'Reproductive, Maternal, Newborn and Child Health', marker_type: 'social_governance', vocabulary: '1', iati_code: '9', is_iati_standard: true },
+  { id: '11', uuid: '11', code: '11', name: 'Disability', description: 'Activities that promote inclusion of persons with disabilities', marker_type: 'social_governance', vocabulary: '1', iati_code: '11', is_iati_standard: true },
+  { id: '12', uuid: '12', code: '12', name: 'Nutrition', description: 'Activities that address nutrition outcomes', marker_type: 'social_governance', vocabulary: '1', iati_code: '12', is_iati_standard: true },
+  { id: '4', uuid: '4', code: '4', name: 'Trade Development', description: 'Activities that promote trade development', marker_type: 'other', vocabulary: '1', iati_code: '4', is_iati_standard: true },
+  { id: '10', uuid: '10', code: '10', name: 'Disaster Risk Reduction (DRR)', description: 'Activities that address disaster risk reduction', marker_type: 'other', vocabulary: '1', iati_code: '10', is_iati_standard: true },
 ];
+
+// Modal form state type
+interface ModalFormState {
+  selectedMarkerId: string | null;
+  significance: number;
+  rationale: string;
+  visibility: VisibilityLevel | null;
+  isCreatingCustom: boolean;
+  customName: string;
+  customCode: string;
+  customDescription: string;
+  customMarkerType: 'environmental' | 'social_governance' | 'other';
+  customVocabulary: string;
+  customVocabularyName: string;
+  customVocabularyUri: string;
+  customDefaultVisibility: VisibilityLevel;
+}
+
+const INITIAL_MODAL_FORM: ModalFormState = {
+  selectedMarkerId: null,
+  significance: 1,
+  rationale: '',
+  visibility: null,
+  isCreatingCustom: false,
+  customName: '',
+  customCode: '',
+  customDescription: '',
+  customMarkerType: 'other',
+  customVocabulary: '99',
+  customVocabularyName: '',
+  customVocabularyUri: '',
+  customDefaultVisibility: 'public',
+};
 
 export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyMarkers, onChange, setHasUnsavedChanges, readOnly = false }: PolicyMarkersSectionProps) {
   const { user } = useUser();
   const policyMarkersAutosave = usePolicyMarkersAutosave(activityId, user?.id);
-  
+
   const [availableMarkers, setAvailableMarkers] = useState<IATIPolicyMarker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('environmental');
   const [selectedMarkers, setSelectedMarkers] = useState<Map<string, ActivityPolicyMarker>>(new Map());
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [showAddCustomDialog, setShowAddCustomDialog] = useState(false);
-  const [showEditCustomDialog, setShowEditCustomDialog] = useState(false);
-  const [editingMarkerId, setEditingMarkerId] = useState<string | null>(null);
-  const [customMarkerForm, setCustomMarkerForm] = useState({
-    name: '',
-    description: '',
-    marker_type: 'other' as 'environmental' | 'social_governance' | 'other',
-    vocabulary: '99',
-    vocabulary_name: '',
-    code: '',
-    significance: 0,
-    vocabulary_uri: '',
-    default_visibility: 'public' as VisibilityLevel
-  });
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const [editingMarkerUuid, setEditingMarkerUuid] = useState<string | null>(null);
+  const [modalForm, setModalForm] = useState<ModalFormState>(INITIAL_MODAL_FORM);
+  const [markerPopoverOpen, setMarkerPopoverOpen] = useState(false);
+  const [savingModal, setSavingModal] = useState(false);
 
   // Initialize selected markers from props
   useEffect(() => {
     const markersMap = new Map<string, ActivityPolicyMarker>();
     policyMarkers.forEach(marker => {
-      markersMap.set(marker.policy_marker_id, marker);
+      if (marker.significance > 0) {
+        markersMap.set(marker.policy_marker_id, marker);
+      }
     });
     setSelectedMarkers(markersMap);
   }, [policyMarkers]);
 
-  // Fetch available IATI policy markers (including activity-specific custom markers)
+  // Fetch available IATI policy markers
   useEffect(() => {
     const fetchMarkers = async () => {
       try {
-        // Pass activity_id to get activity-scoped custom markers
         const response = await apiFetch(`/api/policy-markers?activity_id=${activityId}`);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(errorData.error || `HTTP ${response.status}`);
         }
         const data = await response.json();
-        console.log('[PolicyMarkers] API data received:', data);
-        // Add default IATI fields for markers that don't have them yet
         const markersWithDefaults = (Array.isArray(data) ? data : []).map((marker: any) => ({
           ...marker,
-          uuid: marker.uuid || marker.id, // Ensure UUID is present
+          uuid: marker.uuid || marker.id,
           vocabulary: marker.vocabulary || '1',
           iati_code: marker.iati_code || marker.code,
           is_iati_standard: marker.is_iati_standard !== undefined ? marker.is_iati_standard : true
         }));
-        console.log('[PolicyMarkers] Processed markers:', markersWithDefaults);
         setAvailableMarkers(markersWithDefaults);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching IATI policy markers:', error);
-        console.log('API call failed, using fallback markers...');
-        console.log('[PolicyMarkers] Fallback markers:', FALLBACK_IATI_MARKERS);
         setAvailableMarkers(FALLBACK_IATI_MARKERS);
         toast.error(`Failed to load policy markers: ${error.message}. Using offline markers.`);
       } finally {
         setLoading(false);
       }
     };
-
     fetchMarkers();
-  }, []);
+  }, [activityId]);
 
-  // Update marker significance
-  const updateMarkerSignificance = (markerUuid: string, significance: 0 | 1 | 2 | 3 | 4) => {
-    const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
-    if (!marker) return;
-
-    // Validate significance 4 is only for RMNCH (IATI code 9)
-    if (significance === 4 && marker.iati_code !== '9') {
-      toast.error('Significance level 4 (Explicit primary objective) is only valid for RMNCH marker');
-      return;
-    }
-
-    const newSelectedMarkers = new Map(selectedMarkers);
-
-    if (significance === 0) {
-      newSelectedMarkers.delete(markerUuid);
-    } else {
-      const existingMarker = newSelectedMarkers.get(markerUuid) || {
-        policy_marker_id: markerUuid, // Use UUID as the policy_marker_id
-        significance: 0,
-        rationale: ''
-      };
-      newSelectedMarkers.set(markerUuid, {
-        ...existingMarker,
-        significance
-      });
-    }
-
-    setSelectedMarkers(newSelectedMarkers);
-
-    // Convert to array for parent component
-    const updatedMarkers = Array.from(newSelectedMarkers.values());
-    onChange(updatedMarkers);
-
-    // Trigger autosave - only save markers with valid significance (not 0)
+  // ---- Autosave helper ----
+  const triggerSave = (newSelectedMarkers: Map<string, ActivityPolicyMarker>) => {
+    const markersArray = Array.from(newSelectedMarkers.values()).filter(m => m.significance > 0);
+    onChange(markersArray);
     if (policyMarkersAutosave) {
-      const validMarkers = updatedMarkers.filter(m => m.significance && m.significance > 0);
-      policyMarkersAutosave.triggerFieldSave(validMarkers);
+      policyMarkersAutosave.triggerFieldSave(markersArray);
     }
-    
     setHasUnsavedChanges?.(true);
   };
 
-  // Update marker rationale
-  const updateMarkerRationale = (markerUuid: string, rationale: string) => {
-    const newSelectedMarkers = new Map(selectedMarkers);
-    const existingMarker = newSelectedMarkers.get(markerUuid);
-    
-    if (existingMarker) {
-      newSelectedMarkers.set(markerUuid, {
-        ...existingMarker,
-        rationale
-      });
-      
-      setSelectedMarkers(newSelectedMarkers);
-      
-      const markersArray = Array.from(newSelectedMarkers.values());
-      onChange(markersArray);
-      
-      if (policyMarkersAutosave) {
-        const validMarkers = markersArray.filter(m => m.significance && m.significance > 0);
-        policyMarkersAutosave.triggerFieldSave(validMarkers);
-      }
-      
-      setHasUnsavedChanges?.(true);
-    }
-  };
-
-  // Update marker visibility override for this activity
-  const updateMarkerVisibility = (markerUuid: string, visibility: VisibilityLevel | null) => {
-    const newSelectedMarkers = new Map(selectedMarkers);
-    const existingMarker = newSelectedMarkers.get(markerUuid);
-    
-    if (existingMarker) {
-      newSelectedMarkers.set(markerUuid, {
-        ...existingMarker,
-        visibility
-      });
-      
-      setSelectedMarkers(newSelectedMarkers);
-      
-      const markersArray = Array.from(newSelectedMarkers.values());
-      onChange(markersArray);
-      
-      if (policyMarkersAutosave) {
-        const validMarkers = markersArray.filter(m => m.significance && m.significance > 0);
-        policyMarkersAutosave.triggerFieldSave(validMarkers);
-      }
-      
-      setHasUnsavedChanges?.(true);
-    }
-  };
-
-  // Get effective visibility for a marker (activity override or default)
+  // ---- Get effective visibility ----
   const getEffectiveVisibility = (marker: IATIPolicyMarker, activityMarker?: ActivityPolicyMarker): VisibilityLevel => {
     if (marker.is_iati_standard) return 'public';
     return activityMarker?.visibility ?? marker.default_visibility ?? 'public';
   };
 
-  // Check if a marker is visible based on user context
-  // - readOnly + no user = external/anonymous viewer → only public markers
-  // - readOnly + user = logged-in viewer (non-editor) → public + organization markers  
-  // - !readOnly = editor → all markers visible
+  // ---- Visibility check for readOnly mode ----
   const isMarkerVisible = (marker: IATIPolicyMarker): boolean => {
-    // IATI standard markers are always visible
     if (marker.is_iati_standard) return true;
-    
     const markerUuid = marker.uuid || marker.id;
     const activityMarker = selectedMarkers.get(markerUuid);
     const visibility = getEffectiveVisibility(marker, activityMarker);
-    
-    // Editors can see all markers
     if (!readOnly) return true;
-    
-    // External/anonymous viewers can only see public markers
     if (!user) return visibility === 'public';
-    
-    // Logged-in non-editors can see public and organization markers
     return visibility !== 'hidden';
   };
 
-  // Add custom policy marker
-  const addCustomMarker = async () => {
-    if (!customMarkerForm.name.trim()) {
-      toast.error('Please enter a name for the custom policy marker');
-      return;
-    }
-    if (!customMarkerForm.code.trim()) {
-      toast.error('Please enter a code for the custom policy marker');
-      return;
-    }
-    
-    // Check if code already exists
-    const existingMarker = availableMarkers.find(m => m.code === customMarkerForm.code.trim());
-    if (existingMarker) {
-      toast.error(`Code "${customMarkerForm.code.trim()}" is already taken. Please choose a different code.`);
-      return;
-    }
-
-    // Validate significance 4 is only for RMNCH markers
-    const isRMNCH = customMarkerForm.name.toLowerCase().includes('reproductive') || 
-                    customMarkerForm.name.toLowerCase().includes('maternal') || 
-                    customMarkerForm.name.toLowerCase().includes('newborn') || 
-                    customMarkerForm.name.toLowerCase().includes('child') ||
-                    customMarkerForm.name.toLowerCase().includes('rmnch');
-    
-    if (customMarkerForm.significance === 4 && !isRMNCH) {
-      toast.error('Significance level 4 (Explicit primary objective) is only valid for RMNCH markers');
-      return;
-    }
-
-    try {
-      const response = await apiFetch('/api/policy-markers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: customMarkerForm.name.trim(),
-          description: customMarkerForm.description.trim(),
-          marker_type: customMarkerForm.marker_type,
-          code: customMarkerForm.code.trim(),
-          vocabulary: customMarkerForm.vocabulary,
-          vocabulary_name: customMarkerForm.vocabulary_name.trim(),
-          iati_code: customMarkerForm.code.trim(),
-          is_iati_standard: false,
-          is_active: true,
-          vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null,
-          default_visibility: customMarkerForm.default_visibility
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error creating policy marker:', errorData);
-        
-        // Handle specific error cases
-        if (errorData.message?.includes('duplicate key') || errorData.message?.includes('already exists')) {
-          toast.error(`Code "${customMarkerForm.code.trim()}" is already taken. Please choose a different code.`);
-        } else {
-          toast.error(errorData.message || 'Failed to create custom policy marker');
-        }
-        return;
-      }
-
-      const newMarker = await response.json();
-      
-      // Add default IATI fields to the new marker
-      const markerWithDefaults = {
-        ...newMarker,
-        vocabulary: customMarkerForm.vocabulary,
-        iati_code: customMarkerForm.code.trim(),
-        is_iati_standard: false,
-        vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null,
-        vocabulary_name: customMarkerForm.vocabulary_name.trim()
-      };
-
-      // Add to available markers
-      setAvailableMarkers(prev => [...prev, markerWithDefaults]);
-      
-      // Reset form
-      setCustomMarkerForm({
-        name: '',
-        description: '',
-        marker_type: 'other',
-        vocabulary: '99',
-        vocabulary_name: '',
-        code: '',
-        significance: 0,
-        vocabulary_uri: '',
-        default_visibility: 'public'
-      });
-      
-      setShowAddCustomDialog(false);
-      toast.success('Custom policy marker created successfully');
-    } catch (error) {
-      console.error('Error creating custom policy marker:', error);
-      toast.error('Failed to create custom policy marker');
-    }
+  // ---- Get display code for a marker ----
+  const getDisplayCode = (marker: IATIPolicyMarker): string => {
+    if (marker.is_iati_standard) return marker.iati_code;
+    return marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code;
   };
 
-  // Edit custom policy marker
-  const editCustomMarker = (markerId: string) => {
-    const marker = availableMarkers.find(m => m.id === markerId);
+  // ---- Get active markers grouped by type ----
+  const getActiveMarkersForType = (type: string) => {
+    const results: { marker: IATIPolicyMarker; activityMarker: ActivityPolicyMarker }[] = [];
+    selectedMarkers.forEach((activityMarker, markerUuid) => {
+      if (activityMarker.significance <= 0) return;
+      const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
+      if (!marker) return;
+      if (!isMarkerVisible(marker)) return;
+      const markerType = marker.is_iati_standard ? marker.marker_type : 'custom';
+      if (markerType === type) {
+        results.push({ marker, activityMarker });
+      }
+    });
+    return results.sort((a, b) => a.marker.name.localeCompare(b.marker.name));
+  };
+
+  // ---- Open modal for add ----
+  const openAddModal = () => {
+    setModalMode('add');
+    setEditingMarkerUuid(null);
+    setModalForm(INITIAL_MODAL_FORM);
+    setModalOpen(true);
+  };
+
+  // ---- Open modal for edit ----
+  const openEditModal = (markerUuid: string) => {
+    const activityMarker = selectedMarkers.get(markerUuid);
+    if (!activityMarker) return;
+    const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
     if (!marker) return;
 
-    setEditingMarkerId(markerId);
-    setCustomMarkerForm({
-      name: marker.name,
-      description: marker.description || '',
-      marker_type: marker.marker_type,
-      vocabulary: marker.vocabulary || '99',
-      vocabulary_name: marker.vocabulary_name || '',
-      code: marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code, // Remove CUSTOM_ prefix for display
-      significance: 0,
-      vocabulary_uri: marker.vocabulary_uri || '',
-      default_visibility: marker.default_visibility || 'public'
+    setModalMode('edit');
+    setEditingMarkerUuid(markerUuid);
+    setModalForm({
+      ...INITIAL_MODAL_FORM,
+      selectedMarkerId: markerUuid,
+      significance: activityMarker.significance,
+      rationale: activityMarker.rationale || '',
+      visibility: activityMarker.visibility ?? null,
     });
-    setShowEditCustomDialog(true);
+    setModalOpen(true);
   };
 
-  // Update custom policy marker
-  const updateCustomMarker = async () => {
-    if (!editingMarkerId) return;
-    
-    if (!customMarkerForm.name.trim()) {
-      toast.error('Please enter a name for the custom policy marker');
-      return;
-    }
-    if (!customMarkerForm.code.trim()) {
-      toast.error('Please enter a code for the custom policy marker');
-      return;
-    }
-    
-    // Check if code already exists (excluding current marker)
-    const existingMarker = availableMarkers.find(m => m.code === customMarkerForm.code.trim() && m.id !== editingMarkerId);
-    if (existingMarker) {
-      toast.error(`Code "${customMarkerForm.code.trim()}" is already taken. Please choose a different code.`);
-      return;
-    }
-
-    try {
-      const response = await apiFetch('/api/policy-markers', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: editingMarkerId,
-          name: customMarkerForm.name.trim(),
-          description: customMarkerForm.description.trim(),
-          marker_type: customMarkerForm.marker_type,
-          code: customMarkerForm.code.trim(),
-          vocabulary_name: customMarkerForm.vocabulary_name.trim(),
-          vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null,
-          default_visibility: customMarkerForm.default_visibility
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error updating policy marker:', errorData);
-        
-        // Handle specific error cases
-        if (errorData.message?.includes('duplicate key') || errorData.message?.includes('already exists')) {
-          toast.error(`Code "${customMarkerForm.code.trim()}" is already taken. Please choose a different code.`);
-        } else {
-          toast.error(errorData.message || 'Failed to update custom policy marker');
-        }
-        return;
-      }
-
-      const updatedMarker = await response.json();
-      
-      // Update the marker in available markers
-      setAvailableMarkers(prev => prev.map(marker => 
-        marker.id === editingMarkerId ? updatedMarker : marker
-      ));
-      
-      // Reset form and close dialog
-      setCustomMarkerForm({
-        name: '',
-        description: '',
-        marker_type: 'other',
-        vocabulary: '99',
-        vocabulary_name: '',
-        code: '',
-        significance: 0,
-        vocabulary_uri: '',
-        default_visibility: 'public'
-      });
-      setShowEditCustomDialog(false);
-      setEditingMarkerId(null);
-      
-      toast.success('Custom policy marker updated successfully');
-    } catch (error) {
-      console.error('Error updating custom policy marker:', error);
-      toast.error('Failed to update custom policy marker');
-    }
+  // ---- Remove marker ----
+  const removeMarker = (markerUuid: string) => {
+    const newSelectedMarkers = new Map(selectedMarkers);
+    newSelectedMarkers.delete(markerUuid);
+    setSelectedMarkers(newSelectedMarkers);
+    triggerSave(newSelectedMarkers);
+    toast.success('Policy marker removed');
   };
 
-  // Delete custom policy marker
+  // ---- Delete custom marker definition ----
   const deleteCustomMarker = async (markerId: string) => {
-    if (!confirm('Are you sure you want to delete this custom policy marker? This action cannot be undone.')) {
-      return;
-    }
-
+    if (!confirm('Are you sure you want to delete this custom policy marker? This action cannot be undone.')) return;
     try {
-      const response = await apiFetch(`/api/policy-markers?id=${markerId}`, {
-        method: 'DELETE',
-      });
-
+      const response = await apiFetch(`/api/policy-markers?id=${markerId}`, { method: 'DELETE' });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error deleting policy marker:', errorData);
         throw new Error(errorData.message || 'Failed to delete custom policy marker');
       }
-
-      // Remove from available markers
-      setAvailableMarkers(prev => prev.filter(marker => marker.id !== markerId));
-      
-      // Remove from selected markers if it was selected
+      setAvailableMarkers(prev => prev.filter(m => m.id !== markerId));
       const newSelectedMarkers = new Map(selectedMarkers);
       newSelectedMarkers.delete(markerId);
       setSelectedMarkers(newSelectedMarkers);
-      
-      // Update the parent component
-      const updatedMarkers = Array.from(newSelectedMarkers.values());
-      onChange(updatedMarkers);
-      
-      toast.success('Custom policy marker deleted successfully');
-    } catch (error) {
-      console.error('Error deleting custom policy marker:', error);
-      toast.error('Failed to delete custom policy marker');
+      triggerSave(newSelectedMarkers);
+      toast.success('Custom policy marker deleted');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete custom policy marker');
     }
   };
 
-  // Get markers by type
-  const getMarkersByType = (type: string) => {
-    if (type === 'custom') {
-      return availableMarkers.filter(marker => !marker.is_iati_standard);
+  // ---- Modal submit ----
+  const handleModalSubmit = async () => {
+    setSavingModal(true);
+    try {
+      let markerUuid = modalForm.selectedMarkerId;
+
+      // If creating a custom marker, create it first
+      if (modalForm.isCreatingCustom) {
+        if (!modalForm.customName.trim()) {
+          toast.error('Please enter a name for the custom policy marker');
+          setSavingModal(false);
+          return;
+        }
+        if (!modalForm.customCode.trim()) {
+          toast.error('Please enter a code for the custom policy marker');
+          setSavingModal(false);
+          return;
+        }
+        const existingMarker = availableMarkers.find(m => m.code === modalForm.customCode.trim());
+        if (existingMarker) {
+          toast.error(`Code "${modalForm.customCode.trim()}" is already taken.`);
+          setSavingModal(false);
+          return;
+        }
+
+        const response = await apiFetch('/api/policy-markers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: modalForm.customName.trim(),
+            description: modalForm.customDescription.trim(),
+            marker_type: modalForm.customMarkerType,
+            code: modalForm.customCode.trim(),
+            vocabulary: modalForm.customVocabulary,
+            vocabulary_name: modalForm.customVocabularyName.trim(),
+            iati_code: modalForm.customCode.trim(),
+            is_iati_standard: false,
+            is_active: true,
+            vocabulary_uri: modalForm.customVocabularyUri.trim() || null,
+            default_visibility: modalForm.customDefaultVisibility
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.message?.includes('duplicate key') || errorData.message?.includes('already exists')) {
+            toast.error(`Code "${modalForm.customCode.trim()}" is already taken.`);
+          } else {
+            toast.error(errorData.message || 'Failed to create custom policy marker');
+          }
+          setSavingModal(false);
+          return;
+        }
+
+        const newMarker = await response.json();
+        const markerWithDefaults = {
+          ...newMarker,
+          uuid: newMarker.uuid || newMarker.id,
+          vocabulary: modalForm.customVocabulary,
+          iati_code: modalForm.customCode.trim(),
+          is_iati_standard: false,
+          vocabulary_uri: modalForm.customVocabularyUri.trim() || null,
+          vocabulary_name: modalForm.customVocabularyName.trim()
+        };
+        setAvailableMarkers(prev => [...prev, markerWithDefaults]);
+        markerUuid = markerWithDefaults.uuid || markerWithDefaults.id;
+        toast.success('Custom policy marker created');
+      }
+
+      if (!markerUuid) {
+        toast.error('Please select a policy marker');
+        setSavingModal(false);
+        return;
+      }
+
+      if (modalForm.significance < 1) {
+        toast.error('Please select a significance level');
+        setSavingModal(false);
+        return;
+      }
+
+      // Validate significance against marker rules
+      const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
+      if (marker && modalForm.significance === 4 && marker.iati_code !== '9' && marker.is_iati_standard) {
+        toast.error('Significance level 4 is only valid for RMNCH marker');
+        setSavingModal(false);
+        return;
+      }
+
+      // Save to selected markers
+      const newSelectedMarkers = new Map(selectedMarkers);
+      newSelectedMarkers.set(markerUuid, {
+        policy_marker_id: markerUuid,
+        significance: modalForm.significance as 0 | 1 | 2 | 3 | 4,
+        rationale: modalForm.rationale.trim() || undefined,
+        visibility: modalForm.visibility,
+      });
+      setSelectedMarkers(newSelectedMarkers);
+      triggerSave(newSelectedMarkers);
+
+      setModalOpen(false);
+      setModalForm(INITIAL_MODAL_FORM);
+      toast.success(modalMode === 'add' ? 'Policy marker added' : 'Policy marker updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save policy marker');
+    } finally {
+      setSavingModal(false);
     }
-    return availableMarkers.filter(marker => marker.marker_type === type && marker.is_iati_standard);
   };
 
-  // Get current significance for a marker
-  const getMarkerSignificance = (markerUuid: string): 0 | 1 | 2 | 3 | 4 => {
-    // Find the selected marker by UUID
-    const selectedMarker = selectedMarkers.get(markerUuid);
-    return selectedMarker?.significance || 0;
+  // ---- Get selected marker object for modal ----
+  const getSelectedMarkerForModal = (): IATIPolicyMarker | null => {
+    if (!modalForm.selectedMarkerId) return null;
+    return availableMarkers.find(m => (m.uuid || m.id) === modalForm.selectedMarkerId) || null;
   };
 
-  // Get current rationale for a marker
-  const getMarkerRationale = (markerUuid: string): string => {
-    // Find the selected marker by UUID
-    const selectedMarker = selectedMarkers.get(markerUuid);
-    return selectedMarker?.rationale || '';
-  };
+  // ---- Count active markers ----
+  const activeMarkerCount = Array.from(selectedMarkers.values()).filter(m => m.significance > 0).length;
 
-  // Get current visibility override for a marker
-  const getMarkerVisibilityOverride = (markerUuid: string): VisibilityLevel | null | undefined => {
-    const selectedMarker = selectedMarkers.get(markerUuid);
-    return selectedMarker?.visibility;
-  };
-
-  // Render marker card
-  const renderMarkerCard = (marker: IATIPolicyMarker) => {
-    const markerUuid = marker.uuid || marker.id; // Use UUID, fallback to ID
-    const significance = getMarkerSignificance(markerUuid);
-    const rationale = getMarkerRationale(markerUuid);
-    const visibilityOverride = getMarkerVisibilityOverride(markerUuid);
-    const activityMarker = selectedMarkers.get(markerUuid);
-    const effectiveVisibility = getEffectiveVisibility(marker, activityMarker);
-    const isSelected = significance > 0;
-
-    return (
-      <div key={markerUuid} className={`border rounded-lg p-3 transition-all ${
-        isSelected ? 'border-slate-400 bg-slate-50' : 'border-slate-200 bg-white'
-      }`}>
-        <div className="space-y-2">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                  {marker.is_iati_standard ? marker.iati_code : marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code}
-                </span>
-                {!marker.is_iati_standard && (
-                  <Badge variant="outline" className="text-xs border-slate-400 text-slate-600">
-                    Custom
-                  </Badge>
-                )}
-                {/* Visibility indicator for custom markers */}
-                {!marker.is_iati_standard && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help">
-                          <VisibilityIcon visibility={effectiveVisibility} />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">{getVisibilityLabel(effectiveVisibility)}</p>
-                        {visibilityOverride && (
-                          <p className="text-xs text-muted-foreground">(Activity override)</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-              <h4 className="font-medium text-xs text-slate-900 leading-tight">{marker.name}</h4>
-            </div>
-            
-            {isSelected && (
-              <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
-            )}
-          </div>
-          
-          {/* Significance Level */}
-          {readOnly ? (
-            <div className="text-xs">
-              <span className="text-slate-600">Significance: </span>
-              <span className="font-medium text-slate-900">
-                {getSignificanceLabel(marker.code === '8', significance)}
-              </span>
-            </div>
-          ) : (
-            <div>
-              <Label className="text-xs font-medium mb-1 block text-slate-700">Significance</Label>
-              <PolicyMarkerScoreSelectIATI
-                value={significance}
-                onValueChange={(value) => updateMarkerSignificance(markerUuid, value as 0 | 1 | 2 | 3 | 4)}
-                policyMarker={marker}
-              />
-            </div>
-          )}
-          
-          {/* Rationale */}
-          {isSelected && (
-            <div>
-              <Label className="text-xs font-medium mb-1 block text-slate-700">
-                Rationale
-              </Label>
-              {readOnly ? (
-                rationale ? (
-                  <p className="text-xs text-slate-600 line-clamp-2">{rationale}</p>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">No rationale provided</p>
-                )
-              ) : (
-                <Textarea
-                  value={rationale}
-                  onChange={(e) => updateMarkerRationale(markerUuid, e.target.value)}
-                  placeholder="Provide a short description or rationale for the selected degree of significance..."
-                  className="text-xs min-h-[60px]"
-                  rows={2}
-                />
-              )}
-            </div>
-          )}
-          
-          {/* Visibility override for selected custom markers */}
-          {isSelected && !marker.is_iati_standard && !readOnly && (
-            <div>
-              <Label className="text-xs font-medium mb-1 block text-slate-700">
-                Visibility for this activity
-              </Label>
-              <Select
-                value={visibilityOverride ?? 'default'}
-                onValueChange={(value) => {
-                  if (value === 'default') {
-                    updateMarkerVisibility(markerUuid, null);
-                  } else {
-                    updateMarkerVisibility(markerUuid, value as VisibilityLevel);
-                  }
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Using default" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Use default</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({getVisibilityLabel(marker.default_visibility)})
-                      </span>
-                    </div>
-                  </SelectItem>
-                  {VISIBILITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <VisibilityIcon visibility={option.value} />
-                        <span>{option.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          {/* Edit/Delete for custom markers */}
-          {!marker.is_iati_standard && !readOnly && (
-            <div className="flex gap-1 pt-2 border-t border-slate-200">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-6 px-2 text-slate-600 border-slate-300 hover:bg-slate-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editCustomMarker(marker.id);
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-6 px-2 text-slate-600 border-slate-300 hover:bg-slate-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteCustomMarker(marker.id);
-                }}
-              >
-                <Trash2 className="h-3 w-3 text-red-500" />
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
+  // Loading state
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">IATI Policy Markers</h3>
-          <HelpText content={HELP_CONTENT} />
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-9 w-40" />
         </div>
-        <div className="animate-pulse space-y-3">
+        <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-gray-200 rounded-lg" />
+            <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
       </div>
     );
   }
 
-  const selectedCount = selectedMarkers.size;
-  const totalMarkers = availableMarkers.length;
-  const iatiMarkers = availableMarkers.filter(m => m.is_iati_standard);
-  const customMarkers = availableMarkers.filter(m => !m.is_iati_standard);
+  // Get marker groups that have active entries
+  const groupTypes = ['environmental', 'social_governance', 'other', 'custom'] as const;
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">IATI Policy Markers</h3>
-          <HelpText content={HELP_CONTENT} />
-        </div>
-        <div className="flex items-center gap-4">
-          {!readOnly && (
-            <Dialog open={showAddCustomDialog} onOpenChange={setShowAddCustomDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="text-xs bg-gray-900 hover:bg-gray-800 text-white">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Custom Policy Marker
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add Custom Policy Marker</DialogTitle>
-                <DialogDescription>Create a custom policy marker with a name, vocabulary, and significance score.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="custom-vocabulary">Vocabulary</Label>
-                    <Input
-                      id="custom-vocabulary"
-                      value={customMarkerForm.vocabulary}
-                      disabled
-                      className="bg-gray-100"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Fixed to 99 for custom markers</p>
-                  </div>
-                  <div>
-                    <Label htmlFor="custom-vocabulary-name">Vocabulary Name</Label>
-                    <Input
-                      id="custom-vocabulary-name"
-                      value={customMarkerForm.vocabulary_name}
-                      onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, vocabulary_name: e.target.value }))}
-                      placeholder="Enter vocabulary name"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-code">Code</Label>
-                  <Input
-                    id="custom-code"
-                    value={customMarkerForm.code}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, code: e.target.value }))}
-                    placeholder="Enter custom code"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-name">Name</Label>
-                  <Input
-                    id="custom-name"
-                    value={customMarkerForm.name}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter policy marker name"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-significance">Significance</Label>
-                  <Select
-                    value={customMarkerForm.significance.toString()}
-                    onValueChange={(value) => setCustomMarkerForm(prev => ({ ...prev, significance: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select significance level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customMarkerForm.name.toLowerCase().includes('reproductive') || 
-                       customMarkerForm.name.toLowerCase().includes('maternal') || 
-                       customMarkerForm.name.toLowerCase().includes('newborn') || 
-                       customMarkerForm.name.toLowerCase().includes('child') ||
-                       customMarkerForm.name.toLowerCase().includes('rmnch') ? (
-                        // RMNCH-specific significance levels
-                        <>
-                          <SelectItem value="0">0 - Negligible or no funding</SelectItem>
-                          <SelectItem value="1">1 - At least a quarter of funding</SelectItem>
-                          <SelectItem value="2">2 - Half of the funding</SelectItem>
-                          <SelectItem value="3">3 - Most funding targeted</SelectItem>
-                          <SelectItem value="4">4 - Explicit primary objective</SelectItem>
-                        </>
-                      ) : (
-                        // Standard significance levels for other markers (including IATI levels 3 and 4)
-                        <>
-                          <SelectItem value="0">0 - Not targeted</SelectItem>
-                          <SelectItem value="1">1 - Significant objective</SelectItem>
-                          <SelectItem value="2">2 - Principal objective</SelectItem>
-                          <SelectItem value="3">3 - Most funding targeted</SelectItem>
-                          <SelectItem value="4">4 - Explicit primary objective</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-vocabulary-uri">Vocabulary URI</Label>
-                  <Input
-                    id="custom-vocabulary-uri"
-                    value={customMarkerForm.vocabulary_uri}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, vocabulary_uri: e.target.value }))}
-                    placeholder="http://example.com/vocab.html"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-description">Description</Label>
-                  <Textarea
-                    id="custom-description"
-                    value={customMarkerForm.description}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter description"
-                    rows={2}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="custom-visibility">Default Visibility</Label>
-                  <Select
-                    value={customMarkerForm.default_visibility}
-                    onValueChange={(value) => setCustomMarkerForm(prev => ({ ...prev, default_visibility: value as VisibilityLevel }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select visibility" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {VISIBILITY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            <VisibilityIcon visibility={option.value} />
-                            <span>{option.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {VISIBILITY_OPTIONS.find(o => o.value === customMarkerForm.default_visibility)?.description}
-                  </p>
-                </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowAddCustomDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={addCustomMarker}>
-                    Add Marker
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          )}
-
-          {/* Edit Custom Marker Dialog */}
-          {!readOnly && (
-            <Dialog open={showEditCustomDialog} onOpenChange={setShowEditCustomDialog}>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Edit Custom Policy Marker</DialogTitle>
-                <DialogDescription>Update the custom policy marker details and significance score.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-custom-vocabulary">Vocabulary</Label>
-                    <Input
-                      id="edit-custom-vocabulary"
-                      value={customMarkerForm.vocabulary}
-                      disabled
-                      className="bg-gray-100"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Fixed to 99 for custom markers</p>
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-custom-vocabulary-name">Vocabulary Name</Label>
-                    <Input
-                      id="edit-custom-vocabulary-name"
-                      value={customMarkerForm.vocabulary_name}
-                      onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, vocabulary_name: e.target.value }))}
-                      placeholder="Enter vocabulary name"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-custom-code">Code</Label>
-                  <Input
-                    id="edit-custom-code"
-                    value={customMarkerForm.code}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, code: e.target.value }))}
-                    placeholder="Enter custom code"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-custom-name">Name</Label>
-                  <Input
-                    id="edit-custom-name"
-                    value={customMarkerForm.name}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter policy marker name"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-custom-significance">Significance</Label>
-                  <Select
-                    value={customMarkerForm.significance.toString()}
-                    onValueChange={(value) => setCustomMarkerForm(prev => ({ ...prev, significance: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select significance level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customMarkerForm.name.toLowerCase().includes('reproductive') || 
-                       customMarkerForm.name.toLowerCase().includes('maternal') || 
-                       customMarkerForm.name.toLowerCase().includes('newborn') || 
-                       customMarkerForm.name.toLowerCase().includes('child') ||
-                       customMarkerForm.name.toLowerCase().includes('rmnch') ? (
-                        // RMNCH-specific significance levels
-                        <>
-                          <SelectItem value="0">0 - Negligible or no funding</SelectItem>
-                          <SelectItem value="1">1 - At least a quarter of funding</SelectItem>
-                          <SelectItem value="2">2 - Half of the funding</SelectItem>
-                          <SelectItem value="3">3 - Most funding targeted</SelectItem>
-                          <SelectItem value="4">4 - Explicit primary objective</SelectItem>
-                        </>
-                      ) : (
-                        // Standard significance levels for other markers (including IATI levels 3 and 4)
-                        <>
-                          <SelectItem value="0">0 - Not targeted</SelectItem>
-                          <SelectItem value="1">1 - Significant objective</SelectItem>
-                          <SelectItem value="2">2 - Principal objective</SelectItem>
-                          <SelectItem value="3">3 - Most funding targeted</SelectItem>
-                          <SelectItem value="4">4 - Explicit primary objective</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-custom-vocabulary-uri">Vocabulary URI</Label>
-                  <Input
-                    id="edit-custom-vocabulary-uri"
-                    value={customMarkerForm.vocabulary_uri}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, vocabulary_uri: e.target.value }))}
-                    placeholder="http://example.com/vocab.html"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-custom-description">Description</Label>
-                  <Textarea
-                    id="edit-custom-description"
-                    value={customMarkerForm.description}
-                    onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter description"
-                    rows={2}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-custom-visibility">Default Visibility</Label>
-                  <Select
-                    value={customMarkerForm.default_visibility}
-                    onValueChange={(value) => setCustomMarkerForm(prev => ({ ...prev, default_visibility: value as VisibilityLevel }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select visibility" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {VISIBILITY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            <VisibilityIcon visibility={option.value} />
-                            <span>{option.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {VISIBILITY_OPTIONS.find(o => o.value === customMarkerForm.default_visibility)?.description}
-                  </p>
-                </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowEditCustomDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={updateCustomMarker}>
-                    Update Marker
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div>
+          {activeMarkerCount > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {activeMarkerCount} policy marker{activeMarkerCount !== 1 ? 's' : ''} assigned
+            </p>
           )}
         </div>
+        {!readOnly && (
+          <Button onClick={openAddModal} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Policy Marker
+          </Button>
+        )}
       </div>
 
-      {/* Single View - All Targeted Policy Markers */}
-      {readOnly ? (
-        <div className="space-y-4">
-          {/* Filter to show only targeted markers (significance > 0) and apply visibility filtering */}
-          {(() => {
-            const targetedMarkers = availableMarkers.filter(marker => {
-              const markerUuid = marker.uuid || marker.id;
-              const significance = getMarkerSignificance(markerUuid);
-              // Only show markers that are targeted AND visible to the current user
-              return significance > 0 && isMarkerVisible(marker);
-            });
-
-            if (targetedMarkers.length === 0) {
-              return (
-                <div className="text-center py-12 text-slate-500">
-                  <p>No policy markers have been selected for this activity.</p>
-                </div>
-              );
-            }
-
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {targetedMarkers.map(renderMarkerCard)}
-              </div>
-            );
-          })()}
+      {/* Empty state */}
+      {activeMarkerCount === 0 ? (
+        <div className="text-center py-12">
+          <img src="/images/empty-flag.png" alt="No policy markers" className="h-32 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium mb-2">No policy markers</h3>
+          <p className="text-muted-foreground mb-4">
+            Use the button above to add policy markers to this activity.
+          </p>
         </div>
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            {Object.entries(MARKER_TYPE_LABELS).map(([type, label]) => {
-              const typeMarkers = getMarkersByType(type);
-              const selectedInType = typeMarkers.filter(m => selectedMarkers.has(m.id)).length;
-              const totalInType = typeMarkers.length;
-              
-              return (
-                <TabsTrigger key={type} value={type} className="relative">
-                  <div className="flex items-center gap-2">
-                    {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
-                    <span className="hidden sm:inline">{label}</span>
-                    <span className="sm:hidden">{label.split(' ')[0]}</span>
-                  </div>
-                  <Badge 
-                    variant={selectedInType > 0 ? "default" : "secondary"} 
-                    className={`ml-2 text-xs ${
-                      selectedInType > 0 
-                        ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {selectedInType}/{totalInType}
-                  </Badge>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-
-          {Object.keys(MARKER_TYPE_LABELS).map(type => (
-            <TabsContent key={type} value={type} className="mt-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  {MARKER_TYPE_ICONS[type as keyof typeof MARKER_TYPE_ICONS]}
-                  <h4 className="font-medium">
-                    {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS]}
-                  </h4>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {getMarkersByType(type).map(renderMarkerCard)}
-                </div>
-                
-                {getMarkersByType(type).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS].toLowerCase()} markers available</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+        /* Grouped table */
+        <div className="rounded-md border w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Policy Marker</TableHead>
+                <TableHead style={{ width: '200px' }}>Significance</TableHead>
+                {!readOnly && <TableHead style={{ width: '100px' }}>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupTypes.map(type => {
+                const markersInGroup = getActiveMarkersForType(type);
+                if (markersInGroup.length === 0) return null;
+                return (
+                  <React.Fragment key={type}>
+                    {/* Group header row */}
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableCell colSpan={readOnly ? 2 : 3} className="py-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          {MARKER_TYPE_ICONS[type]}
+                          {MARKER_TYPE_LABELS[type]}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {/* Marker rows */}
+                    {markersInGroup.map(({ marker, activityMarker }) => {
+                      const markerUuid = marker.uuid || marker.id;
+                      const effectiveVisibility = getEffectiveVisibility(marker, activityMarker);
+                      return (
+                        <TableRow key={markerUuid}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {getDisplayCode(marker)}
+                              </span>
+                              <span className="font-medium text-sm">{marker.name}</span>
+                              {!marker.is_iati_standard && (
+                                <Badge variant="outline" className="text-xs">Custom</Badge>
+                              )}
+                              {!marker.is_iati_standard && (
+                                <VisibilityIcon visibility={effectiveVisibility} />
+                              )}
+                            </div>
+                            {activityMarker.rationale && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{activityMarker.rationale}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-xs">
+                              {activityMarker.significance} — {getSignificanceLabel(marker.iati_code, activityMarker.significance)}
+                            </Badge>
+                          </TableCell>
+                          {!readOnly && (
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => openEditModal(markerUuid)} className="hover:bg-blue-50 hover:text-blue-600">
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-red-600 hover:bg-red-50 hover:text-red-700">
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
+
+      {/* Add/Edit Policy Marker Modal */}
+      <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) { setModalOpen(false); setModalForm(INITIAL_MODAL_FORM); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg border-b">
+            <DialogTitle>{modalMode === 'add' ? 'Add Policy Marker' : 'Edit Policy Marker'}</DialogTitle>
+            <DialogDescription>
+              {modalMode === 'add'
+                ? 'Select a policy marker and set its significance for this activity.'
+                : 'Update the significance and rationale for this policy marker.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            {/* Marker Selection */}
+            {modalMode === 'add' && !modalForm.isCreatingCustom && (
+              <div className="space-y-2">
+                <Label>Policy Marker</Label>
+                <Popover open={markerPopoverOpen} onOpenChange={setMarkerPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-between h-10 text-left px-3 py-2",
+                        !modalForm.selectedMarkerId && "text-muted-foreground font-normal"
+                      )}
+                    >
+                      <span className="flex-1 min-w-0 truncate">
+                        {modalForm.selectedMarkerId ? (
+                          (() => {
+                            const m = getSelectedMarkerForModal();
+                            return m ? (
+                              <span className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                  {getDisplayCode(m)}
+                                </span>
+                                <span className="text-sm truncate">{m.name}</span>
+                              </span>
+                            ) : 'Select policy marker';
+                          })()
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Select policy marker</span>
+                        )}
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[400px] p-0 shadow-lg border" align="start" sideOffset={4}>
+                    <Command>
+                      <CommandInput placeholder="Search policy markers..." />
+                      <CommandList>
+                        <CommandEmpty>No policy markers found.</CommandEmpty>
+                        {(['environmental', 'social_governance', 'other'] as const).map(type => {
+                          const markers = availableMarkers.filter(m => m.marker_type === type && m.is_iati_standard);
+                          if (markers.length === 0) return null;
+                          return (
+                            <CommandGroup key={type} heading={MARKER_TYPE_LABELS[type]}>
+                              {markers.map(marker => {
+                                const mUuid = marker.uuid || marker.id;
+                                const isAlreadyAdded = selectedMarkers.has(mUuid);
+                                return (
+                                  <CommandItem
+                                    key={mUuid}
+                                    value={`${marker.code} ${marker.name}`}
+                                    disabled={isAlreadyAdded}
+                                    onSelect={() => {
+                                      setModalForm(prev => ({ ...prev, selectedMarkerId: mUuid, significance: 1 }));
+                                      setMarkerPopoverOpen(false);
+                                    }}
+                                    className={cn("flex items-center gap-3 px-4 py-2.5", isAlreadyAdded && "opacity-40")}
+                                  >
+                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
+                                      {marker.iati_code}
+                                    </span>
+                                    <span className="flex-1 text-sm">{marker.name}</span>
+                                    {isAlreadyAdded && <span className="text-xs text-muted-foreground">(Added)</span>}
+                                    {modalForm.selectedMarkerId === mUuid && <Check className="h-4 w-4 text-primary" />}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          );
+                        })}
+
+                        {/* Custom markers group */}
+                        {availableMarkers.filter(m => !m.is_iati_standard).length > 0 && (
+                          <CommandGroup heading="Custom Policy Markers">
+                            {availableMarkers.filter(m => !m.is_iati_standard).map(marker => {
+                              const mUuid = marker.uuid || marker.id;
+                              const isAlreadyAdded = selectedMarkers.has(mUuid);
+                              return (
+                                <CommandItem
+                                  key={mUuid}
+                                  value={`${marker.code} ${marker.name}`}
+                                  disabled={isAlreadyAdded}
+                                  onSelect={() => {
+                                    setModalForm(prev => ({ ...prev, selectedMarkerId: mUuid, significance: 1 }));
+                                    setMarkerPopoverOpen(false);
+                                  }}
+                                  className={cn("flex items-center gap-3 px-4 py-2.5", isAlreadyAdded && "opacity-40")}
+                                >
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0 min-w-[28px] text-center">
+                                    {getDisplayCode(marker)}
+                                  </span>
+                                  <span className="flex-1 text-sm">{marker.name}</span>
+                                  <Badge variant="outline" className="text-xs">Custom</Badge>
+                                  {isAlreadyAdded && <span className="text-xs text-muted-foreground">(Added)</span>}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        )}
+
+                        {/* Create custom marker option */}
+                        <CommandGroup heading="">
+                          <CommandItem
+                            value="__create_custom__"
+                            onSelect={() => {
+                              setModalForm(prev => ({ ...prev, isCreatingCustom: true, selectedMarkerId: null }));
+                              setMarkerPopoverOpen(false);
+                            }}
+                            className="px-4 py-2.5 text-sm text-primary font-medium"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create custom policy marker...
+                          </CommandItem>
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
+            {/* Edit mode: show locked marker display */}
+            {modalMode === 'edit' && modalForm.selectedMarkerId && (
+              <div className="space-y-2">
+                <Label>Policy Marker</Label>
+                <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+                  {(() => {
+                    const m = getSelectedMarkerForModal();
+                    if (!m) return null;
+                    return (
+                      <>
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {getDisplayCode(m)}
+                        </span>
+                        <span className="font-medium text-sm">{m.name}</span>
+                        {!m.is_iati_standard && <Badge variant="outline" className="text-xs">Custom</Badge>}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Custom marker creation fields */}
+            {modalForm.isCreatingCustom && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">New Custom Marker</Label>
+                  <Button variant="ghost" size="sm" onClick={() => setModalForm(prev => ({ ...prev, isCreatingCustom: false }))}>
+                    Cancel
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Name *</Label>
+                    <Input
+                      value={modalForm.customName}
+                      onChange={(e) => setModalForm(prev => ({ ...prev, customName: e.target.value }))}
+                      placeholder="Marker name"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Code *</Label>
+                    <Input
+                      value={modalForm.customCode}
+                      onChange={(e) => setModalForm(prev => ({ ...prev, customCode: e.target.value }))}
+                      placeholder="Unique code"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Description</Label>
+                  <Textarea
+                    value={modalForm.customDescription}
+                    onChange={(e) => setModalForm(prev => ({ ...prev, customDescription: e.target.value }))}
+                    placeholder="Brief description"
+                    rows={2}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Category</Label>
+                    <Select value={modalForm.customMarkerType} onValueChange={(value) => setModalForm(prev => ({ ...prev, customMarkerType: value as any }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="environmental">Environmental</SelectItem>
+                        <SelectItem value="social_governance">Social & Governance</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Default Visibility</Label>
+                    <Select value={modalForm.customDefaultVisibility} onValueChange={(value) => setModalForm(prev => ({ ...prev, customDefaultVisibility: value as VisibilityLevel }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {VISIBILITY_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            <div className="flex items-center gap-2">
+                              <VisibilityIcon visibility={opt.value} />
+                              <span>{opt.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Vocabulary Name</Label>
+                    <Input
+                      value={modalForm.customVocabularyName}
+                      onChange={(e) => setModalForm(prev => ({ ...prev, customVocabularyName: e.target.value }))}
+                      placeholder="Organization name"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Vocabulary URI</Label>
+                    <Input
+                      value={modalForm.customVocabularyUri}
+                      onChange={(e) => setModalForm(prev => ({ ...prev, customVocabularyUri: e.target.value }))}
+                      placeholder="http://example.com/vocab"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Significance */}
+            {(modalForm.selectedMarkerId || modalForm.isCreatingCustom) && (
+              <div className="space-y-2">
+                <Label>Significance *</Label>
+                <Select
+                  value={modalForm.significance.toString()}
+                  onValueChange={(value) => setModalForm(prev => ({ ...prev, significance: parseInt(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select significance level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const marker = getSelectedMarkerForModal();
+                      const maxSig = marker ? getMaxSignificance(marker) : 4;
+                      const isRMNCH = marker?.iati_code === '9';
+                      const options = [];
+                      for (let i = 1; i <= maxSig; i++) {
+                        options.push(
+                          <SelectItem key={i} value={i.toString()}>
+                            {i} — {getSignificanceLabel(isRMNCH ? '9' : '0', i)}
+                          </SelectItem>
+                        );
+                      }
+                      return options;
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Rationale */}
+            {(modalForm.selectedMarkerId || modalForm.isCreatingCustom) && (
+              <div className="space-y-2">
+                <Label>Rationale</Label>
+                <Textarea
+                  value={modalForm.rationale}
+                  onChange={(e) => setModalForm(prev => ({ ...prev, rationale: e.target.value }))}
+                  placeholder="Provide a short description or rationale for the selected significance..."
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* Visibility override (custom markers only, edit mode) */}
+            {modalMode === 'edit' && (() => {
+              const marker = getSelectedMarkerForModal();
+              return marker && !marker.is_iati_standard;
+            })() && (
+              <div className="space-y-2">
+                <Label>Visibility for this activity</Label>
+                <Select
+                  value={modalForm.visibility ?? 'default'}
+                  onValueChange={(value) => setModalForm(prev => ({ ...prev, visibility: value === 'default' ? null : value as VisibilityLevel }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Using default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">
+                      <span className="text-muted-foreground">Use default</span>
+                    </SelectItem>
+                    {VISIBILITY_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex items-center gap-2">
+                          <VisibilityIcon visibility={opt.value} />
+                          <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => { setModalOpen(false); setModalForm(INITIAL_MODAL_FORM); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleModalSubmit}
+              disabled={savingModal || (!modalForm.selectedMarkerId && !modalForm.isCreatingCustom) || modalForm.significance < 1}
+            >
+              {savingModal ? 'Saving...' : modalMode === 'add' ? 'Add Marker' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

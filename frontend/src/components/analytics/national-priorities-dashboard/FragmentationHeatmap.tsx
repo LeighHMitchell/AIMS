@@ -189,6 +189,11 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
           </span>
           <span>Grand Total: {formatCurrency(data.grandTotal)}</span>
         </div>
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          This heatmap visualizes how funding is distributed between donors and categories. Each cell shows the percentage share of a donor's total allocation to that category. Darker colours indicate higher concentration, helping to identify specialization patterns.
+        </p>
       </div>
     </TooltipProvider>
   );

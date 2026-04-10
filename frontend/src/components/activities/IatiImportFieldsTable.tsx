@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Lock, Settings } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Search, ChevronRight, Copy, Check, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Lock, Settings } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SafeHtml } from '@/components/ui/safe-html';
 import { htmlToPlainText } from '@/lib/sanitize';
@@ -2250,11 +2250,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   // Render sort indicator
   const SortIndicator = ({ column }: { column: SortColumn }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />;
+      return <ChevronsUpDown className="ml-1 h-3 w-3 text-muted-foreground" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="ml-1 h-3 w-3 text-muted-foreground" />
-      : <ArrowDown className="ml-1 h-3 w-3 text-muted-foreground" />;
+      ? <ChevronUp className="ml-1 h-3 w-3 text-muted-foreground" />
+      : <ChevronDown className="ml-1 h-3 w-3 text-muted-foreground" />;
   };
 
   const selectedCount = sortedFields.filter(f => f.selected).length;

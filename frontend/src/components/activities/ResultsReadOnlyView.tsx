@@ -764,15 +764,15 @@ export function ResultsReadOnlyView({
                   <Table>
                     <TableHeader>
                       <TableRow className="border-b border-border">
-                        <TableHead className="font-semibold text-foreground py-4 px-4 w-10"></TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Title</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4 w-24">Trend</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Baseline</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Target</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Actual</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Comment</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Location References</TableHead>
-                        <TableHead className="font-semibold text-foreground py-4 px-4">Disaggregation Dimensions</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4 w-10"></TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Title</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4 w-24">Trend</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Baseline</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Target</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Actual</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Comment</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Location References</TableHead>
+                        <TableHead className="font-medium text-foreground py-4 px-4">Disaggregation Dimensions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

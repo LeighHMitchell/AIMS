@@ -32,7 +32,7 @@ import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
 import { LoadingText } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
@@ -772,13 +772,20 @@ export function PlannedActualDisbursementBySector({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      {customYears.map(cy => (
+                      {sortCustomYearsCalendarFirst(customYears).map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
                           className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
-                          {cy.name}
+                          <span className="flex items-center gap-2">
+                            {cy.shortName && (
+                              <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                {cy.shortName.trim()}
+                              </span>
+                            )}
+                            {cy.name}
+                          </span>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -1040,11 +1047,11 @@ export function PlannedActualDisbursementBySector({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted">
-                    <TableHead className="font-semibold text-foreground sticky left-0 bg-muted">Sector</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Budgets (USDm)</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Planned Disbursements (USDm)</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Commitments (USDm)</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Disbursements (USDm)</TableHead>
+                    <TableHead className="font-medium text-foreground sticky left-0 bg-muted">Sector</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Budgets (USDm)</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Planned Disbursements (USDm)</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Commitments (USDm)</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Disbursements (USDm)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1109,13 +1116,11 @@ export function PlannedActualDisbursementBySector({
           )}
         </div>
 
-        {/* Explanatory Text */}
-        <p className="text-xs text-muted-foreground mt-4">
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
           This chart compares budgets, planned disbursements, commitments, and actual disbursements by sector.
-          Toggle metrics on/off using the legend above. View data by Sector Category, Sector, or Sub-sector level.
-          The top 10 sectors are shown individually; remaining sectors are grouped in &ldquo;All Other Sectors&rdquo;.
-          Budgets and planned disbursements are pro-rated when spanning multiple years.
-          Compare planned vs actual to identify funding gaps or over-delivery.
+          Toggle metrics on or off using the legend above, and switch between Sector Category, Sector, or Sub-sector groupings to view data at different DAC code levels.
+          Compare planned versus actual figures to identify funding gaps or over-delivery across sectors.
         </p>
       </CardContent>
     </Card>

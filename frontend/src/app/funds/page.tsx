@@ -34,7 +34,7 @@ import { apiFetch } from "@/lib/api-fetch"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Search, DollarSign, Users, Layers, TrendingUp, ArrowUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar } from "lucide-react"
+import { Search, DollarSign, Users, Layers, TrendingUp, ChevronsUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
 import { useUser } from "@/hooks/useUser"
@@ -224,7 +224,7 @@ export default function FundsPage() {
             <Label className="text-xs text-muted-foreground">Sort by</Label>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[180px] h-9">
-                <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+                <ChevronsUpDown className="h-3.5 w-3.5 mr-1" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>

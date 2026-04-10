@@ -913,12 +913,12 @@ export function AidEcosystemSolarSystem({
         </div>
       </div>
 
-      {/* Description */}
-      <div className="text-sm text-slate-600 leading-relaxed space-y-3">
-        <p>
+      {/* Explanatory text */}
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           This chart visualises the relative financial gravity of organisations within the aid ecosystem by arranging them in concentric rings based on total disbursement volume. Organisations at the centre represent the largest financial actors in the system, while those further out operate at progressively smaller scales. The inner ring contains the top ten percent of organisations by disbursement value, the middle ring contains the next thirty percent, and the outer ring contains the remaining organisations. Node size corresponds to the total value of funds flowing through each organisation, and colour indicates organisation type. By presenting the aid ecosystem in this radial form, the chart highlights how concentrated or distributed financial power is within the system, making it easy to see whether aid flows are dominated by a small number of large actors or spread across a wider range of organisations. Rankings are recalculated dynamically based on the selected time period and filters.
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           <strong>METHODOLOGY:</strong> Inner ring contains the top 10% of organizations by total disbursement value. Middle ring contains the next 30% (ranks 11-40%). Outer ring contains the remaining organizations (bottom 60%).
         </p>
       </div>

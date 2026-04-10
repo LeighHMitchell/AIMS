@@ -34,16 +34,14 @@ import {
   Calendar,
   Building2,
   DollarSign,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
   FileClock,
   CheckCircle,
   ArrowRightLeft,
   Loader2,
   Eye,
-  ChevronDown,
-  ChevronUp,
   Copy,
   ChevronLeft,
   ChevronRight,
@@ -880,11 +878,11 @@ export default function TransactionList({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-gray-400" />
-      : <ArrowDown className="h-4 w-4 text-gray-400" />;
+      ? <ChevronUp className="h-4 w-4 text-gray-400" />
+      : <ChevronDown className="h-4 w-4 text-gray-400" />;
   };
 
   const handleSubmit = async (data: TransactionFormData) => {
@@ -1535,14 +1533,14 @@ export default function TransactionList({
             <div className={hideSummaryCards ? "w-full" : "rounded-md border"}>
               <div className="overflow-x-auto">
               <Table className={hideSummaryCards ? "w-full" : "table-fixed min-w-max"}>
-                <TableHeader className="bg-surface-muted border-b border-border/70">
+                <TableHeader>
                   <TableRow>
                     {/* Expand/collapse column - always visible */}
                     <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '40px', maxWidth: '40px' }}></TableHead>
                     
                     {/* Date column */}
                     {isColumnVisible('transactionDate') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
+                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
                         <div className="flex items-center gap-1">
                           <span>Transaction Date</span>
                           {getSortIcon('transaction_date')}
@@ -1552,7 +1550,7 @@ export default function TransactionList({
                     
                     {/* Type column */}
                     {isColumnVisible('transactionType') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px', maxWidth: '160px' }} onClick={() => handleSort('transaction_type')}>
+                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px', maxWidth: '160px' }} onClick={() => handleSort('transaction_type')}>
                         <div className="flex items-center gap-1">
                           <span>Type</span>
                           {getSortIcon('transaction_type')}
@@ -1562,7 +1560,7 @@ export default function TransactionList({
                     
                     {/* Finance Type column (inherited values shown in gray) */}
                     {isColumnVisible('financeType') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }} onClick={() => handleSort('finance_type')}>
+                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }} onClick={() => handleSort('finance_type')}>
                         <div className="flex items-center gap-1">
                           <span>Finance Type</span>
                           {getSortIcon('finance_type')}
@@ -1572,35 +1570,35 @@ export default function TransactionList({
                     
                     {/* Aid Type column (optional) */}
                     {isColumnVisible('aidType') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '180px', maxWidth: '180px' }}>
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '180px', maxWidth: '180px' }}>
                         Aid Type
                       </TableHead>
                     )}
                     
                     {/* Flow Type column (optional) */}
                     {isColumnVisible('flowType') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
                         Flow Type
                       </TableHead>
                     )}
                     
                     {/* Tied Status column (optional) */}
                     {isColumnVisible('tiedStatus') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
                         Tied Status
                       </TableHead>
                     )}
                     
                     {/* Humanitarian column (optional) */}
                     {isColumnVisible('humanitarian') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-center whitespace-nowrap" style={{ width: '100px', maxWidth: '100px' }}>
+                      <TableHead className="py-3 px-4 text-center whitespace-nowrap" style={{ width: '100px', maxWidth: '100px' }}>
                         Humanitarian
                       </TableHead>
                     )}
                     
                     {/* Provider → Receiver column */}
                     {isColumnVisible('organizations') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '280px', maxWidth: '280px' }} onClick={() => handleSort('provider_org_name')}>
+                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '280px', maxWidth: '280px' }} onClick={() => handleSort('provider_org_name')}>
                         <div className="flex items-center gap-1">
                           <span>Provider → Receiver</span>
                           {getSortIcon('provider_org_name')}
@@ -1610,16 +1608,16 @@ export default function TransactionList({
                     
                     {/* Currency column (optional) */}
                     {isColumnVisible('currency') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '80px', maxWidth: '80px' }}>
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '80px', maxWidth: '80px' }}>
                         Currency
                       </TableHead>
                     )}
                     
                     {/* Amount column */}
                     {isColumnVisible('amount') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value')}>
+                      <TableHead className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value')}>
                         <div className="flex items-center justify-end gap-1">
-                          <span>Amount</span>
+                          <span>Original Value</span>
                           {getSortIcon('value')}
                         </div>
                       </TableHead>
@@ -1627,7 +1625,7 @@ export default function TransactionList({
                     
                     {/* Value Date column */}
                     {isColumnVisible('valueDate') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('value_date')}>
+                      <TableHead className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('value_date')}>
                         <div className="flex items-center gap-1">
                           <span>Val. Date</span>
                           {getSortIcon('value_date')}
@@ -1637,7 +1635,7 @@ export default function TransactionList({
                     
                     {/* USD Value column */}
                     {isColumnVisible('usdValue') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value_usd')}>
+                      <TableHead className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value_usd')}>
                         <div className="flex items-center justify-end gap-1">
                           <span>USD Value</span>
                           {getSortIcon('value_usd')}
@@ -1647,7 +1645,7 @@ export default function TransactionList({
                     
                     {/* Exchange Rate column (optional) */}
                     {isColumnVisible('exchangeRate') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('exchange_rate_used')}>
+                      <TableHead className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('exchange_rate_used')}>
                         <div className="flex items-center justify-end gap-1">
                           <span>Ex. Rate</span>
                           {getSortIcon('exchange_rate_used')}
@@ -1657,14 +1655,14 @@ export default function TransactionList({
 
                     {/* Description column (optional) */}
                     {isColumnVisible('description') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }}>
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }}>
                         Description
                       </TableHead>
                     )}
 
                     {/* Disbursement Channel column (optional) */}
                     {isColumnVisible('disbursementChannel') && (
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '150px', maxWidth: '150px' }}>
+                      <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '150px', maxWidth: '150px' }}>
                         Channel
                       </TableHead>
                     )}
@@ -1685,7 +1683,7 @@ export default function TransactionList({
                       {/* Group Header Row - only show in grouped view */}
                       {groupedView && type && (
                         <TableRow className="bg-muted hover:bg-muted">
-                          <TableCell colSpan={visibleColumns.length + 1} className="py-3 px-3">
+                          <TableCell colSpan={visibleColumns.length + 1} className="py-3 px-4">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline" className="font-mono text-xs">
@@ -1944,7 +1942,7 @@ export default function TransactionList({
                       
                       {/* Provider → Receiver */}
                       {isColumnVisible('organizations') && (
-                        <TableCell className="py-3 px-3" style={{ maxWidth: '280px' }}>
+                        <TableCell className="py-3 px-4" style={{ maxWidth: '280px' }}>
                           <div className="flex items-center gap-1.5 font-medium overflow-hidden">
                             {/* Provider Org - gray if inferred, black if explicit */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
@@ -2030,7 +2028,7 @@ export default function TransactionList({
                           {transaction.value !== null && transaction.value !== undefined && !isNaN(transaction.value) ? (
                             <div>
                               <span className="font-medium">
-                                <span className="text-muted-foreground">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                <span className="text-muted-foreground text-xs">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </span>
                               {!isColumnVisible('valueDate') && (
                                 <div className="text-[11px] text-muted-foreground">
@@ -2214,7 +2212,7 @@ export default function TransactionList({
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
-                                  <span className="font-medium"><span className="text-muted-foreground">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                  <span className="font-medium"><span className="text-muted-foreground text-xs">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">USD Value:</span>

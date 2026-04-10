@@ -237,7 +237,7 @@ export function PlannedDisbursementsTable({
         maximumFractionDigits: 0,
       }).format(value);
 
-      return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-xs text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[PlannedDisbursementsTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
@@ -295,7 +295,7 @@ export function PlannedDisbursementsTable({
         onClick={() => onSort("activity")}
       >
         <div className="flex items-center gap-1">
-          <span>Activity</span>
+          <span>Activity Title</span>
           {getSortIcon("activity", sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -355,7 +355,7 @@ export function PlannedDisbursementsTable({
         onClick={() => onSort("value")}
       >
         <div className="flex items-center justify-end gap-1">
-          <span>Amount</span>
+          <span>Original Value</span>
           {getSortIcon("value", sortField, sortOrder)}
         </div>
       </SortableTableHeader>
@@ -434,9 +434,21 @@ export function PlannedDisbursementsTable({
               const cellMap: Record<PlannedDisbursementColumnId, React.ReactNode> = {
                 activity: (
                   <td key="activity" className="py-3 px-4">
-                    <div className="space-y-0.5">
+                    <div
+                      className="space-y-0.5 cursor-pointer hover:opacity-75 group"
+                      onClick={() => {
+                        if (disbursement.activity?.id) {
+                          window.location.href = `/activities/${disbursement.activity.id}`;
+                        }
+                      }}
+                    >
                       <div className="text-sm font-medium text-foreground line-clamp-2">
                         {activityTitle}
+                        {disbursement.reference && (
+                          <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block">
+                            {disbursement.reference}
+                          </span>
+                        )}
                       </div>
                       {disbursement.activity?.iati_identifier && (
                         <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
@@ -459,9 +471,7 @@ export function PlannedDisbursementsTable({
                 type: (
                   <td key="type" className="py-3 px-4 whitespace-nowrap">
                     {disbursement.type ? (
-                      <Badge variant="outline" className="bg-muted/50">
-                        {getDisbursementTypeLabel(disbursement.type)}
-                      </Badge>
+                      <span className="text-sm">{getDisbursementTypeLabel(disbursement.type)}</span>
                     ) : (
                       <span className="text-muted-foreground text-sm">—</span>
                     )}
@@ -497,11 +507,6 @@ export function PlannedDisbursementsTable({
                                   )}
                                 </Tooltip>
                               </div>
-                              {disbursement.provider_activity && (
-                                <div className="text-xs text-muted-foreground ml-5">
-                                  {disbursement.provider_activity.title_narrative || disbursement.provider_activity.title}
-                                </div>
-                              )}
                             </div>
 
                             <span className="text-muted-foreground mt-1">→</span>
@@ -527,11 +532,6 @@ export function PlannedDisbursementsTable({
                                   )}
                                 </Tooltip>
                               </div>
-                              {disbursement.receiver_activity && (
-                                <div className="text-xs text-muted-foreground ml-5">
-                                  {disbursement.receiver_activity.title_narrative || disbursement.receiver_activity.title}
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -623,10 +623,9 @@ export function PlannedDisbursementsTable({
                 <React.Fragment key={disbursement.id}>
                   <TableRow
                     className={cn(
-                      "border-b border-border/40 hover:bg-muted/30 transition-colors cursor-pointer",
+                      "border-b border-border/40 hover:bg-muted/30 transition-colors",
                       isSelected && "bg-blue-50 border-blue-200"
                     )}
-                    onClick={() => onRowClick?.(disbursementId)}
                   >
                     {/* Checkbox */}
                     <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>

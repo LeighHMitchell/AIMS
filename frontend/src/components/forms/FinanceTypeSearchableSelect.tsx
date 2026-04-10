@@ -29,8 +29,6 @@ interface FinanceTypeSearchableSelectProps {
 
 const allOptions: FinanceType[] = financeTypes;
 
-// Commonly used finance types for priority display
-const COMMONLY_USED_CODES = ["110", "410", "421", "422", "1100"];
 
 export function FinanceTypeSearchableSelect({
   value,
@@ -69,19 +67,6 @@ export function FinanceTypeSearchableSelect({
     return groups;
   }, [filteredOptions]);
 
-  // Get commonly used options that are in the filtered results
-  const commonlyUsedOptions = React.useMemo(() => {
-    return filteredOptions.filter(option => COMMONLY_USED_CODES.includes(option.code));
-  }, [filteredOptions]);
-
-  // Get other grouped options (excluding commonly used ones)
-  const otherGroupedOptions = React.useMemo(() => {
-    const groups: { [key: string]: FinanceType[] } = {};
-    Object.entries(groupedOptions).forEach(([groupName, options]) => {
-      groups[groupName] = options.filter(option => !COMMONLY_USED_CODES.includes(option.code));
-    });
-    return groups;
-  }, [groupedOptions]);
 
   return (
     <div className={cn("pb-6", className)}>
@@ -157,54 +142,7 @@ export function FinanceTypeSearchableSelect({
               )}
             </div>
             <CommandList>
-              {/* Commonly Used Section */}
-              {commonlyUsedOptions.length > 0 && (
-                <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                    Commonly Used
-                  </div>
-                  {commonlyUsedOptions.map((option) => (
-                    <CommandItem
-                      key={option.code}
-                      onSelect={() => {
-                        if (!option.withdrawn) {
-                          onValueChange?.(option.code);
-                          setOpen(false);
-                          setSearchQuery("");
-                        }
-                      }}
-                      className={cn(
-                        "cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
-                        option.withdrawn && "opacity-50 pointer-events-none bg-muted"
-                      )}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
-                          <span className="font-medium text-foreground">{option.name}</span>
-                          {option.withdrawn && (
-                            <span className="ml-2 text-xs text-red-500">Withdrawn</span>
-                          )}
-                        </div>
-                        {option.description && (
-                          <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                            {option.description}
-                          </div>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-
-              {/* Other Groups */}
-              {Object.entries(otherGroupedOptions).map(([groupName, options]) => 
+              {Object.entries(groupedOptions).map(([groupName, options]) =>
                 options.length > 0 && (
                   <CommandGroup key={groupName}>
                     <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">

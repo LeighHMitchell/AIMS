@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { LabelSaveIndicator } from '@/components/ui/save-indicator';
+import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -205,12 +205,13 @@ export function HumanitarianTab({
               <LabelSaveIndicator
                 isSaving={isSaving}
                 isSaved={!isLoading && activityId !== 'NEW'}
-                hasValue={humanitarian}
+                hasValue={false}
                 className="text-sm font-medium cursor-pointer text-red-900"
               >
                 Humanitarian Activity
               </LabelSaveIndicator>
               <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
+              <SaveIndicator isSaving={isSaving} isSaved={!isLoading && activityId !== 'NEW' && humanitarian} className="ml-0" />
             </div>
             <p className="text-xs text-red-700 mt-1">
               Identify if this activity is for emergency response or disaster relief
@@ -250,7 +251,7 @@ export function HumanitarianTab({
               <HelpTextTooltip content="Identify specific emergencies (using GLIDE codes) or appeals (using UN OCHA HRP codes) that this activity responds to. Multiple entries can be added." />
             </CardTitle>
             <CardDescription>
-              Link to specific emergencies or appeals (optional but recommended)
+              Link to specific emergencies or appeals
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -267,7 +268,7 @@ export function HumanitarianTab({
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Type</TableHead>
                       <TableHead className="whitespace-nowrap">Vocabulary</TableHead>
-                      <TableHead className="whitespace-nowrap">Code</TableHead>
+                      <TableHead className="whitespace-nowrap">Emergency/Appeal</TableHead>
                       <TableHead className="whitespace-nowrap">Location</TableHead>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
                       {!readOnly && <TableHead className="w-[100px]">Actions</TableHead>}
@@ -276,7 +277,7 @@ export function HumanitarianTab({
                   <TableBody>
                     {scopes.map((scope) => (
                       <TableRow key={scope.id}>
-                        <TableCell className="font-medium align-top whitespace-nowrap">
+                        <TableCell className="text-sm align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             {scope.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
@@ -290,13 +291,11 @@ export function HumanitarianTab({
                         </TableCell>
                         <TableCell className="align-top">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] ? (
-                            <div className="space-y-1">
-                              <code className="px-2 py-1 bg-muted rounded text-sm font-mono whitespace-nowrap">
+                            <div className="text-sm">
+                              <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
                                 {scope.code}
-                              </code>
-                              <div className="text-sm font-medium text-foreground">
-                                {emergencyMap[scope.code].name}
-                              </div>
+                              </code>{' '}
+                              {emergencyMap[scope.code].name}
                             </div>
                           ) : scope.vocabulary_uri ? (
                             <a

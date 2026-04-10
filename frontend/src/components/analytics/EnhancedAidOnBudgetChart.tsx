@@ -1285,13 +1285,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                   <TableHeader>
                     <TableRow className="bg-muted">
                       <TableHead className="w-8"></TableHead>
-                      <TableHead className="font-semibold">Classification</TableHead>
-                      <TableHead className="font-semibold text-right">Domestic Spending</TableHead>
-                      <TableHead className="font-semibold text-right">Aid on Budget</TableHead>
-                      <TableHead className="font-semibold text-right">Aid off Budget</TableHead>
-                      <TableHead className="font-semibold text-right">On-Budget Total</TableHead>
-                      <TableHead className="font-semibold text-right">Grand Total</TableHead>
-                      <TableHead className="font-semibold text-right">Aid Share</TableHead>
+                      <TableHead className="font-medium">Classification</TableHead>
+                      <TableHead className="font-medium text-right">Domestic Spending</TableHead>
+                      <TableHead className="font-medium text-right">Aid on Budget</TableHead>
+                      <TableHead className="font-medium text-right">Aid off Budget</TableHead>
+                      <TableHead className="font-medium text-right">On-Budget Total</TableHead>
+                      <TableHead className="font-medium text-right">Grand Total</TableHead>
+                      <TableHead className="font-medium text-right">Aid Share</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1451,6 +1451,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             )}
           </div>
         )}
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart analyses how aid spending aligns with government budget classifications, distinguishing between on-budget aid that flows through national systems, off-budget aid managed outside them, and domestic expenditure. Use the classification selector to switch between COFOG, programme, and other frameworks, and expand individual rows to see which activities contribute to each category.
+      </p>
       </CardContent>
     </Card>
   );

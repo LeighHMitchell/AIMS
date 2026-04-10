@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Pencil, Trash2, ArrowRight, ArrowLeft, ArrowUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
+import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Pencil, Trash2, ArrowRight, ArrowLeft, ChevronsUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -421,7 +421,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     switch (type) {
       case '1': return <ArrowRight className="h-4 w-4" />; // Parent
       case '2': return <ArrowLeft className="h-4 w-4" />; // Child
-      case '3': return <ArrowUpDown className="h-4 w-4" />; // Sibling
+      case '3': return <ChevronsUpDown className="h-4 w-4" />; // Sibling
       default: return <Link2 className="h-4 w-4" />;
     }
   };

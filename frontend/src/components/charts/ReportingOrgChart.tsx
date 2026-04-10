@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
-import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { AlertCircle, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoadingText } from "@/components/ui/loading-text";
@@ -98,11 +98,11 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
     }
     return sortDirection === 'asc'
-      ? <ArrowUp className="h-4 w-4 text-gray-400" />
-      : <ArrowDown className="h-4 w-4 text-gray-400" />;
+      ? <ChevronUp className="h-4 w-4 text-gray-400" />
+      : <ChevronDown className="h-4 w-4 text-gray-400" />;
   };
 
   const sortedData = useMemo(() => {
@@ -181,10 +181,10 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
     <div className="w-full">
       <div className="rounded-md border">
         <Table className="table-fixed w-full">
-          <TableHeader className="bg-surface-muted border-b border-border/70">
+          <TableHeader>
             <TableRow>
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                className="py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
                 style={{ width: '25%' }}
                 onClick={() => handleSort('organization')}
               >
@@ -193,11 +193,11 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
                   {getSortIcon('organization')}
                 </div>
               </TableHead>
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '15%' }}>
+              <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '15%' }}>
                 Organisation Type
               </TableHead>
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
                 style={{ width: '15%' }}
                 onClick={() => handleSort('budget')}
               >
@@ -207,7 +207,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
                 style={{ width: '15%' }}
                 onClick={() => handleSort('disbursements')}
               >
@@ -217,7 +217,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
                 style={{ width: '15%' }}
                 onClick={() => handleSort('expenditures')}
               >
@@ -227,7 +227,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                className="py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
                 style={{ width: '15%' }}
                 onClick={() => handleSort('totalSpending')}
               >

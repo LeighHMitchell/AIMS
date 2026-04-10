@@ -233,7 +233,7 @@ export const COUNTRY_COORDINATES: Record<string, CountryCoordinates> = {
 
 // Generic world-center fallback when no country code is provided or found
 export const DEFAULT_MAP_CENTER: [number, number] = [20.0, 96.0];
-export const DEFAULT_MAP_ZOOM = 2;
+export const DEFAULT_MAP_ZOOM = 6;
 
 /**
  * Get map center coordinates for a country code.

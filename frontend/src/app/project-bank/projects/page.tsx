@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { FilterBar } from "@/components/ui/filter-bar"
 import {
-  Plus, Search, ArrowUpDown, ArrowUp, ArrowDown,
+  Plus, Search, ChevronsUpDown, ChevronUp, ChevronDown,
   MoreVertical, ListTodo, Copy, Check, LayoutGrid, List, Inbox,
 } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
@@ -219,10 +219,10 @@ export default function ProjectListPage() {
   }
 
   const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
     return sortDir === "asc"
-      ? <ArrowUp className="h-3.5 w-3.5 text-foreground" />
-      : <ArrowDown className="h-3.5 w-3.5 text-foreground" />
+      ? <ChevronUp className="h-3.5 w-3.5 text-foreground" />
+      : <ChevronDown className="h-3.5 w-3.5 text-foreground" />
   }
 
   const SortHeader = ({ field, children, className, tight }: { field: string; children: React.ReactNode; className?: string; tight?: boolean }) => (

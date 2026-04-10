@@ -487,10 +487,10 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Period</th>
-            <th className="text-right py-3 px-4 font-semibold text-foreground">Development</th>
-            <th className="text-right py-3 px-4 font-semibold text-red-700">Humanitarian</th>
-            <th className="text-right py-3 px-4 font-semibold text-foreground">Total</th>
+            <th className="text-left py-3 px-4 font-medium text-foreground">Period</th>
+            <th className="text-right py-3 px-4 font-medium text-foreground">Development</th>
+            <th className="text-right py-3 px-4 font-medium text-red-700">Humanitarian</th>
+            <th className="text-right py-3 px-4 font-medium text-foreground">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -593,6 +593,11 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       {viewMode === 'area' && renderAreaChart()}
       {viewMode === 'bar' && renderBarChart()}
       {viewMode === 'table' && renderTable()}
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart breaks down total aid spending into humanitarian and development categories over time. Transactions are classified as humanitarian based on the is_humanitarian flag, aid type codes, or keyword matching. Use the period selector to group by calendar year, financial year, or quarter, and switch between area, bar, and table views to explore the data.
+      </p>
     </div>
   )
 } 

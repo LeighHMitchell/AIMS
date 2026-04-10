@@ -8,7 +8,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
-import { MapPin, Trash2, Loader2 } from 'lucide-react'
+import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import dynamic from 'next/dynamic'
@@ -52,24 +52,33 @@ interface BreakdownEntry {
   allocationLevel: AllocationLevel
 }
 
+interface SuggestedTownship {
+  townshipName: string
+  regionName: string
+}
+
 interface EnhancedSubnationalBreakdownProps {
   activityId: string
   canEdit?: boolean
   onDataChange?: (breakdowns: Record<string, number>) => void
   suggestedRegions?: string[]  // Regions from Activity Sites to auto-add
+  suggestedTownships?: SuggestedTownship[]  // Specific townships from Activity Sites
 }
 
 export function EnhancedSubnationalBreakdown({
   activityId,
   canEdit = true,
   onDataChange,
-  suggestedRegions = []
+  suggestedRegions = [],
+  suggestedTownships = []
 }: EnhancedSubnationalBreakdownProps) {
+  // entries now contains ONLY township-level entries — regions are derived
   const [entries, setEntries] = useState<BreakdownEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
-  const [viewLevel, setViewLevel] = useState<ViewLevel>('region')
+  const [viewLevel, setViewLevel] = useState<ViewLevel>('township')
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set())
 
   // Track if initial load is complete and if user has made changes
   const isInitialLoadRef = useRef(true)
@@ -112,7 +121,21 @@ export function EnhancedSubnationalBreakdown({
     return units
   }, [])
 
-  // Filter admin units based on current view level
+  // Track which township IDs have activity sites (for visual highlighting)
+  const highlightedTownshipIds = useMemo(() => {
+    const ids = new Set<string>()
+    suggestedTownships.forEach(st => {
+      const match = allAdminUnits.find(u =>
+        u.type === 'township' &&
+        u.name === st.townshipName &&
+        u.parentName === st.regionName
+      )
+      if (match) ids.add(match.id)
+    })
+    return ids
+  }, [suggestedTownships, allAdminUnits])
+
+  // Filter admin units based on current view level — always show regions in the selector
   const filteredAdminUnits = useMemo(() => {
     if (viewLevel === 'region') {
       return allAdminUnits.filter(u => u.type !== 'township')
@@ -120,85 +143,96 @@ export function EnhancedSubnationalBreakdown({
     return allAdminUnits
   }, [allAdminUnits, viewLevel])
 
-  // Calculate totals
+  // --- Auto-distribute helper (pure function) ---
+  const autoDistributeTownships = useCallback((regionUnit: AdminUnit, regionPercentage: number = 0): {
+    newEntries: BreakdownEntry[]
+    townshipIds: string[]
+  } => {
+    const townships = allAdminUnits.filter(u => u.parentId === regionUnit.id)
+    const perTownship = townships.length > 0 ? regionPercentage / townships.length : 0
+
+    const newEntries: BreakdownEntry[] = townships.map(t => ({
+      id: `entry-${Date.now()}-${t.id}`,
+      adminUnit: t,
+      percentage: perTownship,
+      allocationLevel: 'township' as AllocationLevel,
+    }))
+
+    return { newEntries, townshipIds: townships.map(t => t.id) }
+  }, [allAdminUnits])
+
+  // --- Computed region summaries from township entries ---
+  const regionSummaries = useMemo(() => {
+    const map = new Map<string, { regionUnit: AdminUnit; total: number; townshipCount: number }>()
+
+    entries.forEach(entry => {
+      const parentName = entry.adminUnit.parentName
+      if (!parentName) return
+      const existing = map.get(parentName)
+      if (existing) {
+        existing.total += entry.percentage
+        existing.townshipCount += 1
+      } else {
+        const regionUnit = allAdminUnits.find(u => u.name === parentName && u.type !== 'township')
+        if (regionUnit) {
+          map.set(parentName, { regionUnit, total: entry.percentage, townshipCount: 1 })
+        }
+      }
+    })
+
+    return map
+  }, [entries, allAdminUnits])
+
+  // Calculate totals from township entries
   const totalPercentage = entries.reduce((sum, entry) => sum + entry.percentage, 0)
   const isValidTotal = Math.abs(totalPercentage - 100) < 0.01
   const hasAnyValues = entries.some(entry => entry.percentage > 0)
 
-  // Format admin unit name for display
-  const formatAdminUnitName = (adminUnit: AdminUnit): string => {
-    if (adminUnit.type === 'township') {
-      return `${adminUnit.name} - ${adminUnit.parentName}`
-    }
-    return adminUnit.fullName
-  }
-
   // Organize entries hierarchically for table display
   const organizedEntries = useMemo(() => {
     const result: Array<{
-      entry: BreakdownEntry
-      isParent: boolean
-      isChild: boolean
-      parentName?: string
+      type: 'region' | 'township'
+      regionName: string
+      regionUnit?: AdminUnit
+      regionTotal?: number
+      townshipCount?: number
+      entry?: BreakdownEntry
     }> = []
 
-    // Group entries by parent state/region
-    const stateEntries = entries.filter((entry) => entry.adminUnit.type !== "township")
-    const townshipEntries = entries.filter((entry) => entry.adminUnit.type === "township")
+    // Build ordered list: region header, then its townships
+    const regionNames = Array.from(regionSummaries.keys()).sort()
 
-    const townshipsByParent = new Map<string, BreakdownEntry[]>()
+    regionNames.forEach(regionName => {
+      const summary = regionSummaries.get(regionName)
+      if (!summary) return
 
-    townshipEntries.forEach((entry) => {
-      const parentName = entry.adminUnit.parentName ?? entry.adminUnit.name
-      const siblings = townshipsByParent.get(parentName)
-      if (siblings) {
-        siblings.push(entry)
-      } else {
-        townshipsByParent.set(parentName, [entry])
-      }
-    })
-
-    // Add state/region entries and their townships
-    stateEntries.forEach(stateEntry => {
-      const childTownships = townshipsByParent.get(stateEntry.adminUnit.name) ?? []
-      const hasChildren = childTownships.length > 0
-
+      // Add region header row
       result.push({
-        entry: stateEntry,
-        isParent: hasChildren,
-        isChild: false
+        type: 'region',
+        regionName,
+        regionUnit: summary.regionUnit,
+        regionTotal: summary.total,
+        townshipCount: summary.townshipCount,
       })
 
-      // Add townships under this state/region
-      if (hasChildren) {
-        childTownships.forEach((townshipEntry) => {
-          result.push({
-            entry: townshipEntry,
-            isParent: false,
-            isChild: true,
-            parentName: stateEntry.adminUnit.name
-          })
-        })
-      }
-    })
+      // Add township rows (if region is expanded)
+      if (expandedRegions.has(regionName)) {
+        const townshipEntries = entries
+          .filter(e => e.adminUnit.parentName === regionName)
+          .sort((a, b) => a.adminUnit.name.localeCompare(b.adminUnit.name))
 
-    // Add orphaned townships (townships without their parent state selected)
-    townshipsByParent.forEach((townships, parentName) => {
-      const hasParentSelected = stateEntries.some((entry) => entry.adminUnit.name === parentName)
-
-      if (!hasParentSelected) {
-        townships.forEach((townshipEntry) => {
+        townshipEntries.forEach(entry => {
           result.push({
-            entry: townshipEntry,
-            isParent: false,
-            isChild: false
+            type: 'township',
+            regionName,
+            entry,
           })
         })
       }
     })
 
     return result
-  }, [entries])
+  }, [entries, regionSummaries, expandedRegions])
 
   // Show toast when total reaches 100% - but only after user makes changes
   useEffect(() => {
@@ -215,12 +249,8 @@ export function EnhancedSubnationalBreakdown({
     const aggregated = new Map<string, number>()
 
     entries.forEach((entry) => {
-      // For region view, aggregate townships to their parent region
-      // For township view, keep townships separate
-      const targetName =
-        viewLevel === 'region' && entry.adminUnit.type === "township"
-          ? entry.adminUnit.parentName ?? entry.adminUnit.name
-          : entry.adminUnit.name
+      // Always aggregate townships to their parent region for the map
+      const targetName = entry.adminUnit.parentName ?? entry.adminUnit.name
 
       const currentValue = aggregated.get(targetName)
       if (typeof currentValue === "number") {
@@ -233,7 +263,7 @@ export function EnhancedSubnationalBreakdown({
     const result = Object.fromEntries(aggregated.entries())
 
     return result
-  }, [entries, viewLevel])
+  }, [entries])
 
   // Load existing data
   const loadData = useCallback(async () => {
@@ -256,28 +286,27 @@ export function EnhancedSubnationalBreakdown({
         // Convert backend data to entries format
         const loadedEntries: BreakdownEntry[] = []
         const loadedSelectedUnits: string[] = []
+        const regionsToExpand = new Set<string>()
 
-        let hasTownshipData = false
+        // Separate region-level and township-level rows
+        const regionRows: any[] = []
+        const townshipRows: any[] = []
 
-        data.forEach((item: any, index: number) => {
-          // Determine if this is a township entry (has ts_pcode or uses "State - Township" format)
+        data.forEach((item: any) => {
           const isTownship = item.allocation_level === 'township' ||
                             item.ts_pcode ||
                             item.region_name.includes(' - ')
+          if (isTownship) {
+            townshipRows.push(item)
+          } else {
+            regionRows.push(item)
+          }
+        })
 
-          if (isTownship) hasTownshipData = true
-
-          // Try to find matching admin unit
+        // Load township rows directly
+        townshipRows.forEach((item: any, index: number) => {
           const adminUnit = allAdminUnits.find(unit => {
-            // First try to match by pcode
-            if (item.ts_pcode && unit.ts_pcode === item.ts_pcode) {
-              return true
-            }
-            if (!isTownship && item.st_pcode && unit.st_pcode === item.st_pcode && unit.type !== 'township') {
-              return true
-            }
-
-            // Fall back to name matching
+            if (item.ts_pcode && unit.ts_pcode === item.ts_pcode) return true
             if (item.region_name.includes(' - ')) {
               const parts = item.region_name.split(' - ')
               const stateName = parts[0]
@@ -285,10 +314,8 @@ export function EnhancedSubnationalBreakdown({
               return unit.type === 'township' &&
                      unit.name === townshipName &&
                      unit.parentName === stateName
-            } else {
-              // Handle state/region format
-              return unit.type !== 'township' && unit.name === item.region_name
             }
+            return false
           })
 
           if (adminUnit) {
@@ -296,119 +323,223 @@ export function EnhancedSubnationalBreakdown({
               id: `entry-${index}`,
               adminUnit,
               percentage: item.percentage,
-              allocationLevel: item.allocation_level || (adminUnit.type === 'township' ? 'township' : 'region')
+              allocationLevel: 'township'
             })
             loadedSelectedUnits.push(adminUnit.id)
+            if (adminUnit.parentName) {
+              regionsToExpand.add(adminUnit.parentName)
+              // Also add the parent region to selectedUnits
+              const parentUnit = allAdminUnits.find(u => u.name === adminUnit.parentName && u.type !== 'township')
+              if (parentUnit && !loadedSelectedUnits.includes(parentUnit.id)) {
+                loadedSelectedUnits.push(parentUnit.id)
+              }
+            }
+          }
+        })
+
+        // Backward compatibility: convert legacy region-level rows to distributed townships
+        regionRows.forEach((item: any) => {
+          const regionUnit = allAdminUnits.find(unit =>
+            unit.type !== 'township' && (
+              (item.st_pcode && unit.st_pcode === item.st_pcode) ||
+              unit.name === item.region_name
+            )
+          )
+
+          if (regionUnit) {
+            // Check if we already have township entries for this region
+            const hasExistingTownships = loadedEntries.some(e => e.adminUnit.parentName === regionUnit.name)
+
+            if (!hasExistingTownships) {
+              // Distribute region percentage to townships
+              const { newEntries, townshipIds } = autoDistributeTownships(regionUnit, item.percentage)
+              loadedEntries.push(...newEntries)
+              loadedSelectedUnits.push(regionUnit.id, ...townshipIds)
+              regionsToExpand.add(regionUnit.name)
+            }
           }
         })
 
         setEntries(loadedEntries)
         setSelectedUnits(loadedSelectedUnits)
-
-        // Set view level based on loaded data
-        if (hasTownshipData) {
-          setViewLevel('township')
-        }
+        setExpandedRegions(regionsToExpand)
 
         console.log('[EnhancedSubnationalBreakdown] Data loaded successfully')
       } else {
         console.log('[EnhancedSubnationalBreakdown] No existing data found, response status:', response.status)
-        // This is normal for new activities
       }
     } catch (error) {
       console.error('[EnhancedSubnationalBreakdown] Error loading data:', error)
-      // Don't show error toast for new activities without data
       if (error instanceof Error && !error.message.includes('404')) {
         toast.error('Failed to load subnational breakdown data')
       }
     } finally {
       console.log('[EnhancedSubnationalBreakdown] Setting loading to false')
       setLoading(false)
-      // Mark initial load as complete after a short delay
       setTimeout(() => {
         isInitialLoadRef.current = false
       }, 500)
     }
-  }, [activityId, allAdminUnits])
+  }, [activityId, allAdminUnits, autoDistributeTownships])
 
+  const hasLoadedRef = useRef(false)
   useEffect(() => {
+    // Prevent double-load in React strict mode from clobbering suggested region entries
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
+
     console.log('[EnhancedSubnationalBreakdown] Loading data for activityId:', activityId)
     loadData()
 
-    // Fallback timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       console.log('[EnhancedSubnationalBreakdown] Timeout reached, forcing loading to false')
       setLoading(false)
-    }, 10000) // 10 second timeout
+    }, 10000)
 
     return () => clearTimeout(timeout)
   }, [activityId, loadData])
 
-  // Handle suggested regions from Activity Sites
-  // This adds states/regions to the breakdown when locations are added
+  // Handle suggested regions/townships from Activity Sites
+  // Only adds the specific townships where sites exist (not all townships in the region)
   useEffect(() => {
-    if (loading || !suggestedRegions?.length) return
-
-    // Find regions that need to be added (not already selected and not already processed)
-    const regionsToAdd: string[] = []
-
-    suggestedRegions.forEach(regionName => {
-      // Skip if we've already processed this region name
-      if (processedSuggestedRegionsRef.current.has(regionName)) return
-
-      const adminUnit = allAdminUnits.find(u => u.name === regionName && u.type !== 'township')
-      if (adminUnit && !selectedUnits.includes(adminUnit.id)) {
-        regionsToAdd.push(adminUnit.id)
-        // Mark as processed
-        processedSuggestedRegionsRef.current.add(regionName)
-      }
+    console.log('[EnhancedSubnationalBreakdown] Suggested regions/townships effect:', {
+      loading,
+      suggestedRegions,
+      suggestedTownships,
+      processedKeys: Array.from(processedSuggestedRegionsRef.current),
+      selectedUnitsCount: selectedUnits.length,
+      entriesCount: entries.length,
     })
 
-    // Add all missing regions at once
-    if (regionsToAdd.length > 0) {
-      console.log('[EnhancedSubnationalBreakdown] Auto-adding regions from Activity Sites:', regionsToAdd)
+    if (loading) return
+    if (!suggestedRegions?.length && !suggestedTownships?.length) return
 
-      setSelectedUnits(prev => [...prev, ...regionsToAdd])
-      setEntries(prev => {
-        const newEntries = [...prev]
-        regionsToAdd.forEach(unitId => {
-          const adminUnit = allAdminUnits.find(unit => unit.id === unitId)
-          if (adminUnit) {
-            newEntries.push({
-              id: `entry-${Date.now()}-${unitId}`,
-              adminUnit,
-              percentage: 0,
-              allocationLevel: 'region'
-            })
+    const allNewEntries: BreakdownEntry[] = []
+    const allNewUnitIds: string[] = []
+    const newExpandedRegions = new Set(expandedRegions)
+    let hasChanges = false
+
+    // Helper: match region name flexibly (e.g. "Mandalay" matches "Mandalay Region", "Yangon" matches "Yangon Region")
+    const findRegionUnit = (regionName: string) => {
+      return allAdminUnits.find(u =>
+        u.type !== 'township' && (
+          u.name === regionName ||
+          u.name.startsWith(regionName + ' ') ||
+          u.name.toLowerCase() === regionName.toLowerCase() ||
+          u.name.toLowerCase().startsWith(regionName.toLowerCase() + ' ')
+        )
+      )
+    }
+
+    // For each suggested region, check if there are specific townships suggested.
+    // If yes: add only those townships. If no: add ALL townships in the region.
+    suggestedRegions.forEach(regionName => {
+      if (processedSuggestedRegionsRef.current.has(regionName)) return
+
+      const regionUnit = findRegionUnit(regionName)
+      if (!regionUnit) {
+        processedSuggestedRegionsRef.current.add(regionName)
+        return
+      }
+
+      // Add region to selectedUnits if not already there
+      if (!selectedUnits.includes(regionUnit.id) && !allNewUnitIds.includes(regionUnit.id)) {
+        allNewUnitIds.push(regionUnit.id)
+      }
+      newExpandedRegions.add(regionUnit.name)
+
+      // Check if there are specific townships suggested for this region
+      const regionTownships = suggestedTownships.filter(st => {
+        const matchedRegion = findRegionUnit(st.regionName)
+        return matchedRegion && matchedRegion.id === regionUnit.id
+      })
+
+      if (regionTownships.length > 0) {
+        // Add only the specific townships with sites
+        regionTownships.forEach(st => {
+          const townshipUnit = allAdminUnits.find(u =>
+            u.type === 'township' &&
+            u.name === st.townshipName &&
+            u.parentId === regionUnit.id
+          )
+
+          if (townshipUnit && !selectedUnits.includes(townshipUnit.id) && !allNewUnitIds.includes(townshipUnit.id)) {
+            const alreadyExists = entries.some(e => e.adminUnit.id === townshipUnit.id)
+            if (!alreadyExists) {
+              allNewEntries.push({
+                id: `entry-${Date.now()}-${townshipUnit.id}`,
+                adminUnit: townshipUnit,
+                percentage: 0,
+                allocationLevel: 'township',
+              })
+              allNewUnitIds.push(townshipUnit.id)
+              hasChanges = true
+            }
           }
         })
-        return newEntries
-      })
-    }
-  }, [suggestedRegions, loading, allAdminUnits, selectedUnits])
+      } else {
+        // No specific townships — add ALL townships in this region with equal split
+        const { newEntries, townshipIds } = autoDistributeTownships(regionUnit, 0)
+        // Only add townships not already present
+        newEntries.forEach((entry, i) => {
+          if (!selectedUnits.includes(townshipIds[i]) && !allNewUnitIds.includes(townshipIds[i])) {
+            const alreadyExists = entries.some(e => e.adminUnit.id === townshipIds[i])
+            if (!alreadyExists) {
+              allNewEntries.push(entry)
+              allNewUnitIds.push(townshipIds[i])
+              hasChanges = true
+            }
+          }
+        })
+      }
 
-  // Auto-save function
+      processedSuggestedRegionsRef.current.add(regionName)
+    })
+
+    if (hasChanges) {
+      console.log('[EnhancedSubnationalBreakdown] Auto-adding from Activity Sites:', {
+        newEntries: allNewEntries.map(e => e.adminUnit.fullName),
+        newUnitIds: allNewUnitIds
+      })
+
+      // Calculate equal distribution: combine existing + new entries, then distribute
+      // 100% equally across all township entries that have sites
+      setSelectedUnits(prev => [...prev, ...allNewUnitIds])
+      setEntries(prev => {
+        const combined = [...prev, ...allNewEntries]
+        // Redistribute: for each region that has suggested townships,
+        // split 100% / total site townships across all site townships in all regions
+        const totalSiteTownships = combined.length
+        if (totalSiteTownships > 0 && !prev.some(e => e.percentage > 0)) {
+          // Only auto-distribute if no existing allocations
+          const perTownship = 100 / totalSiteTownships
+          return combined.map(e => ({ ...e, percentage: perTownship }))
+        }
+        return combined
+      })
+      setExpandedRegions(newExpandedRegions)
+    }
+  }, [suggestedRegions, suggestedTownships, loading, allAdminUnits, selectedUnits, entries, expandedRegions])
+
+  // Auto-save function — only saves township-level entries
   const autoSave = useCallback(async () => {
     if (!canEdit || !activityId) return
 
     setSaving(true)
     try {
-      // Convert entries back to backend format with pcodes
       const payload = entries.map(entry => ({
-        region_name: entry.adminUnit.type === 'township'
-          ? `${entry.adminUnit.parentName} - ${entry.adminUnit.name}`
-          : entry.adminUnit.name,
+        region_name: `${entry.adminUnit.parentName} - ${entry.adminUnit.name}`,
         percentage: entry.percentage || 0,
         is_nationwide: false,
-        allocation_level: entry.allocationLevel,
+        allocation_level: 'township' as AllocationLevel,
         st_pcode: entry.adminUnit.st_pcode,
-        ts_pcode: entry.adminUnit.ts_pcode
+        ts_pcode: entry.adminUnit.ts_pcode,
+        country_code: 'MM'
       }))
 
       console.log('[DEBUG] Subnational autoSave payload:', {
         activityId,
         entriesCount: entries.length,
-        payload,
         hasNonZeroPercentages: payload.some(p => p.percentage > 0)
       });
 
@@ -426,7 +557,6 @@ export function EnhancedSubnationalBreakdown({
       });
 
       if (response.ok) {
-        // Only show success toast if user has made changes
         if (entries.some(entry => entry.percentage > 0) && hasUserChangedDataRef.current) {
           toast.success('Breakdown saved', { duration: 2000 })
         }
@@ -441,39 +571,99 @@ export function EnhancedSubnationalBreakdown({
     }
   }, [canEdit, activityId, entries])
 
-  // Handle selection changes from MultiSelect
+  // Handle selection changes from HierarchicalAdminSelect
   const handleSelectionChange = (newSelectedUnits: string[]) => {
-    setSelectedUnits(newSelectedUnits)
-
-    // Mark that user has made changes (only if not initial load)
     if (!isInitialLoadRef.current) {
       hasUserChangedDataRef.current = true
     }
 
-    // Update entries based on selection
-    const newEntries: BreakdownEntry[] = []
+    const prevSelectedSet = new Set(selectedUnits)
+    const newSelectedSet = new Set(newSelectedUnits)
+
+    // Find newly added region-level units
+    const addedRegions: AdminUnit[] = []
+    const removedRegions: AdminUnit[] = []
 
     newSelectedUnits.forEach(unitId => {
-      const adminUnit = allAdminUnits.find(unit => unit.id === unitId)
-      if (adminUnit) {
-        // Check if we already have an entry for this unit
-        const existingEntry = entries.find(entry => entry.adminUnit.id === unitId)
-
-        newEntries.push({
-          id: existingEntry?.id || `entry-${Date.now()}-${unitId}`,
-          adminUnit,
-          percentage: existingEntry?.percentage || 0,
-          allocationLevel: existingEntry?.allocationLevel || (adminUnit.type === 'township' ? 'township' : 'region')
-        })
+      if (!prevSelectedSet.has(unitId)) {
+        const unit = allAdminUnits.find(u => u.id === unitId)
+        if (unit && unit.type !== 'township') {
+          addedRegions.push(unit)
+        }
       }
     })
 
-    setEntries(newEntries)
+    // Find removed region-level units
+    selectedUnits.forEach(unitId => {
+      if (!newSelectedSet.has(unitId)) {
+        const unit = allAdminUnits.find(u => u.id === unitId)
+        if (unit && unit.type !== 'township') {
+          removedRegions.push(unit)
+        }
+      }
+    })
+
+    let updatedEntries = [...entries]
+    let updatedSelectedUnits = [...newSelectedUnits]
+    const newExpandedRegions = new Set(expandedRegions)
+
+    // Handle newly added regions — auto-distribute townships
+    addedRegions.forEach(regionUnit => {
+      const { newEntries, townshipIds } = autoDistributeTownships(regionUnit, 0)
+      updatedEntries.push(...newEntries)
+      updatedSelectedUnits.push(...townshipIds)
+      newExpandedRegions.add(regionUnit.name)
+    })
+
+    // Handle removed regions — remove all child township entries
+    removedRegions.forEach(regionUnit => {
+      const childTownshipIds = allAdminUnits
+        .filter(u => u.parentId === regionUnit.id)
+        .map(u => u.id)
+
+      updatedEntries = updatedEntries.filter(e => !childTownshipIds.includes(e.adminUnit.id))
+      updatedSelectedUnits = updatedSelectedUnits.filter(id => !childTownshipIds.includes(id))
+      newExpandedRegions.delete(regionUnit.name)
+    })
+
+    // Handle individually added/removed townships (when user selects a township directly)
+    newSelectedUnits.forEach(unitId => {
+      if (!prevSelectedSet.has(unitId)) {
+        const unit = allAdminUnits.find(u => u.id === unitId)
+        if (unit && unit.type === 'township') {
+          const alreadyExists = updatedEntries.some(e => e.adminUnit.id === unitId)
+          if (!alreadyExists) {
+            updatedEntries.push({
+              id: `entry-${Date.now()}-${unitId}`,
+              adminUnit: unit,
+              percentage: 0,
+              allocationLevel: 'township',
+            })
+            if (unit.parentName) {
+              newExpandedRegions.add(unit.parentName)
+            }
+          }
+        }
+      }
+    })
+
+    // Remove deselected townships
+    selectedUnits.forEach(unitId => {
+      if (!newSelectedSet.has(unitId)) {
+        const unit = allAdminUnits.find(u => u.id === unitId)
+        if (unit && unit.type === 'township') {
+          updatedEntries = updatedEntries.filter(e => e.adminUnit.id !== unitId)
+        }
+      }
+    })
+
+    setSelectedUnits(updatedSelectedUnits)
+    setEntries(updatedEntries)
+    setExpandedRegions(newExpandedRegions)
   }
 
-  // Handle feature click from map
+  // Handle feature click from map — auto-distribute if region clicked
   const handleFeatureClick = (pcode: string, name: string, level: AllocationLevel) => {
-    // Find the admin unit for this feature
     const adminUnit = allAdminUnits.find(unit => {
       if (level === 'township') {
         return unit.ts_pcode === pcode
@@ -487,9 +677,8 @@ export function EnhancedSubnationalBreakdown({
     }
   }
 
-  // Update percentage for a specific entry
+  // Update percentage for a specific township entry
   const updatePercentage = (entryId: string, percentage: number) => {
-    // Mark that user has made changes
     if (!isInitialLoadRef.current) {
       hasUserChangedDataRef.current = true
     }
@@ -499,9 +688,49 @@ export function EnhancedSubnationalBreakdown({
     ))
   }
 
-  // Remove an entry
-  const removeEntry = (entryId: string) => {
-    // Mark that user has made changes
+  // Update region percentage — redistributes equally across its townships
+  const updateRegionPercentage = (regionName: string, newTotal: number) => {
+    if (!isInitialLoadRef.current) {
+      hasUserChangedDataRef.current = true
+    }
+
+    setEntries(prev => {
+      const townshipEntries = prev.filter(e => e.adminUnit.parentName === regionName)
+      const otherEntries = prev.filter(e => e.adminUnit.parentName !== regionName)
+      const perTownship = townshipEntries.length > 0 ? newTotal / townshipEntries.length : 0
+
+      const updatedTownships = townshipEntries.map(e => ({
+        ...e,
+        percentage: perTownship,
+      }))
+
+      return [...otherEntries, ...updatedTownships]
+    })
+  }
+
+  // Remove a region and all its township entries
+  const removeRegion = (regionName: string) => {
+    if (!isInitialLoadRef.current) {
+      hasUserChangedDataRef.current = true
+    }
+
+    const regionUnit = allAdminUnits.find(u => u.name === regionName && u.type !== 'township')
+    const childTownshipIds = allAdminUnits
+      .filter(u => u.parentName === regionName)
+      .map(u => u.id)
+    const allIdsToRemove = new Set([...(regionUnit ? [regionUnit.id] : []), ...childTownshipIds])
+
+    setEntries(prev => prev.filter(e => !allIdsToRemove.has(e.adminUnit.id)))
+    setSelectedUnits(prev => prev.filter(id => !allIdsToRemove.has(id)))
+    setExpandedRegions(prev => {
+      const next = new Set(prev)
+      next.delete(regionName)
+      return next
+    })
+  }
+
+  // Remove a single township entry
+  const removeTownship = (entryId: string) => {
     if (!isInitialLoadRef.current) {
       hasUserChangedDataRef.current = true
     }
@@ -513,11 +742,23 @@ export function EnhancedSubnationalBreakdown({
     }
   }
 
-  // Distribute 100% equally across all selected units
+  // Toggle region expansion
+  const toggleRegionExpansion = (regionName: string) => {
+    setExpandedRegions(prev => {
+      const next = new Set(prev)
+      if (next.has(regionName)) {
+        next.delete(regionName)
+      } else {
+        next.add(regionName)
+      }
+      return next
+    })
+  }
+
+  // Distribute 100% equally across all township entries
   const distributeEqually = () => {
     if (entries.length === 0) return
 
-    // Mark that user has made changes
     hasUserChangedDataRef.current = true
 
     const equalPercentage = 100 / entries.length
@@ -527,13 +768,12 @@ export function EnhancedSubnationalBreakdown({
     })))
 
     toast.success('Distributed equally', {
-      description: `${equalPercentage.toFixed(1)}% allocated to each unit`
+      description: `${equalPercentage.toFixed(2)}% allocated to each township`
     })
   }
 
   // Clear all percentage allocations but keep selected units
   const clearAllocations = () => {
-    // Mark that user has made changes
     hasUserChangedDataRef.current = true
 
     setEntries(prev => prev.map(entry => ({
@@ -553,8 +793,7 @@ export function EnhancedSubnationalBreakdown({
     }
   }, [breakdownsForMap, onDataChange, loading])
 
-  // Auto-save when entries change (including just selections without percentages)
-  // But only after initial load is complete
+  // Auto-save when entries change
   useEffect(() => {
     if (!loading && activityId && !isInitialLoadRef.current) {
       const timeoutId = setTimeout(autoSave, 2000)
@@ -566,9 +805,7 @@ export function EnhancedSubnationalBreakdown({
     console.log('[EnhancedSubnationalBreakdown] Still loading, activityId:', activityId)
     return (
       <div className="space-y-6">
-        {/* Two-column layout skeleton to match actual layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Map Skeleton */}
           <div className="h-[800px]">
             <Card className="h-full">
               <CardHeader>
@@ -580,14 +817,12 @@ export function EnhancedSubnationalBreakdown({
             </Card>
           </div>
 
-          {/* Form Skeleton */}
           <Card className="h-[800px] flex flex-col">
             <CardHeader>
               <Skeleton className="h-6 w-48 mb-2" />
               <Skeleton className="h-4 w-64" />
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
-              {/* Admin Unit Selection Skeleton */}
               <div className="space-y-4 mb-6">
                 <Skeleton className="h-4 w-32 mb-2" />
                 <Skeleton className="h-10 w-full" />
@@ -597,7 +832,6 @@ export function EnhancedSubnationalBreakdown({
                 </div>
               </div>
 
-              {/* Entries Table Skeleton */}
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
@@ -616,7 +850,6 @@ export function EnhancedSubnationalBreakdown({
                 ))}
               </div>
 
-              {/* Total Skeleton */}
               <div className="mt-6 pt-4 border-t">
                 <div className="flex justify-between items-center">
                   <Skeleton className="h-5 w-20" />
@@ -624,7 +857,6 @@ export function EnhancedSubnationalBreakdown({
                 </div>
               </div>
 
-              {/* Loading message */}
               <div className="flex items-center justify-center mt-8 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Loading subnational breakdown data...
@@ -640,7 +872,7 @@ export function EnhancedSubnationalBreakdown({
     <div className="space-y-6">
       {/* Two-column layout: Map on left, Form on right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Map (much taller to fit all of Myanmar) */}
+        {/* Left Column - Map */}
         <div className="h-[800px]">
           <SubnationalChoroplethMap
             breakdowns={breakdownsForMap}
@@ -655,8 +887,8 @@ export function EnhancedSubnationalBreakdown({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              Subnational Breakdown
-              <HelpTextTooltip content="Select administrative units (states/regions or townships) and provide percentage breakdowns. Click on the map to add areas quickly. Toggle between Region and Township views." />
+              Sub-national Allocation
+              <HelpTextTooltip content="Select states or regions to allocate budget percentages. Selecting a region automatically distributes across its townships. You can then fine-tune individual township allocations." />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 flex-1 overflow-y-auto">
@@ -665,9 +897,7 @@ export function EnhancedSubnationalBreakdown({
               allAdminUnits={filteredAdminUnits}
               selected={selectedUnits}
               onChange={handleSelectionChange}
-              placeholder={viewLevel === 'region'
-                ? "Select states, regions, or union territories..."
-                : "Select regions or townships..."}
+              placeholder="Select states, regions, or townships..."
               disabled={!canEdit}
             />
 
@@ -695,7 +925,7 @@ export function EnhancedSubnationalBreakdown({
             )}
 
             {/* Percentage Allocation Table */}
-            {entries.length > 0 ? (
+            {organizedEntries.length > 0 ? (
               <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #d1d5db' }}>
                 <table className="w-full">
                   <thead className="bg-surface-muted">
@@ -711,48 +941,110 @@ export function EnhancedSubnationalBreakdown({
                     </tr>
                   </thead>
                   <tbody>
-                    {organizedEntries.map(({ entry, isParent, isChild }) => (
-                      <tr key={entry.id} className="border-t">
-                        <td className={`px-3 py-2 ${isChild ? 'pl-8' : ''}`}>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-sm ${isParent ? 'font-semibold' : isChild ? 'font-normal text-foreground' : 'font-medium'}`}>
-                              {isChild ? entry.adminUnit.name : entry.adminUnit.fullName}
-                            </span>
-                            {entry.adminUnit.type === 'township' && (
-                              <Badge variant="outline" className="text-xs">Township</Badge>
+                    {organizedEntries.map((item, index) => {
+                      if (item.type === 'region') {
+                        const isExpanded = expandedRegions.has(item.regionName)
+                        return (
+                          <tr key={`region-${item.regionName}`} className="border-t bg-muted/20">
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleRegionExpansion(item.regionName)}
+                                  className="p-0.5 hover:bg-muted rounded"
+                                >
+                                  {isExpanded
+                                    ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  }
+                                </button>
+                                <span className="text-sm font-semibold">{item.regionName}</span>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">
+                                  {item.townshipCount} townships
+                                </Badge>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  value={item.regionTotal ? parseFloat(item.regionTotal.toFixed(2)) || '' : ''}
+                                  onChange={(e) => updateRegionPercentage(item.regionName, parseFloat(e.target.value) || 0)}
+                                  className="w-28 text-right text-sm h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="0"
+                                  disabled={!canEdit}
+                                />
+                                <span className="text-xs text-muted-foreground w-8 text-left">%</span>
+                              </div>
+                            </td>
+                            {canEdit && (
+                              <td className="px-3 py-2 text-center">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeRegion(item.regionName)}
+                                  className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 w-7 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </td>
                             )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                              value={entry.percentage || ''}
-                              onChange={(e) => updatePercentage(entry.id, parseFloat(e.target.value) || 0)}
-                              className="w-28 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              placeholder="0"
-                              disabled={!canEdit}
-                            />
-                            <span className="text-xs text-muted-foreground w-8 text-left">%</span>
-                          </div>
-                        </td>
-                        {canEdit && (
-                          <td className="px-3 py-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeEntry(entry.id)}
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 w-7 p-0"
-                            >
-                              <Trash2 className="h-3 w-3 text-red-500" />
-                            </Button>
+                          </tr>
+                        )
+                      }
+
+                      // Township row
+                      const entry = item.entry!
+                      const isHighlighted = highlightedTownshipIds.has(entry.adminUnit.id)
+                      return (
+                        <tr key={entry.id} className={`border-t ${isHighlighted ? 'bg-emerald-50/50' : ''}`}>
+                          <td className="px-3 py-2 pl-10">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-normal text-foreground">
+                                {entry.adminUnit.name}
+                              </span>
+                              {isHighlighted && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-emerald-600 border-emerald-200">
+                                  <MapPin className="h-2.5 w-2.5 mr-0.5" />
+                                  Site
+                                </Badge>
+                              )}
+                            </div>
                           </td>
-                        )}
-                      </tr>
-                    ))}
+                          <td className="px-3 py-2 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value={entry.percentage || ''}
+                                onChange={(e) => updatePercentage(entry.id, parseFloat(e.target.value) || 0)}
+                                className="w-28 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="0"
+                                disabled={!canEdit}
+                              />
+                              <span className="text-xs text-muted-foreground w-8 text-left">%</span>
+                            </div>
+                          </td>
+                          {canEdit && (
+                            <td className="px-3 py-2 text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeTownship(entry.id)}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 w-7 p-0"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </Button>
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                   {hasAnyValues && (
                     <tfoot className="border-t">
@@ -763,7 +1055,7 @@ export function EnhancedSubnationalBreakdown({
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <span className="text-foreground font-semibold text-sm w-28 text-right">
-                              {totalPercentage.toFixed(1)}
+                              {totalPercentage.toFixed(2)}
                             </span>
                             <span className="text-xs text-foreground font-semibold w-8 text-left">%</span>
                           </div>

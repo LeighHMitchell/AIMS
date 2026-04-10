@@ -698,6 +698,13 @@ export default function TransactionModal({
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isLoadingRate, setIsLoadingRate] = useState(false);
   const [rateError, setRateError] = useState<string | null>(null);
+  const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
+
+  // Check if a date string is today or in the future
+  const isDateTodayOrFuture = (dateStr: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    return dateStr >= today;
+  };
 
   // Fetch exchange rate
   const fetchExchangeRate = useCallback(async () => {
@@ -707,30 +714,48 @@ export default function TransactionModal({
     if (currency === 'USD') {
       setExchangeRate(1);
       setRateError(null);
+      setRateInfoMessage(null);
       return;
     }
 
     const valueDate = formData.value_date || formData.transaction_date;
     if (!valueDate) {
       setRateError('Please set a date first');
+      setRateInfoMessage(null);
       return;
     }
 
     setIsLoadingRate(true);
     setRateError(null);
+    setRateInfoMessage(null);
 
     try {
       const result = await fixedCurrencyConverter.convertToUSD(1, currency, new Date(valueDate));
       if (result.success && result.exchange_rate) {
         setExchangeRate(result.exchange_rate);
         setRateError(null);
+        setRateInfoMessage(null);
       } else {
-        setRateError(result.error || 'Failed to fetch exchange rate');
-        setExchangeRate(null);
+        // If the date is today or future, show a gentle info message instead of an error
+        if (isDateTodayOrFuture(valueDate)) {
+          setRateError(null);
+          setRateInfoMessage('Exchange rate not yet available for this date. It will be fetched automatically overnight.');
+          setExchangeRate(null);
+        } else {
+          setRateError(result.error || 'Failed to fetch exchange rate');
+          setRateInfoMessage(null);
+          setExchangeRate(null);
+        }
       }
     } catch (err) {
       console.error('[TransactionModal] Error fetching exchange rate:', err);
-      setRateError('Failed to fetch exchange rate');
+      if (isDateTodayOrFuture(valueDate)) {
+        setRateError(null);
+        setRateInfoMessage('Exchange rate not yet available for this date. It will be fetched automatically overnight.');
+      } else {
+        setRateError('Failed to fetch exchange rate');
+        setRateInfoMessage(null);
+      }
       setExchangeRate(null);
     } finally {
       setIsLoadingRate(false);
@@ -977,7 +1002,7 @@ export default function TransactionModal({
         provider_org_ref: '',
         provider_org_name: user?.organizationId ? (organizations.find(o => o.id === user.organizationId)?.acronym || organizations.find(o => o.id === user.organizationId)?.name || '') : '',
         provider_org_activity_id: '',
-        provider_activity_uuid: undefined,
+        provider_activity_uuid: activityId || undefined,
         receiver_org_id: undefined,
         receiver_org_type: undefined,
         receiver_org_ref: '',
@@ -1041,7 +1066,7 @@ export default function TransactionModal({
     return payload;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (statusOverride?: string) => {
     // Prevent concurrent submissions using ref to avoid race conditions
     if (isSubmittingRef.current || isSubmitting || isInternallySubmitting) {
       console.log('[TransactionModal] Submission already in progress, ignoring duplicate call');
@@ -1066,6 +1091,7 @@ export default function TransactionModal({
 
     const submissionData = getTransactionPayload({
       ...formData,
+      status: statusOverride || formData.status,
       activity_id: activityId,
       provider_org_name: organizations.find(o => o.id === formData.provider_org_id)?.acronym || organizations.find(o => o.id === formData.provider_org_id)?.name || '',
       receiver_org_name: organizations.find(o => o.id === formData.receiver_org_id)?.acronym || organizations.find(o => o.id === formData.receiver_org_id)?.name || '',
@@ -1207,10 +1233,10 @@ export default function TransactionModal({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="h-3 w-3 text-muted-foreground inline-block ml-1" />
+          <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground cursor-help inline-block ml-1" />
         </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
-          <p className="text-sm">{text}</p>
+        <TooltipContent>
+          <p>{text}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -1275,10 +1301,10 @@ export default function TransactionModal({
 
 
   // Add missing handler for internal submission
-  const handleInternalSubmit = async () => {
+  const handleInternalSubmit = async (statusOverride?: string) => {
     setIsInternallySubmitting(true);
     try {
-      await handleSubmit();
+      await handleSubmit(statusOverride);
     } finally {
       setIsInternallySubmitting(false);
     }
@@ -1286,15 +1312,15 @@ export default function TransactionModal({
 
   const SectionHeader = ({ title, helpText }: { title: string; helpText?: string }) => (
     <div className="flex items-center gap-2 mb-4">
-      <h3 className="text-base font-semibold text-slate-700">{title}</h3>
+      <h3 className="text-base font-semibold text-foreground">{title}</h3>
       {helpText && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              <Info className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-sm">{helpText}</p>
+            <TooltipContent>
+              <p>{helpText}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -1822,7 +1848,7 @@ export default function TransactionModal({
                     isSaved={valueAutosave.isSaved}
                     hasValue={!!formData.value && formData.value > 0}
                   >
-                    Transaction Value <RequiredDot />
+                    Value <RequiredDot />
                   </LabelWithInfoAndSave>
                   <Input
                     type="text"
@@ -1933,9 +1959,9 @@ export default function TransactionModal({
                           }
                         }}
                       />
-                      <Label 
-                        htmlFor="fx_date_different" 
-                        className="text-sm font-normal cursor-pointer"
+                      <Label
+                        htmlFor="fx_date_different"
+                        className="text-sm font-normal cursor-pointer text-muted-foreground"
                       >
                         FX settlement date is different
                       </Label>
@@ -1969,7 +1995,7 @@ export default function TransactionModal({
                     </LabelWithInfoAndSave>
                     {formData.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="exchange_rate_mode" className={cn("text-xs cursor-pointer", exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
+                        <Label htmlFor="exchange_rate_mode" className={cn("text-sm font-normal cursor-pointer", exchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                           {exchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
@@ -2024,6 +2050,9 @@ export default function TransactionModal({
                   </div>
                   {rateError && (
                     <p className="text-xs text-red-500">{rateError}</p>
+                  )}
+                  {rateInfoMessage && !rateError && (
+                    <p className="text-xs text-muted-foreground">{rateInfoMessage}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -2501,18 +2530,18 @@ export default function TransactionModal({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-full flex justify-between items-start min-h-[60px] whitespace-normal text-left px-3 py-3",
+                          "w-full flex justify-between items-center h-10 text-left px-3 py-2",
                           !formData.disbursement_channel && "text-muted-foreground font-normal"
                         )}
                         aria-haspopup="listbox"
                       >
-                        <span className="flex-1 min-w-0">
+                        <span className="flex-1 min-w-0 truncate">
                           {formData.disbursement_channel ? (
-                            <span className="flex items-start gap-2">
+                            <span className="flex items-center gap-2 min-w-0 overflow-hidden">
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {formData.disbursement_channel}
                               </span>
-                              <span className="text-sm">
+                              <span className="text-sm truncate">
                                 {DISBURSEMENT_CHANNELS_WITH_DESC[formData.disbursement_channel]?.label}
                               </span>
                             </span>
@@ -2689,6 +2718,7 @@ export default function TransactionModal({
                     <Switch
                       id="is_humanitarian"
                       checked={formData.is_humanitarian}
+                      className={cn(formData.is_humanitarian && "data-[state=checked]:bg-red-500")}
                       onCheckedChange={checked => {
                         setFormData({ ...formData, is_humanitarian: checked });
                         humanitarianAutosave.triggerFieldSave(checked);
@@ -3297,7 +3327,21 @@ export default function TransactionModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleInternalSubmit} className="min-w-[100px]" disabled={isSubmitting || isInternallySubmitting}>
+          {!isEditing && (
+            <Button
+              variant="outline"
+              onClick={() => handleInternalSubmit('draft')}
+              className="min-w-[100px]"
+              disabled={isSubmitting || isInternallySubmitting}
+            >
+              Save as Draft
+            </Button>
+          )}
+          <Button
+            onClick={() => handleInternalSubmit('actual')}
+            className="min-w-[100px]"
+            disabled={isSubmitting || isInternallySubmitting}
+          >
             {isEditing ? "Update" : "Add"} Transaction
           </Button>
         </DialogFooter>

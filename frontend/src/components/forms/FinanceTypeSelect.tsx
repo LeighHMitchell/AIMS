@@ -69,12 +69,6 @@ export function FinanceTypeSelect({
     return groups;
   }, [filteredOptions]);
 
-  const COMMONLY_USED_FINANCE_CODES = ["110", "421"];
-  const commonlyUsedFinanceTypes = filteredOptions.filter(opt => COMMONLY_USED_FINANCE_CODES.includes(opt.code));
-  const otherGroupedOptions = Object.entries(groupedOptions).reduce((acc, [group, options]) => {
-    acc[group] = options.filter(opt => !COMMONLY_USED_FINANCE_CODES.includes(opt.code));
-    return acc;
-  }, {} as typeof groupedOptions);
 
   return (
     <div className={cn("w-full", className)}>
@@ -148,44 +142,7 @@ export function FinanceTypeSelect({
               />
             </div>
             <CommandList>
-              {commonlyUsedFinanceTypes.length > 0 && (
-                <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                    Commonly Used
-                  </div>
-                  {commonlyUsedFinanceTypes.map(option => (
-                    <CommandItem
-                      key={option.code}
-                      onSelect={() => {
-                        if (!option.withdrawn) {
-                          onChange?.(option.code);
-                          setOpen(false);
-                          setSearchQuery("");
-                        }
-                      }}
-                      className={cn(
-                        "cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
-                        option.withdrawn && "opacity-50 pointer-events-none bg-muted",
-                        value === option.code && "bg-accent"
-                      )}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5">{option.code}</span>
-                          <span className="text-foreground">{option.name}</span>
-                          {option.withdrawn && (
-                            <span className="ml-2 text-xs text-red-500">Withdrawn</span>
-                          )}
-                        </div>
-                        {option.description && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{option.description}</div>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-              {Object.entries(otherGroupedOptions).map(([groupName, options]) => options.length > 0 && (
+              {Object.entries(groupedOptions).map(([groupName, options]) => options.length > 0 && (
                 <CommandGroup key={groupName}>
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
                     {groupName}

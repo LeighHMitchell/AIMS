@@ -330,9 +330,9 @@ export function YearlyTotalsBarChart({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200">
-                <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-slate-50">Year</th>
+                <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
                 {activeTransactionTypes.map(type => (
-                  <th key={type} className="text-right py-3 px-4 font-semibold text-slate-700 bg-slate-50">
+                  <th key={type} className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">
                     <div className="flex items-center justify-end gap-2">
                       <span
                         className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
@@ -344,7 +344,7 @@ export function YearlyTotalsBarChart({
                     </div>
                   </th>
                 ))}
-                <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-slate-50">Total</th>
+                <th className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -391,8 +391,8 @@ export function YearlyTotalsBarChart({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-slate-50">Year</th>
-              <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-slate-50">{singleSeriesLabel}</th>
+              <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
+              <th className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">{singleSeriesLabel}</th>
             </tr>
           </thead>
           <tbody>

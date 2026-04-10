@@ -39,7 +39,7 @@ import {
   getFiscalYearForDate
 } from '@/utils/year-allocation'
 import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
-import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format, parseISO } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
@@ -1160,13 +1160,20 @@ export function CumulativeFinancialOverview({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
-                        {customYears.map(cy => (
+                        {sortCustomYearsCalendarFirst(customYears).map(cy => (
                           <DropdownMenuItem
                             key={cy.id}
                             className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
                             onClick={() => setCalendarType(cy.id)}
                           >
-                            {cy.name}
+                            <span className="flex items-center gap-2">
+                              {cy.shortName && (
+                                <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                  {cy.shortName.trim()}
+                                </span>
+                              )}
+                              {cy.name}
+                            </span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
@@ -1380,30 +1387,30 @@ export function CumulativeFinancialOverview({
                 <Table>
                   <TableHeader>
                     <TableRow className="sticky top-0 bg-white z-10">
-                      <TableHead className="bg-white">Period</TableHead>
+                      <TableHead>Period</TableHead>
                       {activeSeries.has('Incoming Commitments') && (
-                        <TableHead className="text-right bg-white">Incoming Commitments</TableHead>
+                        <TableHead className="text-right">Incoming Commitments</TableHead>
                       )}
                       {activeSeries.has('Incoming Funds') && (
-                        <TableHead className="text-right bg-white">Incoming Funds</TableHead>
+                        <TableHead className="text-right">Incoming Funds</TableHead>
                       )}
                       {activeSeries.has('Outgoing Commitments') && (
-                        <TableHead className="text-right bg-white">Outgoing Commitments</TableHead>
+                        <TableHead className="text-right">Outgoing Commitments</TableHead>
                       )}
                       {activeSeries.has('Credit Guarantee') && (
-                        <TableHead className="text-right bg-white">Credit Guarantee</TableHead>
+                        <TableHead className="text-right">Credit Guarantee</TableHead>
                       )}
                       {activeSeries.has('Disbursements') && (
-                        <TableHead className="text-right bg-white">Disbursements</TableHead>
+                        <TableHead className="text-right">Disbursements</TableHead>
                       )}
                       {activeSeries.has('Expenditures') && (
-                        <TableHead className="text-right bg-white">Expenditures</TableHead>
+                        <TableHead className="text-right">Expenditures</TableHead>
                       )}
                       {activeSeries.has('Planned Disbursements') && (
-                        <TableHead className="text-right bg-white">Planned Disbursements</TableHead>
+                        <TableHead className="text-right">Planned Disbursements</TableHead>
                       )}
                       {activeSeries.has('Budgets') && (
-                        <TableHead className="text-right bg-white">Budgets</TableHead>
+                        <TableHead className="text-right">Budgets</TableHead>
                       )}
                     </TableRow>
                   </TableHeader>
@@ -1994,15 +2001,10 @@ export function CumulativeFinancialOverview({
         )}
         </div>
 
-        {/* Explanatory Text */}
-        <p className="text-xs text-gray-500 mt-4">
-          This chart provides a comprehensive view of financial flows over time, tracking all IATI transaction types including
-          Incoming Funds (type 1), Outgoing Commitments (type 2), Disbursements (type 3), Expenditures (type 4),
-          Credit Guarantees (type 10), and Incoming Commitments (type 11), alongside Planned Disbursements and Budgets.
-          Toggle between <strong>Cumulative</strong> view to see running totals over time, or <strong>Periodic</strong> view
-          to see year-by-year changes. The <strong>Proportional</strong> setting distributes multi-year budgets and planned
-          disbursements across their time periods, while <strong>Period Start</strong> shows the full amount at the start date.
-          Click on legend items to show or hide specific data series. Year labels adjust based on the selected calendar type.
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This chart provides a comprehensive view of financial flows over time, tracking all IATI transaction types including incoming funds, commitments, disbursements, and expenditures, alongside planned disbursements and budgets.
+          Toggle between cumulative view for running totals or periodic view for year-by-year changes, and use the proportional setting to distribute multi-year budgets evenly across their time periods. Click legend items to show or hide specific data series.
         </p>
     </div>
   )

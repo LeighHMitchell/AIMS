@@ -468,13 +468,13 @@ export function OrganizationalPositioningMap({
         </div>
       </div>
 
-      {/* Description */}
-      <div className="text-sm text-slate-600 leading-relaxed space-y-3">
-        <p>
+      {/* Explanatory text */}
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           This chart shows where organisations sit in the aid ecosystem based on observed financial behaviour, rather than stated mandates or organisational labels. Each organisation is positioned using two dimensions derived from transaction data. The horizontal axis reflects whether an organisation's funding is directed primarily toward humanitarian activities such as emergency relief and disaster response, or toward development activities such as infrastructure, education, and long-term service delivery. The vertical axis reflects whether an organisation acts mainly as a net funder, providing resources to others, or as a net implementer, receiving funding to deliver programmes. Together, these axes form four quadrants that highlight different functional roles within the system, including humanitarian funders, development funders, humanitarian implementers, and development implementers. The size of each bubble represents the total volume of disbursement transactions associated with that organisation over the selected period. Positions are calculated from actual financial flows, using transaction-level data with activity-level fallback where needed, ensuring that organisational roles reflect how money moves in practice rather than how organisations self-identify.
         </p>
-        <p className="text-xs text-slate-500">
-          <strong>METHODOLOGY:</strong> X-axis (Humanitarian ↔ Development) is calculated from transaction humanitarian flags with activity-level fallback. Y-axis (Funder ↔ Implementer) shows net provider vs receiver transaction flows, normalized across all organizations. Data source is disbursement transactions only, reflecting realized behavior.
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          <strong>METHODOLOGY:</strong> X-axis (Humanitarian / Development) is calculated from transaction humanitarian flags with activity-level fallback. Y-axis (Funder / Implementer) shows net provider vs receiver transaction flows, normalized across all organizations. Data source is disbursement transactions only, reflecting realized behavior.
         </p>
       </div>
     </div>

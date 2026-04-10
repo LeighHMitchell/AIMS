@@ -278,6 +278,7 @@ export function ParticipatingOrgModal({
             className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
           >
             <span>Advanced Fields</span>
+            <HelpTextTooltip content="These optional fields provide additional IATI-compliant metadata for specialized reporting requirements." />
             {showAdvanced ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
@@ -287,18 +288,13 @@ export function ParticipatingOrgModal({
 
           {showAdvanced && (
             <div className="space-y-6 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                These optional fields provide additional IATI-compliant metadata for specialized reporting requirements.
-              </p>
 
               {/* Activity ID */}
               <div className="space-y-2">
                 <Label htmlFor="org_activity_id" className="flex items-center gap-2">
                   Activity ID (Organisation's Own Reference)
+                  <HelpTextTooltip content="Identifier used by this participating organisation for the same activity in their own IATI dataset." />
                 </Label>
-                <p className="text-sm text-gray-600">
-                  Identifier used by this participating organisation for the same activity in their own IATI dataset.
-                </p>
                 <Input
                   id="org_activity_id"
                   value={formData.org_activity_id || ''}
@@ -417,11 +413,8 @@ export function ParticipatingOrgModal({
               <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   Multilingual Names
-                  <HelpTextTooltip content="Each narrative corresponds to a translated organisation name." />
+                  <HelpTextTooltip content="Enter additional organisation names in other languages (ISO 639-1)." />
                 </Label>
-                <p className="text-sm text-gray-600">
-                  Enter additional organisation names in other languages (ISO 639-1).
-                </p>
                 
                 {formData.narratives?.map((narrative, index) => (
                   <div key={index} className="space-y-2">

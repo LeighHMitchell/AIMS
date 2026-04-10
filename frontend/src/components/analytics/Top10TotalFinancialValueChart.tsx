@@ -149,51 +149,58 @@ export function Top10TotalFinancialValueChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart 
-        data={data}
-        layout="vertical"
-        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-      >
-        <CartesianGrid
-          strokeDasharray="3 3"
-          stroke={CHART_STRUCTURE_COLORS.grid}
-          horizontal={false}
-        />
-        <XAxis 
-          type="number"
-          tickFormatter={formatCurrency}
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-        />
-        <YAxis 
-          type="category"
-          dataKey="shortName"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-          width={90}
-        />
-        <Tooltip 
-          formatter={(value: number) => formatCurrency(value)}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
-          cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
-        />
-        <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
-          {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} 
-            />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div>
+      <ResponsiveContainer width="100%" height={400}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={CHART_STRUCTURE_COLORS.grid}
+            horizontal={false}
+          />
+          <XAxis
+            type="number"
+            tickFormatter={formatCurrency}
+            tick={{ fill: '#64748b', fontSize: 12 }}
+            axisLine={{ stroke: '#cbd5e1' }}
+          />
+          <YAxis
+            type="category"
+            dataKey="shortName"
+            tick={{ fill: '#64748b', fontSize: 12 }}
+            axisLine={{ stroke: '#cbd5e1' }}
+            width={90}
+          />
+          <Tooltip
+            formatter={(value: number) => formatCurrency(value)}
+            contentStyle={{
+              backgroundColor: '#1e293b',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#fff'
+            }}
+            labelStyle={{ color: '#94a3b8' }}
+            cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+          />
+          <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
+            {data.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]}
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        This chart ranks the top 10 organisations by total financial value, combining all transaction types within the selected date range. The horizontal bars make it easy to compare relative scale across organisations. Hover over any bar to see the exact USD amount.
+      </p>
+    </div>
   )
 }
 

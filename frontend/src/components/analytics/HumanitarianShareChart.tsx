@@ -353,9 +353,9 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 font-semibold text-slate-700">Category</th>
-            <th className="text-right py-3 px-4 font-semibold text-slate-700">Amount (USD)</th>
-            <th className="text-right py-3 px-4 font-semibold text-slate-700">Share</th>
+            <th className="text-left py-3 px-4 font-medium text-slate-700">Category</th>
+            <th className="text-right py-3 px-4 font-medium text-slate-700">Amount (USD)</th>
+            <th className="text-right py-3 px-4 font-medium text-slate-700">Share</th>
           </tr>
         </thead>
         <tbody>
@@ -423,6 +423,11 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
         {viewMode === 'chart' && renderChartView()}
         {viewMode === 'bar' && renderBarView()}
         {viewMode === 'table' && renderTableView()}
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          This chart shows the proportion of total aid that is classified as humanitarian versus development cooperation. The percentage reflects the share of commitments, disbursements, and expenditures flagged as humanitarian within the selected date range. Use the toggle to switch between the visual indicator, bar chart, and table views.
+        </p>
       </CardContent>
     </Card>
   )

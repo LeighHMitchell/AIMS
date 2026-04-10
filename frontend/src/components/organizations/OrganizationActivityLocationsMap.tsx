@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
-import { MapPin, RotateCcw, Mountain, Map as MapIcon } from 'lucide-react';
+import { MapPin, RotateCcw, Mountain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
@@ -103,7 +103,7 @@ function Map3DController({
             title="2D View"
             className="bg-white shadow-md border-gray-300 h-9 px-2.5"
           >
-            <MapIcon className="h-4 w-4 mr-1.5" />
+            <Mountain className="h-4 w-4 mr-1.5" />
             <span className="text-xs">2D</span>
           </Button>
         ) : (

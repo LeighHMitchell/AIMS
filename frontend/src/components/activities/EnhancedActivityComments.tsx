@@ -28,7 +28,6 @@ import {
   Paperclip,
   Download,
   AlertCircle,
-  HelpCircle,
   Filter,
   SortAsc,
   Clock,
@@ -45,7 +44,7 @@ import {
   ThumbsDown,
   Heart,
   Zap,
-  HelpCircle as Confused,
+  HelpCircle,
   Plus,
   X,
   Upload,
@@ -93,7 +92,7 @@ const REACTION_TYPES = [
   { type: 'thumbs_down', icon: ThumbsDown, label: 'Thumbs Down', color: 'text-red-600' },
   { type: 'heart', icon: Heart, label: 'Love', color: 'text-pink-600' },
   { type: 'celebrate', icon: Zap, label: 'Celebrate', color: 'text-yellow-600' },
-  { type: 'confused', icon: Confused, label: 'Confused', color: 'text-gray-600' },
+  { type: 'confused', icon: HelpCircle, label: 'Confused', color: 'text-gray-600' },
 ];
 
 export function EnhancedActivityComments({ 

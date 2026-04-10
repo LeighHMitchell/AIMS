@@ -129,19 +129,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get activity titles for the transactions (single batch query)
+    // Get activity titles and IATI identifiers for the transactions (single batch query)
     const activityIds = [...new Set((transactions || []).map((t: { activity_id: string }) => t.activity_id).filter(Boolean))];
     let activityTitles = new Map<string, string>();
+    let activityIatiIds = new Map<string, string>();
 
     if (activityIds.length > 0) {
       const { data: activities } = await supabase
         .from('activities')
-        .select('id, title_narrative')
+        .select('id, title_narrative, iati_identifier')
         .in('id', activityIds);
 
       if (activities) {
-        activities.forEach((a: { id: string; title_narrative: string | null }) => {
+        activities.forEach((a: { id: string; title_narrative: string | null; iati_identifier: string | null }) => {
           activityTitles.set(a.id, a.title_narrative || 'Untitled');
+          if (a.iati_identifier) activityIatiIds.set(a.id, a.iati_identifier);
         });
       }
     }
@@ -172,6 +174,7 @@ export async function GET(request: NextRequest) {
       activity_id: t.activity_id,
       activityId: t.activity_id,
       activityTitle: activityTitles.get(t.activity_id) || 'Unknown',
+      activityIatiIdentifier: activityIatiIds.get(t.activity_id) || null,
       transaction_type: t.transaction_type,
       transactionType: t.transaction_type,
       transaction_date: t.transaction_date,

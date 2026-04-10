@@ -355,8 +355,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead>
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -386,8 +386,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead>
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -474,8 +474,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead>
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -505,8 +505,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   <table className="border-collapse">
                                     <thead>
                                       <tr className="bg-surface-muted">
-                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
-                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                        <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -577,7 +577,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               <table className="border-collapse">
                                 <thead>
                                   <tr className="bg-surface-muted">
-                                    <th className="px-3 py-1.5 text-left font-semibold text-slate-700" colSpan={2}>Year {label}</th>
+                                    <th className="px-3 py-1.5 text-left font-medium text-slate-700" colSpan={2}>Year {label}</th>
                                   </tr>
                                   <tr className="bg-surface-muted">
                                     <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
@@ -804,8 +804,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead>
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
-                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -836,8 +836,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead>
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
-                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -899,8 +899,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead>
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
-                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -931,8 +931,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <table className="border-collapse">
                             <thead>
                               <tr className="bg-surface-muted">
-                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
-                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                                <th className="px-3 py-1.5 text-left font-medium">Year</th>
+                                <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -977,7 +977,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       <table className="border-collapse w-full">
                         <thead>
                           <tr className="bg-surface-muted">
-                            <th className="px-3 py-1.5 text-left font-semibold" colSpan={2}>Year {label}</th>
+                            <th className="px-3 py-1.5 text-left font-medium" colSpan={2}>Year {label}</th>
                           </tr>
                           <tr className="bg-surface-muted border-b border-slate-200">
                             <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>

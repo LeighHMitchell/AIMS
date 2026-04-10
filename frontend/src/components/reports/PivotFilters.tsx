@@ -32,12 +32,12 @@ interface PivotFiltersProps {
 
 // Activity status options based on IATI standard
 const ACTIVITY_STATUS_OPTIONS: MultiSelectOption[] = [
-  { value: '1', label: 'Pipeline/Identification', code: '1' },
-  { value: '2', label: 'Implementation', code: '2' },
-  { value: '3', label: 'Finalisation', code: '3' },
-  { value: '4', label: 'Closed', code: '4' },
-  { value: '5', label: 'Cancelled', code: '5' },
-  { value: '6', label: 'Suspended', code: '6' },
+  { value: '1', label: 'Pipeline/Identification', code: '1', color: '#94a3b8' },
+  { value: '2', label: 'Implementation', code: '2', color: '#3b82f6' },
+  { value: '3', label: 'Finalisation', code: '3', color: '#22c55e' },
+  { value: '4', label: 'Closed', code: '4', color: '#10b981' },
+  { value: '5', label: 'Cancelled', code: '5', color: '#ef4444' },
+  { value: '6', label: 'Suspended', code: '6', color: '#f59e0b' },
 ]
 
 // Transaction type options based on IATI standard

@@ -859,7 +859,7 @@ function ActivitiesPageContent() {
                 <thead className="bg-muted border-b">
                   <tr>
                     <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[30%]"
+                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[30%]"
                       onClick={() => handleSort('title')}
                     >
                       <div className="flex items-center gap-1">
@@ -867,14 +867,14 @@ function ActivitiesPageContent() {
                         {getSortIcon('title')}
                       </div>
                     </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left w-[120px]">
+                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left w-[120px]">
                       Status
                     </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
+                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-center w-[120px]">
                       Data Source & Review
                     </th>
                     <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-gray-200"
+                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left min-w-[140px] cursor-pointer hover:bg-gray-200"
                       onClick={() => handleSort('createdBy')}
                     >
                       <div className="flex items-center gap-1">
@@ -883,7 +883,7 @@ function ActivitiesPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[120px]"
+                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[120px]"
                       onClick={() => handleSort('commitments')}
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -898,7 +898,7 @@ function ActivitiesPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
+                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
                       onClick={() => handleSort('disbursements')}
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -914,7 +914,7 @@ function ActivitiesPageContent() {
                     </th>
 
                     <th 
-                      className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
+                      className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right cursor-pointer hover:bg-gray-200 min-w-[100px]"
                       onClick={() => handleSort('updatedAt')}
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -922,10 +922,10 @@ function ActivitiesPageContent() {
                         {getSortIcon('updatedAt')}
                       </div>
                     </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-center w-[120px]">
+                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-center w-[120px]">
                       Default Aid Modality
                     </th>
-                    <th className="bg-muted text-sm font-semibold text-muted-foreground px-4 py-2 text-right w-[80px]">
+                    <th className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-right w-[80px]">
                       Actions
                     </th>
                   </tr>

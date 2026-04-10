@@ -9,7 +9,7 @@ import {
   MapPin,
   Pencil,
   Trash2,
-  Copy,
+
   MoreVertical,
   CheckCircle2,
   Building,
@@ -18,7 +18,7 @@ import {
   School,
   Car,
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 import {
   type LocationSchema,
 } from '@/lib/schemas/location';
@@ -103,7 +103,7 @@ interface LocationCardProps {
   location: LocationSchema;
   onEdit: (location: LocationSchema) => void;
   onDelete: (locationId: string) => void;
-  onDuplicate: (location: LocationSchema) => void;
+
   canEdit?: boolean;
   isDragging?: boolean;
   dragHandleProps?: any;
@@ -113,7 +113,7 @@ export default function LocationCard({
   location,
   onEdit,
   onDelete,
-  onDuplicate,
+
   canEdit = true,
   isDragging = false,
   dragHandleProps,
@@ -162,18 +162,6 @@ export default function LocationCard({
     return siteType.replace('_', ' ').charAt(0).toUpperCase() + siteType.replace('_', ' ').slice(1);
   };
 
-  // Handle duplicate
-  const handleDuplicate = () => {
-    const duplicatedLocation: LocationSchema = {
-      ...location,
-      id: undefined,
-      location_name: `${location.location_name} (Copy)`,
-      created_at: undefined,
-      updated_at: undefined,
-    };
-    onDuplicate(duplicatedLocation);
-    toast.success('Location duplicated');
-  };
 
   return (
     <Card
@@ -271,10 +259,6 @@ export default function LocationCard({
                     <DropdownMenuItem onClick={() => onEdit(location)}>
                       <Pencil className="h-4 w-4 mr-2 text-slate-500" />
                       Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDuplicate}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

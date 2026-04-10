@@ -285,6 +285,10 @@ export function RecipientGovBodiesChart({
           {viewMode === "pie" && renderPieChart()}
           {viewMode === "table" && renderTable()}
         </div>
+        {/* Explanatory footer */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-2 px-4">
+          This chart breaks down disbursements received by government bodies and recipient organizations. Toggle between bar, pie, and table views to see the distribution of funds across different recipient entities.
+        </p>
         {renderControls(false)}
       </div>
 

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
 import { formatCurrencyShort } from '@/lib/format'
@@ -60,7 +60,7 @@ export default function LocationProfilesPage() {
   const [totalActivities, setTotalActivities] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -140,18 +140,18 @@ export default function LocationProfilesPage() {
               </div>
               <div className="flex items-center border rounded-md flex-shrink-0">
                 <Button
-                  variant="ghost"
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setViewMode("table")}
-                  className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                  onClick={() => setViewMode("list")}
+                  className="rounded-r-none h-9"
                 >
-                  <TableIcon className="h-4 w-4" />
+                  <List className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant={viewMode === 'card' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode("card")}
-                  className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                  className="rounded-l-none h-9"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>
@@ -160,7 +160,7 @@ export default function LocationProfilesPage() {
           </div>
 
           {/* List/Table View */}
-          {viewMode === 'table' && (
+          {viewMode === 'list' && (
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">

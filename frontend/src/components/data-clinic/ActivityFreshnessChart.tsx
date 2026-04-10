@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { BarChart3, Table as TableIcon, Clock, ExternalLink, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { BarChart3, Table as TableIcon, Clock, ExternalLink, AlertCircle, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { differenceInDays, format, parseISO } from 'date-fns'
@@ -268,11 +268,11 @@ export function ActivityFreshnessChart() {
   // Sort icon component
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return <ChevronsUpDown className="h-4 w-4 ml-1 opacity-50" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="h-4 w-4 ml-1" />
-      : <ArrowDown className="h-4 w-4 ml-1" />;
+      ? <ChevronUp className="h-4 w-4 ml-1" />
+      : <ChevronDown className="h-4 w-4 ml-1" />;
   };
 
   // Custom tooltip for chart

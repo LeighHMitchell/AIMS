@@ -26,6 +26,10 @@ interface CurrencySelectorProps {
   id?: string;
   showCodeOnly?: boolean; // New prop to control display behavior
   forceDropUp?: boolean; // Force dropdown to open upward
+  /** Controlled open state */
+  open?: boolean;
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void;
 }
 
 const allOptions: Currency[] = currencyList;
@@ -39,8 +43,12 @@ export function CurrencySelector({
   id,
   showCodeOnly = false, // Default to false for backward compatibility
   forceDropUp = false, // Default to false for backward compatibility
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: CurrencySelectorProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [searchQuery, setSearchQuery] = useState("");
   const [dropDirection, setDropDirection] = useState<"top" | "bottom">(forceDropUp ? "top" : "bottom");
   const triggerRef = useRef<HTMLButtonElement>(null);

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether DFMIS — UI Audit Report</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-hover: #22262f;
+    --border: #2a2e3a;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --accent: #3b82f6;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+    --info: #6366f1;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  header .meta {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .summary-card .count {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .summary-card .label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.5rem;
+  }
+  .count.critical { color: var(--critical); }
+  .count.high { color: var(--high); }
+  .count.medium { color: var(--medium); }
+  .count.low { color: var(--low); }
+
+  .pages-visited {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .pages-visited h2 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .page-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .page-tag {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .page-tag.issue { border-color: var(--high); color: var(--high); }
+
+  h2.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .finding {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--border);
+  }
+  .finding.critical { border-left-color: var(--critical); }
+  .finding.high { border-left-color: var(--high); }
+  .finding.medium { border-left-color: var(--medium); }
+  .finding.low { border-left-color: var(--low); }
+  .finding.info { border-left-color: var(--info); }
+
+  .finding-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .severity-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .severity-badge.critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .severity-badge.high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .severity-badge.medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .severity-badge.low { background: rgba(34,197,94,0.15); color: var(--low); }
+  .severity-badge.info { background: rgba(99,102,241,0.15); color: var(--info); }
+
+  .finding-title {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .finding-location {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-bottom: 0.5rem;
+  }
+  .finding-description {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  .finding-description code {
+    background: var(--surface-hover);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: var(--accent);
+  }
+
+  .executive-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .executive-summary h2 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .executive-summary p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+    margin-top: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Aether DFMIS — UI Audit Report</h1>
+  <div class="meta">
+    Generated: 31 March 2026 &nbsp;|&nbsp; Version: 3.22.0 &nbsp;|&nbsp; Instance: Myanmar &nbsp;|&nbsp; Audited by: Claude Code (automated browser exploration)
+  </div>
+</header>
+
+<div class="executive-summary">
+  <h2>Executive Summary</h2>
+  <p>
+    Automated UI audit of the Aether DFMIS platform across 22+ pages. The platform is visually cohesive with a clean dark sidebar, consistent typography, and well-structured navigation. However, several data integrity issues, loading performance concerns, and UI inconsistencies were identified across modules. The most impactful findings relate to missing/unknown data in key financial views, exposed implementation details in the Data Clinic, and percentage calculations exceeding 100% in financial summaries.
+  </p>
+</div>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="count critical">4</div>
+    <div class="label">Critical</div>
+  </div>
+  <div class="summary-card">
+    <div class="count high">5</div>
+    <div class="label">High</div>
+  </div>
+  <div class="summary-card">
+    <div class="count medium">7</div>
+    <div class="label">Medium</div>
+  </div>
+  <div class="summary-card">
+    <div class="count low">6</div>
+    <div class="label">Low</div>
+  </div>
+</div>
+
+<div class="pages-visited">
+  <h2>Pages Visited (22)</h2>
+  <div class="page-tags">
+    <span class="page-tag">Home</span>
+    <span class="page-tag">Login</span>
+    <span class="page-tag issue">Dashboard</span>
+    <span class="page-tag issue">Activities List</span>
+    <span class="page-tag issue">Activity Detail</span>
+    <span class="page-tag">Analytics Dashboard</span>
+    <span class="page-tag">Atlas / Map</span>
+    <span class="page-tag">Search</span>
+    <span class="page-tag issue">Portfolios</span>
+    <span class="page-tag">Reports</span>
+    <span class="page-tag issue">Transactions</span>
+    <span class="page-tag">Planned Disbursements</span>
+    <span class="page-tag">Budgets</span>
+    <span class="page-tag issue">Organizations</span>
+    <span class="page-tag">Rolodex</span>
+    <span class="page-tag">SDGs</span>
+    <span class="page-tag">SDG Detail (SDG 1)</span>
+    <span class="page-tag">Sectors</span>
+    <span class="page-tag">Location Profiles</span>
+    <span class="page-tag issue">Policy Markers</span>
+    <span class="page-tag">Working Groups</span>
+    <span class="page-tag">Transparency Index</span>
+    <span class="page-tag">Aid Effectiveness</span>
+    <span class="page-tag">Calendar</span>
+    <span class="page-tag issue">Data Clinic</span>
+    <span class="page-tag issue">Document Library</span>
+    <span class="page-tag">FAQ</span>
+    <span class="page-tag issue">Pooled Funds</span>
+    <span class="page-tag">Project Bank</span>
+    <span class="page-tag issue">Land Bank</span>
+  </div>
+</div>
+
+<!-- ============ CRITICAL ============ -->
+<h2 class="section-title">Critical Issues</h2>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="severity-badge critical">Critical</span>
+    <span class="finding-title">Data Clinic exposes raw SQL commands to users</span>
+  </div>
+  <div class="finding-location">/data-clinic</div>
+  <div class="finding-description">
+    The Data Clinic page shows a "Database Migration Required" warning with a raw <code>psql</code> command visible to all users: <code>psql -h your-host -U your-user -d your-db -f frontend/sql/add_data_clinic_fields.sql</code>. This exposes internal implementation details and could confuse non-technical users. The migration prompt should be shown only to administrators and should not display raw shell commands.
+  </div>
+</div>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="severity-badge critical">Critical</span>
+    <span class="finding-title">Transactions page: all Provider and Receiver show "Unknown"</span>
+  </div>
+  <div class="finding-location">/transactions</div>
+  <div class="finding-description">
+    Every transaction in the Transactions list shows <code>Unknown → Unknown</code> for Provider and Receiver columns. This is in contrast to the Planned Disbursements page which correctly shows organization names (e.g. "EU → UNDP", "DFAT → MOPFI"). This suggests transaction provider/receiver data is not being resolved or joined properly.
+  </div>
+</div>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="severity-badge critical">Critical</span>
+    <span class="finding-title">Pooled Fund shows 4193% utilisation and negative balance</span>
+  </div>
+  <div class="finding-location">/funds</div>
+  <div class="finding-description">
+    The "Women's Economic Empowerment through Microfinance and Skills Training" fund shows <code>4193% utilised</code> with a balance of <code>$-13.5M</code> in red. The progress bar extends far beyond its container. This indicates either a data entry error or a calculation bug where disbursements vastly exceed contributions. The UI should cap the progress bar at 100% and flag anomalies rather than rendering them as normal.
+  </div>
+</div>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="severity-badge critical">Critical</span>
+    <span class="finding-title">Activity detail shows 250% of committed funds spent</span>
+  </div>
+  <div class="finding-location">/activities/[id]</div>
+  <div class="finding-description">
+    An activity detail page shows "Percentage of Committed Funds Spent: 250%" with disbursements ($8M) and expenditures ($7M) totalling $15M against $6M committed. While this may be valid data, the UI presents it without any warning or visual indicator that this is anomalous. The progress bar overflows. Consider capping the visual at 100% and adding an alert badge.
+  </div>
+</div>
+
+<!-- ============ HIGH ============ -->
+<h2 class="section-title">High Issues</h2>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="severity-badge high">High</span>
+    <span class="finding-title">Portfolios page appears stuck on skeleton loading</span>
+  </div>
+  <div class="finding-location">/partners</div>
+  <div class="finding-description">
+    The Portfolios page never fully loaded during testing — it remained stuck on skeleton placeholders with no page heading, no data, and no error message. The accessibility tree showed an element marked as <code>busy</code> with an aria-label "Loading partner funding summary". This page may have a failing API call or an infinite loading state with no timeout/error handling.
+  </div>
+</div>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="severity-badge high">High</span>
+    <span class="finding-title">All activities show "Reported by: Unknown"</span>
+  </div>
+  <div class="finding-location">/activities</div>
+  <div class="finding-description">
+    In the Activity List, every activity displays "Unknown" in the "Reported by" column. Since the Planned Disbursements and Budgets pages correctly show reporting organizations, this appears to be a data join issue specific to the Activities list query rather than missing data.
+  </div>
+</div>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="severity-badge high">High</span>
+    <span class="finding-title">All activities show $0 for Total Budgeted and Total Planned Disbursements</span>
+  </div>
+  <div class="finding-location">/activities</div>
+  <div class="finding-description">
+    Every activity in the Activity List shows "USD 0" for both "Total Budgeted" and "Total Planned Disbursements" columns. However, the Budgets page shows real budget data (e.g. EUR 4,700,000, AUD 8,500,000). This suggests the Activity List is not aggregating or joining budget data correctly.
+  </div>
+</div>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="severity-badge high">High</span>
+    <span class="finding-title">Transactions page: all Finance Type columns show "—"</span>
+  </div>
+  <div class="finding-location">/transactions</div>
+  <div class="finding-description">
+    Every transaction displays an em dash "—" in the Finance Type column, suggesting this field is never populated. Since finance type is an important IATI classification, this may indicate missing data or a display bug.
+  </div>
+</div>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="severity-badge high">High</span>
+    <span class="finding-title">Slow page load times — navigation timeouts on multiple pages</span>
+  </div>
+  <div class="finding-location">Multiple pages</div>
+  <div class="finding-description">
+    Several pages exceeded 20-second navigation timeouts: Dashboard, Activities, Transactions, Analytics Dashboard, and the Activity Detail page. During loading, a full-page spinner with "Loading..." text is shown with no sidebar or navigation — the user loses all context and cannot navigate away. Consider showing the sidebar/shell immediately and loading content progressively.
+  </div>
+</div>
+
+<!-- ============ MEDIUM ============ -->
+<h2 class="section-title">Medium Issues</h2>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">Organizations page: all cards show 0 activities and $0 budgeted</span>
+  </div>
+  <div class="finding-location">/organizations</div>
+  <div class="finding-description">
+    Every organization card displays "Activities: 0" and "Total Budgeted: $0", even for organizations that clearly have associated activities (e.g. World Bank, USAID, EU). This is likely a data aggregation issue in the organizations query.
+  </div>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">Policy Markers: IATI badge count contradicts activity count</span>
+  </div>
+  <div class="finding-location">/policy-markers</div>
+  <div class="finding-description">
+    Environmental policy marker cards show IATI badge numbers (5, 8, 7, 6) that differ from the activity counts below them (all showing "0 activities"). The IATI badge appears to show the IATI code number, not an activity count — but its position and styling make it look like a count badge, creating confusion.
+  </div>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">Library sidebar count (18) doesn't match page count (7)</span>
+  </div>
+  <div class="finding-location">/library</div>
+  <div class="finding-description">
+    The sidebar navigation shows "Library 18" but the Document Library page displays "7 documents found". This may be due to the "All Documents" tab filtering differently from the total, or a caching issue with the sidebar count.
+  </div>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">SDG detail page shows 0 organizations / 0 donors despite having activities</span>
+  </div>
+  <div class="finding-location">/sdgs/1</div>
+  <div class="finding-description">
+    SDG 1 (No Poverty) shows 6 active activities with $322.1M committed, but "Organizations: 0 donors", "Top Donors: No donor data", and "Geographic Spread: No geo data". The organization resolution appears to not be working for SDG profile pages.
+  </div>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">Transparency Index shows all zeros</span>
+  </div>
+  <div class="finding-location">/transparency-index</div>
+  <div class="finding-description">
+    The Transparency Index page shows "Average Score: 0.0 / 100", "Projects Assessed: 0", "In Good Standing: 0.0%". The score distribution chart is empty. This feature appears to not be computing scores, possibly dependent on the Data Clinic migration that hasn't been run.
+  </div>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">Land Bank: parcels missing names, truncated pie chart labels</span>
+  </div>
+  <div class="finding-location">/land-bank</div>
+  <div class="finding-description">
+    The "Recently Added Parcels" table has empty Name column values. The "By Classification" pie chart truncates labels — "ommercial 19%" (missing "C" in "Commercial") and "Special Economic Zo..." is cut off. Labels should be positioned to avoid overlap or use a legend.
+  </div>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="severity-badge medium">Medium</span>
+    <span class="finding-title">Sectors page: some sectors show blank funding column</span>
+  </div>
+  <div class="finding-location">/sectors</div>
+  <div class="finding-description">
+    "Communications" (code 220) shows 1 activity but no funding amount — the cell is completely blank rather than showing "$0" or "—". This inconsistency makes it unclear whether data is missing or actually zero.
+  </div>
+</div>
+
+<!-- ============ LOW ============ -->
+<h2 class="section-title">Low Issues</h2>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="severity-badge low">Low</span>
+    <span class="finding-title">Activity detail: blurred/redacted toolbar buttons</span>
+  </div>
+  <div class="finding-location">/activities/[id]</div>
+  <div class="finding-description">
+    The activity detail page toolbar contains what appear to be two blurred or redacted buttons near the eye/views icon. These are likely conditionally hidden features, but the blur effect makes them look like a rendering glitch rather than intentionally hidden controls.
+  </div>
+</div>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="severity-badge low">Low</span>
+    <span class="finding-title">Rolodex: email address used as contact name</span>
+  </div>
+  <div class="finding-location">/rolodex</div>
+  <div class="finding-description">
+    The third contact card shows <code>aidtransparency@usaid.gov</code> as the person's name instead of an actual name. This appears to be a data quality issue where the email was entered as the contact name during import.
+  </div>
+</div>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="severity-badge low">Low</span>
+    <span class="finding-title">Test/demo organizations mixed with real data</span>
+  </div>
+  <div class="finding-location">/organizations</div>
+  <div class="finding-description">
+    Organizations list includes obvious test entries: "Agency A (NOA-A)" with ID <code>AA-AAA-123456789</code> and "Agency B (NOA-B)" with ID <code>BB-BBB-123456789</code>. These should be removed or flagged as test data in a production-like environment.
+  </div>
+</div>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="severity-badge low">Low</span>
+    <span class="finding-title">Activity detail: "Actual End: —" uses em dash for empty value</span>
+  </div>
+  <div class="finding-location">/activities/[id]</div>
+  <div class="finding-description">
+    The activity detail page shows "Actual End: —" using an em dash for null dates. Other pages use different empty state patterns (blank, "N/A", or "Not set"). Consider standardizing the empty state representation across the application.
+  </div>
+</div>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="severity-badge low">Low</span>
+    <span class="finding-title">Dashboard hero cards show inconsistent "by you" vs "your organisation" labels</span>
+  </div>
+  <div class="finding-location">/dashboard</div>
+  <div class="finding-description">
+    Dashboard hero stat cards mix labeling: "Financial Transactions" shows "64 Your Organisation / 0 By you" while "Budgets" shows "14 Your Organisation / 0 By you". The terms "By you" and "Your Organisation" are used but the relationship between them isn't clearly explained. For a user with 0 personal contributions across all categories, consider whether the "By you" column adds value.
+  </div>
+</div>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="severity-badge low">Low</span>
+    <span class="finding-title">Policy Markers: some cards missing description text</span>
+  </div>
+  <div class="finding-location">/policy-markers</div>
+  <div class="finding-description">
+    In the Environmental category, the first card ("Aid Targeting the Objectives of the Convention on Biological Diversity") has no description below it, while neighboring cards do. This creates uneven card heights and visual inconsistency in the grid.
+  </div>
+</div>
+
+<!-- ============ POSITIVE ============ -->
+<h2 class="section-title">What Works Well</h2>
+
+<div class="finding info">
+  <div class="finding-header">
+    <span class="severity-badge info">Positive</span>
+    <span class="finding-title">Consistent and professional visual design</span>
+  </div>
+  <div class="finding-description">
+    The application has a cohesive design language: dark sidebar with clear section groupings, consistent typography, well-spaced cards and tables, and a professional color palette. Page headers follow a uniform pattern with icon + title + subtitle.
+  </div>
+</div>
+
+<div class="finding info">
+  <div class="finding-header">
+    <span class="severity-badge info">Positive</span>
+    <span class="finding-title">Rich feature set across modules</span>
+  </div>
+  <div class="finding-description">
+    The platform covers an impressive breadth: DFMIS with dashboards, analytics, and activity management; Project Bank with multi-phase review boards; Land Bank with geospatial data; Document Library; Calendar; Working Groups; FAQ system; and multiple profile pages (SDGs, Sectors, Locations, Policy Markers). The navigation is well-organized into logical sections.
+  </div>
+</div>
+
+<div class="finding info">
+  <div class="finding-header">
+    <span class="severity-badge info">Positive</span>
+    <span class="finding-title">Search functionality works well</span>
+  </div>
+  <div class="finding-description">
+    The global Search page returns results quickly with highlighted matches, grouping results by type (Activities, Organisations). The search box UX is clean and responsive.
+  </div>
+</div>
+
+<div class="finding info">
+  <div class="finding-header">
+    <span class="severity-badge info">Positive</span>
+    <span class="finding-title">Atlas map is interactive and well-integrated</span>
+  </div>
+  <div class="finding-description">
+    The Atlas/Map view uses MapLibre GL with proper controls (3D toggle, zoom, layer selection, style switching), filters for status/organization/sector, and correctly plots activity locations across Myanmar.
+  </div>
+</div>
+
+<div class="finding info">
+  <div class="finding-header">
+    <span class="severity-badge info">Positive</span>
+    <span class="finding-title">Financial pages (Budgets, Planned Disbursements) show proper data</span>
+  </div>
+  <div class="finding-description">
+    Unlike Activities and Transactions, the Budgets and Planned Disbursements pages correctly display financial data with proper currency formatting, organization flags/logos, and complete Provider → Receiver chains. These serve as a model for fixing the broken pages.
+  </div>
+</div>
+
+<footer>
+  <p>Aether DFMIS UI Audit Report &mdash; Generated by Claude Code automated browser exploration &mdash; 31 March 2026</p>
+  <p style="margin-top: 0.5rem;">22 findings across 22+ pages &bull; 4 Critical &bull; 5 High &bull; 7 Medium &bull; 6 Low</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { DollarSign, Download, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
+import { DollarSign, Download, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -402,7 +402,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
       <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-surface-muted border-b border-border/70">
+            <TableHeader>
               <TableRow>
                 <TableHead
                   className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
@@ -410,11 +410,11 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   onClick={() => handleSort('activity')}
                 >
                   <div className="flex items-center gap-1">
-                    Activity
+                    Activity Title
                     {sortColumn === 'activity' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -426,9 +426,9 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   <div className="flex items-center gap-1">
                     Period
                     {sortColumn === 'period_start' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -440,9 +440,9 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   <div className="flex items-center gap-1">
                     Status
                     {sortColumn === 'status' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -454,9 +454,9 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   <div className="flex items-center gap-1">
                     Type
                     {sortColumn === 'type' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -466,11 +466,11 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   onClick={() => handleSort('value')}
                 >
                   <div className="flex items-center justify-end gap-1">
-                    Amount
+                    Original Value
                     {sortColumn === 'value' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -482,9 +482,9 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   <div className="flex items-center gap-1">
                     Value Date
                     {sortColumn === 'value_date' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -496,9 +496,9 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   <div className="flex items-center justify-end gap-1">
                     USD Value
                     {sortColumn === 'usd_value' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
                     )}
                   </div>
                 </TableHead>
@@ -561,7 +561,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
                           <span className="font-medium">
-                            <span className="text-muted-foreground">{budget.currency}</span>{' '}
+                            <span className="text-muted-foreground text-xs">{budget.currency}</span>{' '}
                             {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                         </TableCell>
@@ -612,7 +612,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
                       <span className="font-medium">
-                        <span className="text-muted-foreground">{budget.currency}</span>{' '}
+                        <span className="text-muted-foreground text-xs">{budget.currency}</span>{' '}
                         {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </span>
                     </TableCell>

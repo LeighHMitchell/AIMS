@@ -43,9 +43,9 @@ import {
   Table as TableIcon,
   Maximize2,
   Download,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LoadingText } from "@/components/ui/loading-text";
@@ -163,10 +163,10 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
   });
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />;
+    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 ml-1 opacity-50" />;
     return sortDirection === "asc"
-      ? <ArrowUp className="h-3 w-3 ml-1" />
-      : <ArrowDown className="h-3 w-3 ml-1" />;
+      ? <ChevronUp className="h-3 w-3 ml-1" />
+      : <ChevronDown className="h-3 w-3 ml-1" />;
   };
 
   const handleExport = () => {
@@ -537,6 +537,10 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col min-h-0">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart shows how development funding is distributed across subnational states and regions. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and switch between bar and pie chart views.
+          </p>
         </CardContent>
       </Card>
 

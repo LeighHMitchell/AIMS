@@ -304,10 +304,10 @@ export function Top10GovernmentValidatedChart({
         </div>
       )}
 
-      <p className="text-sm text-slate-600 leading-relaxed">
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
         This chart ranks development partners by the total value of projects that have been government-validated.
-        Use this to identify which partners have the strongest track record of completing the validation process
-        and to prioritize engagement with partners committed to transparency and government oversight.
+        Use this to identify which partners have the strongest track record of completing the validation process and to prioritize engagement with partners committed to transparency and government oversight.
       </p>
     </div>
   )

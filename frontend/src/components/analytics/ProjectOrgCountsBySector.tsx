@@ -31,7 +31,7 @@ import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
 import { LoadingText } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
@@ -669,13 +669,20 @@ export function ProjectOrgCountsBySector({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      {customYears.map(cy => (
+                      {sortCustomYearsCalendarFirst(customYears).map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
                           className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
-                          {cy.name}
+                          <span className="flex items-center gap-2">
+                            {cy.shortName && (
+                              <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                {cy.shortName.trim()}
+                              </span>
+                            )}
+                            {cy.name}
+                          </span>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -925,9 +932,9 @@ export function ProjectOrgCountsBySector({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted">
-                    <TableHead className="font-semibold text-foreground sticky left-0 bg-muted">Sector</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Projects</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Orgs</TableHead>
+                    <TableHead className="font-medium text-foreground sticky left-0 bg-muted">Sector</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Projects</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Orgs</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -976,13 +983,11 @@ export function ProjectOrgCountsBySector({
           )}
         </div>
 
-        {/* Explanatory Text */}
-        <p className="text-xs text-muted-foreground mt-4">
-          <strong>Projects</strong> shows the count of activities that have been tagged with each {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'}.
-          <strong> Organisations</strong> shows the count of unique organisations involved in activities in that {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'} (including reporting organisations and contributors).
-          Since activities can be tagged with multiple sectors, the same project or organisation may appear across different {groupByLevel === '1' ? 'categories' : groupByLevel === '3' ? 'sectors' : 'sub-sectors'}.
-          The table view footer displays the true unique totals across the entire portfolio.
-          Use the toggles above to switch between Sector Category (1-digit DAC code), Sector (3-digit), or Sub-sector (5-digit) groupings.
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This chart shows the number of projects and unique organisations involved in each {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'}.
+          Since activities can be tagged with multiple sectors, the same project or organisation may appear across different groupings.
+          Use the toggle to switch between Sector Category, Sector, or Sub-sector levels, and check the table view footer for true unique totals across the entire portfolio.
         </p>
       </CardContent>
     </Card>

@@ -18,7 +18,7 @@ import {
   Link2,
   FileText,
   Code,
-  ArrowUpDown,
+  ChevronsUpDown,
   Info,
   Settings,
   ExternalLink,
@@ -289,7 +289,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  <ArrowUpDown className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <ChevronsUpDown className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                   <p>No link data available</p>
                   <p className="text-sm mt-1">Check status to compare fields</p>
                 </div>

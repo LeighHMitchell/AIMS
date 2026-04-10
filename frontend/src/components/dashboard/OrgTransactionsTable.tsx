@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronUpRight, ArrowDownLeft, DollarSign, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { TableRowActionMenu } from './TableRowActionMenu';
 import { apiFetch } from '@/lib/api-fetch';
@@ -275,7 +275,7 @@ export function OrgTransactionsTable({
                     <TableCell className="min-w-[280px]">
                       <div className="flex items-start gap-2">
                         {transaction.isProvider ? (
-                          <ArrowUpRight className="h-4 w-4 text-slate-600 mt-0.5 flex-shrink-0" title="Outgoing" />
+                          <ChevronUpRight className="h-4 w-4 text-slate-600 mt-0.5 flex-shrink-0" title="Outgoing" />
                         ) : (
                           <ArrowDownLeft className="h-4 w-4 text-slate-600 mt-0.5 flex-shrink-0" title="Incoming" />
                         )}

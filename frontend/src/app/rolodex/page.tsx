@@ -31,9 +31,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
   Mail,
   Phone,
   Building2,
@@ -183,11 +183,11 @@ export default function RolodexPage() {
   const getSortIcon = (column: string) => {
     const currentSortBy = filters.sortBy || 'name';
     if (currentSortBy !== column) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return <ChevronsUpDown className="h-4 w-4 ml-1 opacity-50" />;
     }
     return filters.sortOrder === 'desc' 
-      ? <ArrowDown className="h-4 w-4 ml-1" />
-      : <ArrowUp className="h-4 w-4 ml-1" />;
+      ? <ChevronDown className="h-4 w-4 ml-1" />
+      : <ChevronUp className="h-4 w-4 ml-1" />;
   };
 
   const renderPaginationControls = () => (

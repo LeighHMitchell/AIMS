@@ -12,7 +12,8 @@ import { supabase } from '@/lib/supabase';
 
 // Tab group definitions - when visiting any tab in a group, load data for all tabs in that group
 export const TAB_GROUPS = {
-  'activity-overview': ['general', 'sectors', 'humanitarian', 'country-region', 'locations'],
+  'activity-overview': ['general', 'sectors', 'humanitarian'],
+  'locations': ['country-region', 'locations', 'subnational-allocation'],
   'stakeholders': ['organisations', 'contacts', 'focal_points'],
   'funding-delivery': ['finances', 'planned-disbursements', 'budgets'],
   'strategic-alignment': ['sdg', 'tags', 'working-groups', 'policy-markers'],

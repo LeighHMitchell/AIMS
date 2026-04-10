@@ -394,17 +394,6 @@ export default function TransactionsPage() {
     toast.success("Transactions exported successfully");
   };
 
-  const handleRowClick = (transactionId: string) => {
-    // Find the transaction to get its activity_id
-    const transaction = transactions.data.find(t => (t.uuid || t.id) === transactionId);
-    if (transaction && transaction.activity_id) {
-      // Navigate to Activity Editor's finances section
-      router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
-    } else {
-      // Fallback to transaction detail page if no activity_id
-      router.push(`/transactions/${transactionId}`);
-    }
-  };
 
   const handleEdit = (transaction: any) => {
     if (transaction && transaction.activity_id) {
@@ -743,19 +732,19 @@ export default function TransactionsPage() {
               <Label className="text-xs text-muted-foreground">Type</Label>
               <MultiSelectFilter
                 options={[
-                  { value: "1", label: "Incoming Funds", code: "1" },
-                  { value: "2", label: "Outgoing Commitment", code: "2" },
-                  { value: "3", label: "Disbursement", code: "3" },
-                  { value: "4", label: "Expenditure", code: "4" },
-                  { value: "5", label: "Interest Payment", code: "5" },
-                  { value: "6", label: "Loan Repayment", code: "6" },
-                  { value: "7", label: "Reimbursement", code: "7" },
-                  { value: "8", label: "Purchase of Equity", code: "8" },
-                  { value: "9", label: "Sale of Equity", code: "9" },
-                  { value: "10", label: "Credit Guarantee", code: "10" },
-                  { value: "11", label: "Incoming Commitment", code: "11" },
-                  { value: "12", label: "Outgoing Pledge", code: "12" },
-                  { value: "13", label: "Incoming Pledge", code: "13" },
+                  { value: "1", label: "Incoming Funds", code: "1", color: "#4c5568" },
+                  { value: "2", label: "Outgoing Commitment", code: "2", color: "#8b95a5" },
+                  { value: "3", label: "Disbursement", code: "3", color: "#dc2625" },
+                  { value: "4", label: "Expenditure", code: "4", color: "#cfd0d5" },
+                  { value: "5", label: "Interest Payment", code: "5", color: "#4c5568" },
+                  { value: "6", label: "Loan Repayment", code: "6", color: "#8b95a5" },
+                  { value: "7", label: "Reimbursement", code: "7", color: "#dc2625" },
+                  { value: "8", label: "Purchase of Equity", code: "8", color: "#4c5568" },
+                  { value: "9", label: "Sale of Equity", code: "9", color: "#8b95a5" },
+                  { value: "10", label: "Credit Guarantee", code: "10", color: "#cfd0d5" },
+                  { value: "11", label: "Incoming Commitment", code: "11", color: "#4c5568" },
+                  { value: "12", label: "Outgoing Pledge", code: "12", color: "#8b95a5" },
+                  { value: "13", label: "Incoming Pledge", code: "13", color: "#dc2625" },
                 ]}
                 value={filters.transactionTypes}
                 onChange={(value) => setFilters({...filters, transactionTypes: value})}
@@ -771,11 +760,11 @@ export default function TransactionsPage() {
               <Label className="text-xs text-muted-foreground">Status</Label>
               <MultiSelectFilter
                 options={[
-                  { value: "draft", label: "Draft" },
-                  { value: "submitted", label: "Submitted" },
-                  { value: "validated", label: "Validated" },
-                  { value: "rejected", label: "Rejected" },
-                  { value: "actual", label: "Actual" },
+                  { value: "draft", label: "Draft", color: "#94a3b8" },
+                  { value: "submitted", label: "Submitted", color: "#3b82f6" },
+                  { value: "validated", label: "Validated", color: "#22c55e" },
+                  { value: "rejected", label: "Rejected", color: "#ef4444" },
+                  { value: "actual", label: "Actual", color: "#10b981" },
                 ]}
                 value={filters.statuses}
                 onChange={(value) => setFilters({...filters, statuses: value})}
@@ -912,7 +901,6 @@ export default function TransactionsPage() {
                 sortField={sortField}
                 sortOrder={sortOrder}
                 onSort={handleSort}
-                onRowClick={handleRowClick}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onConvertCurrency={handleConvertCurrency}

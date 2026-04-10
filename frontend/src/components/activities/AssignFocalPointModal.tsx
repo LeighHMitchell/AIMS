@@ -18,6 +18,8 @@ export interface UserOption {
   avatarUrl?: string | null;
   organizationId?: string;
   organization?: string;
+  jobTitle?: string;
+  department?: string;
   value: string;
   label: string;
 }
@@ -171,6 +173,11 @@ export function AssignFocalPointModal({
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{selectedUser.name}</p>
+                  {(selectedUser.jobTitle || selectedUser.department) && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[selectedUser.jobTitle, selectedUser.department].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
                   {selectedUser.organization && (
                     <p className="text-xs text-muted-foreground truncate">{selectedUser.organization}</p>
                   )}
@@ -229,11 +236,13 @@ export function AssignFocalPointModal({
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900 truncate">{user.name}</p>
-                          {user.email && (
-                            <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                          {(user.jobTitle || user.department) && (
+                            <p className="text-xs text-gray-500 truncate">
+                              {[user.jobTitle, user.department].filter(Boolean).join(' · ')}
+                            </p>
                           )}
                           {user.organization && (
-                            <p className="text-sm text-gray-600 truncate">{user.organization}</p>
+                            <p className="text-xs text-gray-500 truncate">{user.organization}</p>
                           )}
                         </div>
                       </div>
@@ -251,31 +260,31 @@ export function AssignFocalPointModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
+        <DialogFooter className="flex-row gap-2">
           <Button
-            className="w-full"
+            className="flex-1 py-3 px-4 h-auto"
             onClick={() => onAssign('government_focal_point')}
             disabled={!selectedUser || actionLoading !== null}
           >
             {actionLoading === 'assign-government_focal_point' ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-8 w-8 mr-2 animate-spin" />
             ) : (
-              <Building2 className="h-4 w-4 mr-2" />
+              <Building2 className="h-8 w-8 mr-2" />
             )}
-            Assign as Government Focal Point
+            <span className="whitespace-normal text-center leading-tight">Assign as Government Focal Point</span>
           </Button>
           <Button
-            className="w-full"
+            className="flex-1 py-3 px-4 h-auto"
             variant="outline"
             onClick={() => onAssign('development_partner_focal_point')}
             disabled={!selectedUser || actionLoading !== null}
           >
             {actionLoading === 'assign-development_partner_focal_point' ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-8 w-8 mr-2 animate-spin" />
             ) : (
-              <Users className="h-4 w-4 mr-2" />
+              <Users className="h-8 w-8 mr-2" />
             )}
-            Assign as Development Partner Focal Point
+            <span className="whitespace-normal text-center leading-tight">Assign as Development Partner Focal Point</span>
           </Button>
         </DialogFooter>
       </DialogContent>

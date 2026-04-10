@@ -492,6 +492,11 @@ export function PlannedVsActualDisbursements({
             </div>
           </div>
         )}
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This chart compares planned disbursement schedules against actual disbursement transactions across all activities. Use the time period buttons to zoom into recent months or view the full history, and toggle between monthly and yearly grouping. Significant gaps between planned and actual lines may indicate forecasting issues or implementation delays.
+        </p>
       </CardContent>
     </Card>
   )

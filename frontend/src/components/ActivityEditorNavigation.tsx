@@ -66,8 +66,14 @@ export default function ActivityEditorNavigation({
         { id: "general", label: "General" },
         { id: "sectors", label: "Sectors" },
         { id: "humanitarian", label: "Humanitarian" },
-        { id: "country-region", label: "Country/Region" },
-        { id: "locations", label: "Locations" },
+      ]
+    },
+    {
+      title: "Locations",
+      sections: [
+        { id: "country-region", label: "Countries & Regions" },
+        { id: "locations", label: "Activity Sites" },
+        { id: "subnational-allocation", label: "Sub-national Allocation" },
       ]
     },
     {
@@ -163,7 +169,8 @@ export default function ActivityEditorNavigation({
               <div className={cn(
                 "space-y-0.5 ml-3",
                 // Add subtle visual indicator for linked scrollable groups
-                (group.title === "Activity Overview" || group.title === "Stakeholders" ||
+                (group.title === "Activity Overview" || group.title === "Locations" ||
+                 group.title === "Stakeholders" ||
                  group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
                  group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-gray-100 pl-1"
               )}>

@@ -672,13 +672,13 @@ export default function ForwardSpendingSurveyTab({
             ) : (
               <div className="rounded-md border">
                 <Table>
-                  <TableHeader className="bg-surface-muted border-b border-border/70">
+                  <TableHeader>
                     <TableRow>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-1/5">Year</TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-1/5">Amount</TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-1/5">Value Date</TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-1/5">USD Value</TableHead>
-                      {!isReadOnly && <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-1/5">Actions</TableHead>}
+                      <TableHead className="py-3 px-4 w-1/5">Year</TableHead>
+                      <TableHead className="py-3 px-4 text-right w-1/5">Amount</TableHead>
+                      <TableHead className="py-3 px-4 w-1/5">Value Date</TableHead>
+                      <TableHead className="py-3 px-4 text-right w-1/5">USD Value</TableHead>
+                      {!isReadOnly && <TableHead className="py-3 px-4 text-center w-1/5">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>

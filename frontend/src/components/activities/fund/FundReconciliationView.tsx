@@ -130,11 +130,11 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className="font-semibold">Child Activity</TableHead>
-              <TableHead className="text-right font-semibold">Fund Side</TableHead>
-              <TableHead className="text-right font-semibold">Child Side</TableHead>
-              <TableHead className="text-right font-semibold">Discrepancy</TableHead>
-              <TableHead className="text-center font-semibold">Status</TableHead>
+              <TableHead className="font-medium">Child Activity</TableHead>
+              <TableHead className="text-right font-medium">Fund Side</TableHead>
+              <TableHead className="text-right font-medium">Child Side</TableHead>
+              <TableHead className="text-right font-medium">Discrepancy</TableHead>
+              <TableHead className="text-center font-medium">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

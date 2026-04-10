@@ -27,8 +27,8 @@ import {
   Info,
   AlertCircle,
   CheckCircle2,
-  ArrowUp,
-  ArrowDown
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
@@ -743,7 +743,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         <div className="flex items-center gap-2">
                           Policy Marker
                           {sortField === 'marker' && (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           )}
                         </div>
                       </th>
@@ -754,7 +754,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         <div className="flex items-center gap-2">
                           Significance
                           {sortField === 'significance' && (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           )}
                         </div>
                       </th>
@@ -765,7 +765,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         <div className="flex items-center justify-end gap-2">
                           Number of Activities
                           {sortField === 'activity_count' && (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           )}
                         </div>
                       </th>
@@ -776,7 +776,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         <div className="flex items-center justify-end gap-2">
                           Total Activity Budget (USD)
                           {sortField === 'budget' && (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           )}
                         </div>
                       </th>
@@ -865,15 +865,15 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground sticky left-0 bg-card z-10">
+                      <th className="text-left py-3 px-4 font-medium text-foreground sticky left-0 bg-card z-10">
                         Policy Marker
                       </th>
                       {timeSeriesYears.map(year => (
-                        <th key={year} className="text-right py-3 px-4 font-semibold text-foreground">
+                        <th key={year} className="text-right py-3 px-4 font-medium text-foreground">
                           Spend {year}
                         </th>
                       ))}
-                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-muted">
+                      <th className="text-right py-3 px-4 font-medium text-foreground bg-muted">
                         Total
                       </th>
                     </tr>
@@ -919,6 +919,11 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           </CardContent>
         </Card>
       )}
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart analyses OECD/DAC policy markers such as gender equality, environment, and climate adaptation across your activity portfolio. Activities are grouped by marker and significance level (significant or principal objective). Use the filters to focus on specific markers, toggle the value chart to see associated budgets, and switch to the time series view to track trends over time.
+      </p>
     </div>
   )
 }

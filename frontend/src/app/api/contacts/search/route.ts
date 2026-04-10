@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[Contacts Search API] Searching for:', query || '(all)', 'limit:', limit);
 
-    // ---- Contacts table ----
+    // ---- Build both queries ----
     let contactsQuery = supabase
       .from('contacts')
       .select(`
@@ -50,20 +50,6 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .order('last_name', { ascending: true });
 
-    if (query.length >= 2) {
-      const escapedQuery = escapeIlikeWildcards(query);
-      contactsQuery = contactsQuery.or(
-        `first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%,organisation.ilike.%${escapedQuery}%`
-      );
-    }
-
-    const { data: contacts, error: contactsError } = await contactsQuery;
-
-    if (contactsError) {
-      console.error('[Contacts Search API] Contacts error:', contactsError);
-    }
-
-    // ---- Users table ----
     let usersQuery = supabase
       .from('users')
       .select(`
@@ -88,12 +74,26 @@ export async function GET(request: NextRequest) {
 
     if (query.length >= 2) {
       const escapedQuery = escapeIlikeWildcards(query);
+      contactsQuery = contactsQuery.or(
+        `first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%,organisation.ilike.%${escapedQuery}%`
+      );
       usersQuery = usersQuery.or(
         `first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%`
       );
     }
 
-    const { data: users, error: usersError } = await usersQuery;
+    // ---- Run both queries in parallel ----
+    const [contactsResult, usersResult] = await Promise.all([
+      contactsQuery,
+      usersQuery,
+    ]);
+
+    const { data: contacts, error: contactsError } = contactsResult;
+    const { data: users, error: usersError } = usersResult;
+
+    if (contactsError) {
+      console.error('[Contacts Search API] Contacts error:', contactsError);
+    }
 
     if (usersError) {
       console.error('[Contacts Search API] Users error:', usersError);

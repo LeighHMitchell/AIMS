@@ -20,14 +20,20 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         title_narrative,
+        description_narrative,
         activity_status,
         planned_start_date,
         planned_end_date,
         updated_at,
         reporting_org_id,
         iati_identifier,
+        recipient_countries,
+        recipient_regions,
         activity_budgets(usd_value),
-        activity_sectors(id)
+        activity_sectors(id),
+        activity_participating_organizations(id),
+        activity_contacts(id),
+        activity_locations(id)
       `)
       .eq('created_by', userId)
 
@@ -65,7 +71,7 @@ export async function GET(request: NextRequest) {
       activityIds.length > 0
         ? supabase
             .from('transactions')
-            .select('transaction_type, usd_value')
+            .select('activity_id, transaction_type, usd_value')
             .in('activity_id', activityIds)
         : Promise.resolve({ data: null }),
       // Activity events for contribution calendar
@@ -116,8 +122,9 @@ export async function GET(request: NextRequest) {
     const plannedDisbursementsTotal = disbursementsResult.data?.reduce((sum: number, d: any) =>
       sum + (d.usd_amount || 0), 0) || 0
 
-    // Calculate transaction totals by type
+    // Calculate transaction totals by type and build set of activity IDs with transactions
     const transactions = transactionsResult.data || []
+    const activityIdsWithTransactions = new Set(transactions.map((t: any) => t.activity_id))
     const totalCommitments = transactions
       .filter((t: any) => t.transaction_type === 'commitment' || t.transaction_type === '2')
       .reduce((sum: number, t: any) => sum + (t.usd_value || 0), 0)
@@ -166,47 +173,47 @@ export async function GET(request: NextRequest) {
       lastUpdated: activity.updated_at
     })) || []
 
-    // Find activities with missing data - return {id, title, field} for linking
-    interface MissingDataItem { id: string; title: string }
-    const missingData = {
-      sector: [] as MissingDataItem[],
-      dates: [] as MissingDataItem[],
-      budget: [] as MissingDataItem[],
-      reportingOrg: [] as MissingDataItem[],
-      iatiId: [] as MissingDataItem[]
+    // Find activities with missing data — grouped by activity for "+N more" display
+    interface MissingActivity {
+      id: string
+      title: string
+      missingFields: string[]
     }
+    const missingDataByActivity: MissingActivity[] = []
 
     if (activities && Array.isArray(activities)) {
       activities.forEach((activity: any) => {
         if (!activity) return
 
-        const item = { id: activity.id, title: activity.title_narrative || 'Untitled Activity' }
+        const missing: string[] = []
 
-        // Check for missing sectors
-        if (!activity.activity_sectors || activity.activity_sectors.length === 0) {
-          missingData.sector.push(item)
-        }
+        if (!activity.description_narrative) missing.push('description')
+        if (!activity.activity_sectors || activity.activity_sectors.length === 0) missing.push('sector')
+        if (!activity.planned_start_date || !activity.planned_end_date) missing.push('dates')
+        if (!activity.activity_budgets || activity.activity_budgets.length === 0) missing.push('budget')
+        if (!activity.reporting_org_id) missing.push('reportingOrg')
+        if (!activity.iati_identifier) missing.push('iatiId')
+        const countries = activity.recipient_countries
+        const regions = activity.recipient_regions
+        const hasCountry = Array.isArray(countries) && countries.length > 0
+        const hasRegion = Array.isArray(regions) && regions.length > 0
+        if (!hasCountry && !hasRegion) missing.push('recipientCountry')
+        if (!activity.activity_participating_organizations || activity.activity_participating_organizations.length === 0) missing.push('participatingOrg')
+        if (!activity.activity_contacts || activity.activity_contacts.length === 0) missing.push('contacts')
+        if (!activity.activity_locations || activity.activity_locations.length === 0) missing.push('locations')
+        if (!activityIdsWithTransactions.has(activity.id)) missing.push('transactions')
 
-        // Check for missing dates
-        if (!activity.planned_start_date || !activity.planned_end_date) {
-          missingData.dates.push(item)
-        }
-
-        // Check for missing budget
-        if (!activity.activity_budgets || activity.activity_budgets.length === 0) {
-          missingData.budget.push(item)
-        }
-
-        // Check for missing reporting org
-        if (!activity.reporting_org_id) {
-          missingData.reportingOrg.push(item)
-        }
-
-        // Check for missing IATI ID
-        if (!activity.iati_identifier) {
-          missingData.iatiId.push(item)
+        if (missing.length > 0) {
+          missingDataByActivity.push({
+            id: activity.id,
+            title: activity.title_narrative || 'Untitled Activity',
+            missingFields: missing,
+          })
         }
       })
+
+      // Sort by most missing fields first
+      missingDataByActivity.sort((a, b) => b.missingFields.length - a.missingFields.length)
     }
 
     // Mock validation status for now
@@ -336,7 +343,7 @@ export async function GET(request: NextRequest) {
       summary,
       pipelinePastStart,
       inactive90Days,
-      missingData,
+      missingData: missingDataByActivity,
       validationStatus,
       participatingOrgActivities: [], // Empty for now
       sectorDistribution,

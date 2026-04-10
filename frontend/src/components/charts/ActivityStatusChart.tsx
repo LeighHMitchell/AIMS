@@ -295,9 +295,9 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="sticky top-0 bg-white z-10">
-                <TableHead className="bg-white font-semibold">Status</TableHead>
-                <TableHead className="bg-white font-semibold">Activity</TableHead>
-                <TableHead className="bg-white font-semibold">IATI Identifier</TableHead>
+                <TableHead className="font-medium">Status</TableHead>
+                <TableHead className="font-medium">Activity</TableHead>
+                <TableHead className="font-medium">IATI Identifier</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

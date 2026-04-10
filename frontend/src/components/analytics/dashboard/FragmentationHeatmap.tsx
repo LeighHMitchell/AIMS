@@ -76,7 +76,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                       {col.code ? `${col.code}` : (col.acronym || col.name.slice(0, 15))}
                     </th>
                   ))}
-                  <th className="text-right p-2 border-b border-slate-200 font-bold">Total</th>
+                  <th className="text-right p-2 border-b border-slate-200 font-medium">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -351,10 +351,10 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
           <span className="text-xs font-medium text-slate-600 mr-2">LEGENDS</span>
           <div className="flex items-center">
             {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center justify-center px-3 py-1.5 text-xs font-medium first:rounded-l last:rounded-r"
-                style={{ 
+                style={{
                   backgroundColor: scale.color,
                   color: getTextColorForBackground(scale.color),
                   minWidth: 100,
@@ -365,6 +365,11 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
             ))}
           </div>
         </div>
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          This heatmap visualizes how funding is distributed between donors and categories. Each cell shows the percentage share, with colour intensity indicating concentration. The totals column shows each row's share of overall funding, helping identify dominant donors or categories.
+        </p>
       </div>
     </TooltipProvider>
   );

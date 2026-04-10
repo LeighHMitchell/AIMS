@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { generateNextReference } from '@/lib/reference-helpers';
 
 export async function POST(request: NextRequest) {
   const { supabase, response: authResponse } = await requireAuth();
@@ -100,6 +101,10 @@ export async function POST(request: NextRequest) {
     disbursementData.usd_conversion_date = new Date().toISOString();
     disbursementData.usd_convertible = usdConvertible;
     disbursementData.exchange_rate_manual = isManualRate;
+
+    // Auto-generate reference
+    const reference = await generateNextReference(supabaseAdmin, 'planned_disbursements', disbursementData.activity_id, 'PD');
+    disbursementData.reference = reference;
 
     // Insert the planned disbursement using admin client (bypasses RLS)
     const { data, error } = await supabaseAdmin

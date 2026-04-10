@@ -475,6 +475,10 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory footer */}
+          <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+            This chart shows the top implementing agencies and their role in executing activities. Choose between commitments and disbursements metrics, and use the chart type controls to view the data as a bar chart, pie chart, or detailed table.
+          </p>
           {renderControls(false)}
         </CardContent>
       </Card>

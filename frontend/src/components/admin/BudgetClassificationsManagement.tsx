@@ -50,9 +50,8 @@ import {
   AlertCircle,
   Search,
   SlidersHorizontal,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
   Lock,
   Unlock,
 } from "lucide-react";
@@ -670,12 +669,12 @@ export function BudgetClassificationsManagement() {
                     Code / Name
                     {sortColumn === "code" || sortColumn === "name" ? (
                       sortDirection === "asc" ? (
-                        <ArrowUp className="h-3 w-3" />
+                        <ChevronUp className="h-3 w-3" />
                       ) : (
-                        <ArrowDown className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3" />
                       )
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                      <ChevronsUpDown className="h-3 w-3 opacity-50" />
                     )}
                   </button>
                   <button
@@ -685,12 +684,12 @@ export function BudgetClassificationsManagement() {
                     Local Name
                     {sortColumn === "nameLocal" ? (
                       sortDirection === "asc" ? (
-                        <ArrowUp className="h-3 w-3" />
+                        <ChevronUp className="h-3 w-3" />
                       ) : (
-                        <ArrowDown className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3" />
                       )
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                      <ChevronsUpDown className="h-3 w-3 opacity-50" />
                     )}
                   </button>
                   <div className="hidden lg:flex flex-[2] min-w-0">Description</div>
@@ -701,12 +700,12 @@ export function BudgetClassificationsManagement() {
                     Status
                     {sortColumn === "status" ? (
                       sortDirection === "asc" ? (
-                        <ArrowUp className="h-3 w-3" />
+                        <ChevronUp className="h-3 w-3" />
                       ) : (
-                        <ArrowDown className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3" />
                       )
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                      <ChevronsUpDown className="h-3 w-3 opacity-50" />
                     )}
                   </button>
                   <div className="w-[160px] flex-shrink-0 pl-2">Type</div>

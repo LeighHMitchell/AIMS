@@ -563,6 +563,10 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart shows the top 5 DAC sectors by financial allocation, with remaining sectors aggregated into an "Others" category. Use the metric selector to switch between budgets, planned disbursements, commitments, and disbursements to see different views of sector-level funding.
+          </p>
         </CardContent>
       </Card>
 

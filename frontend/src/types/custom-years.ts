@@ -142,6 +142,19 @@ export function crossesCalendarYear(customYear: CustomYear | CustomYearInput): b
 }
 
 /**
+ * Sort custom years so calendar-type years (Jan–Dec) appear before financial/fiscal years.
+ * Within each group, preserves the original displayOrder.
+ */
+export function sortCustomYearsCalendarFirst<T extends CustomYear | CustomYearInput>(years: T[]): T[] {
+  return [...years].sort((a, b) => {
+    const aCrosses = crossesCalendarYear(a) ? 1 : 0;
+    const bCrosses = crossesCalendarYear(b) ? 1 : 0;
+    if (aCrosses !== bCrosses) return aCrosses - bCrosses;
+    return ((a as CustomYear).displayOrder ?? 0) - ((b as CustomYear).displayOrder ?? 0);
+  });
+}
+
+/**
  * Get the date range for a specific calendar year using a custom year definition
  * @param customYear The custom year definition
  * @param year The starting calendar year

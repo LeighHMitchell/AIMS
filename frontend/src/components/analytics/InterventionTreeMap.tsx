@@ -932,9 +932,14 @@ export function InterventionTreeMap() {
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Edit the table above to update the tree map visualization. The "Sample Size" column determines the size of each intervention block.
+          Edit the table above to update the tree map visualization. The &quot;Sample Size&quot; column determines the size of each intervention block.
         </p>
       </div>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This tree map visualises intervention areas as nested blocks, where the size of each block reflects the sample size or value of that intervention. Click on any parent block to zoom in and explore sub-categories, and use the breadcrumb trail to navigate back. The editable table below allows you to adjust the data directly and see changes reflected in the visualisation in real time.
+      </p>
     </div>
   );
 }

@@ -36,6 +36,34 @@ interface MyPortfolioTabProps {
   organizationId: string
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  description: 'Description',
+  sector: 'Sectors',
+  dates: 'Dates',
+  budget: 'Budget',
+  reportingOrg: 'Reporting Org',
+  iatiId: 'IATI Identifier',
+  recipientCountry: 'Recipient Country/Region',
+  participatingOrg: 'Participating Orgs',
+  contacts: 'Contacts',
+  locations: 'Locations',
+  transactions: 'Transactions',
+}
+
+const FIELD_TABS: Record<string, string> = {
+  description: 'overview',
+  sector: 'sectors',
+  dates: 'overview',
+  budget: 'finances',
+  reportingOrg: 'partnerships',
+  iatiId: 'overview',
+  recipientCountry: 'locations',
+  participatingOrg: 'partnerships',
+  contacts: 'partnerships',
+  locations: 'locations',
+  transactions: 'finances',
+}
+
 interface FiscalYearConfig {
   startMonth: number
   startDay: number
@@ -144,11 +172,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
 
   return (
     <div className="space-y-6">
-      {/* Description */}
-      <p className="text-muted-foreground">
-        Overview of all activities you have personally entered into the system
-      </p>
-
       {/* Summary Cards */}
       <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StaggerItem>
@@ -359,39 +382,38 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <thead className="sticky top-0 bg-background">
                   <tr className="border-b text-left">
                     <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                    <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Field</th>
+                    <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Fields</th>
                     <th className="pb-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(data.missingData).flatMap(([field, activities]) => {
-                    const fieldLabel: Record<string, string> = {
-                      sector: 'Sectors', dates: 'Dates', budget: 'Budget',
-                      reportingOrg: 'Reporting Org', iatiId: 'IATI Identifier',
-                    }
-                    const fieldTab: Record<string, string> = {
-                      sector: 'sectors', dates: 'finances', budget: 'finances',
-                      reportingOrg: 'partnerships', iatiId: 'finances',
-                    }
-                    return (activities as Array<{ id: string; title: string }>).slice(0, 5).map((activity) => (
-                      <tr key={`${field}-${activity.id}`} className="border-b last:border-0">
+                  {data.missingData.slice(0, 5).map((activity) => {
+                    const firstField = activity.missingFields[0]
+                    const remaining = activity.missingFields.length - 1
+                    return (
+                      <tr key={activity.id} className="border-b last:border-0">
                         <td className="py-1.5 pr-2">
                           <span className="line-clamp-2 block text-foreground" title={activity.title}>
                             {activity.title}
                           </span>
                         </td>
                         <td className="py-1.5 text-xs text-muted-foreground">
-                          {fieldLabel[field] || field}
+                          <span title={activity.missingFields.map(f => FIELD_LABELS[f] || f).join(', ')}>
+                            {FIELD_LABELS[firstField] || firstField}
+                            {remaining > 0 && (
+                              <span className="text-orange-500 font-medium"> +{remaining} more</span>
+                            )}
+                          </span>
                         </td>
                         <td className="py-1.5 pl-2">
-                          <Link href={`/activities/${activity.id}?tab=${fieldTab[field] || 'finances'}`} className="text-muted-foreground hover:text-foreground" title="Edit activity">
+                          <Link href={`/activities/${activity.id}?tab=${FIELD_TABS[firstField] || 'overview'}`} className="text-muted-foreground hover:text-foreground" title="Edit activity">
                             <Pencil className="h-3.5 w-3.5" />
                           </Link>
                         </td>
                       </tr>
-                    ))
+                    )
                   })}
-                  {Object.values(data.missingData).flat().length === 0 && (
+                  {data.missingData.length === 0 && (
                     <tr><td colSpan={3} className="py-4 text-center text-muted-foreground text-xs">No missing data found</td></tr>
                   )}
                 </tbody>
@@ -485,37 +507,33 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <thead className="sticky top-0 bg-background">
                 <tr className="border-b text-left">
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
-                  <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Field</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Fields</th>
                   <th className="pb-2 w-10"></th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(data.missingData).flatMap(([field, activities]) => {
-                  const fieldLabel: Record<string, string> = {
-                    sector: 'Sectors', dates: 'Dates', budget: 'Budget',
-                    reportingOrg: 'Reporting Org', iatiId: 'IATI Identifier',
-                  }
-                  const fieldTab: Record<string, string> = {
-                    sector: 'sectors', dates: 'finances', budget: 'finances',
-                    reportingOrg: 'partnerships', iatiId: 'finances',
-                  }
-                  return (activities as Array<{ id: string; title: string }>).map((activity) => (
-                    <tr key={`${field}-${activity.id}`} className="border-b last:border-0">
-                      <td className="py-2 pr-4 text-foreground">
-                        {activity.title}
-                      </td>
-                      <td className="py-2 text-sm text-muted-foreground">
-                        {fieldLabel[field] || field}
-                      </td>
-                      <td className="py-2 pl-2">
-                        <Link href={`/activities/${activity.id}?tab=${fieldTab[field] || 'finances'}`} className="text-muted-foreground hover:text-foreground" title="Edit activity">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
-                })}
-                {Object.values(data.missingData).flat().length === 0 && (
+                {data.missingData.map((activity) => (
+                  <tr key={activity.id} className="border-b last:border-0">
+                    <td className="py-2 pr-4 text-foreground">
+                      {activity.title}
+                    </td>
+                    <td className="py-2 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap gap-1">
+                        {activity.missingFields.map((field) => (
+                          <Badge key={field} variant="outline" className="text-xs font-normal">
+                            {FIELD_LABELS[field] || field}
+                          </Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-2 pl-2">
+                      <Link href={`/activities/${activity.id}?tab=${FIELD_TABS[activity.missingFields[0]] || 'overview'}`} className="text-muted-foreground hover:text-foreground" title="Edit activity">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {data.missingData.length === 0 && (
                   <tr><td colSpan={3} className="py-8 text-center text-muted-foreground">No missing data found</td></tr>
                 )}
               </tbody>

@@ -1,7 +1,24 @@
 {
-  "currentVersion": "3.26.0",
-  "narrativeSummary": "Version 3.26 moves all map controls out of the map overlay and into a clean toolbar above the map, making the Activity Locations Map much easier to use. The Select component across the entire platform now shows checkmarks on the right side of items instead of the left, matching modern UI conventions. Scroll-spy navigation in the Activity Editor has been refined with smarter re-scroll logic that only corrects if layout shifts actually moved the target section. Several icon inconsistencies have been cleaned up, and the IATI select dropdowns now capitalise option names for readability.",
+  "currentVersion": "3.27.0",
+  "narrativeSummary": "Version 3.27 adds short-name code badges to every calendar year dropdown across the platform, replacing plain coloured dots with readable codes like CY, EFY, or USFY. This applies to the shared CustomYearSelector component used on Transactions, Budgets, and Planned Disbursements pages, all inline DropdownMenu calendar selectors on analytics charts, and the Organisation form. Duplicate lucide-react icon imports that caused build failures have been cleaned up across 11 files, and the Activity Editor import block has been consolidated.",
   "releases": [
+    {
+      "version": "3.27.0",
+      "date": "2026-04-10",
+      "narrativeSummary": "This release standardises calendar year dropdowns across the entire platform to show short-name code badges (e.g. CY, EFY) instead of coloured dots, and fixes build-breaking duplicate icon imports in 11 files.",
+      "changes": [
+        "<b>Calendar Year Dropdowns &mdash; Short-Name Code Badges</b>",
+        "&nbsp;&nbsp;The shared <code>CustomYearSelector</code> component now shows a monospace code badge (from the <code>shortName</code> field) instead of a coloured dot when available",
+        "&nbsp;&nbsp;Falls back to the previous coloured dot when <code>shortName</code> is null",
+        "&nbsp;&nbsp;Applied to Transactions, Budgets, and Planned Disbursements pages via the shared component",
+        "&nbsp;&nbsp;11 inline DropdownMenu calendar selectors on analytics charts updated with the same badge pattern: FinancialTotalsBarChart, AllDonorsHorizontalBarChart (2 instances), CumulativeFinancialOverview, SectorDisbursementOverTime, SDGConcentrationChart, FinanceTypeFlowChart, PlannedActualDisbursementBySector, ProjectOrgCountsBySector, PortfolioSpendTrajectoryChart, and the Aid Effectiveness Dashboard",
+        "&nbsp;&nbsp;Organisation form calendar selector updated to show code badge instead of Calendar icon",
+        "<b>Build Fix &mdash; Duplicate Icon Imports</b>",
+        "&nbsp;&nbsp;Removed duplicate <code>lucide-react</code> imports that caused SWC compilation errors in 11 files",
+        "&nbsp;&nbsp;Affected components: BudgetClassificationsManagement, DomesticBudgetManagement, SectorMappingsManagement, partner-summary, partners, Atlas, EnhancedActivityComments, TransactionList, OrgActivitiesMap, TaskTrackingView",
+        "&nbsp;&nbsp;Activity detail page: consolidated two separate <code>lucide-react</code> import blocks into one"
+      ]
+    },
     {
       "version": "3.26.0",
       "date": "2026-04-06",

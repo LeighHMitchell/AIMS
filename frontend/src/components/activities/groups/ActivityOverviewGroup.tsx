@@ -9,11 +9,9 @@ import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 // Import the tab components
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm"
 import { HumanitarianTab } from "@/components/activities/HumanitarianTab"
-import CountriesRegionsTab from "@/components/activities/CountriesRegionsTab"
-import CombinedLocationsTab from "@/components/CombinedLocationsTab"
 
 // Section IDs for the Activity Overview group
-export const ACTIVITY_OVERVIEW_SECTIONS = ['general', 'sectors', 'humanitarian', 'country-region', 'locations'] as const
+export const ACTIVITY_OVERVIEW_SECTIONS = ['general', 'sectors', 'humanitarian'] as const
 export type ActivityOverviewSectionId = typeof ACTIVITY_OVERVIEW_SECTIONS[number]
 
 /**
@@ -47,23 +45,6 @@ interface ActivityOverviewGroupProps {
   // Humanitarian props
   setHumanitarian: (data: any) => void
   setHumanitarianScopes: (data: any) => void
-  
-  // Countries/Regions props
-  countries: any[]
-  regions: any[]
-  setCountries: (countries: any[]) => void
-  setRegions: (regions: any[]) => void
-  onGeographyLevelChange: (level: string) => void
-  
-  // Locations props
-  specificLocations: any[]
-  coverageAreas: any[]
-  advancedLocations: any[]
-  setSpecificLocations: (locations: any[]) => void
-  setCoverageAreas: (areas: any[]) => void
-  setAdvancedLocations: (locations: any[]) => void
-  subnationalBreakdowns: any[]
-  setSubnationalBreakdowns: (breakdowns: any[]) => void
   
   // Permissions
   permissions: {
@@ -113,23 +94,6 @@ export function ActivityOverviewGroup({
   setHumanitarian,
   setHumanitarianScopes,
   
-  // Countries/Regions
-  countries,
-  regions,
-  setCountries,
-  setRegions,
-  onGeographyLevelChange,
-  
-  // Locations
-  specificLocations,
-  coverageAreas,
-  advancedLocations,
-  setSpecificLocations,
-  setCoverageAreas,
-  setAdvancedLocations,
-  subnationalBreakdowns,
-  setSubnationalBreakdowns,
-  
   // Permissions
   permissions,
 
@@ -149,8 +113,6 @@ export function ActivityOverviewGroup({
   const generalRef = useRef<HTMLElement>(null)
   const sectorsRef = useRef<HTMLElement>(null)
   const humanitarianRef = useRef<HTMLElement>(null)
-  const countryRegionRef = useRef<HTMLElement>(null)
-  const locationsRef = useRef<HTMLElement>(null)
   
   // Track if initial scroll has happened (to prevent re-scrolling when scroll spy updates)
   const hasInitiallyScrolled = useRef(false)
@@ -161,8 +123,6 @@ export function ActivityOverviewGroup({
     ...(activityCreated ? [
       { id: 'sectors', ref: sectorsRef },
       { id: 'humanitarian', ref: humanitarianRef },
-      { id: 'country-region', ref: countryRegionRef },
-      { id: 'locations', ref: locationsRef },
     ] : []),
   ], [activityCreated])
   
@@ -191,7 +151,7 @@ export function ActivityOverviewGroup({
     if (initialSection && isActivityOverviewSection(initialSection) && activityCreated) {
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (initialSection !== 'general' || prevInitialSection.current !== initialSection) {
+      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'general')) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
@@ -222,6 +182,8 @@ export function ActivityOverviewGroup({
   useEffect(() => {
     if (isFirstRender.current) return
     if (activeSection && isActivityOverviewSection(activeSection)) {
+      // Sync prevInitialSection so the parent re-render doesn't re-trigger scrollIntoView
+      prevInitialSection.current = activeSection
       onActiveSectionChangeRef.current(activeSection)
     }
   }, [activeSection])
@@ -244,6 +206,7 @@ export function ActivityOverviewGroup({
     const handleScrollToSection = (event: CustomEvent<string>) => {
       const sectionId = event.detail
       if (isActivityOverviewSection(sectionId)) {
+        prevInitialSection.current = sectionId
         scrollToSection(sectionId)
         activateSection(sectionId)
       }
@@ -275,7 +238,7 @@ export function ActivityOverviewGroup({
     )
 
     // Observe all section elements
-    const sectionElements = [sectorsRef.current, humanitarianRef.current, countryRegionRef.current, locationsRef.current]
+    const sectionElements = [sectorsRef.current, humanitarianRef.current]
     sectionElements.forEach((el) => {
       if (el) observer.observe(el)
     })
@@ -292,7 +255,7 @@ export function ActivityOverviewGroup({
     if (!activityCreated || !enablePreloading) return
 
     // Activate all sections in a single batch to prevent sequential layout shifts
-    const sectionsToPreload = ['sectors', 'humanitarian', 'country-region', 'locations']
+    const sectionsToPreload = ['sectors', 'humanitarian']
     const unloaded = sectionsToPreload.filter(id => !activeSectionsRef.current.has(id))
     if (unloaded.length > 0) {
       activateSections(unloaded)
@@ -374,72 +337,6 @@ export function ActivityOverviewGroup({
               </div>
             ) : (
               <SectionSkeleton sectionId="humanitarian" />
-            )}
-          </section>
-          
-          {/* Country/Region Section */}
-          <section
-            id="country-region"
-            ref={countryRegionRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-            style={{ minHeight: getSectionMinHeight('country-region') }}
-          >
-            {isSectionActive('country-region') || activeSections.has('country-region') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="country-region"
-                  title={getSectionLabel('country-region')}
-                  helpText={getSectionHelpText('country-region')}
-                  showDivider={false}
-                />
-                <CountriesRegionsTab
-                  activityId={general.id || ''}
-                  countries={countries}
-                  regions={regions}
-                  onCountriesChange={setCountries}
-                  onRegionsChange={setRegions}
-                  canEdit={permissions?.canEditActivity ?? true}
-                  geographyLevel={general.geographyLevel || 'activity'}
-                  onGeographyLevelChange={onGeographyLevelChange}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="country-region" />
-            )}
-          </section>
-          
-          {/* Locations Section */}
-          <section
-            id="locations"
-            ref={locationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-            style={{ minHeight: getSectionMinHeight('locations') }}
-          >
-            {isSectionActive('locations') || activeSections.has('locations') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="locations"
-                  title={getSectionLabel('locations')}
-                  helpText={getSectionHelpText('locations')}
-                  showDivider={false}
-                />
-                <CombinedLocationsTab
-                  specificLocations={specificLocations}
-                  coverageAreas={coverageAreas}
-                  onSpecificLocationsChange={setSpecificLocations}
-                  onCoverageAreasChange={setCoverageAreas}
-                  advancedLocations={advancedLocations}
-                  onAdvancedLocationsChange={setAdvancedLocations}
-                  activityId={general.id}
-                  canEdit={permissions?.canEditActivity ?? true}
-                  onSubnationalDataChange={setSubnationalBreakdowns}
-                  subnationalBreakdowns={subnationalBreakdowns}
-                  activityTitle={general.title}
-                  activitySector={general.primarySector}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="locations" />
             )}
           </section>
         </div>

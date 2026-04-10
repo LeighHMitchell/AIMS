@@ -143,7 +143,7 @@ export function BudgetTable({
         maximumFractionDigits: 0,
       }).format(value);
 
-      return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-xs">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[BudgetTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
@@ -346,8 +346,7 @@ export function BudgetTable({
                   <TableCell key="activity" className="py-3 px-4 min-w-[300px] max-w-[500px]">
                     <span
                       className="group/title cursor-pointer hover:opacity-75"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         if (budget.activity_id) {
                           window.location.href = `/activities/${budget.activity_id}`;
                         }
@@ -370,6 +369,11 @@ export function BudgetTable({
                         )}
                       </button>
                     </span>
+                    {budget.reference && (
+                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
+                        {budget.reference}
+                      </span>
+                    )}
                     {budget.activity?.iati_identifier && (
                       <span className="group/iati whitespace-nowrap">
                         <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
@@ -459,10 +463,9 @@ export function BudgetTable({
                 <React.Fragment key={budget.id}>
                   <TableRow
                     className={cn(
-                      "border-b border-border/40 hover:bg-muted/50 transition-colors cursor-pointer",
+                      "border-b border-border/40 hover:bg-muted/50 transition-colors",
                       isSelected && "bg-blue-50 border-blue-200"
                     )}
-                    onClick={() => onRowClick?.(budgetId)}
                   >
                     {/* Checkbox or Expand/Collapse Button */}
                     <TableCell className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>

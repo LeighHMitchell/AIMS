@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useDropdownState } from '@/contexts/DropdownContext';
 import { DefaultFieldsSection } from '@/components/forms/DefaultFieldsSection';
 import { SupabaseSelect, withSupabaseIntegration } from '@/components/forms/SupabaseSelect';
 import TransactionsManager from '@/components/TransactionsManager';
@@ -116,6 +117,14 @@ export function EnhancedFinancesSection({
     disbursementChannel: Boolean(general.defaultDisbursementChannel),
     modality: Boolean(general.defaultModality), // Updated to camelCase
   };
+
+  // Exclusive dropdown state - only one dropdown open at a time
+  const aidTypeDropdown = useDropdownState('defaults-aid-type');
+  const currencyDropdown = useDropdownState('defaults-currency');
+  const flowTypeDropdown = useDropdownState('defaults-flow-type');
+  const tiedStatusDropdown = useDropdownState('defaults-tied-status');
+  const financeTypeDropdown = useDropdownState('defaults-finance-type');
+  const disbursementChannelDropdown = useDropdownState('defaults-disbursement-channel');
 
   // Use refs to hold the latest callbacks to avoid recreating useCallback wrappers
   const onDefaultsChangeRef = useRef(onDefaultsChange);
@@ -329,10 +338,10 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Aid Type
+                        <HelpTextTooltip content="The type of aid for this activity" />
                         {fieldCompletion.aidType && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
-                        <HelpTextTooltip content="The type of aid for this activity" />
                       </label>
                       <SupabaseAidTypeSelect
                         activityId={activityId}
@@ -342,6 +351,8 @@ export function EnhancedFinancesSection({
                         onUpdateError={handleFieldError}
                         placeholder="Select Aid Type"
                         disabled={disabled}
+                        open={aidTypeDropdown.isOpen}
+                        onOpenChange={aidTypeDropdown.setOpen}
                       />
                     </div>
 
@@ -349,10 +360,10 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Currency
+                        <HelpTextTooltip content="The default currency for financial transactions" />
                         {fieldCompletion.currency && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
-                        <HelpTextTooltip content="The default currency for financial transactions" />
                       </label>
                       <SupabaseCurrencySelector
                         activityId={activityId}
@@ -362,6 +373,8 @@ export function EnhancedFinancesSection({
                         onUpdateError={handleFieldError}
                         placeholder="Select Currency"
                         disabled={disabled}
+                        open={currencyDropdown.isOpen}
+                        onOpenChange={currencyDropdown.setOpen}
                       />
                     </div>
 
@@ -369,10 +382,10 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Flow Type
+                        <HelpTextTooltip content="The flow type for this activity" />
                         {fieldCompletion.flowType && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
-                        <HelpTextTooltip content="The flow type for this activity" />
                       </label>
                       <SupabaseFlowTypeSelect
                         activityId={activityId}
@@ -382,6 +395,8 @@ export function EnhancedFinancesSection({
                         onUpdateError={handleFieldError}
                         placeholder="Select Flow Type"
                         disabled={disabled}
+                        open={flowTypeDropdown.isOpen}
+                        onOpenChange={flowTypeDropdown.setOpen}
                       />
                     </div>
 
@@ -389,10 +404,10 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Tied Status
+                        <HelpTextTooltip content="The tied status for this activity" />
                         {fieldCompletion.tiedStatus && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
-                        <HelpTextTooltip content="The tied status for this activity" />
                       </label>
                       <SupabaseTiedStatusSelect
                         activityId={activityId}
@@ -402,6 +417,8 @@ export function EnhancedFinancesSection({
                         onUpdateError={handleFieldError}
                         placeholder="Select Tied Status"
                         disabled={disabled}
+                        open={tiedStatusDropdown.isOpen}
+                        onOpenChange={tiedStatusDropdown.setOpen}
                       />
                     </div>
 
@@ -409,10 +426,10 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Finance Type
+                        <HelpTextTooltip content="The finance type for this activity" />
                         {fieldCompletion.financeType && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
-                        <HelpTextTooltip content="The finance type for this activity" />
                       </label>
                       <SupabaseFinanceTypeSearchableSelect
                         activityId={activityId}
@@ -422,7 +439,7 @@ export function EnhancedFinancesSection({
                         onUpdateError={handleFieldError}
                         placeholder="Select Finance Type"
                         disabled={disabled}
-                        dropdownId="default-finance-type-select"
+                        dropdownId="defaults-finance-type"
                       />
                     </div>
 
@@ -430,10 +447,10 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Disbursement Channel
+                        <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies." />
                         {fieldCompletion.disbursementChannel && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
-                        <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies." />
                       </label>
                       <SupabaseDisbursementChannelSelect
                         activityId={activityId}
@@ -443,6 +460,8 @@ export function EnhancedFinancesSection({
                         onUpdateError={handleFieldError}
                         placeholder="Select Disbursement Channel"
                         disabled={disabled}
+                        open={disbursementChannelDropdown.isOpen}
+                        onOpenChange={disbursementChannelDropdown.setOpen}
                       />
                     </div>
                   </div>

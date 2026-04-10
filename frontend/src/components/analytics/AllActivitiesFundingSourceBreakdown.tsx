@@ -384,10 +384,10 @@ export function AllActivitiesFundingSourceBreakdown({
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-card z-10">
                   <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Provider</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Receiver</th>
-                    <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Amount (USD)</th>
-                    <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Percentage</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Provider</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Receiver</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Amount (USD)</th>
+                    <th className="text-right py-3 px-4 font-medium text-foreground bg-card">Percentage</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -433,6 +433,12 @@ export function AllActivitiesFundingSourceBreakdown({
             </div>
           </div>
         )}
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This Sankey diagram maps financial flows from funding providers to receiving organisations across all activities. Toggle between transaction-based and planned disbursement views, and filter by transaction type to focus on specific flow categories.
+          Use this to understand which donors are channelling funds to which implementing partners and to identify the largest funding relationships in your portfolio.
+        </p>
       </CardContent>
     </Card>
   )

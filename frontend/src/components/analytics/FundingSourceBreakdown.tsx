@@ -312,6 +312,11 @@ export function FundingSourceBreakdown({
             </div>
           </div>
         )}
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This chart shows the distribution of funding across provider organisations, revealing which donors or funding sources contribute the most. The donut chart gives a visual overview of relative shares, while the detailed breakdown on the right lists each source with exact amounts and percentages. Sources beyond the top seven are grouped as Others.
+        </p>
       </CardContent>
     </Card>
   )

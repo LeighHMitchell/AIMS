@@ -45,7 +45,7 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  ArrowUpDown,
+  ChevronsUpDown,
   Twitter,
   Facebook,
   Linkedin,
@@ -1989,8 +1989,8 @@ export default function OrganizationProfilePage() {
                             <table className="text-xs w-full border-collapse">
                               <thead>
                                 <tr className="bg-surface-muted border-b border-border">
-                                  <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{hoveredPoint.year}</th>
-                                  <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Value</th>
+                                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">{hoveredPoint.year}</th>
+                                  <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2106,8 +2106,8 @@ export default function OrganizationProfilePage() {
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
                                         <tr className="bg-surface-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Budget</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -2153,8 +2153,8 @@ export default function OrganizationProfilePage() {
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
                                         <tr className="bg-surface-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Budget</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -2321,8 +2321,8 @@ export default function OrganizationProfilePage() {
                                       <table className="text-xs w-full border-collapse">
                                         <thead>
                                           <tr className="bg-surface-muted border-b border-border">
-                                            <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
-                                            <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Value</th>
+                                            <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                            <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -2395,8 +2395,8 @@ export default function OrganizationProfilePage() {
                                       <table className="text-xs w-full border-collapse">
                                         <thead>
                                           <tr className="bg-surface-muted border-b border-border">
-                                            <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
-                                            <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Value</th>
+                                            <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                            <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -2544,7 +2544,7 @@ export default function OrganizationProfilePage() {
                                         <table className="text-xs border-collapse">
                                           <thead>
                                             <tr className="bg-surface-muted border-b border-border">
-                                              <th colSpan={2} className="text-left px-3 py-2 text-muted-foreground font-semibold">{item.name}</th>
+                                              <th colSpan={2} className="text-left px-3 py-2 text-muted-foreground font-medium">{item.name}</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -3473,17 +3473,17 @@ export default function OrganizationProfilePage() {
                                   <Table>
                                     <TableHeader className="bg-card border-b-2 border-border">
                                       <TableRow>
-                                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap sticky left-0 bg-card z-10">
+                                        <TableHead className="py-3 px-4 whitespace-nowrap sticky left-0 bg-card z-10">
                                           {pivotRowDimension === 'organization' ? 'Organization' :
                                            pivotRowDimension === 'orgType' ? 'Organization Type' :
                                            pivotRowDimension === 'country' ? 'Country' : 'Role'}
                                         </TableHead>
                                         {columnValues.map(col => (
-                                          <TableHead key={col} className="text-sm font-medium text-foreground/90 py-3 px-4 text-center whitespace-nowrap min-w-[100px]">
+                                          <TableHead key={col} className="py-3 px-4 text-center whitespace-nowrap min-w-[100px]">
                                             {col}
                                           </TableHead>
                                         ))}
-                                        <TableHead className="text-sm font-bold text-foreground py-3 px-4 text-center whitespace-nowrap bg-[#f1f4f8] min-w-[80px] border-l-2 border-border">
+                                        <TableHead className="text-sm font-medium text-foreground py-3 px-4 text-center whitespace-nowrap bg-surface-muted min-w-[80px] border-l-2 border-border">
                                           Total
                                         </TableHead>
                                       </TableRow>
@@ -4280,12 +4280,12 @@ export default function OrganizationProfilePage() {
                           <table className="w-full">
                             <thead>
                               <tr className="border-b border-border">
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Document</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Format</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                                <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Link</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Document</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Source</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Format</th>
+                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Link</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border">

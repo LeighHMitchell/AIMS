@@ -66,15 +66,20 @@ import {
   FileCode,
   FileCheck,
   Target,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
   LayoutGrid,
   Bookmark,
   BookmarkCheck,
   Layers,
   Scale,
-  Info
+  Info,
+  BarChart3 as BarChart3Icon,
+  GitBranch,
+  Printer,
+  FileImage,
+  ChevronRight
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -122,7 +127,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BudgetsSkeleton, PlannedDisbursementsSkeleton, TransactionsSkeleton } from "@/components/activities/TabSkeletons"
 import { v4 as uuidv4 } from 'uuid'
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area } from 'recharts'
-import { ChevronDown, ChevronUp, ChevronRight, BarChart3 as BarChart3Icon, GitBranch, Printer, FileImage } from 'lucide-react'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
 import FinanceTypeDonut from '@/components/charts/FinanceTypeDonut'
 import PolicyMarkersSectionIATIWithCustom from '@/components/PolicyMarkersSectionIATIWithCustom'
@@ -2740,8 +2744,8 @@ export default function ActivityDetailPage() {
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
                                         <tr className="bg-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Budget</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -2994,8 +2998,8 @@ export default function ActivityDetailPage() {
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
                                         <tr className="bg-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Amount</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-medium">Amount</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -3633,11 +3637,11 @@ export default function ActivityDetailPage() {
 
                   const getPartnershipsSortIcon = (field: string) => {
                     if (partnershipsSortField !== field) {
-                      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+                      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
                     }
                     return partnershipsSortDirection === 'asc'
-                      ? <ArrowUp className="h-4 w-4 text-muted-foreground" />
-                      : <ArrowDown className="h-4 w-4 text-muted-foreground" />;
+                      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
                   };
 
                   const sortedParticipatingOrgs = [...participatingOrgs].sort((a, b) => {
@@ -3687,12 +3691,12 @@ export default function ActivityDetailPage() {
                     <CardContent className="p-6 pt-0">
                         <div className="rounded-md border overflow-x-auto">
                           <Table className="table-fixed">
-                            <TableHeader className="bg-surface-muted border-b border-border/70">
+                            <TableHeader>
                               <TableRow>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '35%' }}>Organization</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '20%' }}>Role</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '30%' }}>Organisation Type</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '15%' }}>Country</TableHead>
+                                <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '35%' }}>Organization</TableHead>
+                                <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '20%' }}>Role</TableHead>
+                                <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '30%' }}>Organisation Type</TableHead>
+                                <TableHead className="py-3 px-4 whitespace-nowrap" style={{ width: '15%' }}>Country</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -3782,10 +3786,10 @@ export default function ActivityDetailPage() {
                     <CardContent className="p-6 pt-0">
                         <div className="rounded-md border overflow-x-auto">
                           <Table className="table-fixed">
-                            <TableHeader className="bg-surface-muted border-b border-border/70">
+                            <TableHeader>
                               <TableRow>
                                 <TableHead
-                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  className="py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
                                   style={{ width: '35%' }}
                                   onClick={() => handlePartnershipsSort('organization')}
                                 >
@@ -3795,7 +3799,7 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableHead>
                                 <TableHead
-                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  className="py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
                                   style={{ width: '20%' }}
                                   onClick={() => handlePartnershipsSort('role')}
                                 >
@@ -3805,7 +3809,7 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableHead>
                                 <TableHead
-                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  className="py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
                                   style={{ width: '30%' }}
                                   onClick={() => handlePartnershipsSort('type')}
                                 >
@@ -3815,7 +3819,7 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableHead>
                                 <TableHead
-                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  className="py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
                                   style={{ width: '15%' }}
                                   onClick={() => handlePartnershipsSort('country')}
                                 >

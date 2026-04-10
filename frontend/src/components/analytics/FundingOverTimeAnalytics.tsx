@@ -266,13 +266,13 @@ export function FundingOverTimeAnalytics() {
           <table className="min-w-full text-sm border-collapse">
             <thead>
               <tr style={{ backgroundColor: COLORS.platinum }}>
-                <th className="px-3 py-2 text-left font-semibold" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                <th className="px-3 py-2 text-left font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                   Donor
                 </th>
-                <th className="px-3 py-2 text-right font-semibold" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                <th className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                   Amount
                 </th>
-                <th className="px-3 py-2 text-center font-semibold" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                <th className="px-3 py-2 text-center font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                   Type
                 </th>
               </tr>
@@ -698,22 +698,22 @@ export function FundingOverTimeAnalytics() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr style={{ backgroundColor: COLORS.platinum }}>
-                      <th className="border p-3 text-left font-semibold" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
+                      <th className="border p-3 text-left font-medium" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                         Year
                       </th>
-                      <th className="border p-3 text-center font-semibold" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
+                      <th className="border p-3 text-center font-medium" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                         Data Type
                       </th>
                       {donorNames.map((name) => (
                         <th
                           key={name}
-                          className="border p-3 text-right font-semibold"
+                          className="border p-3 text-right font-medium"
                           style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}
                         >
                           {name}
                         </th>
                       ))}
-                      <th className="border p-3 text-right font-semibold" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
+                      <th className="border p-3 text-right font-medium" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                         Total
                       </th>
                     </tr>

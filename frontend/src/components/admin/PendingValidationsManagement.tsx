@@ -20,7 +20,7 @@ import {
   Building2,
   Calendar,
   RefreshCw,
-  ArrowUpRight
+  ChevronUpRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -192,7 +192,7 @@ const ActivityRow: React.FC<{
           size="sm"
           onClick={() => onNavigate(activity.id)}
         >
-          <ArrowUpRight className="h-4 w-4" />
+          <ChevronUpRight className="h-4 w-4" />
         </Button>
       </TableCell>
     </TableRow>
@@ -278,7 +278,7 @@ const TransactionRow: React.FC<{
           size="sm"
           onClick={() => onNavigate(transaction.activity_id, transaction.id)}
         >
-          <ArrowUpRight className="h-4 w-4" />
+          <ChevronUpRight className="h-4 w-4" />
         </Button>
       </TableCell>
     </TableRow>

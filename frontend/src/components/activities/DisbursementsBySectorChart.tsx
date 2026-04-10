@@ -300,9 +300,9 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                       <TableHead className="text-right">{year} Variance</TableHead>
                     </React.Fragment>
                   ))}
-                  <TableHead className="text-right font-semibold">Total Planned</TableHead>
-                  <TableHead className="text-right font-semibold">Total Actual</TableHead>
-                  <TableHead className="text-right font-semibold">Total Variance</TableHead>
+                  <TableHead className="text-right font-medium">Total Planned</TableHead>
+                  <TableHead className="text-right font-medium">Total Actual</TableHead>
+                  <TableHead className="text-right font-medium">Total Variance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

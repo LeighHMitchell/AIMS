@@ -445,7 +445,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                 {sector.name}
               </TableHead>
             ))}
-            <TableHead className="text-right font-semibold">Total</TableHead>
+            <TableHead className="text-right font-medium">Total</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -392,6 +392,10 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart shows recipient government bodies -- the government entities that receive development funding. Use the metric selector to switch between budgets, planned disbursements, commitments, and disbursements to see how funds are distributed across government institutions.
+          </p>
         </CardContent>
       </Card>
 

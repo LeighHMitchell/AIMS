@@ -333,6 +333,11 @@ export function TopDistrictsChart({
         {renderControls(false)}
       </div>
 
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart shows the top districts (states and regions) by financial allocation. Compare geographic distribution of funding to identify which areas receive the most development assistance and spot potential gaps in coverage.
+      </p>
+
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>

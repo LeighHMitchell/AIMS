@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, PenLine, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Unlock, RefreshCw, Info } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, PenLine, Save, X, Check, MoreVertical, Calendar, ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle, ChevronLeft, ChevronRight, Lock, Unlock, RefreshCw, Info, AlertCircle } from 'lucide-react';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
-import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -71,12 +71,11 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { OrganizationCombobox } from '@/components/ui/organization-combobox';
 import { OrganizationSearchableSelect } from '@/components/ui/organization-searchable-select';
 import { ActivityCombobox } from '@/components/ui/activity-combobox';
 import { OrgTypeMappingModal, useOrgTypeMappingModal } from '@/components/organizations/OrgTypeMappingModal';
+import { usePartners } from '@/hooks/usePartners';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
@@ -195,8 +194,23 @@ export default function PlannedDisbursementsTab({
   onLoadingChange
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [organizationsLoaded, setOrganizationsLoaded] = useState(false);
+  const { partners } = usePartners();
+
+  // Transform partners to organizations format for OrganizationSearchableSelect
+  const organizations: Organization[] = useMemo(() => {
+    return partners.map(partner => ({
+      id: partner.id,
+      name: partner.fullName || partner.name || '',
+      acronym: partner.acronym,
+      iati_org_id: partner.iatiOrgId,
+      iati_identifier: partner.iatiOrgId,
+      type: partner.type,
+      Organisation_Type_Code: (partner as any).Organisation_Type_Code || '',
+      Organisation_Type_Name: (partner as any).Organisation_Type_Name || '',
+      country: partner.countryRepresented,
+      logo: partner.logo,
+    }));
+  }, [partners]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -209,6 +223,7 @@ export default function PlannedDisbursementsTab({
   const [showModal, setShowModal] = useState(false);
   const [modalDisbursement, setModalDisbursement] = useState<PlannedDisbursement | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [validationAlert, setValidationAlert] = useState<string | null>(null);
   const [isFormDirty, setIsFormDirty] = useState(false);
   // isCalculatingUSD removed - USD conversion now happens server-side
   const [typePopoverOpen, setTypePopoverOpen] = useState(false);
@@ -244,13 +259,10 @@ export default function PlannedDisbursementsTab({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ Organisation_Type_Code: newTypeCode })
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to update organization type');
     }
-    
-    // Refresh organizations list
-    fetchOrganizations();
   };
 
   // Reset to page 1 when filter changes
@@ -286,33 +298,31 @@ export default function PlannedDisbursementsTab({
     }
   }, [sortColumn]);
 
-  // Lazy-load organizations only when modal is opened (for autocomplete)
-  const fetchOrganizationsIfNeeded = async () => {
-    if (organizationsLoaded) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('id, name, code, acronym, type, Organisation_Type_Code, Organisation_Type_Name, iati_org_id, logo, country')
-        .order('name');
-
-      if (error) throw error;
-
-      console.log('[PlannedDisbursementsTab] Fetched organizations with logos:', 
-        data?.filter(org => org.logo).map(org => ({ name: org.name, hasLogo: !!org.logo }))
-      );
-
-      setOrganizations(data || []);
-      setOrganizationsLoaded(true);
-    } catch (err) {
-      console.error('Error fetching organizations:', err);
-    }
-  };
 
   // Handler to open modal for add/edit
   const openModal = (disbursement?: PlannedDisbursement) => {
-    // Lazy-load organizations only when modal is opened
-    fetchOrganizationsIfNeeded();
+    // For new disbursements, default provider to the user's organisation and current activity
+    let providerDefaults: Partial<PlannedDisbursement> = {
+      provider_org_name: '',
+      provider_org_ref: '',
+      provider_org_type: '',
+      provider_activity_id: '',
+      provider_activity_uuid: '',
+    };
+    if (!disbursement && user?.organizationId) {
+      const userOrg = organizations.find((o: any) => o.id === user.organizationId);
+      if (userOrg) {
+        providerDefaults = {
+          provider_org_id: userOrg.id,
+          provider_org_name: getOrganizationDisplayName(userOrg),
+          provider_org_ref: userOrg.iati_org_id || '',
+          provider_org_type: userOrg.type || '',
+          provider_activity_id: '',
+          provider_activity_uuid: activityId,
+        };
+      }
+    }
+
     const newDisbursement = disbursement ? { ...disbursement } : {
       activity_id: activityId,
       amount: 0,
@@ -321,11 +331,7 @@ export default function PlannedDisbursementsTab({
       period_end: endDate || format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
       type: '1' as const,           // NEW - Default to Original
       status: 'original' as const,
-      provider_org_name: '',
-      provider_org_ref: '',
-      provider_org_type: '',
-      provider_activity_id: '',
-      provider_activity_uuid: '',
+      ...providerDefaults,
       receiver_org_name: '',
       receiver_org_ref: '',
       receiver_org_type: '',
@@ -344,6 +350,7 @@ export default function PlannedDisbursementsTab({
     }
     setIsAmountFocused(false);
     setFieldErrors({});
+    setValidationAlert(null);
     setIsFormDirty(false);
     setShowModal(true);
   };
@@ -375,7 +382,7 @@ export default function PlannedDisbursementsTab({
     switch (field) {
       case 'amount':
         if (!value || value <= 0) {
-          errors.amount = 'Amount must be greater than 0';
+          errors.amount = 'Value must be greater than 0';
         } else {
           delete errors.amount;
         }
@@ -502,7 +509,7 @@ export default function PlannedDisbursementsTab({
     } finally {
       setIsLoadingModalRate(false);
     }
-  }, [modalDisbursement]);
+  }, [modalDisbursement?.currency, modalDisbursement?.value_date, modalDisbursement?.period_start]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate modal USD value
   const modalCalculatedUsdValue = modalDisbursement?.amount && modalExchangeRate 
@@ -628,6 +635,28 @@ export default function PlannedDisbursementsTab({
       periodEnd = endDate;
     }
     
+    // Default provider to user's organisation for new disbursements
+    let providerDefs: Partial<PlannedDisbursement> = {
+      provider_org_name: '',
+      provider_org_ref: '',
+      provider_org_type: '',
+      provider_activity_id: '',
+      provider_activity_uuid: '',
+    };
+    if (user?.organizationId) {
+      const userOrg = organizations.find((o: any) => o.id === user.organizationId);
+      if (userOrg) {
+        providerDefs = {
+          provider_org_id: userOrg.id,
+          provider_org_name: getOrganizationDisplayName(userOrg),
+          provider_org_ref: userOrg.iati_org_id || '',
+          provider_org_type: userOrg.type || '',
+          provider_activity_id: '',
+          provider_activity_uuid: activityId,
+        };
+      }
+    }
+
     // Open modal with pre-populated dates
     const newDisbursement: PlannedDisbursement = {
       activity_id: activityId,
@@ -637,10 +666,7 @@ export default function PlannedDisbursementsTab({
       period_end: periodEnd,
       type: '1' as const,
       status: 'original' as const,
-      provider_org_name: '',
-      provider_org_ref: '',
-      provider_org_type: '',
-      provider_activity_id: '',
+      ...providerDefs,
       receiver_org_name: '',
       receiver_org_ref: '',
       receiver_org_type: '',
@@ -659,11 +685,10 @@ export default function PlannedDisbursementsTab({
     }
     setIsAmountFocused(false);
     setFieldErrors({});
+    setValidationAlert(null);
     setIsFormDirty(false);
     setShowModal(true);
   }, [disbursements, activityId, defaultCurrency, startDate, endDate]);
-
-  // Organizations are now lazy-loaded in fetchOrganizationsIfNeeded() when modal opens
 
   // Fetch disbursements for this activity
   useEffect(() => {
@@ -1271,7 +1296,7 @@ export default function PlannedDisbursementsTab({
       { label: 'Status', value: (disbursement.status || 'Original').charAt(0).toUpperCase() + (disbursement.status || 'Original').slice(1) },
       { label: 'Period Start', value: format(parseISO(disbursement.period_start), 'MMM d, yyyy') },
       { label: 'Period End', value: format(parseISO(disbursement.period_end), 'MMM d, yyyy') },
-      { label: 'Original Amount', value: `${disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${disbursement.currency}` },
+      { label: 'Original Value', value: `${disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${disbursement.currency}` },
       { label: 'USD Value', value: disbursement.usdAmount != null ? `USD ${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—' },
     );
 
@@ -1347,7 +1372,7 @@ export default function PlannedDisbursementsTab({
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
-      toast.error('Please fix the validation errors');
+      setValidationAlert('Please fill in all required fields before saving.');
       return;
     }
 
@@ -1548,30 +1573,10 @@ export default function PlannedDisbursementsTab({
             </div>
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button disabled={isReadOnly} className="bg-foreground hover:bg-foreground/90 text-white">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Planned Disbursement
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem onClick={() => addPeriod('month')}>
-                        Monthly
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => addPeriod('quarter')}>
-                        Quarterly
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => addPeriod('half-year')}>
-                        Semi-Annual
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => addPeriod('year')}>
-                        Annual
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button disabled={isReadOnly} onClick={() => addPeriod('quarter')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Planned Disbursement
+                </Button>
               )}
               {!hideSummaryCards && disbursements.length > 0 && !loading && (
                 <>
@@ -1673,7 +1678,7 @@ export default function PlannedDisbursementsTab({
           {/* Table */}
           {disbursements.length === 0 ? (
             <div className="text-center py-12">
-              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <img src="/images/empty-stork.png" alt="No planned disbursements" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No planned disbursements</h3>
               <p className="text-muted-foreground mb-4">
                 Use the button above to add your first planned disbursement.
@@ -1683,7 +1688,7 @@ export default function PlannedDisbursementsTab({
             <>
               <div className={hideSummaryCards ? "w-full" : "rounded-md border w-full"}>
                 <Table aria-label="Planned disbursements table" className="w-full">
-                  <TableHeader className="bg-surface-muted border-b border-border/70">
+                  <TableHeader>
                     <TableRow>
                       {!readOnly && (
                         <TableHead className="text-center w-12">
@@ -1695,86 +1700,86 @@ export default function PlannedDisbursementsTab({
                           />
                         </TableHead>
                       )}
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <TableHead className="py-3 px-4">
                         <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('period')}
                         >
                           Period
                           {sortColumn === 'period' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <TableHead className="py-3 px-4">
                         <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('status')}
                         >
                           Type
                           {sortColumn === 'status' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <TableHead className="py-3 px-4">
                         <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('provider')}
                         >
                           Provider → Receiver
                           {sortColumn === 'provider' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                      <TableHead className="py-3 px-4 text-right">
                         <div
                           className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('amount')}
                         >
-                          Amount
+                          Original Value
                           {sortColumn === 'amount' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <TableHead className="py-3 px-4">
                         <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('value_date')}
                         >
                           Value Date
                           {sortColumn === 'value_date' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                      <TableHead className="py-3 px-4 text-right">
                         <div
                           className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('usd_value')}
                         >
                           USD Value
                           {sortColumn === 'usd_value' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                            sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                            <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
                       {!readOnly && (
-                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-20">
+                        <TableHead className="py-3 px-4 text-right w-20">
                           Actions
                         </TableHead>
                       )}
@@ -1806,6 +1811,9 @@ export default function PlannedDisbursementsTab({
                           )}
                           {/* Period */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
+                            {disbursement.reference && (
+                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{disbursement.reference}</code>
+                            )}
                             <span className="font-medium">
                               {format(parseISO(disbursement.period_start), 'MMM yyyy')} - {format(parseISO(disbursement.period_end), 'MMM yyyy')}
                             </span>
@@ -1881,7 +1889,7 @@ export default function PlannedDisbursementsTab({
                           <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="font-medium">
                               {disbursement.amount > 0 
-                                ? <><span className="text-muted-foreground">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
+                                ? <><span className="text-muted-foreground text-xs">{disbursement.currency}</span> {disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
                                 : '-'
                               }
                             </div>
@@ -2114,6 +2122,16 @@ export default function PlannedDisbursementsTab({
           </DialogHeader>
           
           <div className="space-y-6">
+            {/* Validation Alert */}
+            {validationAlert && (
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                <span>{validationAlert}</span>
+                <button onClick={() => setValidationAlert(null)} className="ml-auto text-red-500 hover:text-red-700">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             {/* Type */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
@@ -2202,13 +2220,14 @@ export default function PlannedDisbursementsTab({
                   isSaved={false}
                   hasValue={!!modalDisbursement?.period_start}
                 >
-                  Period Start Date
+                  Period Start Date <RequiredDot />
                 </LabelWithInfoAndSave>
                 <DatePicker
                   value={modalDisbursement?.period_start || ''}
-                  onChange={(value) => updateFormField('period_start', value)}
+                  onChange={(value) => { updateFormField('period_start', value); setValidationAlert(null); }}
                   disabled={savingId === modalDisbursement?.id}
                   placeholder="Select start date"
+                  dropdownId="pd-modal-period-start"
                 />
                 {fieldErrors.period_start && (
                   <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
@@ -2221,13 +2240,14 @@ export default function PlannedDisbursementsTab({
                   isSaved={false}
                   hasValue={!!modalDisbursement?.period_end}
                 >
-                  Period End Date
+                  Period End Date <RequiredDot />
                 </LabelWithInfoAndSave>
                 <DatePicker
                   value={modalDisbursement?.period_end || ''}
                   onChange={(value) => updateFormField('period_end', value)}
                   disabled={savingId === modalDisbursement?.id}
                   placeholder="Select end date"
+                  dropdownId="pd-modal-period-end"
                 />
                 {fieldErrors.period_end && (
                   <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
@@ -2239,28 +2259,33 @@ export default function PlannedDisbursementsTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="The planned disbursement amount in the specified currency"
+                  helpText="The planned disbursement value in the specified currency"
                   isSaving={false}
                   isSaved={false}
                   hasValue={!!modalDisbursement?.amount && modalDisbursement.amount > 0}
                 >
-                  Amount
+                  Value <RequiredDot />
                 </LabelWithInfoAndSave>
                 <Input
                   id="amount"
                   type="text"
                   value={isAmountFocused ? amountInputValue : (modalDisbursement?.amount && modalDisbursement.amount > 0 ? modalDisbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    setAmountInputValue(value);
-                    const rawValue = value.replace(/[^\d.]/g, '');
-                    const numericValue = parseFloat(rawValue) || 0;
+                    const raw = e.target.value.replace(/[^\d.]/g, '');
+                    const parts = raw.split('.');
+                    const intPart = parts[0] ? parseInt(parts[0], 10) : 0;
+                    const formatted = isNaN(intPart) ? '' : intPart.toLocaleString() + (parts.length > 1 ? '.' + parts[1] : '');
+                    setAmountInputValue(formatted);
+                    const numericValue = parseFloat(raw) || 0;
                     updateFormField('amount', numericValue);
                   }}
                   onFocus={() => {
                     setIsAmountFocused(true);
                     if (modalDisbursement?.amount && modalDisbursement.amount > 0) {
-                      setAmountInputValue(modalDisbursement.amount.toString());
+                      const raw = modalDisbursement.amount.toString();
+                      const parts = raw.split('.');
+                      const intPart = parseInt(parts[0], 10);
+                      setAmountInputValue(intPart.toLocaleString() + (parts.length > 1 ? '.' + parts[1] : ''));
                     } else {
                       setAmountInputValue('');
                     }
@@ -2288,7 +2313,7 @@ export default function PlannedDisbursementsTab({
                   isSaved={false}
                   hasValue={!!modalDisbursement?.currency}
                 >
-                  Currency
+                  Currency <RequiredDot />
                 </LabelWithInfoAndSave>
                 <CurrencySelector
                   value={modalDisbursement?.currency || null}
@@ -2318,6 +2343,7 @@ export default function PlannedDisbursementsTab({
                   onChange={(value) => updateFormField('value_date', value)}
                   disabled={savingId === modalDisbursement?.id}
                   placeholder="Select date"
+                  dropdownId="pd-modal-value-date"
                 />
                 {fieldErrors.value_date && (
                   <p className="text-xs text-red-500">{fieldErrors.value_date}</p>

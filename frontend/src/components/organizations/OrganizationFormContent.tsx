@@ -81,7 +81,7 @@ import {
 import { LabelSaveIndicator } from '@/components/ui/save-indicator'
 import { useOrganizationAutosave } from '@/hooks/use-organization-autosave'
 import { apiFetch } from '@/lib/api-fetch';
-import { CustomYear } from '@/types/custom-years';
+import { CustomYear, sortCustomYearsCalendarFirst } from '@/types/custom-years';
 
 // Acronym generation helper
 const ACRONYM_FILLER_WORDS = new Set([
@@ -1548,10 +1548,16 @@ export function OrganizationFormContent({
                     No financial year types configured. Ask an admin to set them up in System Settings.
                   </div>
                 )}
-                {customYears.map((cy) => (
+                {sortCustomYearsCalendarFirst(customYears).map((cy) => (
                   <SelectItem key={cy.id} value={cy.id}>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      {cy.shortName ? (
+                        <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                          {cy.shortName.trim()}
+                        </span>
+                      ) : (
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
                       <span className="font-medium text-foreground">{cy.name}</span>
                       {cy.isDefault && (
                         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">System Default</span>

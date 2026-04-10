@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { PlusIcon, SearchIcon, Users, LayoutGrid, List, Table as TableIcon, Pencil, MoreVertical, Eye, Trash2, Inbox, GitBranch, ChevronRight, ChevronLeft, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { PlusIcon, SearchIcon, Users, LayoutGrid, List, Pencil, MoreVertical, Eye, Trash2, Inbox, GitBranch, ChevronRight, ChevronLeft, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/ui/empty-state"
 import WorkingGroupCardModern from '@/components/working-groups/WorkingGroupCardModern'
@@ -82,7 +82,7 @@ export default function WorkingGroupsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [wgToDelete, setWgToDelete] = useState<WorkingGroup | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -337,18 +337,18 @@ export default function WorkingGroupsPage() {
 
           <div className="flex items-center border rounded-md flex-shrink-0">
             <Button
-              variant="ghost"
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode("table")}
-              className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+              onClick={() => setViewMode("list")}
+              className="rounded-r-none h-9"
             >
-              <TableIcon className="h-4 w-4" />
+              <List className="h-4 w-4" />
             </Button>
             <Button
-              variant="ghost"
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode("card")}
-              className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+              className="rounded-l-none h-9"
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -382,7 +382,7 @@ export default function WorkingGroupsPage() {
         )}
 
         {/* Table View */}
-        {viewMode === 'table' && (
+        {viewMode === 'list' && (
           <Card>
             {/* Expand/Collapse All */}
             {Array.from(subGroupsMap.values()).some(arr => arr.length > 0) && (

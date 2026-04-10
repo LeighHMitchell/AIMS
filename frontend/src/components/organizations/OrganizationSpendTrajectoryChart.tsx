@@ -781,11 +781,11 @@ export function OrganizationSpendTrajectoryChart({
               <Table>
                 <TableHeader>
                   <TableRow className="sticky top-0 bg-white z-10">
-                    <TableHead className="bg-white">Month</TableHead>
-                    <TableHead className="text-right bg-white">Baseline (USD)</TableHead>
-                    <TableHead className="text-right bg-white">Planned (USD)</TableHead>
-                    <TableHead className="text-right bg-white">Commitments (USD)</TableHead>
-                    <TableHead className="text-right bg-white">Disbursements (USD)</TableHead>
+                    <TableHead>Month</TableHead>
+                    <TableHead className="text-right">Baseline (USD)</TableHead>
+                    <TableHead className="text-right">Planned (USD)</TableHead>
+                    <TableHead className="text-right">Commitments (USD)</TableHead>
+                    <TableHead className="text-right">Disbursements (USD)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

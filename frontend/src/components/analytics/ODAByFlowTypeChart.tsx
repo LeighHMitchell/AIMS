@@ -225,6 +225,11 @@ export function ODAByFlowTypeChart({
           </>
         )}
       </div>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart breaks down Official Development Assistance by IATI flow type classification, showing how aid is categorised across grants, loans, equity, and other instruments. Toggle the non-ODA switch to include Other Official Flows and private flows for a broader picture. The summary cards below the chart show aggregate totals by category.
+      </p>
     </div>
   )
 }

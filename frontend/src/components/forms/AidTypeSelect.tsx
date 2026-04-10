@@ -157,13 +157,9 @@ export function AidTypeSelect({
     return groups
   }, [filteredItems, flattenedAidTypes])
 
-  const COMMONLY_USED_AID_CODES = ["C01", "B01", "D02", "B04", "B031", "B032"];
-  const commonlyUsedAidTypes = filteredItems.filter(opt => COMMONLY_USED_AID_CODES.includes(opt.code));
-  const otherGroupedItems = groupedItems;
-
   const renderItemContent = (item: typeof flattenedAidTypes[0]) => {
     const isSelected = value === item.code
-    const indentClass = item.level === 1 ? "pl-4" : item.level === 2 ? "pl-7" : ""
+    const indentClass = ""
 
     return (
       <CommandItem
@@ -236,15 +232,15 @@ export function AidTypeSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full h-full justify-between font-normal px-3 py-3 text-sm min-h-[60px] border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal text-left items-start",
+            "w-full justify-between font-normal px-3 py-2 text-sm h-10 border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground",
             !value && "text-muted-foreground"
           )}
         >
-          <span className="flex-1 min-w-0 text-left">
+          <span className="flex-1 min-w-0 truncate text-left">
             {selectedItem ? (
-              <span className="flex items-start gap-2">
+              <span className="flex items-center gap-2">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{selectedItem.code}</span>
-                <span className="font-medium text-sm text-foreground">{selectedItem.name}</span>
+                <span className="font-medium text-sm text-foreground truncate">{selectedItem.name}</span>
               </span>
             ) : (
               <span className="text-muted-foreground text-sm">{placeholder}</span>
@@ -304,15 +300,7 @@ export function AidTypeSelect({
                 {filteredItems.length} match{filteredItems.length !== 1 ? 'es' : ''} found
               </div>
             )}
-            {commonlyUsedAidTypes.length > 0 && (
-              <CommandGroup>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                  Commonly Used
-                </div>
-                {commonlyUsedAidTypes.map(option => renderItemContent(option))}
-              </CommandGroup>
-            )}
-            {Object.entries(otherGroupedItems).map(([categoryCode, items]) => {
+            {Object.entries(groupedItems).map(([categoryCode, items]) => {
               const category = items.find(item => item.code === categoryCode && item.level === 0)
               if (!category) return null
 

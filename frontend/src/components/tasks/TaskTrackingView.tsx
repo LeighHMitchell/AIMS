@@ -32,9 +32,8 @@ import {
   Pencil,
   Building2,
   UserCog,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
   Trash2,
   FileText,
   FileSpreadsheet,
@@ -190,11 +189,11 @@ export function TaskTrackingView({
 
   const SortIcon = ({ field }: { field: AssignmentSortField }) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
+      return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />;
     }
     return sortDirection === 'asc'
-      ? <ArrowUp className="ml-1 h-3 w-3" />
-      : <ArrowDown className="ml-1 h-3 w-3" />;
+      ? <ChevronUp className="ml-1 h-3 w-3" />
+      : <ChevronDown className="ml-1 h-3 w-3" />;
   };
 
   if (loading) {

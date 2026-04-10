@@ -175,8 +175,8 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-semibold text-xs">Top Donors</TableHead>
-                <TableHead className="font-semibold text-xs text-right">Amount</TableHead>
+                <TableHead className="font-medium text-xs">Top Donors</TableHead>
+                <TableHead className="font-medium text-xs text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -200,8 +200,8 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-semibold text-xs">Top Sectors</TableHead>
-                <TableHead className="font-semibold text-xs text-right">Activities</TableHead>
+                <TableHead className="font-medium text-xs">Top Sectors</TableHead>
+                <TableHead className="font-medium text-xs text-right">Activities</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

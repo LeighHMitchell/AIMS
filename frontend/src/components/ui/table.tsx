@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -118,11 +118,11 @@ function getSortIcon(
   sortOrder: 'asc' | 'desc'
 ): React.ReactElement {
   if (sortField !== field) {
-    return <ArrowUpDown className="h-4 w-4 text-muted-foreground/50" />;
+    return <ChevronsUpDown className="h-4 w-4 text-muted-foreground/50" />;
   }
   return sortOrder === 'asc'
-    ? <ArrowUp className="h-4 w-4 text-muted-foreground" />
-    : <ArrowDown className="h-4 w-4 text-muted-foreground" />;
+    ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+    : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
 }
 
 /**

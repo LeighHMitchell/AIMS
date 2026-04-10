@@ -129,7 +129,8 @@ export async function POST(
         is_nationwide: item.is_nationwide,
         allocation_level: item.allocation_level || 'region',
         st_pcode: item.st_pcode || null,
-        ts_pcode: item.ts_pcode || null
+        ts_pcode: item.ts_pcode || null,
+        country_code: item.country_code || 'MM'
       }))
 
       const { error: insertError } = await supabase

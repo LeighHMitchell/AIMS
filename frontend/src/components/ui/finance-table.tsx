@@ -9,6 +9,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table'
 
 interface FinanceTableColumn {
@@ -98,7 +100,7 @@ export function FinanceTable({
                   key={index} 
                   className={cn(
                     "px-4 py-2 text-left text-sm font-medium text-muted-foreground",
-                    column.sortable && "cursor-pointer hover:bg-muted/20",
+                    column.sortable && sortableHeaderClasses,
                     column.className
                   )}
                   onClick={() => column.sortable && onSort?.(column.accessor || column.header)}
@@ -106,10 +108,10 @@ export function FinanceTable({
                 >
                   <div className="flex items-center gap-1">
                     <span>{column.header}</span>
-                    {column.sortable && sortColumn === (column.accessor || column.header) && (
-                      <span className="text-xs">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
-                      </span>
+                    {column.sortable && getSortIcon(
+                      column.accessor || column.header,
+                      sortColumn || '',
+                      sortDirection || 'asc'
                     )}
                   </div>
                 </TableHead>
@@ -134,14 +136,14 @@ export function FinanceTable({
   return (
     <div className="overflow-x-auto">
       <Table className={cn("w-full", className)}>
-        <TableHeader className="bg-surface-muted border-b border-border">
+        <TableHeader>
           <TableRow>
             {columns.map((column, index) => (
               <TableHead 
                 key={index} 
                 className={cn(
                   "h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground",
-                  column.sortable && "cursor-pointer hover:bg-muted/80 transition-colors",
+                  column.sortable && sortableHeaderClasses,
                   column.className
                 )}
                 onClick={() => column.sortable && onSort?.(column.accessor || column.header)}

@@ -13,6 +13,7 @@ export interface MultiSelectOption {
   value: string
   label: string
   code?: string
+  color?: string
 }
 
 interface MultiSelectFilterProps {
@@ -85,12 +86,17 @@ export function MultiSelectFilter({
     onChange([])
   }
 
+  const getSelectedSingle = () => {
+    if (safeValue.length === 1) {
+      return options.find((opt) => opt.value === safeValue[0]) || null
+    }
+    return null
+  }
+
   const getDisplayText = () => {
     if (safeValue.length === 0) return placeholder
-    if (safeValue.length === 1) {
-      const selected = options.find((opt) => opt.value === safeValue[0])
-      return selected?.label || safeValue[0]
-    }
+    const single = getSelectedSingle()
+    if (single) return single.label
     return `${safeValue.length} selected`
   }
 
@@ -108,6 +114,12 @@ export function MultiSelectFilter({
         >
           <div className="flex items-center gap-2 overflow-hidden">
             {icon}
+            {getSelectedSingle()?.color && (
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: getSelectedSingle()!.color }}
+              />
+            )}
             <span className="truncate">{getDisplayText()}</span>
           </div>
           <div className="flex items-center gap-1 ml-1 shrink-0">
@@ -192,6 +204,12 @@ export function MultiSelectFilter({
                   checked={safeValue.includes(option.value)}
                   onCheckedChange={() => toggleOption(option.value)}
                 />
+                {option.color && (
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: option.color }}
+                  />
+                )}
                 {option.code && (
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     {option.code}

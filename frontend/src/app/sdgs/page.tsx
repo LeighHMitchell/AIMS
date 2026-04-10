@@ -6,7 +6,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, Target, LayoutGrid, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, Target, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SDGCardModern from '@/components/sdgs/SDGCardModern'
 import { SDG_GOALS } from '@/data/sdg-targets'
@@ -24,7 +24,7 @@ export default function SDGListingPage() {
   const [sdgs, setSdgs] = useState<SDGListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [banners, setBanners] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -124,18 +124,18 @@ export default function SDGListingPage() {
               </div>
               <div className="flex items-center border rounded-md flex-shrink-0">
                 <Button
-                  variant="ghost"
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setViewMode("table")}
-                  className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                  onClick={() => setViewMode("list")}
+                  className="rounded-r-none h-9"
                 >
-                  <TableIcon className="h-4 w-4" />
+                  <List className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant={viewMode === 'card' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode("card")}
-                  className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                  className="rounded-l-none h-9"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>
@@ -144,7 +144,7 @@ export default function SDGListingPage() {
           </div>
 
           {/* SDG Table View */}
-          {viewMode === 'table' && (
+          {viewMode === 'list' && (
             <Card>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

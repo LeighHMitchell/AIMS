@@ -86,7 +86,7 @@ export function CompactChartCard({
           <TableHeader>
             <TableRow>
               {headers.map((header) => (
-                <TableHead key={header} className="font-semibold">
+                <TableHead key={header} className="font-medium">
                   {header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')}
                 </TableHead>
               ))}
@@ -144,7 +144,7 @@ export function CompactChartCard({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-1">
-          <div style={{ minHeight: compactHeight }} className="overflow-hidden">
+          <div style={{ height: compactHeight }} className="overflow-hidden">
             {renderChart(true)}
           </div>
         </CardContent>

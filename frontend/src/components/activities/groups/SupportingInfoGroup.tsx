@@ -115,7 +115,7 @@ export function SupportingInfoGroup({
     if (initialSection && isSupportingInfoSection(initialSection) && activityCreated) {
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (initialSection !== 'documents' || prevInitialSection.current !== initialSection) {
+      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'documents')) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
@@ -141,6 +141,7 @@ export function SupportingInfoGroup({
   useEffect(() => {
     if (isFirstRender.current) return
     if (activeSection && isSupportingInfoSection(activeSection)) {
+      prevInitialSection.current = activeSection
       onActiveSectionChangeRef.current(activeSection)
     }
   }, [activeSection])
@@ -163,6 +164,7 @@ export function SupportingInfoGroup({
     const handleScrollToSection = (event: CustomEvent<string>) => {
       const sectionId = event.detail
       if (isSupportingInfoSection(sectionId)) {
+        prevInitialSection.current = sectionId
         scrollToSection(sectionId)
         activateSection(sectionId)
       }

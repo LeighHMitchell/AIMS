@@ -52,9 +52,8 @@ import {
   Minimize2,
   Maximize2,
   AlertCircle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
   ChevronRight,
   Settings,
   Plus,
@@ -350,10 +349,10 @@ export default function PartnerSummaryPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortConfig.field !== field) return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    if (sortConfig.field !== field) return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
     return sortConfig.direction === 'asc' ? 
-      <ArrowUp className="h-4 w-4 text-gray-400" /> : 
-      <ArrowDown className="h-4 w-4 text-gray-400" />;
+      <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+      <ChevronDown className="h-4 w-4 text-gray-400" />;
   };
 
   // Format currency with thousands separators
@@ -614,7 +613,7 @@ export default function PartnerSummaryPage() {
                       ) : (
                         <div className="rounded-md border">
                           <Table>
-                            <TableHeader className="sticky top-0 z-10 bg-surface-muted">
+                            <TableHeader className="sticky top-0 z-10">
                               <TableRow>
                                 <TableHead className="w-[300px]">
                                   <Button 

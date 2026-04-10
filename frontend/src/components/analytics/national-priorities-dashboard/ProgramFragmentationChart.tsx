@@ -78,6 +78,14 @@ export function ProgramFragmentationChart({
     );
   }
 
-  return <FragmentationHeatmap data={data} />;
+  return (
+    <div>
+      <FragmentationHeatmap data={data} />
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        This heatmap shows how each donor distributes their funding across national priority programs. Darker cells indicate a higher share of a donor's total funding allocated to that program, helping to identify alignment with national priorities.
+      </p>
+    </div>
+  );
 }
 

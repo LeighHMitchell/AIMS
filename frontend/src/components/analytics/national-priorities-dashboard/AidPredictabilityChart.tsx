@@ -336,10 +336,10 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-xs font-semibold">Year</TableHead>
-            <TableHead className="text-xs font-semibold text-right">Planned Disbursements</TableHead>
-            <TableHead className="text-xs font-semibold text-right">Actual Disbursements</TableHead>
-            <TableHead className="text-xs font-semibold text-right">Variance</TableHead>
+            <TableHead className="text-xs font-medium">Year</TableHead>
+            <TableHead className="text-xs font-medium text-right">Planned Disbursements</TableHead>
+            <TableHead className="text-xs font-medium text-right">Actual Disbursements</TableHead>
+            <TableHead className="text-xs font-medium text-right">Variance</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -516,6 +516,10 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This chart compares planned disbursements against actual disbursements over time to measure aid predictability. A close match between planned and actual amounts indicates reliable and predictable aid flows. Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period.
+          </p>
         </CardContent>
       </Card>
 

@@ -121,6 +121,9 @@ import {
   ActivityOverviewGroup,
   ACTIVITY_OVERVIEW_SECTIONS,
   isActivityOverviewSection,
+  LocationsGroup,
+  LOCATIONS_SECTIONS,
+  isLocationsSection,
   StakeholdersGroup,
   STAKEHOLDERS_SECTIONS,
   isStakeholdersSection,
@@ -2672,6 +2675,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
 
   // Determine which group is active
   const activeGroup = isActivityOverviewSection(section) ? 'activity-overview'
+    : isLocationsSection(section) ? 'locations'
     : isStakeholdersSection(section) ? 'stakeholders'
     : isFundingDeliverySection(section) ? 'funding-delivery'
     : isStrategicAlignmentSection(section) ? 'strategic-alignment'
@@ -2694,6 +2698,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   }, [onSectionChange]);
 
   const onActivityOverviewSectionChange = useMemo(() => guardedSectionChange('activity-overview'), [guardedSectionChange]);
+  const onLocationsSectionChange = useMemo(() => guardedSectionChange('locations'), [guardedSectionChange]);
   const onStakeholdersSectionChange = useMemo(() => guardedSectionChange('stakeholders'), [guardedSectionChange]);
   const onFundingDeliverySectionChange = useMemo(() => guardedSectionChange('funding-delivery'), [guardedSectionChange]);
   const onStrategicAlignmentSectionChange = useMemo(() => guardedSectionChange('strategic-alignment'), [guardedSectionChange]);
@@ -2731,19 +2736,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             onSectorExportLevelChange={onSectorExportLevelChange}
             setHumanitarian={setHumanitarian}
             setHumanitarianScopes={setHumanitarianScopes}
-            countries={countries}
-            regions={regions}
-            setCountries={setCountries}
-            setRegions={setRegions}
-            onGeographyLevelChange={onGeographyLevelChange}
-            specificLocations={specificLocations}
-            coverageAreas={coverageAreas}
-            advancedLocations={advancedLocations}
-            setSpecificLocations={setSpecificLocations}
-            setCoverageAreas={setCoverageAreas}
-            setAdvancedLocations={setAdvancedLocations}
-            subnationalBreakdowns={subnationalBreakdowns}
-            setSubnationalBreakdowns={setSubnationalBreakdowns}
             permissions={permissions}
             onActiveSectionChange={onActivityOverviewSectionChange}
             initialSection={section}
@@ -2752,6 +2744,33 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             renderGeneralSection={renderGeneralSection}
           />
         </div>}
+
+        {activeGroup === 'locations' && (
+          <div>
+            <LocationsGroup
+              activityId={general.id}
+              general={general}
+              countries={countries}
+              regions={regions}
+              setCountries={setCountries}
+              setRegions={setRegions}
+              onGeographyLevelChange={onGeographyLevelChange}
+              specificLocations={specificLocations}
+              coverageAreas={coverageAreas}
+              advancedLocations={advancedLocations}
+              setSpecificLocations={setSpecificLocations}
+              setCoverageAreas={setCoverageAreas}
+              setAdvancedLocations={setAdvancedLocations}
+              subnationalBreakdowns={subnationalBreakdowns}
+              setSubnationalBreakdowns={setSubnationalBreakdowns}
+              permissions={permissions}
+              onActiveSectionChange={onLocationsSectionChange}
+              initialSection={section}
+              activityCreated={!!general.id}
+              enablePreloading={true}
+            />
+          </div>
+        )}
 
         {activeGroup === 'stakeholders' && (
           <div>
@@ -4609,8 +4628,10 @@ function NewActivityPageContent() {
         'general': 'activity-overview',
         'sectors': 'activity-overview',
         'humanitarian': 'activity-overview',
-        'country-region': 'activity-overview',
-        'locations': 'activity-overview',
+        // locations group
+        'country-region': 'locations',
+        'locations': 'locations',
+        'subnational-allocation': 'locations',
         // stakeholders group
         'organisations': 'stakeholders',
         'contacts': 'stakeholders',
@@ -4804,6 +4825,10 @@ function NewActivityPageContent() {
         isComplete: (countries && countries.length > 0) || (regions && regions.length > 0),
         isInProgress: false
       },
+      "subnational-allocation": {
+        isComplete: subnationalBreakdowns && Object.values(subnationalBreakdowns).some((v: any) => v > 0),
+        isInProgress: false
+      },
 
       // Stakeholders group (lazy loaded)
       organisations: organizationsCompletion ? {
@@ -4902,14 +4927,15 @@ function NewActivityPageContent() {
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
       "iati", "xml-import",
-      "general", "sectors", "humanitarian", "country-region", "locations",
+      "general", "sectors", "humanitarian",
+      "country-region", "locations", "subnational-allocation",
       "organisations", "contacts", "focal_points", "linked_activities",
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
       "government", "readiness_checklist", "metadata"
     ].filter(id => id !== "government" || showGovernmentInputs);
-    
+
     const idx = sections.findIndex(s => s === currentId);
     return idx < sections.length - 1 ? sections[idx + 1] : null;
   }, [showGovernmentInputs]);
@@ -4918,7 +4944,8 @@ function NewActivityPageContent() {
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
       "iati", "xml-import",
-      "general", "sectors", "humanitarian", "country-region", "locations",
+      "general", "sectors", "humanitarian",
+      "country-region", "locations", "subnational-allocation",
       "organisations", "contacts", "focal_points", "linked_activities",
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
@@ -4958,12 +4985,14 @@ function NewActivityPageContent() {
     // just scroll instead of full tab change (continuous scrolling)
     // All five groups are linked: Activity Overview -> Stakeholders -> Funding & Delivery -> Strategic Alignment -> Supporting Info
     const isValueInScrollableGroup = isActivityOverviewSection(value) ||
+                                      isLocationsSection(value) ||
                                       isStakeholdersSection(value) ||
                                       isFundingDeliverySection(value) ||
                                       isStrategicAlignmentSection(value) ||
                                       isSupportingInfoSection(value) ||
                                       isAdvancedSection(value);
     const isCurrentInScrollableGroup = isActivityOverviewSection(activeSection) ||
+                                        isLocationsSection(activeSection) ||
                                         isStakeholdersSection(activeSection) ||
                                         isFundingDeliverySection(activeSection) ||
                                         isStrategicAlignmentSection(activeSection) ||
@@ -4975,6 +5004,7 @@ function NewActivityPageContent() {
 
       // Determine if switching within the same group or between groups
       const sameGroup = (isActivityOverviewSection(value) && isActivityOverviewSection(activeSection)) ||
+                        (isLocationsSection(value) && isLocationsSection(activeSection)) ||
                         (isStakeholdersSection(value) && isStakeholdersSection(activeSection)) ||
                         (isFundingDeliverySection(value) && isFundingDeliverySection(activeSection)) ||
                         (isStrategicAlignmentSection(value) && isStrategicAlignmentSection(activeSection)) ||
@@ -5247,8 +5277,14 @@ function NewActivityPageContent() {
         { id: "general", label: "General" },
         { id: "sectors", label: "Sectors" },
         { id: "humanitarian", label: "Humanitarian" },
-        { id: "country-region", label: "Country/Region" },
-        { id: "locations", label: "Locations" }
+      ]
+    },
+    {
+      title: "Locations",
+      sections: [
+        { id: "country-region", label: "Countries & Regions" },
+        { id: "locations", label: "Activity Sites" },
+        { id: "subnational-allocation", label: "Sub-national Allocation" },
       ]
     },
     {
@@ -5603,6 +5639,7 @@ function NewActivityPageContent() {
             <section>
               {/* Hide section header for all scrollable groups - each group renders its own headers */}
               {!isActivityOverviewSection(activeSection) &&
+               !isLocationsSection(activeSection) &&
                !isStakeholdersSection(activeSection) &&
                !isFundingDeliverySection(activeSection) &&
                !isStrategicAlignmentSection(activeSection) &&

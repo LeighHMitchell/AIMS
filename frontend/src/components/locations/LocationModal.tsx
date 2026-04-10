@@ -26,7 +26,8 @@ import {
   Map,
   RefreshCw,
   Copy,
-  Check
+  Check,
+  Mountain
 } from 'lucide-react';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -1195,6 +1196,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       className="h-8 px-2.5 text-xs"
                       title="Toggle 3D View"
                     >
+                      <Mountain className="h-3.5 w-3.5 mr-1" />
                       3D
                     </Button>
                   </div>

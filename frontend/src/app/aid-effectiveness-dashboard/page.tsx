@@ -27,7 +27,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { SectorHierarchyFilter, SectorFilterSelection } from '@/components/maps/SectorHierarchyFilter'
 import { format } from 'date-fns'
 
@@ -572,13 +572,20 @@ export default function AidEffectivenessDashboard() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
-                        {customYears.map(cy => (
+                        {sortCustomYearsCalendarFirst(customYears).map(cy => (
                           <DropdownMenuItem
                             key={cy.id}
                             className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                             onClick={() => setCalendarType(cy.id)}
                           >
-                            {cy.name}
+                            <span className="flex items-center gap-2">
+                              {cy.shortName && (
+                                <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                  {cy.shortName.trim()}
+                                </span>
+                              )}
+                              {cy.name}
+                            </span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
@@ -844,6 +851,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.ownership}
                   helpKey="ownership"
+                  description="Alignment with national priorities, government frameworks, and support for national institutions."
                 />
                 <SectionDetail
                   title="Use of Country Public Financial & Procurement Systems"
@@ -853,6 +861,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.countrySystems}
                   helpKey="countrySystems"
+                  description="Whether funds flow through national treasury, budget, reporting, audit, and procurement systems."
                 />
                 <GovWhyNotSection activities={filteredActivities} />
 
@@ -864,6 +873,7 @@ export default function AidEffectivenessDashboard() {
                       Outcome Indicators Distribution
                       <HelpTooltip helpKey="outcomeIndicators" />
                     </CardTitle>
+                    <CardDescription>How many government-defined outcome indicators each activity tracks for results measurement.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
@@ -891,6 +901,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.predictability}
                   helpKey="predictability"
+                  description="Whether annual budgets, forward plans, and multi-year financing agreements are shared with partners."
                 />
                 {/* Tied Aid Pie */}
                 <Card className="bg-card border-border">
@@ -900,6 +911,7 @@ export default function AidEffectivenessDashboard() {
                       Aid Tying Status
                       <HelpTooltip helpKey="tiedAid" />
                     </CardTitle>
+                    <CardDescription>Aid tying status determines whether recipients can procure goods and services from any source.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -921,6 +933,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.transparency}
                   helpKey="transparency"
+                  description="Public availability of financial reports, evaluation results, and performance data."
                 />
                 <SectionDetail
                   title="Mutual Accountability"
@@ -930,6 +943,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.accountability}
                   helpKey="accountability"
+                  description="Joint reviews, mutual accountability frameworks, and documented corrective actions."
                 />
               </TabsContent>
 
@@ -943,6 +957,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.civilSociety}
                   helpKey="civilSociety"
+                  description="Civil society consultation, CSO involvement in implementation, and public-private dialogue."
                 />
                 <SectionDetail
                   title="Gender Equality & Inclusion"
@@ -952,6 +967,7 @@ export default function AidEffectivenessDashboard() {
                   total={metrics.total}
                   score={metrics.sectionScores.gender}
                   helpKey="gender"
+                  description="Integration of gender objectives, budget allocations, and disaggregated indicators into activities."
                 />
               </TabsContent>
 
@@ -988,6 +1004,7 @@ export default function AidEffectivenessDashboard() {
                       Section Performance
                       <HelpTooltip helpKey="sectionBars" />
                     </CardTitle>
+                    <CardDescription>Average compliance rates across all 7 GPEDC sections for comparative analysis.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -1011,6 +1028,7 @@ export default function AidEffectivenessDashboard() {
                       All Sections Breakdown
                       <HelpTooltip helpKey="allSections" />
                     </CardTitle>
+                    <CardDescription>Progress and percentage ratings for each of the 7 GPEDC compliance sections.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -1041,6 +1059,7 @@ export default function AidEffectivenessDashboard() {
                       Implementing Partners
                       <HelpTooltip helpKey="partners" />
                     </CardTitle>
+                    <CardDescription>Distribution of activities across implementing partners by volume.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <PartnerChart partnerCounts={metrics.partnerCounts} orgMap={orgMap} total={metrics.total} />
@@ -1065,7 +1084,7 @@ export default function AidEffectivenessDashboard() {
 
 // --- Reusable Section Detail Component ---
 
-function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
+function SectionDetail({ title, icon, badge, fields, total, score, helpKey, description }: {
   title: string
   icon: React.ReactNode
   badge: string
@@ -1073,6 +1092,7 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
   total: number
   score: number
   helpKey?: string
+  description?: string
 }) {
   return (
     <Card className="bg-card border-border">
@@ -1092,6 +1112,7 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
             }>{score}%</Badge>
           </div>
         </div>
+        {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(200, fields.length * 44)}>
@@ -1164,6 +1185,7 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
           Reasons for Not Using Government Systems
           <HelpTooltip helpKey="govWhyNot" />
         </CardTitle>
+        <CardDescription>Stated reasons when donors choose not to use government public financial management systems.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

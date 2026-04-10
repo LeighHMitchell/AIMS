@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/ui/stat-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react"
 import { FullPagination } from "@/components/ui/full-pagination"
 import {
   ResponsiveContainer,
@@ -98,10 +98,10 @@ export default function ProjectBankDashboard() {
   }
 
   const getSortIcon = (field: string) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-400" />
     return sortOrder === 'asc'
-      ? <ArrowUp className="h-3.5 w-3.5 text-gray-400" />
-      : <ArrowDown className="h-3.5 w-3.5 text-gray-400" />
+      ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" />
+      : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
   }
 
   useEffect(() => {

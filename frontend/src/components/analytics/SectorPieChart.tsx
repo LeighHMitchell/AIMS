@@ -226,43 +226,50 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          label={renderCustomizedLabel}
-          outerRadius={100}
-          fill="#8884d8"
-          dataKey="value"
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip 
-          formatter={(value: number, name: string) => [formatCurrency(value), name]}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
-        />
-        <Legend 
-          verticalAlign="bottom" 
-          height={36}
-          iconType="circle"
-          wrapperStyle={{
-            paddingTop: '20px',
-            fontSize: '12px',
-            color: '#64748b'
-          }}
-        />
-      </PieChart>
-    </ResponsiveContainer>
+    <div>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={renderCustomizedLabel}
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value: number, name: string) => [formatCurrency(value), name]}
+            contentStyle={{
+              backgroundColor: '#1e293b',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#fff'
+            }}
+            labelStyle={{ color: '#94a3b8' }}
+          />
+          <Legend
+            verticalAlign="bottom"
+            height={36}
+            iconType="circle"
+            wrapperStyle={{
+              paddingTop: '20px',
+              fontSize: '12px',
+              color: '#64748b'
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        This pie chart shows the distribution of disbursement spending across DAC sectors. Each slice represents a sector weighted by actual disbursement value, with the top seven sectors shown individually and smaller sectors grouped under Others. Hover over any slice to see the exact amount in USD.
+      </p>
+    </div>
   )
 } 

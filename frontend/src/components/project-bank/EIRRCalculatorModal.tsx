@@ -147,10 +147,10 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 sticky top-0 z-10">
-                <th className="px-3 py-1.5 text-xs font-semibold text-left w-16">Year</th>
-                <th className="px-3 py-1.5 text-xs font-semibold text-right">Costs (M)</th>
-                <th className="px-3 py-1.5 text-xs font-semibold text-right">Benefits (M)</th>
-                <th className="px-3 py-1.5 text-xs font-semibold text-right">Net</th>
+                <th className="px-3 py-1.5 text-xs font-medium text-left w-16">Year</th>
+                <th className="px-3 py-1.5 text-xs font-medium text-right">Costs (M)</th>
+                <th className="px-3 py-1.5 text-xs font-medium text-right">Benefits (M)</th>
+                <th className="px-3 py-1.5 text-xs font-medium text-right">Net</th>
                 <th className="w-10" />
               </tr>
             </thead>

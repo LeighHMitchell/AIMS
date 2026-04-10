@@ -17,6 +17,9 @@ export type { StrategicAlignmentSectionId } from './StrategicAlignmentGroup'
 export { SupportingInfoGroup, SUPPORTING_INFO_SECTIONS, isSupportingInfoSection } from './SupportingInfoGroup'
 export type { SupportingInfoSectionId } from './SupportingInfoGroup'
 
+export { LocationsGroup, LOCATIONS_SECTIONS, isLocationsSection } from './LocationsGroup'
+export type { LocationsSectionId } from './LocationsGroup'
+
 export { AdvancedGroup, ADVANCED_SECTIONS, isAdvancedSection } from './AdvancedGroup'
 export type { AdvancedSectionId } from './AdvancedGroup'
 

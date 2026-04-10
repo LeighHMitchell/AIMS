@@ -332,6 +332,11 @@ export function ExecutingAgenciesChart({
         {renderContent(false)}
       </div>
 
+      {/* Explanatory text */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        This chart shows executing agencies -- organizations that manage budgets and administer funds on behalf of the funding organization. Use the view toggles to compare agencies by bar chart, pie chart, or table format.
+      </p>
+
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>

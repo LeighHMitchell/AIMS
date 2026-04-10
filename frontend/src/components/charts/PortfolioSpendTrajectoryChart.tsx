@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
@@ -886,13 +886,20 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    {customYears.map(cy => (
+                    {sortCustomYearsCalendarFirst(customYears).map(cy => (
                       <DropdownMenuItem
                         key={cy.id}
                         className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
                         onClick={() => setCalendarType(cy.id)}
                       >
-                        {cy.name}
+                        <span className="flex items-center gap-2">
+                          {cy.shortName && (
+                            <span className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                              {cy.shortName.trim()}
+                            </span>
+                          )}
+                          {cy.name}
+                        </span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -1221,11 +1228,11 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
             <Table>
               <TableHeader>
                 <TableRow className="sticky top-0 bg-white z-10">
-                  <TableHead className="bg-white">Month</TableHead>
-                  <TableHead className="text-right bg-white">Even-Spend Budget Baseline (USD)</TableHead>
-                  <TableHead className="text-right bg-white">Planned Disbursements (USD)</TableHead>
-                  <TableHead className="text-right bg-white">Commitments (USD)</TableHead>
-                  <TableHead className="text-right bg-white">Disbursements (USD)</TableHead>
+                  <TableHead>Month</TableHead>
+                  <TableHead className="text-right">Even-Spend Budget Baseline (USD)</TableHead>
+                  <TableHead className="text-right">Planned Disbursements (USD)</TableHead>
+                  <TableHead className="text-right">Commitments (USD)</TableHead>
+                  <TableHead className="text-right">Disbursements (USD)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

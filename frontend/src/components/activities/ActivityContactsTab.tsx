@@ -360,12 +360,12 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Position</TableHead>
-              <TableHead className="font-semibold">Organization</TableHead>
-              <TableHead className="font-semibold">Email</TableHead>
-              <TableHead className="font-semibold">Phone</TableHead>
-              <TableHead className="font-semibold">Type</TableHead>
+              <TableHead className="font-medium">Name</TableHead>
+              <TableHead className="font-medium">Position</TableHead>
+              <TableHead className="font-medium">Organization</TableHead>
+              <TableHead className="font-medium">Email</TableHead>
+              <TableHead className="font-medium">Phone</TableHead>
+              <TableHead className="font-medium">Type</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -17,6 +17,7 @@ export interface FocalPoint {
   status: FocalPointStatus;
   title?: string;
   job_title?: string;
+  department?: string;
   organisation?: string;
   avatar_url?: string;
   user_id?: string;

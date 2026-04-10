@@ -48,12 +48,11 @@ export function HelpTextTooltip({
           )} />
         </TooltipTrigger>
         <TooltipContent
-          className="max-w-[16rem] border border-gray-200 bg-white shadow-lg"
           side={side}
           align={align}
           sideOffset={sideOffset}
         >
-          <p className="text-sm text-gray-600 font-normal">{resolvedContent}</p>
+          <p>{resolvedContent}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

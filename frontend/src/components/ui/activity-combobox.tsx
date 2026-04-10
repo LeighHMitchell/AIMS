@@ -129,40 +129,72 @@ export function ActivityCombobox({
     }
   }, [open]);
 
-  // Fetch the selected activity when value changes
+  // Fetch the selected activity on mount or when value changes externally
   React.useEffect(() => {
-    console.log('[ActivityCombobox] Value changed to:', value);
-    const fetchSelectedActivity = async () => {
-      if (!value) {
-        console.log('[ActivityCombobox] No value, clearing selection');
-        setSelectedActivity(null);
-        return;
-      }
+    if (!value) {
+      setSelectedActivity(null);
+      return;
+    }
 
-      // Check if activity is already in the list
-      const activityInList = activities.find(a => a.id === value);
-      if (activityInList) {
-        console.log('[ActivityCombobox] Found activity in list:', activityInList.title_narrative || activityInList.title);
-        setSelectedActivity(activityInList);
-        return;
-      }
+    // If we already have the right activity selected, skip the fetch
+    if (selectedActivity?.id === value) return;
 
-      // Fetch the specific activity
-      console.log('[ActivityCombobox] Fetching activity:', value);
-      try {
-        const response = await apiFetch(`/api/activities/${value}`);
-        if (response.ok) {
-          const activity = await response.json();
-          console.log('[ActivityCombobox] Fetched activity:', activity.title_narrative || activity.title);
-          setSelectedActivity(activity);
+    // Check if activity is already in the loaded list
+    const activityInList = activities.find(a => a.id === value);
+    if (activityInList) {
+      setSelectedActivity(activityInList);
+      return;
+    }
+
+    // Fetch from API as fallback (e.g. initial mount with a pre-set value)
+    let cancelled = false;
+    apiFetch(`/api/activities/${value}`)
+      .then(response => {
+        if (response.ok) return response.json();
+        return null;
+      })
+      .then(async (activity) => {
+        if (cancelled || !activity) return;
+
+        // The individual activity endpoint doesn't include the nested reporting_org.
+        // Construct it from available fields, then enrich with a org lookup if possible.
+        if (!activity.reporting_org) {
+          const orgId = activity.reportingOrgId || activity.reporting_org_id;
+          if (orgId) {
+            // Build a minimal reporting_org from what we have
+            activity.reporting_org = {
+              id: orgId,
+              name: activity.created_by_org_name || activity.reporting_org_name || '',
+              acronym: activity.created_by_org_acronym || '',
+            };
+            // Enrich with full org details (logo, type, country)
+            try {
+              const orgRes = await apiFetch(`/api/organizations/${orgId}`);
+              if (orgRes.ok) {
+                const org = await orgRes.json();
+                activity.reporting_org = {
+                  id: orgId,
+                  name: org.name || activity.reporting_org.name,
+                  acronym: org.acronym || activity.reporting_org.acronym,
+                  logo: org.logo,
+                  country: org.country,
+                  type: org.type,
+                  Organisation_Type_Code: org.Organisation_Type_Code,
+                  Organisation_Type_Name: org.Organisation_Type_Name,
+                };
+              }
+            } catch {
+              // Keep the minimal reporting_org
+            }
+          }
         }
-      } catch (error) {
-        console.error('Error fetching selected activity:', error);
-      }
-    };
 
-    fetchSelectedActivity();
-  }, [value, activities]);
+        if (!cancelled) setSelectedActivity(activity);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch activities — always use the search endpoint for consistent data shape
   React.useEffect(() => {
@@ -296,6 +328,7 @@ export function ActivityCombobox({
                   key={activity.id}
                   role="option"
                   onClick={() => {
+                    setSelectedActivity(activity);
                     onValueChange(activity.id);
                     setOpen(false);
                   }}

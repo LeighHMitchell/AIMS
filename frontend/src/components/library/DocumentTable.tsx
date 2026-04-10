@@ -8,6 +8,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,9 +27,6 @@ import {
   Eye,
   Trash2,
   ExternalLink,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Pencil,
   Bookmark,
   BookOpen,
@@ -70,43 +69,6 @@ const SOURCE_TYPE_LABELS: Record<DocumentSourceType, string> = {
   standalone: 'Library',
 };
 
-// Sortable column header component
-function SortableHeader({
-  field,
-  label,
-  currentSortBy,
-  sortOrder,
-  onSort,
-}: {
-  field: LibrarySortField;
-  label: string;
-  currentSortBy: string;
-  sortOrder: 'asc' | 'desc';
-  onSort: (field: LibrarySortField) => void;
-}) {
-  const isActive = currentSortBy === field;
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-3 h-8 data-[state=open]:bg-accent"
-      onClick={() => onSort(field)}
-    >
-      {label}
-      {isActive ? (
-        sortOrder === 'asc' ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        )
-      ) : (
-        <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-      )}
-    </Button>
-  );
-}
-
 export function DocumentTable({
   documents,
   selectedIds,
@@ -146,60 +108,42 @@ export function DocumentTable({
                 onCheckedChange={(checked) => onSelectAll(checked as boolean)}
               />
             </TableHead>
-            <TableHead className="w-[25%]">
-              <SortableHeader
-                field="title"
-                label="Document Title"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
+            <TableHead className={`w-[25%] ${sortableHeaderClasses}`} onClick={() => onSort('title')}>
+              <div className="flex items-center gap-1">
+                Document Title
+                {getSortIcon('title', sortBy, sortOrder)}
+              </div>
             </TableHead>
-            <TableHead className="w-[18%]">
-              <SortableHeader
-                field="categoryCode"
-                label="Category"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
+            <TableHead className={`w-[18%] ${sortableHeaderClasses}`} onClick={() => onSort('categoryCode')}>
+              <div className="flex items-center gap-1">
+                Category
+                {getSortIcon('categoryCode', sortBy, sortOrder)}
+              </div>
             </TableHead>
             <TableHead className="w-[14%]">Activity</TableHead>
-            <TableHead className="w-[14%]">
-              <SortableHeader
-                field="reportingOrgName"
-                label="Organisation"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
+            <TableHead className={`w-[14%] ${sortableHeaderClasses}`} onClick={() => onSort('reportingOrgName')}>
+              <div className="flex items-center gap-1">
+                Organisation
+                {getSortIcon('reportingOrgName', sortBy, sortOrder)}
+              </div>
             </TableHead>
-            <TableHead className="w-[8%]">
-              <SortableHeader
-                field="format"
-                label="Format"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
+            <TableHead className={`w-[8%] ${sortableHeaderClasses}`} onClick={() => onSort('format')}>
+              <div className="flex items-center gap-1">
+                Format
+                {getSortIcon('format', sortBy, sortOrder)}
+              </div>
             </TableHead>
-            <TableHead className="w-[10%]">
-              <SortableHeader
-                field="createdAt"
-                label="Date"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
+            <TableHead className={`w-[10%] ${sortableHeaderClasses}`} onClick={() => onSort('createdAt')}>
+              <div className="flex items-center gap-1">
+                Date
+                {getSortIcon('createdAt', sortBy, sortOrder)}
+              </div>
             </TableHead>
-            <TableHead className={showAddedBy ? "w-[7%]" : "w-[8%]"}>
-              <SortableHeader
-                field="sourceType"
-                label="Source"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
+            <TableHead className={`${showAddedBy ? "w-[7%]" : "w-[8%]"} ${sortableHeaderClasses}`} onClick={() => onSort('sourceType')}>
+              <div className="flex items-center gap-1">
+                Source
+                {getSortIcon('sourceType', sortBy, sortOrder)}
+              </div>
             </TableHead>
             {showAddedBy && (
               <TableHead className="w-[10%]">Added By</TableHead>

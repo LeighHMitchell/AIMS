@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether DFMIS — Visual Consistency Audit</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #22262f;
+    --border: #2a2e3a;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --accent: #3b82f6;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+    --info: #6366f1;
+    --geist: 'Geist', -apple-system, sans-serif;
+    --mono: 'Geist Mono', 'SF Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--geist); background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 2rem; margin-bottom: 2rem; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
+  header .meta { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; }
+
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+  .toc h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; }
+  .toc ol { padding-left: 1.25rem; }
+  .toc li { margin-bottom: 0.25rem; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+  .toc a:hover { text-decoration: underline; }
+
+  h2.section { font-size: 1.4rem; font-weight: 700; margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  h3.subsection { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--text); }
+
+  .finding { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border-left: 4px solid var(--border); }
+  .finding.critical { border-left-color: var(--critical); }
+  .finding.high { border-left-color: var(--high); }
+  .finding.medium { border-left-color: var(--medium); }
+  .finding.low { border-left-color: var(--low); }
+  .finding.good { border-left-color: var(--low); }
+  .finding.info { border-left-color: var(--info); }
+
+  .finding-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+  .badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.6rem; border-radius: 4px; white-space: nowrap; }
+  .badge.critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .badge.high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .badge.medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .badge.low { background: rgba(34,197,94,0.15); color: var(--low); }
+  .badge.good { background: rgba(34,197,94,0.15); color: var(--low); }
+  .badge.info { background: rgba(99,102,241,0.15); color: var(--info); }
+
+  .finding-title { font-weight: 600; font-size: 1rem; }
+  .finding p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
+  code { background: var(--surface-2); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85em; font-family: var(--mono); color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+  th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--surface-2); }
+  td code { font-size: 0.8rem; }
+  .match { color: var(--low); }
+  .mismatch { color: var(--critical); font-weight: 600; }
+  .partial { color: var(--medium); }
+
+  .dominant { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.75rem 0; display: inline-block; }
+  .dominant .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.25rem; }
+  .dominant .value { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; }
+  .summary-card .count { font-size: 2.5rem; font-weight: 700; line-height: 1; }
+  .summary-card .label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem; }
+
+  footer { border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Aether DFMIS — Visual Consistency Audit</h1>
+  <div class="meta">Generated: 1 April 2026 &nbsp;|&nbsp; v3.23.0 &nbsp;|&nbsp; Myanmar Instance &nbsp;|&nbsp; Method: Live browser computed style extraction + codebase analysis</div>
+</header>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="count" style="color:var(--low)">2</div><div class="label">Fonts Verified</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--accent)">22</div><div class="label">Pages Audited</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--critical)">8</div><div class="label">Inconsistencies</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--medium)">6</div><div class="label">Partial Issues</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--low)">5</div><div class="label">Consistent</div></div>
+</div>
+
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#fonts">Font Families &amp; Configuration</a></li>
+    <li><a href="#h1">Page Title (H1) Consistency</a></li>
+    <li><a href="#headings">Heading Hierarchy (H2/H3)</a></li>
+    <li><a href="#ids">IATI ID &amp; Code Badge Styling</a></li>
+    <li><a href="#cards">Card Border, Radius &amp; Shadow</a></li>
+    <li><a href="#filters">Filter Controls &amp; Dropdowns</a></li>
+    <li><a href="#tables">Table Header Styling</a></li>
+    <li><a href="#badges">Status Badges &amp; Color Tokens</a></li>
+    <li><a href="#money">Currency &amp; Financial Formatting</a></li>
+    <li><a href="#sidebar">Sidebar Counts &amp; Navigation</a></li>
+    <li><a href="#colors">Color System &amp; CSS Variables</a></li>
+    <li><a href="#tabs">Tab Styling</a></li>
+    <li><a href="#recommendations">Prioritised Recommendations</a></li>
+  </ol>
+</div>
+
+<!-- ========== 1. FONTS ========== -->
+<h2 class="section" id="fonts">1. Font Families &amp; Configuration</h2>
+
+<div class="finding good">
+  <div class="finding-header">
+    <span class="badge good">Consistent</span>
+    <span class="finding-title">Geist Sans and Geist Mono correctly configured</span>
+  </div>
+  <p>Both <code>__GeistSans_245d8d</code> (primary) and <code>__GeistMono_97c177</code> (monospace) are loaded via <code>layout.tsx</code>. Tailwind config maps <code>font-mono</code> to Geist Mono. <strong>No leftover Inter font found</strong> anywhere in the codebase or computed styles. The <code>ui-sans-serif</code> fallback is the Tailwind default and correctly chains after Geist Sans.</p>
+</div>
+
+<!-- ========== 2. H1 ========== -->
+<h2 class="section" id="h1">2. Page Title (H1) Consistency</h2>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="badge high">Inconsistent</span>
+    <span class="finding-title">Dashboard H1 uses different size and weight than all other pages</span>
+  </div>
+  <p>The Dashboard "Welcome, Leigh" heading renders at <code>24px / weight 400</code> while every other page title uses <code>30px / weight 700</code>. The SDG detail page title ("No Poverty") also uses <code>24px / 700</code> — closer but still different from the dominant pattern.</p>
+</div>
+
+<table>
+  <thead><tr><th>Page</th><th>H1 Text</th><th>Font Size</th><th>Weight</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>/dashboard</td><td>"Welcome, Leigh"</td><td><code>24px</code></td><td><code>400</code></td><td class="mismatch">Outlier</td></tr>
+    <tr><td>/activities</td><td>"Activities"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/transactions</td><td>"Transactions"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/budgets</td><td>"Budgets"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/organizations</td><td>"Organizations"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/sectors</td><td>"Sectors"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/sdgs</td><td>"Sustainable Development Goals"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/sdgs/1</td><td>"No Poverty"</td><td><code>24px</code></td><td><code>700</code></td><td class="mismatch">Outlier</td></tr>
+    <tr><td>/policy-markers</td><td>"Policy Markers"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/location-profiles</td><td>"Location Profiles"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/working-groups</td><td>"Working Groups"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/funds</td><td>"Pooled Funds"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/analytics-dashboard</td><td>"Analytics Dashboard"</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+    <tr><td>/activities/[id]</td><td>(Activity title)</td><td><code>30px</code></td><td><code>700</code></td><td class="match">Dominant</td></tr>
+  </tbody>
+</table>
+
+<div class="dominant">
+  <div class="label">Dominant Pattern</div>
+  <div class="value">H1: 30px / font-weight: 700 (text-3xl font-bold)</div>
+</div>
+
+<!-- ========== 3. HEADINGS ========== -->
+<h2 class="section" id="headings">3. Heading Hierarchy (H2/H3)</h2>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="badge medium">Inconsistent</span>
+    <span class="finding-title">Chart/section title sizes vary between pages</span>
+  </div>
+  <p>The Analytics Dashboard uses consistent H3 chart titles at <code>16px / 500</code>, but SDG detail pages use <code>12px / 600</code> and <code>14px / 600</code> for equivalent chart titles. H2 section headings are generally <code>24px / 700</code> on analytics but not consistently applied elsewhere.</p>
+</div>
+
+<table>
+  <thead><tr><th>Page</th><th>Element</th><th>Size</th><th>Weight</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>/analytics-dashboard</td><td>H2 section "Overview"</td><td><code>24px</code></td><td><code>700</code></td><td class="match">Good</td></tr>
+    <tr><td>/analytics-dashboard</td><td>H3 chart titles (all)</td><td><code>16px</code></td><td><code>500</code></td><td class="match">Consistent</td></tr>
+    <tr><td>/sdgs/1</td><td>H3 chart titles (top row)</td><td><code>12px</code></td><td><code>600</code></td><td class="mismatch">Outlier</td></tr>
+    <tr><td>/sdgs/1</td><td>H3 chart titles (lower)</td><td><code>14px</code></td><td><code>600</code></td><td class="mismatch">Outlier</td></tr>
+    <tr><td>/sdgs/1</td><td>H3 section titles</td><td><code>14px</code></td><td><code>600</code></td><td class="partial">Different</td></tr>
+  </tbody>
+</table>
+
+<div class="dominant">
+  <div class="label">Recommended Standard</div>
+  <div class="value">H2: 24px / 700 &nbsp;|&nbsp; H3 chart title: 16px / 500 &nbsp;|&nbsp; H3 section: 18px / 600</div>
+</div>
+
+<!-- ========== 4. IDS ========== -->
+<h2 class="section" id="ids">4. IATI ID &amp; Code Badge Styling</h2>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="badge high">Inconsistent</span>
+    <span class="finding-title">Code badges differ in font size, weight, and padding across pages</span>
+  </div>
+  <p>Three distinct code badge variants exist across the app. The dominant pattern is <code>12px / weight 400 / bg muted / padding 2px 6px / radius 4px</code>, used for IATI IDs on most pages. But Sector codes use <code>font-weight: 700</code> (bold), and Location codes use <code>10px / padding 2px 4px</code> — both smaller and tighter. All three should use the same base style.</p>
+</div>
+
+<table>
+  <thead><tr><th>Context</th><th>Font Size</th><th>Weight</th><th>Background</th><th>Padding</th><th>Radius</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>IATI IDs (Activities, Funds, Detail)</td><td><code>12px</code></td><td><code>400</code></td><td><code>rgb(245,245,245)</code></td><td><code>2px 6px</code></td><td><code>4px</code></td><td class="match">Dominant</td></tr>
+    <tr><td>IATI IDs (Dashboard)</td><td><code>12px</code></td><td><code>400</code></td><td><code>rgb(245,245,245)</code></td><td><code>2px 6px</code></td><td><code>4px</code></td><td class="match">Match</td></tr>
+    <tr><td>Sector codes (/sectors)</td><td><code>12px</code></td><td><code>700</code></td><td><code>rgb(245,245,245)</code></td><td><code>2px 6px</code></td><td><code>4px</code></td><td class="mismatch">Bold outlier</td></tr>
+    <tr><td>Location codes (/location-profiles)</td><td><code>10px</code></td><td><code>400</code></td><td><code>rgb(245,245,245)</code></td><td><code>2px 4px</code></td><td><code>4px</code></td><td class="mismatch">Smaller size + padding</td></tr>
+    <tr><td>Policy Marker codes (on card)</td><td><code>10px</code></td><td><code>400</code></td><td><code>rgba(255,255,255,0.1)</code></td><td><code>2px 4px</code></td><td><code>4px</code></td><td class="partial">Contextual (on dark bg)</td></tr>
+    <tr><td>Org IDs (on banner cards)</td><td><code>12px</code></td><td><code>400</code></td><td><code>rgba(255,255,255,0.2)</code></td><td><code>2px 6px</code></td><td><code>4px</code></td><td class="match">Contextual (on image)</td></tr>
+    <tr><td>WG codes (on banner cards)</td><td><code>12px</code></td><td><code>400</code></td><td><code>rgba(255,255,255,0.2)</code></td><td><code>2px 6px</code></td><td><code>4px</code></td><td class="match">Contextual (on image)</td></tr>
+  </tbody>
+</table>
+
+<div class="dominant">
+  <div class="label">Dominant Pattern (light bg)</div>
+  <div class="value">font-mono text-xs bg-muted px-1.5 py-0.5 rounded &nbsp;→&nbsp; 12px / 400 / #f5f5f5 / 2px 6px / 4px</div>
+</div>
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">Sector codes should drop <code>font-bold</code>. Location codes should match the dominant <code>text-xs</code> / <code>px-1.5 py-0.5</code> sizing.</p>
+
+<!-- ========== 5. CARDS ========== -->
+<h2 class="section" id="cards">5. Card Border, Radius &amp; Shadow</h2>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="badge medium">Mostly Consistent — minor radius mixing</span>
+    <span class="finding-title">Cards use rounded-xl (12px) but some inner surfaces use 8px or 6px</span>
+  </div>
+  <p>The standard Card component consistently uses <code>rounded-xl</code> (12px), <code>border-border/60</code> (0.667px), and a custom multi-layer shadow. However, some pages mix <code>rounded-lg</code> (8px) elements within card layouts (e.g. SDG detail chart containers), and filter/input elements use <code>rounded-md</code> (6px). The 12px for cards and 6px for inputs is a reasonable system — the issue is when 8px appears as an intermediate value with no clear semantic meaning.</p>
+</div>
+
+<table>
+  <thead><tr><th>Element Type</th><th>Border Radius</th><th>Frequency</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Card component</td><td><code>12px</code> (rounded-xl)</td><td>~14 per page</td><td class="match">Dominant</td></tr>
+    <tr><td>Avatar / pill badges</td><td><code>9999px</code> (rounded-full)</td><td>~8 per page</td><td class="match">Correct</td></tr>
+    <tr><td>Filters, inputs, small controls</td><td><code>6px</code> (rounded-md)</td><td>~66 per page</td><td class="match">Correct</td></tr>
+    <tr><td>Code badges</td><td><code>4px</code> (rounded-sm)</td><td>Varies</td><td class="match">Correct</td></tr>
+    <tr><td>Inner card surfaces (SDG detail)</td><td><code>8px</code> (rounded-lg)</td><td>~3 per page</td><td class="partial">Ambiguous tier</td></tr>
+  </tbody>
+</table>
+
+<div class="dominant">
+  <div class="label">Recommended Radius Scale</div>
+  <div class="value">4px (codes) → 6px (inputs) → 12px (cards/panels) → 9999px (pills/avatars)</div>
+</div>
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">Drop the 8px tier. Promote inner chart containers to <code>rounded-xl</code> (12px) to match their parent card.</p>
+
+<!-- ========== 6. FILTERS ========== -->
+<h2 class="section" id="filters">6. Filter Controls &amp; Dropdowns</h2>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="badge medium">Mostly Consistent — height variance and missing codes</span>
+    <span class="finding-title">Filter dropdowns are generally uniform but some are 40px instead of 36px</span>
+  </div>
+  <p>Most filter comboboxes across Activities, Transactions, Budgets use a consistent style: <code>14px font / 36px height / 6px radius / white bg</code>. However, the Columns button on the Budgets page renders at <code>40px</code> height. Sectors and Policy Markers use custom inline filter buttons instead of the shared <code>FilterBar</code> component.</p>
+  <p style="margin-top: 0.75rem;"><strong>Missing codes in dropdowns:</strong> Filter dropdown options do not show numeric codes alongside names. For example, the Sector filter shows "All Sectors" but when expanded, sector options don't display their DAC codes (e.g., "151 — Government & Civil Society"). The same applies to Organization, Aid Type, and Flow Type filters — no reference codes are shown.</p>
+</div>
+
+<table>
+  <thead><tr><th>Page</th><th>Filter Type</th><th>Font</th><th>Height</th><th>Radius</th><th>Codes Shown?</th></tr></thead>
+  <tbody>
+    <tr><td>/activities</td><td>FilterBar combobox</td><td><code>14px</code></td><td><code>36px</code></td><td><code>6px</code></td><td class="mismatch">No</td></tr>
+    <tr><td>/transactions</td><td>FilterBar combobox</td><td><code>14px</code></td><td><code>36px</code></td><td><code>6px</code></td><td class="mismatch">No</td></tr>
+    <tr><td>/budgets</td><td>FilterBar combobox</td><td><code>14px</code></td><td><code>36px</code></td><td><code>6px</code></td><td class="mismatch">No</td></tr>
+    <tr><td>/budgets</td><td>Columns button</td><td><code>14px</code></td><td><code>40px</code></td><td><code>6px</code></td><td>N/A</td></tr>
+    <tr><td>/sectors</td><td>Custom inline buttons</td><td colspan="3">Non-standard implementation</td><td class="partial">Inline only</td></tr>
+    <tr><td>/policy-markers</td><td>Custom inline buttons</td><td colspan="3">Non-standard implementation</td><td class="partial">Inline only</td></tr>
+  </tbody>
+</table>
+
+<!-- ========== 7. TABLES ========== -->
+<h2 class="section" id="tables">7. Table Header Styling</h2>
+
+<div class="finding good">
+  <div class="finding-header">
+    <span class="badge good">Consistent</span>
+    <span class="finding-title">Table headers are uniform across all data table pages</span>
+  </div>
+  <p>All table headers across Activities, Transactions, Budgets, Planned Disbursements, SDGs, and Location Profiles use the same style: <code>14px / weight 500 / color rgb(115,115,115) / no text-transform / transparent bg</code>. The checkbox column header correctly uses <code>16px / 700</code> for the select-all control. This is well-standardised.</p>
+</div>
+
+<!-- ========== 8. BADGES ========== -->
+<h2 class="section" id="badges">8. Status Badges &amp; Color Tokens</h2>
+
+<div class="finding good">
+  <div class="finding-header">
+    <span class="badge good">Mostly Consistent</span>
+    <span class="finding-title">Status badges follow a clear pattern</span>
+  </div>
+  <p>Status badges like "Active", "Published", "Implementation" consistently use <code>12px / weight 600 / 6px radius / padding 2px 10px</code>. Green badges ("Active", "Published") use <code>bg: rgb(220,252,231)</code> with green text. The Badge component in <code>badge.tsx</code> defines proper variants.</p>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="badge medium">Partial Issue</span>
+    <span class="finding-title">Some status colors use hardcoded Tailwind utilities instead of semantic tokens</span>
+  </div>
+  <p>The codebase has 88+ instances of hardcoded Tailwind color classes like <code>bg-blue-50</code>, <code>bg-green-50</code>, <code>bg-red-50</code> etc. The badge component also uses hardcoded hex values (<code>#4c5568</code>, <code>#dc2625</code>) for Project Bank pipeline statuses instead of referencing CSS variables. While the visual result is consistent, these hardcoded values won't respond to theme changes and are harder to maintain.</p>
+</div>
+
+<!-- ========== 9. MONEY ========== -->
+<h2 class="section" id="money">9. Currency &amp; Financial Formatting</h2>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="badge high">Inconsistent</span>
+    <span class="finding-title">Three different currency display formats used across the app</span>
+  </div>
+  <p>Financial figures appear in at least three distinct formats depending on context, with no clear system:</p>
+</div>
+
+<table>
+  <thead><tr><th>Format</th><th>Example</th><th>Where Used</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>$ + abbreviated</td><td><code>$18.0M</code>, <code>$402.4M</code></td><td>Dashboard cards, Pooled Funds, Location Profiles</td><td class="match">Dominant for summaries</td></tr>
+    <tr><td>Code + full number</td><td><code>EUR 4,700,000</code>, <code>AUD 8,500,000</code></td><td>Budget table "Currency Value" column</td><td class="partial">Appropriate for detail</td></tr>
+    <tr><td>USD + full number</td><td><code>USD 5,488,089</code></td><td>Budget table "USD Value" column</td><td class="partial">Appropriate for detail</td></tr>
+    <tr><td>USD + comma-separated</td><td><code>USD 280,000</code></td><td>Transactions table "Amount" column</td><td class="match">Detail format</td></tr>
+    <tr><td>$ + negative</td><td><code>$-13.5M</code></td><td>Pooled Funds balance</td><td class="mismatch">Should use ($13.5M) or -$13.5M</td></tr>
+  </tbody>
+</table>
+
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;"><strong>Recommendation:</strong> Define two tiers: (1) Summary format: <code>$18.0M</code> for cards, charts, and summary views. (2) Detail format: <code>USD 4,700,000</code> for table cells. Negative values should use <code>-$13.5M</code> or <code>($13.5M)</code> with red color — never <code>$-13.5M</code>.</p>
+
+<!-- ========== 10. SIDEBAR ========== -->
+<h2 class="section" id="sidebar">10. Sidebar Counts &amp; Navigation</h2>
+
+<div class="finding low">
+  <div class="finding-header">
+    <span class="badge low">Minor</span>
+    <span class="finding-title">Sidebar counts are shown for some items but not all</span>
+  </div>
+  <p>Counts are shown for: Activities (56), Transactions (760), Planned Disbursements (178), Budgets (95), Organizations (232), Rolodex (25), Sectors (45), Policy Markers (29), Library (18), FAQ (46). Missing counts: SDGs, Locations, Working Groups, Transparency Index, Aid Effectiveness, Analytics, Atlas, Search, Portfolios, Reports, Calendar, Data Clinic, Build History. Some of these (like Analytics) may not have a meaningful count, but SDGs (17), Locations, and Working Groups could benefit from counts.</p>
+</div>
+
+<!-- ========== 11. COLORS ========== -->
+<h2 class="section" id="colors">11. Color System &amp; CSS Variables</h2>
+
+<div class="finding info">
+  <div class="finding-header">
+    <span class="badge info">Reference</span>
+    <span class="finding-title">CSS variable baseline from :root</span>
+  </div>
+  <p>The color system uses HSL-based CSS variables:</p>
+</div>
+
+<table>
+  <thead><tr><th>Token</th><th>Value</th><th>Resolved</th></tr></thead>
+  <tbody>
+    <tr><td><code>--primary</code></td><td><code>0 0% 9%</code></td><td>Near-black (used for buttons, strong text)</td></tr>
+    <tr><td><code>--background</code></td><td><code>0 0% 100%</code></td><td>White</td></tr>
+    <tr><td><code>--foreground</code></td><td><code>0 0% 3.9%</code></td><td>Near-black text</td></tr>
+    <tr><td><code>--muted</code></td><td><code>0 0% 96.1%</code></td><td>Light gray (code badge bg)</td></tr>
+    <tr><td><code>--accent</code></td><td><code>0 0% 96.1%</code></td><td>Same as muted (neutral accent)</td></tr>
+    <tr><td><code>--border</code></td><td><code>0 0% 89.8%</code></td><td>Light border gray</td></tr>
+    <tr><td><code>--card</code></td><td><code>0 0% 100%</code></td><td>White card bg</td></tr>
+    <tr><td><code>--radius</code></td><td><code>0.5rem</code></td><td>8px base radius</td></tr>
+  </tbody>
+</table>
+
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.75rem;"><strong>Note:</strong> The <code>--accent</code> token is identical to <code>--muted</code> — this means there is no distinct accent color defined. The app relies on the dark navy sidebar and <code>--primary</code> (near-black) as its visual anchor. Semantic colors (green for success, red for error, amber for warning) are applied via direct Tailwind classes rather than CSS variables, making them harder to theme.</p>
+
+<!-- ========== 12. TABS ========== -->
+<h2 class="section" id="tabs">12. Tab Styling</h2>
+
+<div class="finding good">
+  <div class="finding-header">
+    <span class="badge good">Consistent</span>
+    <span class="finding-title">Tab controls are uniform across pages</span>
+  </div>
+  <p>Tabs on the Dashboard, Analytics Dashboard, and Activity Detail all use <code>14px / weight 500</code>. Active tab uses <code>color: rgb(10,10,10)</code>, inactive uses <code>rgb(115,115,115)</code>. This is well-standardised.</p>
+</div>
+
+<!-- ========== RECOMMENDATIONS ========== -->
+<h2 class="section" id="recommendations">Prioritised Recommendations</h2>
+
+<h3 class="subsection">Priority 1 — Quick wins (fix in a few files)</h3>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="badge critical">P1</span>
+    <span class="finding-title">Standardise code badge styling</span>
+  </div>
+  <p><strong>What:</strong> Remove <code>font-bold</code> from sector code badges in <code>/sectors/page.tsx</code> and <code>/sectors/[code]/page.tsx</code>. Update location code badges in <code>/location-profiles/page.tsx</code> to use <code>text-xs px-1.5 py-0.5</code> instead of <code>text-[10px] px-1 py-0.5</code>. Create a shared <code>&lt;CodeBadge&gt;</code> component to prevent future drift.</p>
+  <p><strong>Target:</strong> All code/ID badges → <code>font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded</code></p>
+</div>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="badge critical">P2</span>
+    <span class="finding-title">Fix Dashboard H1 to match dominant pattern</span>
+  </div>
+  <p><strong>What:</strong> Change "Welcome, Leigh" heading from <code>text-2xl font-normal</code> to <code>text-3xl font-bold</code>. Also fix SDG detail page title to use <code>text-3xl</code> instead of <code>text-2xl</code>.</p>
+</div>
+
+<div class="finding critical">
+  <div class="finding-header">
+    <span class="badge critical">P3</span>
+    <span class="finding-title">Standardise chart title sizes on SDG detail</span>
+  </div>
+  <p><strong>What:</strong> SDG detail page chart titles (H3) use <code>text-xs font-semibold</code> (12px) in the top row and <code>text-sm font-semibold</code> (14px) below. Change all to <code>text-base font-medium</code> (16px/500) to match the Analytics Dashboard chart title pattern.</p>
+</div>
+
+<h3 class="subsection">Priority 2 — Medium effort (component-level changes)</h3>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="badge high">P4</span>
+    <span class="finding-title">Add codes to filter dropdown options</span>
+  </div>
+  <p><strong>What:</strong> Update sector filter dropdowns to show <code>151 — Government &amp; Civil Society</code> format. Update organization dropdowns to show org abbreviation or IATI prefix. Update country/location selectors to show ISO codes (e.g., <code>MM — Myanmar</code>). This applies to all <code>FilterBar</code> / <code>MultiSelectFilter</code> components.</p>
+</div>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="badge high">P5</span>
+    <span class="finding-title">Standardise filter control heights</span>
+  </div>
+  <p><strong>What:</strong> Ensure all combobox/select controls in filter bars use <code>h-9</code> (36px). The Columns button on Budgets uses <code>h-10</code> (40px) — align it. Also migrate Sectors and Policy Markers pages from custom inline buttons to the shared <code>FilterBar</code> component.</p>
+</div>
+
+<div class="finding high">
+  <div class="finding-header">
+    <span class="badge high">P6</span>
+    <span class="finding-title">Define currency formatting tiers</span>
+  </div>
+  <p><strong>What:</strong> Create a shared <code>formatCurrency()</code> utility with two modes: <code>summary</code> (<code>$18.0M</code>) and <code>detail</code> (<code>USD 4,700,000</code>). Fix negative value display from <code>$-13.5M</code> to <code>-$13.5M</code>. Apply consistently across dashboard cards, table cells, chart tooltips.</p>
+</div>
+
+<h3 class="subsection">Priority 3 — Design system improvements</h3>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="badge medium">P7</span>
+    <span class="finding-title">Eliminate the 8px border-radius tier</span>
+  </div>
+  <p><strong>What:</strong> Audit all <code>rounded-lg</code> (8px) usage. Promote to <code>rounded-xl</code> (12px) for card-like containers, or demote to <code>rounded-md</code> (6px) for input-like elements. Keep a clean 4-tier scale: 4px → 6px → 12px → full.</p>
+</div>
+
+<div class="finding medium">
+  <div class="finding-header">
+    <span class="badge medium">P8</span>
+    <span class="finding-title">Move hardcoded colors to CSS variables</span>
+  </div>
+  <p><strong>What:</strong> Replace the 88+ direct Tailwind color class usages (<code>bg-blue-50</code>, <code>bg-green-100</code>) with semantic CSS variables like <code>--success-bg</code>, <code>--warning-bg</code>, <code>--info-bg</code>. Also move hardcoded hex values in <code>badge.tsx</code> to CSS variables. This enables future theming and ensures a single source of truth for semantic colors.</p>
+</div>
+
+<footer>
+  <p>Aether DFMIS Visual Consistency Audit &mdash; 1 April 2026</p>
+  <p style="margin-top: 0.5rem;">Method: Computed style extraction via Chrome DevTools MCP + codebase grep analysis across 22 pages</p>
+  <p style="margin-top: 0.25rem;">8 inconsistencies found &bull; 6 partial issues &bull; 5 areas fully consistent &bull; 8 prioritised recommendations</p>
+</footer>
+
+</div>
+</body>
+</html>

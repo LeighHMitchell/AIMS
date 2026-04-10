@@ -677,7 +677,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
       return (
         <>
-          <span className="text-[10px] text-muted-foreground mr-1">{currencyCode}</span>
+          <span className="text-xs text-muted-foreground mr-1">{currencyCode}</span>
           <span>{amount}</span>
         </>
       );
@@ -1329,8 +1329,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           <table className="w-full text-[10px] border-collapse">
                             <thead className="bg-muted/80 border-b border-border">
                               <tr>
-                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground text-left align-top">Organisation</th>
-                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground text-left align-top whitespace-nowrap">Role</th>
+                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top">Organisation</th>
+                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top whitespace-nowrap">Role</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1400,8 +1400,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         <table className="w-full text-[10px] border-collapse">
                           <thead className="bg-muted/80 border-b border-border">
                             <tr>
-                              <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground text-left align-top">Classification</th>
-                              <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground text-left align-top">Detail</th>
+                              <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top">Classification</th>
+                              <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top">Detail</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1610,9 +1610,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <table className="w-full text-[10px]">
                     <thead className="bg-muted/80 border-b border-border">
                       <tr>
-                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground">Category</th>
-                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground">Count</th>
-                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-muted-foreground">Total Amount</th>
+                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground">Category</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground">Count</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground">Total Amount</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

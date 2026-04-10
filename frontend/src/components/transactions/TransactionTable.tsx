@@ -432,6 +432,9 @@ export function TransactionTable({
   // Fetch activities for all transactions (not just when expanded)
   React.useEffect(() => {
     transactions.forEach(transaction => {
+      if (transaction.activity_id) {
+        fetchActivityDetails(transaction.activity_id);
+      }
       if (transaction.provider_org_activity_id) {
         fetchActivityDetails(transaction.provider_org_activity_id);
       }
@@ -535,14 +538,14 @@ export function TransactionTable({
       }).format(value);
 
       // Return as JSX with gray currency code
-      return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-xs">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[TransactionTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-xs font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -651,7 +654,7 @@ export function TransactionTable({
                 const txHeaderMap: Record<string, React.ReactNode> = {
                   activity: variant === "full" ? (
                     <SortableTableHeader key="activity" id="activity" className="cursor-pointer hover:bg-muted/80 transition-colors data-table-col-activity min-w-0" onClick={() => onSort("activity")}>
-                      <div className="flex items-center gap-1"><span>Activity</span>{getSortIcon("activity", sortField, sortOrder)}</div>
+                      <div className="flex items-center gap-1"><span>Activity Title</span>{getSortIcon("activity", sortField, sortOrder)}</div>
                     </SortableTableHeader>
                   ) : null,
                   activityId: <SortableTableHeader key="activityId" id="activityId">Activity ID</SortableTableHeader>,
@@ -679,7 +682,7 @@ export function TransactionTable({
                   receiverActivity: <SortableTableHeader key="receiverActivity" id="receiverActivity">Receiver Activity</SortableTableHeader>,
                   amount: (
                     <SortableTableHeader key="amount" id="amount" className="text-right cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("value")}>
-                      <div className="flex items-center justify-end gap-1"><span>Amount</span>{getSortIcon("value", sortField, sortOrder)}</div>
+                      <div className="flex items-center justify-end gap-1"><span>Original Value</span>{getSortIcon("value", sortField, sortOrder)}</div>
                     </SortableTableHeader>
                   ),
                   currency: <SortableTableHeader key="currency" id="currency" className="text-center">Currency</SortableTableHeader>,
@@ -733,7 +736,7 @@ export function TransactionTable({
                             {getGroupedLabel(type)}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            ({groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'})
+                            {groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'}
                           </span>
                         </div>
                         <span className="font-semibold text-sm">
@@ -882,6 +885,11 @@ export function TransactionTable({
                           <div className="flex items-start gap-1">
                             <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
                               {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
+                              {(transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier) && (
+                                <span className="text-xs font-mono font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
+                                  {transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier}
+                                </span>
+                              )}
                               <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity', 'title', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-title` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy activity title</p></TooltipContent></Tooltip>
                             </div>
                           </div>
@@ -902,7 +910,19 @@ export function TransactionTable({
                     ),
                     transactionType: (
                       <td key="transactionType" className="py-3 px-4 whitespace-nowrap">
-                        <Tooltip><TooltipTrigger asChild><span className="text-sm font-medium text-foreground">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                        <div className="flex items-center gap-2">
+                          <Tooltip><TooltipTrigger asChild><span className="text-sm font-medium text-foreground">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                          {transaction.status === 'draft' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 w-4 h-4 rounded flex items-center justify-center cursor-help">D</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <p>Draft — saved but not yet finalised</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
                       </td>
                     ),
                     linkedStatus: (

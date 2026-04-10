@@ -335,6 +335,11 @@ export function CumulativeSpendingOverTime({
             </div>
           </div>
         )}
+
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+          This chart tracks the running total of all disbursement and expenditure transactions over time. The upward slope indicates the rate of spending, with steeper sections representing periods of higher activity. Use the time period filter to focus on recent trends or zoom out to see the full spending trajectory.
+        </p>
       </CardContent>
     </Card>
   )

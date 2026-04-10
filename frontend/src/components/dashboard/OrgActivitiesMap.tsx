@@ -20,13 +20,11 @@ import {
   Flame,
   CircleDot,
   BarChart3,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
   ChevronDown,
+  ChevronRight,
   Mountain,
-  Map as MapIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
@@ -724,9 +722,9 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                             <div className="flex items-center gap-1">
                               Region
                               {sortColumn === 'region' ? (
-                                sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                               ) : (
-                                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                               )}
                             </div>
                           </TableHead>
@@ -744,9 +742,9 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                             <div className="flex items-center justify-end gap-1">
                               Activities
                               {sortColumn === 'activities' ? (
-                                sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                               ) : (
-                                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                               )}
                             </div>
                           </TableHead>
@@ -764,9 +762,9 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                             <div className="flex items-center justify-end gap-1">
                               Allocation %
                               {sortColumn === 'allocation' ? (
-                                sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                               ) : (
-                                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                               )}
                             </div>
                           </TableHead>
@@ -784,9 +782,9 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                             <div className="flex items-center justify-end gap-1">
                               Coverage %
                               {sortColumn === 'coverage' ? (
-                                sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                               ) : (
-                                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
                               )}
                             </div>
                           </TableHead>
