@@ -734,7 +734,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="bg-surface-muted">
                     <tr className="border-b border-border">
                       <th 
                         className="text-left py-3 px-4 font-semibold text-foreground cursor-pointer hover:bg-muted/50 select-none"
@@ -863,7 +863,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="bg-surface-muted">
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-medium text-foreground sticky left-0 bg-card z-10">
                         Policy Marker

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Save } from 'lucide-react';
 import SectorAllocationForm from '@/components/activities/SectorAllocationForm';
 import { SectorAllocation, SectorValidation } from '@/types/sector';
+import { toast } from 'sonner';
 
 export default function ActivitySectorsPage() {
   const params = useParams();
@@ -17,7 +18,7 @@ export default function ActivitySectorsPage() {
 
   const handleSave = async () => {
     if (!validation?.isValid) {
-      alert('Please ensure all sector allocations sum to 100% before saving.');
+      toast.error('Please ensure all sector allocations sum to 100% before saving.');
       return;
     }
 
@@ -37,7 +38,7 @@ export default function ActivitySectorsPage() {
       }
     } catch (error) {
       console.error('Error saving sectors:', error);
-      alert('Failed to save sectors. Please try again.');
+      toast.error('Failed to save sectors. Please try again.');
     } finally {
       setIsSaving(false);
     }

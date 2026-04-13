@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Link2, X } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useReferences } from '@/hooks/use-results';
 import { ResultReference, REFERENCE_VOCABULARIES } from '@/types/results';
 
@@ -27,6 +28,7 @@ export function ReferencesManager({
   readOnly = false
 }: ReferencesManagerProps) {
   const { createReference, deleteReference, loading } = useReferences();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     vocabulary: '99', // Default to Reporting Organisation
@@ -57,7 +59,7 @@ export function ReferencesManager({
   };
 
   const handleDelete = async (referenceId: string) => {
-    if (window.confirm('Delete this reference?')) {
+    if (await confirm({ title: 'Delete this reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteReference(entityType, entityId, referenceId);
       if (success) {
         onUpdate();
@@ -244,6 +246,7 @@ export function ReferencesManager({
       {references.length === 0 && !showAddForm && (
         <p className="text-xs text-gray-500 italic">No external references</p>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

@@ -33,11 +33,10 @@ const CAPITAL_SPEND_PALETTE = {
 function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: number | null }) {
   if (capitalPercentage === null || capitalPercentage === undefined) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center">
-          <Building2 className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-          <p className="text-sm">Enter capital spend percentage to view breakdown</p>
-        </div>
+      <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+        <img src="/images/empty-anvil.png" alt="No capital spend entered" className="h-32 mx-auto mb-4 opacity-50" />
+        <h3 className="text-lg font-semibold mb-2">No capital spend entered</h3>
+        <p className="text-muted-foreground">Enter a capital spend percentage to view the breakdown.</p>
       </div>
     );
   }

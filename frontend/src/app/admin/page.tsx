@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target, AlertTriangle, Scale, Layers, Gauge } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, BookOpen, FileCode2, Calendar, Activity, Target, AlertTriangle, Scale, Layers, Gauge } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -21,9 +21,9 @@ import { IATIImportLogsManagement } from "@/components/admin/IATIImportLogsManag
 import { ProjectReferencesManagement } from "@/components/admin/ProjectReferencesManagement"
 import { EventManagement } from "@/components/calendar/EventManagement"
 import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
-import { NationalPrioritiesManagement } from "@/components/admin/NationalPrioritiesManagement"
+import { NationalPlansManagement } from "@/components/admin/NationalPlansManagement"
 import { CountryEmergenciesManagement } from "@/components/admin/CountryEmergenciesManagement"
-import { NationalDevelopmentGoals } from "@/components/admin/NationalDevelopmentGoals"
+// NationalDevelopmentGoals consolidated into NationalPlansManagement
 import { ComplianceRulesManagement } from "@/components/admin/ComplianceRulesManagement"
 import { ScoringRubricManagement } from "@/components/admin/ScoringRubricManagement"
 import { PBSectorsManagement } from "@/components/admin/PBSectorsManagement"
@@ -36,8 +36,8 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "ndp-goals", "compliance-rules", "scoring-rubric"]
-  const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "national-priorities", "pb-sectors"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric"]
+  const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "pb-sectors"]
 
   useEffect(() => {
     // Redirect if user is not super_user
@@ -174,9 +174,9 @@ function AdminPageContent() {
               <Calendar className="h-4 w-4" />
               Calendar Events
             </TabsTrigger>
-            <TabsTrigger value="ndp-goals" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              <Target className="h-4 w-4" />
-              NDP Goals
+            <TabsTrigger value="national-plans" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <BookOpen className="h-4 w-4" />
+              National Plans
             </TabsTrigger>
             <TabsTrigger value="compliance-rules" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Scale className="h-4 w-4" />
@@ -235,10 +235,6 @@ function AdminPageContent() {
                   <DollarSign className="h-4 w-4" />
                   Domestic Budget
                 </TabsTrigger>
-                <TabsTrigger value="national-priorities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  <Target className="h-4 w-4" />
-                  National Priorities
-                </TabsTrigger>
                 <TabsTrigger value="pb-sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Layers className="h-4 w-4" />
                   Project Bank Sectors
@@ -261,10 +257,6 @@ function AdminPageContent() {
                 <DomesticBudgetManagement />
               </TabsContent>
 
-              <TabsContent value="national-priorities">
-                <NationalPrioritiesManagement />
-              </TabsContent>
-
               <TabsContent value="pb-sectors">
                 <PBSectorsManagement />
               </TabsContent>
@@ -283,9 +275,10 @@ function AdminPageContent() {
             <EventManagement />
           </TabsContent>
 
-          <TabsContent value="ndp-goals" className="space-y-6">
-            <NationalDevelopmentGoals />
+          <TabsContent value="national-plans" className="space-y-6">
+            <NationalPlansManagement />
           </TabsContent>
+
 
           <TabsContent value="compliance-rules" className="space-y-6">
             <ComplianceRulesManagement />

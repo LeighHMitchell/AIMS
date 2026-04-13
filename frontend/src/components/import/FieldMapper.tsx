@@ -30,6 +30,7 @@ import { MappingTemplateManager } from '@/lib/import-utils';
 import { SystemFieldItem } from './SystemFieldItem';
 import { FileColumnItem } from './FileColumnItem';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface FieldMapperProps {
   systemFields: SystemField[];
@@ -141,7 +142,7 @@ export function FieldMapper({
     if (name) {
       await MappingTemplateManager.saveTemplate(name, entityType, mappings);
       setSavedTemplates(MappingTemplateManager.getTemplatesForEntity(entityType));
-      alert('Template saved successfully!');
+      toast.success('Template saved successfully!');
     }
   };
 
@@ -308,7 +309,7 @@ export function FieldMapper({
                 <Info className="h-4 w-4" />
               </Button>
             </div>
-            <Card className="p-4 bg-muted/50">
+            <Card className="p-6 bg-muted/50">
               <div className="space-y-2">
                 {fileColumns.map((column) => {
                   const isMapped = mappedColumnIndices.has(column.index);

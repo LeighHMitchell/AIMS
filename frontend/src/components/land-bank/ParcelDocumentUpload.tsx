@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Upload, FileText, Trash2, Download, Loader2, Star } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { LAND_DOCUMENT_TYPE_LABELS } from "@/lib/land-bank-utils"
 import type { LandParcelDocument, LandDocumentType } from "@/types/land-bank"
 
@@ -38,6 +39,7 @@ export function ParcelDocumentUpload({
   onDocumentsChange,
   onBannerChange,
 }: ParcelDocumentUploadProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [uploading, setUploading] = useState(false)
   const [documentType, setDocumentType] = useState<string>("other")
   const [description, setDescription] = useState("")
@@ -75,7 +77,7 @@ export function ParcelDocumentUpload({
   }, [parcelId, documentType, description, onDocumentsChange])
 
   const handleDelete = async (docId: string) => {
-    if (!confirm("Delete this document?")) return
+    if (!(await confirm({ title: 'Delete this document?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
     setDeletingId(docId)
     try {
       const res = await apiFetch(`/api/land-bank/${parcelId}/documents/${docId}`, {
@@ -260,6 +262,7 @@ export function ParcelDocumentUpload({
           )}
         </CardContent>
       </Card>
+    <ConfirmDialog />
     </div>
   )
 }

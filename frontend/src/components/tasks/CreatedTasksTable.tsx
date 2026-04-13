@@ -53,6 +53,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiFetch } from '@/lib/api-fetch';
+import { toast } from 'sonner';
 
 type SortField = 'task' | 'priority' | 'status' | 'deadline' | 'assignees' | 'progress';
 type SortDirection = 'asc' | 'desc';
@@ -87,7 +88,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     if (!userId) {
       console.error('User not authenticated');
-      alert('You must be logged in to download attachments');
+      toast.error('You must be logged in to download attachments');
       return;
     }
 
@@ -100,13 +101,13 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);
-      alert(`Download failed: ${data.error || 'Unknown error'}`);
+      toast.error(`Download failed: ${data.error || 'Unknown error'}`);
       return;
     }
 
     if (!data.success || !data.data?.download_url) {
       console.error('[Download] No download URL in response');
-      alert('Failed to get download URL');
+      toast.error('Failed to get download URL');
       return;
     }
 
@@ -124,7 +125,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
     document.body.removeChild(a);
   } catch (error) {
     console.error('Error downloading attachment:', error);
-    alert('Failed to download attachment');
+    toast.error('Failed to download attachment');
   }
 }
 
@@ -323,7 +324,7 @@ export function CreatedTasksTable({
               >
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="font-medium line-clamp-1">{task.title}</div>
+                    <div className="text-sm text-foreground line-clamp-1">{task.title}</div>
                     {task.description && (
                       <div className="text-xs text-muted-foreground line-clamp-1">
                         {task.description}
@@ -557,7 +558,7 @@ export function CreatedTasksTable({
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
-                              className="bg-red-600 hover:bg-red-700"
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               onClick={() => handleDelete(task.id)}
                             >
                               Delete Task

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 // Comment type options
 const COMMENT_TYPE_OPTIONS = [
@@ -77,6 +78,7 @@ interface CommentsDrawerProps {
 }
 
 export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const { user } = useUser();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -348,7 +350,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     if (!user) return;
     
     // Show confirmation dialog
-    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+    if (!(await confirm({ title: 'Delete this comment?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
     
@@ -699,6 +701,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
           )}
         </div>
       </div>
+      <ConfirmDialog />
     </>
   );
-} 
+}

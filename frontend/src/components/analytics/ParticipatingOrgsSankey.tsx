@@ -380,7 +380,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
 
           return (
             <Card key={role} className="bg-card">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-2">
                   <div
                     className="w-3 h-3 rounded-full"

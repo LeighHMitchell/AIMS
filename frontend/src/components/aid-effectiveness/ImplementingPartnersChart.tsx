@@ -203,7 +203,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Total Partners</p>
@@ -215,7 +215,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Avg Compliance</p>
@@ -227,7 +227,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Avg Gov Systems</p>
@@ -239,7 +239,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Most Active</p>

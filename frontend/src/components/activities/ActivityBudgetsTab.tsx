@@ -26,6 +26,7 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { useUser } from '@/hooks/useUser';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { showValidationError } from '@/lib/toast-manager';
 import {
   DropdownMenu,
@@ -280,6 +281,7 @@ export default function ActivityBudgetsTab({
 
   // Modal state for budget creation/editing
   const [showModal, setShowModal] = useState(false);
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
   const [modalBudget, setModalBudget] = useState<ActivityBudget | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [validationAlert, setValidationAlert] = useState<string | null>(null);
@@ -307,6 +309,11 @@ export default function ActivityBudgetsTab({
   // Bulk selection state
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Confirmation dialog state
+  const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [showUnlockConfirm, setShowUnlockConfirm] = useState(false);
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -608,7 +615,16 @@ export default function ActivityBudgetsTab({
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this budget?')) return;
+    setShowDeleteConfirm(index);
+    return;
+  }, [budgets]);
+
+  const confirmDeleteBudget = useCallback(async () => {
+    const index = showDeleteConfirm;
+    if (index === null) return;
+    setShowDeleteConfirm(null);
+    const budget = budgets[index];
+    if (!budget?.id) return;
 
     try {
       const { error } = await supabase
@@ -629,7 +645,7 @@ export default function ActivityBudgetsTab({
       console.error('Error deleting budget:', err);
       setError('Failed to delete budget');
     }
-  }, [budgets]);
+  }, [budgets, showDeleteConfirm]);
 
   const handleSelectBudget = useCallback((id: string, checked: boolean) => {
     const newSelected = new Set(selectedBudgetIds);
@@ -984,7 +1000,7 @@ export default function ActivityBudgetsTab({
 
     if (!currentStart || !currentEnd || !isValid(currentStart) || !isValid(currentEnd)) {
       console.log('[DuplicateForward] ERROR: Invalid dates in source budget');
-      alert('Cannot duplicate - source budget has invalid dates');
+      toast.error('Cannot duplicate - source budget has invalid dates');
       return;
     }
 
@@ -999,7 +1015,7 @@ export default function ActivityBudgetsTab({
 
     if (!nextPeriodStart) {
       console.log('[DuplicateForward] ERROR: Failed to calculate next period start');
-      alert('Cannot duplicate - failed to calculate next period');
+      toast.error('Cannot duplicate - failed to calculate next period');
       return;
     }
 
@@ -1016,7 +1032,7 @@ export default function ActivityBudgetsTab({
     const projectEnd = safeParseDateOrNull(endDate);
     if (!projectEnd) {
       console.log('[DuplicateForward] ERROR: Invalid project end date');
-      alert('Cannot duplicate - invalid project end date');
+      toast.error('Cannot duplicate - invalid project end date');
       return;
     }
     let adjustedEnd = nextPeriodEnd;
@@ -1241,15 +1257,7 @@ export default function ActivityBudgetsTab({
   // Close modal with unsaved changes confirmation
   const closeModal = useCallback(() => {
     if (isFormDirty) {
-      if (confirm('You have unsaved changes. Are you sure you want to close?')) {
-        setShowModal(false);
-        setModalBudget(null);
-        setFieldErrors({}); setValidationAlert(null);
-        setIsFormDirty(false);
-        setShowAdvancedFields(false);
-        setModalLocked(false);
-        setIsReviseMode(false);
-      }
+      setShowUnsavedConfirm(true);
     } else {
       setShowModal(false);
       setModalBudget(null);
@@ -1260,6 +1268,17 @@ export default function ActivityBudgetsTab({
       setIsReviseMode(false);
     }
   }, [isFormDirty]);
+
+  const confirmDiscardChanges = useCallback(() => {
+    setShowUnsavedConfirm(false);
+    setShowModal(false);
+    setModalBudget(null);
+    setFieldErrors({}); setValidationAlert(null);
+    setIsFormDirty(false);
+    setShowAdvancedFields(false);
+    setModalLocked(false);
+    setIsReviseMode(false);
+  }, []);
 
   // Budget line management
   const addBudgetLine = useCallback(() => {
@@ -1389,7 +1408,7 @@ export default function ActivityBudgetsTab({
 
   // Validate and save budget
   const saveBudget = useCallback(async () => {
-    if (!modalBudget) return;
+    if (!modalBudget || isSavingBudget) return;
 
     // Validation
     const errors: Record<string, string> = {};
@@ -1415,6 +1434,7 @@ export default function ActivityBudgetsTab({
       return;
     }
 
+    setIsSavingBudget(true);
     try {
       // Prepare budget data with exchange rate fields
       const budgetPayload = {
@@ -1466,11 +1486,13 @@ export default function ActivityBudgetsTab({
       setIsFormDirty(false);
       setModalLocked(false);
       setIsReviseMode(false);
+      setIsSavingBudget(false);
     } catch (error) {
       console.error('Error saving budget:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save budget');
+      setIsSavingBudget(false);
     }
-  }, [modalBudget, activityId, modalExchangeRateManual, modalExchangeRate, modalCalculatedUsdValue, isReviseMode]);
+  }, [modalBudget, activityId, modalExchangeRateManual, modalExchangeRate, modalCalculatedUsdValue, isReviseMode, isSavingBudget]);
 
   // Granularity change handlers removed - users can now create any period length they want
 
@@ -1665,12 +1687,6 @@ export default function ActivityBudgetsTab({
             )}
             {hideSummaryCards && <div />}
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
-              {!readOnly && (
-                <Button onClick={() => openModalForNewBudget('quarter')}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Budget
-                </Button>
-              )}
               {!hideSummaryCards && budgets.length > 0 && !loading && (
                 <>
                   <div className="flex items-center gap-2">
@@ -1715,10 +1731,16 @@ export default function ActivityBudgetsTab({
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="outline" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>
+              )}
+              {!readOnly && (
+                <Button onClick={() => openModalForNewBudget('quarter')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Budget
+                </Button>
               )}
             </div>
           </div>
@@ -2235,9 +2257,7 @@ export default function ActivityBudgetsTab({
                   )}
                   onClick={() => {
                     if (modalLocked) {
-                      if (confirm('Budgets should not normally be edited after entry. Changes may affect the audit trail. Are you sure you want to unlock?')) {
-                        setModalLocked(false);
-                      }
+                      setShowUnlockConfirm(true);
                     } else {
                       setModalLocked(true);
                     }
@@ -2476,23 +2496,25 @@ export default function ActivityBudgetsTab({
               </div>
 
               {/* Currency */}
-              <div className="space-y-2">
-                <LabelWithInfoAndSave
-                  helpText="The currency in which the budget value is denominated"
-                  isSaving={false}
-                  isSaved={false}
-                  hasValue={!!modalBudget?.currency}
-                >
-                  Currency <RequiredDot />
-                </LabelWithInfoAndSave>
-                <CurrencySelector
-                  value={modalBudget?.currency || null}
-                  onValueChange={(value) => updateFormField('currency', value || 'USD')}
-                  placeholder="Select currency"
-                />
-                {fieldErrors.currency && (
-                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <LabelWithInfoAndSave
+                    helpText="The currency in which the budget value is denominated"
+                    isSaving={false}
+                    isSaved={false}
+                    hasValue={!!modalBudget?.currency}
+                  >
+                    Currency <RequiredDot />
+                  </LabelWithInfoAndSave>
+                  <CurrencySelector
+                    value={modalBudget?.currency || null}
+                    onValueChange={(value) => updateFormField('currency', value || 'USD')}
+                    placeholder="Select currency"
+                  />
+                  {fieldErrors.currency && (
+                    <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                  )}
+                </div>
               </div>
 
               {/* Value and Value Date */}
@@ -2825,8 +2847,8 @@ export default function ActivityBudgetsTab({
               Cancel
             </Button>
             {!modalLocked && (
-              <Button onClick={saveBudget} disabled={Object.keys(fieldErrors).length > 0}>
-                {isReviseMode ? 'Create Revised Budget' : modalBudget?.id ? 'Update Budget' : 'Create Budget'}
+              <Button onClick={saveBudget} disabled={isSavingBudget || Object.keys(fieldErrors).length > 0}>
+                {isSavingBudget ? 'Saving...' : isReviseMode ? 'Create Revised Budget' : modalBudget?.id ? 'Update Budget' : 'Create Budget'}
               </Button>
             )}
           </DialogFooter>
@@ -2841,6 +2863,56 @@ export default function ActivityBudgetsTab({
         onCancel={() => setSelectedBudgetIds(new Set())}
         isDeleting={isBulkDeleting}
       />
+
+      {/* Unsaved changes confirmation */}
+      <AlertDialog open={showUnsavedConfirm} onOpenChange={setShowUnsavedConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes in this budget. Closing now will discard all changes you&apos;ve made.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscardChanges}>Discard Changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete budget confirmation */}
+      <AlertDialog open={showDeleteConfirm !== null} onOpenChange={(open) => { if (!open) setShowDeleteConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this budget?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The budget record will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteBudget}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unlock budget confirmation */}
+      <AlertDialog open={showUnlockConfirm} onOpenChange={setShowUnlockConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unlock this budget for editing?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Budgets should not normally be edited after entry. Changes may affect the audit trail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Locked</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowUnlockConfirm(false); setModalLocked(false); }}>
+              Unlock
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 

@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import {
   Tooltip,
   TooltipContent,
@@ -88,6 +89,7 @@ export function SavedReportsManager({
   onLoadReport,
   isAdmin = false 
 }: SavedReportsManagerProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [savedReports, setSavedReports] = useState<SavedReport[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
@@ -260,7 +262,7 @@ export function SavedReportsManager({
   }
 
   const handleDelete = async (reportId: string) => {
-    if (!confirm('Are you sure you want to delete this report?')) return
+    if (!(await confirm({ title: 'Delete this report?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
 
     try {
       const response = await fetch(`/api/reports/saved-pivots/${reportId}`, {
@@ -438,6 +440,8 @@ export function SavedReportsManager({
           Save Report
         </Button>
       </div>
+
+      <ConfirmDialog />
 
       {/* Save Dialog */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>

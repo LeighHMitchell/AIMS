@@ -393,7 +393,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
       ) : (
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="bg-muted border-b">
                 <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
                   <span className="flex items-center gap-1">Name {getSortIcon('name', sortField, sortDirection)}</span>
@@ -688,7 +688,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMember} className="bg-red-500 hover:bg-red-600">
+            <AlertDialogAction onClick={handleDeleteMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Remove
             </AlertDialogAction>
           </AlertDialogFooter>

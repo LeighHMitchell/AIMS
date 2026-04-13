@@ -92,9 +92,9 @@ export function GmailLogin({ redirectTo = '/', className = '' }: GmailLoginProps
       className={`w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 border-gray-300 ${className}`}
     >
       {isLoading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <GoogleIcon className="h-5 w-5" />
+        <GoogleIcon className="h-4 w-4" />
       )}
       <span className="text-gray-700 font-medium">
         {isLoading ? 'Signing in...' : 'Continue with Google'}

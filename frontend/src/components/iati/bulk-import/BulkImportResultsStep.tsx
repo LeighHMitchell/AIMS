@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   CheckCircle2,
@@ -186,49 +187,52 @@ export default function BulkImportResultsStep({
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="grid grid-cols-[1fr_100px_200px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
-            <div>Activity</div>
-            <div>Action</div>
-            <div className="text-right">Import Details</div>
-          </div>
           <ScrollArea className="h-64">
-            {batchStatus.items.map((item) => (
-              <div
-                key={item.id}
-                className="grid grid-cols-[1fr_100px_200px] gap-2 px-4 py-3 border-b last:border-b-0 items-center"
-              >
-                <div className="min-w-0">
-                  {item.activityId ? (
-                    <button
-                      onClick={() => router.push(`/activities/${item.activityId}`)}
-                      className="text-sm text-left hover:text-gray-600 truncate block w-full"
-                    >
-                      {item.activityTitle || item.iatiIdentifier}
-                    </button>
-                  ) : (
-                    <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
-                  )}
-                  <span className="text-xs font-mono bg-muted text-gray-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
-                </div>
-                <div>
-                  {item.action === 'create' && (
-                    <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">Created</Badge>
-                  )}
-                  {item.action === 'update' && (
-                    <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">Updated</Badge>
-                  )}
-                  {item.action === 'skip' && (
-                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500">Skipped</Badge>
-                  )}
-                  {item.action === 'fail' && (
-                    <Badge variant="outline" className="text-xs bg-gray-200 text-gray-700">Failed</Badge>
-                  )}
-                </div>
-                <div className="text-right text-xs text-gray-500">
-                  {formatImportCounts(item) || '-'}
-                </div>
-              </div>
-            ))}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Activity</TableHead>
+                  <TableHead className="w-[100px]">Action</TableHead>
+                  <TableHead className="w-[200px] text-right">Import Details</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {batchStatus.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="min-w-0">
+                      {item.activityId ? (
+                        <button
+                          onClick={() => router.push(`/activities/${item.activityId}`)}
+                          className="text-sm text-left hover:text-gray-600 truncate block w-full"
+                        >
+                          {item.activityTitle || item.iatiIdentifier}
+                        </button>
+                      ) : (
+                        <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
+                      )}
+                      <span className="text-xs font-mono bg-muted text-gray-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
+                    </TableCell>
+                    <TableCell>
+                      {item.action === 'create' && (
+                        <Badge variant="outline" className="text-xs">Created</Badge>
+                      )}
+                      {item.action === 'update' && (
+                        <Badge variant="outline" className="text-xs">Updated</Badge>
+                      )}
+                      {item.action === 'skip' && (
+                        <Badge variant="outline" className="text-xs">Skipped</Badge>
+                      )}
+                      {item.action === 'fail' && (
+                        <Badge variant="outline" className="text-xs">Failed</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-gray-500">
+                      {formatImportCounts(item) || '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </ScrollArea>
         </CardContent>
       </Card>

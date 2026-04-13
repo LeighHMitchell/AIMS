@@ -13,6 +13,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -455,6 +456,7 @@ export default function TransactionList({
   hideSummaryCards = false,
   renderFilters
 }: TransactionListProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -914,11 +916,11 @@ export default function TransactionList({
     // Additional validation to prevent undefined UUIDs
     if (!uuid || uuid === 'undefined' || uuid === undefined) {
       console.error('[TransactionList] Invalid transaction UUID for deletion:', uuid);
-      alert('Cannot delete transaction: Invalid transaction UUID');
+      toast.error('Cannot delete transaction: Invalid transaction UUID');
       return;
     }
     
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+    if (await confirm({ title: 'Delete this transaction?', description: 'This action cannot be undone. The transaction will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       setIsLoading(true);
       try {
         await onDelete?.(uuid);
@@ -1390,7 +1392,7 @@ export default function TransactionList({
               
               {/* Export Button - always visible */}
               {transactions.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleExport} title="Export">
+                <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                   <Download className="h-4 w-4" />
                 </Button>
               )}
@@ -2806,6 +2808,7 @@ export default function TransactionList({
           />
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
-} 
+}

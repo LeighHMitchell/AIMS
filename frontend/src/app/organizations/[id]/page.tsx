@@ -91,6 +91,7 @@ import ActivityCardModern from '@/components/activities/ActivityCardModern'
 import { NativeLikesCounter } from '@/components/ui/native-likes-counter'
 import { useEntityLikes } from '@/hooks/use-entity-likes'
 import { useUser } from '@/hooks/useUser'
+import StrategiesTab from '@/components/StrategiesTab'
 import { useLoadingBar } from '@/hooks/useLoadingBar'
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks'
 import {
@@ -1324,7 +1325,7 @@ export default function OrganizationProfilePage() {
               </div>
             )}
             
-            <CardContent className="p-8">
+            <CardContent className="p-6">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Logo and Organization Info - Columns 1-3 */}
                 <div className="lg:col-span-3">
@@ -1518,7 +1519,7 @@ export default function OrganizationProfilePage() {
                 {/* Contact & Metadata Card - Column 4 */}
                 <div className="lg:col-span-1 self-start" data-tour="org-contact">
                   <Card className="border-border bg-card">
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="space-y-3">
                       {/* Contact Information - Always Visible */}
                       {(organization.website || organization.email || organization.phone || organization.address) && (
@@ -1860,7 +1861,7 @@ export default function OrganizationProfilePage() {
                     return (
                       <div className="h-36 overflow-auto">
                         <table className="w-full text-xs">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Count</th>
@@ -1987,7 +1988,7 @@ export default function OrganizationProfilePage() {
                             }}
                           >
                             <table className="text-xs w-full border-collapse">
-                              <thead>
+                              <thead className="bg-surface-muted">
                                 <tr className="bg-surface-muted border-b border-border">
                                   <th className="text-left px-3 py-2 text-muted-foreground font-medium">{hoveredPoint.year}</th>
                                   <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
@@ -2053,7 +2054,7 @@ export default function OrganizationProfilePage() {
                     budgetView === 'table' ? (
                     <div className="h-36 overflow-auto">
                       <table className="w-full text-xs">
-                        <thead>
+                        <thead className="bg-surface-muted">
                           <tr className="border-b border-border">
                             <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
                             <th className="text-right py-1 text-muted-foreground font-medium">Budget</th>
@@ -2104,7 +2105,7 @@ export default function OrganizationProfilePage() {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
-                                      <thead>
+                                      <thead className="bg-surface-muted">
                                         <tr className="bg-surface-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
@@ -2151,7 +2152,7 @@ export default function OrganizationProfilePage() {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
-                                      <thead>
+                                      <thead className="bg-surface-muted">
                                         <tr className="bg-surface-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
@@ -2264,7 +2265,7 @@ export default function OrganizationProfilePage() {
                     budgetVsActualsView === 'table' ? (
                       <div className="h-36 overflow-auto">
                         <table className="w-full text-xs">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Planned Disbursements</th>
@@ -2319,7 +2320,7 @@ export default function OrganizationProfilePage() {
                                   return (
                                     <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                       <table className="text-xs w-full border-collapse">
-                                        <thead>
+                                        <thead className="bg-surface-muted">
                                           <tr className="bg-surface-muted border-b border-border">
                                             <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
                                             <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
@@ -2393,7 +2394,7 @@ export default function OrganizationProfilePage() {
                                   return (
                                     <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                       <table className="text-xs w-full border-collapse">
-                                        <thead>
+                                        <thead className="bg-surface-muted">
                                           <tr className="bg-surface-muted border-b border-border">
                                             <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
                                             <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
@@ -2483,7 +2484,7 @@ export default function OrganizationProfilePage() {
                   modalityView === 'table' ? (
                     <div className="h-24 overflow-auto">
                       <table className="w-full text-xs">
-                        <thead>
+                        <thead className="bg-surface-muted">
                           <tr className="border-b border-border">
                             <th className="text-left py-1 text-muted-foreground font-medium">Finance Type</th>
                             <th className="text-right py-1 text-muted-foreground font-medium">Value</th>
@@ -2542,7 +2543,7 @@ export default function OrganizationProfilePage() {
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                                       <div className="bg-card border border-border rounded shadow-lg overflow-hidden whitespace-nowrap">
                                         <table className="text-xs border-collapse">
-                                          <thead>
+                                          <thead className="bg-surface-muted">
                                             <tr className="bg-surface-muted border-b border-border">
                                               <th colSpan={2} className="text-left px-3 py-2 text-muted-foreground font-medium">{item.name}</th>
                                             </tr>
@@ -2627,6 +2628,9 @@ export default function OrganizationProfilePage() {
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Documents
+                </TabsTrigger>
+                <TabsTrigger value="strategies" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                  Strategies
                 </TabsTrigger>
               </TabsList>
 
@@ -4029,7 +4033,7 @@ export default function OrganizationProfilePage() {
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
                               <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
@@ -4278,7 +4282,7 @@ export default function OrganizationProfilePage() {
                         /* Table View */
                         <div className="overflow-x-auto">
                           <table className="w-full">
-                            <thead>
+                            <thead className="bg-surface-muted">
                               <tr className="border-b border-border">
                                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Document</th>
                                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
@@ -4376,6 +4380,15 @@ export default function OrganizationProfilePage() {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="strategies" className="p-6 data-[state=inactive]:hidden" forceMount>
+                <StrategiesTab
+                  organizationId={organization.id}
+                  organizationName={organization.name || ''}
+                  isPublicView={!user}
+                  userCanEdit={!!user}
+                />
               </TabsContent>
             </Tabs>
           </Card>

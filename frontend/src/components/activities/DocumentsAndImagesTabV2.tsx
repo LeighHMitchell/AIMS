@@ -638,9 +638,9 @@ export function DocumentsAndImagesTabV2({
                   <ExternalLink className="w-8 h-8 text-gray-400" />
                 </div>
               </div>
-              <h3 className="text-xl font-medium mb-2 text-gray-900">No documents uploaded</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                There are no documents uploaded for this activity.
+              <h3 className="text-lg font-medium mb-2">No documents</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Upload files or add external links to attach documents to this activity.
               </p>
 
             </div>

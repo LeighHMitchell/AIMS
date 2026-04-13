@@ -5,6 +5,87 @@
  */
 
 // ============================================
+// NATIONAL PLAN TYPES
+// ============================================
+
+/**
+ * Plan type distinguishes national plans from sectoral/thematic strategies
+ */
+export type PlanType = 'national' | 'sectoral' | 'thematic';
+
+export const PLAN_TYPE_LABELS: Record<PlanType, string> = {
+  national: 'National',
+  sectoral: 'Sectoral',
+  thematic: 'Thematic',
+};
+
+/**
+ * National Plan - a container for a set of priorities (e.g., "National Development Plan 2025-2030")
+ */
+export interface NationalPlan {
+  id: string;
+  name: string;
+  acronym?: string | null;
+  nameLocal?: string | null;
+  description?: string | null;
+  planType: PlanType;
+  level1Label: string;
+  level2Label: string;
+  level3Label: string;
+  isPrimary: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+/**
+ * Database row format (snake_case)
+ */
+export interface NationalPlanRow {
+  id: string;
+  name: string;
+  acronym?: string | null;
+  name_local?: string | null;
+  description?: string | null;
+  plan_type: string;
+  level1_label: string;
+  level2_label: string;
+  level3_label: string;
+  is_primary: boolean;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+/**
+ * Form data for creating/editing a national plan
+ */
+export interface NationalPlanFormData {
+  name: string;
+  acronym?: string;
+  nameLocal?: string;
+  description?: string;
+  planType: PlanType;
+  level1Label: string;
+  level2Label: string;
+  level3Label: string;
+  isPrimary: boolean;
+  startDate?: string;
+  endDate?: string;
+  isActive: boolean;
+}
+
+// ============================================
 // NATIONAL PRIORITY TYPES
 // ============================================
 
@@ -13,23 +94,27 @@
  */
 export interface NationalPriority {
   id: string;
+  planId: string;
   code: string;
   name: string;
   nameLocal?: string | null;
   description?: string | null;
   parentId?: string | null;
-  level: number; // 1 = top level, 2 = sub, 3 = sub-sub, etc.
+  level: number; // 1 = Pillar, 2 = Outcome, 3 = Intervention
   displayOrder: number;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;
   updatedBy?: string;
-  
+
   // Computed fields for UI
   children?: NationalPriority[];
   fullPath?: string; // e.g., "SC > Education > Primary Education"
   parentName?: string;
+  planName?: string;
+  planCategory?: PlanType;
+  levelLabel?: string;
 }
 
 /**
@@ -37,6 +122,7 @@ export interface NationalPriority {
  */
 export interface NationalPriorityRow {
   id: string;
+  plan_id: string;
   code: string;
   name: string;
   name_local?: string | null;
@@ -55,6 +141,7 @@ export interface NationalPriorityRow {
  * Form data for creating/editing a national priority
  */
 export interface NationalPriorityFormData {
+  planId: string;
   code: string;
   name: string;
   nameLocal?: string;
@@ -68,18 +155,37 @@ export interface NationalPriorityFormData {
 // ============================================
 
 /**
- * Activity-Priority mapping with percentage allocation
+ * Significance of an activity's alignment to a priority.
+ * Modelled on IATI policy marker significance.
+ */
+export type AlignmentSignificance = 'principal' | 'significant';
+
+export const ALIGNMENT_SIGNIFICANCE_LABELS: Record<AlignmentSignificance, string> = {
+  principal: 'Principal',
+  significant: 'Significant',
+};
+
+export const ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS: Record<AlignmentSignificance, string> = {
+  principal: 'The priority is the main focus of this activity',
+  significant: 'The priority is an important but not primary focus of this activity',
+};
+
+/**
+ * Activity-Priority alignment with significance and optional rationale.
  */
 export interface ActivityNationalPriority {
   id: string;
   activityId: string;
   nationalPriorityId: string;
-  percentage: number;
+  significance: AlignmentSignificance;
+  rationale?: string | null;
+  /** @deprecated — legacy field, retained for backward compatibility during migration */
+  percentage?: number | null;
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;
-  
+
   // Joined data for display
   nationalPriority?: NationalPriority;
 }
@@ -91,7 +197,9 @@ export interface ActivityNationalPriorityRow {
   id: string;
   activity_id: string;
   national_priority_id: string;
-  percentage: number;
+  significance: string;
+  rationale?: string | null;
+  percentage?: number | null;
   notes?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -103,8 +211,8 @@ export interface ActivityNationalPriorityRow {
  */
 export interface ActivityNationalPriorityFormData {
   nationalPriorityId: string;
-  percentage: number;
-  notes?: string;
+  significance: AlignmentSignificance;
+  rationale?: string;
 }
 
 // ============================================
@@ -136,7 +244,6 @@ export interface NationalPriorityResponse {
 export interface ActivityNationalPrioritiesResponse {
   success: boolean;
   data: ActivityNationalPriority[];
-  totalPercentage: number;
   error?: string;
 }
 
@@ -347,15 +454,117 @@ export function getTextColorForBackground(backgroundColor: string): string {
 }
 
 // ============================================
-// UTILITY TYPES
+// ALIGNMENT COVERAGE TYPES (Public Dashboard)
 // ============================================
 
 /**
- * Convert database row to frontend format
+ * A node in the alignment coverage tree with activity/funding counts
+ */
+export interface AlignmentCoverageNode {
+  id: string;
+  code: string;
+  name: string;
+  level: number;
+  activityCount: number;
+  principalCount: number;
+  significantCount: number;
+  totalFunding: number;
+  children?: AlignmentCoverageNode[];
+}
+
+/**
+ * One activity aligned to a priority, with its disbursement total
+ */
+export interface AlignedActivity {
+  id: string;
+  title: string;
+  iati_id: string | null;
+  funding: number;
+}
+
+/**
+ * Complete alignment coverage data for a plan
+ */
+export interface AlignmentCoverageData {
+  plan: NationalPlan;
+  tree: AlignmentCoverageNode[];
+  totalActivities: number;
+  alignedActivities: number;
+  totalFunding: number;
+  alignedFunding: number;
+  activitiesByPriority: Record<string, AlignedActivity[]>;
+}
+
+/**
+ * API response for alignment coverage
+ */
+export interface AlignmentCoverageResponse {
+  success: boolean;
+  data: AlignmentCoverageData;
+  error?: string;
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+/**
+ * Convert plan database row to frontend format
+ */
+export function nationalPlanFromRow(row: NationalPlanRow): NationalPlan {
+  return {
+    id: row.id,
+    name: row.name,
+    acronym: row.acronym,
+    nameLocal: row.name_local,
+    description: row.description,
+    planType: row.plan_type as PlanType,
+    level1Label: row.level1_label || 'Goal',
+    level2Label: row.level2_label || 'Objective',
+    level3Label: row.level3_label || 'Action',
+    isPrimary: row.is_primary || false,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    isActive: row.is_active,
+    displayOrder: row.display_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+  };
+}
+
+/**
+ * Convert plan frontend format to database row
+ */
+export function nationalPlanToRow(plan: Partial<NationalPlan>): Partial<NationalPlanRow> {
+  const row: Partial<NationalPlanRow> = {};
+  if (plan.id !== undefined) row.id = plan.id;
+  if (plan.name !== undefined) row.name = plan.name;
+  if (plan.acronym !== undefined) row.acronym = plan.acronym;
+  if (plan.nameLocal !== undefined) row.name_local = plan.nameLocal;
+  if (plan.description !== undefined) row.description = plan.description;
+  if (plan.planType !== undefined) row.plan_type = plan.planType;
+  if (plan.level1Label !== undefined) row.level1_label = plan.level1Label;
+  if (plan.level2Label !== undefined) row.level2_label = plan.level2Label;
+  if (plan.level3Label !== undefined) row.level3_label = plan.level3Label;
+  if (plan.isPrimary !== undefined) row.is_primary = plan.isPrimary;
+  if (plan.startDate !== undefined) row.start_date = plan.startDate;
+  if (plan.endDate !== undefined) row.end_date = plan.endDate;
+  if (plan.isActive !== undefined) row.is_active = plan.isActive;
+  if (plan.displayOrder !== undefined) row.display_order = plan.displayOrder;
+  if (plan.createdBy !== undefined) row.created_by = plan.createdBy;
+  if (plan.updatedBy !== undefined) row.updated_by = plan.updatedBy;
+  return row;
+}
+
+/**
+ * Convert priority database row to frontend format
  */
 export function nationalPriorityFromRow(row: NationalPriorityRow): NationalPriority {
   return {
     id: row.id,
+    planId: row.plan_id,
     code: row.code,
     name: row.name,
     nameLocal: row.name_local,
@@ -372,12 +581,13 @@ export function nationalPriorityFromRow(row: NationalPriorityRow): NationalPrior
 }
 
 /**
- * Convert frontend format to database row
+ * Convert priority frontend format to database row
  */
 export function nationalPriorityToRow(priority: Partial<NationalPriority>): Partial<NationalPriorityRow> {
   const row: Partial<NationalPriorityRow> = {};
-  
+
   if (priority.id !== undefined) row.id = priority.id;
+  if (priority.planId !== undefined) row.plan_id = priority.planId;
   if (priority.code !== undefined) row.code = priority.code;
   if (priority.name !== undefined) row.name = priority.name;
   if (priority.nameLocal !== undefined) row.name_local = priority.nameLocal;
@@ -388,7 +598,7 @@ export function nationalPriorityToRow(priority: Partial<NationalPriority>): Part
   if (priority.isActive !== undefined) row.is_active = priority.isActive;
   if (priority.createdBy !== undefined) row.created_by = priority.createdBy;
   if (priority.updatedBy !== undefined) row.updated_by = priority.updatedBy;
-  
+
   return row;
 }
 

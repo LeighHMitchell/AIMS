@@ -147,7 +147,7 @@ export default function HomePage() {
 
       <MainLayout>
         <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
-          <div className="max-w-5xl w-full text-center">
+          <div className="max-w-4xl w-full text-center">
             <div className="mb-12">
               <h1 className="text-4xl font-bold tracking-tight">
                 Aether

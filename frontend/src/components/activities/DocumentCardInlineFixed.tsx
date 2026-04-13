@@ -197,7 +197,7 @@ export function DocumentCardInlineFixed({
       "group relative overflow-hidden transition-all duration-200",
       "bg-white hover:shadow-md border border-gray-200"
     )}>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex gap-3">
           {/* Thumbnail/Icon */}
           <div className="flex-shrink-0">

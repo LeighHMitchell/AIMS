@@ -498,7 +498,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
 
         <div className="overflow-x-auto border rounded-lg">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="bg-surface-muted">
                 <th className="text-left p-2 font-medium text-xs w-20">Year</th>
                 <th className="text-right p-2 font-medium text-xs">Local ({shadowPrices.standard_conversion_factor}x)</th>
@@ -730,7 +730,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
 
             <div className="overflow-x-auto border rounded-lg">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="bg-surface-muted">
                   <tr className="bg-surface-muted">
                     <th className="text-left p-2 font-medium text-xs w-20">Year</th>
                     {activeCols.map(col => (
@@ -884,7 +884,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
 
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="bg-surface-muted">
                 <tr className="bg-surface-muted">
                   <th className="text-left p-2 font-medium text-xs">Scenario</th>
                   <th className="text-right p-2 font-medium text-xs">EIRR</th>

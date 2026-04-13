@@ -201,9 +201,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
         
         newLevel = parent.level + 1;
-        if (newLevel > 5) {
+        if (newLevel > 3) {
           return NextResponse.json(
-            { success: false, error: 'Maximum nesting level (5) exceeded' },
+            { success: false, error: 'Maximum nesting level (3: Pillar > Outcome > Intervention) exceeded' },
             { status: 400 }
           );
         }

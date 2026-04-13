@@ -39,12 +39,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Get activity's national priorities with joined priority data
+    // Get activity's national priorities with joined priority and plan data
     const { data: allocations, error } = await supabase
       .from('activity_national_priorities')
       .select(`
         *,
-        national_priorities (*)
+        national_priorities (*, national_plans (id, name, acronym, start_date, end_date, plan_type, level1_label, level2_label, level3_label))
       `)
       .eq('activity_id', activityId)
       .order('created_at', { ascending: true });
@@ -67,19 +67,48 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Format response
     const formattedAllocations = (allocations || []).map((alloc: any) => {
-      const priority = alloc.national_priorities
-        ? nationalPriorityFromRow(alloc.national_priorities as NationalPriorityRow)
+      const priorityRow = alloc.national_priorities;
+      const priority = priorityRow
+        ? nationalPriorityFromRow(priorityRow as NationalPriorityRow)
         : null;
 
       if (priority) {
         priority.fullPath = buildPriorityPath(priority.id, allPrioritiesFormatted);
+        // Attach formatted plan title from joined data: "Name (ACRONYM) 2021-2030"
+        const plan = priorityRow?.national_plans;
+        if (plan?.name) {
+          let title = plan.name;
+          if (plan.acronym) title += ` (${plan.acronym})`;
+          const startYear = plan.start_date ? new Date(plan.start_date).getFullYear() : null;
+          const endYear = plan.end_date ? new Date(plan.end_date).getFullYear() : null;
+          if (startYear && endYear) {
+            title += ` ${startYear}-${endYear}`;
+          } else if (startYear) {
+            title += ` ${startYear}-`;
+          } else if (endYear) {
+            title += ` -${endYear}`;
+          }
+          priority.planName = title;
+
+          // Attach level label based on priority's level and plan's custom labels
+          const levelLabels = [
+            plan.level1_label || 'Goal',
+            plan.level2_label || 'Objective',
+            plan.level3_label || 'Action',
+          ];
+          priority.levelLabel = levelLabels[priority.level - 1] || `Level ${priority.level}`;
+
+          // Attach plan category (national/sectoral/thematic)
+          priority.planCategory = plan.plan_type || 'national';
+        }
       }
 
       return {
         id: alloc.id,
         activityId: alloc.activity_id,
         nationalPriorityId: alloc.national_priority_id,
-        percentage: parseFloat(alloc.percentage) || 0,
+        significance: alloc.significance || 'significant',
+        rationale: alloc.rationale || null,
         notes: alloc.notes,
         createdAt: alloc.created_at,
         updatedAt: alloc.updated_at,
@@ -88,16 +117,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       };
     });
 
-    // Calculate total percentage
-    const totalPercentage = formattedAllocations.reduce(
-      (sum, a) => sum + a.percentage,
-      0
-    );
-
     return NextResponse.json({
       success: true,
       data: formattedAllocations,
-      totalPercentage,
       count: formattedAllocations.length,
     });
   } catch (error) {
@@ -125,7 +147,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { id: activityId } = await params;
     const body = await request.json();
 
-    const { nationalPriorityId, percentage, notes } = body;
+    const { nationalPriorityId, significance = 'significant', rationale, notes } = body;
 
     // Validate required fields
     if (!nationalPriorityId) {
@@ -135,17 +157,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (percentage === undefined || percentage === null) {
+    if (!['principal', 'significant'].includes(significance)) {
       return NextResponse.json(
-        { success: false, error: 'Percentage is required' },
-        { status: 400 }
-      );
-    }
-
-    const parsedPercentage = parseFloat(percentage);
-    if (isNaN(parsedPercentage) || parsedPercentage < 0 || parsedPercentage > 100) {
-      return NextResponse.json(
-        { success: false, error: 'Percentage must be between 0 and 100' },
+        { success: false, error: 'Significance must be either "principal" or "significant"' },
         { status: 400 }
       );
     }
@@ -199,7 +213,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const { data, error } = await supabase
         .from('activity_national_priorities')
         .update({
-          percentage: parsedPercentage,
+          significance,
+          rationale: rationale?.trim() || null,
           notes: notes || null,
         })
         .eq('id', existing.id)
@@ -215,7 +230,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         .insert({
           activity_id: activityId,
           national_priority_id: nationalPriorityId,
-          percentage: parsedPercentage,
+          significance,
+          rationale: rationale?.trim() || null,
           notes: notes || null,
         })
         .select()
@@ -239,7 +255,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         id: result.id,
         activityId: result.activity_id,
         nationalPriorityId: result.national_priority_id,
-        percentage: parseFloat(result.percentage),
+        significance: result.significance,
+        rationale: result.rationale,
         notes: result.notes,
         createdAt: result.created_at,
         updatedAt: result.updated_at,
@@ -341,19 +358,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Validate total percentage
-    const totalPercentage = allocations.reduce(
-      (sum, a) => sum + (parseFloat(a.percentage) || 0),
-      0
-    );
-
-    if (totalPercentage > 100) {
-      return NextResponse.json(
-        { success: false, error: 'Total percentage cannot exceed 100%' },
-        { status: 400 }
-      );
-    }
-
     // Validate each allocation
     for (const alloc of allocations) {
       if (!alloc.nationalPriorityId) {
@@ -362,10 +366,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           { status: 400 }
         );
       }
-      const pct = parseFloat(alloc.percentage);
-      if (isNaN(pct) || pct < 0 || pct > 100) {
+      if (alloc.significance && !['principal', 'significant'].includes(alloc.significance)) {
         return NextResponse.json(
-          { success: false, error: 'Each percentage must be between 0 and 100' },
+          { success: false, error: 'Significance must be either "principal" or "significant"' },
           { status: 400 }
         );
       }
@@ -382,7 +385,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       const insertData = allocations.map((a) => ({
         activity_id: activityId,
         national_priority_id: a.nationalPriorityId,
-        percentage: parseFloat(a.percentage),
+        significance: a.significance || 'significant',
+        rationale: a.rationale?.trim() || null,
         notes: a.notes || null,
       }));
 
@@ -401,9 +405,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       success: true,
-      message: 'Priority allocations updated successfully',
+      message: 'Priority alignments updated successfully',
       count: allocations.length,
-      totalPercentage,
     });
   } catch (error) {
     console.error('[Activity National Priorities API] Unexpected error:', error);

@@ -20,6 +20,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import StrategiesGanttChart from './StrategiesGanttChart';
 import { StrategyForm } from './StrategyForm';
 import { apiFetch } from '@/lib/api-fetch';
@@ -74,6 +75,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
   userCanEdit = false
 }) => {
   const { user } = useUser();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -117,7 +119,8 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
   };
 
   const handleDeleteStrategy = async (strategyId: string) => {
-    if (!user?.id || !confirm('Are you sure you want to delete this strategy?')) return;
+    if (!user?.id) return;
+    if (!(await confirm({ title: 'Delete this strategy?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
 
     try {
       const response = await apiFetch(`/api/strategies?id=${strategyId}&userId=${user.id}`, {
@@ -196,7 +199,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
       {!isPublicView && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total</p>
@@ -208,7 +211,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Published</p>
@@ -220,7 +223,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Draft/Internal</p>
@@ -232,7 +235,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">With Files</p>
@@ -255,7 +258,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
         <TabsContent value="list" className="space-y-4">
           {strategies.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No strategies found</h3>
                 <p className="text-gray-600 mb-4">
@@ -390,6 +393,8 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
           />
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog />
 
       {/* Strategy Form Dialog */}
       <StrategyForm

@@ -14,6 +14,7 @@ import { useOrganizations } from "@/hooks/use-organizations";
 import { useContributors, ActivityContributor } from "@/hooks/use-contributors";
 import { isOrganizationContributor, getContributorOrganizationId } from "@/lib/contributor-utils";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface ContributorsSectionProps {
   contributors: ActivityContributor[];
@@ -34,6 +35,7 @@ export default function ContributorsSection({
   onContributorsChange
 }: ContributorsSectionProps) {
   const { user } = useUser();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const { organizations, loading: organizationsLoading } = useOrganizations();
   const { 
     contributors: dbContributors, 
@@ -194,7 +196,7 @@ export default function ContributorsSection({
   const handleRemoveContributor = async (contributorId: string) => {
     const contributor = contributors.find(c => c.id === contributorId);
     if (contributor && contributor.status === 'accepted') {
-      if (!confirm("This contributor has already accepted. Are you sure you want to remove them?")) {
+      if (!(await confirm({ title: 'Remove contributor?', description: 'This contributor has already accepted. Are you sure you want to remove them?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
         return;
       }
     }
@@ -241,10 +243,10 @@ export default function ContributorsSection({
       const response = await apiFetch(`/api/debug-current-user?userId=${user.id}`);
       const data = await response.json();
       console.log('[Debug] User data from API:', data);
-      alert(`User data check complete. Check console for details.\n\nComputed Name: ${data.computedName}`);
+      toast.info(`User data check complete. Check console for details.\n\nComputed Name: ${data.computedName}`);
     } catch (error) {
       console.error('[Debug] Error checking user data:', error);
-      alert('Error checking user data. Check console for details.');
+      toast.error('Error checking user data. Check console for details.');
     }
   };
 
@@ -426,6 +428,7 @@ export default function ContributorsSection({
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 } 

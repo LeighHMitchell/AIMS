@@ -693,7 +693,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
       {/* Pagination - Hide in grouped view */}
       {sortedDisbursements.length > 0 && !groupedView && (
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 Showing {Math.min(startIndex + 1, sortedDisbursements.length)} to {Math.min(endIndex, sortedDisbursements.length)} of {sortedDisbursements.length} planned disbursements

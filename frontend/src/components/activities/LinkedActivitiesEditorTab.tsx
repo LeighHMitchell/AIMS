@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { Textarea } from '@/components/ui/textarea';
@@ -75,6 +76,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   canEdit,
   onCountChange
 }) => {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Activity[]>([]);
   const [allActivities, setAllActivities] = useState<Activity[]>([]);
@@ -392,7 +394,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       }
     }
 
-    if (!confirm(confirmMessage)) return;
+    if (!(await confirm({ title: 'Remove linked activity?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
     
     try {
       setSaving(true);
@@ -514,7 +516,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     )}
                     onClick={() => canEdit && handleActivitySelect(activity)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex-1 min-w-0">
                         {/* First line: Title (Acronym) · Activity ID or IATI ID */}
                         <div className="flex items-center gap-1.5">
@@ -601,11 +603,11 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 ))}
               </div>
             ) : linkedActivities.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Link2 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm">No linked activities yet</p>
+              <div className="text-center py-12">
+                <img src="/images/empty-carabiner.png" alt="No linked activities" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No linked activities</h3>
                 {canEdit && (
-                  <p className="text-xs mt-1">Search for activities above to create a link</p>
+                  <p className="text-muted-foreground">Use the search above to find and link related activities.</p>
                       )}
                     </div>
             ) : (
@@ -838,6 +840,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           }}
         />
       </div>
+      <ConfirmDialog />
     </div>
   );
 };

@@ -219,10 +219,10 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No contacts found</h3>
+          <img src="/images/empty-cardholder.png" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium mb-2">No contacts</h3>
           <p className="text-muted-foreground">
-            No contacts have been added to this activity yet.
+            Use the button above to add your first contact.
           </p>
         </CardContent>
       </Card>

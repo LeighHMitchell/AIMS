@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FeedbackModal } from '@/components/ui/feedback-modal';
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface Feedback {
   id: string;
@@ -145,6 +146,7 @@ const getPriorityLabel = (priority: string) => {
 };
 
 export function FeedbackManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const { user } = useUser();
   const { toast } = useToast();
   const [feedback, setFeedback] = useState<Feedback[]>([]);
@@ -362,7 +364,7 @@ export function FeedbackManagement() {
     if (!user?.id) return;
     
     // Show confirmation dialog
-    if (!confirm('Are you sure you want to delete this feedback? This action cannot be undone.')) {
+    if (!(await confirm({ title: 'Delete this feedback?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
     
@@ -400,7 +402,7 @@ export function FeedbackManagement() {
   const batchDeleteFeedback = async () => {
     if (!user?.id || selectedIds.size === 0) return;
     
-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} feedback item(s)? This action cannot be undone.`)) {
+    if (!(await confirm({ title: 'Delete selected feedback?', description: `Are you sure you want to delete ${selectedIds.size} feedback item(s)? This action cannot be undone.`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -800,10 +802,10 @@ export function FeedbackManagement() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="max-w-[300px]">
-                              <div className="font-medium truncate">
+                              <div className="text-sm text-foreground truncate">
                                 {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
                               </div>
-                              <div className="text-sm text-gray-500 line-clamp-2 mt-1">
+                              <div className="text-xs text-muted-foreground line-clamp-2 mt-1">
                                 {item.message}
                               </div>
                             </div>
@@ -821,23 +823,23 @@ export function FeedbackManagement() {
                         </Tooltip>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
+                        <div className="text-sm text-foreground">
                           {item.feature ? (
                             <div className="max-w-[200px]">
-                              <div className="font-medium text-gray-900 truncate">
+                              <div className="truncate">
                                 {ALL_APP_FEATURES.find(f => f.code === item.feature)?.name || item.feature}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400 text-xs">Not specified</span>
+                            <span className="text-xs text-muted-foreground">Not specified</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">{getUserDisplayName(item.user)}</div>
+                        <div className="text-sm text-foreground">
+                          <div>{getUserDisplayName(item.user)}</div>
                           {item.user?.email && item.user.email !== getUserDisplayName(item.user) && (
-                            <div className="text-gray-500">{item.user.email}</div>
+                            <div className="text-xs text-muted-foreground">{item.user.email}</div>
                           )}
                         </div>
                       </TableCell>
@@ -984,7 +986,7 @@ export function FeedbackManagement() {
       {/* Pagination */}
       {totalPages > 1 && (
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} feedback items
@@ -1099,6 +1101,7 @@ export function FeedbackManagement() {
           fetchFeedback();
         }}
       />
+      <ConfirmDialog />
       </div>
     </TooltipProvider>
   );

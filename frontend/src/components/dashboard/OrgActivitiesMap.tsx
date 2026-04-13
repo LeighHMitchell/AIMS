@@ -558,7 +558,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               title="Reset map view"
               className="h-10 w-10"
             >
-              <RotateCcw className="h-5 w-5" />
+              <RotateCcw className="h-4 w-4" />
             </Button>
 
             <Button
@@ -568,7 +568,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               title="Show markers"
               className="h-10 w-10"
             >
-              <CircleDot className={`${viewMode === 'markers' ? 'h-6 w-6 stroke-[2.5]' : 'h-5 w-5'}`} />
+              <CircleDot className={`${viewMode === 'markers' ? 'h-6 w-6 stroke-[2.5]' : 'h-4 w-4'}`} />
             </Button>
             <Button
               onClick={() => setViewMode('heatmap')}
@@ -577,7 +577,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               title="Show heatmap"
               className="h-10 w-10"
             >
-              <Flame className={`${viewMode === 'heatmap' ? 'h-6 w-6 stroke-[2.5]' : 'h-5 w-5'}`} />
+              <Flame className={`${viewMode === 'heatmap' ? 'h-6 w-6 stroke-[2.5]' : 'h-4 w-4'}`} />
             </Button>
 
             <Button
@@ -586,7 +586,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               title={is3D ? '2D View' : '3D View'}
               className="h-10 px-6 inline-flex items-center gap-2"
             >
-              <Mountain className="h-5 w-5 shrink-0" />
+              <Mountain className="h-4 w-4 shrink-0" />
               <span className="text-sm font-medium">{is3D ? '2D' : '3D'}</span>
             </Button>
 

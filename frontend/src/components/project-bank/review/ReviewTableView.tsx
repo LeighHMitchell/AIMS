@@ -59,7 +59,7 @@ export function ReviewTableView({ projects, columns, onRowClick, emptyMessage }:
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <table className="w-full text-sm">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="bg-surface-muted border-b border-border">
             {columns.map(col => (
               <th

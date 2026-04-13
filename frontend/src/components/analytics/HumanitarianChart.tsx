@@ -485,7 +485,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
   const renderTable = () => (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-medium text-foreground">Period</th>
             <th className="text-right py-3 px-4 font-medium text-foreground">Development</th>

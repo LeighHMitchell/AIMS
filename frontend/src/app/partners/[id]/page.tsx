@@ -283,7 +283,7 @@ export default function PartnerProfilePage() {
           )}
 
           <Card className="mb-6">
-            <CardContent className="p-8">
+            <CardContent className="p-6">
               <div className="flex items-start gap-6 mb-6">
                 <div className="bg-muted p-4 rounded-lg">
                   {partner.logo ? (

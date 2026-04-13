@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { CommentsDrawer } from './activities/CommentsDrawer';
 import { DateRevisionHistory } from './activities/DateRevisionHistory';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -77,16 +77,10 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
 
       if (error) throw error;
       
-      toast.success(`${displayName} saved successfully`, {
-        position: 'top-center',
-        duration: 2000
-      });
+      toast.success(`${displayName} saved successfully`, { duration: 2000 });
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
-      toast.error(`Failed to save ${displayName}`, {
-        position: 'top-center',
-        duration: 3000
-      });
+      toast.error(`Failed to save ${displayName}`, { duration: 3000 });
     } finally {
       setSaving(prev => ({ ...prev, [fieldName]: false }));
     }

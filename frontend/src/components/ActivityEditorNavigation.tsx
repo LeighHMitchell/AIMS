@@ -95,6 +95,7 @@ export default function ActivityEditorNavigation({
     {
       title: "Strategic Alignment",
       sections: [
+        { id: "national_plans", label: "Plan Alignment" },
         { id: "sdg", label: "SDG Alignment" },
         { id: "tags", label: "Tags" },
         { id: "working_groups", label: "Working Groups" },

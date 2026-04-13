@@ -488,7 +488,7 @@ export default function ProjectBankDashboard() {
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b bg-surface-muted">
                               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('name')}>
                                 <div className="flex items-center gap-1">Project Title {getSortIcon('name')}</div>

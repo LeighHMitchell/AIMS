@@ -161,7 +161,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Untied Aid</p>
@@ -174,7 +174,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Partially Tied</p>
@@ -187,7 +187,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Tied Aid</p>

@@ -558,7 +558,7 @@ export default function OrganizationFundingVisualization({
             {chartView === 'table' && (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
-                  <thead>
+                  <thead className="bg-surface-muted">
                     <tr style={{ backgroundColor: COLORS.platinum }}>
                       <th className="border p-3 text-left font-medium" style={{ color: COLORS.blueSlate }}>Year</th>
                       <th className="border p-3 text-right font-medium" style={{ color: COLORS.blueSlate }}>Total Funding</th>

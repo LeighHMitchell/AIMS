@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 
 import type { ReadinessTemplate, UpsertTemplateRequest } from '@/types/readiness';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface TemplateWithCount extends ReadinessTemplate {
   items?: { count: number }[];
@@ -50,6 +51,7 @@ interface ReadinessTemplateManagementProps {
 }
 
 export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTemplateManagementProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [templates, setTemplates] = useState<TemplateWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +152,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
   };
 
   const handleDelete = async (template: TemplateWithCount) => {
-    if (!confirm(`Are you sure you want to delete "${template.name}"? This will also delete all items in this template.`)) {
+    if (!(await confirm({ title: 'Delete this template?', description: `Are you sure you want to delete "${template.name}"? This will also delete all items in this template.`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -409,6 +411,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
 }

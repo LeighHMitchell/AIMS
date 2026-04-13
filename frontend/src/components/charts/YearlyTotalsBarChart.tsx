@@ -328,7 +328,7 @@ export function YearlyTotalsBarChart({
       return (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="border-b border-slate-200">
                 <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
                 {activeTransactionTypes.map(type => (
@@ -389,7 +389,7 @@ export function YearlyTotalsBarChart({
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="bg-surface-muted">
             <tr className="border-b border-slate-200">
               <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
               <th className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">{singleSeriesLabel}</th>

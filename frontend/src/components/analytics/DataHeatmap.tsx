@@ -196,7 +196,7 @@ export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr>
             <th className="text-left py-2 px-4 text-sm font-medium text-muted-foreground">
               Donor

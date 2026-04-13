@@ -353,7 +353,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               return (
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
-                                    <thead>
+                                    <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
@@ -384,7 +384,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               return (
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
-                                    <thead>
+                                    <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
@@ -472,7 +472,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               return (
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
-                                    <thead>
+                                    <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
@@ -503,7 +503,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               return (
                                 <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                                   <table className="border-collapse">
-                                    <thead>
+                                    <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
                                         <th className="px-3 py-1.5 text-left font-medium text-slate-700">Year</th>
                                         <th className="px-3 py-1.5 text-right font-medium text-slate-700">Amount (USD)</th>
@@ -575,7 +575,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           return (
                             <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
                               <table className="border-collapse">
-                                <thead>
+                                <thead className="bg-surface-muted">
                                   <tr className="bg-surface-muted">
                                     <th className="px-3 py-1.5 text-left font-medium text-slate-700" colSpan={2}>Year {label}</th>
                                   </tr>
@@ -802,7 +802,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       return (
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
-                            <thead>
+                            <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
@@ -834,7 +834,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       return (
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
-                            <thead>
+                            <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
@@ -897,7 +897,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       return (
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
-                            <thead>
+                            <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
@@ -929,7 +929,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       return (
                         <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                           <table className="border-collapse">
-                            <thead>
+                            <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
                                 <th className="px-3 py-1.5 text-left font-medium">Year</th>
                                 <th className="px-3 py-1.5 text-right font-medium">Amount (USD)</th>
@@ -975,7 +975,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   return (
                     <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
                       <table className="border-collapse w-full">
-                        <thead>
+                        <thead className="bg-surface-muted">
                           <tr className="bg-surface-muted">
                             <th className="px-3 py-1.5 text-left font-medium" colSpan={2}>Year {label}</th>
                           </tr>

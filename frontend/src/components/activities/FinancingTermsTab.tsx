@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { 
   CheckCircle,
   Info, 
@@ -49,6 +50,7 @@ export function FinancingTermsTab({
   className,
   onFinancingTermsChange 
 }: FinancingTermsTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const {
     loanTerms,
     loanStatuses,
@@ -211,7 +213,7 @@ export function FinancingTermsTab({
 
   // Handle delete loan status
   const handleDeleteLoanStatus = async (id: string, year: number) => {
-    if (window.confirm(`Are you sure you want to delete the loan status for year ${year}?`)) {
+    if (await confirm({ title: 'Delete loan status?', description: `Are you sure you want to delete the loan status for year ${year}?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       await deleteLoanStatus(id);
     }
   };
@@ -453,7 +455,7 @@ export function FinancingTermsTab({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Interest Rates Card */}
               <Card className="hover:border-border transition-colors">
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-muted rounded-lg">
                       <Percent className="h-4 w-4 text-muted-foreground" />
@@ -478,7 +480,7 @@ export function FinancingTermsTab({
 
               {/* Repayment Info Card */}
               <Card className="hover:border-border transition-colors">
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-muted rounded-lg">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -512,7 +514,7 @@ export function FinancingTermsTab({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Commitment Date */}
               <Card className="hover:border-border transition-colors">
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-muted rounded-lg">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -529,7 +531,7 @@ export function FinancingTermsTab({
 
               {/* First Repayment */}
               <Card className="hover:border-border transition-colors">
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-muted rounded-lg">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -546,7 +548,7 @@ export function FinancingTermsTab({
 
               {/* Final Repayment */}
               <Card className="hover:border-border transition-colors">
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-muted rounded-lg">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -565,7 +567,7 @@ export function FinancingTermsTab({
             {/* Third Row: OECD CRS Flags */}
             <div className="grid grid-cols-1 gap-4">
               <Card className="hover:border-border transition-colors">
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-muted rounded-lg">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -616,7 +618,7 @@ export function FinancingTermsTab({
           {loanStatuses.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="bg-surface-muted">
                   <tr className="border-b bg-muted">
                     <th className="text-left p-2 font-medium">Year</th>
                     <th className="text-left p-2 font-medium">Currency</th>
@@ -678,10 +680,12 @@ export function FinancingTermsTab({
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <TrendingUp className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-              <p>No loan status entries yet</p>
-              <p className="text-sm">Click "Add Year" to record yearly loan status</p>
+            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+              <img src="/images/empty-galley.png" alt="No loan status entries" className="h-32 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No loan status entries</h3>
+              <p className="text-muted-foreground">
+                Use the button above to add your first yearly loan status.
+              </p>
             </div>
           )}
         </CardContent>
@@ -704,6 +708,7 @@ export function FinancingTermsTab({
         editingId={editingLoanStatusId}
         editingValues={editingLoanStatusValues}
       />
+      <ConfirmDialog />
     </div>
   );
 }

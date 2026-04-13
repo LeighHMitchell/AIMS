@@ -692,6 +692,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingDocField, setUploadingDocField] = useState<string | null>(null);
   const [aeOptions, setAeOptions] = useState<AEOption[]>([]);
+  const [nationalPlanOptions, setNationalPlanOptions] = useState<AEOption[]>([]);
   const formDataRef = useRef(formData);
   const autosaveRef = useRef<NodeJS.Timeout>();
 
@@ -725,13 +726,53 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         const response = await apiFetch('/api/admin/aid-effectiveness-options?activeOnly=true');
         if (response.ok) {
           const result = await response.json();
-          setAeOptions(result.data || []);
+          // Filter out plan-based categories — those now come from national_plans
+          const planCategories = new Set([
+            'includedInNationalPlan',
+            'linkedToGovFramework',
+            'capacityDevFromNationalPlan',
+            'mutualAccountabilityFramework',
+          ]);
+          const filtered = (result.data || []).filter(
+            (opt: AEOption) => !planCategories.has(opt.category)
+          );
+          setAeOptions(filtered);
         }
       } catch (error) {
         console.error('Error fetching AE options:', error);
       }
     };
+
+    const fetchNationalPlans = async () => {
+      try {
+        const response = await apiFetch('/api/national-plans?activeOnly=true');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Convert national plans into AEOption format for the dropdown
+            const planOptions: AEOption[] = (result.data || []).map((plan: any) => ({
+              id: plan.id,
+              category: 'includedInNationalPlan',
+              label: plan.name,
+              description: plan.description || null,
+              acronym: null,
+              start_date: plan.startDate || null,
+              start_date_precision: plan.startDate ? 'day' as const : null,
+              end_date: plan.endDate || null,
+              end_date_precision: plan.endDate ? 'day' as const : null,
+              sort_order: plan.displayOrder || 0,
+              is_active: true,
+            }));
+            setNationalPlanOptions(planOptions);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching national plans:', error);
+      }
+    };
+
     fetchAEOptions();
+    fetchNationalPlans();
   }, []);
 
   // Pre-fill implementing partner with user's reporting org
@@ -744,10 +785,21 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     }
   }, [user?.organizationId]);
 
+  // Categories whose options come from national_plans instead of aid_effectiveness_options
+  const planBasedCategories = useMemo(() => new Set([
+    'includedInNationalPlan',
+    'linkedToGovFramework',
+    'capacityDevFromNationalPlan',
+    'mutualAccountabilityFramework',
+  ]), []);
+
   // Get options for a specific country-dropdown category
   const getOptionsForCategory = useCallback((category: string) => {
+    if (planBasedCategories.has(category)) {
+      return nationalPlanOptions;
+    }
     return aeOptions.filter(opt => opt.category === category);
-  }, [aeOptions]);
+  }, [aeOptions, nationalPlanOptions, planBasedCategories]);
 
   // Calculate completion percentage
   const completionPercentage = useMemo(() => {

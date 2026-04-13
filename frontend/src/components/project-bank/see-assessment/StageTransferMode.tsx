@@ -148,7 +148,7 @@ export function StageTransferMode({ wizard }: StageTransferModeProps) {
           {bidders.length > 0 ? (
             <div className="overflow-x-auto border rounded-md">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="bg-surface-muted">
                   <tr className="border-b bg-surface-muted">
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Company</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Contact</th>

@@ -8,7 +8,8 @@ import {
   ExternalLink,
   Building2,
   Calendar,
-  DollarSign
+  DollarSign,
+  ArrowRightLeft
 } from 'lucide-react';
 import { getSortIcon, sortableHeaderClasses } from '@/components/ui/table';
 
@@ -236,10 +237,16 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
   if (!transactions.length) {
     return (
       <div className="bg-card rounded-lg shadow p-6">
-        <div className="text-center py-8 text-muted-foreground">
-          {linkedActivityCount === 0 
-            ? 'No linked activities found. Link activities first to see their transactions.'
-            : 'No transactions found in linked activities.'}
+        <div className="text-center py-12">
+          <ArrowRightLeft className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">
+            {linkedActivityCount === 0 ? 'No linked activities' : 'No linked transactions'}
+          </h3>
+          <p className="text-muted-foreground">
+            {linkedActivityCount === 0
+              ? 'Link activities first to see their transactions here.'
+              : 'No transactions were found in the linked activities.'}
+          </p>
         </div>
       </div>
     );

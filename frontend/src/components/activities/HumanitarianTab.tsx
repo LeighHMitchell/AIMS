@@ -256,8 +256,12 @@ export function HumanitarianTab({
           </CardHeader>
           <CardContent className="space-y-4">
             {scopes.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No emergencies or appeals linked. Click "Add Emergency / Appeal" to link to a specific emergency or appeal.
+              <div className="text-center py-12">
+                <img src="/images/empty-pallet.png" alt="No humanitarian scopes" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No emergencies or appeals</h3>
+                <p className="text-muted-foreground">
+                  Use the button above to link to a specific emergency or appeal.
+                </p>
               </div>
             )}
 

@@ -26,6 +26,7 @@ import { useCustomYears } from "@/hooks/useCustomYears";
 import { BudgetsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -36,6 +37,8 @@ export default function BudgetsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [organizations, setOrganizations] = useState<any[]>([]);
   
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   // Bulk selection state
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -280,7 +283,7 @@ export default function BudgetsPage() {
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this budget?")) {
+    if (!(await confirm({ title: 'Delete this budget?', description: 'This action cannot be undone. The budget will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -563,7 +566,7 @@ export default function BudgetsPage() {
         {/* Pagination */}
         {!loading && totalBudgets > 0 && (
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalBudgets)} to {Math.min(endIndex, totalBudgets)} of {totalBudgets} budgets
@@ -684,6 +687,7 @@ export default function BudgetsPage() {
           isDeleting={isBulkDeleting}
         />
       </div>
+      <ConfirmDialog />
     </MainLayout>
   );
 }

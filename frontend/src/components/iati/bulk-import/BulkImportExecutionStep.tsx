@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   CheckCircle2,
   XCircle,
@@ -231,11 +232,15 @@ export default function BulkImportExecutionStep({
       {/* Per-activity status table - Monochrome */}
       <Card className="border-gray-200">
         <CardContent className="p-0">
-          <div className="grid grid-cols-[1fr_300px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
-            <div>Activity</div>
-            <div className="text-right">Status</div>
-          </div>
           <ScrollArea className="h-80">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Activity</TableHead>
+                  <TableHead className="w-[300px] text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
             {[...(batchStatus?.items || selectedActivities.map(a => ({
               iatiIdentifier: a.iatiIdentifier,
               activityTitle: a.title || '',
@@ -245,19 +250,17 @@ export default function BulkImportExecutionStep({
               const order: Record<string, number> = { processing: 0, completed: 1, failed: 1, skipped: 1, queued: 2 };
               return (order[a.status] ?? 3) - (order[b.status] ?? 3);
             }).map((item, i) => (
-              <div
-                key={item.iatiIdentifier || i}
-                className="grid grid-cols-[1fr_300px] gap-2 px-4 py-3 border-b last:border-b-0 items-center"
-              >
+              <TableRow key={item.iatiIdentifier || i}>
                 {/* Activity Title + IATI Identifier */}
-                <div className="min-w-0">
+                <TableCell className="min-w-0">
                   <p className="text-sm truncate">
                     {item.activityTitle || item.iatiIdentifier}
                     <span className="ml-2 font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-gray-600">{item.iatiIdentifier}</span>
                   </p>
-                </div>
+                </TableCell>
                 {/* Combined Status */}
-                <div className="text-right flex items-center justify-end gap-2">
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
                   {item.status === 'queued' && (
                     <>
                       <Circle className="h-4 w-4 text-gray-300" />
@@ -332,9 +335,12 @@ export default function BulkImportExecutionStep({
                       <span className="text-xs text-gray-400">Skipped</span>
                     </>
                   )}
-                </div>
-              </div>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))}
+              </TableBody>
+            </Table>
           </ScrollArea>
         </CardContent>
       </Card>

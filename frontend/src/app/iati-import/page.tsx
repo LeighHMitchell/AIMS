@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useDropzone } from 'react-dropzone'
 import { useUser } from '@/hooks/useUser'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
@@ -117,6 +118,7 @@ function HistoryTab() {
   const [loadingItems, setLoadingItems] = useState(false)
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null)
   const [exportingBatchId, setExportingBatchId] = useState<string | null>(null)
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -235,7 +237,7 @@ function HistoryTab() {
 
   const deleteBatch = async (batchId: string, batchName: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm(`Delete import "${batchName}"? This removes the import history record only — imported activities are not affected.`)) return
+    if (!(await confirm({ title: 'Delete import record?', description: `Delete import "${batchName}"? This removes the import history record only — imported activities are not affected.`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
     setDeletingBatchId(batchId)
     try {
       const res = await apiFetch('/api/iati/history', {
@@ -290,6 +292,7 @@ function HistoryTab() {
   const endIndex = startIndex + historyData.length
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Import History</CardTitle>
@@ -422,7 +425,7 @@ function HistoryTab() {
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={async (e) => {
                             e.stopPropagation()
-                            if (!confirm('Cancel this import? Items already imported will remain.')) return
+                            if (!(await confirm({ title: 'Cancel this import?', description: 'Items already imported will remain.', confirmLabel: 'Cancel Import', cancelLabel: 'Keep Importing' }))) return
                             try {
                               const res = await apiFetch('/api/iati/history', {
                                 method: 'PATCH',
@@ -610,6 +613,8 @@ function HistoryTab() {
         )}
       </CardContent>
     </Card>
+    <ConfirmDialog />
+    </>
   )
 }
 
@@ -1141,7 +1146,7 @@ export default function IATIImportPage() {
   if (parsing && step === 'parse') {
     return (
       <MainLayout>
-        <div className="max-w-screen-2xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">IATI Import Tool</h1>
             <p className="text-muted-foreground mt-2">Sequential import process for IATI data</p>
@@ -1176,7 +1181,7 @@ export default function IATIImportPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-screen-2xl mx-auto px-6 py-4">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">IATI Import Tool</h1>
           <p className="text-muted-foreground mt-2">Sequential import process for IATI data</p>

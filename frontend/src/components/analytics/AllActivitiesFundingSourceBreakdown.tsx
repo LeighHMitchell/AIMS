@@ -382,7 +382,7 @@ export function AllActivitiesFundingSourceBreakdown({
           fundingChartType === 'table' ? (
             <div className="overflow-auto h-[500px] border border-border rounded-lg">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-card z-10">
+                <thead className="sticky top-0 bg-surface-muted z-10">
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Provider</th>
                     <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Receiver</th>

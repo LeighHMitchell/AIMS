@@ -163,6 +163,7 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
+        { name: "Plan Alignment", href: "/alignment", show: true },
         { name: "Atlas", href: "/atlas", show: true },
         { name: "Search", href: "/search", show: true },
         { name: "Portfolios", href: "/partners", show: true },
@@ -396,20 +397,30 @@ export function SidebarNav({
           {currentModule === 'aims' && canCreateActivities && (
             <div className="pb-4 border-b border-gray-200 dark:border-gray-700" data-tour="activities-create">
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <GlassButton
-                    className={cn(
-                      "w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800",
-                      isInActivityEditor && "opacity-50 cursor-not-allowed"
-                    )}
-                    disabled={isInActivityEditor}
-                    title={isInActivityEditor ? "Please finish editing the current activity first" : "Create a new activity"}
-                  >
-                    <Plus className="h-4 w-4" />
-                    {!isCollapsed && "Add New Activity"}
-                    {!isCollapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
-                  </GlassButton>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={isInActivityEditor ? 0 : undefined}>
+                      <DropdownMenuTrigger asChild>
+                        <GlassButton
+                          className={cn(
+                            "w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800",
+                            isInActivityEditor && "opacity-50 cursor-not-allowed pointer-events-none"
+                          )}
+                          disabled={isInActivityEditor}
+                        >
+                          <Plus className="h-4 w-4" />
+                          {!isCollapsed && "Add New Activity"}
+                          {!isCollapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
+                        </GlassButton>
+                      </DropdownMenuTrigger>
+                    </span>
+                  </TooltipTrigger>
+                  {isInActivityEditor && (
+                    <TooltipContent side="right">
+                      <p>Please finish editing the current activity before creating a new one</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
                 <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
                   <DropdownMenuSeparator />

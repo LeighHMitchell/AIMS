@@ -314,7 +314,7 @@ export function BookmarkedActivitiesTable() {
                 >
                   <TableCell>
                     <div>
-                      <p className="font-medium" title={activity.title_narrative}>
+                      <p className="text-sm text-foreground" title={activity.title_narrative}>
                         {activity.title_narrative}
                         {activity.acronym && (
                           <span> ({activity.acronym})</span>
@@ -339,7 +339,7 @@ export function BookmarkedActivitiesTable() {
                           }}
                         />
                       )}
-                      <span className="text-sm text-slate-700">
+                      <span className="text-sm text-foreground">
                         {activity.reporting_org_name || activity.created_by_org_name || '-'}
                         {(activity.reporting_org_acronym || activity.created_by_org_acronym) && (
                           <> ({activity.reporting_org_acronym || activity.created_by_org_acronym})</>
@@ -348,7 +348,7 @@ export function BookmarkedActivitiesTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs text-slate-500" title={format(new Date(activity.updated_at), 'PPpp')}>
+                    <span className="text-xs text-muted-foreground" title={format(new Date(activity.updated_at), 'PPpp')}>
                       {formatDistanceToNow(new Date(activity.updated_at), { addSuffix: true })}
                     </span>
                   </TableCell>

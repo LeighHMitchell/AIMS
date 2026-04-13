@@ -4499,6 +4499,7 @@ function NewActivityPageContent() {
       finances: "Transactions",
       results: "Results",
       "capital-spend": "Capital Spend",
+      national_plans: "Plan Alignment",
       sdg: "SDG Alignment",
       "country-budget": "Country Budget Mapping",
       tags: "Tags",
@@ -4923,36 +4924,38 @@ function NewActivityPageContent() {
     }
   }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, contactsCount, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus, dataLoadedGroups, tabCountsReady]);
 
-  // Helper to get next section id - moved here to avoid temporal dead zone
+  // Helper to get next section id - matches navigationGroups order
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
-      "iati", "xml-import",
+      "iati", "xml-import", "excel-import",
       "general", "sectors", "humanitarian",
       "country-region", "locations", "subnational-allocation",
-      "organisations", "contacts", "focal_points", "linked_activities",
-      "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
-      "sdg", "country-budget", "tags", "working_groups", "policy_markers",
+      "organisations", "contacts", "focal_points",
+      "finances", "planned-disbursements", "budgets",
+      "sdg", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
-      "government", "readiness_checklist", "metadata"
-    ].filter(id => id !== "government" || showGovernmentInputs);
+      "linked_activities", "results", "forward-spending-survey", "capital-spend", "financing-terms", "conditions", "country-budget",
+      ...(showGovernmentInputs ? ["government"] : []), "readiness_checklist", "metadata"
+    ];
 
     const idx = sections.findIndex(s => s === currentId);
-    return idx < sections.length - 1 ? sections[idx + 1] : null;
+    return idx >= 0 && idx < sections.length - 1 ? sections[idx + 1] : null;
   }, [showGovernmentInputs]);
 
-  // Helper to get previous section id
+  // Helper to get previous section id - matches navigationGroups order
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
-      "iati", "xml-import",
+      "iati", "xml-import", "excel-import",
       "general", "sectors", "humanitarian",
       "country-region", "locations", "subnational-allocation",
-      "organisations", "contacts", "focal_points", "linked_activities",
-      "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
-      "sdg", "country-budget", "tags", "working_groups", "policy_markers",
+      "organisations", "contacts", "focal_points",
+      "finances", "planned-disbursements", "budgets",
+      "sdg", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
-      "government", "readiness_checklist", "metadata"
-    ].filter(id => id !== "government" || showGovernmentInputs);
-    
+      "linked_activities", "results", "forward-spending-survey", "capital-spend", "financing-terms", "conditions", "country-budget",
+      ...(showGovernmentInputs ? ["government"] : []), "readiness_checklist", "metadata"
+    ];
+
     const idx = sections.findIndex(s => s === currentId);
     return idx > 0 ? sections[idx - 1] : null;
   }, [showGovernmentInputs]);
@@ -5266,9 +5269,9 @@ function NewActivityPageContent() {
     {
       title: "IATI Tools",
       sections: [
+        { id: "iati", label: "IATI Link" },
         { id: "xml-import", label: "Import Single Activity" },
         { id: "excel-import", label: "Excel Import" },
-        { id: "iati", label: "IATI Link" }
       ]
     },
     {
@@ -5292,7 +5295,7 @@ function NewActivityPageContent() {
       sections: [
         { id: "organisations", label: "Participating Organisations" },
         { id: "contacts", label: "Contacts" },
-        { id: "linked_activities", label: "Linked Activities" }
+        { id: "focal_points", label: "Focal Points" },
       ]
     },
     {
@@ -5301,28 +5304,35 @@ function NewActivityPageContent() {
         { id: "finances", label: "Financial Information" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
         { id: "budgets", label: "Budgets" },
-        { id: "forward-spending-survey", label: "Forward Spend" },
-        { id: "results", label: "Results" },
-        { id: "capital-spend", label: "Capital Spend" },
-        { id: "financing-terms", label: "Financing Terms" },
-        { id: "conditions", label: "Conditions" }
       ]
     },
     {
       title: "Strategic Alignment",
       sections: [
+        { id: "national_plans", label: "Plan Alignment" },
         { id: "sdg", label: "SDG Alignment" },
-        { id: "country-budget", label: "Budget Mapping" },
         { id: "tags", label: "Tags" },
         { id: "working_groups", label: "Working Groups" },
-        { id: "policy_markers", label: "Policy Markers" }
+        { id: "policy_markers", label: "Policy Markers" },
       ]
     },
     {
       title: "Supporting Info",
       sections: [
         { id: "documents", label: "Documents & Images" },
-        { id: "aid_effectiveness", label: "Aid Effectiveness" }
+        { id: "aid_effectiveness", label: "Aid Effectiveness" },
+      ]
+    },
+    {
+      title: "Advanced",
+      sections: [
+        { id: "linked_activities", label: "Linked Activities" },
+        { id: "results", label: "Results" },
+        { id: "forward-spending-survey", label: "Forward Spend" },
+        { id: "capital-spend", label: "Capital Spend" },
+        { id: "financing-terms", label: "Financing Terms" },
+        { id: "conditions", label: "Conditions" },
+        { id: "country-budget", label: "Budget Mapping" },
       ]
     },
     {
@@ -5803,7 +5813,7 @@ function NewActivityPageContent() {
                       setIsCommentsDrawerOpen(true);
                     }}
                   >
-                    <MessageSquare className="mr-2 h-5 w-5" />
+                    <MessageSquare className="mr-2 h-4 w-4" />
                     Comments
                     {comments.length > 0 && (
                       <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1">
@@ -5832,12 +5842,12 @@ function NewActivityPageContent() {
                 >
                   {tabLoading ? (
                     <>
-                      <CircleDashed className="mr-2 h-5 w-5 animate-spin" />
+                      <CircleDashed className="mr-2 h-4 w-4 animate-spin" />
                       Loading...
                     </>
                   ) : (
                     <>
-                      <ArrowLeft className="mr-2 h-5 w-5" />
+                      <ArrowLeft className="mr-2 h-4 w-4" />
                       Back
                     </>
                   )}
@@ -5852,7 +5862,7 @@ function NewActivityPageContent() {
                   title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
                 >
                   Next
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
 
                 {/* Save Button - Only show for existing activities */}
@@ -5865,12 +5875,12 @@ function NewActivityPageContent() {
                   >
                     {saving ? (
                       <>
-                        <CircleDashed className="mr-2 h-5 w-5 animate-spin" />
+                        <CircleDashed className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-5 w-5" />
+                        <Save className="mr-2 h-4 w-4" />
                         Save
                       </>
                     )}
@@ -5892,9 +5902,9 @@ function NewActivityPageContent() {
                   <>
                     Save & Next
                     {savingAndNext ? (
-                      <CircleDashed className="ml-2 h-5 w-5 animate-spin" />
+                      <CircleDashed className="ml-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     )}
                   </>
                 </Button>

@@ -64,7 +64,7 @@ export default function ImprovedSectorsDemoPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto py-8 max-w-6xl">
+      <div className="container mx-auto py-8 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Improved Sector Allocation Demo

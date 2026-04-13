@@ -18,6 +18,7 @@ import { usePolicyMarkersAutosave } from '@/hooks/use-policy-markers-autosave';
 import { useUser } from '@/hooks/useUser';
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 // Types
 type VisibilityLevel = 'public' | 'organization' | 'hidden';
@@ -172,6 +173,7 @@ const INITIAL_MODAL_FORM: ModalFormState = {
 
 export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyMarkers, onChange, setHasUnsavedChanges, readOnly = false }: PolicyMarkersSectionProps) {
   const { user } = useUser();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const policyMarkersAutosave = usePolicyMarkersAutosave(activityId, user?.id);
 
   const [availableMarkers, setAvailableMarkers] = useState<IATIPolicyMarker[]>([]);
@@ -313,7 +315,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
 
   // ---- Delete custom marker definition ----
   const deleteCustomMarker = async (markerId: string) => {
-    if (!confirm('Are you sure you want to delete this custom policy marker? This action cannot be undone.')) return;
+    if (!(await confirm({ title: 'Delete custom policy marker?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
     try {
       const response = await apiFetch(`/api/policy-markers?id=${markerId}`, { method: 'DELETE' });
       if (!response.ok) {
@@ -905,6 +907,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

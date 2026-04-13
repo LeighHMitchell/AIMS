@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Tag, X } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useDimensions } from '@/hooks/use-results';
 import { Dimension, DIMENSION_TEMPLATES } from '@/types/results';
 
@@ -29,6 +30,7 @@ export function DimensionsManager({
   readOnly = false
 }: DimensionsManagerProps) {
   const { createDimension, deleteDimension, loading } = useDimensions();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -68,7 +70,7 @@ export function DimensionsManager({
   };
 
   const handleDelete = async (dimensionId: string) => {
-    if (window.confirm('Delete this dimension?')) {
+    if (await confirm({ title: 'Delete this dimension?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteDimension(entityType, entityId, dimensionId);
       if (success) {
         onUpdate();
@@ -217,7 +219,7 @@ export function DimensionsManager({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(dim.id)}
-                  className="text-red-600 hover:text-red-800 h-5 w-5 p-0 ml-1"
+                  className="text-red-600 hover:text-red-800 h-4 w-4 p-0 ml-1"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -230,6 +232,7 @@ export function DimensionsManager({
       {filteredDimensions.length === 0 && !showAddForm && (
         <p className="text-xs text-gray-500 italic">No disaggregation dimensions</p>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

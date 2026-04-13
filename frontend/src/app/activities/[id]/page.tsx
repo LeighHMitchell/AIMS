@@ -130,6 +130,7 @@ import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsToo
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
 import FinanceTypeDonut from '@/components/charts/FinanceTypeDonut'
 import PolicyMarkersSectionIATIWithCustom from '@/components/PolicyMarkersSectionIATIWithCustom'
+import { NationalPrioritiesSection } from '@/components/activities/NationalPrioritiesSection'
 import { PolicyMarkersAnalyticsTab } from '@/components/activities/PolicyMarkersAnalyticsTab'
 import { DocumentsAndImagesTabV2 } from '@/components/activities/DocumentsAndImagesTabV2'
 import { AllDatesHistory } from '@/components/activities/AllDatesHistory'
@@ -1669,7 +1670,7 @@ export default function ActivityDetailPage() {
               </div>
             ) : null}
             
-            <CardContent className="p-8">
+            <CardContent className="p-6">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
                 {/* Main Content - Columns 1-3 */}
                 <div className="lg:col-span-3">
@@ -2683,7 +2684,7 @@ export default function ActivityDetailPage() {
                     return (
                       <div className="flex-1 min-h-24 overflow-auto">
                         <table className="w-full text-xs">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Budget</th>
@@ -2742,7 +2743,7 @@ export default function ActivityDetailPage() {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
-                                      <thead>
+                                      <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
@@ -2927,7 +2928,7 @@ export default function ActivityDetailPage() {
                     return (
                       <div className="flex-1 min-h-24 overflow-auto">
                         <table className="w-full text-xs">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Planned</th>
@@ -2996,7 +2997,7 @@ export default function ActivityDetailPage() {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
-                                      <thead>
+                                      <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Amount</th>
@@ -4572,8 +4573,9 @@ export default function ActivityDetailPage() {
                           )
                         ) : (
                           <div className="text-center py-12">
-                            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">No locations have been added to this activity yet.</p>
+                            <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
+                            <h3 className="text-lg font-medium mb-2">No locations</h3>
+                            <p className="text-muted-foreground">Add locations to show where this activity takes place.</p>
                           </div>
                         )}
                       </CardContent>
@@ -4604,7 +4606,8 @@ export default function ActivityDetailPage() {
                       <div className="h-96 flex items-center justify-center bg-surface-muted rounded-md border border-border">
                         <div className="text-center">
                           <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">No regional breakdown data available</p>
+                          <h3 className="text-lg font-medium mb-2">No regional breakdown</h3>
+                          <p className="text-muted-foreground">Add subnational locations to see a regional breakdown.</p>
                         </div>
                       </div>
                     </CardContent>
@@ -4727,7 +4730,8 @@ export default function ActivityDetailPage() {
                     ) : (
                       <div className="text-center py-12">
                         <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">No SDG alignments have been configured for this activity.</p>
+                        <h3 className="text-lg font-medium mb-2">No SDG alignments</h3>
+                        <p className="text-muted-foreground">Configure Sustainable Development Goal alignments for this activity.</p>
                       </div>
                     )}
                   </CardContent>

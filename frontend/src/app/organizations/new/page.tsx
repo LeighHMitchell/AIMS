@@ -16,7 +16,7 @@ export default function NewOrganizationPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
         <Breadcrumbs items={[
           { label: "Organizations", href: "/organizations" },
           { label: "New" },

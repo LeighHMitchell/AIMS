@@ -787,7 +787,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
       {/* Pagination - Hide in grouped view */}
       {sortedTransactions.length > 0 && !groupedView && (
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 Showing {Math.min(startIndex + 1, sortedTransactions.length)} to {Math.min(endIndex, sortedTransactions.length)} of {sortedTransactions.length} transactions

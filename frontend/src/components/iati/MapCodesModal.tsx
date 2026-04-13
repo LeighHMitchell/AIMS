@@ -29,6 +29,7 @@ import {
   Info,
   FileCode
 } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface UnmappedCodes {
   [codeType: string]: string[];
@@ -125,6 +126,7 @@ export function MapCodesModal({
   unmappedCodes,
   onComplete
 }: MapCodesModalProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   // Track mappings: codeType -> originalCode -> mappedCode
   const [mappings, setMappings] = useState<CodeMapping>({});
   const [manualMode, setManualMode] = useState<{ [key: string]: boolean }>({});
@@ -187,6 +189,7 @@ export function MapCodesModal({
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
@@ -308,8 +311,8 @@ export function MapCodesModal({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => {
-              if (confirm('Are you sure? Unmapped codes will prevent import.')) {
+            onClick={async () => {
+              if (await confirm({ title: 'Continue with unmapped codes?', description: 'Unmapped codes will prevent import.', confirmLabel: 'Continue', cancelLabel: 'Cancel' })) {
                 onClose();
               }
             }}
@@ -325,5 +328,7 @@ export function MapCodesModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog />
+    </>
   );
-} 
+}

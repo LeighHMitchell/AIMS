@@ -127,7 +127,7 @@ export default function TransfersListPage() {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="bg-surface-muted">
                   <tr className="border-b bg-surface-muted">
                     <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Code</th>
                     <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">SEE Name</th>

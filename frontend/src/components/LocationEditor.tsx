@@ -16,6 +16,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 
@@ -63,6 +64,7 @@ export default function LocationEditor({
   activityId,
   canEdit = true
 }: LocationEditorProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [localLocations, setLocalLocations] = useState<IATILocation[]>(() => locations);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -193,8 +195,8 @@ export default function LocationEditor({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (confirm('Are you sure you want to remove all locations?')) {
+                onClick={async () => {
+                  if (await confirm({ title: 'Remove all locations?', description: 'Are you sure you want to remove all locations?', confirmLabel: 'Remove All', cancelLabel: 'Cancel' })) {
                     setLocalLocations([]);
                     onLocationsChange([]);
                     setErrors({});
@@ -494,6 +496,7 @@ export default function LocationEditor({
           </CardContent>
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

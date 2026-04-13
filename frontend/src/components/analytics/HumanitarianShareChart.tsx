@@ -351,7 +351,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   const renderTableView = () => (
     <div className="py-6">
       <table className="w-full text-sm">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-medium text-slate-700">Category</th>
             <th className="text-right py-3 px-4 font-medium text-slate-700">Amount (USD)</th>

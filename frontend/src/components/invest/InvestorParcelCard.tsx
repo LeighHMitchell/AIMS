@@ -16,7 +16,7 @@ export function InvestorParcelCard({ parcel, onClick }: InvestorParcelCardProps)
       className="cursor-pointer hover:shadow-md transition-shadow"
       onClick={onClick}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-medium text-sm">{parcel.name}</h3>
           <TitleStatusBadge status={parcel.title_status} />

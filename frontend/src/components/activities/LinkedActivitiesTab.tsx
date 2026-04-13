@@ -7,6 +7,8 @@ import ActivityCard from './ActivityCard';
 import LinkedActivityModal from './LinkedActivityModal';
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { toast } from 'sonner';
 
 interface LinkedActivity {
   id: string;
@@ -31,6 +33,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
   activityId, 
   currentUserId 
 }) => {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [linkedActivities, setLinkedActivities] = useState<LinkedActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,7 +63,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
 
   // Handle delete link
   const handleDeleteLink = async (linkId: string) => {
-    if (!confirm('Are you sure you want to remove this link?')) return;
+    if (!(await confirm({ title: 'Remove this link?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
     
     try {
       const response = await apiFetch(`/api/activities/${activityId}/linked/${linkId}`, {
@@ -73,7 +76,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
       await fetchLinkedActivities();
     } catch (error) {
       console.error('Error deleting link:', error);
-      alert('Failed to remove link');
+      toast.error('Failed to remove link');
     }
   };
 
@@ -166,7 +169,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
       
     } catch (error) {
       console.error('Error creating link:', error);
-      alert(error instanceof Error ? error.message : 'Failed to create activity link');
+      toast.error(error instanceof Error ? error.message : 'Failed to create activity link');
     } finally {
       setIsLoading(false);
     }
@@ -263,8 +266,12 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
     
     if (!linkedActivities.length) {
       return (
-        <div className="text-center py-8 text-muted-foreground">
-          No linked activities yet. Use the search above to find and link related activities.
+        <div className="text-center py-12">
+          <img src="/images/empty-carabiner.png" alt="No linked activities" className="h-32 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium mb-2">No linked activities</h3>
+          <p className="text-muted-foreground">
+            Use the search above to find and link related activities.
+          </p>
         </div>
       );
     }
@@ -529,6 +536,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
           }}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 };

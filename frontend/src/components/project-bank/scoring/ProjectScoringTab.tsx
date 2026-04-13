@@ -349,7 +349,7 @@ function DimensionCard({
       {isExpanded && (
         <div className="px-4 pb-3 border-t bg-muted/20">
           <table className="w-full mt-2">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="text-xs text-muted-foreground">
                 <th className="text-left font-medium py-1">Criterion</th>
                 <th className="text-right font-medium py-1 w-16">Earned</th>

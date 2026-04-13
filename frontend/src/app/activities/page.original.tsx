@@ -856,7 +856,7 @@ function ActivitiesPageContent() {
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse min-w-[1300px]">
-                <thead className="bg-muted border-b">
+                <thead className="bg-surface-muted border-b">
                   <tr>
                     <th 
                       className="bg-muted text-sm font-medium text-muted-foreground px-4 py-2 text-left cursor-pointer hover:bg-gray-200 w-[30%]"

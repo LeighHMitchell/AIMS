@@ -185,7 +185,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Transparency Score</p>
@@ -198,7 +198,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Annual Budget</p>
@@ -210,7 +210,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Forward Plan</p>
@@ -222,7 +222,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Both Shared</p>

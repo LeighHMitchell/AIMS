@@ -11,9 +11,11 @@ import SDGAlignmentSection from "@/components/SDGAlignmentSection"
 import TagsSection from "@/components/TagsSection"
 import WorkingGroupsSection from "@/components/WorkingGroupsSection"
 import PolicyMarkersSectionIATIWithCustom from "@/components/PolicyMarkersSectionIATIWithCustom"
+import { NationalPrioritiesSection } from "@/components/activities/NationalPrioritiesSection"
 
 // Section IDs for the Strategic Alignment group
 export const STRATEGIC_ALIGNMENT_SECTIONS = [
+  'national_plans',
   'sdg',
   'tags',
   'working_groups',
@@ -104,6 +106,7 @@ export function StrategicAlignmentGroup({
 }: StrategicAlignmentGroupProps) {
 
   // Create refs for each section
+  const nationalPlansRef = useRef<HTMLElement>(null)
   const sdgRef = useRef<HTMLElement>(null)
   const tagsRef = useRef<HTMLElement>(null)
   const workingGroupsRef = useRef<HTMLElement>(null)
@@ -114,6 +117,7 @@ export function StrategicAlignmentGroup({
 
   // Build section refs array for scroll spy (only if activityCreated)
   const sectionRefs: SectionRef[] = useMemo(() => activityCreated ? [
+    { id: 'national_plans', ref: nationalPlansRef },
     { id: 'sdg', ref: sdgRef },
     { id: 'tags', ref: tagsRef },
     { id: 'working_groups', ref: workingGroupsRef },
@@ -130,7 +134,7 @@ export function StrategicAlignmentGroup({
   // Use lazy loader to track which sections have been scrolled into view
   const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
     activityCreated
-      ? (enablePreloading ? [...STRATEGIC_ALIGNMENT_SECTIONS] : ['sdg'])
+      ? (enablePreloading ? [...STRATEGIC_ALIGNMENT_SECTIONS] : ['national_plans'])
       : []
   )
 
@@ -186,7 +190,7 @@ export function StrategicAlignmentGroup({
     if (activityCreated && !sectionsRevealed) {
       setSectionsRevealed(true)
       // Activate the first section
-      activateSection('sdg')
+      activateSection('national_plans')
     }
   }, [activityCreated, sectionsRevealed, activateSection])
 
@@ -228,6 +232,7 @@ export function StrategicAlignmentGroup({
 
     // Observe all section elements
     const sectionElements = [
+      nationalPlansRef.current,
       sdgRef.current,
       tagsRef.current,
       workingGroupsRef.current,
@@ -249,7 +254,7 @@ export function StrategicAlignmentGroup({
     if (!activityCreated || !enablePreloading) return
 
     // Preload all sections in a single batch
-    const sectionsToPreload = ['sdg', 'tags', 'working_groups', 'policy_markers']
+    const sectionsToPreload = ['national_plans', 'sdg', 'tags', 'working_groups', 'policy_markers']
 
     const unloaded = sectionsToPreload.filter(id => !activeSectionsRef.current.has(id))
     if (unloaded.length > 0) {
@@ -269,11 +274,36 @@ export function StrategicAlignmentGroup({
       {/* Sections revealed after activity creation */}
       {activityCreated && (
         <div className={`transition-all duration-500 ${sectionsRevealed ? 'opacity-100' : 'opacity-0'}`}>
+          {/* National Plan Alignment Section */}
+          <section
+            id="national_plans"
+            ref={nationalPlansRef as React.RefObject<HTMLElement>}
+            className="scroll-mt-0 pb-16"
+            style={{ minHeight: getSectionMinHeight('national_plans') }}
+          >
+            {isSectionActive('national_plans') || activeSections.has('national_plans') ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="national_plans"
+                  title={getSectionLabel('national_plans')}
+                  helpText={getSectionHelpText('national_plans')}
+                  showDivider={false}
+                />
+                <NationalPrioritiesSection
+                  activityId={activityId}
+                  disabled={!permissions?.canEditActivity}
+                />
+              </div>
+            ) : (
+              <SectionSkeleton sectionId="national_plans" />
+            )}
+          </section>
+
           {/* SDG Alignment Section */}
           <section
             id="sdg"
             ref={sdgRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pb-16"
+            className="scroll-mt-0 pt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('sdg') }}
           >
             {isSectionActive('sdg') || activeSections.has('sdg') ? (

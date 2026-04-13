@@ -239,7 +239,7 @@ export function DisaggregationChart({
       {chartData.length > 0 && (
         <div className="border rounded-md overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-muted">
+            <thead className="bg-surface-muted">
               <tr>
                 <th className="text-left py-2 px-3 font-medium text-foreground">
                   {selectedDimension.charAt(0).toUpperCase() + selectedDimension.slice(1)}

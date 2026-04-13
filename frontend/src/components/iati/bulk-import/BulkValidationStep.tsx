@@ -212,7 +212,7 @@ export default function BulkValidationStep({
 
       {hasBlockingErrors && (
         <Card className="border-destructive/20 bg-destructive/10">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <p className="text-sm text-destructive font-medium">
               All activities have errors. Fix the issues and re-upload, or deselect activities with errors in the Preview step.
             </p>

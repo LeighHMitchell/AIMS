@@ -28,6 +28,7 @@ import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { PlannedDisbursementsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { apiFetch } from '@/lib/api-fetch';
 
 export default function PlannedDisbursementsPage() {
@@ -41,6 +42,8 @@ export default function PlannedDisbursementsPage() {
   const [disbursements, setDisbursements] = useState<any[]>([]);
   const [totalDisbursements, setTotalDisbursements] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Bulk selection state
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
@@ -301,7 +304,7 @@ export default function PlannedDisbursementsPage() {
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this planned disbursement?")) {
+    if (!(await confirm({ title: 'Delete this planned disbursement?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -531,7 +534,7 @@ export default function PlannedDisbursementsPage() {
         {/* Pagination */}
         {!loading && totalDisbursements > 0 && (
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
                   Showing {Math.min(startIndex + 1, totalDisbursements)} to {Math.min(endIndex, totalDisbursements)} of {totalDisbursements} planned disbursements
@@ -652,6 +655,7 @@ export default function PlannedDisbursementsPage() {
           isDeleting={isBulkDeleting}
         />
       </div>
+      <ConfirmDialog />
     </MainLayout>
   );
 }

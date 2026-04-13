@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -331,6 +332,7 @@ export default function TransactionsManager({
   isPooledFund = false
 }: TransactionsManagerProps) {
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -640,7 +642,7 @@ export default function TransactionsManager({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this transaction?")) {
+    if (!(await confirm({ title: 'Delete this transaction?', description: 'This action cannot be undone. The transaction will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -1292,6 +1294,7 @@ export default function TransactionsManager({
         isDeleting={isBulkDeleting}
       />
     </div>
+    <ConfirmDialog />
     </TooltipProvider>
   );
 } 

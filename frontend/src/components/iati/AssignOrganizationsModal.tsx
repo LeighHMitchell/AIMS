@@ -22,13 +22,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { 
-  AlertTriangle, 
-  Building2, 
-  CheckCircle, 
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle,
   Search,
   ArrowRight
 } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface Transaction {
   provider_org_id?: string;
@@ -71,6 +72,7 @@ export function AssignOrganizationsModal({
   organizations,
   onComplete
 }: AssignOrganizationsModalProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   // Track assignments: transaction index -> { provider_org_id, receiver_org_id }
   const [assignments, setAssignments] = useState<Record<number, OrgAssignment>>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,6 +159,7 @@ export function AssignOrganizationsModal({
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="max-w-5xl max-h-[90vh]">
         <DialogHeader>
@@ -328,8 +331,8 @@ export function AssignOrganizationsModal({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => {
-              if (confirm('Are you sure? Transactions without organizations may fail to import.')) {
+            onClick={async () => {
+              if (await confirm({ title: 'Continue without organizations?', description: 'Transactions without organizations may fail to import.', confirmLabel: 'Continue', cancelLabel: 'Cancel' })) {
                 onClose();
               }
             }}
@@ -345,5 +348,7 @@ export function AssignOrganizationsModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog />
+    </>
   );
-} 
+}

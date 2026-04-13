@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { Label } from '@/components/ui/label';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -220,16 +221,17 @@ export function ConditionsTab({
   className,
   onConditionsChange
 }: ConditionsTabProps) {
-  const { 
-    conditions, 
-    loading, 
-    error, 
-    createCondition, 
-    updateCondition, 
+  const {
+    conditions,
+    loading,
+    error,
+    createCondition,
+    updateCondition,
     deleteCondition,
     updateAttachedStatus,
     fetchConditions
   } = useConditions(activityId);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Check if activity is saved
   const isActivitySaved = activityId && activityId !== 'new';
@@ -287,7 +289,7 @@ export function ConditionsTab({
 
   // Handle deleting a condition
   const handleDeleteCondition = async (conditionId: string) => {
-    if (window.confirm('Are you sure you want to delete this condition?')) {
+    if (await confirm({ title: 'Delete this condition?', description: 'This action cannot be undone. The condition will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       setIsDeleting(conditionId);
       const success = await deleteCondition(conditionId);
       setIsDeleting(null);
@@ -482,10 +484,10 @@ export function ConditionsTab({
             </div>
           </CardHeader>
           <CardContent className="text-center pb-8">
-            <ScrollText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">No conditions yet</h4>
-            <p className="text-gray-600">
-              Add conditions that must be met for this activity
+            <ScrollText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No conditions</h3>
+            <p className="text-muted-foreground">
+              Use the button above to add your first condition.
             </p>
           </CardContent>
         </Card>
@@ -588,6 +590,7 @@ export function ConditionsTab({
           ))}
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

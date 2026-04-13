@@ -9,7 +9,8 @@ import {
   Building2,
   Calendar,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  ArrowRightLeft
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -200,14 +201,17 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
       </div>
 
       {!transactions.length ? (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {linkedActivityCount === 0 
-              ? 'No linked activities found. Link activities first to see their transactions.'
-              : 'No transactions found in linked activities.'}
-          </AlertDescription>
-        </Alert>
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+          <img src="/images/empty-circuit-board.png" alt={linkedActivityCount === 0 ? 'No linked activities' : 'No linked transactions'} className="h-32 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-semibold mb-2">
+            {linkedActivityCount === 0 ? 'No linked activities' : 'No linked transactions'}
+          </h3>
+          <p className="text-muted-foreground">
+            {linkedActivityCount === 0
+              ? 'Link activities first to see their transactions here.'
+              : 'No transactions were found in the linked activities.'}
+          </p>
+        </div>
       ) : (
         <>
           {/* Summary Section */}

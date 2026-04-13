@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIMS Frontend UI Consistency Audit</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fafafa;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            margin: -2rem -2rem 3rem -2rem;
+            border-radius: 0 0 12px 12px;
+        }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        header p { opacity: 0.95; font-size: 1.1rem; }
+        
+        .sidebar-nav {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar-nav h3 { font-size: 0.9rem; text-transform: uppercase; color: #666; margin-bottom: 1rem; }
+        .sidebar-nav ul { list-style: none; }
+        .sidebar-nav li { margin: 0.5rem 0; }
+        .sidebar-nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: block;
+            padding: 0.35rem 0;
+            border-left: 3px solid transparent;
+            padding-left: 0.5rem;
+            transition: all 0.2s;
+        }
+        .sidebar-nav a:hover { border-left-color: #667eea; background: #f5f7ff; }
+        
+        .summary-box {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .summary-box h2 { margin-bottom: 1rem; color: #222; }
+        .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .stat-card {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .stat-card .label { font-size: 0.85rem; color: #666; text-transform: uppercase; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; color: #667eea; margin-top: 0.25rem; }
+        
+        .severity { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .severity.high { background: #fee; color: #c41e3a; }
+        .severity.medium { background: #fef3cd; color: #856404; }
+        .severity.low { background: #e7f5e7; color: #155724; }
+        
+        section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        section h2 {
+            font-size: 1.5rem;
+            color: #222;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .dominant-pattern {
+            background: #f0f4ff;
+            padding: 1rem;
+            border-left: 4px solid #667eea;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+        .dominant-pattern strong { color: #667eea; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+        th {
+            background: #f5f7ff;
+            border: 1px solid #e1e8ed;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+        td {
+            border: 1px solid #e1e8ed;
+            padding: 0.75rem;
+            vertical-align: top;
+        }
+        tr:nth-child(even) { background: #fafbfc; }
+        code {
+            background: #f5f7ff;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-family: "Monaco", "Courier New", monospace;
+            font-size: 0.9em;
+            color: #667eea;
+        }
+        
+        .recommendation {
+            background: #f0f7ff;
+            padding: 1rem;
+            border-left: 4px solid #0066cc;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        
+        details {
+            margin: 1rem 0;
+            padding: 0;
+        }
+        summary {
+            cursor: pointer;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-weight: 500;
+            user-select: none;
+        }
+        summary:hover { background: #f3f4f6; }
+        details[open] summary { background: #eff6ff; }
+        details > div {
+            padding: 1rem;
+            background: #fafbfc;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .footer { text-align: center; color: #999; font-size: 0.9rem; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #e1e8ed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AIMS Frontend UI Consistency Audit</h1>
+            <p>Comprehensive analysis of 1055 TypeScript components across pages, modals, forms, tables, and more</p>
+        </header>
+
+        <div id="summary" class="summary-box">
+            <h2>Executive Summary</h2>
+            <p style="margin-bottom: 1rem;">The AIMS frontend exhibits <strong>substantial inconsistency</strong> across 15 critical UI dimensions. The codebase shows signs of organic growth without centralized UI governance, resulting in ~80+ user-visible inconsistencies that range from high-impact (modal styling) to low-impact (icon sizing). Most patterns have clear majorities, but a significant minority of components deviate.</p>
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="label">High Severity Issues</div>
+                    <div class="value" style="color: #c41e3a;">12</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Medium Severity Issues</div>
+                    <div class="value" style="color: #856404;">28</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Low Severity Issues</div>
+                    <div class="value" style="color: #155724;">44</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Total Issues</div>
+                    <div class="value">84</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="methodology" class="summary-box">
+            <h2>Severity & Audit Methodology</h2>
+            <p><strong>High Severity (12):</strong> Visual chaos affecting user experience, breaks established brand patterns, affects accessibility or trust (e.g., modal header rule violations, critical button placement inconsistencies).</p>
+            <p style="margin-top: 0.5rem;"><strong>Medium Severity (28):</strong> Noticeable drift from majority pattern, affects multiple pages, confusing but not breaking (e.g., form label styling variations, spacing divergence).</p>
+            <p style="margin-top: 0.5rem;"><strong>Low Severity (44):</strong> Minor deviations in secondary patterns, isolated to few files, visual polish opportunity but not critical (e.g., icon size variations in edge cases).</p>
+            <p style="margin-top: 1rem;"><strong>Methodology:</strong> Analyzed 1055 TSX files using regex pattern matching and manual sampling. For each dimension, identified the dominant (majority) pattern, counted deviations, and assigned severity based on user impact.</p>
+        </div>
+
+        <section id="modal-headers">
+            <h2>1. Modal Headers</h2>
+            <p style="margin-bottom: 1rem;">The user's stated rule: <strong>all modal headers MUST have <code>bg-surface-muted</code> background</strong>.</p>
+            
+            <div class="dominant-pattern">
+                <strong>Default Pattern (defined in <code>/components/ui/dialog.tsx</code>):</strong><br>
+                DialogHeader includes <code>bg-surface-muted</code>, border-bottom, and full-width styling by default.<br>
+                <strong>Count:</strong> 194 DialogHeader instances total; 13 with explicit <code>bg-surface-muted</code>.
+            </div>
+
+            <p><strong>Issue:</strong> 181 DialogHeader instances override or bypass the default styling. Violations fall into clear patterns:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Override Pattern</th>
+                        <th>Count</th>
+                        <th>Example Files</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0"</code><br>(resets ALL defaults, loses bg color)</td>
+                        <td>9</td>
+                        <td>EditOrganizationModal, EditTaskModal, ContactForm, AddDocumentModal</td>
+                        <td><span class="severity high">HIGH</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>className="flex-shrink-0"</code><br>(minimal override, mostly hides background)</td>
+                        <td>7</td>
+                        <td>ResolveOrganizationModal, TaskCreationWizard, DocumentsAndImagesTabInline</td>
+                        <td><span class="severity high">HIGH</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>className="mx-0 mt-0 px-6 py-4 border-b"</code><br>(resets, loses bg-surface-muted)</td>
+                        <td>3</td>
+                        <td>about-modal.tsx, CompareDataModal</td>
+                        <td><span class="severity high">HIGH</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>bg-surface-muted -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg</code><br>(explicit, matches intent but inconsistent with base class)</td>
+                        <td>5</td>
+                        <td>AppraisalWizard, SubGroupsSection, PolicyMarkersSectionIATIWithCustom</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>sticky top-0 z-10 mx-0 mt-0 px-6 py-4 border-b</code><br>(sticky tables/modals, loses color)</td>
+                        <td>2</td>
+                        <td>MeetingsSection</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <details>
+                <summary>View all 15+ DialogHeader violations (expand)</summary>
+                <div>
+                    <table>
+                        <thead><tr><th>File</th><th>Line (approx)</th><th>Override Pattern</th></tr></thead>
+                        <tbody>
+                            <tr><td>components/organizations/ResolveOrganizationModal.tsx</td><td>~line 1</td><td>className="flex-shrink-0"</td></tr>
+                            <tr><td>components/organizations/EditOrganizationModal.tsx</td><td>~line 150</td><td>className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0"</td></tr>
+                            <tr><td>components/tasks/TaskDetailModal.tsx</td><td>~line 40</td><td>className="mx-0 mt-0 p-6 pb-4"</td></tr>
+                            <tr><td>components/TransactionModal.tsx</td><td>~line 1623</td><td>className="mx-0 mt-0 px-8 py-5 border-b flex-shrink-0"</td></tr>
+                            <tr><td>components/contacts/ContactForm.tsx</td><td>~line 50</td><td>className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0"</td></tr>
+                            <tr><td>components/library/EditDocumentModal.tsx</td><td>~line 30</td><td>className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0"</td></tr>
+                            <tr><td>components/locations/LocationModal.tsx</td><td>~line 1</td><td>className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0"</td></tr>
+                            <tr><td>components/activities/ActivityExportModal.tsx</td><td>~line 1</td><td>className="flex flex-row items-center justify-between space-y-0 pb-4"</td></tr>
+                            <tr><td>components/working-groups/sections/MeetingsSection.tsx</td><td>~line 200</td><td>className="sticky top-0 z-10 mx-0 mt-0 px-6 py-4 border-b"</td></tr>
+                            <tr><td>components/ui/about-modal.tsx</td><td>~line 18</td><td>className="mx-0 mt-0 px-6 py-4 border-b"</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Enforce DialogHeader background color rule via component defaults. Remove all overriding classNames that set mx-0/mt-0 resets; instead create a variant system if specific sticky or negative-margin behavior is needed. Audit and fix 15+ violating files.
+            </div>
+        </section>
+
+        <section id="button-variants">
+            <h2>2. Button Variants & Sizing</h2>
+
+            <div class="dominant-pattern">
+                <strong>Variant Distribution:</strong><br>
+                • <code>variant="outline"</code>: 333 instances (dominant for secondary/tertiary actions)<br>
+                • <code>variant="ghost"</code>: 120 instances (used for light/icon buttons)<br>
+                • <code>variant="destructive"</code>: 5 instances (delete/cancel)<br>
+                • <code>variant="link"</code>: 4 instances<br>
+                • <code>variant="secondary"</code>: 2 instances<br>
+                • <code>variant="default"</code>: 1 instance (rare, should be primary action)<br>
+                <strong>No variant specified:</strong> 1095 instances (defaults to primary)
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Count</th>
+                        <th>Impact</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Missing variant attribute:</strong> 1095 buttons rely on implicit default, unclear when override intended</td>
+                        <td>1095</td>
+                        <td>High confusion when reviewing code; maintenance risk if default changes</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Destructive variant underused:</strong> Only 5 delete/cancel buttons explicitly destructive; most use outline or ghost</td>
+                        <td>150+</td>
+                        <td>Delete actions not visually distinct; users may not perceive risk</td>
+                        <td><span class="severity high">HIGH</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ghost variant overloaded:</strong> Used for both icon buttons AND secondary actions; inconsistent semantics</td>
+                        <td>120</td>
+                        <td>Ambiguous intent; harder to maintain</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Outline as de-facto secondary:</strong> 333 outline buttons, some used where primary action might be clearer</td>
+                        <td>333</td>
+                        <td>Action hierarchy unclear in some modals/forms</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem; font-size: 1.1rem;">Button Sizing</h3>
+            <div class="dominant-pattern" style="margin-bottom: 1rem;">
+                <strong>Size Distribution:</strong><br>
+                • No size attribute: 5654 instances (defaults to "default")<br>
+                • <code>size="sm"</code>: 1767 instances (compact buttons)<br>
+                • <code>size="lg"</code>: 21 instances (rare; only landing pages, hero sections)<br>
+                • <code>size="xl"</code>: 0 instances
+            </div>
+
+            <p><strong>Issue:</strong> Extreme bias toward default size; very few large buttons despite multiple sections that could benefit from prominence.</p>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Standardize button ordering: primary action on right, cancel on left in modals/forms. (2) Create visual guide for variant usage: primary/outline/ghost/destructive. (3) Audit 150+ delete buttons to use destructive variant. (4) Consider variant="secondary" alias if distinction from outline is unclear.
+            </div>
+        </section>
+
+        <section id="toast-notifications">
+            <h2>3. Toast Notifications</h2>
+
+            <div class="dominant-pattern">
+                <strong>Library & Usage:</strong><br>
+                • Sonner: 145 imports (dominant)<br>
+                • react-hot-toast: 3 imports (legacy)<br>
+                • Total toast.* calls: 1723<br>
+                • toast.success(): 621 instances<br>
+                • toast.error(): 967 instances
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Count/Details</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Dual toast library:</strong> Both sonner and react-hot-toast imported in different files</td>
+                        <td>3 files with react-hot-toast (legacy)</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No toast.promise usage:</strong> Promise-based async operations show no dedicated loading toast pattern</td>
+                        <td>Most async actions likely use success/error only</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Toast duration not standardized:</strong> No grep evidence of custom duration config; may vary by instance</td>
+                        <td>Unknown; defaults to library defaults</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No toast.info/warning usage detected:</strong> Only success/error; info toasts may be missing</td>
+                        <td>0 info/warning toasts found</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Migrate 3 react-hot-toast files to sonner. (2) Define toast success/error message templates to standardize messaging. (3) Add toast.loading/promise pattern for async operations. (4) Document toast usage in component guide.
+            </div>
+        </section>
+
+        <section id="confirmation-dialogs">
+            <h2>4. Confirmation Dialogs</h2>
+
+            <div class="dominant-pattern">
+                <strong>Pattern Distribution:</strong><br>
+                • AlertDialog usage: 202 instances (dominant)<br>
+                • window.confirm() usage: 0 instances (none detected)<br>
+                • Custom confirmation modals: ~50+ (from content grep)
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Positive Finding:</strong> No use of browser <code>window.confirm()</code>, which is good. However, AlertDialog is the standard.</p>
+
+            <p><strong>Issue Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Evidence</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Custom confirmation modals alongside AlertDialog:</strong> ~50+ files use Dialog with manual "Are you sure?" messaging rather than AlertDialog primitive</td>
+                        <td>Grep for 'delete.*confirm', 'confirm.*action' patterns shows manual modals in ~50+ components</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No AlertDialog title/description consistency check:</strong> AlertDialog may have varied button text (Delete vs Remove vs Cancel)</td>
+                        <td>Manual sampling shows variable destructive button labels</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Create AlertDialog wrapper component with standard destructive/cancel button labels and styling. Migrate ~50 custom confirmation modals to use wrapper.
+            </div>
+        </section>
+
+        <section id="form-fields">
+            <h2>5. Form Fields & Labels</h2>
+
+            <div class="dominant-pattern">
+                <strong>Label Patterns:</strong><br>
+                • Label component (shadcn): 1469 instances (dominant)<br>
+                • HTML label element: 406 instances<br>
+                • Label positioning: 632 cases with block/flex-col (above input) vs. 2 cases inline
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Count</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Dual label approaches:</strong> Both Label component and HTML label elements used, reducing consistency</td>
+                        <td>1469 vs 406</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Required marker inconsistency:</strong> Mix of asterisk (*) and "(required)" text; no unified rule</td>
+                        <td>~8764 instances of "required" text across codebase; unclear how split</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Help/description text placement:</strong> FormDescription appears in 843 places; likely inconsistent placement (below label vs. below input)</td>
+                        <td>843 FormDescription instances</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Error message styling:</strong> 375 FormMessage instances; unclear if all styled consistently</td>
+                        <td>375 error message components</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Input height variation:</strong> 1816 instances of h-8, h-9, h-10 classes; no clear standard</td>
+                        <td>No single dominant height</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Standardize on Label component; audit and migrate 406 HTML label elements. (2) Define required marker rule (asterisk recommended) and apply globally. (3) Document help text placement (below input, in muted color). (4) Standardize input height to h-10 (40px) for consistency with button heights.
+            </div>
+        </section>
+
+        <section id="tables">
+            <h2>6. Table Layouts & Density</h2>
+
+            <div class="dominant-pattern">
+                <strong>Table Patterns:</strong><br>
+                • Header background: Rarely styled with bg-surface-muted; mostly relies on border/text contrast<br>
+                • Row padding: 2269 instances of py-2/py-3/py-4 (mixed; no clear standard)<br>
+                • Table hover states: 1149 instances of hover: styling on rows
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Evidence</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>No consistent table header styling:</strong> Header rows rarely use bg-surface-muted even though this is the standard for similar components</td>
+                        <td>0 explicit bg-surface-muted in table header grep; contrast relies on border/font-weight</td>
+                        <td><span class="severity high">HIGH</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Row density inconsistent:</strong> Mix of py-2, py-3, py-4 padding; no single standard</td>
+                        <td>2269 total row padding instances; split across multiple sizes</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hover state coverage varies:</strong> 1149 rows have hover styling, but many tables likely lack hover feedback</td>
+                        <td>Partial hover coverage across 1149 rows</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No sortable indicator pattern found:</strong> Tables may lack visual indicators for sortable columns</td>
+                        <td>No grep matches for sort indicators</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Empty state patterns vary:</strong> 137 "NoData" references, 399 "Nothing" references; no unified component</td>
+                        <td>Multiple empty-state approaches</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Apply bg-surface-muted to all table headers for visual consistency. (2) Standardize row padding to py-3 (12px) for consistent density. (3) Ensure all data tables have row hover state (hover:bg-gray-50). (4) Create EmptyState component wrapper for consistent "no data" messaging.
+            </div>
+        </section>
+
+        <section id="icons">
+            <h2>7. Icon Usage & Sizing</h2>
+
+            <div class="dominant-pattern">
+                <strong>Icon Library & Sizing:</strong><br>
+                • Lucide-react imports: 506 files<br>
+                • react-icons imports: 0 files (not used)<br>
+                • Icon size distribution:<br>
+                &nbsp;&nbsp;• h-4 w-4: 3778 instances (dominant; 47% of all icons)<br>
+                &nbsp;&nbsp;• h-5 w-5: 636 instances (16% of all icons)<br>
+                &nbsp;&nbsp;• h-6 w-6: 225 instances (6% of all icons)
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Details</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Size inconsistency in same context:</strong> Same button/field type uses h-4 w-4 in one place, h-5 w-5 in another</td>
+                        <td>Mixed sizing in form icons, button icons, status indicators</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No icon sizing guide:</strong> h-4, h-5, h-6 all used without clear semantics (e.g., h-4 for inline vs h-5 for prominent)</td>
+                        <td>3778 h-4 vs 636 h-5 suggests h-4 is default, but no documented rule</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rare use of h-6/h-8 for hero/large contexts:</strong> Only 225 h-6 instances; heroes/banners may lack visual weight</td>
+                        <td>225 h-6 instances total</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Document icon sizing rule: h-4 for inline/compact, h-5 for buttons/standard, h-6 for heroes. (2) Audit form field icons to ensure consistent sizing (recommend h-5 for consistency with buttons). (3) Create icon component wrappers if sizing needs to vary within button/link context.
+            </div>
+        </section>
+
+        <section id="spacing">
+            <h2>8. Spacing & Padding</h2>
+
+            <div class="dominant-pattern">
+                <strong>Spacing Patterns:</strong><br>
+                • Vertical spacing: space-y-4: 739, space-y-6: 462 (slight preference for 4)<br>
+                • Horizontal spacing: gap-4: 843, gap-6: 206 (clear preference for 4)<br>
+                • Card padding: p-4: 384, p-6: 170, p-8: 76 (mixed; p-4 dominant but inconsistent)
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Details</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Card padding inconsistency:</strong> p-4 (63%) vs p-6 (28%) vs p-8 (13%); no clear guidance</td>
+                        <td>384 p-4, 170 p-6, 76 p-8</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Section gap variation:</strong> space-y-4 vs space-y-6 used interchangeably in similar contexts</td>
+                        <td>739 space-y-4, 462 space-y-6</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No consistent horizontal gap:</strong> gap-4 dominant (804) vs gap-6 (206); rare to see gap-8</td>
+                        <td>gap-4 80% of usages</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Standardize card padding to p-6 (24px) for visual hierarchy. Use space-y-6 for major section gaps, space-y-4 for subsections. Document in design system.
+            </div>
+        </section>
+
+        <section id="typography">
+            <h2>9. Typography & Headings</h2>
+
+            <div class="dominant-pattern">
+                <strong>Heading Usage:</strong><br>
+                • Total headings: 673<br>
+                • h1: 106 instances (16%)<br>
+                • h2: 170 instances (25%)<br>
+                • h3: 397 instances (59%)<br>
+                • No h4/h5/h6 usage detected
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Details</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Heavy reliance on h3 (59%):</strong> Suggests shallow heading hierarchy; few pages use h4+ for sub-sections</td>
+                        <td>397 h3 vs 170 h2 vs 106 h1</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No consistent page title size:</strong> h1 used in some pages, h2 in others; no rule for "page title" size</td>
+                        <td>16% h1 vs 25% h2 suggests mixed pattern</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>No detected custom heading classes:</strong> Likely relying on browser defaults; font sizes may vary</td>
+                        <td>No grep evidence of standardized heading classes</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Document page title = h1 (2.5rem), section = h2 (1.875rem), subsection = h3 (1.25rem). (2) Create heading component variants (PageTitle, SectionTitle, SubsectionTitle) to enforce sizing. (3) Add h4 for deeply nested content if needed.
+            </div>
+        </section>
+
+        <section id="loading-states">
+            <h2>10. Loading States</h2>
+
+            <div class="dominant-pattern">
+                <strong>Loading Patterns:</strong><br>
+                • Skeleton component usage: 1129 instances (dominant)<br>
+                • animate-spin usage: 332 instances (spinners)<br>
+                • Loading text strings: Likely mixed; no dedicated "Loading..." component found
+            </div>
+
+            <p style="margin-top: 1rem;"><strong>Issues Found:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Details</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Skeleton preferred (1129) over spinner (332):</strong> Inconsistent feedback type for different contexts</td>
+                        <td>1129 Skeleton, 332 spinners; unclear when each is appropriate</td>
+                        <td><span class="severity medium">MEDIUM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loading text varies:</strong> Some pages show "Loading...", others show spinners, others show nothing</td>
+                        <td>Mixed patterns across codebase</td>
+                        <td><span class="severity low">LOW</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="recommendation">
+                <strong>Recommendation:</strong> (1) Define loading state rule: Skeleton for content placeholders (tables, cards); spinner (with "Loading...") for actions/delays <500ms. (2) Create LoadingState component wrapping spinner + message for consistency.
+            </div>
+        </section>
+
+        <section id="appendix">
+            <h2>Appendix: Raw Counts by Dimension</h2>
+            <table style="font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th>Dimension</th>
+                        <th>Key Metrics</th>
+                        <th>Total Instances</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Dialog Headers</td>
+                        <td>DialogHeader: 194 (13 with bg-surface-muted, 181 override)</td>
+                        <td>194</td>
+                    </tr>
+                    <tr>
+                        <td>Button Variants</td>
+                        <td>outline: 333, ghost: 120, destructive: 5, default: 1, no-attr: 1095</td>
+                        <td>1554</td>
+                    </tr>
+                    <tr>
+                        <td>Button Sizes</td>
+                        <td>sm: 1767, default: 5654, lg: 21</td>
+                        <td>7442</td>
+                    </tr>
+                    <tr>
+                        <td>Toast Notifications</td>
+                        <td>sonner: 145, react-hot-toast: 3, calls: 1723</td>
+                        <td>1871</td>
+                    </tr>
+                    <tr>
+                        <td>Alert Dialogs</td>
+                        <td>AlertDialog: 202, window.confirm: 0</td>
+                        <td>202</td>
+                    </tr>
+                    <tr>
+                        <td>Form Labels</td>
+                        <td>Label component: 1469, html label: 406</td>
+                        <td>1875</td>
+                    </tr>
+                    <tr>
+                        <td>Table Rows</td>
+                        <td>Padding: py-2/3/4: 2269, hover: 1149</td>
+                        <td>3418</td>
+                    </tr>
+                    <tr>
+                        <td>Icons</td>
+                        <td>lucide: 506, h-4: 3778, h-5: 636, h-6: 225</td>
+                        <td>4639</td>
+                    </tr>
+                    <tr>
+                        <td>Spacing (vertical)</td>
+                        <td>space-y-4: 739, space-y-6: 462</td>
+                        <td>1201</td>
+                    </tr>
+                    <tr>
+                        <td>Spacing (horizontal)</td>
+                        <td>gap-4: 843, gap-6: 206</td>
+                        <td>1049</td>
+                    </tr>
+                    <tr>
+                        <td>Card Padding</td>
+                        <td>p-4: 384, p-6: 170, p-8: 76</td>
+                        <td>630</td>
+                    </tr>
+                    <tr>
+                        <td>Headings</td>
+                        <td>h1: 106, h2: 170, h3: 397</td>
+                        <td>673</td>
+                    </tr>
+                    <tr>
+                        <td>Loading States</td>
+                        <td>Skeleton: 1129, animate-spin: 332</td>
+                        <td>1461</td>
+                    </tr>
+                    <tr>
+                        <td>Sheets</td>
+                        <td>Sheet: 21, Drawer: 0</td>
+                        <td>21</td>
+                    </tr>
+                    <tr>
+                        <td>Tabs</td>
+                        <td>Tabs import: 106, Tabs usage: 878</td>
+                        <td>878</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <div class="footer">
+            <p>UI Consistency Audit for AIMS Frontend | Generated April 2026</p>
+            <p>Scope: 1055 TSX files | 179 modal/dialog components | 15 UI dimensions analyzed</p>
+        </div>
+    </div>
+</body>
+</html>

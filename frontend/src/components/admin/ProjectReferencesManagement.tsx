@@ -62,8 +62,10 @@ import {
   ProjectReferenceBulkImportResult,
 } from "@/types/project-references";
 import Link from "next/link";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 export function ProjectReferencesManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [references, setReferences] = useState<ProjectReference[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,7 +209,7 @@ export function ProjectReferencesManagement() {
 
   // Delete reference
   const handleDelete = async (item: ProjectReference) => {
-    if (!confirm(`Are you sure you want to delete this reference?`)) {
+    if (!(await confirm({ title: 'Delete this reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -832,6 +834,7 @@ export function ProjectReferencesManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
 }

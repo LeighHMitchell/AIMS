@@ -11,7 +11,7 @@ export default function ResumeAppraisalPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl">
+      <div className="max-w-7xl">
         <Breadcrumbs items={[
           { label: "Project Bank", href: "/project-bank" },
           { label: "Appraisal" },

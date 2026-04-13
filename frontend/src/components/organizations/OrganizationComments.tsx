@@ -255,7 +255,7 @@ export function OrganizationComments({
           {/* Comment Input */}
           {user && (
             <Card>
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-6 space-y-3">
                 <div className="flex items-center gap-2">
                   <Select value={commentType} onValueChange={(v) => setCommentType(v as any)}>
                     <SelectTrigger className="w-32">
@@ -297,7 +297,7 @@ export function OrganizationComments({
             <div className="space-y-4">
               {filteredComments.map((comment) => (
                 <Card key={comment.id}>
-                  <CardContent className="p-4">
+                  <CardContent className="p-6">
                     <div className="flex items-start gap-3">
                       <UserAvatar
                         src={comment.author.profilePicture}

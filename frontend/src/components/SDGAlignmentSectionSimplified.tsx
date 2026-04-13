@@ -332,7 +332,7 @@ export default function SDGAlignmentSectionSimplified({
 
             return (
               <Card key={goalId} className="border-l-4" style={{ borderLeftColor: goal.color }}>
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   {/* Goal Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">

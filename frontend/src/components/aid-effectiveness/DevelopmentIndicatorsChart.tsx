@@ -147,7 +147,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Most Adopted</p>
@@ -160,7 +160,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Least Adopted</p>
@@ -173,7 +173,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
           </Card>
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600">Average Compliance</p>

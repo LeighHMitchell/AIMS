@@ -25,7 +25,7 @@ export function InvestorProjectCard({ project, onClick }: InvestorProjectCardPro
       className="cursor-pointer hover:shadow-md transition-shadow"
       onClick={onClick}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-medium text-sm">{project.name}</h3>
           <Badge variant="success" className="shrink-0">Approved</Badge>

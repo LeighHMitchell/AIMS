@@ -292,7 +292,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Expected Start</th>
@@ -335,7 +335,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Last Updated</th>
@@ -379,7 +379,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           <CardContent>
             <div className="max-h-64 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-background">
+                <thead className="sticky top-0 bg-surface-muted">
                   <tr className="border-b text-left">
                     <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                     <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Fields</th>
@@ -432,7 +432,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Expected Start</th>
@@ -468,7 +468,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Last Updated</th>
@@ -504,7 +504,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 bg-surface-muted">
                 <tr className="border-b text-left">
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Activity</th>
                   <th className="pb-2 font-medium text-muted-foreground text-xs">Missing Fields</th>

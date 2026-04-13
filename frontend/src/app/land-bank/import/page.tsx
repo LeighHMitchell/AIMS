@@ -162,7 +162,7 @@ export default function ImportParcelsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl pb-16">
+      <div className="max-w-7xl pb-16">
         <Breadcrumbs items={[
           { label: "Land Bank", href: "/land-bank" },
           { label: "Import" },
@@ -186,7 +186,7 @@ export default function ImportParcelsPage() {
             className="cursor-pointer hover:border-primary/50 transition-colors"
             onClick={() => csvInputRef.current?.click()}
           >
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-6 text-center">
               <FileSpreadsheet className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium mb-1">Upload CSV Metadata</p>
               <p className="text-xs text-muted-foreground">
@@ -207,7 +207,7 @@ export default function ImportParcelsPage() {
             className="cursor-pointer hover:border-primary/50 transition-colors"
             onClick={() => geoJsonInputRef.current?.click()}
           >
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-6 text-center">
               <FileJson className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium mb-1">Upload GeoJSON Geometry</p>
               <p className="text-xs text-muted-foreground">

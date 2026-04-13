@@ -334,7 +334,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                         </div>
                       )}
                       <div>
-                        <p className="font-medium" title={organization.name}>
+                        <p className="text-sm text-foreground" title={organization.name}>
                           {organization.name}
                           {organization.acronym && (
                             <span> ({organization.acronym})</span>
@@ -344,22 +344,22 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-foreground">
                       {organization.organisation_type_name || organization.organisation_type || '-'}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-foreground">
                       {organization.country_represented || organization.country || '-'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="text-sm font-medium">
+                    <span className="text-sm text-foreground">
                       {organization.activeProjects || 0}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs text-slate-500" title={format(new Date(organization.updated_at), 'PPpp')}>
+                    <span className="text-xs text-muted-foreground" title={format(new Date(organization.updated_at), 'PPpp')}>
                       {formatDistanceToNow(new Date(organization.updated_at), { addSuffix: true })}
                     </span>
                   </TableCell>

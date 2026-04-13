@@ -26,6 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { BudgetClassification, ClassificationType, CLASSIFICATION_TYPE_LABELS } from "@/types/aid-on-budget";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { toast } from 'sonner';
 
 interface BudgetMappingModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ export function BudgetMappingModal({
   usedVocabularies = [],
   initialEditIndex
 }: BudgetMappingModalProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [selectedVocabulary, setSelectedVocabulary] = useState<string>(existingData?.vocabulary || "2");
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(existingData?.budget_items || []);
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
@@ -190,8 +193,8 @@ export function BudgetMappingModal({
     setEditingItemIndex(null);
   };
 
-  const deleteBudgetItem = (index: number) => {
-    if (confirm('Are you sure you want to delete this budget item?')) {
+  const deleteBudgetItem = async (index: number) => {
+    if (await confirm({ title: 'Delete budget item?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       setBudgetItems(budgetItems.filter((_, i) => i !== index));
     }
   };
@@ -199,7 +202,7 @@ export function BudgetMappingModal({
   const handleSave = async () => {
     const validation = validateBudgetItems();
     if (!validation.isValid) {
-      alert(validation.error);
+      toast.error(validation.error);
       return;
     }
 
@@ -212,7 +215,7 @@ export function BudgetMappingModal({
       onClose();
     } catch (error) {
       console.error('Error saving budget mapping:', error);
-      alert('Failed to save budget mapping');
+      toast.error('Failed to save budget mapping');
     } finally {
       setSaving(false);
     }
@@ -227,6 +230,7 @@ export function BudgetMappingModal({
   const percentageSum = budgetItems.reduce((sum, item) => sum + (item.percentage || 0), 0);
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -553,6 +557,8 @@ export function BudgetMappingModal({
         </div>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog />
+    </>
   );
 }
 

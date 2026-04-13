@@ -295,7 +295,7 @@ export function ValidationSummaryPanel({
             size="lg"
             className="flex items-center space-x-2"
           >
-            <FileWarning className="h-5 w-5" />
+            <FileWarning className="h-4 w-4" />
             <span>Fix Issues</span>
           </Button>
         )}
@@ -305,7 +305,7 @@ export function ValidationSummaryPanel({
             size="lg"
             className="flex items-center space-x-2"
           >
-            <CheckCircle2 className="h-5 w-5" />
+            <CheckCircle2 className="h-4 w-4" />
             <span>Proceed to Import</span>
           </Button>
         )}

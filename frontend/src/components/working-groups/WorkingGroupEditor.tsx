@@ -317,7 +317,7 @@ export function WorkingGroupEditor({
                   onClick={handlePreviousSection}
                   disabled={isFirstSection || saving}
                 >
-                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
 
@@ -329,7 +329,7 @@ export function WorkingGroupEditor({
                   disabled={isLastSection || saving}
                 >
                   Next
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
 
                 {/* Save & Next */}
@@ -340,7 +340,7 @@ export function WorkingGroupEditor({
                   disabled={isLastSection || saving}
                 >
                   {saving ? 'Saving...' : 'Save & Next'}
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>

@@ -41,7 +41,7 @@ export function TourButton() {
           aria-label="Page tour"
           title={currentTour.title}
         >
-          <GraduationCap className="h-5 w-5 text-neutral-600" />
+          <GraduationCap className="h-4 w-4 text-neutral-600" />
           {showPulse && (
             <span
               className={cn(

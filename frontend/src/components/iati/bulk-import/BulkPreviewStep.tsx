@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   CheckCircle2,
   XCircle,
@@ -391,7 +392,7 @@ export default function BulkPreviewStep({
           <SlidersHorizontal className="h-4 w-4" />
           Filters
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 justify-center text-xs">
+            <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 justify-center text-xs">
               {activeFilterCount}
             </Badge>
           )}
@@ -413,7 +414,7 @@ export default function BulkPreviewStep({
       {/* Advanced Filters Panel */}
       {showFilters && (
         <Card className="overflow-visible">
-          <CardContent className="p-4 overflow-visible">
+          <CardContent className="p-6 overflow-visible">
             <div className="flex flex-wrap gap-6">
               {/* Activity Status */}
               <div className="space-y-3">
@@ -713,31 +714,44 @@ export default function BulkPreviewStep({
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          {/* Table Header */}
-          <div className="grid grid-cols-[40px_1fr_200px_80px_100px_120px_80px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
-            <div />
-            <button className="text-left hover:text-gray-700" onClick={() => toggleSort('id')}>
-              Activity Title and IATI Identifier {sortField === 'id' && (sortAsc ? '↑' : '↓')}
-            </button>
-            <button className="text-left hover:text-gray-700" onClick={() => toggleSort('title')}>
-              Planned Start/End Dates
-            </button>
-            <div className="text-center">Scope</div>
-            <button className="text-right hover:text-gray-700" onClick={() => toggleSort('transactions')}>
-              Transactions {sortField === 'transactions' && (sortAsc ? '↑' : '↓')}
-            </button>
-            <button className="text-right hover:text-gray-700 w-full" onClick={() => toggleSort('budget')}>
-              Budgets {sortField === 'budget' && (sortAsc ? '↑' : '↓')}
-            </button>
-            <button className="text-center hover:text-gray-700" onClick={() => toggleSort('status')}>
-              Status {sortField === 'status' && (sortAsc ? '↑' : '↓')}
-            </button>
-          </div>
-
-          {/* Table Body */}
           <ScrollArea className="h-[440px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[40px]" />
+                  <TableHead>
+                    <button className="text-left hover:text-gray-700" onClick={() => toggleSort('id')}>
+                      Activity Title and IATI Identifier {sortField === 'id' && (sortAsc ? '↑' : '↓')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="w-[200px]">
+                    <button className="text-left hover:text-gray-700" onClick={() => toggleSort('title')}>
+                      Planned Start/End Dates
+                    </button>
+                  </TableHead>
+                  <TableHead className="w-[80px] text-center">Scope</TableHead>
+                  <TableHead className="w-[100px] text-right">
+                    <button className="hover:text-gray-700" onClick={() => toggleSort('transactions')}>
+                      Transactions {sortField === 'transactions' && (sortAsc ? '↑' : '↓')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="w-[120px] text-right">
+                    <button className="hover:text-gray-700" onClick={() => toggleSort('budget')}>
+                      Budgets {sortField === 'budget' && (sortAsc ? '↑' : '↓')}
+                    </button>
+                  </TableHead>
+                  <TableHead className="w-[80px] text-center">
+                    <button className="hover:text-gray-700" onClick={() => toggleSort('status')}>
+                      Status {sortField === 'status' && (sortAsc ? '↑' : '↓')}
+                    </button>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
             {filteredActivities.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">No activities match your filters</div>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12 text-gray-500">No activities match your filters</TableCell>
+              </TableRow>
             ) : (
               filteredActivities.map((activity) => {
                 const isExpanded = expandedRow === activity.iatiIdentifier
@@ -745,13 +759,15 @@ export default function BulkPreviewStep({
                 const hasWarnings = activity.validationIssues?.some(i => i.severity === 'warning')
 
                 return (
-                  <div key={activity.iatiIdentifier} className="border-b last:border-b-0">
-                    <div className="grid grid-cols-[40px_1fr_200px_80px_100px_120px_80px] gap-2 px-4 py-3 items-center hover:bg-gray-50">
-                      <Checkbox
-                        checked={selectedIds.has(activity.iatiIdentifier)}
-                        onCheckedChange={() => toggleSelection(activity.iatiIdentifier)}
-                      />
-                      <div
+                  <React.Fragment key={activity.iatiIdentifier}>
+                    <TableRow>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(activity.iatiIdentifier)}
+                          onCheckedChange={() => toggleSelection(activity.iatiIdentifier)}
+                        />
+                      </TableCell>
+                      <TableCell
                         className="cursor-pointer min-w-0"
                         onClick={() => setExpandedRow(isExpanded ? null : activity.iatiIdentifier)}
                       >
@@ -798,8 +814,8 @@ export default function BulkPreviewStep({
                             </p>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-xs text-gray-500">
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-500">
                         {(() => {
                           const formatDate = (dateStr: string) => {
                             const d = new Date(dateStr)
@@ -817,17 +833,17 @@ export default function BulkPreviewStep({
                             </>
                           )
                         })()}
-                      </div>
-                      <div className="text-center text-xs text-gray-600">
+                      </TableCell>
+                      <TableCell className="text-center text-xs text-gray-600">
                         {classifyScope(activity, filterCountry) === 'Unknown' ? '-' : classifyScope(activity, filterCountry)}
-                      </div>
-                      <div className="text-right text-sm">
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
                         {(activity.transactions || []).length}
-                      </div>
-                      <div className="text-right text-sm">
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
                         {(activity.budgets || []).length || '-'}
-                      </div>
-                      <div className="text-center">
+                      </TableCell>
+                      <TableCell className="text-center">
                         {hasErrors ? (
                           <XCircle className="h-4 w-4 text-red-500 mx-auto" />
                         ) : hasWarnings ? (
@@ -835,12 +851,14 @@ export default function BulkPreviewStep({
                         ) : (
                           <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] mx-auto" />
                         )}
-                      </div>
-                    </div>
+                      </TableCell>
+                    </TableRow>
 
                     {/* Expanded Row Detail */}
                     {isExpanded && (
-                      <div className="px-12 py-4 bg-gray-50 border-t text-sm">
+                      <TableRow>
+                        <TableCell colSpan={7} className="p-0">
+                          <div className="px-12 py-4 bg-gray-50 border-t text-sm">
                         {/* Description - full width */}
                         {activity.description && (
                           <div className="mb-4">
@@ -1056,7 +1074,7 @@ export default function BulkPreviewStep({
                                   <Globe className="h-3 w-3" /> Recipient Countries
                                 </span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Country</th>
                                       <th className="font-medium py-1 text-right">%</th>
@@ -1089,7 +1107,7 @@ export default function BulkPreviewStep({
                                   <Globe className="h-3 w-3" /> Recipient Regions
                                 </span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Region</th>
                                       <th className="font-medium py-1 text-right">%</th>
@@ -1214,7 +1232,7 @@ export default function BulkPreviewStep({
                               <div>
                                 <span className="font-medium text-gray-700 text-xs uppercase">Sectors</span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Sector</th>
                                       <th className="font-medium py-1 text-right">%</th>
@@ -1260,7 +1278,7 @@ export default function BulkPreviewStep({
                                   <Link2 className="h-3 w-3" /> Related Activities
                                 </span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Type</th>
                                       <th className="font-medium py-1">Identifier</th>
@@ -1302,7 +1320,7 @@ export default function BulkPreviewStep({
                                 )}
                                 {activity.conditions && activity.conditions.length > 0 && (
                                   <table className="mt-1 w-full text-xs">
-                                    <thead>
+                                    <thead className="bg-surface-muted">
                                       <tr className="text-left text-gray-500">
                                         <th className="font-medium py-1">Type</th>
                                         <th className="font-medium py-1">Description</th>
@@ -1338,7 +1356,7 @@ export default function BulkPreviewStep({
                               <div>
                                 <span className="font-medium text-gray-700 text-xs uppercase">Transactions</span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Type</th>
                                       <th className="font-medium py-1 text-center">Country</th>
@@ -1393,7 +1411,7 @@ export default function BulkPreviewStep({
                                   <Wallet className="h-3 w-3" /> Budgets
                                 </span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Period</th>
                                       <th className="font-medium py-1 text-right">Amount</th>
@@ -1422,7 +1440,7 @@ export default function BulkPreviewStep({
                               <div>
                                 <span className="font-medium text-gray-700 text-xs uppercase">Planned Disbursements</span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Period</th>
                                       <th className="font-medium py-1 text-right">Amount</th>
@@ -1466,7 +1484,7 @@ export default function BulkPreviewStep({
                                   </p>
                                 )}
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Code</th>
                                       <th className="font-medium py-1 text-right">%</th>
@@ -1580,7 +1598,7 @@ export default function BulkPreviewStep({
                                   <FileText className="h-3 w-3" /> Documents
                                 </span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Category</th>
                                       <th className="font-medium py-1">Title</th>
@@ -1806,7 +1824,7 @@ export default function BulkPreviewStep({
                                 </div>
                                 {activity.fss.forecasts.length > 0 && (
                                   <table className="mt-1 w-full text-xs">
-                                    <thead>
+                                    <thead className="bg-surface-muted">
                                       <tr className="text-left text-gray-500">
                                         <th className="font-medium py-1">Year</th>
                                         <th className="font-medium py-1 text-right">Value</th>
@@ -1915,7 +1933,7 @@ export default function BulkPreviewStep({
                                   <div>
                                     <p className="text-xs text-gray-500 font-medium">Loan Status</p>
                                     <table className="mt-0.5 w-full text-xs">
-                                      <thead>
+                                      <thead className="bg-surface-muted">
                                         <tr className="text-left text-gray-500">
                                           <th className="font-medium py-1">Year</th>
                                           <th className="font-medium py-1 text-right">Principal</th>
@@ -1963,12 +1981,16 @@ export default function BulkPreviewStep({
                             </div>
                           </div>
                         )}
-                      </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </div>
+                  </React.Fragment>
                 )
               })
             )}
+              </TableBody>
+            </Table>
           </ScrollArea>
         </CardContent>
       </Card>

@@ -7,7 +7,7 @@ import { AppraisalWizard } from "@/components/project-bank/appraisal/AppraisalWi
 export default function SubmitProjectPage() {
   return (
     <MainLayout>
-      <div className="max-w-6xl pb-16">
+      <div className="max-w-7xl pb-16">
         <Breadcrumbs items={[
           { label: "Project Bank", href: "/project-bank" },
           { label: "New Project" },

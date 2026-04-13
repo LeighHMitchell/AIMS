@@ -48,8 +48,10 @@ import {
   CountryEmergency,
   CountryEmergencyFormData,
 } from "@/types/country-emergency";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 export function CountryEmergenciesManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [emergencies, setEmergencies] = useState<CountryEmergency[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,7 +145,7 @@ export function CountryEmergenciesManagement() {
 
   // Delete emergency
   const handleDelete = async (item: CountryEmergency) => {
-    if (!confirm(`Are you sure you want to delete "${item.name}"?`)) {
+    if (!(await confirm({ title: 'Delete this emergency?', description: `Are you sure you want to delete "${item.name}"?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -553,6 +555,7 @@ export function CountryEmergenciesManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
 }

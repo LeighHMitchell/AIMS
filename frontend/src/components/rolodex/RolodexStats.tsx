@@ -77,7 +77,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
   if (loading) {
     return (
       <Card className="border-slate-200">
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
             <span className="ml-2 text-sm text-slate-600">Loading stats...</span>

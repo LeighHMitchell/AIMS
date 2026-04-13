@@ -275,7 +275,7 @@ export default function WorkingGroupsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="gap-2">
-                <PlusIcon className="h-5 w-5" />
+                <PlusIcon className="h-4 w-4" />
                 New Working Group
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
@@ -724,7 +724,7 @@ export default function WorkingGroupsPage() {
             <AlertDialogAction
               onClick={handleDeleteWorkingGroup}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>

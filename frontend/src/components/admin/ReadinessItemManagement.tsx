@@ -57,6 +57,7 @@ import {
   FINANCING_MODALITY_OPTIONS 
 } from '@/types/readiness';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface ItemWithTemplate extends ReadinessChecklistItem {
   template?: {
@@ -77,6 +78,7 @@ export function ReadinessItemManagement({
   templateName,
   onBack 
 }: ReadinessItemManagementProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [items, setItems] = useState<ItemWithTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -192,7 +194,7 @@ export function ReadinessItemManagement({
   };
 
   const handleDelete = async (item: ItemWithTemplate) => {
-    if (!confirm(`Are you sure you want to delete "${item.title}"?`)) {
+    if (!(await confirm({ title: 'Delete this item?', description: `Are you sure you want to delete "${item.title}"?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -580,6 +582,7 @@ export function ReadinessItemManagement({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
 }

@@ -336,7 +336,7 @@ export function CellDrillDownSheet({
                 </div>
               ) : (
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background border-b">
+                  <thead className="sticky top-0 bg-surface-muted border-b">
                     <tr>
                       <th 
                         className="text-left p-2 font-medium cursor-pointer hover:bg-muted/50"

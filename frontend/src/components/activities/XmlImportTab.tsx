@@ -9753,7 +9753,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
                       size="lg"
                     >
-                      <Copy className="h-5 w-5 mr-2" />
+                      <Copy className="h-4 w-4 mr-2" />
                       Copy Full Import Log
                     </Button>
                     <p className="text-xs text-blue-600 mt-2">

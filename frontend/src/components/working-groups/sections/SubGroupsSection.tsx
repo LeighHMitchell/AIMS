@@ -324,7 +324,7 @@ export default function SubGroupsSection({
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>

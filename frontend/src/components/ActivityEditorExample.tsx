@@ -2,7 +2,7 @@
 // Example usage of the ActivityEditor component
 
 import React from 'react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import ActivityEditor from './ActivityEditor';
 
 // Example page component showing how to use ActivityEditor
@@ -54,7 +54,7 @@ export function SimpleActivityEditor({ activityId }: { activityId: string }) {
 
 import { useRouter } from 'next/router'; // or 'next/navigation' for app router
 import ActivityEditor from '@/components/ActivityEditor';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 
 export default function EditActivityPage() {
   const router = useRouter();

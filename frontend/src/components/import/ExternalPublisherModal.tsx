@@ -1047,7 +1047,7 @@ export function ExternalPublisherModal({
           {/* Summary Information - 2 Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Your Organisation */}
-            <Card className="p-4">
+            <Card className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium text-muted-foreground">
@@ -1081,7 +1081,7 @@ export function ExternalPublisherModal({
           </Card>
 
             {/* Source Publisher */}
-            <Card className="p-4">
+            <Card className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium text-muted-foreground">

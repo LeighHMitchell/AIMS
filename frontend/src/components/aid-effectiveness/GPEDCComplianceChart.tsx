@@ -188,7 +188,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Overall Compliance</p>
@@ -201,7 +201,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
             </Card>
 
             <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Best Indicator</p>
@@ -214,7 +214,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
             </Card>
 
             <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Needs Focus</p>
@@ -240,7 +240,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           const IconComponent = PRINCIPLE_ICONS[principle.principle as keyof typeof PRINCIPLE_ICONS] || Shield
           return (
             <Card key={principle.principle} className="bg-white border-slate-200">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <div 
                     className="p-2 rounded-lg"

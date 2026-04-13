@@ -29,7 +29,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
 
   return (
     <Card className="border-slate-200 bg-white">
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="mb-3">
           <h3 className="text-sm font-semibold text-slate-900">Data Health</h3>
         </div>

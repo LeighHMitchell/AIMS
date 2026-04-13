@@ -256,7 +256,7 @@ export function OrganizationCombobox({
                     </div>
                   ) : (
                     <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-muted rounded-sm">
-                      <Building2 className="h-5 w-5 text-gray-400" />
+                      <Building2 className="h-4 w-4 text-gray-400" />
                     </div>
                   )}
 

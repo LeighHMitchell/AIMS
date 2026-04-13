@@ -914,7 +914,7 @@ function SubnationalChoroplethMapComponent({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 flex-1 h-[calc(100%-4rem)]">
+      <CardContent className="p-6 flex-1 h-[calc(100%-4rem)]">
         <div ref={mapContainerRef} className="w-full h-full min-h-[500px]">
           {mapContent}
         </div>

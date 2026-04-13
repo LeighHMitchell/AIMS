@@ -26,7 +26,7 @@ export default function ActionMenuDemoPage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-muted p-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Action Menu Demo</h1>
           <p className="text-muted-foreground mb-8">
             Demonstration of the new action menu using the MoreVertical icon with dropdown functionality.

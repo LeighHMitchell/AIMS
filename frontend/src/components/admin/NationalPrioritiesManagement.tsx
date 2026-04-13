@@ -52,7 +52,6 @@ import {
   FolderTree,
   AlertCircle,
   Search,
-  RefreshCw,
 } from "lucide-react";
 import {
   NationalPriority,
@@ -60,6 +59,7 @@ import {
   buildPriorityTree,
 } from "@/types/national-priorities";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 // ============================================
 // TREE NODE COMPONENT
@@ -73,6 +73,7 @@ interface TreeNodeProps {
   onAddChild: (parent: NationalPriority) => void;
   expandedIds: Set<string>;
   toggleExpanded: (id: string) => void;
+  levelLabels: [string, string, string];
 }
 
 function TreeNode({
@@ -83,6 +84,7 @@ function TreeNode({
   onAddChild,
   expandedIds,
   toggleExpanded,
+  levelLabels,
 }: TreeNodeProps) {
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
@@ -113,37 +115,27 @@ function TreeNode({
           )}
         </button>
 
-        {/* Code */}
-        <span className="w-[100px] flex-shrink-0">
-          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded inline-block">
+        {/* Level label */}
+        <span className="w-[80px] flex-shrink-0 text-sm text-foreground">
+          {levelLabels[node.level - 1] || `Level ${node.level}`}
+        </span>
+
+        {/* Code + Name */}
+        <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
             {node.code}
           </span>
-        </span>
-
-        {/* Name */}
-        <span className="text-sm flex-1 min-w-0">
           {node.name}
-          {node.nameLocal && (
-            <span className="text-xs text-muted-foreground ml-2 italic">
-              ({node.nameLocal})
-            </span>
-          )}
         </span>
 
-        {/* Level badge */}
-        <span className="w-[80px] flex-shrink-0">
-          <Badge variant="outline" className="text-xs">
-            Level {node.level}
-          </Badge>
+        {/* Description */}
+        <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+          {node.description || ""}
         </span>
 
         {/* Status */}
-        <span className="w-[80px] flex-shrink-0 text-sm">
-          {node.isActive ? (
-            <Badge variant="default" className="bg-green-600">Active</Badge>
-          ) : (
-            <Badge variant="secondary">Inactive</Badge>
-          )}
+        <span className="w-[60px] flex-shrink-0 text-sm text-foreground">
+          {node.isActive ? "Active" : "Inactive"}
         </span>
 
         {/* Actions */}
@@ -155,7 +147,7 @@ function TreeNode({
                 size="sm"
                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="h-4 w-4 rotate-90" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -163,7 +155,7 @@ function TreeNode({
                 <Pencil className="h-4 w-4 mr-2 text-slate-500" />
                 Edit
               </DropdownMenuItem>
-              {node.level < 5 && (
+              {node.level < 3 && (
                 <DropdownMenuItem onClick={() => onAddChild(node)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Sub-Priority
@@ -171,9 +163,8 @@ function TreeNode({
               )}
               <DropdownMenuItem
                 onClick={() => onDelete(node)}
-                className="text-red-600"
               >
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-muted-foreground" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -194,6 +185,7 @@ function TreeNode({
               onAddChild={onAddChild}
               expandedIds={expandedIds}
               toggleExpanded={toggleExpanded}
+              levelLabels={levelLabels}
             />
           ))}
         </div>
@@ -206,7 +198,15 @@ function TreeNode({
 // MAIN COMPONENT
 // ============================================
 
-export function NationalPrioritiesManagement() {
+interface NationalPrioritiesManagementProps {
+  planId?: string;
+  levelLabels?: [string, string, string];
+}
+
+const DEFAULT_LEVEL_LABELS: [string, string, string] = ['Goal', 'Objective', 'Action'];
+
+export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEVEL_LABELS }: NationalPrioritiesManagementProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [priorities, setPriorities] = useState<NationalPriority[]>([]);
   const [flatPriorities, setFlatPriorities] = useState<NationalPriority[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,6 +223,7 @@ export function NationalPrioritiesManagement() {
 
   // Form state
   const [formData, setFormData] = useState<NationalPriorityFormData>({
+    planId: planId || "",
     code: "",
     name: "",
     nameLocal: "",
@@ -236,11 +237,19 @@ export function NationalPrioritiesManagement() {
   // ============================================
 
   const fetchPriorities = useCallback(async () => {
+    if (!planId) {
+      setPriorities([]);
+      setFlatPriorities([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const params = new URLSearchParams({
         includeInactive: showInactive.toString(),
         asTree: "false", // Get flat list first
+        planId,
       });
 
       const response = await apiFetch(`/api/national-priorities?${params}`);
@@ -262,7 +271,7 @@ export function NationalPrioritiesManagement() {
     } finally {
       setLoading(false);
     }
-  }, [showInactive]);
+  }, [showInactive, planId]);
 
   useEffect(() => {
     fetchPriorities();
@@ -300,6 +309,7 @@ export function NationalPrioritiesManagement() {
     setSelectedPriority(null);
     setParentForNew(parent || null);
     setFormData({
+      planId: planId || "",
       code: "",
       name: "",
       nameLocal: "",
@@ -314,6 +324,7 @@ export function NationalPrioritiesManagement() {
     setSelectedPriority(priority);
     setParentForNew(null);
     setFormData({
+      planId: priority.planId || planId || "",
       code: priority.code,
       name: priority.name,
       nameLocal: priority.nameLocal || "",
@@ -385,9 +396,12 @@ export function NationalPrioritiesManagement() {
       if (!result.success) {
         if (result.requiresConfirmation) {
           // Show confirmation with details
-          const proceed = window.confirm(
-            `This priority has ${result.childrenCount} sub-priorities and ${result.activitiesCount} linked activities. Are you sure you want to delete it?`
-          );
+          const proceed = await confirm({
+            title: 'Delete priority with dependencies?',
+            description: `This priority has ${result.childrenCount} sub-priorities and ${result.activitiesCount} linked activities. Are you sure you want to delete it?`,
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+          });
           if (proceed) {
             await handleConfirmDelete(true);
           }
@@ -432,11 +446,11 @@ export function NationalPrioritiesManagement() {
     // Include parents of matching items
     flatPriorities.forEach((p) => {
       if (matchingIds.has(p.id) && p.parentId) {
-        let currentParentId = p.parentId;
+        let currentParentId: string | null | undefined = p.parentId;
         while (currentParentId) {
           matchingIds.add(currentParentId);
           const parent = flatPriorities.find((pp) => pp.id === currentParentId);
-          currentParentId = parent?.parentId || null;
+          currentParentId = parent?.parentId;
         }
       }
     });
@@ -449,46 +463,48 @@ export function NationalPrioritiesManagement() {
   // RENDER
   // ============================================
 
+  if (!planId) {
+    return null;
+  }
+
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96 mt-2" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                National Priorities
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Manage hierarchical national development priorities for strategic alignment analysis
-              </CardDescription>
-            </div>
-            <Button onClick={() => handleAddNew()}>
-              <Plus className="h-4 w-4 mr-2" />
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Strategic Objectives
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {levelLabels[0]}s, {levelLabels[1].toLowerCase()}s, and {levelLabels[2].toLowerCase()}s within this plan
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={expandAll}>
+              Expand All
+            </Button>
+            <Button variant="outline" size="sm" onClick={collapseAll}>
+              Collapse All
+            </Button>
+            <Button size="sm" onClick={() => handleAddNew()}>
+              <Plus className="h-4 w-4 mr-1" />
               Add Priority
             </Button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent>
+        <div>
           {/* Toolbar */}
           <div className="flex items-center gap-4 mb-4">
             <div className="relative flex-1 max-w-sm">
@@ -512,26 +528,15 @@ export function NationalPrioritiesManagement() {
               </Label>
             </div>
 
-            <div className="flex items-center gap-2 ml-auto">
-              <Button variant="outline" size="sm" onClick={expandAll}>
-                Expand All
-              </Button>
-              <Button variant="outline" size="sm" onClick={collapseAll}>
-                Collapse All
-              </Button>
-              <Button variant="outline" size="sm" onClick={fetchPriorities}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
 
           {/* Header Row */}
           <div className="flex items-center gap-4 py-2 px-3 bg-muted/50 border-b font-medium text-sm">
             <span className="w-5" /> {/* Expand button spacer */}
-            <span className="w-[100px]">Code</span>
+            <span className="w-[80px]">Type</span>
             <span className="flex-1">Name</span>
-            <span className="w-[80px]">Level</span>
-            <span className="w-[80px]">Status</span>
+            <span className="flex-1">Description</span>
+            <span className="w-[60px]">Status</span>
             <span className="w-[100px] text-right">Actions</span>
           </div>
 
@@ -558,18 +563,14 @@ export function NationalPrioritiesManagement() {
                   onAddChild={handleAddNew}
                   expandedIds={expandedIds}
                   toggleExpanded={toggleExpanded}
+                  levelLabels={levelLabels}
                 />
               ))
             )}
           </div>
 
-          {/* Count */}
-          <div className="mt-4 text-sm text-muted-foreground">
-            {flatPriorities.length} priorities total
-            {searchQuery && ` (${filteredPriorities.length} matching)`}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Edit/Create Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -669,13 +670,13 @@ export function NationalPrioritiesManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
               Delete Priority
             </AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{selectedPriority?.name}"?
               {selectedPriority?.children && selectedPriority.children.length > 0 && (
-                <span className="block mt-2 text-amber-600">
+                <span className="block mt-2 text-muted-foreground">
                   Warning: This will also delete all sub-priorities.
                 </span>
               )}
@@ -686,13 +687,14 @@ export function NationalPrioritiesManagement() {
             <AlertDialogAction
               onClick={() => handleConfirmDelete()}
               disabled={saving}
-              className="bg-red-600 hover:bg-red-700"
+              className=""
             >
               {saving ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ConfirmDialog />
     </>
   );
 }

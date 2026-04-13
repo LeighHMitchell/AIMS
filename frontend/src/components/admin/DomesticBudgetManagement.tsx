@@ -77,6 +77,7 @@ import {
   CLASSIFICATION_TYPE_LABELS,
 } from "@/types/aid-on-budget";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface BudgetSummary {
   totalBudget: number;
@@ -86,6 +87,7 @@ interface BudgetSummary {
 }
 
 export function DomesticBudgetManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [budgetData, setBudgetData] = useState<DomesticBudgetData[]>([]);
   const [classifications, setClassifications] = useState<BudgetClassification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -323,9 +325,12 @@ export function DomesticBudgetManagement() {
   const handleDelete = async (item: DomesticBudgetData) => {
     const classificationName = item.budgetClassification?.name || "this entry";
     if (
-      !confirm(
-        `Are you sure you want to delete the budget entry for "${classificationName}" (${item.fiscalYear})?`
-      )
+      !(await confirm({
+        title: 'Delete this budget entry?',
+        description: `Are you sure you want to delete the budget entry for "${classificationName}" (${item.fiscalYear})?`,
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel',
+      }))
     ) {
       return;
     }
@@ -492,7 +497,7 @@ export function DomesticBudgetManagement() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <Wallet className="h-4 w-4" />
                   Total Budget
@@ -503,7 +508,7 @@ export function DomesticBudgetManagement() {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <Receipt className="h-4 w-4" />
                   Total Expenditure
@@ -514,7 +519,7 @@ export function DomesticBudgetManagement() {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <TrendingUp className="h-4 w-4" />
                   Execution Rate
@@ -526,7 +531,7 @@ export function DomesticBudgetManagement() {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <Calculator className="h-4 w-4" />
                   Entries
@@ -1107,6 +1112,7 @@ export function DomesticBudgetManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
 }

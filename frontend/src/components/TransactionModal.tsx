@@ -1620,7 +1620,7 @@ export default function TransactionModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="mx-0 mt-0 px-8 py-5 border-b flex-shrink-0">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl">
             {isEditing ? "Edit Transaction" : "Add New Transaction"}
           </DialogTitle>
@@ -3074,7 +3074,7 @@ export default function TransactionModal({
                         </p>
                         <div className="p-3 bg-white rounded-md border border-gray-200">
                           <table className="w-full text-xs">
-                            <thead>
+                            <thead className="bg-surface-muted">
                               <tr className="text-muted-foreground border-b">
                                 <th className="text-left py-1 font-medium">Sector</th>
                                 <th className="text-right py-1 font-medium w-14">%</th>

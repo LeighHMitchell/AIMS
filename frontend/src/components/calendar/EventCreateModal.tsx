@@ -573,7 +573,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
-              <ChevronUp className="h-5 w-5" />
+              <ChevronUp className="h-4 w-4" />
             </Button>
           </div>
 

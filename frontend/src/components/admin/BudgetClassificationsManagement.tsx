@@ -63,6 +63,7 @@ import {
   BudgetClassificationFormData,
 } from "@/types/aid-on-budget";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 type SortColumn = "code" | "name" | "nameLocal" | "status";
 type SortDirection = "asc" | "desc";
@@ -203,6 +204,7 @@ function TreeNode({
 }
 
 export function BudgetClassificationsManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [classifications, setClassifications] = useState<
     (BudgetClassification & { children?: BudgetClassification[] })[]
   >([]);
@@ -347,9 +349,12 @@ export function BudgetClassificationsManagement() {
   // Delete classification
   const handleDelete = async (item: BudgetClassification) => {
     if (
-      !confirm(
-        `Are you sure you want to delete "${item.name}"? This will also delete all child classifications.`
-      )
+      !(await confirm({
+        title: 'Delete this classification?',
+        description: `Are you sure you want to delete "${item.name}"? This will also delete all child classifications.`,
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel',
+      }))
     ) {
       return;
     }
@@ -896,6 +901,7 @@ export function BudgetClassificationsManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </>
   );
 }

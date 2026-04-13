@@ -72,7 +72,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="bg-surface-muted">
             <tr className="border-b">
               <th className="text-left px-2 py-1.5 font-medium text-muted-foreground w-[80px]">Year</th>
               <th className="text-right px-2 py-1.5 font-medium text-muted-foreground">Revenue</th>

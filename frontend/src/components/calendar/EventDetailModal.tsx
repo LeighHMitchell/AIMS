@@ -43,6 +43,7 @@ import {
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface CalendarEvent {
   id: string
@@ -110,6 +111,7 @@ export function EventDetailModal({
   canEdit = false 
 }: EventDetailModalProps) {
   const { user } = useUser()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [loading, setLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [descriptionExpanded, setDescriptionExpanded] = useState(true)
@@ -242,7 +244,7 @@ export function EventDetailModal({
   }
 
   const handleDeleteDocument = async (doc: EventDocument) => {
-    if (!confirm('Are you sure you want to delete this document?')) return
+    if (!(await confirm({ title: 'Delete this document?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
 
     try {
       const response = await apiFetch(`/api/calendar-events/${event?.id}/documents/${doc.id}`, {
@@ -395,7 +397,7 @@ export function EventDetailModal({
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event?')) {
+    if (!(await confirm({ title: 'Delete this event?', description: 'This action cannot be undone. The event will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return
     }
 
@@ -472,7 +474,7 @@ export function EventDetailModal({
                 </>
               )}
               <Button variant="ghost" size="sm" onClick={onClose}>
-                <ChevronUp className="h-5 w-5" />
+                <ChevronUp className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -1101,6 +1103,7 @@ export function EventDetailModal({
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   )
 }

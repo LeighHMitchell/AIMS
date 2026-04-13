@@ -110,7 +110,7 @@ export default function LocationProfilesPage() {
         <div className="min-h-screen">
           <div className="w-full p-6">
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Location Profiles</h2>
                 <p className="text-muted-foreground">{error}</p>
@@ -165,7 +165,7 @@ export default function LocationProfilesPage() {
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="bg-surface-muted">
                       <tr className="border-b border-border bg-muted/50">
                         <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Location</th>
                         <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Type</th>

@@ -23,6 +23,7 @@ import { FieldCheck } from './FieldCheck';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import type { PendingFile } from '@/hooks/use-appraisal-wizard';
+import { toast } from 'sonner';
 
 const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
   value: String(i + 1),
@@ -215,7 +216,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB'); return; }
+                    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
                     const reader = new FileReader();
                     reader.onloadend = () => {
                       updateField('banner', reader.result as string);
@@ -247,7 +248,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB'); return; }
+                if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
                 const reader = new FileReader();
                 reader.onloadend = () => {
                   updateField('banner', reader.result as string);

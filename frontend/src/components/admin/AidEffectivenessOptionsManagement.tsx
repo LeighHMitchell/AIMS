@@ -37,6 +37,7 @@ import {
   X,
 } from "lucide-react";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { DatePicker } from "@/components/ui/date-picker";
 
@@ -207,6 +208,7 @@ const CATEGORIES = [
 ];
 
 export function AidEffectivenessOptionsManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [options, setOptions] = useState<AEOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -384,7 +386,7 @@ export function AidEffectivenessOptionsManagement() {
 
   // Delete
   const handleDelete = async (option: AEOption) => {
-    if (!confirm(`Are you sure you want to delete "${option.label}"?`)) {
+    if (!(await confirm({ title: 'Delete this option?', description: `Are you sure you want to delete "${option.label}"?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -689,6 +691,7 @@ export function AidEffectivenessOptionsManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

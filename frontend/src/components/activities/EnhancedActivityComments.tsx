@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { ActivityComment, CommentReply } from '@/types/comment';
@@ -103,7 +104,8 @@ export function EnhancedActivityComments({
   showInline = false 
 }: EnhancedActivityCommentsProps) {
   const { user } = useUser();
-  
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   const [comments, setComments] = useState<ActivityComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
@@ -538,7 +540,7 @@ export function EnhancedActivityComments({
     if (!user) return;
     
     // Show confirmation dialog
-    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+    if (!(await confirm({ title: 'Delete this comment?', description: 'This action cannot be undone. The comment will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
     
@@ -914,6 +916,7 @@ export function EnhancedActivityComments({
           </TabsContent>
         </Tabs>
       </div>
+      <ConfirmDialog />
     </TooltipProvider>
   );
 }

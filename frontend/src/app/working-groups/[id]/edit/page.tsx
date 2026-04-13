@@ -54,7 +54,7 @@ export default function EditWorkingGroupPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6">
           <Skeleton className="h-12 w-64 mb-6" />
           <Skeleton className="h-96 w-full" />
         </div>
@@ -65,7 +65,7 @@ export default function EditWorkingGroupPage() {
   if (error) {
     return (
       <MainLayout>
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
@@ -79,7 +79,7 @@ export default function EditWorkingGroupPage() {
   if (!workingGroup) {
     return (
       <MainLayout>
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6">
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Not Found</AlertTitle>

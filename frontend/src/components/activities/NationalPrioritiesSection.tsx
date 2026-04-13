@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -33,19 +35,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   Target,
   Plus,
+  Pencil,
   Trash2,
   AlertCircle,
   CheckCircle,
   AlertTriangle,
 } from "lucide-react";
 import {
+  NationalPlan,
   NationalPriority,
   ActivityNationalPriority,
+  AlignmentSignificance,
+  ALIGNMENT_SIGNIFICANCE_LABELS,
+  ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS,
+  PLAN_TYPE_LABELS,
   flattenPriorityTree,
   buildPriorityTree,
 } from "@/types/national-priorities";
@@ -63,18 +70,23 @@ export function NationalPrioritiesSection({
   onChange,
 }: NationalPrioritiesSectionProps) {
   const [allocations, setAllocations] = useState<ActivityNationalPriority[]>([]);
+  const [plans, setPlans] = useState<NationalPlan[]>([]);
   const [availablePriorities, setAvailablePriorities] = useState<NationalPriority[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAllocation, setSelectedAllocation] = useState<ActivityNationalPriority | null>(null);
-  
-  // Form state for adding new allocation
+  const [editingAllocation, setEditingAllocation] = useState<ActivityNationalPriority | null>(null);
+
+  // Form state for adding/editing an allocation
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [selectedPriorityId, setSelectedPriorityId] = useState<string>("");
-  const [percentage, setPercentage] = useState<string>("100");
+  const [significance, setSignificance] = useState<AlignmentSignificance>("significant");
+  const [rationale, setRationale] = useState<string>("");
+  const [loadingPriorities, setLoadingPriorities] = useState(false);
 
   // ============================================
   // DATA FETCHING
@@ -93,36 +105,56 @@ export function NationalPrioritiesSection({
     }
   }, [activityId]);
 
-  const fetchPriorities = useCallback(async () => {
+  const fetchPlans = useCallback(async () => {
     try {
-      const response = await apiFetch("/api/national-priorities?asTree=false");
+      const response = await apiFetch("/api/national-plans?activeOnly=true");
       const result = await response.json();
-      
+      if (result.success) {
+        setPlans(result.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching plans:", error);
+    }
+  }, []);
+
+  // Fetch priorities for a specific plan (used in the add dialog)
+  const fetchPrioritiesForPlan = useCallback(async (planId: string) => {
+    try {
+      setLoadingPriorities(true);
+      const response = await apiFetch(`/api/national-priorities?planId=${planId}&asTree=false`);
+      const result = await response.json();
       if (result.success) {
         setAvailablePriorities(result.data || []);
       }
     } catch (error) {
       console.error("Error fetching priorities:", error);
+    } finally {
+      setLoadingPriorities(false);
     }
   }, []);
+
+  // When plan selection changes in dialog, fetch that plan's priorities
+  useEffect(() => {
+    if (selectedPlanId) {
+      setSelectedPriorityId("");
+      fetchPrioritiesForPlan(selectedPlanId);
+    } else {
+      setAvailablePriorities([]);
+    }
+  }, [selectedPlanId, fetchPrioritiesForPlan]);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchAllocations(), fetchPriorities()]);
+      await Promise.all([fetchAllocations(), fetchPlans()]);
       setLoading(false);
     };
     loadData();
-  }, [fetchAllocations, fetchPriorities]);
+  }, [fetchAllocations, fetchPlans]);
 
   // ============================================
   // COMPUTED VALUES
   // ============================================
-
-  const totalPercentage = allocations.reduce((sum, a) => sum + a.percentage, 0);
-  const isValid = totalPercentage === 100 || allocations.length === 0;
-  const isOverAllocated = totalPercentage > 100;
-  const remainingPercentage = 100 - totalPercentage;
 
   // Get priorities not yet allocated
   const unallocatedPriorities = availablePriorities.filter(
@@ -145,15 +177,18 @@ export function NationalPrioritiesSection({
   // CRUD OPERATIONS
   // ============================================
 
+  const handleEditAllocation = (allocation: ActivityNationalPriority) => {
+    setEditingAllocation(allocation);
+    setSelectedPlanId(""); // Not used in edit mode (plan/priority locked)
+    setSelectedPriorityId(allocation.nationalPriorityId);
+    setSignificance(allocation.significance);
+    setRationale(allocation.rationale || "");
+    setAddDialogOpen(true);
+  };
+
   const handleAddAllocation = async () => {
     if (!selectedPriorityId) {
       toast.error("Please select a priority");
-      return;
-    }
-
-    const pct = parseFloat(percentage);
-    if (isNaN(pct) || pct <= 0 || pct > 100) {
-      toast.error("Percentage must be between 0 and 100");
       return;
     }
 
@@ -165,52 +200,29 @@ export function NationalPrioritiesSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nationalPriorityId: selectedPriorityId,
-          percentage: pct,
+          significance,
+          rationale: rationale.trim() || null,
         }),
       });
 
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to add allocation");
+        throw new Error(result.error || "Failed to add alignment");
       }
 
-      toast.success("Priority allocation added");
+      toast.success("Plan alignment added");
       setAddDialogOpen(false);
       setSelectedPriorityId("");
-      setPercentage("100");
+      setSignificance("significant");
+      setRationale("");
       await fetchAllocations();
       onChange?.();
     } catch (error: any) {
       console.error("Error adding allocation:", error);
-      toast.error(error.message || "Failed to add allocation");
+      toast.error(error.message || "Failed to add alignment");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleUpdatePercentage = async (allocation: ActivityNationalPriority, newPercentage: number) => {
-    try {
-      const response = await apiFetch(`/api/activities/${activityId}/national-priorities`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nationalPriorityId: allocation.nationalPriorityId,
-          percentage: newPercentage,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      await fetchAllocations();
-      onChange?.();
-    } catch (error: any) {
-      console.error("Error updating allocation:", error);
-      toast.error("Failed to update percentage");
     }
   };
 
@@ -249,214 +261,284 @@ export function NationalPrioritiesSection({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-72 mt-2" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="h-4 w-4" />
-                National Priority Allocations
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Allocate this activity to national development priorities. Percentages should total 100%.
-              </CardDescription>
-            </div>
-            {!disabled && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  setPercentage(remainingPercentage > 0 ? remainingPercentage.toString() : "100");
-                  setAddDialogOpen(true);
-                }}
-                disabled={unallocatedPriorities.length === 0}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Priority
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {allocations.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground border rounded-lg border-dashed">
-              <Target className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No priority allocations yet</p>
-              <p className="text-xs mt-1">
-                Click "Add Priority" to allocate this activity to national priorities
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Allocation rows */}
-              {allocations.map((allocation) => (
-                <div
-                  key={allocation.id}
-                  className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg"
-                >
-                  {/* Priority info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs bg-background px-1.5 py-0.5 rounded border">
-                        {allocation.nationalPriority?.code}
-                      </span>
-                      <span className="font-medium text-sm truncate">
-                        {allocation.nationalPriority?.name}
-                      </span>
-                    </div>
-                    {allocation.nationalPriority?.fullPath && (
-                      <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {allocation.nationalPriority.fullPath}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Percentage input */}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={allocation.percentage}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val) && val >= 0 && val <= 100) {
-                          handleUpdatePercentage(allocation, val);
-                        }
-                      }}
-                      className="w-20 text-right"
-                      disabled={disabled}
-                    />
-                    <span className="text-sm text-muted-foreground">%</span>
-                  </div>
-
-                  {/* Delete button */}
-                  {!disabled && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                      onClick={() => {
-                        setSelectedAllocation(allocation);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-
-              {/* Total row */}
-              <div className="flex items-center justify-between pt-3 border-t">
-                <div className="flex items-center gap-2">
-                  {isValid ? (
-                    <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                  ) : isOverAllocated ? (
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  )}
-                  <span className="text-sm font-medium">Total Allocation</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={isValid ? "default" : isOverAllocated ? "destructive" : "secondary"}
-                    className={isValid ? "bg-green-600" : ""}
-                  >
-                    {totalPercentage.toFixed(1)}%
-                  </Badge>
-                  {!isValid && (
-                    <span className="text-xs text-muted-foreground">
-                      {isOverAllocated
-                        ? `(${(totalPercentage - 100).toFixed(1)}% over)`
-                        : `(${remainingPercentage.toFixed(1)}% remaining)`}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-end mb-4">
+          {!disabled && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingAllocation(null);
+                setSelectedPlanId("");
+                setSelectedPriorityId("");
+                setSignificance("significant");
+                setRationale("");
+                setAddDialogOpen(true);
+              }}
+              disabled={plans.length === 0}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Alignment
+            </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Add Allocation Dialog */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        {allocations.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <img src="/images/empty-tuning-fork.png" alt="No plan alignments" className="h-32 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold mb-2">No plan alignments</h3>
+            <p className="text-muted-foreground">
+              Use the Add Alignment button to align this activity to a national plan or strategy.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="border rounded-md overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Plan</TableHead>
+                    <TableHead className="w-[110px]">Category</TableHead>
+                    <TableHead className="w-[120px]">Type</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead className="w-[140px]">Significance</TableHead>
+                    <TableHead>Rationale</TableHead>
+                    <TableHead className="w-[90px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allocations.map((allocation) => (
+                    <TableRow key={allocation.id}>
+                      <TableCell className="text-sm whitespace-normal align-top">
+                        {allocation.nationalPriority?.planName || "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {allocation.nationalPriority?.planCategory
+                          ? PLAN_TYPE_LABELS[allocation.nationalPriority.planCategory]
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {allocation.nationalPriority?.levelLabel || "—"}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
+                          {allocation.nationalPriority?.code}
+                        </span>
+                        {allocation.nationalPriority?.name}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                            {allocation.significance === "principal" ? "1" : "2"}
+                          </span>
+                          {ALIGNMENT_SIGNIFICANCE_LABELS[allocation.significance]}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-normal align-top">
+                        {allocation.rationale || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {!disabled && (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleEditAllocation(allocation)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                              onClick={() => {
+                                setSelectedAllocation(allocation);
+                                setDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Add/Edit Allocation Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={(open) => {
+        setAddDialogOpen(open);
+        if (!open) {
+          setSelectedPlanId("");
+          setSelectedPriorityId("");
+          setEditingAllocation(null);
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Priority Allocation</DialogTitle>
+            <DialogTitle>{editingAllocation ? "Edit Alignment" : "Add Alignment"}</DialogTitle>
             <DialogDescription>
-              Select a national priority and specify the allocation percentage.
+              {editingAllocation
+                ? "Update the significance and rationale for this alignment."
+                : "Select a plan, then choose a priority to align this activity to."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            {editingAllocation ? (
+              // Read-only plan + priority display in edit mode
+              <div className="space-y-2">
+                <Label>Plan & Priority</Label>
+                <div className="p-3 border rounded-md bg-muted/30 text-sm">
+                  <div className="text-muted-foreground text-xs mb-1">
+                    {editingAllocation.nationalPriority?.planName || "—"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                      {editingAllocation.nationalPriority?.code}
+                    </span>
+                    <span>{editingAllocation.nationalPriority?.name}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+            {/* Plan selector */}
             <div className="space-y-2">
-              <Label>National Priority</Label>
+              <Label>Plan / Strategy</Label>
               <Select
-                value={selectedPriorityId}
-                onValueChange={setSelectedPriorityId}
+                value={selectedPlanId}
+                onValueChange={setSelectedPlanId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a priority..." />
+                  <SelectValue placeholder="Select a plan..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(groupedPriorities).map(([level, priorities]) => (
-                    <SelectGroup key={level}>
-                      <SelectLabel>Level {level}</SelectLabel>
-                      {priorities.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="font-mono text-xs mr-2">{p.code}</span>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      <span className="flex items-center gap-2">
+                        {plan.acronym && (
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                            {plan.acronym}
+                          </span>
+                        )}
+                        <span>
+                          {plan.name}
+                          {plan.acronym && ` (${plan.acronym})`}
+                          {plan.startDate && plan.endDate && (
+                            <> {new Date(plan.startDate).getFullYear()}-{new Date(plan.endDate).getFullYear()}</>
+                          )}
+                        </span>
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Percentage</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={percentage}
-                  onChange={(e) => setPercentage(e.target.value)}
-                  className="w-24"
-                />
-                <span className="text-sm text-muted-foreground">%</span>
-                {remainingPercentage > 0 && remainingPercentage < 100 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPercentage(remainingPercentage.toString())}
+            {/* Priority selector (shown after plan is selected) */}
+            {selectedPlanId && (
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                {loadingPriorities ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <Select
+                    value={selectedPriorityId}
+                    onValueChange={setSelectedPriorityId}
                   >
-                    Use remaining ({remainingPercentage.toFixed(1)}%)
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a priority..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(groupedPriorities).map(([level, priorities]) => (
+                        <SelectGroup key={level}>
+                          <SelectLabel>
+                            {level === "1" ? "Pillar" : level === "2" ? "Outcome" : level === "3" ? "Intervention" : `Level ${level}`}
+                          </SelectLabel>
+                          {priorities.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              <span className="font-mono text-xs mr-2">{p.code}</span>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                      {unallocatedPriorities.length === 0 && (
+                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                          All priorities from this plan are already allocated
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
+            )}
+              </>
+            )}
+
+            <div className="space-y-2">
+              <Label>Significance</Label>
+              <Select
+                value={significance}
+                onValueChange={(val) => setSignificance(val as AlignmentSignificance)}
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {significance === "principal" ? "1" : "2"}
+                      </span>
+                      <span>{ALIGNMENT_SIGNIFICANCE_LABELS[significance]}</span>
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="principal" className="py-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">1</span>
+                        <span className="font-medium">Principal</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.principal}</p>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="significant" className="py-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">2</span>
+                        <span className="font-medium">Significant</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.significant}</p>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Rationale (optional)</Label>
+              <Textarea
+                value={rationale}
+                onChange={(e) => setRationale(e.target.value)}
+                placeholder="Explain how this activity supports the selected priority..."
+                rows={3}
+              />
             </div>
           </div>
 
@@ -490,7 +572,7 @@ export function NationalPrioritiesSection({
             <AlertDialogAction
               onClick={handleDeleteAllocation}
               disabled={saving}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {saving ? "Removing..." : "Remove"}
             </AlertDialogAction>

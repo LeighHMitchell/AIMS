@@ -331,7 +331,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
 
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="bg-surface-muted">
                 <tr className="bg-surface-muted">
                   <th className="text-left p-2 font-medium text-xs">Scenario</th>
                   <th className="text-right p-2 font-medium text-xs">FIRR <HelpTooltip text="Financial Internal Rate of Return under this scenario." /></th>

@@ -302,7 +302,7 @@ export default function SDGProfilePage() {
         <div className="min-h-screen">
           <div className="w-full p-6">
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading SDG Profile</h2>
                 <p className="text-muted-foreground mb-4">{error || 'Failed to load SDG profile data'}</p>
@@ -660,7 +660,7 @@ export default function SDGProfilePage() {
                     {paginatedActivities.map(activity => (
                       <Link key={activity.id} href={`/activities/${activity.id}`}>
                         <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-                          <CardContent className="p-4">
+                          <CardContent className="p-6">
                             <div className="flex items-start justify-between mb-2">
                               <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
                               <ExternalLink className="h-3 w-3 text-muted-foreground" />
@@ -686,7 +686,7 @@ export default function SDGProfilePage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
-                      <thead>
+                      <thead className="bg-surface-muted">
                         <tr className="border-b border-border bg-muted">
                           <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Activity</th>
                           <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Status</th>
@@ -764,7 +764,7 @@ export default function SDGProfilePage() {
                     {filteredOrgs.map(org => (
                       <Link key={org.id} href={`/organizations/${org.id}`}>
                         <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-                          <CardContent className="p-4">
+                          <CardContent className="p-6">
                             <div className="flex items-start gap-3">
                               {org.logo ? (
                                 <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
@@ -836,7 +836,7 @@ export default function SDGProfilePage() {
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
-                      <thead>
+                      <thead className="bg-surface-muted">
                         <tr className="border-b border-border">
                           <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>
                           <th className="text-left py-2 px-2 text-muted-foreground font-medium">Country</th>

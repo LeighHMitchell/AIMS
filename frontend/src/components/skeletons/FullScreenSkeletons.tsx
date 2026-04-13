@@ -270,7 +270,7 @@ export function PartnerFundingSummarySkeleton() {
                 <CardContent className="pt-0">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
+                      <thead className="bg-surface-muted">
                         <tr className="border-b border-border">
                           <th className="text-left py-3 px-2">
                             <Skeleton variant="text" width="140px" height="0.875rem" />
@@ -577,7 +577,7 @@ export function UserManagementSkeleton() {
 
         {/* Role Filters */}
         <Card className="mb-6">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <Skeleton variant="text" width="80px" height="1rem" />
               <div className="flex gap-2">

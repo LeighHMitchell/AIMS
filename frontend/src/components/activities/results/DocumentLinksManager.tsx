@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, ExternalLink, FileText, X } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useDocumentLinks } from '@/hooks/use-results';
 import { DocumentLink } from '@/types/results';
 
@@ -31,6 +32,7 @@ export function DocumentLinksManager({
   defaultLanguage = 'en'
 }: DocumentLinksManagerProps) {
   const { createDocumentLink, deleteDocumentLink, loading } = useDocumentLinks();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     url: '',
@@ -77,7 +79,7 @@ export function DocumentLinksManager({
   };
 
   const handleDelete = async (documentId: string) => {
-    if (window.confirm('Delete this document link?')) {
+    if (await confirm({ title: 'Delete document link?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteDocumentLink(entityType, entityId, documentId);
       if (success) {
         onUpdate();
@@ -319,6 +321,7 @@ export function DocumentLinksManager({
       {filteredDocuments.length === 0 && !showAddForm && (
         <p className="text-xs text-gray-500 italic">No documents attached</p>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

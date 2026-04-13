@@ -373,9 +373,9 @@ export default function LocationsTab({
       {/* Locations Display */}
       {locations.length === 0 ? (
         <div className="text-center py-12">
-          <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No locations added</h4>
-          <p className="text-gray-600 mb-6">
+          <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium mb-2">No locations added</h3>
+          <p className="text-muted-foreground mb-6">
             Add locations to specify where your activity takes place or where beneficiaries are located.
           </p>
           {canEdit && (

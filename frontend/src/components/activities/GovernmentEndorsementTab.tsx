@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +71,7 @@ export default function GovernmentEndorsementTab({
   const [formData, setFormData] = useState<GovernmentEndorsementFormData>({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Project References state
   const [projectReferences, setProjectReferences] = useState<ProjectReference[]>([]);
@@ -142,7 +144,7 @@ export default function GovernmentEndorsementTab({
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this government endorsement? This action cannot be undone.')) {
+    if (await confirm({ title: 'Delete government endorsement?', description: 'This action cannot be undone. The endorsement will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteEndorsement();
       if (success) {
         setFormData({});
@@ -240,7 +242,7 @@ export default function GovernmentEndorsementTab({
   };
 
   const handleDeleteRef = async (refId: string) => {
-    if (!window.confirm('Delete this project reference?')) return;
+    if (!(await confirm({ title: 'Delete project reference?', description: 'This action cannot be undone. The project reference will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
 
     try {
       const response = await apiFetch(`/api/activities/${activityId}/project-references?referenceId=${refId}`,
@@ -679,9 +681,10 @@ export default function GovernmentEndorsementTab({
               <Skeleton className="h-10 w-full" />
             </div>
           ) : projectReferences.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileCode2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No project references added yet.</p>
+            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+              <img src="/images/empty-bee.png" alt="No project references" className="h-32 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No project references</h3>
+              <p className="text-muted-foreground mb-2">Add government project reference codes for this activity.</p>
               {canEdit && (
                 <Button variant="outline" size="sm" className="mt-2" onClick={() => openRefDialog()}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -870,6 +873,7 @@ export default function GovernmentEndorsementTab({
           </AlertDescription>
         </Alert>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

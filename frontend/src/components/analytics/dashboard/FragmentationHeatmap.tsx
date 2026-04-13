@@ -66,7 +66,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
         <div className="space-y-4">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-              <thead>
+              <thead className="bg-surface-muted">
                 <tr className="bg-slate-50">
                   <th className="text-left p-2 border-b border-slate-200 font-medium">
                     {swapAxes ? 'Category' : 'Donor'}
@@ -150,7 +150,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
         {/* Heatmap table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" style={{ borderSpacing: 0, tableLayout: 'fixed' }}>
-            <thead>
+            <thead className="bg-surface-muted">
               <tr>
                 {/* Empty corner cell - fixed width for row labels */}
                 <th 

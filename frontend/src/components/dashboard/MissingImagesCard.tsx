@@ -198,7 +198,7 @@ export function MissingImagesCard({
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      toast.error('Please upload an image file');
       return;
     }
 
@@ -276,7 +276,7 @@ export function MissingImagesCard({
 
     } catch (err) {
       console.error('[MissingImagesCard] Upload error:', err);
-      alert('Failed to upload image. Please try again.');
+      toast.error('Failed to upload image. Please try again.');
     } finally {
       setUploading(null);
     }

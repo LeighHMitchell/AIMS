@@ -415,7 +415,7 @@ export function TransactionDocumentUpload({
               <h4 className="text-sm font-medium">Uploaded Documents and Links</h4>
             </div>
             <table className="w-full text-xs">
-              <thead>
+              <thead className="bg-surface-muted">
                 <tr className="bg-muted/50 text-muted-foreground border-b">
                   <th className="text-left py-2 px-3 font-medium w-8"></th>
                   <th className="text-left py-2 px-3 font-medium">Name</th>

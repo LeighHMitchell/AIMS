@@ -212,7 +212,7 @@ function EditMeetingModal({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
       <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="sticky top-0 z-10 mx-0 mt-0 px-6 py-4 border-b">
+        <DialogHeader className="sticky top-0 z-10">
           <DialogTitle>Edit Meeting</DialogTitle>
           <DialogDescription>Update meeting details, location, and documents</DialogDescription>
         </DialogHeader>
@@ -397,7 +397,7 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
   return (
     <div className="border rounded-lg overflow-hidden">
       <table className="w-full">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="bg-muted border-b">
             <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Title</th>
             <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Date</th>
@@ -646,7 +646,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
       {/* Add Meeting Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-          <DialogHeader className="sticky top-0 z-10 mx-0 mt-0 px-6 py-4 border-b">
+          <DialogHeader className="sticky top-0 z-10">
             <DialogTitle>Schedule Meeting</DialogTitle>
             <DialogDescription>Create a new meeting for this working group</DialogDescription>
           </DialogHeader>
@@ -726,7 +726,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMeeting} className="bg-red-500 hover:bg-red-600">
+            <AlertDialogAction onClick={handleDeleteMeeting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

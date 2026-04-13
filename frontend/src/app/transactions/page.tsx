@@ -28,6 +28,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
 import TransactionModal from "@/components/TransactionModal";
 import { TransactionsListSkeleton } from "@/components/skeletons";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
@@ -62,6 +63,8 @@ export default function TransactionsPage() {
   const [financeTypes, setFinanceTypes] = useState<Array<{code: string, name: string}>>([]);
   const [activityPartnerId, setActivityPartnerId] = useState<string | null>(null);
   
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   // Bulk selection state
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -413,7 +416,7 @@ export default function TransactionsPage() {
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this transaction?")) {
+    if (!(await confirm({ title: 'Delete this transaction?', description: 'This action cannot be undone. The transaction will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -918,7 +921,7 @@ export default function TransactionsPage() {
         {/* Pagination */}
         {!loading && totalTransactions > 0 && (
           <Card data-tour="transactions-pagination">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalTransactions)} to {Math.min(endIndex, totalTransactions)} of {totalTransactions} transactions
@@ -1065,6 +1068,7 @@ export default function TransactionsPage() {
           isDeleting={isBulkDeleting}
         />
       </div>
+      <ConfirmDialog />
     </MainLayout>
   );
 }

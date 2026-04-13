@@ -221,7 +221,7 @@ export function TransactionSectorManager({
           {/* Sector table */}
           <div className="border rounded-md overflow-hidden">
             <table className="w-full text-xs">
-              <thead>
+              <thead className="bg-surface-muted">
                 <tr className="bg-muted/50 text-muted-foreground border-b">
                   <th className="text-left py-2 px-3 font-medium">Sector</th>
                   {allowPercentages && <th className="text-right py-2 px-3 font-medium w-20">%</th>}
@@ -514,7 +514,7 @@ export function TransactionAidTypeManager({
       {aidTypes.length > 0 && (
         <div className="rounded-md border">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="border-b bg-muted/50">
                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Code</th>
                 <th className="text-left py-2 px-3 font-medium text-muted-foreground">Aid Type</th>

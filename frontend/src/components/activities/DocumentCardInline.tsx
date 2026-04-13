@@ -264,7 +264,7 @@ export function DocumentCardInline({
       "group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-all duration-200",
       isEditing && "ring-2 ring-blue-500/20 shadow-lg"
     )}>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         {/* Header Section - Always Visible */}
         <div className="flex gap-4">
           {/* Thumbnail/Icon */}

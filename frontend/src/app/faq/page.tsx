@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import {
   Plus,
   Search,
@@ -78,6 +79,8 @@ export default function FAQPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingFAQ, setEditingFAQ] = useState<FAQItem | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -237,7 +240,7 @@ export default function FAQPage() {
 
   const handleDelete = async (id: string) => {
     // Confirm before deleting
-    if (!window.confirm('Are you sure you want to delete this FAQ? This action cannot be undone.')) {
+    if (!(await confirm({ title: 'Delete this FAQ?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return
     }
 
@@ -445,7 +448,7 @@ export default function FAQPage() {
               <FAQSkeleton />
             ) : error ? (
               <Card>
-                <CardContent className="p-8 text-center">
+                <CardContent className="p-6 text-center">
                   <div className="text-red-600 mb-4">
                     <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium mb-2">Error Loading FAQs</h3>
@@ -458,7 +461,7 @@ export default function FAQPage() {
               </Card>
             ) : filteredFAQs.length === 0 ? (
               <Card>
-                <CardContent className="p-8 text-center">
+                <CardContent className="p-6 text-center">
                   <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No FAQs found</h3>
                   <p className="text-muted-foreground mb-4">
@@ -641,7 +644,7 @@ export default function FAQPage() {
           {/* Pagination */}
           {!loading && totalFAQs > 0 && (
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
                     Showing {Math.min(startIndex + 1, totalFAQs)} to {Math.min(endIndex, totalFAQs)} of {totalFAQs} FAQs
@@ -739,7 +742,7 @@ export default function FAQPage() {
 
           {/* Help Text */}
           <Card className="bg-muted/30 border-muted">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-start space-x-3">
                 <HelpCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
@@ -826,6 +829,7 @@ export default function FAQPage() {
           )}
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </MainLayout>
   )
 }

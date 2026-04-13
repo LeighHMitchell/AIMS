@@ -370,7 +370,7 @@ export default function FundsPage() {
                               size="icon"
                               className="bg-card/90 hover:bg-card"
                             >
-                              <MoreVertical className="h-5 w-5" />
+                              <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" sideOffset={5} className="min-w-[160px] shadow-xl">

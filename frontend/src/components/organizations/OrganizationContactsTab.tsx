@@ -28,6 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import {
   Command,
   CommandEmpty,
@@ -96,6 +97,7 @@ interface OrganizationContactsTabProps {
 }
 
 export default function OrganizationContactsTab({ organizationId, organization }: OrganizationContactsTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -261,7 +263,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
 
   // Handle delete contact
   const handleDelete = async (contactId: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) {
+    if (!(await confirm({ title: 'Delete this contact?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -490,6 +492,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }
@@ -682,7 +685,7 @@ function ContactsTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="border-b border-border">
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
               <div className="flex items-center gap-1">Contact {getSortIcon('name', sortField, sortDirection)}</div>

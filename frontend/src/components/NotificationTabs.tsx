@@ -56,7 +56,7 @@ const mapApiNotification = (apiNotif: any): Notification => {
 function NotificationSkeleton() {
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-start gap-4">
           <Skeleton className="h-5 w-5 mt-1 shrink-0" />
           <div className="flex-1 space-y-2">

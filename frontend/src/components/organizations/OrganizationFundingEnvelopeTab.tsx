@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X, RefreshCw } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
@@ -65,6 +66,7 @@ export default function OrganizationFundingEnvelopeTab({
   organizationId,
   readOnly = false
 }: OrganizationFundingEnvelopeTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [envelopes, setEnvelopes] = useState<OrganizationFundingEnvelope[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -292,7 +294,7 @@ export default function OrganizationFundingEnvelopeTab({
 
   // Delete envelope
   const handleDelete = async (envelopeId: string) => {
-    if (!confirm('Are you sure you want to delete this funding envelope?')) {
+    if (!(await confirm({ title: 'Delete funding envelope?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return
     }
 
@@ -1280,6 +1282,7 @@ export default function OrganizationFundingEnvelopeTab({
           </TooltipProvider>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   )
 }

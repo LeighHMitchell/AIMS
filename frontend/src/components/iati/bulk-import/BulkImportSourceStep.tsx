@@ -907,7 +907,7 @@ export default function BulkImportSourceStep({
     <div className="space-y-6">
       {/* Organisation Identity Banner */}
       <Card className="bg-gray-50 border-gray-200">
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="flex items-center gap-3">
             <div className="flex-1">
               {isSuperUser ? (
@@ -1255,7 +1255,7 @@ export default function BulkImportSourceStep({
 
           {fetchStatus === 'fetching' && (
             <Card>
-              <CardContent className="p-8">
+              <CardContent className="p-6">
                 <div className="flex flex-col items-center gap-6">
                   {isPaginated ? (
                     <>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CountryBudgetItems, Narrative } from "@/types/country-budget-items";
 import { BUDGET_IDENTIFIER_VOCABULARIES } from "@/data/budget-identifier-vocabulary";
 import { BudgetMappingModal } from "@/components/modals/BudgetMappingModal";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import {
   Table,
   TableBody,
@@ -84,6 +85,7 @@ export default function BudgetMappingTab({
   onDataChange,
   totalBudgetUSD,
 }: BudgetMappingTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [countryBudgetItems, setCountryBudgetItems] = React.useState<CountryBudgetItems[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -238,7 +240,7 @@ export default function BudgetMappingTab({
   };
 
   const handleDelete = async (vocabularyCode: string) => {
-    if (!confirm('Are you sure you want to delete all budget items for this vocabulary?')) {
+    if (!(await confirm({ title: 'Delete budget items?', description: 'Are you sure you want to delete all budget items for this vocabulary?', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -627,8 +629,10 @@ export default function BudgetMappingTab({
           )}
 
           {countryBudgetItems.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-              <p className="mb-4">No budget mappings added yet.</p>
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No budget mappings</h3>
+              <p className="text-muted-foreground mb-4">Map activity sectors to government budget classifications.</p>
               {hasSuggestions ? (
                 <p className="text-sm text-amber-600 mb-4">
                   Use the suggestions above to auto-create mappings from sectors.
@@ -750,6 +754,7 @@ export default function BudgetMappingTab({
         usedVocabularies={usedVocabularies}
         initialEditIndex={editingItemIndex}
       />
+      <ConfirmDialog />
     </>
   );
 }

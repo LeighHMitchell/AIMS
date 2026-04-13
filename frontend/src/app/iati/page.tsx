@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Upload, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { toast } from 'sonner';
 
 interface ParseResult {
   activities: any[];
@@ -166,7 +167,7 @@ export default function IATIImportPage() {
                       });
                       const result = await response.json();
                       console.log('Debug result:', result);
-                      alert(`Debug: ${result.recommendation}\n\nCheck console for details.`);
+                      toast.info(`Debug: ${result.recommendation}\n\nCheck console for details.`);
                     } catch (err) {
                       console.error('Debug error:', err);
                     }

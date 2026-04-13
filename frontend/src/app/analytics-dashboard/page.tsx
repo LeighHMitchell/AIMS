@@ -662,7 +662,7 @@ export default function AnalyticsDashboardPage() {
           {/* Error Display */}
           {error && (
             <Card className="bg-red-50 border-red-200 mb-6">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <p className="text-red-700">{error}</p>
               </CardContent>
             </Card>

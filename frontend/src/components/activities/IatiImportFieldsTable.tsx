@@ -2485,13 +2485,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                             )}
                           </button>
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="text-sm text-foreground">
                           {field.fieldName}
                         </TableCell>
-                        <TableCell className={`text-sm text-gray-700 break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
+                        <TableCell className={`text-sm text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
                           {renderValue(field.importValue, rowId, 'import', field.fieldName, field)}
                         </TableCell>
-                        <TableCell className={`text-sm text-gray-700 break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
+                        <TableCell className={`text-sm text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
                           {renderValue(field.currentValue, rowId, 'current', field.fieldName, field)}
                         </TableCell>
                         <TableCell className="text-center">

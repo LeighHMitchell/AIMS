@@ -82,7 +82,7 @@ export function BulkImportPreview({ rows }: BulkImportPreviewProps) {
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="border-b bg-surface-muted">
                 <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8">#</th>
                 <th className={`text-left px-3 py-2 font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>

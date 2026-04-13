@@ -640,7 +640,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
       {/* Pagination - Hide in grouped view */}
       {sortedBudgets.length > 0 && !groupedView && (
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 Showing {Math.min(startIndex + 1, sortedBudgets.length)} to {Math.min(endIndex, sortedBudgets.length)} of {sortedBudgets.length} budgets

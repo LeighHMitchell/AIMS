@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -62,6 +63,7 @@ export function IndicatorCard({
   const { createIndicator, updateIndicator, deleteIndicator } = useIndicators(indicator.result_id);
   const { upsertBaseline, deleteBaseline } = useBaselines();
   const { createPeriod } = usePeriods();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Local state
   const [isExpanded, setIsExpanded] = useState(true);
@@ -112,7 +114,7 @@ export function IndicatorCard({
 
   // Handle deleting indicator
   const handleDeleteIndicator = async () => {
-    if (window.confirm('Are you sure you want to delete this indicator? This will also delete all its periods and baseline data.')) {
+    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteIndicator(indicator.id);
       if (success) {
         onUpdate?.();
@@ -195,6 +197,7 @@ export function IndicatorCard({
   };
 
   return (
+    <>
     <Card className="border border-gray-200 bg-white">
       <Collapsible open={true}>
           <CardHeader className="hover:bg-gray-50 transition-colors">
@@ -657,5 +660,7 @@ export function IndicatorCard({
         </CollapsibleContent>
       </Collapsible>
     </Card>
+    <ConfirmDialog />
+    </>
   );
 }

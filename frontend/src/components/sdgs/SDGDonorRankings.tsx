@@ -136,7 +136,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
       {!compact && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="border-b border-border">
                 <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>
                 <th className="text-left py-2 px-2 text-muted-foreground font-medium">Organization</th>

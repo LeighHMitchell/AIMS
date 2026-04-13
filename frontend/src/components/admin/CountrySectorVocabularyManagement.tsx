@@ -656,7 +656,7 @@ export function CountrySectorVocabularyManagement() {
                 </div>
               ) : (
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background z-10 border-b">
+                  <thead className="sticky top-0 bg-surface-muted z-10 border-b">
                     <tr>
                       <th className="h-10 px-4 text-left font-medium text-muted-foreground w-[200px]">
                         Code
@@ -1099,7 +1099,7 @@ export function CountrySectorVocabularyManagement() {
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setDeletingItem(null)}>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={deletingItem?.type === "vocabulary" ? deleteVocabulary : deleteSector}
               >
                 Delete

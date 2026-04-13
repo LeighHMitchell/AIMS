@@ -159,7 +159,7 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
     <div className="h-full">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead>
+          <thead className="bg-surface-muted">
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Location</th>
               <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Country</th>

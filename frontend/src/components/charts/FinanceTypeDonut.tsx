@@ -153,7 +153,7 @@ export default function FinanceTypeDonut({
       {viewMode === 'table' ? (
         <div className="h-24 overflow-auto">
           <table className="w-full text-xs">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="border-b border-slate-200">
                 <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
                 <th className="text-right py-1 text-slate-600 font-medium">Amount</th>

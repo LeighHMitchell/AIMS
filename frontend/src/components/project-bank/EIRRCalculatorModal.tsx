@@ -145,7 +145,7 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
         <div className="border rounded-md overflow-hidden mb-4">
           <div className="max-h-[40vh] overflow-y-auto">
           <table className="w-full">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="bg-muted/50 sticky top-0 z-10">
                 <th className="px-3 py-1.5 text-xs font-medium text-left w-16">Year</th>
                 <th className="px-3 py-1.5 text-xs font-medium text-right">Costs (M)</th>

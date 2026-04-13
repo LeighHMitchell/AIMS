@@ -262,7 +262,7 @@ export function DataClinicDuplicates() {
   if (stats?.migrationRequired) {
     return (
       <Card>
-        <CardContent className="p-8">
+        <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <AlertCircle className="h-8 w-8 text-amber-500 flex-shrink-0" />
             <div>
@@ -414,7 +414,7 @@ export function DataClinicDuplicates() {
 
         {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex flex-wrap gap-4 items-center">
               <Select value={confidenceFilter} onValueChange={setConfidenceFilter}>
                 <SelectTrigger className="w-[180px]">
@@ -467,7 +467,7 @@ export function DataClinicDuplicates() {
         <TabsContent value="activities" className="mt-0">
           {duplicates.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--success-icon))]" />
                 <h3 className="text-lg font-medium mb-2">No Activity Duplicates Found</h3>
                 <p className="text-muted-foreground">
@@ -494,7 +494,7 @@ export function DataClinicDuplicates() {
         <TabsContent value="organizations" className="mt-0">
           {duplicates.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--success-icon))]" />
                 <h3 className="text-lg font-medium mb-2">No Organization Duplicates Found</h3>
                 <p className="text-muted-foreground">

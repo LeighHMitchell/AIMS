@@ -72,7 +72,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
         {/* Heatmap table */}
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr>
                 <th className="sticky left-0 bg-background z-10 px-2 py-1 text-left text-xs font-medium border-b">
                   Donor

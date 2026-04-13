@@ -428,7 +428,7 @@ export default function ActivityLocationsHeatmap({
           <HelpTextTooltip content="Interactive map showing activity locations. Click markers for details. Double-click to zoom. Use the style selector to switch between different map styles. Toggle 3D mode for a tilted perspective." />
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         {/* Controls toolbar — outside the map */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           {/* Map tile style selector */}

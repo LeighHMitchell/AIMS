@@ -92,7 +92,7 @@ export default function SDGListingPage() {
         <div className="min-h-screen">
           <div className="w-full p-6">
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading SDGs</h2>
                 <p className="text-slate-600">{error}</p>
@@ -148,7 +148,7 @@ export default function SDGListingPage() {
             <Card>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="bg-surface-muted">
                     <tr className="border-b bg-muted/50">
                       <th className="text-left font-medium text-muted-foreground px-4 py-3 w-16"></th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3 w-20">Goal</th>

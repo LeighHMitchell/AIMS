@@ -22,6 +22,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useDropzone } from 'react-dropzone'
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import Flag from 'react-world-flags'
 import { 
   INSTITUTIONAL_GROUPS, 
@@ -857,7 +858,7 @@ const DeleteConfirmationModal: React.FC<{
           <Button
             onClick={handleConfirm}
             disabled={!isConfirmationValid || deleting}
-            className="bg-red-600 hover:bg-red-700"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {deleting ? 'Deleting...' : 'Delete Organization'}
           </Button>
@@ -915,7 +916,7 @@ const OrganizationCard: React.FC<{
               size="icon"
               className="bg-card/90 hover:bg-card"
             >
-              <MoreVertical className="h-5 w-5" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -983,7 +984,7 @@ const OrganizationCard: React.FC<{
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
       </div>
 
-      <CardContent className="p-4 flex flex-col flex-grow">
+      <CardContent className="p-6 flex flex-col flex-grow">
         <div className="flex flex-col space-y-3 flex-grow">
           {/* Top section with logo and name */}
           <div className="flex items-start gap-3">
@@ -1103,7 +1104,7 @@ const OrganizationListView: React.FC<{
                         navigator.clipboard.writeText(org.iati_org_id || '')
                         toast.success('Copied to clipboard')
                       }}
-                      className="h-5 w-5 p-0 flex-shrink-0"
+                      className="h-4 w-4 p-0 flex-shrink-0"
                       title="Copy IATI ID"
                     >
                       <Copy className="h-3 w-3" />
@@ -1200,6 +1201,7 @@ function OrganizationsPageContent() {
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false)
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   
   // Sorting state for table view
   const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'residency' | 'created_at'>('name')
@@ -1878,7 +1880,7 @@ function OrganizationsPageContent() {
                             setEditGroupModalOpen(true)
                           }}
                           onDelete={async (group) => {
-                            if (!confirm('Are you sure you want to delete this group?')) return
+                            if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
 
                             try {
                               const response = await apiFetch(`/api/custom-groups/${group.id}`, {
@@ -1977,7 +1979,7 @@ function OrganizationsPageContent() {
                                     size="sm"
                                     className="text-red-600 hover:text-red-700"
                                     onClick={async () => {
-                                      if (!confirm('Are you sure you want to delete this group?')) return
+                                      if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
                                       try {
                                         const response = await apiFetch(`/api/custom-groups/${group.id}`, {
                                           method: 'DELETE'
@@ -2184,6 +2186,7 @@ function OrganizationsPageContent() {
           onSuccess={fetchCustomGroups}
         />
       </div>
+      <ConfirmDialog />
     </MainLayout>
   )
 }

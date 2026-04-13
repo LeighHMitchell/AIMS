@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiFetch } from '@/lib/api-fetch';
+import { toast } from 'sonner';
 
 type SortField = 'task' | 'priority' | 'status' | 'deadline' | 'person';
 type SortDirection = 'asc' | 'desc';
@@ -77,7 +78,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     if (!userId) {
       console.error('User not authenticated');
-      alert('You must be logged in to download attachments');
+      toast.error('You must be logged in to download attachments');
       return;
     }
 
@@ -91,13 +92,13 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);
-      alert(`Download failed: ${data.error || 'Unknown error'}`);
+      toast.error(`Download failed: ${data.error || 'Unknown error'}`);
       return;
     }
 
     if (!data.success || !data.data?.download_url) {
       console.error('[Download] No download URL in response');
-      alert('Failed to get download URL');
+      toast.error('Failed to get download URL');
       return;
     }
 
@@ -115,7 +116,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
     document.body.removeChild(a);
   } catch (error) {
     console.error('Error downloading attachment:', error);
-    alert('Failed to download attachment');
+    toast.error('Failed to download attachment');
   }
 }
 
@@ -299,7 +300,7 @@ export function TaskTable({
               >
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="font-medium line-clamp-1">{task.title}</div>
+                    <div className="text-sm text-foreground line-clamp-1">{task.title}</div>
                     {task.description && (
                       <div className="text-xs text-muted-foreground line-clamp-1">
                         {task.description}
@@ -309,11 +310,7 @@ export function TaskTable({
                 </TableCell>
 
                 <TableCell>
-                  <span className={cn('text-sm', {
-                    'text-[#DC2625] font-medium': task.priority === 'high',
-                    'text-foreground': task.priority === 'medium',
-                    'text-muted-foreground': task.priority === 'low',
-                  })}>
+                  <span className="text-sm text-foreground">
                     {getPriorityLabel(task.priority)}
                   </span>
                 </TableCell>
@@ -333,7 +330,7 @@ export function TaskTable({
                   {deadline ? (
                     <div className={cn(
                       'text-sm',
-                      isOverdue && 'text-[#DC2625] font-medium',
+                      isOverdue && 'text-[#DC2625]',
                       isDueSoon && !isOverdue && 'text-[#DC2625]'
                     )}>
                       {format(deadline, 'MMM d, yyyy')}

@@ -106,7 +106,7 @@ export default function TransferDetailPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="w-full max-w-6xl">
+        <div className="w-full max-w-7xl">
           {/* Breadcrumbs + header */}
           <div className="mb-6">
             <Skeleton className="h-4 w-64 mb-4" />
@@ -120,7 +120,7 @@ export default function TransferDetailPage() {
           </div>
           {/* Status pipeline */}
           <Card className="mb-6">
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center gap-1">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="flex-1 h-8 rounded" />
@@ -162,7 +162,7 @@ export default function TransferDetailPage() {
 
   return (
     <MainLayout>
-      <div className="w-full max-w-6xl">
+      <div className="w-full max-w-7xl">
         {/* Header */}
         <div className="mb-6">
           <Breadcrumbs items={[
@@ -208,7 +208,7 @@ export default function TransferDetailPage() {
 
         {/* Status Pipeline */}
         <Card className="mb-6">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center gap-1">
               {STATUS_ORDER.map((status, idx) => {
                 const isActive = status === transfer.status
@@ -339,7 +339,7 @@ export default function TransferDetailPage() {
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
+                      <thead className="bg-surface-muted">
                         <tr className="border-b bg-surface-muted">
                           <th className="text-left px-4 py-2 font-medium text-muted-foreground">Year</th>
                           <th className="text-left px-4 py-2 font-medium text-muted-foreground">Type</th>
@@ -448,7 +448,7 @@ export default function TransferDetailPage() {
 
             {/* Danger Zone */}
             <Card className="border-red-200">
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <Button
                   variant="outline"
                   size="sm"
@@ -477,7 +477,7 @@ export default function TransferDetailPage() {
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={deleting}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {deleting && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
                 Delete

@@ -735,7 +735,7 @@ export function GovernmentInputsSectionEnhanced({
                         {(rgc?.annual?.length ?? 0) > 0 && (
                           <div className="overflow-x-auto border rounded-lg">
                             <table className="w-full text-sm">
-                              <thead>
+                              <thead className="bg-surface-muted">
                                 <tr className="bg-surface-muted">
                                   <th className="text-left p-2 font-medium text-xs w-24">Year</th>
                                   <th className="text-right p-2 font-medium text-xs">

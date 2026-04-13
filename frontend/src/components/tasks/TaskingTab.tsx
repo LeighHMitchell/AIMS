@@ -630,7 +630,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <Card>
               <CardContent className="p-0">
                 <table className="w-full">
-                  <thead>
+                  <thead className="bg-surface-muted">
                     <tr className="border-b bg-muted/50">
                       <th className="text-left p-3 font-medium">Task</th>
                       <th className="text-left p-3 font-medium">Reassigned To</th>

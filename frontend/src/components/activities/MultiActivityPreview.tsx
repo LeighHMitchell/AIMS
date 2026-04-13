@@ -281,7 +281,7 @@ export function MultiActivityPreview({
                   key={activity.index}
                   className={`transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-6">
                     <div className="flex items-start gap-3">
                       {/* Checkbox */}
                       <Checkbox

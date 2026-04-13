@@ -170,7 +170,7 @@ export default function SectorProfilePage() {
     return (
       <MainLayout>
         <div className="min-h-screen"><div className="w-full p-6">
-          <Card><CardContent className="p-8 text-center">
+          <Card><CardContent className="p-6 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Sector</h2>
             <p className="text-muted-foreground mb-4">{error || 'Failed to load'}</p>
@@ -418,7 +418,7 @@ export default function SectorProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedActivities.map(activity => (
                     <Link key={activity.id} href={`/activities/${activity.id}`}>
-                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-4">
+                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-6">
                         <div className="flex items-start justify-between mb-2">
                           <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
                           {activity.sectorPercentage < 100 && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{activity.sectorPercentage}%</Badge>}
@@ -442,7 +442,7 @@ export default function SectorProfilePage() {
                 </div>
               ) : (
                 <Card><CardContent className="p-0"><div className="overflow-x-auto">
-                  <table className="w-full text-xs"><thead><tr className="border-b border-border bg-muted">
+                  <table className="w-full text-xs"><thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
                     <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Title</th>
                     <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Status</th>
                     <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Alloc %</th>
@@ -490,7 +490,7 @@ export default function SectorProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredOrgs.map(org => (
                     <Link key={org.id} href={`/organizations/${org.id}`}>
-                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-4">
+                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-6">
                         <div className="flex items-start gap-3">
                           {org.logo ? <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" /> : (
                             <div className="w-10 h-10 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: '#4c5568' }}>
@@ -534,7 +534,7 @@ export default function SectorProfilePage() {
               </CardHeader><CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
-                    <thead><tr className="border-b border-border bg-muted">
+                    <thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
                       <th className="text-left py-2.5 px-3 text-muted-foreground font-medium w-8">#</th>
                       <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Country</th>
                       <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Activities</th>

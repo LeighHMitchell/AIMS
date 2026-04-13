@@ -1193,7 +1193,7 @@ export function SectorMappingsManagement() {
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                  <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[280px]">DAC Sector</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Country Sectors</th>
@@ -1258,7 +1258,7 @@ export function SectorMappingsManagement() {
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                  <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization (Receiver)</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
@@ -1363,7 +1363,7 @@ export function SectorMappingsManagement() {
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                  <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
@@ -1452,7 +1452,7 @@ export function SectorMappingsManagement() {
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                  <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[400px]">Finance Type</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Revenue Classification</th>
@@ -1546,7 +1546,7 @@ export function SectorMappingsManagement() {
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                  <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[400px]">Finance Type</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Liabilities Classification</th>

@@ -509,7 +509,7 @@ export default function CalendarPage() {
                       setShowDetailModal(true)
                     }}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">{event.title}</h4>

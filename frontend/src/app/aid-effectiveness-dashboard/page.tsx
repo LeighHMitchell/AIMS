@@ -675,7 +675,7 @@ export default function AidEffectivenessDashboard() {
                             if (!org) return 'All Organisations'
                             return (
                               <>
-                                <Avatar className="h-5 w-5 shrink-0">
+                                <Avatar className="h-4 w-4 shrink-0">
                                   {org.logo ? <AvatarImage src={org.logo} alt={org.name} /> : null}
                                   <AvatarFallback className="text-[8px] bg-muted">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>

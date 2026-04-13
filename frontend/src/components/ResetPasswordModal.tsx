@@ -219,7 +219,7 @@ export function ResetPasswordModal({
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isLoading ? "Resetting..." : "Reset Password"}
             </Button>

@@ -211,7 +211,7 @@ export default function FinancesSection({
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="bg-surface-muted">
                 <tr className="border-b">
                   <th className="text-left py-2 px-4 font-medium">Category</th>
                   <th className="text-right py-2 px-4 font-medium">Count</th>

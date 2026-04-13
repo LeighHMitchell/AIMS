@@ -21,13 +21,14 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  AlertTriangle, 
-  Link2, 
-  CheckCircle, 
+import {
+  AlertTriangle,
+  Link2,
+  CheckCircle,
   Info,
   Users
 } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface Transaction {
   activityRef?: string;
@@ -63,6 +64,7 @@ export function AssignTransactionsModal({
   newActivities,
   onComplete
 }: AssignTransactionsModalProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   // Track assignments: transaction index -> activity UUID
   const [assignments, setAssignments] = useState<Record<number, string>>({});
   const [bulkActivityId, setBulkActivityId] = useState<string>('');
@@ -167,6 +169,7 @@ export function AssignTransactionsModal({
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
@@ -302,8 +305,8 @@ export function AssignTransactionsModal({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => {
-              if (confirm('Are you sure? Unassigned transactions will be skipped during import.')) {
+            onClick={async () => {
+              if (await confirm({ title: 'Skip unassigned transactions?', description: 'Unassigned transactions will be skipped during import.', confirmLabel: 'Continue', cancelLabel: 'Cancel' })) {
                 onClose();
               }
             }}
@@ -319,5 +322,7 @@ export function AssignTransactionsModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog />
+  </>
   );
-} 
+}

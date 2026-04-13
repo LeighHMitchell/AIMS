@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import {
   MessageSquare,
   Send,
@@ -459,6 +460,7 @@ export function CommentsDrawer({
   children
 }: CommentsDrawerProps) {
   const { user } = useUser();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Main state
   const [open, setOpen] = useState(false);
@@ -677,7 +679,7 @@ export function CommentsDrawer({
   const handleDeleteComment = async (commentId: string) => {
     if (!user) return;
 
-    if (!confirm('Are you sure you want to delete this comment?')) {
+    if (!(await confirm({ title: 'Delete this comment?', description: 'This action cannot be undone. The comment will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -714,6 +716,7 @@ export function CommentsDrawer({
   const resolvedCount = comments.filter(c => c.status === 'Resolved').length;
 
   return (
+    <>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         {children || (
@@ -842,5 +845,7 @@ export function CommentsDrawer({
         </div>
       </SheetContent>
     </Sheet>
+    <ConfirmDialog />
+    </>
   );
 }

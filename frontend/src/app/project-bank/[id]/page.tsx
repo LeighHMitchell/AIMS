@@ -1011,7 +1011,7 @@ export default function ProjectDetailPage() {
                           <div className="text-xs font-medium text-muted-foreground mb-2">Sensitivity Analysis</div>
                           <div className="border rounded-lg overflow-hidden">
                             <table className="w-full text-sm">
-                              <thead>
+                              <thead className="bg-surface-muted">
                                 <tr className="bg-surface-muted">
                                   <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground">Scenario</th>
                                   <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground">FIRR</th>

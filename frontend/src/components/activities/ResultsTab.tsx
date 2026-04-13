@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -347,7 +348,8 @@ export function ResultsTab({
 }: ResultsTabProps) {
   const { results, loading, error, createResult, updateResult, deleteResult, fetchResults } = useResults(activityId);
   const { upsertBaseline } = useBaselines();
-  
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   // Local state
   const [showAddResult, setShowAddResult] = useState(false);
   const [expandedResults, setExpandedResults] = useState<string[]>([]);
@@ -423,7 +425,7 @@ export function ResultsTab({
 
   // Handle deleting a result
   const handleDeleteResult = async (resultId: string) => {
-    if (window.confirm('Are you sure you want to delete this result? This will also delete all its indicators and data.')) {
+    if (await confirm({ title: 'Delete this result?', description: 'This will also delete all its indicators and data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteResult(resultId);
       if (success) {
         onResultsChange?.(results);
@@ -433,7 +435,7 @@ export function ResultsTab({
 
   // Handle deleting an indicator
   const handleDeleteIndicator = async (indicatorId: string) => {
-    if (window.confirm('Are you sure you want to delete this indicator? This will also delete all its periods and baseline data.')) {
+    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       try {
         // Use direct Supabase call for now since we need a more flexible approach
         const { error } = await supabase
@@ -754,11 +756,11 @@ export function ResultsTab({
 
       {/* Main Content - Simple List */}
       {displayResults.length === 0 && !showDummyData ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
-          <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No results yet</h4>
-          <p className="text-gray-600">
-            Start by adding what changes you want this activity to achieve
+        <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
+          <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No results</h3>
+          <p className="text-muted-foreground">
+            Use the button above to add your first result.
           </p>
         </div>
       ) : (
@@ -1289,7 +1291,7 @@ export function ResultsTab({
                                                   size="sm"
                                                   variant="ghost"
                                                   onClick={async () => {
-                                                    if (window.confirm('Delete this period?')) {
+                                                    if (await confirm({ title: 'Delete this period?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
                                                       try {
                                                         const { error } = await supabase
                                                           .from('indicator_periods')
@@ -2250,6 +2252,7 @@ export function ResultsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

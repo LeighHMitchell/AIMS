@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
   if (authResponse) return authResponse;
 
   try {
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'Database not available' }, { status: 500 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
 
     // Query parameters
@@ -23,24 +27,30 @@ export async function GET(request: NextRequest) {
     const asTree = searchParams.get('asTree') !== 'false'; // Default to tree
     const parentId = searchParams.get('parentId');
     const level = searchParams.get('level');
-    
+    const planId = searchParams.get('planId');
+
     // Build query
     let query = supabase
       .from('national_priorities')
-      .select('*')
+      .select('*, national_plans!inner(name)')
       .order('display_order', { ascending: true })
       .order('code', { ascending: true });
-    
+
+    // Filter by plan
+    if (planId) {
+      query = query.eq('plan_id', planId);
+    }
+
     // Filter by active status
     if (!includeInactive) {
       query = query.eq('is_active', true);
     }
-    
+
     // Filter by parent
     if (parentId) {
       query = query.eq('parent_id', parentId);
     }
-    
+
     // Filter by level
     if (level) {
       query = query.eq('level', parseInt(level));
@@ -56,8 +66,14 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Convert to frontend format
-    const priorities = (rows as NationalPriorityRow[]).map(nationalPriorityFromRow);
+    // Convert to frontend format, attaching plan name from join
+    const priorities = (rows as (NationalPriorityRow & { national_plans?: { name: string } })[]).map(row => {
+      const priority = nationalPriorityFromRow(row);
+      if (row.national_plans?.name) {
+        priority.planName = row.national_plans.name;
+      }
+      return priority;
+    });
     
     // Build paths for each priority
     priorities.forEach(p => {
@@ -91,18 +107,28 @@ export async function POST(request: NextRequest) {
   if (authResponse) return authResponse;
 
   try {
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'Database not available' }, { status: 500 });
+    }
     const body = await request.json();
     
-    const { code, name, nameLocal, description, parentId, isActive = true } = body;
-    
+    const { planId, code, name, nameLocal, description, parentId, isActive = true } = body;
+
     // Validate required fields
+    if (!planId) {
+      return NextResponse.json(
+        { success: false, error: 'Plan ID is required' },
+        { status: 400 }
+      );
+    }
+
     if (!code?.trim()) {
       return NextResponse.json(
         { success: false, error: 'Code is required' },
         { status: 400 }
       );
     }
-    
+
     if (!name?.trim()) {
       return NextResponse.json(
         { success: false, error: 'Name is required' },
@@ -128,29 +154,37 @@ export async function POST(request: NextRequest) {
       
       level = parent.level + 1;
       
-      if (level > 5) {
+      if (level > 3) {
         return NextResponse.json(
-          { success: false, error: 'Maximum nesting level (5) exceeded' },
+          { success: false, error: 'Maximum nesting level (3: Pillar > Outcome > Intervention) exceeded' },
           { status: 400 }
         );
       }
     }
     
-    // Get next display order
-    const { data: maxOrder } = await supabase
+    // Get next display order (scoped to this plan + parent)
+    let orderQuery = supabase
       .from('national_priorities')
       .select('display_order')
-      .eq('parent_id', parentId || null)
+      .eq('plan_id', planId)
       .order('display_order', { ascending: false })
-      .limit(1)
-      .single();
-    
+      .limit(1);
+
+    if (parentId) {
+      orderQuery = orderQuery.eq('parent_id', parentId);
+    } else {
+      orderQuery = orderQuery.is('parent_id', null);
+    }
+
+    const { data: maxOrder } = await orderQuery.single();
+
     const displayOrder = (maxOrder?.display_order || 0) + 1;
-    
+
     // Insert new priority
     const { data: newPriority, error: insertError } = await supabase
       .from('national_priorities')
       .insert({
+        plan_id: planId,
         code: code.trim(),
         name: name.trim(),
         name_local: nameLocal?.trim() || null,

@@ -6,6 +6,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp, HelpCircle, RefreshCw, Info } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,6 +62,7 @@ export default function ForwardSpendingSurveyTab({
   readOnly = false,
   onFssChange
 }: ForwardSpendingSurveyTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [fss, setFss] = useState<ForwardSpendingSurvey | null>(null);
   const [forecasts, setForecasts] = useState<FSSForecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,7 +196,7 @@ export default function ForwardSpendingSurveyTab({
 
   // Delete FSS
   const deleteFss = async () => {
-    if (!confirm('Are you sure you want to delete the Forward Spending Survey? This will remove all forecasts.')) {
+    if (!(await confirm({ title: 'Delete Forward Spending Survey?', description: 'This will remove all forecasts. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -237,9 +239,9 @@ export default function ForwardSpendingSurveyTab({
     setShowForecastModal(true);
   };
 
-  const closeForecastModal = () => {
+  const closeForecastModal = async () => {
     if (isFormDirty) {
-      if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+      if (await confirm({ title: 'Discard unsaved changes?', description: 'You have unsaved changes in this forecast. Closing now will discard all changes.', confirmLabel: 'Discard Changes', cancelLabel: 'Keep Editing' })) {
         setShowForecastModal(false);
         setModalForecast(null);
         setFieldErrors({});
@@ -452,7 +454,7 @@ export default function ForwardSpendingSurveyTab({
 
   // Delete forecast
   const deleteForecast = async (forecastId: string) => {
-    if (!confirm('Are you sure you want to delete this forecast?')) {
+    if (!(await confirm({ title: 'Delete this forecast?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -658,10 +660,10 @@ export default function ForwardSpendingSurveyTab({
           </CardHeader>
           <CardContent>
             {forecasts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">No forecasts yet</p>
-                <p className="text-sm mb-4">Add forecast years to track forward spending</p>
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No forecasts</h3>
+                <p className="text-muted-foreground mb-4">Use the button above to add your first forecast year.</p>
                 {!isReadOnly && (
                   <Button size="sm" onClick={() => openForecastModal()}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -1015,6 +1017,7 @@ export default function ForwardSpendingSurveyTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

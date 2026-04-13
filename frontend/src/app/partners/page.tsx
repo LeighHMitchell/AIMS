@@ -1091,7 +1091,7 @@ export default function PartnersPage() {
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="bg-surface-muted">
                           <tr className="border-b border-border bg-surface-muted">
                             <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                               <button
@@ -1200,7 +1200,7 @@ export default function PartnersPage() {
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border bg-surface-muted">
                               <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                                 <button
@@ -1308,7 +1308,7 @@ export default function PartnersPage() {
                     <CardContent>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead>
+                          <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                                 <button
@@ -1471,7 +1471,7 @@ export default function PartnersPage() {
                             ) : (
                               <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                  <thead>
+                                  <thead className="bg-surface-muted">
                                     <tr className="border-b border-border">
                                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                                         <button

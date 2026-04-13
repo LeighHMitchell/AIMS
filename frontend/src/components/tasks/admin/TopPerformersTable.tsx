@@ -142,16 +142,16 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{getTaskUserDisplayName(performer.user)}</p>
+                    <p className="text-sm text-foreground">{getTaskUserDisplayName(performer.user)}</p>
                     <p className="text-xs text-muted-foreground">{performer.user.email}</p>
                   </div>
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <span className="font-medium">{performer.assigned_count}</span>
+                <span className="text-sm text-foreground">{performer.assigned_count}</span>
               </TableCell>
               <TableCell className="text-center">
-                <span className="font-medium text-slate-700">{performer.completed_count}</span>
+                <span className="text-sm text-foreground">{performer.completed_count}</span>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">

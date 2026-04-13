@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import {
   Table,
   TableBody,
@@ -73,6 +74,7 @@ const getStatusLabel = (status?: string) => {
 };
 
 export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Activity', readOnly = false }: RelatedActivitiesTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [loading, setLoading] = useState(true);
   const [relatedActivities, setRelatedActivities] = useState<RelatedActivity[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -169,7 +171,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   };
 
   const handleDelete = async (relationshipId: string) => {
-    if (!confirm('Are you sure you want to remove this linked activity?')) {
+    if (!(await confirm({ title: 'Remove linked activity?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -253,9 +255,10 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
       <>
         <Card>
           <CardContent className="py-12">
-            <div className="text-center text-muted-foreground">
-              <Link2 className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-sm mb-4">No related activities found</p>
+            <div className="text-center">
+              <Link2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No related activities</h3>
+              <p className="text-muted-foreground mb-4">Link parent, child, or sibling activities to show relationships.</p>
               {!readOnly && (
                 <Button onClick={() => setShowAddModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -505,6 +508,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
           }}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

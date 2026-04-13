@@ -30,7 +30,7 @@ export function ImportPreviewTable({ preview, onValueOverride, repeatGroups }: I
   return (
     <div className="border rounded-lg overflow-hidden">
       <table className="w-full text-sm">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="bg-muted/50 border-b">
             <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[30%]">Field Name</th>
             <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[30%]">Imported Value</th>

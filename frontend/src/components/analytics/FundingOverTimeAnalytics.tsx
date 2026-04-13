@@ -264,7 +264,7 @@ export function FundingOverTimeAnalytics() {
             {label}
           </div>
           <table className="min-w-full text-sm border-collapse">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr style={{ backgroundColor: COLORS.platinum }}>
                 <th className="px-3 py-2 text-left font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                   Donor
@@ -696,7 +696,7 @@ export function FundingOverTimeAnalytics() {
             {chartView === 'table' && (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
-                  <thead>
+                  <thead className="bg-surface-muted">
                     <tr style={{ backgroundColor: COLORS.platinum }}>
                       <th className="border p-3 text-left font-medium" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                         Year

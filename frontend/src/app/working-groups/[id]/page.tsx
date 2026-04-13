@@ -382,7 +382,7 @@ export default function WorkingGroupProfilePage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
+                      <thead className="bg-surface-muted">
                         <tr className="border-b border-border">
                           <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Name</th>
                           <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Role</th>
@@ -676,7 +676,7 @@ export default function WorkingGroupProfilePage() {
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>

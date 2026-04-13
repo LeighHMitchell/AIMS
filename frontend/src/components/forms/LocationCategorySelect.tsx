@@ -60,7 +60,22 @@ export function LocationCategorySelect({
           <span className="truncate text-left">
             {selectedCategory ? selectedCategory.name : placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex items-center gap-1">
+            {value && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onValueChange?.("");
+                }}
+                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                aria-label="Clear selection"
+              >
+                <span className="text-xs">×</span>
+              </button>
+            )}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">

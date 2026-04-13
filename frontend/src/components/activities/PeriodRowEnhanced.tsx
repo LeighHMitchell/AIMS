@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,7 @@ export function PeriodRowEnhanced({
   onUpdate 
 }: PeriodRowEnhancedProps) {
   const { updatePeriod, deletePeriod } = usePeriods();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Local state
   const [isEditing, setIsEditing] = useState(false);
@@ -64,7 +66,7 @@ export function PeriodRowEnhanced({
 
   // Handle deleting period
   const handleDeletePeriod = async () => {
-    if (window.confirm('Are you sure you want to delete this period?')) {
+    if (await confirm({ title: 'Delete this period?', description: 'This action cannot be undone. The period and all its data will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deletePeriod(period.id);
       if (success) {
         onUpdate?.();
@@ -253,6 +255,7 @@ export function PeriodRowEnhanced({
 
   // View mode
   return (
+    <>
     <div className={cn(
       "grid grid-cols-6 gap-2 items-center px-3 py-3 rounded-lg hover:bg-gray-50 transition-all group",
       status.color === 'gray-900' && "bg-gray-100 border border-gray-300 hover:bg-gray-200",
@@ -394,5 +397,7 @@ export function PeriodRowEnhanced({
         )}
       </div>
     </div>
+    <ConfirmDialog />
+    </>
   );
 }

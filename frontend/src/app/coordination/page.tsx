@@ -137,7 +137,7 @@ export default function CoordinationPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-100 rounded-lg">
                   <DollarSign className="h-5 w-5 text-[hsl(var(--success-icon))]" />
@@ -157,7 +157,7 @@ export default function CoordinationPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Layers className="h-5 w-5 text-blue-600" />
@@ -177,7 +177,7 @@ export default function CoordinationPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
                   <Users className="h-5 w-5 text-purple-600" />
@@ -197,7 +197,7 @@ export default function CoordinationPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-100 rounded-lg">
                   <Activity className="h-5 w-5 text-amber-600" />

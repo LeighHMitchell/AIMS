@@ -491,13 +491,13 @@ export function PreviewTable({
                         <TableCell className="font-mono text-sm">
                           {activity.iati_id}
                         </TableCell>
-                        <TableCell className="max-w-[300px] truncate">
+                        <TableCell className="max-w-[300px] truncate text-sm text-foreground">
                           {activity.title}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm text-foreground">
                           {formatDate(activity.planned_start_date || activity.actual_start_date)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm text-foreground">
                           {formatDate(activity.planned_end_date || activity.actual_end_date)}
                         </TableCell>
                         <TableCell>
@@ -609,16 +609,16 @@ export function PreviewTable({
                             {getTransactionTypeLabel(transaction.transaction_type)}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm text-foreground">
                           {formatDate(transaction.transaction_date)}
                         </TableCell>
                         <TableCell className="font-mono">
                           {formatCurrency(transaction.value, transaction.currency)}
                         </TableCell>
-                        <TableCell className="max-w-[150px] truncate">
+                        <TableCell className="max-w-[150px] truncate text-sm text-foreground">
                           {transaction.provider_org_name || '-'}
                         </TableCell>
-                        <TableCell className="max-w-[150px] truncate">
+                        <TableCell className="max-w-[150px] truncate text-sm text-foreground">
                           {transaction.receiver_org_name || '-'}
                         </TableCell>
                         <TableCell>

@@ -17,6 +17,7 @@ import { getOrganizationTypeName } from '@/data/iati-organization-types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface OrganisationsSectionProps {
   activityId?: string;
@@ -34,6 +35,7 @@ export default function OrganisationsSection({
   activityId,
   onParticipatingOrganizationsChange,
 }: OrganisationsSectionProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<any | null>(null);
   const [sortField, setSortField] = useState<string | null>('organization');
@@ -127,7 +129,7 @@ export default function OrganisationsSection({
   };
 
   const handleDelete = async (org: any) => {
-    if (!confirm(`Are you sure you want to remove ${org.organization?.name || org.narrative || 'this organization'}?`)) {
+    if (!(await confirm({ title: 'Remove organisation?', description: `Are you sure you want to remove ${org.organization?.name || org.narrative || 'this organization'}?`, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -304,10 +306,10 @@ export default function OrganisationsSection({
         <CardContent>
           {participatingOrganizations.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
-              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground font-medium mb-2">No participating organizations added yet</p>
-              <p className="text-sm text-muted-foreground">
-                Add organizations to define who is funding, implementing, or managing this activity
+              <img src="/images/empty-puzzle-piece.png" alt="No participating organisations" className="h-32 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">No participating organisations</h3>
+              <p className="text-muted-foreground">
+                Use the button above to add your first organisation.
               </p>
             </div>
           ) : (
@@ -444,6 +446,8 @@ export default function OrganisationsSection({
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog />
 
       <ParticipatingOrgModal
         open={modalOpen}

@@ -171,7 +171,7 @@ export function DocumentTable({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className="text-left font-medium hover:text-primary hover:underline"
+                          className="text-left text-sm text-foreground hover:text-primary hover:underline"
                           onClick={() => onPreview(doc)}
                         >
                           {doc.title}
@@ -188,8 +188,8 @@ export function DocumentTable({
                 </TableCell>
                 <TableCell>
                   {doc.categoryCode ? (
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      <span className="text-xs font-mono bg-muted dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                    <span className="text-sm text-foreground">
+                      <span className="text-xs font-mono bg-muted dark:bg-gray-800 text-muted-foreground px-1.5 py-0.5 rounded">
                         {doc.categoryCode}
                       </span>
                       {doc.categoryName && (
@@ -206,7 +206,7 @@ export function DocumentTable({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            className="text-sm text-muted-foreground hover:text-primary hover:underline text-left"
+                            className="text-sm text-foreground hover:text-primary hover:underline text-left"
                             onClick={() => onNavigate(doc)}
                           >
                             {doc.sourceName}
@@ -241,7 +241,7 @@ export function DocumentTable({
                                 </span>
                               </div>
                             )}
-                            <span className="text-sm">
+                            <span className="text-sm text-foreground">
                               {doc.reportingOrgAcronym || doc.reportingOrgName}
                             </span>
                           </div>
@@ -269,7 +269,7 @@ export function DocumentTable({
                   }
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     {sourceLabel}
                   </span>
                 </TableCell>

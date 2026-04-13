@@ -683,7 +683,7 @@ export function FinancialTotalsBarChart({
       return (
         <div className="overflow-auto" style={{ maxHeight: height }}>
           <table className="w-full text-sm">
-            <thead className="bg-muted sticky top-0">
+            <thead className="bg-surface-muted sticky top-0">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-foreground border-b">Year</th>
                 {activeDataKeys.map(key => (

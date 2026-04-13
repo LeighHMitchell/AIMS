@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface CustomGroup {
   id: string
@@ -55,6 +56,7 @@ export default function ManageGroupsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const router = useRouter()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => {
     fetchGroups()
@@ -79,7 +81,7 @@ export default function ManageGroupsPage() {
   }
 
   const handleDelete = async (groupId: string) => {
-    if (!confirm('Are you sure you want to delete this group?')) return
+    if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
 
     try {
       const response = await apiFetch(`/api/custom-groups/${groupId}`, {
@@ -296,11 +298,12 @@ export default function ManageGroupsPage() {
       </div>
       
       {/* Create Custom Group Modal */}
-      <CreateCustomGroupModal 
+      <CreateCustomGroupModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onSuccess={fetchGroups}
       />
+      <ConfirmDialog />
     </MainLayout>
   )
 } 

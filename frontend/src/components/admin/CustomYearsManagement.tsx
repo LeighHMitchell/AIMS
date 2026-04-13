@@ -52,6 +52,7 @@ import {
   validateCustomYear,
 } from "@/types/custom-years";
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 /**
  * Calculate the end date as the day before the start date (for a full 12-month year)
@@ -72,6 +73,7 @@ function calculateEndDate(startMonth: number, startDay: number): { endMonth: num
 }
 
 export function CustomYearsManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [customYears, setCustomYears] = useState<CustomYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -260,7 +262,7 @@ export function CustomYearsManagement() {
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete "${year.name}"?`)) {
+    if (!(await confirm({ title: 'Delete this year?', description: `Are you sure you want to delete "${year.name}"?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -649,6 +651,7 @@ export function CustomYearsManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

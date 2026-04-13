@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -194,6 +195,7 @@ export default function PlannedDisbursementsTab({
   onLoadingChange
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const { partners } = usePartners();
 
   // Transform partners to organizations format for OrganizationSearchableSelect
@@ -355,9 +357,9 @@ export default function PlannedDisbursementsTab({
     setShowModal(true);
   };
 
-  const closeModal = () => {
+  const closeModal = async () => {
     if (isFormDirty) {
-      if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+      if (await confirm({ title: 'Discard unsaved changes?', description: 'You have unsaved changes in this disbursement. Closing now will discard all changes.', confirmLabel: 'Discard Changes', cancelLabel: 'Keep Editing' })) {
         setShowModal(false);
         setModalDisbursement(null);
         setFieldErrors({});
@@ -1572,12 +1574,6 @@ export default function PlannedDisbursementsTab({
               <CardDescription>Scheduled future disbursements</CardDescription>
             </div>
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
-              {!readOnly && (
-                <Button disabled={isReadOnly} onClick={() => addPeriod('quarter')}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Planned Disbursement
-                </Button>
-              )}
               {!hideSummaryCards && disbursements.length > 0 && !loading && (
                 <>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -1600,10 +1596,16 @@ export default function PlannedDisbursementsTab({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>
+              )}
+              {!readOnly && (
+                <Button disabled={isReadOnly} onClick={() => addPeriod('quarter')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Planned Disbursement
+                </Button>
               )}
             </div>
           </div>
@@ -2679,6 +2681,7 @@ export default function PlannedDisbursementsTab({
         organization={orgTypeMappingModal.targetOrg}
         onSave={handleOrgTypeUpdate}
       />
+      <ConfirmDialog />
 
     </div>
   );

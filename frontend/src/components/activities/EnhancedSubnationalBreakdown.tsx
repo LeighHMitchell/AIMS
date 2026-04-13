@@ -23,7 +23,7 @@ const SubnationalChoroplethMap = dynamic(
     ssr: false,
     loading: () => (
       <Card className="w-full h-full">
-        <CardContent className="p-4 h-full flex items-center justify-center">
+        <CardContent className="p-6 h-full flex items-center justify-center">
           <div className="text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading map...
@@ -1067,10 +1067,12 @@ export function EnhancedSubnationalBreakdown({
                 </table>
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No administrative units selected yet.</p>
-                <p className="text-sm">Use the dropdown above or click on the map to add regions.</p>
+              <div className="text-center py-12 border rounded-lg">
+                <img src="/images/empty-fish.png" alt="No administrative units" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No administrative units</h3>
+                <p className="text-muted-foreground">
+                  Use the dropdown above or click on the map to add regions.
+                </p>
               </div>
             )}
 

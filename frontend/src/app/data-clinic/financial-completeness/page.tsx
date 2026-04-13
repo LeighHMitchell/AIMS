@@ -129,7 +129,7 @@ export default function FinancialCompletenessPage() {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="p-8 text-center">
+          <Card className="p-6 text-center">
             <Stethoscope className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
             <p className="text-muted-foreground">

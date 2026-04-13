@@ -313,7 +313,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{ref.vocabularyLabel}</span>
+                    <span className="text-sm text-foreground">{ref.vocabularyLabel}</span>
                     {ref.vocabularyUri && (
                       <a 
                         href={ref.vocabularyUri} 

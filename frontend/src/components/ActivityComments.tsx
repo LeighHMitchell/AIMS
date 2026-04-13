@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { ActivityComment, CommentReply, CommentSearchFilters } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { toast } from 'sonner';
 import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
 import {
@@ -51,6 +52,7 @@ interface ActivityCommentsProps {
 
 export function ActivityComments({ activityId, contextSection, allowContextSwitch = true }: ActivityCommentsProps) {
   const { user } = useUser();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [comments, setComments] = useState<ActivityComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
@@ -458,7 +460,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!user) return;
     
     // Show confirmation dialog
-    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+    if (!(await confirm({ title: 'Delete this comment?', description: 'This action cannot be undone. The comment will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
     
@@ -921,7 +923,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
               <Button variant="outline" size="sm" onClick={fetchNotifications} className="relative">
                 {unreadCount > 0 ? <Bell className="h-4 w-4 text-orange-500" /> : <BellOff className="h-4 w-4" />}
                 {unreadCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs">
                     {unreadCount}
                   </Badge>
                 )}
@@ -1059,6 +1061,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           </TabsContent>
         </Tabs>
       </CardContent>
+      <ConfirmDialog />
     </Card>
   );
 } 

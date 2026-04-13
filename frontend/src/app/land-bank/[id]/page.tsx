@@ -28,6 +28,7 @@ import { LeaseExpiryBadge } from "@/components/land-bank/LeaseExpiryBadge"
 import { ParcelDetailMap } from "@/components/land-bank/ParcelDetailMap"
 import { AllocationScoringPanel } from "@/components/land-bank/AllocationScoringPanel"
 import { AllocationRequestModal } from "@/components/land-bank/AllocationRequestModal"
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { ParcelHistoryTimeline } from "@/components/land-bank/ParcelHistoryTimeline"
 import { ParcelDocumentUpload } from "@/components/land-bank/ParcelDocumentUpload"
 import { SuggestedProjectsCard } from "@/components/land-bank/SuggestedProjectsCard"
@@ -46,6 +47,7 @@ export default function ParcelDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showAllocationModal, setShowAllocationModal] = useState(false)
   const [deallocating, setDeallocating] = useState(false)
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const fetchParcel = useCallback(async () => {
     try {
@@ -79,7 +81,7 @@ export default function ParcelDetailPage() {
   }, [fetchParcel])
 
   const handleDeallocate = async () => {
-    if (!confirm("Are you sure you want to de-allocate this parcel? It will be reverted to Available status.")) return
+    if (!(await confirm({ title: 'De-allocate this parcel?', description: 'It will be reverted to Available status.', confirmLabel: 'De-allocate', cancelLabel: 'Cancel' }))) return
     setDeallocating(true)
     try {
       const res = await apiFetch(`/api/land-bank/${id}/deallocate`, { method: "POST" })
@@ -92,7 +94,7 @@ export default function ParcelDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to permanently delete this parcel? This cannot be undone.")) return
+    if (!(await confirm({ title: 'Delete this parcel?', description: 'This action cannot be undone. The parcel will be permanently deleted.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
     try {
       const res = await apiFetch(`/api/land-bank/${id}`, { method: "DELETE" })
       if (res.ok) router.push("/land-bank/parcels")
@@ -414,7 +416,7 @@ export default function ParcelDetailPage() {
                 {/* Right sidebar */}
                 <div className="space-y-4">
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <h3 className="text-sm font-medium mb-3">Quick Info</h3>
                       <div className="space-y-3 text-sm">
                         <div className="flex items-center gap-2">
@@ -457,7 +459,7 @@ export default function ParcelDetailPage() {
 
                   {parcel.geometry && (
                     <Card>
-                      <CardContent className="p-4">
+                      <CardContent className="p-6">
                         <h3 className="text-sm font-medium mb-2">Geometry</h3>
                         <p className="text-xs text-muted-foreground">
                           Type: {parcel.geometry.type}
@@ -486,6 +488,7 @@ export default function ParcelDetailPage() {
           onSuccess={fetchParcel}
         />
       </div>
+      <ConfirmDialog />
     </MainLayout>
   )
 }

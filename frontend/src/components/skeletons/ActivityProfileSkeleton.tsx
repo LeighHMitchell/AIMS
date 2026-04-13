@@ -154,7 +154,7 @@ export function TransactionTableSkeleton() {
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead>
+        <thead className="bg-surface-muted">
           <tr className="border-b">
             <th className="text-left p-2">
               <Skeleton variant="text" width="80px" height="0.875rem" />

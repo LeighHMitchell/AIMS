@@ -129,7 +129,7 @@ export default function TransactionDetailPage() {
       <MainLayout>
         <div className="max-w-4xl mx-auto px-6 py-8">
           <Card>
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-6 text-center">
               <p className="text-red-600 mb-4">
                 {error || "Transaction not found"}
               </p>

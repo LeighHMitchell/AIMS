@@ -208,7 +208,7 @@ export function ScoringRubricManagement() {
         </CardHeader>
         <CardContent>
           <table className="w-full">
-            <thead>
+            <thead className="bg-surface-muted">
               <tr className="text-xs text-muted-foreground border-b">
                 <th className="text-left py-2 font-medium">Version</th>
                 <th className="text-left py-2 font-medium">Label</th>
@@ -374,7 +374,7 @@ export function ScoringRubricManagement() {
                           </CardHeader>
                           <CardContent className="pt-0">
                             <table className="w-full text-sm">
-                              <thead>
+                              <thead className="bg-surface-muted">
                                 <tr className="text-xs text-muted-foreground border-b">
                                   <th className="text-left py-1 font-medium">Key</th>
                                   <th className="text-left py-1 font-medium">Label</th>

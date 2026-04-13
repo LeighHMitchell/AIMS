@@ -8,6 +8,7 @@ import { searchDACCodes } from '@/data/dac-codes';
 import SectorDonutChart from './SectorDonutChart';
 import SectorStackedBar from './SectorStackedBar';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 interface SectorAllocationFormProps {
   allocations: SectorAllocation[];
@@ -200,7 +201,7 @@ export default function SectorAllocationForm({
         setShowImportDialog(false);
       } catch (error) {
         console.error('CSV import error:', error);
-        alert('Failed to import CSV. Please check the format.');
+        toast.error('Failed to import CSV. Please check the format.');
       }
     };
     reader.readAsText(file);
@@ -266,8 +267,12 @@ export default function SectorAllocationForm({
           {/* Allocations list */}
           <div className="space-y-3">
             {localAllocations.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">No sectors assigned yet. Click "Add Sector" to begin.</p>
+              <div className="text-center py-12">
+                <img src="/images/empty-beaker.png" alt="No sectors" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No sectors</h3>
+                <p className="text-muted-foreground">
+                  Use the button above to add your first sector allocation.
+                </p>
               </div>
             ) : (
               localAllocations.map((allocation) => (

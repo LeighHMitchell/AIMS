@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Pencil, Trash2, Target } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import type { NationalDevelopmentGoal } from "@/types/project-bank"
 
 export function NationalDevelopmentGoals() {
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [goals, setGoals] = useState<NationalDevelopmentGoal[]>([])
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
@@ -79,7 +81,7 @@ export function NationalDevelopmentGoals() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this goal? This cannot be undone.")) return
+    if (!(await confirm({ title: 'Delete this goal?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
     try {
       await apiFetch(`/api/national-development-goals/${id}`, { method: "DELETE" })
       fetchGoals()
@@ -194,6 +196,7 @@ export function NationalDevelopmentGoals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </Card>
   )
 }

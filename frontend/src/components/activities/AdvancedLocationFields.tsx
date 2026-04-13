@@ -234,16 +234,18 @@ export default function AdvancedLocationFields({
 
             {/* Locations List */}
             {localLocations.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No locations added yet</p>
-                <p className="text-sm">Click "Add Location" to get started</p>
+              <div className="text-center py-12">
+                <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No locations</h3>
+                <p className="text-muted-foreground">
+                  Use the button above to add your first location.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {localLocations.map((location, index) => (
                   <Card key={location.id} className="border border-gray-200">
-                    <CardContent className="p-4 space-y-4">
+                    <CardContent className="p-6 space-y-4">
                       {/* Location Header */}
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-sm text-gray-700">

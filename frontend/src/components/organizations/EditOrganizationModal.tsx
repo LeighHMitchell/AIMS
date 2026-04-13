@@ -652,7 +652,7 @@ export function EditOrganizationModal({
       <DialogContent 
         className="max-w-4xl h-[85vh] overflow-hidden flex flex-col p-0"
       >
-        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0">
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-xl font-semibold">
@@ -1733,7 +1733,7 @@ export function EditOrganizationModal({
               handleMerge()
             }}
             disabled={isMerging}
-            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive"
           >
             {isMerging ? (
               <>

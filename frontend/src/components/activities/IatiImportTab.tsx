@@ -1327,7 +1327,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1.5">Participating Organisations</div>
                         <div className="border border-border rounded-md overflow-hidden">
                           <table className="w-full text-[10px] border-collapse">
-                            <thead className="bg-muted/80 border-b border-border">
+                            <thead className="bg-surface-muted border-b border-border">
                               <tr>
                                 <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top">Organisation</th>
                                 <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top whitespace-nowrap">Role</th>
@@ -1398,7 +1398,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                       <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1.5">Classifications</div>
                       <div className="border border-border rounded-md overflow-hidden">
                         <table className="w-full text-[10px] border-collapse">
-                          <thead className="bg-muted/80 border-b border-border">
+                          <thead className="bg-surface-muted border-b border-border">
                             <tr>
                               <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top">Classification</th>
                               <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground text-left align-top">Detail</th>
@@ -1608,7 +1608,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
                 <div className="border border-border rounded-md overflow-hidden">
                   <table className="w-full text-[10px]">
-                    <thead className="bg-muted/80 border-b border-border">
+                    <thead className="bg-surface-muted border-b border-border">
                       <tr>
                         <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground">Category</th>
                         <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-medium text-muted-foreground">Count</th>
@@ -13493,7 +13493,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#145667'}
                       size="lg"
                     >
-                      <Copy className="h-5 w-5 mr-2" />
+                      <Copy className="h-4 w-4 mr-2" />
                       Copy Full Import Log
                     </Button>
                     <p className="text-xs mt-2" style={{ color: '#145667' }}>
@@ -14819,7 +14819,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     {/* Table layout for subsector selections */}
                     <div className="space-y-2">
                       <table className="w-full">
-                        <thead>
+                        <thead className="bg-surface-muted">
                           <tr className="border-b border-gray-200">
                             <th className="text-left text-xs font-medium text-gray-500 pb-2 px-1">Subsector</th>
                             <th className="text-center text-xs font-medium text-gray-500 pb-2 px-1 w-28">Percentage</th>

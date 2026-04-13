@@ -50,6 +50,7 @@ import {
   FAQ_QUESTION_STATUS_COLORS,
 } from '@/types/faq-enhanced';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 // Helper function to get user display name
 const getUserDisplayName = (user?: { first_name?: string; last_name?: string; email?: string }) => {
@@ -81,6 +82,7 @@ const getStatusIcon = (status: FAQQuestionStatus) => {
 // Helper function to get sort icon
 
 export function FAQManagement() {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const { user } = useUser();
   const [activeSubTab, setActiveSubTab] = useState<'queue' | 'all'>('queue');
   const [questions, setQuestions] = useState<FAQQuestion[]>([]);
@@ -258,7 +260,7 @@ export function FAQManagement() {
 
   // Delete question
   const deleteQuestion = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) return;
+    if (!(await confirm({ title: 'Delete this question?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
 
     try {
       const response = await apiFetch(`/api/faq/questions/${id}`, {
@@ -281,7 +283,7 @@ export function FAQManagement() {
   const batchDeleteQuestions = async () => {
     if (selectedIds.size === 0) return;
     
-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} question(s)? This action cannot be undone.`)) {
+    if (!(await confirm({ title: 'Delete selected questions?', description: `Are you sure you want to delete ${selectedIds.size} question(s)? This action cannot be undone.`, confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -596,7 +598,7 @@ export function FAQManagement() {
         {/* Pagination */}
         {totalPages > 1 && (
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
                   Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} questions
@@ -640,6 +642,7 @@ export function FAQManagement() {
           onUpdate={updateQuestion}
           onPublish={publishQuestion}
         />
+      <ConfirmDialog />
       </div>
     </TooltipProvider>
   );
@@ -747,19 +750,19 @@ function QuestionTable({
                     </TableCell>
                     <TableCell>
                       <div className="max-w-[400px]">
-                        <div className="font-medium truncate">{question.question}</div>
+                        <div className="text-sm text-foreground truncate">{question.question}</div>
                         {question.context && (
-                          <div className="text-sm text-gray-500 truncate mt-1">
+                          <div className="text-xs text-muted-foreground truncate mt-1">
                             {question.context}
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        <div className="font-medium">{getUserDisplayName(question.user)}</div>
+                      <div className="text-sm text-foreground">
+                        <div>{getUserDisplayName(question.user)}</div>
                         {question.user?.email && (
-                          <div className="text-gray-500 text-xs">{question.user.email}</div>
+                          <div className="text-xs text-muted-foreground">{question.user.email}</div>
                         )}
                       </div>
                     </TableCell>
@@ -778,7 +781,7 @@ function QuestionTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}
                       </div>
                     </TableCell>

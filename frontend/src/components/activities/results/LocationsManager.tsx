@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, MapPin, X } from 'lucide-react';
 import { useLocations } from '@/hooks/use-results';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { LocationReference } from '@/types/results';
 
 interface LocationsManagerProps {
@@ -27,6 +28,7 @@ export function LocationsManager({
   readOnly = false
 }: LocationsManagerProps) {
   const { createLocation, deleteLocation, loading } = useLocations();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showAddForm, setShowAddForm] = useState(false);
   const [locationRef, setLocationRef] = useState('');
 
@@ -57,7 +59,7 @@ export function LocationsManager({
   };
 
   const handleDelete = async (locationId: string) => {
-    if (window.confirm('Delete this location reference?')) {
+    if (await confirm({ title: 'Delete location reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
       const success = await deleteLocation(entityType, entityId, locationId);
       if (success) {
         onUpdate();
@@ -156,7 +158,7 @@ export function LocationsManager({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(loc.id)}
-                  className="text-red-600 hover:text-red-800 h-5 w-5 p-0 ml-1"
+                  className="text-red-600 hover:text-red-800 h-4 w-4 p-0 ml-1"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -169,6 +171,7 @@ export function LocationsManager({
       {filteredLocations.length === 0 && !showAddForm && (
         <p className="text-xs text-gray-500 italic">No location references</p>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

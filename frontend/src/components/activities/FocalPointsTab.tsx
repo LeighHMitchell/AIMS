@@ -8,6 +8,7 @@ import type { UserOption } from './AssignFocalPointModal';
 import { useUser } from '@/hooks/useUser';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { 
   UserPlus, 
   HandPlatter, 
@@ -41,7 +42,8 @@ export default function FocalPointsTab({
 }: FocalPointsTabProps) {
   const { user } = useUser();
   const { isSuperUser } = useUserRole();
-  
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   const [governmentFocalPoints, setGovernmentFocalPoints] = useState<FocalPoint[]>([]);
   const [developmentPartnerFocalPoints, setDevelopmentPartnerFocalPoints] = useState<FocalPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +155,7 @@ export default function FocalPointsTab({
       ? 'Are you sure you want to remove yourself as focal point?'
       : `Are you sure you want to remove ${focalPoint.name} as focal point?`;
     
-    if (!confirm(confirmMessage)) return;
+    if (!(await confirm({ title: 'Remove focal point?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
 
     setActionLoading(`remove-${focalPoint.id}`);
     try {
@@ -533,13 +535,15 @@ export default function FocalPointsTab({
               )}
             </CardTitle>
             <CardDescription className="text-xs">
-              Officials responsible for reviewing and endorsing this activity.
+              Government officials responsible for reviewing, endorsing, and approving this activity.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {governmentFocalPoints.length === 0 ? (
               <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
-                No government focal points assigned
+                <img src="/images/empty-key-ornate.png" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">No government focal points</p>
+                <p className="text-xs text-slate-400 mt-1">Use the Assign Focal Point button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -566,7 +570,9 @@ export default function FocalPointsTab({
           <CardContent>
             {developmentPartnerFocalPoints.length === 0 ? (
               <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
-                No development partner focal points assigned
+                <img src="/images/empty-key-modern.png" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">No development partner focal points</p>
+                <p className="text-xs text-slate-400 mt-1">Use the Assign Focal Point button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -589,6 +595,7 @@ export default function FocalPointsTab({
         type={handoffType}
         activityId={activityId}
       />
+      <ConfirmDialog />
     </div>
   );
 }

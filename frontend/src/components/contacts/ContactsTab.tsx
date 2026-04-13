@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy } from 'lucide-react';
+import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy, Users } from 'lucide-react';
 import ContactForm from './ContactForm';
 import ContactSearchBar from './ContactSearchBar';
 import { PersonCard } from '@/components/rolodex/PersonCard';
@@ -14,6 +14,7 @@ import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { toast } from 'sonner';
 import { normalizeContact, deduplicateContacts, areContactsDuplicate } from '@/lib/contact-utils';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import type { RolodexPerson } from '@/app/api/rolodex/route';
 
 interface Contact {
@@ -67,6 +68,7 @@ interface ContactsTabProps {
 }
 
 export default function ContactsTab({ activityId, readOnly = false, onContactsChange }: ContactsTabProps) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -288,7 +290,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
 
   // Handle delete contact
   const handleDelete = async (contactId: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) {
+    if (!(await confirm({ title: 'Delete this contact?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
       return;
     }
 
@@ -450,12 +452,13 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         </div>
 
         {contacts.length === 0 ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              No contacts added yet. {!readOnly && 'Search for existing contacts or create a new one above.'}
-            </AlertDescription>
-          </Alert>
+          <div className="text-center py-12">
+            <img src="/images/empty-cardholder.png" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium mb-2">No contacts</h3>
+            <p className="text-muted-foreground">
+              {!readOnly ? 'Use the search above to add your first contact.' : 'No contacts have been added to this activity yet.'}
+            </p>
+          </div>
         ) : contactsView === 'table' ? (
           <Table>
             <TableHeader>
@@ -557,6 +560,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
           </div>
         )}
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

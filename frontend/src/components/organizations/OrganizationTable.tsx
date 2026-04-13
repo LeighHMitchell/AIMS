@@ -344,7 +344,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="font-medium line-clamp-2 flex items-start gap-1.5">
+                              <div className="line-clamp-2 flex items-start gap-1.5">
                                 <span className="flex-1">
                                   <Link
                                     href={`/organizations/${org.id}`}
@@ -404,7 +404,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 ),
                 type: (
                   <TableCell key="type" className="px-4 py-3 text-sm text-foreground">
-                    <span className="text-sm text-gray-700">
+                    <span>
                       {typeLabel}
                     </span>
                   </TableCell>
@@ -451,7 +451,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 ),
                 reported: (
                   <TableCell key="reported" className="px-4 py-3 text-sm text-foreground text-center">
-                    <span className="font-medium">
+                    <span>
                       {org.reportedActivities ?? org.activeProjects ?? 0}
                     </span>
                   </TableCell>
@@ -461,7 +461,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="font-medium cursor-help">
+                          <span className="cursor-help">
                             {org.totalTransactionCount ?? 0}
                           </span>
                         </TooltipTrigger>
@@ -501,7 +501,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 ),
                 created_at: (
                   <TableCell key="created_at" className="px-4 py-3 text-sm text-foreground">
-                    <span className="text-muted-foreground">
+                    <span>
                       {formatDate(org.created_at)}
                     </span>
                   </TableCell>

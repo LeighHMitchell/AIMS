@@ -261,7 +261,7 @@ export default function MyanmarRegionsMap({
   if (loading) {
     return (
       <Card className="w-full h-full">
-        <CardContent className="p-4 h-full flex items-center justify-center">
+        <CardContent className="p-6 h-full flex items-center justify-center">
           <div className="text-muted-foreground">Loading map...</div>
         </CardContent>
       </Card>
@@ -271,7 +271,7 @@ export default function MyanmarRegionsMap({
   if (!geoData) {
     return (
       <Card className="w-full h-full">
-        <CardContent className="p-4 h-full flex items-center justify-center">
+        <CardContent className="p-6 h-full flex items-center justify-center">
           <div className="text-muted-foreground">Failed to load map data</div>
         </CardContent>
       </Card>
@@ -298,7 +298,7 @@ export default function MyanmarRegionsMap({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4 flex-1">
+      <CardContent className="p-6 flex-1">
 
         <div ref={mapContainerRef} className="w-full h-full flex items-center justify-center relative">
             <svg 

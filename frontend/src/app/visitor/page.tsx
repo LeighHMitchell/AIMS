@@ -78,7 +78,7 @@ export default function VisitorHomePage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Welcome Banner */}
         <Card className="bg-surface-muted border-0">
           <CardContent className="py-8 px-8">

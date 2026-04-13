@@ -186,7 +186,7 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b">
+                <thead className="bg-surface-muted border-b">
                   <tr>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Period</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Due Date</th>

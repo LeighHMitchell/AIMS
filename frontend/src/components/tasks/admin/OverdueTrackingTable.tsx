@@ -107,7 +107,7 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
             <TableRow key={task.task_id}>
               <TableCell>
                 <div className="max-w-[200px]">
-                  <p className="truncate font-medium">{task.task_title}</p>
+                  <p className="truncate text-sm text-foreground">{task.task_title}</p>
                   <p className="text-xs text-muted-foreground">
                     Due: {new Date(task.deadline).toLocaleDateString()}
                   </p>
@@ -128,11 +128,7 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
                       task.days_overdue > 7 ? 'text-slate-700' : 'text-slate-500'
                     }`}
                   />
-                  <span
-                    className={`font-medium ${
-                      task.days_overdue > 7 ? 'text-slate-800' : 'text-slate-600'
-                    }`}
-                  >
+                  <span className="text-sm text-foreground">
                     {task.days_overdue} {task.days_overdue === 1 ? 'day' : 'days'}
                   </span>
                 </div>
@@ -140,13 +136,13 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>
+                  <span className="text-sm text-foreground">
                     {task.completed_count} / {task.assignee_count}
                   </span>
                 </div>
               </TableCell>
               <TableCell>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-foreground">
                   {task.creator ? getTaskUserDisplayName(task.creator) : 'Unknown'}
                 </span>
               </TableCell>
