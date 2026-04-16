@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
+import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -209,16 +209,23 @@ export function HumanitarianTab({
           <div>
             <div className="flex items-center gap-2">
               <Heart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              {/*
+                Single save indicator only — LabelSaveIndicator renders the
+                spinner/tick inline after the label. The previous markup had a
+                second standalone SaveIndicator right after the HelpTextTooltip
+                which produced an orange circle on BOTH sides of the (?) during
+                save. `hasValue={humanitarian}` makes the green tick confirm the
+                ON state after a save, rather than being permanently suppressed.
+              */}
               <LabelSaveIndicator
                 isSaving={isSaving}
                 isSaved={!isLoading && activityId !== 'NEW'}
-                hasValue={false}
+                hasValue={humanitarian}
                 className="text-sm font-medium cursor-pointer text-foreground"
               >
                 Humanitarian Activity
               </LabelSaveIndicator>
               <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
-              <SaveIndicator isSaving={isSaving} isSaved={!isLoading && activityId !== 'NEW' && humanitarian} className="ml-0" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
