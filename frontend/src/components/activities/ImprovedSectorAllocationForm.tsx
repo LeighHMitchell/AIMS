@@ -30,7 +30,6 @@ import {
   ChevronDown,
   HelpCircle
 } from 'lucide-react';
-import { HeroCard } from '@/components/ui/hero-card';
 import { SectorSelect, transformSectorGroups } from '@/components/forms/SectorSelect';
 import { useSectorsAutosave } from '@/hooks/use-field-autosave-new';
 import { useUser } from '@/hooks/useUser';
@@ -1016,89 +1015,56 @@ function ImprovedSectorAllocationFormInner({
 
       {/* Wrap everything below in a disabled overlay when in transaction mode */}
       <div className={cn("space-y-6", isLocked && "opacity-50 pointer-events-none select-none")}>
-      {/* Allocation Summary */}
-      <div className="text-base font-semibold leading-none tracking-tight">Allocation Summary</div>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <HeroCard
-                title="% Allocated"
-                value={Math.round(totalAllocated * 10) / 10}
-                currency=""
-                suffix="%"
-                subtitle="Total sector allocation"
-                variant={totalAllocated > 100 ? 'error' : 'default'}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Total percentage allocated across selected sectors</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <HeroCard
-                title="% Unallocated"
-                value={formatUnallocatedValue(totalUnallocated)}
-                currency=""
-                suffix="%"
-                subtitle="Remaining allocation"
-                variant={totalUnallocated > 0 ? 'error-text' : 'default'}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Remaining percentage not yet assigned</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <HeroCard
-                title="Sector Categories"
-                value={categoryCount}
-                currency=""
-                subtitle="Selected categories"
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Top-level DAC groups (e.g. Education, Health)</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <HeroCard
-                title="Sectors"
-                value={sectorCount}
-                currency=""
-                subtitle="Selected sectors"
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Intermediate DAC codes grouping related sub-sectors</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <HeroCard
-                title="Sub-sectors"
-                value={subSectorCount}
-                currency=""
-                subtitle="Selected sub-sectors"
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>DAC 5-digit sector codes (e.g. 12220 – Basic Health Care)</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+      {/*
+        Allocation Summary — compact line + progress bar, replacing a 5-hero-card
+        strip. The hero cards duplicated information already visible in the
+        allocation table (totals, counts) and consumed the entire top fold.
+        One line of text plus a slim progress indicator conveys the same at a
+        fraction of the visual weight.
+      */}
+      {allocations.length > 0 && (
+        <div className="space-y-2 pb-2 border-b border-border">
+          <div className="flex items-baseline justify-between gap-4 text-sm">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className={cn(
+                "font-semibold text-lg tabular-nums",
+                totalAllocated > 100 && "text-destructive"
+              )}>
+                {Math.round(totalAllocated * 10) / 10}% allocated
+              </span>
+              {totalUnallocated > 0 && (
+                <span className="text-muted-foreground">
+                  · <span className="text-destructive">{formatUnallocatedValue(totalUnallocated)}% unallocated</span>
+                </span>
+              )}
+              <span className="text-muted-foreground">
+                ·{' '}
+                {subSectorCount} sub-sector{subSectorCount === 1 ? '' : 's'}
+                {categoryCount > 0 && ` across ${categoryCount} DAC ${categoryCount === 1 ? 'group' : 'groups'}`}
+              </span>
+            </div>
+          </div>
+          {/* Thin progress bar — visual reinforcement of the number above. */}
+          <div
+            className="h-1.5 w-full rounded-full bg-muted overflow-hidden"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.min(100, totalAllocated)}
+            aria-label="Sector allocation progress"
+          >
+            <div
+              className={cn(
+                "h-full transition-all duration-300",
+                totalAllocated > 100 ? "bg-destructive" :
+                totalAllocated === 100 ? "bg-[hsl(var(--success-icon))]" :
+                "bg-foreground"
+              )}
+              style={{ width: `${Math.min(100, Math.max(0, totalAllocated))}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Form Interface */}
       <div className="space-y-6 w-full">

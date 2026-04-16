@@ -198,23 +198,30 @@ export function HumanitarianTab({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Humanitarian Flag Section - Fieldset Style with Label */}
-      <div className="relative border-2 border-red-300 rounded-lg p-6">
+      {/*
+        Humanitarian flag — a metadata marker, not a warning. Dropped the
+        border-red-300 / text-red-* / bg-red-600 styling that dressed this
+        section like an error zone. A single <Heart /> icon at the heading
+        carries the thematic cue; the active-state Switch keeps a calm red
+        tint via accent tokens.
+      */}
+      <div className="relative border border-border rounded-lg p-6">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
+              <Heart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <LabelSaveIndicator
                 isSaving={isSaving}
                 isSaved={!isLoading && activityId !== 'NEW'}
                 hasValue={false}
-                className="text-sm font-medium cursor-pointer text-red-900"
+                className="text-sm font-medium cursor-pointer text-foreground"
               >
                 Humanitarian Activity
               </LabelSaveIndicator>
               <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
               <SaveIndicator isSaving={isSaving} isSaved={!isLoading && activityId !== 'NEW' && humanitarian} className="ml-0" />
             </div>
-            <p className="text-xs text-red-700 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
             </p>
             <Switch
@@ -222,7 +229,7 @@ export function HumanitarianTab({
               checked={humanitarian}
               onCheckedChange={handleHumanitarianToggle}
               disabled={readOnly || isSaving || activityId === 'NEW'}
-              className="mt-3 data-[state=checked]:bg-red-600"
+              className="mt-3"
             />
           </div>
           {humanitarian && !readOnly && activityId !== 'NEW' && (
@@ -234,9 +241,9 @@ export function HumanitarianTab({
         </div>
 
         {activityId === 'NEW' && (
-          <Alert className="mt-4 border-red-300 bg-red-100/50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
               Please create the activity first by adding a title in the General tab.
             </AlertDescription>
           </Alert>
