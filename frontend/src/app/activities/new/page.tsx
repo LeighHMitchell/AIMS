@@ -118,6 +118,7 @@ import { PooledFundTypeToggle } from "@/components/activities/PooledFundTypeTogg
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
 import { KeyboardShortcutsCheatsheet } from "@/components/activities/KeyboardShortcutsCheatsheet";
 import { FieldSaveError } from "@/components/activities/FieldSaveError";
+import { SubSection } from "@/components/activities/SubSection";
 import { useActivityEditorShortcuts } from "@/hooks/useActivityEditorShortcuts";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { apiFetch } from '@/lib/api-fetch';
@@ -857,7 +858,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-8">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-12">
       {/* Section Heading */}
       <div className="flex items-center gap-3">
         <h2 className="text-3xl font-semibold text-foreground">General</h2>
@@ -865,6 +866,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
         </HelpTextTooltip>
       </div>
+
+      <SubSection
+        title="Identity"
+        intro="The core handles that identify this activity across reports, lists, and profiles."
+      >
 
       {/* Activity Title and Acronym — the primary handles, placed before Banner/Icon */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" data-tour="editor-title">
@@ -1666,38 +1672,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
-      {/* Activity Type: Standard vs Pooled Fund */}
-      <div className="w-full space-y-2 mb-6">
-        <LabelSaveIndicator
-          isSaving={isPooledFundAutosave.state.isSaving}
-          isSaved={isPooledFundAutosave.state.isPersistentlySaved}
-          hasValue={general.is_pooled_fund === true}
-          className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
-        >
-          <div className="flex items-center gap-2">
-            Activity Type
-            <HelpTextTooltip>
-              Choose whether this is a standard activity (single project or programme) or a pooled or trust fund. Pooled funds receive contributions from donors and disburse to child activities, with a dedicated fund management section.
-            </HelpTextTooltip>
-          </div>
-        </LabelSaveIndicator>
-        <PooledFundTypeToggle
-          isPooledFund={general.is_pooled_fund || false}
-          onSelect={(checked) => {
-            if (!fieldLockStatus.isLocked) {
-              setGeneral((g: any) => ({ ...g, is_pooled_fund: checked }));
-              isPooledFundAutosave.triggerFieldSave(checked);
-            }
-          }}
-          disabled={fieldLockStatus.isLocked}
-          isSaving={isPooledFundAutosave.state.isSaving}
-        />
-        <FieldSaveError
-          error={isPooledFundAutosave.state.error}
-          onRetry={() => isPooledFundAutosave.triggerFieldSave(!!general.is_pooled_fund)}
-          fieldLabel="the Activity Type"
-        />
-      </div>
+      </SubSection>
+
+      <SubSection
+        title="Narrative"
+        intro="What this activity is about — a plain-language summary anyone can read."
+      >
 
       {/* Description with field-level autosave */}
       <div className="space-y-2">
@@ -2032,8 +2012,48 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           )}
       </div>
 
-      {/* Row 6-7: All Type Selectors */}
+      </SubSection>
+
+      <SubSection
+        title="Classification"
+        intro="How this activity is categorized for reporting and aggregation."
+      >
+
+      {/* Classification controls: Activity Type + Collaboration/Status/Scope/Hierarchy */}
       <div className="space-y-6">
+        {/* Activity Type: Standard vs Pooled Fund */}
+        <div className="w-full space-y-2">
+          <LabelSaveIndicator
+            isSaving={isPooledFundAutosave.state.isSaving}
+            isSaved={isPooledFundAutosave.state.isPersistentlySaved}
+            hasValue={general.is_pooled_fund === true}
+            className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
+          >
+            <div className="flex items-center gap-2">
+              Activity Type
+              <HelpTextTooltip>
+                Choose whether this is a standard activity (single project or programme) or a pooled or trust fund. Pooled funds receive contributions from donors and disburse to child activities, with a dedicated fund management section.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <PooledFundTypeToggle
+            isPooledFund={general.is_pooled_fund || false}
+            onSelect={(checked) => {
+              if (!fieldLockStatus.isLocked) {
+                setGeneral((g: any) => ({ ...g, is_pooled_fund: checked }));
+                isPooledFundAutosave.triggerFieldSave(checked);
+              }
+            }}
+            disabled={fieldLockStatus.isLocked}
+            isSaving={isPooledFundAutosave.state.isSaving}
+          />
+          <FieldSaveError
+            error={isPooledFundAutosave.state.error}
+            onRetry={() => isPooledFundAutosave.triggerFieldSave(!!general.is_pooled_fund)}
+            fieldLabel="the Activity Type"
+          />
+        </div>
+
         {/* Collaboration Type and Activity Status */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="w-full space-y-2">
@@ -2219,7 +2239,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
-      {/* Row 8: Date Fields */}
+      </SubSection>
+
+      <SubSection
+        title="Timeline"
+        intro="When the activity starts, ends, and hits its key milestones."
+      >
+
+      {/* Date Fields */}
       <div className="space-y-4" data-tour="editor-dates">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">Activity Dates</h3>
@@ -2683,6 +2710,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
         </div>
       </div>
+
+      </SubSection>
 
       {/* Activity Date Modal */}
       <Dialog open={showActivityDateModal} onOpenChange={(open) => {
