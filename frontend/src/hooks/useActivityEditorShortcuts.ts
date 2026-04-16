@@ -20,12 +20,11 @@ function isMac(): boolean {
 }
 
 export interface ActivityEditorShortcutHandlers {
-  onOpenPalette: () => void
   onOpenCheatsheet: () => void
   onNextSection: () => void
   onPreviousSection: () => void
   onSave: () => void
-  /** Optional: pressed when Esc is used while no modal/palette is open */
+  /** Optional: pressed when Esc is used while no modal is open */
   onEscape?: () => void
 }
 
@@ -33,14 +32,14 @@ export interface ActivityEditorShortcutHandlers {
  * Global keyboard shortcuts for the Activity Editor.
  *
  * Shortcuts:
- *   Cmd/Ctrl + K       → Open quick-jump palette
  *   Cmd/Ctrl + /       → Open keyboard cheatsheet
  *   Cmd/Ctrl + ↓       → Next section
  *   Cmd/Ctrl + ↑       → Previous section
  *   Cmd/Ctrl + Enter   → Save the activity
- *   Esc                → onEscape (usually close modal/palette)
+ *   Esc                → onEscape (usually close modal)
  *
  * Tab / Shift+Tab remains the browser default for field-to-field movement.
+ * Section navigation is complemented by the always-visible middle sidebar.
  */
 export function useActivityEditorShortcuts(
   handlers: ActivityEditorShortcutHandlers,
@@ -59,13 +58,6 @@ export function useActivityEditorShortcuts(
       const mod = isMac() ? event.metaKey : event.ctrlKey
       // Cmd/Ctrl must be held for almost every shortcut (Esc is the exception)
       const editable = isEditableTarget(event.target)
-
-      // Cmd/Ctrl + K — open palette (works even from inside an editable field)
-      if (mod && (event.key === "k" || event.key === "K") && !event.shiftKey && !event.altKey) {
-        event.preventDefault()
-        ref.current.onOpenPalette()
-        return
-      }
 
       // Cmd/Ctrl + / — open cheatsheet (works from inside an editable field)
       if (mod && event.key === "/" && !event.shiftKey && !event.altKey) {

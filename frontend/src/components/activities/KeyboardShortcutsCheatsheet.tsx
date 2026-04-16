@@ -31,7 +31,6 @@ export function KeyboardShortcutsCheatsheet({
   const mod = modKeyLabel()
 
   const navigation: ShortcutRow[] = [
-    { label: "Quick-jump palette", keys: [mod, "K"] },
     { label: "Next section", keys: [mod, "↓"] },
     { label: "Previous section", keys: [mod, "↑"] },
     { label: "Next field", keys: ["Tab"] },
@@ -41,7 +40,7 @@ export function KeyboardShortcutsCheatsheet({
   const actions: ShortcutRow[] = [
     { label: "Save activity", keys: [mod, "Enter"] },
     { label: "Show this help", keys: [mod, "/"] },
-    { label: "Close modal / palette", keys: ["Esc"] },
+    { label: "Close modal", keys: ["Esc"] },
   ]
 
   return (
@@ -60,9 +59,9 @@ export function KeyboardShortcutsCheatsheet({
         </div>
 
         <p className="border-t pt-3 text-xs text-muted-foreground">
-          Tip: <Kbd>{mod}</Kbd>
+          Tip: use the sidebar to jump to any section, or <Kbd>{mod}</Kbd>
           <span className="mx-1">+</span>
-          <Kbd>K</Kbd> is the fastest way to reach any field or section.
+          <Kbd>↓</Kbd> to step through them in order.
         </p>
       </DialogContent>
     </Dialog>

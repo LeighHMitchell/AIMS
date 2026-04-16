@@ -116,7 +116,6 @@ import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 import { PooledFundTypeToggle } from "@/components/activities/PooledFundTypeToggle";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
-import { ActivityEditorCommandPalette } from "@/components/activities/ActivityEditorCommandPalette";
 import { KeyboardShortcutsCheatsheet } from "@/components/activities/KeyboardShortcutsCheatsheet";
 import { useActivityEditorShortcuts } from "@/hooks/useActivityEditorShortcuts";
 import { apiFetch } from '@/lib/api-fetch';
@@ -3087,7 +3086,6 @@ function NewActivityPageContent() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Keyboard shortcut UI state
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showShortcutCheatsheet, setShowShortcutCheatsheet] = useState(false);
 
   // OPTIMIZATION: Track which tabs have been loaded for lazy loading
@@ -5358,12 +5356,12 @@ function NewActivityPageContent() {
   const nextSection = !isLastSection ? allSections[currentSectionIndex + 1] : null;
   const previousSection = !isFirstSection ? allSections[currentSectionIndex - 1] : null;
 
-  // Keyboard shortcuts: Cmd/Ctrl+K (palette), Cmd/Ctrl+/ (cheatsheet),
-  // Cmd/Ctrl+↓/↑ (section nav), Cmd/Ctrl+Enter (save), Esc (close).
-  // Disabled while the palette/cheatsheet are open so their own key handlers win.
+  // Keyboard shortcuts: Cmd/Ctrl+/ (cheatsheet), Cmd/Ctrl+↓/↑ (section nav),
+  // Cmd/Ctrl+Enter (save), Esc (close). Section jumps use the same
+  // handleTabChange as the middle sidebar.
+  // Disabled while the cheatsheet is open so the Dialog's own key handlers win.
   useActivityEditorShortcuts(
     {
-      onOpenPalette: () => setShowCommandPalette(true),
       onOpenCheatsheet: () => setShowShortcutCheatsheet(true),
       onNextSection: () => {
         if (nextSection) handleTabChange(nextSection.id);
@@ -5376,7 +5374,7 @@ function NewActivityPageContent() {
         saveActivity({});
       },
     },
-    { enabled: !showCommandPalette && !showShortcutCheatsheet }
+    { enabled: !showShortcutCheatsheet }
   );
 
   if (loading) {
@@ -6062,25 +6060,7 @@ function NewActivityPageContent() {
         activityTitle={general.title || 'Untitled Activity'}
       />
 
-      {/* Keyboard shortcut UI */}
-      <ActivityEditorCommandPalette
-        open={showCommandPalette}
-        onOpenChange={setShowCommandPalette}
-        groups={navigationGroups}
-        actions={[
-          {
-            id: "save",
-            label: "Save activity",
-            onRun: () => saveActivity({}),
-          },
-          {
-            id: "show-shortcuts",
-            label: "Show keyboard shortcuts",
-            onRun: () => setShowShortcutCheatsheet(true),
-          },
-        ]}
-        onSelectSection={(sectionId) => handleTabChange(sectionId)}
-      />
+      {/* Keyboard shortcut cheatsheet */}
       <KeyboardShortcutsCheatsheet
         open={showShortcutCheatsheet}
         onOpenChange={setShowShortcutCheatsheet}
