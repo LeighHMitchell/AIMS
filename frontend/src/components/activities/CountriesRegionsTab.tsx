@@ -34,6 +34,7 @@ import { GeographyLevelToggle } from '@/components/activities/GeographyLevelTogg
 import { IATI_COUNTRIES, IATICountry, searchCountries } from '@/data/iati-countries';
 import { IATI_REGIONS, IATIRegion, searchRegions } from '@/data/iati-regions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { toast } from 'sonner';
@@ -132,6 +133,15 @@ export default function CountriesRegionsTab({
 
   const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
   const isDirtyRef = useRef(false);
+
+  // Pending delete confirmation — null when dialog closed.
+  // Tagged with kind so we can call the right remover + build the right copy.
+  const [pendingDelete, setPendingDelete] = useState<
+    | { kind: 'country'; id: string; name: string; percentage: number }
+    | { kind: 'region'; id: string; name: string; percentage: number }
+    | { kind: 'custom'; id: string; name: string; percentage: number }
+    | null
+  >(null);
 
   // Type options for the dropdown
   const typeOptions = [
@@ -918,14 +928,12 @@ export default function CountriesRegionsTab({
         </Alert>
       )}
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading countries/regions data...</span>
-        </div>
-      )}
-
+      {/*
+        Loading state is handled by the full-page Skeleton block earlier
+        (returned when `isLoading` is true) — once we reach this point
+        `isLoading` is false. The !isLoading guard below is kept for
+        backward-compat with any future early return.
+      */}
       {!isLoading && (
         <div className={`space-y-6 ${geographyLevel === 'transaction' ? 'opacity-50 pointer-events-none' : ''}`}>
 
@@ -1019,78 +1027,49 @@ export default function CountriesRegionsTab({
                     </Popover>
                   </div>
 
-                  {/* Vocabulary Selection */}
+                  {/*
+                    Vocabulary — disabled, auto-filled display.
+                    The IATI vocabulary is deterministic from the Type (Country
+                    → A4, Region → 1, Custom → 99), so presenting it as a
+                    selectable dropdown was pure ceremony. It's still shown for
+                    IATI traceability, but disabled + tooltip-explained.
+                  */}
                   <div className="space-y-2">
-                    <Label>Vocabulary</Label>
-                    {selectedType ? (
-                      <Popover open={vocabularyDropdownOpen} onOpenChange={setVocabularyDropdownOpen}>
-                        <PopoverTrigger
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
-                          disabled={!canEdit}
-                        >
-                          <span className="truncate">
-                            {vocabulary ? (
-                              <span className="flex items-center gap-2">
-                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                  {vocabulary}
-                                </span>
-                                <span className="font-medium">
-                                  {getVocabularyOptions().find(opt => opt.value === vocabulary)?.label}
-                                </span>
-                              </span>
-                            ) : (
-                              'Select vocabulary...'
-                            )}
+                    <div className="flex items-center gap-1.5">
+                      <Label>Vocabulary</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-label="Why is this disabled?" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p>
+                              The IATI vocabulary is set automatically by the
+                              Type you pick — Country uses ISO 3166-1 alpha-2,
+                              Region uses OECD DAC, and Custom uses your
+                              reporting organisation's vocabulary.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div
+                      className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-sm cursor-not-allowed"
+                      aria-disabled="true"
+                    >
+                      {vocabulary ? (
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {vocabulary}
                           </span>
-                          <div className="flex items-center gap-2">
-                            {vocabulary && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleVocabularyChange('');
-                                }}
-                                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                                aria-label="Clear selection"
-                              >
-                                <span className="text-xs">×</span>
-                              </button>
-                            )}
-                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-[var(--radix-popover-trigger-width)] min-w-[300px] p-0 shadow-lg border"
-                          align="start"
-                          side="bottom"
-                          sideOffset={4}
-                        >
-                          <Command>
-                            <CommandGroup>
-                              {getVocabularyOptions().map((option) => (
-                                <CommandItem
-                                  key={option.value}
-                                  value={option.value}
-                                  onSelect={() => {
-                                    handleVocabularyChange(option.value);
-                                  }}
-                                  className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                                >
-                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                    {option.value}
-                                  </span>
-                                  <span className="font-medium">{option.label}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    ) : (
-                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
-                        Select type first
-                      </div>
-                    )}
+                          <span className="font-medium text-foreground">
+                            {getVocabularyOptions().find(opt => opt.value === vocabulary)?.label}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Select type first</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Country/Region Selection */}
@@ -1277,7 +1256,7 @@ export default function CountriesRegionsTab({
                       onChange={(e) => setPercentage(e.target.value)}
                       placeholder="0.0"
                       disabled={!canEdit || (selectedType !== 'custom' && !selectedItem)}
-                      className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                      className="w-full"
                     />
                   </div>
 
@@ -1290,14 +1269,14 @@ export default function CountriesRegionsTab({
                       onChange={(e) => setNarrative(e.target.value)}
                       placeholder="e.g., Covers all South Asian states except India"
                       disabled={!canEdit}
-                      className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                      className="w-full"
                     />
                   </div>
 
                   {/* Custom Geography Fields */}
                   {selectedType === 'custom' && (
                     <div className="space-y-3 pt-2 border-t">
-                      <h4 className="text-sm font-medium text-gray-900">Custom Geography Details</h4>
+                      <h4 className="text-sm font-medium text-foreground">Custom Geography Details</h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">Name <RequiredDot /></Label>
@@ -1307,7 +1286,7 @@ export default function CountriesRegionsTab({
                             onChange={(e) => setCustomName(e.target.value)}
                             placeholder="e.g., Horn of Africa"
                             disabled={!canEdit}
-                            className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                            className="w-full"
                           />
                         </div>
                         <div className="space-y-2">
@@ -1318,7 +1297,7 @@ export default function CountriesRegionsTab({
                             onChange={(e) => setCustomCode(e.target.value)}
                             placeholder="e.g., HOA"
                             disabled={!canEdit}
-                            className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                            className="w-full"
                           />
                         </div>
                       </div>
@@ -1330,7 +1309,7 @@ export default function CountriesRegionsTab({
                           onChange={(e) => setCustomVocabularyUri(e.target.value)}
                           placeholder="https://donor.org/vocab/regions"
                           disabled={!canEdit}
-                          className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                          className="w-full"
                         />
                       </div>
                     </div>
@@ -1413,7 +1392,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">CT</Badge>
-                            <span className="text-sm font-medium text-gray-900">Country</span>
+                            <span className="text-sm font-medium text-foreground">Country</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -1421,7 +1400,7 @@ export default function CountriesRegionsTab({
                           <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                             {countryAllocation.country?.code}
                           </Badge>
-                            <span className="text-sm font-medium text-gray-900">{countryAllocation.country?.name}</span>
+                            <span className="text-sm font-medium text-foreground">{countryAllocation.country?.name}</span>
                             {countryAllocation.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
@@ -1430,7 +1409,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">A4</Badge>
-                            <span className="text-sm font-medium text-gray-900">ISO Country</span>
+                            <span className="text-sm font-medium text-foreground">ISO Country</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1438,7 +1417,7 @@ export default function CountriesRegionsTab({
                             <span className="text-sm font-medium">{countryAllocation.percentage}%</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600 min-w-48" title={countryAllocation.narrative}>
+                        <TableCell className="text-sm text-muted-foreground min-w-48" title={countryAllocation.narrative}>
                           {countryAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
@@ -1447,19 +1426,24 @@ export default function CountriesRegionsTab({
                               type="button"
                               onClick={() => editCountry(countryAllocation)}
                               disabled={!canEdit}
-                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
+                              className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                               title="Edit country"
                             >
                               <Pencil className="h-4 w-4 text-slate-500" />
                             </button>
                             <button
                               type="button"
-                              onClick={() => removeCountry(countryAllocation.id)}
+                              onClick={() => setPendingDelete({
+                                kind: 'country',
+                                id: countryAllocation.id,
+                                name: countryAllocation.country?.name || 'country',
+                                percentage: countryAllocation.percentage,
+                              })}
                               disabled={!canEdit}
-                              className="p-1.5 rounded hover:bg-gray-100 text-red-500 disabled:pointer-events-none disabled:opacity-50"
+                              className="p-1.5 rounded hover:bg-muted text-destructive disabled:pointer-events-none disabled:opacity-50"
                               title="Delete country"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </button>
                           </div>
                         </TableCell>
@@ -1472,7 +1456,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">RG</Badge>
-                            <span className="text-sm font-medium text-gray-900">Region</span>
+                            <span className="text-sm font-medium text-foreground">Region</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -1480,7 +1464,7 @@ export default function CountriesRegionsTab({
                           <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                             {regionAllocation.region?.code}
                           </Badge>
-                            <span className="text-sm font-medium text-gray-900">{regionAllocation.region?.name}</span>
+                            <span className="text-sm font-medium text-foreground">{regionAllocation.region?.name}</span>
                             {regionAllocation.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
@@ -1489,7 +1473,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">1</Badge>
-                            <span className="text-sm font-medium text-gray-900">OECD DAC</span>
+                            <span className="text-sm font-medium text-foreground">OECD DAC</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1497,7 +1481,7 @@ export default function CountriesRegionsTab({
                             <span className="text-sm font-medium">{regionAllocation.percentage}%</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600 min-w-48" title={regionAllocation.narrative}>
+                        <TableCell className="text-sm text-muted-foreground min-w-48" title={regionAllocation.narrative}>
                           {regionAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
@@ -1506,19 +1490,24 @@ export default function CountriesRegionsTab({
                               type="button"
                               onClick={() => editRegion(regionAllocation)}
                               disabled={!canEdit}
-                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
+                              className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                               title="Edit region"
                             >
                               <Pencil className="h-4 w-4 text-slate-500" />
                             </button>
                             <button
                               type="button"
-                              onClick={() => removeRegion(regionAllocation.id)}
+                              onClick={() => setPendingDelete({
+                                kind: 'region',
+                                id: regionAllocation.id,
+                                name: regionAllocation.region?.name || 'region',
+                                percentage: regionAllocation.percentage,
+                              })}
                               disabled={!canEdit}
-                              className="p-1.5 rounded hover:bg-gray-100 text-red-500 disabled:pointer-events-none disabled:opacity-50"
+                              className="p-1.5 rounded hover:bg-muted text-destructive disabled:pointer-events-none disabled:opacity-50"
                               title="Delete region"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </button>
                           </div>
                         </TableCell>
@@ -1531,7 +1520,7 @@ export default function CountriesRegionsTab({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">CG</Badge>
-                            <span className="text-sm font-medium text-gray-900">Custom</span>
+                            <span className="text-sm font-medium text-foreground">Custom</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -1539,7 +1528,7 @@ export default function CountriesRegionsTab({
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                               {customAllocation.code}
                             </Badge>
-                            <span className="text-sm font-medium text-gray-900">{customAllocation.name}</span>
+                            <span className="text-sm font-medium text-foreground">{customAllocation.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1548,11 +1537,11 @@ export default function CountriesRegionsTab({
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-2 cursor-help">
                                   <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">99</Badge>
-                                  <span className="text-sm font-medium text-gray-900">Custom</span>
+                                  <span className="text-sm font-medium text-foreground">Custom</span>
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
-                                <p className="text-sm text-gray-600 font-normal">
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-sm text-muted-foreground font-normal">
                                   {customAllocation.vocabularyUri ? `Vocabulary URI: ${customAllocation.vocabularyUri}` : 'No vocabulary URI specified'}
                                 </p>
                               </TooltipContent>
@@ -1564,7 +1553,7 @@ export default function CountriesRegionsTab({
                             <span className="text-sm font-medium">{customAllocation.percentage}%</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600 min-w-48" title={customAllocation.narrative}>
+                        <TableCell className="text-sm text-muted-foreground min-w-48" title={customAllocation.narrative}>
                           {customAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
@@ -1573,19 +1562,24 @@ export default function CountriesRegionsTab({
                               type="button"
                               onClick={() => editCustomGeography(customAllocation)}
                               disabled={!canEdit}
-                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
+                              className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                               title="Edit custom geography"
                             >
                               <Pencil className="h-4 w-4 text-slate-500" />
                             </button>
                             <button
                               type="button"
-                              onClick={() => removeCustomGeography(customAllocation.id)}
+                              onClick={() => setPendingDelete({
+                                kind: 'custom',
+                                id: customAllocation.id,
+                                name: customAllocation.name || 'custom geography',
+                                percentage: customAllocation.percentage,
+                              })}
                               disabled={!canEdit}
-                              className="p-1.5 rounded hover:bg-gray-100 text-red-500 disabled:pointer-events-none disabled:opacity-50"
+                              className="p-1.5 rounded hover:bg-muted text-destructive disabled:pointer-events-none disabled:opacity-50"
                               title="Delete custom geography"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </button>
                           </div>
                         </TableCell>
@@ -1597,6 +1591,38 @@ export default function CountriesRegionsTab({
           </div>
         </div>
       )}
+
+      {/* Delete confirmation — named row, shows remaining unallocated %. */}
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.kind === 'country') removeCountry(pendingDelete.id);
+          else if (pendingDelete.kind === 'region') removeRegion(pendingDelete.id);
+          else removeCustomGeography(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        title={
+          pendingDelete?.kind === 'country' ? 'Remove country?'
+            : pendingDelete?.kind === 'region' ? 'Remove region?'
+            : 'Remove custom geography?'
+        }
+        description={pendingDelete && (
+          <>
+            This will remove <span className="font-medium text-foreground">{pendingDelete.name}</span>
+            {pendingDelete.percentage > 0 && (
+              <>
+                {' '}and release <span className="font-medium text-foreground">{pendingDelete.percentage}%</span> back to unallocated
+              </>
+            )}. This can't be undone.
+          </>
+        )}
+        confirmText="Remove"
+        isDestructive
+      />
     </div>
   );
 }
