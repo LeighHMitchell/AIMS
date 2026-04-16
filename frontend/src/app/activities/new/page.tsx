@@ -861,7 +861,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-12">
       {/* Section Heading */}
       <div className="flex items-center gap-3">
-        <h2 className="text-3xl font-semibold text-foreground">General</h2>
+        <h2 className="text-3xl font-semibold text-foreground">Overview</h2>
         <HelpTextTooltip content="This tab brings together the core details that define the activity, including its identifiers, title, description, imagery, collaboration type, status, and dates. Completing this section establishes the basic profile of the activity and provides a clear reference point for all other information entered elsewhere.">
           <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
         </HelpTextTooltip>
@@ -4673,10 +4673,10 @@ function NewActivityPageContent() {
   const getSectionLabel = (sectionId: string): string => {
     const sectionLabels: Record<string, string> = {
       metadata: "Metadata",
-      general: "General Information",
+      general: "Overview",
       iati: "IATI Link",
       sectors: "Sectors",
-      humanitarian: "Humanitarian",
+      humanitarian: "Humanitarian Marker",
       locations: "Activity Locations",
       subnational_breakdown: "Subnational Breakdown",
       organisations: "Participating Organisations",
@@ -5459,9 +5459,9 @@ function NewActivityPageContent() {
     {
       title: "Activity Overview",
       sections: [
-        { id: "general", label: "General" },
+        { id: "general", label: "Overview" },
         { id: "sectors", label: "Sectors" },
-        { id: "humanitarian", label: "Humanitarian" },
+        { id: "humanitarian", label: "Humanitarian Marker" },
       ]
     },
     {

@@ -59,10 +59,10 @@ export function SectionHeader({
  */
 export const SECTION_LABELS: Record<string, string> = {
   metadata: "Metadata",
-  general: "General Information",
+  general: "Overview",
   iati: "IATI Sync",
   sectors: "Sectors",
-  humanitarian: "Humanitarian",
+  humanitarian: "Humanitarian Marker",
   locations: "Activity Sites",
   "country-region": "Countries & Regions",
   "subnational-allocation": "Sub-national Allocation",
