@@ -230,6 +230,8 @@ export async function GET(
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,
       iati_identifier: activity.iati_identifier,
+      autoRef: activity.auto_ref,
+      auto_ref: activity.auto_ref,
       created_by_org_name: resolvedOrgName,
       created_by_org_acronym: resolvedOrgAcronym,
       collaborationType: activity.collaboration_type,

@@ -261,7 +261,7 @@ async function handleAssign(
   // Get user details
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, first_name, last_name, title, email, role, organisation, avatar_url')
+        .select('id, first_name, last_name, title, email, role, job_title, organisation, avatar_url')
     .eq('id', userId)
         .single();
 
@@ -297,7 +297,7 @@ async function handleAssign(
     title: user.title,
     first_name: user.first_name || user.email.split('@')[0],
     last_name: user.last_name || 'User',
-    position: user.role || null,
+    position: user.job_title || null,
         email: user.email,
         organisation: user.organisation,
     profile_photo: user.avatar_url,
@@ -461,7 +461,7 @@ async function handleAcceptHandoff(
   // Get accepting user details
   const { data: acceptingUser, error: userError } = await supabase
     .from('users')
-    .select('id, first_name, last_name, title, email, role, organisation, avatar_url')
+    .select('id, first_name, last_name, title, email, role, job_title, organisation, avatar_url')
     .eq('id', userId)
     .single();
 
@@ -482,7 +482,7 @@ async function handleAcceptHandoff(
     title: acceptingUser.title,
     first_name: acceptingUser.first_name || acceptingUser.email.split('@')[0],
     last_name: acceptingUser.last_name || 'User',
-    position: acceptingUser.role || null,
+    position: acceptingUser.job_title || null,
     email: acceptingUser.email,
     organisation: acceptingUser.organisation,
     profile_photo: acceptingUser.avatar_url,

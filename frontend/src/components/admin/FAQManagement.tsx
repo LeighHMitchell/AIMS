@@ -722,7 +722,7 @@ function QuestionTable({
                     {getSortIcon('createdAt', sortField, sortDirection)}
                   </div>
                 </TableHead>
-                <TableHead className="w-[150px]">Actions</TableHead>
+                <TableHead className="w-[150px]" />
               </TableRow>
             </TableHeader>
             <TableBody>

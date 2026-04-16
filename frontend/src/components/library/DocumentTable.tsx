@@ -148,7 +148,7 @@ export function DocumentTable({
             {showAddedBy && (
               <TableHead className="w-[10%]">Added By</TableHead>
             )}
-            <TableHead className="w-[50px]">Actions</TableHead>
+            <TableHead className="w-[50px]" />
           </TableRow>
         </TableHeader>
         <TableBody>

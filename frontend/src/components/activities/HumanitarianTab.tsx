@@ -26,6 +26,7 @@ import {
 } from '@/data/humanitarian-codelists';
 import { formatLanguageDisplay } from '@/data/language-codes';
 import { HumanitarianScopeModal } from '@/components/modals/HumanitarianScopeModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 interface HumanitarianTabProps {
@@ -257,7 +258,7 @@ export function HumanitarianTab({
           <CardContent className="space-y-4">
             {scopes.length === 0 && (
               <div className="text-center py-12">
-                <img src="/images/empty-pallet.png" alt="No humanitarian scopes" className="h-32 mx-auto mb-4 opacity-50" />
+                <img src="/images/empty-pallet.webp" alt="No humanitarian scopes" className="h-32 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium mb-2">No emergencies or appeals</h3>
                 <p className="text-muted-foreground">
                   Use the button above to link to a specific emergency or appeal.
@@ -275,7 +276,7 @@ export function HumanitarianTab({
                       <TableHead className="whitespace-nowrap">Emergency/Appeal</TableHead>
                       <TableHead className="whitespace-nowrap">Location</TableHead>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
-                      {!readOnly && <TableHead className="w-[100px]">Actions</TableHead>}
+                      {!readOnly && <TableHead className="w-[100px]" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -294,29 +295,48 @@ export function HumanitarianTab({
                           {getVocabularyName(scope.vocabulary)}
                         </TableCell>
                         <TableCell className="align-top">
-                          {scope.vocabulary === '98' && emergencyMap[scope.code] ? (
-                            <div className="text-sm">
-                              <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
-                                {scope.code}
-                              </code>{' '}
-                              {emergencyMap[scope.code].name}
-                            </div>
-                          ) : scope.vocabulary_uri ? (
-                            <a
-                              href={scope.vocabulary_uri}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-block"
-                            >
-                              <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-gray-200 cursor-pointer transition-colors whitespace-nowrap">
+                          {(() => {
+                            const narrativeText = (scope.narratives || [])
+                              .map(n => n.narrative?.trim())
+                              .filter(Boolean)
+                              .join(' \u2014 ');
+                            const inner = scope.vocabulary === '98' && emergencyMap[scope.code] ? (
+                              <div className="text-sm">
+                                <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                                  {scope.code}
+                                </code>{' '}
+                                {emergencyMap[scope.code].name}
+                              </div>
+                            ) : scope.vocabulary_uri ? (
+                              <a
+                                href={scope.vocabulary_uri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block"
+                              >
+                                <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-gray-200 cursor-pointer transition-colors whitespace-nowrap">
+                                  {scope.code}
+                                </code>
+                              </a>
+                            ) : (
+                              <code className="px-2 py-1 bg-muted rounded text-sm font-mono whitespace-nowrap">
                                 {scope.code}
                               </code>
-                            </a>
-                          ) : (
-                            <code className="px-2 py-1 bg-muted rounded text-sm font-mono whitespace-nowrap">
-                              {scope.code}
-                            </code>
-                          )}
+                            );
+                            if (!narrativeText) return inner;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-block cursor-help">{inner}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-sm">
+                                    <p className="text-xs">{narrativeText}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="align-top text-sm">
                           {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (

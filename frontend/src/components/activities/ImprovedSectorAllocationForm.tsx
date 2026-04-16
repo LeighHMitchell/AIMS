@@ -1125,7 +1125,7 @@ function ImprovedSectorAllocationFormInner({
         {/* Empty State */}
         {allocations.length === 0 && (
           <div className="text-center py-12">
-            <img src="/images/empty-beaker.png" alt="No sectors" className="h-32 mx-auto mb-4 opacity-50" />
+            <img src="/images/empty-beaker.webp" alt="No sectors" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No sectors</h3>
             <p className="text-muted-foreground">
               Use the dropdown above to add your first sector allocation.

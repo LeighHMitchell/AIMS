@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
+import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
 import { MapSearch } from '@/components/maps/MapSearch';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { useOrganizations } from '@/hooks/use-organizations';
@@ -1032,18 +1033,7 @@ export default function Atlas() {
 
                 {/* Map Style & Controls */}
                 <div className="flex items-center gap-2 self-end shrink-0">
-                  <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-                    <SelectTrigger className="w-[140px] text-xs h-9">
-                      <SelectValue placeholder="Map style" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(MAP_STYLES).map(([key, style]) => (
-                        <SelectItem key={key} value={key}>
-                          {style.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[170px] h-9" />
 
                   {/* Layers Popover */}
                   <Popover open={layersPopoverOpen} onOpenChange={handleLayersPopoverOpen}>

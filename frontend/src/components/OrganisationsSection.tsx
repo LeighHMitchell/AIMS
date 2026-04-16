@@ -306,7 +306,7 @@ export default function OrganisationsSection({
         <CardContent>
           {participatingOrganizations.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
-              <img src="/images/empty-puzzle-piece.png" alt="No participating organisations" className="h-32 mx-auto mb-4 opacity-50" />
+              <img src="/images/empty-puzzle-piece.webp" alt="No participating organisations" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No participating organisations</h3>
               <p className="text-muted-foreground">
                 Use the button above to add your first organisation.
@@ -345,7 +345,7 @@ export default function OrganisationsSection({
                           {getSortIcon('type')}
                         </div>
                       </TableHead>
-                      <TableHead className="w-[14%] text-right font-medium">Actions</TableHead>
+                      <TableHead className="w-[14%] text-right font-medium" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -375,7 +375,7 @@ export default function OrganisationsSection({
                                 {participatingOrg.organization_id ? (
                                   <Link
                                     href={`/organizations/${participatingOrg.organization_id}`}
-                                    className="font-medium text-foreground hover:text-foreground transition-colors"
+                                    className="text-sm hover:text-foreground transition-colors"
                                   >
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
@@ -384,7 +384,7 @@ export default function OrganisationsSection({
                                      ` (${participatingOrg.organization.acronym})`}
                                   </Link>
                                 ) : (
-                                  <span className="font-medium text-foreground">
+                                  <span className="text-sm">
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
                                      'Unknown Organization'}
@@ -406,12 +406,12 @@ export default function OrganisationsSection({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-foreground">
+                          <span className="text-sm">
                             {getOrganizationRoleName(participatingOrg.iati_role_code)}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-foreground">
+                          <span className="text-sm">
                             {participatingOrg.organization?.Organisation_Type_Name || 
                              (participatingOrg.organization?.Organisation_Type_Code ? getOrganizationTypeName(participatingOrg.organization.Organisation_Type_Code) : null) || 
                              <span className="text-muted-foreground">Not set</span>}

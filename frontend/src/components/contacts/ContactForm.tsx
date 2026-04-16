@@ -261,7 +261,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
           <DialogTitle className="text-gray-900">
             {contact?.id ? 'Edit Contact' : 'Add New Contact'}
           </DialogTitle>

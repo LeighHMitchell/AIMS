@@ -21,7 +21,7 @@ export interface EmptyStateProps {
   };
   /** Show the empty box illustration (default: true) */
   showIllustration?: boolean;
-  /** Custom illustration image path (defaults to empty-box.png) */
+  /** Custom illustration image path (defaults to empty-box.webp) */
   illustration?: string;
 }
 
@@ -35,7 +35,7 @@ export function EmptyState({ title, message, icon, action, showIllustration = tr
       {showIllustration ? (
         <div className="mb-4 flex justify-center">
           <Image
-            src={illustration || "/images/empty-box.png"}
+            src={illustration || "/images/empty-box.webp"}
             alt="Nothing here yet"
             width={240}
             height={160}

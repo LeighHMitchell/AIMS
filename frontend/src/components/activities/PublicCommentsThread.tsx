@@ -685,10 +685,10 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
       {/* Comments List */}
       <section>
         {sortedComments.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No comments yet</p>
-            <p className="text-sm">Be the first to start the discussion!</p>
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <img src="/images/empty-megaphone.webp" alt="No comments yet" className="h-32 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold mb-2">No comments yet</h3>
+            <p className="text-muted-foreground">Be the first to start the discussion.</p>
           </div>
         ) : (
           <div className="space-y-2">

@@ -3,6 +3,7 @@ import { ALL_CURRENCIES } from '@/data/currencies';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types';
 import { IATI_ACTIVITY_SCOPE } from '@/data/iati-activity-scope';
+import { IATI_REGIONS } from '@/data/iati-regions';
 import {
   AID_TYPE_DEFINITIONS,
   FINANCE_TYPE_DEFINITIONS,
@@ -44,6 +45,26 @@ const currencies: CodelistEntry[] = ALL_CURRENCIES.map(c => ({
 const countries: CodelistEntry[] = IATI_COUNTRIES
   .filter(c => !c.withdrawn)
   .map(c => ({ code: c.code, name: c.name }));
+
+const regions: CodelistEntry[] = IATI_REGIONS
+  .filter(r => !r.withdrawn)
+  .map(r => ({ code: r.code, name: r.name }));
+
+// IATI Policy Marker codes (vocabulary 1 = OECD DAC CRS)
+const policyMarkers: CodelistEntry[] = [
+  { code: '1', name: 'Gender Equality' },
+  { code: '2', name: 'Aid to Environment' },
+  { code: '3', name: 'Participatory Development / Good Governance' },
+  { code: '4', name: 'Trade Development' },
+  { code: '5', name: 'Aid Targeting the Objectives of the Convention on Biological Diversity' },
+  { code: '6', name: 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Mitigation' },
+  { code: '7', name: 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Adaptation' },
+  { code: '8', name: 'Aid Targeting the Objectives of the Convention to Combat Desertification' },
+  { code: '9', name: 'Reproductive, Maternal, Newborn and Child Health (RMNCH)' },
+  { code: '10', name: 'Disaster Risk Reduction (DRR)' },
+  { code: '11', name: 'Disability' },
+  { code: '12', name: 'Nutrition' },
+];
 
 const organizationTypes: CodelistEntry[] = IATI_ORGANIZATION_TYPES.map(t => ({
   code: t.code,
@@ -140,6 +161,8 @@ const registry: Record<string, CodelistEntry[]> = {
   activity_scope: activityScopes,
   currency: currencies,
   country: countries,
+  region: regions,
+  policy_marker: policyMarkers,
   organization_type: organizationTypes,
   aid_type: aidTypes,
   finance_type: financeTypes,

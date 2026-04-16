@@ -410,7 +410,7 @@ export default function RolodexPage() {
           </Card>
         ) : people.length === 0 && !loading ? (
           <EmptyState
-            illustration="/images/empty-badges.png"
+            illustration="/images/empty-badges.webp"
             title="No people found"
             message={
               filters.search || filters.organization || filters.activity || filters.orgType || filters.role
@@ -487,7 +487,7 @@ export default function RolodexPage() {
                             {getSortIcon('source')}
                           </div>
                         </th>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[80px]">Actions</th>
+                        <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[80px]" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border bg-white">

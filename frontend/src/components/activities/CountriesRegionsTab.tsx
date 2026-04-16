@@ -1,6 +1,7 @@
 'use client';
 
 import { RequiredDot } from "@/components/ui/required-dot";
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -953,7 +954,7 @@ export default function CountriesRegionsTab({
                 <div ref={formRef as any} className="space-y-4 pr-4">
                   {/* Type Selection */}
                   <div className="space-y-2">
-                    <Label>Type <RequiredDot /></Label>
+                    <Label>Type <RequiredDot /> <HelpTextTooltip content="Choose whether this allocation targets a specific country, a broader region, or a custom geography not covered by IATI vocabularies." /></Label>
                     <Popover open={typeDropdownOpen} onOpenChange={setTypeDropdownOpen}>
                       <PopoverTrigger
                         className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
@@ -1021,7 +1022,7 @@ export default function CountriesRegionsTab({
 
                   {/* Vocabulary Selection */}
                   <div className="space-y-2">
-                    <Label>Vocabulary</Label>
+                    <Label>Vocabulary <HelpTextTooltip content="The IATI codelist used to identify the country or region. Defaults to ISO 3166-1 alpha-2 for countries and OECD DAC regions for regions. Use 99 for custom vocabularies." /></Label>
                     {selectedType ? (
                       <Popover open={vocabularyDropdownOpen} onOpenChange={setVocabularyDropdownOpen}>
                         <PopoverTrigger
@@ -1095,7 +1096,7 @@ export default function CountriesRegionsTab({
 
                   {/* Country/Region Selection */}
                   <div className="space-y-2">
-                    <Label>{selectedType === 'region' ? 'Region' : 'Country'} <RequiredDot /></Label>
+                    <Label>{selectedType === 'region' ? 'Region' : 'Country'} <RequiredDot /> <HelpTextTooltip content="Select the specific country or region from the chosen vocabulary. The list is filtered to valid codes from the selected vocabulary." /></Label>
                     {selectedType === 'custom' ? (
                       <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
                         Custom Geography fields below
@@ -1267,7 +1268,7 @@ export default function CountriesRegionsTab({
 
                   {/* Percentage */}
                   <div className="space-y-2">
-                    <Label>Percentage (%) <RequiredDot /></Label>
+                    <Label>Percentage (%) <RequiredDot /> <HelpTextTooltip content="Share of the activity's total budget allocated to this country or region. Allocations across all entries must sum to exactly 100%." /></Label>
                     <Input
                       type="number"
                       min="0"
@@ -1283,7 +1284,7 @@ export default function CountriesRegionsTab({
 
                   {/* Narrative field */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Narrative / Description</Label>
+                    <Label className="text-sm font-medium">Narrative / Description <HelpTextTooltip content="Optional free-text description providing additional context for this allocation, such as the scope or rationale." /></Label>
                     <Input
                       type="text"
                       value={narrative}
@@ -1300,7 +1301,7 @@ export default function CountriesRegionsTab({
                       <h4 className="text-sm font-medium text-gray-900">Custom Geography Details</h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Name <RequiredDot /></Label>
+                          <Label className="text-sm font-medium">Name <RequiredDot /> <HelpTextTooltip content="Human-readable name for this custom geography (e.g., 'Horn of Africa')." /></Label>
                           <Input
                             type="text"
                             value={customName}
@@ -1311,7 +1312,7 @@ export default function CountriesRegionsTab({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Code <RequiredDot /></Label>
+                          <Label className="text-sm font-medium">Code <RequiredDot /> <HelpTextTooltip content="Short code identifier for this custom geography as defined in your own vocabulary (e.g., 'HOA')." /></Label>
                           <Input
                             type="text"
                             value={customCode}
@@ -1323,7 +1324,7 @@ export default function CountriesRegionsTab({
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Vocabulary URI</Label>
+                        <Label className="text-sm font-medium">Vocabulary URI <HelpTextTooltip content="Optional URL pointing to the definition of your custom vocabulary so data consumers can resolve the code." /></Label>
                         <Input
                           type="url"
                           value={customVocabularyUri}
@@ -1369,7 +1370,7 @@ export default function CountriesRegionsTab({
           {/* Allocations Table */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Current Allocations</h3>
+              <h3 className="text-lg font-semibold flex items-center">Current Allocations <HelpTextTooltip content="All country, region, and custom geography allocations for this activity. The sum of percentages must equal 100%." /></h3>
               {canEdit && (
                 <Button onClick={() => {
                   cancelEdit();
@@ -1388,7 +1389,7 @@ export default function CountriesRegionsTab({
             </div>
               {countries.length === 0 && regions.length === 0 && customGeographies.length === 0 ? (
                 <div className="text-center py-12">
-                  <img src="/images/empty-globe.png" alt="No countries or regions" className="h-32 mx-auto mb-4 opacity-50" />
+                  <img src="/images/empty-globe.webp" alt="No countries or regions" className="h-32 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No countries or regions</h3>
                   <p className="text-muted-foreground">
                     Use the form above to add your first country or region allocation.
@@ -1403,7 +1404,7 @@ export default function CountriesRegionsTab({
                       <TableHead className="w-40">Vocabulary</TableHead>
                       <TableHead className="w-20">Percentage</TableHead>
                       <TableHead className="min-w-48">Narrative</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
+                      <TableHead className="w-[100px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

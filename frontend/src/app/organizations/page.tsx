@@ -1910,7 +1910,7 @@ function OrganizationsPageContent() {
                             <TableHead className="w-[35%]">Description</TableHead>
                             <TableHead className="text-center w-[10%]">Members</TableHead>
                             <TableHead className="text-center w-[10%]">Visibility</TableHead>
-                            <TableHead className="text-right w-[15%]">Actions</TableHead>
+                            <TableHead className="text-right w-[15%]" />
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -2134,13 +2134,13 @@ function OrganizationsPageContent() {
                     </div>
                   ) : searchTerm || activeFilter !== 'all' ? (
                     <EmptyState
-                      illustration="/images/empty-roundtable.png"
+                      illustration="/images/empty-roundtable.webp"
                       title="No organizations found"
                       message={searchTerm ? 'Try adjusting your search terms.' : 'No organizations match the current filter.'}
                     />
                   ) : (
                     <EmptyState
-                      illustration="/images/empty-roundtable.png"
+                      illustration="/images/empty-roundtable.webp"
                       title="No organizations yet"
                       message="Get started by adding your first organization."
                       action={{

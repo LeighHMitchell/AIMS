@@ -604,7 +604,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               </div>
             ) : linkedActivities.length === 0 ? (
               <div className="text-center py-12">
-                <img src="/images/empty-carabiner.png" alt="No linked activities" className="h-32 mx-auto mb-4 opacity-50" />
+                <img src="/images/empty-carabiner.webp" alt="No linked activities" className="h-32 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium mb-2">No linked activities</h3>
                 {canEdit && (
                   <p className="text-muted-foreground">Use the search above to find and link related activities.</p>

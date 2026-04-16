@@ -214,7 +214,7 @@ export function ScoringRubricManagement() {
                 <th className="text-left py-2 font-medium">Label</th>
                 <th className="text-left py-2 font-medium">Status</th>
                 <th className="text-left py-2 font-medium">Created</th>
-                <th className="text-right py-2 font-medium">Actions</th>
+                <th className="text-right py-2 font-medium" />
               </tr>
             </thead>
             <tbody>
@@ -381,7 +381,7 @@ export function ScoringRubricManagement() {
                                   <th className="text-left py-1 font-medium">Rule Type</th>
                                   <th className="text-left py-1 font-medium">Field Path</th>
                                   <th className="text-right py-1 font-medium">Max Pts</th>
-                                  <th className="text-right py-1 font-medium w-20">Actions</th>
+                                  <th className="text-right py-1 font-medium w-20" />
                                 </tr>
                               </thead>
                               <tbody>

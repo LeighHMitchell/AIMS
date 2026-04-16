@@ -330,7 +330,7 @@ export function AutosaveUpload({
       case 'banner':
         return 'h-48'; // Wide banner
       case 'square':
-        return 'h-48 max-w-[12rem]'; // Square aspect
+        return 'h-48'; // Square aspect
       default:
         return 'h-48'; // Auto
     }

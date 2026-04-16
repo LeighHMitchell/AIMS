@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check } from 'lucide-react';
+import { Leaf, Users, Wrench, Plus, Trash2, Pencil, Building2, EyeOff, Globe, ChevronsUpDown, Check, HelpCircle, LayoutGrid, List, Activity } from 'lucide-react';
+import { CardShell } from '@/components/ui/card-shell';
+import { getIconForMarker } from '@/lib/policy-marker-utils';
+
+const GROUP_COLORS: Record<string, string> = {
+  environmental: '#16a34a',
+  social_governance: '#2563eb',
+  other: '#7c3aed',
+  custom: '#64748b',
+};
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -182,6 +193,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingMarkerUuid, setEditingMarkerUuid] = useState<string | null>(null);
   const [modalForm, setModalForm] = useState<ModalFormState>(INITIAL_MODAL_FORM);
@@ -475,14 +487,27 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          {activeMarkerCount > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {activeMarkerCount} policy marker{activeMarkerCount !== 1 ? 's' : ''} assigned
-            </p>
-          )}
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        {activeMarkerCount > 0 && (
+          <div className="flex items-center border rounded-md flex-shrink-0">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="rounded-r-none h-9"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('card')}
+              className="rounded-l-none h-9"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
         {!readOnly && (
           <Button onClick={openAddModal} size="sm">
             <Plus className="h-4 w-4 mr-1.5" />
@@ -494,11 +519,106 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       {/* Empty state */}
       {activeMarkerCount === 0 ? (
         <div className="text-center py-12">
-          <img src="/images/empty-flag.png" alt="No policy markers" className="h-32 mx-auto mb-4 opacity-50" />
+          <img src="/images/empty-flag.webp" alt="No policy markers" className="h-32 mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium mb-2">No policy markers</h3>
           <p className="text-muted-foreground mb-4">
             Use the button above to add policy markers to this activity.
           </p>
+        </div>
+      ) : viewMode === 'card' ? (
+        <div className="space-y-8">
+          {groupTypes.map(type => {
+            const markersInGroup = getActiveMarkersForType(type);
+            if (markersInGroup.length === 0) return null;
+            const groupColor = GROUP_COLORS[type] || '#64748b';
+
+            return (
+              <div key={type}>
+                <div className="flex items-center gap-2 mb-3">
+                  {MARKER_TYPE_ICONS[type]}
+                  <h3 className="text-sm font-medium text-muted-foreground">{MARKER_TYPE_LABELS[type]}</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {markersInGroup.map(({ marker, activityMarker }) => {
+                    const markerUuid = marker.uuid || marker.id;
+                    const IconComponent = getIconForMarker(marker.iati_code);
+                    const isRMNCH = marker.iati_code === '9';
+                    const significanceLabel = getSignificanceLabel(isRMNCH ? '9' : '0', activityMarker.significance);
+
+                    return (
+                      <CardShell
+                        key={markerUuid}
+                        ariaLabel={marker.name}
+                        bannerColor={groupColor}
+                        bannerContent={
+                          <div className="h-full w-full flex items-center justify-center">
+                            <IconComponent className="h-12 w-12 text-white/20" />
+                          </div>
+                        }
+                        bannerOverlay={
+                          <>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              {marker.is_iati_standard ? (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-white/20 text-white border-0">IATI</Badge>
+                              ) : (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-white/20 text-white border-0">Custom</Badge>
+                              )}
+                              <code className="text-xs px-1.5 py-0.5 bg-white/20 text-white/90 rounded font-mono">{getDisplayCode(marker)}</code>
+                            </div>
+                            <h2 className="text-sm font-bold text-white leading-tight">{marker.name}</h2>
+                          </>
+                        }
+                      >
+                        <div className="relative flex-1 p-5 flex flex-col bg-card">
+                          {activityMarker.rationale ? (
+                            <p className="text-xs text-muted-foreground line-clamp-3 mb-3">
+                              {activityMarker.rationale}
+                            </p>
+                          ) : marker.description ? (
+                            <p className="text-xs text-muted-foreground line-clamp-3 mb-3">
+                              {marker.description}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground/60 italic mb-3">No rationale provided</p>
+                          )}
+                          <div className="mt-auto pt-3 border-t border-border">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {activityMarker.significance}
+                              </span>
+                              <span className="text-sm font-medium truncate">{significanceLabel}</span>
+                            </div>
+                            {!readOnly && (
+                              <div className="mt-2 flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditModal(markerUuid)}
+                                  className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
+                                  aria-label={`Edit ${marker.name}`}
+                                >
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeMarker(markerUuid)}
+                                  className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                  aria-label={`Remove ${marker.name}`}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardShell>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         /* Grouped table */
@@ -506,9 +626,10 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Policy Marker</TableHead>
-                <TableHead style={{ width: '200px' }}>Significance</TableHead>
-                {!readOnly && <TableHead style={{ width: '100px' }}>Actions</TableHead>}
+                <TableHead style={{ width: '280px' }}>Policy Marker</TableHead>
+                <TableHead style={{ width: '220px' }}>Significance</TableHead>
+                <TableHead>Rationale</TableHead>
+                {!readOnly && <TableHead style={{ width: '90px' }} />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -519,7 +640,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   <React.Fragment key={type}>
                     {/* Group header row */}
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableCell colSpan={readOnly ? 2 : 3} className="py-2">
+                      <TableCell colSpan={readOnly ? 3 : 4} className="py-2">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                           {MARKER_TYPE_ICONS[type]}
                           {MARKER_TYPE_LABELS[type]}
@@ -545,14 +666,23 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                 <VisibilityIcon visibility={effectiveVisibility} />
                               )}
                             </div>
-                            {activityMarker.rationale && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{activityMarker.rationale}</p>
-                            )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className="text-xs">
-                              {activityMarker.significance} — {getSignificanceLabel(marker.iati_code, activityMarker.significance)}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {activityMarker.significance}
+                              </span>
+                              <span className="text-sm">
+                                {getSignificanceLabel(marker.iati_code, activityMarker.significance)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {activityMarker.rationale ? (
+                              <p className="text-sm text-muted-foreground line-clamp-2">{activityMarker.rationale}</p>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/60">—</span>
+                            )}
                           </TableCell>
                           {!readOnly && (
                             <TableCell>
@@ -593,7 +723,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             {/* Marker Selection */}
             {modalMode === 'add' && !modalForm.isCreatingCustom && (
               <div className="space-y-2">
-                <Label>Policy Marker</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Policy Marker <RequiredDot /></Label>
+                  <HelpTextTooltip content="Select an IATI standard policy marker or a custom marker defined by your organisation. Policy markers identify whether an activity targets a particular policy objective such as gender equality, environment, or governance.">
+                    <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </HelpTextTooltip>
+                </div>
                 <Popover open={markerPopoverOpen} onOpenChange={setMarkerPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -743,7 +878,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs">Name *</Label>
+                    <Label className="text-xs">Name <RequiredDot /></Label>
                     <Input
                       value={modalForm.customName}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customName: e.target.value }))}
@@ -751,7 +886,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Code *</Label>
+                    <Label className="text-xs">Code <RequiredDot /></Label>
                     <Input
                       value={modalForm.customCode}
                       onChange={(e) => setModalForm(prev => ({ ...prev, customCode: e.target.value }))}
@@ -821,13 +956,32 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             {/* Significance */}
             {(modalForm.selectedMarkerId || modalForm.isCreatingCustom) && (
               <div className="space-y-2">
-                <Label>Significance *</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Significance <RequiredDot /></Label>
+                  <HelpTextTooltip content="Indicates the degree to which the activity targets this policy objective. Typical values: 0 = not targeted, 1 = significant objective, 2 = principal objective. Some markers (e.g. RMNCH) use an extended 0–4 scale.">
+                    <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </HelpTextTooltip>
+                </div>
                 <Select
                   value={modalForm.significance.toString()}
                   onValueChange={(value) => setModalForm(prev => ({ ...prev, significance: parseInt(value) }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select significance level" />
+                    {modalForm.significance >= 1 ? (
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {modalForm.significance}
+                        </span>
+                        <span>
+                          {getSignificanceLabel(
+                            getSelectedMarkerForModal()?.iati_code === '9' ? '9' : '0',
+                            modalForm.significance
+                          )}
+                        </span>
+                      </span>
+                    ) : (
+                      <SelectValue placeholder="Select significance level" />
+                    )}
                   </SelectTrigger>
                   <SelectContent>
                     {(() => {
@@ -838,7 +992,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                       for (let i = 1; i <= maxSig; i++) {
                         options.push(
                           <SelectItem key={i} value={i.toString()}>
-                            {i} — {getSignificanceLabel(isRMNCH ? '9' : '0', i)}
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                {i}
+                              </span>
+                              <span>{getSignificanceLabel(isRMNCH ? '9' : '0', i)}</span>
+                            </span>
                           </SelectItem>
                         );
                       }
@@ -852,7 +1011,12 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             {/* Rationale */}
             {(modalForm.selectedMarkerId || modalForm.isCreatingCustom) && (
               <div className="space-y-2">
-                <Label>Rationale</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Rationale</Label>
+                  <HelpTextTooltip content="Optional free-text explanation of why this significance level was chosen for the activity. Helps reviewers understand how the policy objective is addressed.">
+                    <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </HelpTextTooltip>
+                </div>
                 <Textarea
                   value={modalForm.rationale}
                   onChange={(e) => setModalForm(prev => ({ ...prev, rationale: e.target.value }))}

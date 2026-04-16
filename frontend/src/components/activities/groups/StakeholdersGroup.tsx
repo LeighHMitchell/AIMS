@@ -125,7 +125,7 @@ export function StakeholdersGroup({
     if (initialSection && isStakeholdersSection(initialSection) && activityCreated) {
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'organisations')) {
+      if (prevInitialSection.current !== initialSection || isFirstRender.current) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return

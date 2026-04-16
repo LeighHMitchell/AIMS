@@ -296,7 +296,7 @@ export default function TransactionSectorsTab({
                     <TableHead>Sector Name</TableHead>
                     <TableHead className="w-[120px]">Percentage</TableHead>
                     <TableHead className="w-[140px]">Amount</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead className="w-[80px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

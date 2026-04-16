@@ -701,7 +701,7 @@ function ContactsTable({
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
               <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
             </th>
-            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground" />
           </tr>
         </thead>
         <tbody>

@@ -263,7 +263,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
                   <TableHead>Name</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right" />
                 </TableRow>
               </TableHeader>
               <TableBody>

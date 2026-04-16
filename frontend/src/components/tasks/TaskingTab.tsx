@@ -637,7 +637,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                       <th className="text-left p-3 font-medium">Status</th>
                       <th className="text-left p-3 font-medium">Deadline</th>
                       <th className="text-left p-3 font-medium">Reassigned On</th>
-                      <th className="text-left p-3 font-medium">Actions</th>
+                      <th className="text-left p-3 font-medium" />
                     </tr>
                   </thead>
                   <tbody>

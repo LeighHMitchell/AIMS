@@ -776,7 +776,7 @@ export function FeedbackManagement() {
                       </div>
                     </TableHead>
                   )}
-                  <TableHead className="w-[200px]">Actions</TableHead>
+                  <TableHead className="w-[200px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>

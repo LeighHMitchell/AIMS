@@ -62,7 +62,7 @@ export function OrganizationActionMenu({
           <DropdownMenuItem onClick={onToggleBookmark} className="cursor-pointer">
             {isBookmarked ? (
               <>
-                <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+                <BookmarkCheck className="h-4 w-4 mr-2" />
                 Remove Bookmark
               </>
             ) : (
@@ -83,7 +83,7 @@ export function OrganizationActionMenu({
 
         {onEdit && (
           <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
-            <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+            <Pencil className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
         )}

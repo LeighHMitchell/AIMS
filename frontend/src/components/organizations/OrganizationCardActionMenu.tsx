@@ -69,7 +69,7 @@ export function OrganizationCardActionMenu({
             <DropdownMenuItem className={itemClass} onSelect={onToggleBookmark}>
               {isBookmarked ? (
                 <>
-                  <BookmarkCheck className="h-4 w-4 text-slate-600" />
+                  <BookmarkCheck className="h-4 w-4" />
                   Remove Bookmark
                 </>
               ) : (
@@ -90,7 +90,7 @@ export function OrganizationCardActionMenu({
 
           {onEdit && (
             <DropdownMenuItem className={itemClass} onSelect={onEdit}>
-              <Pencil className="h-4 w-4 text-slate-500" />
+              <Pencil className="h-4 w-4" />
               Edit
             </DropdownMenuItem>
           )}

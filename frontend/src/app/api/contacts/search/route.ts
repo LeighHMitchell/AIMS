@@ -99,6 +99,29 @@ export async function GET(request: NextRequest) {
       console.error('[Contacts Search API] Users error:', usersError);
     }
 
+    // Strip values that leaked in from users.role
+    const USER_ROLE_VALUES = new Set([
+      'super_user', 'admin', 'orphan',
+      'dev_partner_tier_1', 'dev_partner_tier_2',
+      'gov_partner_tier_1', 'gov_partner_tier_2',
+    ]);
+    const clean = (v: any) => (v && USER_ROLE_VALUES.has(String(v)) ? '' : (v || ''));
+
+    // Look up matching users by email so contacts inherit the real job_title
+    const contactEmails = Array.from(new Set(
+      (contacts || []).map((c: any) => (c.email || '').toLowerCase()).filter(Boolean)
+    ));
+    const usersByEmail = new Map<string, any>();
+    if (contactEmails.length > 0) {
+      const { data: emailUsers } = await supabase
+        .from('users')
+        .select('email, job_title')
+        .in('email', contactEmails);
+      (emailUsers || []).forEach((u: any) => {
+        if (u.email) usersByEmail.set(u.email.toLowerCase(), u);
+      });
+    }
+
     // ---- Normalize contacts ----
     const normalizedContacts = (contacts || []).map((contact: any) => {
       const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown Contact';
@@ -116,8 +139,8 @@ export async function GET(request: NextRequest) {
         organisation: orgName,
         organisationId: contact.organisation_id,
         organisationAcronym: orgAcronym,
-        position: contact.position || '',
-        jobTitle: contact.job_title || '',
+        position: clean(contact.position),
+        jobTitle: clean(contact.job_title) || usersByEmail.get((contact.email || '').toLowerCase())?.job_title || '',
         department: contact.department || '',
         type: '1',
         profilePhoto: contact.profile_photo || '',

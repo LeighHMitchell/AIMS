@@ -359,12 +359,11 @@ export function RichTextEditor({
           className="prose prose-sm max-w-none p-4 focus:outline-none h-full overflow-y-auto [&_p]:my-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600"
         />
         
-        {/* Resize Handle */}
-        <div 
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-40 hover:opacity-80 transition-opacity group border-l border-t border-gray-300 flex items-center justify-center"
+        {/* Resize Handle - styled to match the browser's native textarea resize grip */}
+        <div
+          className="absolute bottom-0 right-0 w-3.5 h-3.5 cursor-se-resize"
           style={{
-            background: 'linear-gradient(-45deg, transparent 30%, #9ca3af 30%, #9ca3af 40%, transparent 40%, transparent 60%, #9ca3af 60%, #9ca3af 70%, transparent 70%)',
-            backgroundSize: '6px 6px'
+            background: 'linear-gradient(135deg, transparent 0%, transparent 50%, #9ca3af 50%, #9ca3af 60%, transparent 60%, transparent 70%, #9ca3af 70%, #9ca3af 80%, transparent 80%)'
           }}
           title="Drag to resize"
           onMouseDown={(e) => {
@@ -393,9 +392,8 @@ export function RichTextEditor({
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
           }}
-        >
-          <Move className="w-2 h-2 text-gray-500" />
-        </div>
+        />
+
       </div>
 
       <style jsx global>{`

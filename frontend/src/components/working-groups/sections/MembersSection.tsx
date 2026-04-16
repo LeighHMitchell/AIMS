@@ -410,7 +410,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                 <th className={`text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 ${sortableHeaderClasses}`} onClick={() => handleSort('joined')}>
                   <span className="flex items-center gap-1">Joined {getSortIcon('joined', sortField, sortDirection)}</span>
                 </th>
-                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
+                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

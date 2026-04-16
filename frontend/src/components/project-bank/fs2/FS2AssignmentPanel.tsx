@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { RequiredDot } from "@/components/ui/required-dot"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -301,7 +302,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               <h4 className="text-sm font-medium">Complete Study — Enter Results</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">FIRR (%) <span className="text-destructive">*</span></Label>
+                  <Label className="text-xs">FIRR (%) <RequiredDot /></Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -311,7 +312,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">EIRR (%) <span className="text-destructive">*</span></Label>
+                  <Label className="text-xs">EIRR (%) <RequiredDot /></Label>
                   <Input
                     type="number"
                     step="0.1"

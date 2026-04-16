@@ -31,6 +31,7 @@ interface AssignFocalPointModalProps {
   selectedUser: UserOption | null;
   onSelectedUserChange: (userId: string | null, userData: UserOption | null) => void;
   actionLoading: string | null;
+  fixedType?: FocalPointType;
 }
 
 export function AssignFocalPointModal({
@@ -39,8 +40,15 @@ export function AssignFocalPointModal({
   onAssign,
   selectedUser,
   onSelectedUserChange,
-  actionLoading
+  actionLoading,
+  fixedType
 }: AssignFocalPointModalProps) {
+  const typeLabel = fixedType === 'government_focal_point'
+    ? 'Government Focal Point'
+    : fixedType === 'development_partner_focal_point'
+      ? 'Development Partner Focal Point'
+      : null;
+  const TypeIcon = fixedType === 'development_partner_focal_point' ? Users : Building2;
   const [query, setQuery] = useState('');
   const [allResults, setAllResults] = useState<UserOption[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserOption[]>([]);
@@ -81,7 +89,7 @@ export function AssignFocalPointModal({
     if (!hasLoaded) return;
 
     if (query.length === 0) {
-      setFilteredResults(allResults);
+      fetchUsers('');
       return;
     }
 
@@ -151,9 +159,11 @@ export function AssignFocalPointModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Assign Focal Point</DialogTitle>
+          <DialogTitle>{typeLabel ? `Assign ${typeLabel}` : 'Assign Focal Point'}</DialogTitle>
           <DialogDescription>
-            Search for a user and assign them as a government or development partner focal point.
+            {typeLabel
+              ? `Search for a user and assign them as a ${typeLabel.toLowerCase()}.`
+              : 'Search for a user and assign them as a government or development partner focal point.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -261,31 +271,48 @@ export function AssignFocalPointModal({
         </div>
 
         <DialogFooter className="flex-row gap-2">
-          <Button
-            className="flex-1 py-3 px-4 h-auto"
-            onClick={() => onAssign('government_focal_point')}
-            disabled={!selectedUser || actionLoading !== null}
-          >
-            {actionLoading === 'assign-government_focal_point' ? (
-              <Loader2 className="h-8 w-8 mr-2 animate-spin" />
-            ) : (
-              <Building2 className="h-8 w-8 mr-2" />
-            )}
-            <span className="whitespace-normal text-center leading-tight">Assign as Government Focal Point</span>
-          </Button>
-          <Button
-            className="flex-1 py-3 px-4 h-auto"
-            variant="outline"
-            onClick={() => onAssign('development_partner_focal_point')}
-            disabled={!selectedUser || actionLoading !== null}
-          >
-            {actionLoading === 'assign-development_partner_focal_point' ? (
-              <Loader2 className="h-8 w-8 mr-2 animate-spin" />
-            ) : (
-              <Users className="h-8 w-8 mr-2" />
-            )}
-            <span className="whitespace-normal text-center leading-tight">Assign as Development Partner Focal Point</span>
-          </Button>
+          {fixedType ? (
+            <Button
+              className="flex-1 py-3 px-4 h-auto"
+              onClick={() => onAssign(fixedType)}
+              disabled={!selectedUser || actionLoading !== null}
+            >
+              {actionLoading === `assign-${fixedType}` ? (
+                <Loader2 className="h-8 w-8 mr-2 animate-spin" />
+              ) : (
+                <TypeIcon className="h-8 w-8 mr-2" />
+              )}
+              <span className="whitespace-normal text-center leading-tight">Assign as {typeLabel}</span>
+            </Button>
+          ) : (
+            <>
+              <Button
+                className="flex-1 py-3 px-4 h-auto"
+                onClick={() => onAssign('government_focal_point')}
+                disabled={!selectedUser || actionLoading !== null}
+              >
+                {actionLoading === 'assign-government_focal_point' ? (
+                  <Loader2 className="h-8 w-8 mr-2 animate-spin" />
+                ) : (
+                  <Building2 className="h-8 w-8 mr-2" />
+                )}
+                <span className="whitespace-normal text-center leading-tight">Assign as Government Focal Point</span>
+              </Button>
+              <Button
+                className="flex-1 py-3 px-4 h-auto"
+                variant="outline"
+                onClick={() => onAssign('development_partner_focal_point')}
+                disabled={!selectedUser || actionLoading !== null}
+              >
+                {actionLoading === 'assign-development_partner_focal_point' ? (
+                  <Loader2 className="h-8 w-8 mr-2 animate-spin" />
+                ) : (
+                  <Users className="h-8 w-8 mr-2" />
+                )}
+                <span className="whitespace-normal text-center leading-tight">Assign as Development Partner Focal Point</span>
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

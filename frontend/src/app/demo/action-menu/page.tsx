@@ -81,7 +81,7 @@ export default function ActionMenuDemoPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead className="w-[50px]">Actions</TableHead>
+                    <TableHead className="w-[50px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -414,7 +414,7 @@ export default function ParcelsListPage() {
                       <SortHeader field="title_status">Title</SortHeader>
                       <SortHeader field="status">Status</SortHeader>
                       <SortHeader field="created_at">Created</SortHeader>
-                      <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[60px]">Actions</th>
+                      <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[60px]" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-background">

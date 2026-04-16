@@ -263,7 +263,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
-        <DialogHeader>
+        <DialogHeader className="mx-0 mt-0 rounded-t-lg">
           <DialogTitle className="text-xl">IATI Data Comparison</DialogTitle>
           <DialogDescription>Review and select which IATI data fields to import into your activity record.</DialogDescription>
         </DialogHeader>

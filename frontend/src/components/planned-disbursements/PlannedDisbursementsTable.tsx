@@ -8,6 +8,8 @@ import {
   ArrowRight,
   Loader2,
   NotepadText,
+  Copy,
+  Check,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +150,12 @@ export function PlannedDisbursementsTable({
 }: PlannedDisbursementsTableProps) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyIatiId = (iatiId: string, rowId: string) => {
+    navigator.clipboard.writeText(iatiId);
+    setCopiedId(`${rowId}-iati`);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
   const [usdValues, setUsdValues] = useState<Record<string, {
     usd: number | null,
     rate: number | null,
@@ -282,7 +290,7 @@ export function PlannedDisbursementsTable({
   }
 
   if (disbursements.length === 0) {
-    return <EmptyState illustration="/images/empty-hourglass.png" message="No planned disbursements found" />;
+    return <EmptyState illustration="/images/empty-hourglass.webp" message="No planned disbursements found" />;
   }
 
   // Build header map
@@ -298,6 +306,15 @@ export function PlannedDisbursementsTable({
           <span>Activity Title</span>
           {getSortIcon("activity", sortField, sortOrder)}
         </div>
+      </SortableTableHeader>
+    ),
+    systemId: (
+      <SortableTableHeader
+        key="systemId"
+        id="systemId"
+        className="cursor-pointer hover:bg-muted/80 transition-colors whitespace-nowrap"
+      >
+        <span>Planned Disbursement ID</span>
       </SortableTableHeader>
     ),
     periodStart: (
@@ -442,20 +459,43 @@ export function PlannedDisbursementsTable({
                         }
                       }}
                     >
-                      <div className="text-sm font-medium text-foreground line-clamp-2">
+                      <div className="text-sm">
                         {activityTitle}
-                        {disbursement.reference && (
-                          <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block">
-                            {disbursement.reference}
-                          </span>
+                        {disbursement.activity?.iati_identifier && (
+                          <>
+                            <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block">
+                              {disbursement.activity.iati_identifier}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                copyIatiId(disbursement.activity!.iati_identifier!, disbursementId);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 inline-flex align-middle ml-1"
+                              title="Copy IATI Identifier"
+                            >
+                              {copiedId === `${disbursementId}-iati` ? (
+                                <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </>
                         )}
                       </div>
-                      {disbursement.activity?.iati_identifier && (
-                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
-                          {disbursement.activity.iati_identifier}
-                        </span>
-                      )}
                     </div>
+                  </td>
+                ),
+                systemId: (
+                  <td key="systemId" className="py-3 px-4 whitespace-nowrap">
+                    {(disbursement as any).auto_ref ? (
+                      <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block">
+                        {(disbursement as any).auto_ref}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                 ),
                 periodStart: (
@@ -484,7 +524,7 @@ export function PlannedDisbursementsTable({
                       const receiverDisplay = disbursement.receiver_org_acronym || disbursement.receiver_org_name || '—';
 
                       return (
-                        <div className="text-sm font-medium text-foreground">
+                        <div className="text-sm">
                           <div className="flex items-start gap-2">
                             {/* Provider */}
                             <div className="flex flex-col gap-0.5">
@@ -547,7 +587,7 @@ export function PlannedDisbursementsTable({
 
                       if (amountValue != null && disbursement.currency) {
                         return (
-                          <div className="font-medium">
+                          <div className="text-sm">
                             <span className="text-muted-foreground text-xs">{disbursement.currency.toUpperCase()}</span>{' '}
                             {new Intl.NumberFormat("en-US", {
                               minimumFractionDigits: 2,
@@ -574,7 +614,7 @@ export function PlannedDisbursementsTable({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="font-medium cursor-help">
+                              <span className="text-sm cursor-help">
                                 {formatCurrency(usdValues[disbursement.id].usd!, 'USD')}
                               </span>
                             </TooltipTrigger>

@@ -27,7 +27,9 @@ interface FinanceTypeSearchableSelectProps {
   align?: "start" | "center" | "end";
 }
 
-const allOptions: FinanceType[] = financeTypes;
+const allOptions: FinanceType[] = (financeTypes as FinanceType[]).filter(
+  ft => !ft.withdrawn && ft.group !== "Indicators / Macroeconomic Stats"
+);
 
 
 export function FinanceTypeSearchableSelect({

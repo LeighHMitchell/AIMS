@@ -1109,6 +1109,21 @@ const autoPopulateIatiFields = useCallback((params: {
     }
   };
 
+  const onInvalid = (formErrors: any) => {
+    const fieldLabels: Record<string, string> = {
+      location_name: 'Location Name',
+      latitude: 'Latitude',
+      longitude: 'Longitude',
+      location_id_code: 'Gazetteer Code',
+      admin_code: 'Administrative Code',
+    };
+    const missing = Object.keys(formErrors || {})
+      .map((k) => fieldLabels[k] || k)
+      .filter((v, i, a) => a.indexOf(v) === i);
+    const list = missing.length ? missing.join(', ') : 'required fields';
+    toast.error(`Please complete required fields: ${list}`);
+  };
+
   // Handle delete
   const handleDelete = async () => {
     if (!location?.id || !onDelete) return;
@@ -1126,7 +1141,7 @@ const autoPopulateIatiFields = useCallback((params: {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             {location?.id ? 'Edit Location' : 'Add Location'}
@@ -1136,7 +1151,7 @@ const autoPopulateIatiFields = useCallback((params: {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Map Section */}
@@ -1163,6 +1178,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       </SelectContent>
                     </Select>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => {
@@ -1181,6 +1197,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => {
@@ -1308,6 +1325,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   <div className="space-y-2">
                     <Label htmlFor="location_name" className="flex items-center gap-2">
                       Location Name
+                      <RequiredDot />
                       <HelpTextTooltip content="A human-readable name for the place. This provides a clear label for identifying the location within the activity record." />
                     </Label>
                     <Input
@@ -1315,20 +1333,17 @@ const autoPopulateIatiFields = useCallback((params: {
                       {...register('location_name')}
                       placeholder="Enter location name"
                     />
-                    {errors.location_name && (
-                      <p className="text-sm text-red-600">{errors.location_name.message}</p>
-                    )}
                   </div>
 
                   {/* Location Description */}
                         <div className="space-y-2">
-                    <Label htmlFor="description" className="flex items-center gap-2">
+                    <Label htmlFor="location_description" className="flex items-center gap-2">
                       Location Description
                       <HelpTextTooltip content="A short narrative describing the place and its significance. This explains why the location is relevant to the activity." />
                     </Label>
                     <Textarea
-                      id="description"
-                      {...register('description')}
+                      id="location_description"
+                      {...register('location_description')}
                       placeholder="Additional location details"
                       rows={3}
                     />
@@ -1353,6 +1368,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     <div className="space-y-2">
                       <Label htmlFor="latitude" className="flex items-center gap-2">
                         Latitude
+                        <RequiredDot />
                         <HelpTextTooltip content="The latitude coordinate in decimal degrees (-90 to 90). Click on the map or search for a location to auto-populate." />
                       </Label>
                       <div className="flex items-center gap-2">
@@ -1382,13 +1398,11 @@ const autoPopulateIatiFields = useCallback((params: {
                           className="flex-1"
                         />
                       </div>
-                      {errors.latitude && (
-                        <p className="text-sm text-red-600">{errors.latitude.message}</p>
-                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="longitude" className="flex items-center gap-2">
                         Longitude
+                        <RequiredDot />
                         <HelpTextTooltip content="The longitude coordinate in decimal degrees (-180 to 180). Click on the map or search for a location to auto-populate." />
                       </Label>
                       <div className="flex items-center gap-2">
@@ -1434,9 +1448,6 @@ const autoPopulateIatiFields = useCallback((params: {
                           </Button>
                         )}
                       </div>
-                      {errors.longitude && (
-                        <p className="text-sm text-red-600">{errors.longitude.message}</p>
-                      )}
                     </div>
                   </div>
                   {validationErrors.coordinates && (

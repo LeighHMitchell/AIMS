@@ -235,7 +235,7 @@ export default function AdvancedLocationFields({
             {/* Locations List */}
             {localLocations.length === 0 ? (
               <div className="text-center py-12">
-                <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
+                <img src="/images/empty-pushpin.webp" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium mb-2">No locations</h3>
                 <p className="text-muted-foreground">
                   Use the button above to add your first location.

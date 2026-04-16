@@ -297,7 +297,7 @@ export function CreatedTasksTable({
                 {getSortIcon('progress', sortField || '', sortDirection)}
               </div>
             </TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableHead className="w-[100px]" />
           </TableRow>
         </TableHeader>
         <TableBody>

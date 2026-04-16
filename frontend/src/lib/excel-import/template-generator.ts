@@ -172,7 +172,7 @@ function getSampleValue(field: ExcelFieldDefinition): string {
     case 'date':
       return '2025-01-01';
     case 'boolean':
-      return 'No';
+      return 'Yes';
     default:
       return '';
   }

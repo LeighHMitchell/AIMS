@@ -255,7 +255,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
 
   return (
     <TooltipProvider>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+      <div className="space-y-6">
         {/* Tag Input */}
         <div className="flex gap-2 items-start">
           <div className="relative flex-1">
@@ -400,7 +400,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
             </div>
           ) : (
             <div className="text-center py-12">
-              <img src="/images/empty-filmreel.png" alt="No tags" className="h-32 mx-auto mb-4 opacity-50" />
+              <img src="/images/empty-filmreel.webp" alt="No tags" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No tags</h3>
               <p className="text-muted-foreground mb-4">
                 Use the input above to search or add your first tag.

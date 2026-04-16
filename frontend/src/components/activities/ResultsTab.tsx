@@ -1952,10 +1952,10 @@ export function ResultsTab({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                    <p>No time series data available yet</p>
-                    <p className="text-sm">Add indicator periods with dates to see progress over time</p>
+                  <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                    <img src="/images/empty-staff-paper.webp" alt="No time series data" className="h-32 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-semibold mb-2">No time series data yet</h3>
+                    <p className="text-muted-foreground">Add indicator periods with dates to see progress over time.</p>
                   </div>
                 )}
               </div>
@@ -1990,9 +1990,10 @@ export function ResultsTab({
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Activity className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                      <p>No indicators to analyze yet</p>
+                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                      <img src="/images/empty-sundial.webp" alt="No indicators to analyze" className="h-32 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">No indicators to analyze</h3>
+                      <p className="text-muted-foreground">Add indicators to see status distribution.</p>
                     </div>
                   )}
                 </div>
@@ -2014,9 +2015,10 @@ export function ResultsTab({
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Target className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                      <p>No results to categorize yet</p>
+                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                      <img src="/images/empty-kite-spool.webp" alt="No results to categorize" className="h-32 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">No results to categorize</h3>
+                      <p className="text-muted-foreground">Add results to see them grouped by type.</p>
                     </div>
                   )}
                 </div>

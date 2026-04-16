@@ -181,7 +181,7 @@ export default function LocationCard({
             <div className="flex-1 space-y-2">
               {/* 1. Location Name */}
               <div className="flex items-center gap-1.5">
-                <h4 className="font-semibold text-gray-900 truncate">
+                <h4 className="font-semibold text-gray-900 break-words">
                   {location.location_name}
                 </h4>
                 {location.id && (
@@ -190,17 +190,17 @@ export default function LocationCard({
               </div>
 
               {/* 2. Location Description */}
-              {(location.description || location.location_description) && (
+              {(location.location_description || location.description) && (
                 <div className="text-sm text-gray-600">
                   {(() => {
-                    const desc = location.description || location.location_description || '';
+                    const desc = location.location_description || location.description || '';
                     return showFullDescription || desc.length <= 100 ? (
                       <span>
                         {desc}
                         {desc.length > 100 && (
                           <button
                             onClick={() => setShowFullDescription(false)}
-                            className="text-blue-600 hover:text-blue-800 ml-1"
+                            className="text-muted-foreground hover:text-foreground ml-1 transition-colors"
                           >
                             Show less
                           </button>
@@ -211,7 +211,7 @@ export default function LocationCard({
                         {desc.substring(0, 100)}...
                         <button
                           onClick={() => setShowFullDescription(true)}
-                          className="text-blue-600 hover:text-blue-800 ml-1"
+                          className="text-muted-foreground hover:text-foreground ml-1 transition-colors"
                         >
                           Show more
                         </button>

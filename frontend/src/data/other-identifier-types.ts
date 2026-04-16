@@ -7,12 +7,12 @@ export interface OtherIdentifierType {
 export const OTHER_IDENTIFIER_TYPES: OtherIdentifierType[] = [
   {
     code: "A1",
-    name: "Reporting Organisation's internal activity identifier",
+    name: "Reporting Organisation's Internal Activity Identifier",
     description: "Internal identifier used by the reporting organisation for this activity"
   },
   {
     code: "A2", 
-    name: "CRS Activity identifier",
+    name: "CRS Activity Identifier",
     description: "Creditor Reporting System activity identifier"
   },
   {

@@ -55,6 +55,12 @@ export default function FocalPointsTab({
   
   // Assign modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignModalType, setAssignModalType] = useState<FocalPointType>('government_focal_point');
+
+  const openAssignModal = (type: FocalPointType) => {
+    setAssignModalType(type);
+    setShowAssignModal(true);
+  };
 
   // Handoff modal state
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
@@ -73,6 +79,8 @@ export default function FocalPointsTab({
         avatarUrl: (user as any).profilePicture || null,
         organizationId: user.organizationId,
         organization: user.organisation || user.organization?.name,
+        jobTitle: (user as any).jobTitle || (user as any).title || '',
+        department: (user as any).department || '',
         value: user.id,
         label: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
       };
@@ -488,16 +496,6 @@ export default function FocalPointsTab({
 
   return (
     <div className="space-y-6">
-      {/* Assign Focal Point Button - pulled up to align with section header */}
-      {permissions.canAssignFocalPoints && (
-        <div className="flex justify-end -mt-12">
-          <Button onClick={() => setShowAssignModal(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Assign Focal Point
-          </Button>
-        </div>
-      )}
-
       {/* Pending Handoff Alerts */}
       {renderPendingHandoffAlert('government_focal_point')}
       {renderPendingHandoffAlert('development_partner_focal_point')}
@@ -518,6 +516,7 @@ export default function FocalPointsTab({
               setSelectedUser(userId && userData ? userData : null);
             }}
             actionLoading={actionLoading}
+            fixedType={assignModalType}
           />
         </>
       )}
@@ -527,23 +526,33 @@ export default function FocalPointsTab({
         {/* Government Focal Points */}
         <Card className="h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="h-5 w-5 text-slate-600" />
-              Government Focal Points
-              {governmentFocalPoints.length > 0 && (
-                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Building2 className="h-5 w-5 text-slate-600" />
+                  Government Focal Points
+                  {governmentFocalPoints.length > 0 && (
+                    <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+                  )}
+                </CardTitle>
+                <CardDescription className="text-xs mt-1.5">
+                  Government officials responsible for reviewing, endorsing, and approving this activity.
+                </CardDescription>
+              </div>
+              {permissions.canAssignFocalPoints && (
+                <Button size="sm" onClick={() => openAssignModal('government_focal_point')} className="shrink-0">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign
+                </Button>
               )}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Government officials responsible for reviewing, endorsing, and approving this activity.
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             {governmentFocalPoints.length === 0 ? (
               <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
-                <img src="/images/empty-key-ornate.png" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
+                <img src="/images/empty-key-ornate.webp" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">No government focal points</p>
-                <p className="text-xs text-slate-400 mt-1">Use the Assign Focal Point button to add your first focal point.</p>
+                <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -556,23 +565,33 @@ export default function FocalPointsTab({
         {/* Development Partner Focal Points */}
         <Card className="h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="h-5 w-5 text-slate-600" />
-              Development Partner Focal Points
-              {developmentPartnerFocalPoints.length > 0 && (
-                <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-5 w-5 text-slate-600" />
+                  Development Partner Focal Points
+                  {developmentPartnerFocalPoints.length > 0 && (
+                    <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
+                  )}
+                </CardTitle>
+                <CardDescription className="text-xs mt-1.5">
+                  Main contacts responsible for updating and managing the activity information.
+                </CardDescription>
+              </div>
+              {permissions.canAssignFocalPoints && (
+                <Button size="sm" onClick={() => openAssignModal('development_partner_focal_point')} className="shrink-0">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign
+                </Button>
               )}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Main contacts responsible for updating and managing the activity information.
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             {developmentPartnerFocalPoints.length === 0 ? (
               <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
-                <img src="/images/empty-key-modern.png" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
+                <img src="/images/empty-key-modern.webp" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">No development partner focal points</p>
-                <p className="text-xs text-slate-400 mt-1">Use the Assign Focal Point button to add your first focal point.</p>
+                <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">

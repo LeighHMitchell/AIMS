@@ -1696,13 +1696,6 @@
           "st_pcode": "MMR013"
         },
         {
-          "id": "12-031",
-          "name": "Seikkyi",
-          "code": "MM-12-031",
-          "ts_pcode": "MMR013031",
-          "st_pcode": "MMR013"
-        },
-        {
           "id": "12-032",
           "name": "Shwepyithar",
           "code": "MM-12-032",
@@ -1953,13 +1946,6 @@
           "st_pcode": "MMR015"
         },
         {
-          "id": "13-025",
-          "name": "Maukmai",
-          "code": "MM-13-025",
-          "ts_pcode": "MMR014020",
-          "st_pcode": "MMR014"
-        },
-        {
           "id": "13-026",
           "name": "Mawkmai",
           "code": "MM-13-026",
@@ -2100,13 +2086,6 @@
           "name": "Namtu",
           "code": "MM-13-046",
           "ts_pcode": "MMR015015",
-          "st_pcode": "MMR015"
-        },
-        {
-          "id": "13-047",
-          "name": "Nanhkan",
-          "code": "MM-13-047",
-          "ts_pcode": "MMR015010",
           "st_pcode": "MMR015"
         },
         {
@@ -2352,13 +2331,6 @@
           "id": "14-018",
           "name": "Ngathainggyaung",
           "code": "MM-14-018"
-        },
-        {
-          "id": "14-019",
-          "name": "Ngaputaw",
-          "code": "MM-14-019",
-          "ts_pcode": "MMR017004",
-          "st_pcode": "MMR017"
         },
         {
           "id": "14-020",

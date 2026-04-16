@@ -1,6 +1,7 @@
 "use client"
 
 import { RequiredDot } from "@/components/ui/required-dot";
+import { AutoRefField } from "@/components/ui/auto-ref-field";
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -685,6 +686,7 @@ export default function TransactionForm({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <AutoRefField value={(transaction as any)?.auto_ref} />
           {/* Basic Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Transaction Type */}

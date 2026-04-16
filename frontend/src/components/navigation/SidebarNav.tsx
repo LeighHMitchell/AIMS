@@ -162,7 +162,7 @@ export function SidebarNav({
       isAnimated: true,
       defaultOpen: true,
       items: [
-        { name: "Analytics", href: "/analytics-dashboard", show: true },
+        { name: "Dashboards", href: "/analytics-dashboard", show: true },
         { name: "Plan Alignment", href: "/alignment", show: true },
         { name: "Atlas", href: "/atlas", show: true },
         { name: "Search", href: "/search", show: true },
@@ -365,7 +365,7 @@ export function SidebarNav({
     : currentModule === 'land-bank'
     ? [{ name: "DASHBOARD", href: "/land-bank", icon: HomeIcon, isAnimated: true, show: true }]
     : currentModule === 'aims'
-    ? [{ name: "DASHBOARD", href: "/dashboard", icon: HomeIcon, isAnimated: true, show: true }]
+    ? [{ name: "WORKSPACE", href: "/dashboard", icon: Briefcase, isAnimated: true, show: true }]
     : []
 
   // Show "Back to Home" link when inside a module

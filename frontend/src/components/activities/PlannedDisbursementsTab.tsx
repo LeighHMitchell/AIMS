@@ -63,6 +63,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import {
   Sheet,
   SheetContent,
@@ -753,8 +754,8 @@ export default function PlannedDisbursementsTab({
               usdAmount: disbursement.usd_amount ?? null, // Use stored value from database
               provider_organization: providerOrg,
               receiver_organization: receiverOrg,
-              provider_org_logo: providerOrg?.logo,
-              receiver_org_logo: receiverOrg?.logo,
+              provider_org_logo: providerOrg?.logo ?? disbursement.provider_org_logo,
+              receiver_org_logo: receiverOrg?.logo ?? disbursement.receiver_org_logo,
             };
 
             // Debug logging
@@ -1370,6 +1371,7 @@ export default function PlannedDisbursementsTab({
   // Enhanced modal save handler
   const handleModalSave = async () => {
     if (isReadOnly || !modalDisbursement) return;
+    if (savingId !== null) return;
 
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
@@ -1462,10 +1464,13 @@ export default function PlannedDisbursementsTab({
         toast.success('Planned disbursement added successfully');
       }
 
-      // Reset amount input states
+      // Reset amount input states and close without dirty-check prompt
+      setShowModal(false);
+      setModalDisbursement(null);
+      setFieldErrors({});
+      setIsFormDirty(false);
       setAmountInputValue('');
       setIsAmountFocused(false);
-      closeModal();
     } catch (err: any) {
       toast.error(err.message || 'Failed to save planned disbursement');
       console.error('Error saving planned disbursement:', err);
@@ -1596,7 +1601,7 @@ export default function PlannedDisbursementsTab({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>
@@ -1636,7 +1641,7 @@ export default function PlannedDisbursementsTab({
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1669,7 +1674,7 @@ export default function PlannedDisbursementsTab({
                   </SelectContent>
                 </Select>
               </div>
-              <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+              <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
@@ -1680,7 +1685,7 @@ export default function PlannedDisbursementsTab({
           {/* Table */}
           {disbursements.length === 0 ? (
             <div className="text-center py-12">
-              <img src="/images/empty-stork.png" alt="No planned disbursements" className="h-32 mx-auto mb-4 opacity-50" />
+              <img src="/images/empty-stork.webp" alt="No planned disbursements" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No planned disbursements</h3>
               <p className="text-muted-foreground mb-4">
                 Use the button above to add your first planned disbursement.
@@ -1993,10 +1998,6 @@ export default function PlannedDisbursementsTab({
                                     <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
                                     Edit
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Duplicate
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => setDeleteConfirmId(disbursement.id || '')}
                                     disabled={isReadOnly || deleteLoading === disbursement.id}
@@ -2117,10 +2118,33 @@ export default function PlannedDisbursementsTab({
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{modalDisbursement?.id ? 'Edit Planned Disbursement' : 'Add Planned Disbursement'}</DialogTitle>
-            <DialogDescription>
-              Fill in all required fields for this planned disbursement.
-            </DialogDescription>
+            <div className="flex items-start justify-between gap-4 pr-8">
+              <div>
+                <DialogTitle>{modalDisbursement?.id ? 'Edit Planned Disbursement' : 'Add Planned Disbursement'}</DialogTitle>
+                <DialogDescription>
+                  Fill in all required fields for this planned disbursement.
+                </DialogDescription>
+              </div>
+              {(modalDisbursement as any)?.auto_ref && (
+                <div className="group inline-flex items-center gap-2 text-muted-foreground whitespace-nowrap">
+                  <span className="text-2xl font-mono">{(modalDisbursement as any).auto_ref}</span>
+                  <HelpTextTooltip side="bottom" align="end" size="sm">
+                    A unique, immutable identifier (PD-####) automatically generated by the system when this planned disbursement was created. It cannot be edited.
+                  </HelpTextTooltip>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText((modalDisbursement as any).auto_ref);
+                      toast.success(`Copied ${(modalDisbursement as any).auto_ref}`);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-foreground"
+                    title="Copy ID"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </DialogHeader>
           
           <div className="space-y-6">
@@ -2623,18 +2647,21 @@ export default function PlannedDisbursementsTab({
           <DialogFooter className="pt-4">
             <Button 
               onClick={handleModalSave}
-              disabled={savingId === modalDisbursement?.id || Object.keys(fieldErrors).length > 0}
+              disabled={savingId !== null || Object.keys(fieldErrors).length > 0}
             >
-              {savingId === modalDisbursement?.id ? (
+              {savingId !== null ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
-                'Save Disbursement'
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Planned Disbursement
+                </>
               )}
             </Button>
-            <Button variant="outline" onClick={closeModal} disabled={savingId === modalDisbursement?.id}>
+            <Button variant="outline" onClick={closeModal} disabled={savingId !== null}>
               Cancel
             </Button>
           </DialogFooter>

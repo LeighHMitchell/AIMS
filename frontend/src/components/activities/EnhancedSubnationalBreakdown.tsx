@@ -34,6 +34,37 @@ const SubnationalChoroplethMap = dynamic(
   }
 )
 
+// Nominatim reverse-geocoding often returns township names with admin-level
+// suffixes (e.g. "Kyauktada District", "Bhamo Township") or directional
+// parentheticals, whereas MIMU/myanmar-locations.json uses short names like
+// "Kyauktada". This normaliser strips that noise so best-effort matches land.
+function normaliseTownshipName(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\s*\((east|west|north|south|seikkan)\)\s*$/i, '')
+    .replace(/\s+(district|township|sub[- ]township)\s*$/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+// Known Nominatim ↔ MIMU spelling drift for Myanmar state/region names.
+// Keys and values are post-normalisation (lowercase, alphanumeric-collapsed,
+// suffixes already stripped). Extend as new mismatches surface.
+const REGION_NAME_ALIASES: Record<string, string> = {
+  naypyitaw: 'naypyidaw',
+  nay_pyi_taw: 'naypyidaw',
+  'nay pyi taw': 'naypyidaw',
+}
+
+function normaliseRegionName(raw: string): string {
+  const base = raw
+    .toLowerCase()
+    .replace(/\s+(region|state|union\s+territory|division)\s*$/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+  return REGION_NAME_ALIASES[base] ?? base
+}
+
 interface AdminUnit {
   id: string
   name: string
@@ -215,8 +246,9 @@ export function EnhancedSubnationalBreakdown({
         townshipCount: summary.townshipCount,
       })
 
-      // Add township rows (if region is expanded)
-      if (expandedRegions.has(regionName)) {
+      // Add township rows only in Townships view, and only when expanded.
+      // Regions view shows region rows only (no chevrons, no township children).
+      if (viewLevel === 'township' && expandedRegions.has(regionName)) {
         const townshipEntries = entries
           .filter(e => e.adminUnit.parentName === regionName)
           .sort((a, b) => a.adminUnit.name.localeCompare(b.adminUnit.name))
@@ -232,7 +264,7 @@ export function EnhancedSubnationalBreakdown({
     })
 
     return result
-  }, [entries, regionSummaries, expandedRegions])
+  }, [entries, regionSummaries, expandedRegions, viewLevel])
 
   // Show toast when total reaches 100% - but only after user makes changes
   useEffect(() => {
@@ -244,26 +276,49 @@ export function EnhancedSubnationalBreakdown({
     }
   }, [isValidTotal, hasAnyValues, loading])
 
-  // Convert entries to the format expected by the map
-  const breakdownsForMap = useMemo(() => {
+  // Region-keyed breakdowns: aggregate every entry up to its parent region.
+  // Used for the region/state choropleth layer and as the region-totals source
+  // for the township tooltip.
+  const regionBreakdowns = useMemo(() => {
     const aggregated = new Map<string, number>()
 
     entries.forEach((entry) => {
-      // Always aggregate townships to their parent region for the map
       const targetName = entry.adminUnit.parentName ?? entry.adminUnit.name
-
       const currentValue = aggregated.get(targetName)
-      if (typeof currentValue === "number") {
-        aggregated.set(targetName, currentValue + entry.percentage)
+      aggregated.set(targetName, (currentValue ?? 0) + entry.percentage)
+    })
+
+    return Object.fromEntries(aggregated.entries())
+  }, [entries])
+
+  // Township-keyed breakdowns. Keys are MIMU township pcodes (matched against
+  // the GeoJSON `TS_PCODE` property). Pcodes are used instead of names because
+  // township name spellings differ between the MIMU GeoJSON and our locations
+  // data (e.g. "Dagon Myothit (East)" vs "East Dagon", "Kamaryut" vs "Kamayut").
+  // Region-level entries are spread evenly across their child townships.
+  const townshipBreakdowns = useMemo(() => {
+    const aggregated: Record<string, number> = {}
+
+    const addTo = (key: string | undefined, value: number) => {
+      if (!key) return
+      aggregated[key] = (aggregated[key] ?? 0) + value
+    }
+
+    entries.forEach((entry) => {
+      if (entry.adminUnit.type === 'township') {
+        addTo(entry.adminUnit.ts_pcode, entry.percentage)
       } else {
-        aggregated.set(targetName, entry.percentage)
+        const children = allAdminUnits.filter(u => u.parentId === entry.adminUnit.id)
+        if (children.length === 0) return
+        const share = entry.percentage / children.length
+        children.forEach(child => addTo(child.ts_pcode, share))
       }
     })
 
-    const result = Object.fromEntries(aggregated.entries())
+    return aggregated
+  }, [entries, allAdminUnits])
 
-    return result
-  }, [entries])
+  const breakdownsForMap = viewLevel === 'township' ? townshipBreakdowns : regionBreakdowns
 
   // Load existing data
   const loadData = useCallback(async () => {
@@ -419,15 +474,13 @@ export function EnhancedSubnationalBreakdown({
     const newExpandedRegions = new Set(expandedRegions)
     let hasChanges = false
 
-    // Helper: match region name flexibly (e.g. "Mandalay" matches "Mandalay Region", "Yangon" matches "Yangon Region")
+    // Helper: match region name flexibly across Nominatim/MIMU spelling drift
+    // (e.g. "Mandalay" ↔ "Mandalay Region", "Naypyitaw" ↔ "Naypyidaw Union Territory").
     const findRegionUnit = (regionName: string) => {
+      const target = normaliseRegionName(regionName)
+      if (!target) return undefined
       return allAdminUnits.find(u =>
-        u.type !== 'township' && (
-          u.name === regionName ||
-          u.name.startsWith(regionName + ' ') ||
-          u.name.toLowerCase() === regionName.toLowerCase() ||
-          u.name.toLowerCase().startsWith(regionName.toLowerCase() + ' ')
-        )
+        u.type !== 'township' && normaliseRegionName(u.name) === target
       )
     }
 
@@ -455,13 +508,18 @@ export function EnhancedSubnationalBreakdown({
       })
 
       if (regionTownships.length > 0) {
-        // Add only the specific townships with sites
+        // Add only the specific townships with sites. Match by normalised name
+        // so dirty values like "Kyauktada District" still resolve to "Kyauktada".
+        let matchedInThisRegion = 0
         regionTownships.forEach(st => {
-          const townshipUnit = allAdminUnits.find(u =>
-            u.type === 'township' &&
-            u.name === st.townshipName &&
-            u.parentId === regionUnit.id
-          )
+          const target = normaliseTownshipName(st.townshipName)
+          const townshipUnit = target
+            ? allAdminUnits.find(u =>
+                u.type === 'township' &&
+                u.parentId === regionUnit.id &&
+                normaliseTownshipName(u.name) === target
+              )
+            : undefined
 
           if (townshipUnit && !selectedUnits.includes(townshipUnit.id) && !allNewUnitIds.includes(townshipUnit.id)) {
             const alreadyExists = entries.some(e => e.adminUnit.id === townshipUnit.id)
@@ -473,10 +531,29 @@ export function EnhancedSubnationalBreakdown({
                 allocationLevel: 'township',
               })
               allNewUnitIds.push(townshipUnit.id)
+              matchedInThisRegion += 1
               hasChanges = true
+            } else {
+              matchedInThisRegion += 1
             }
           }
         })
+
+        // If none of the suggested townships for this region could be resolved
+        // against MIMU data, fall back to expanding the whole region at 0%.
+        if (matchedInThisRegion === 0) {
+          const { newEntries, townshipIds } = autoDistributeTownships(regionUnit, 0)
+          newEntries.forEach((entry, i) => {
+            if (!selectedUnits.includes(townshipIds[i]) && !allNewUnitIds.includes(townshipIds[i])) {
+              const alreadyExists = entries.some(e => e.adminUnit.id === townshipIds[i])
+              if (!alreadyExists) {
+                allNewEntries.push(entry)
+                allNewUnitIds.push(townshipIds[i])
+                hasChanges = true
+              }
+            }
+          })
+        }
       } else {
         // No specific townships — add ALL townships in this region with equal split
         const { newEntries, townshipIds } = autoDistributeTownships(regionUnit, 0)
@@ -876,6 +953,7 @@ export function EnhancedSubnationalBreakdown({
         <div className="h-[800px]">
           <SubnationalChoroplethMap
             breakdowns={breakdownsForMap}
+            regionTotals={regionBreakdowns}
             viewLevel={viewLevel}
             onViewLevelChange={setViewLevel}
             onFeatureClick={handleFeatureClick}
@@ -933,7 +1011,7 @@ export function EnhancedSubnationalBreakdown({
                       <th className="text-left px-3 py-2 font-medium text-sm text-foreground">Administrative Unit</th>
                       <th className="px-3 py-2">
                         <div className="flex items-center justify-end gap-2">
-                          <span className="w-28 text-right font-medium text-sm text-foreground">%</span>
+                          <span className="w-20 text-right font-medium text-sm text-foreground">%</span>
                           <span className="w-8"></span>
                         </div>
                       </th>
@@ -948,20 +1026,21 @@ export function EnhancedSubnationalBreakdown({
                           <tr key={`region-${item.regionName}`} className="border-t bg-muted/20">
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleRegionExpansion(item.regionName)}
-                                  className="p-0.5 hover:bg-muted rounded"
-                                >
-                                  {isExpanded
-                                    ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                    : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                  }
-                                </button>
+                                {viewLevel === 'township' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleRegionExpansion(item.regionName)}
+                                    className="p-0.5 hover:bg-muted rounded"
+                                  >
+                                    {isExpanded
+                                      ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                      : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    }
+                                  </button>
+                                ) : (
+                                  <span className="w-5" aria-hidden />
+                                )}
                                 <span className="text-sm font-semibold">{item.regionName}</span>
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">
-                                  {item.townshipCount} townships
-                                </Badge>
                               </div>
                             </td>
                             <td className="px-3 py-2 text-right">
@@ -973,7 +1052,7 @@ export function EnhancedSubnationalBreakdown({
                                   step="0.01"
                                   value={item.regionTotal ? parseFloat(item.regionTotal.toFixed(2)) || '' : ''}
                                   onChange={(e) => updateRegionPercentage(item.regionName, parseFloat(e.target.value) || 0)}
-                                  className="w-28 text-right text-sm h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-20 text-right text-sm h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="0"
                                   disabled={!canEdit}
                                 />
@@ -1023,7 +1102,7 @@ export function EnhancedSubnationalBreakdown({
                                 step="0.01"
                                 value={entry.percentage || ''}
                                 onChange={(e) => updatePercentage(entry.id, parseFloat(e.target.value) || 0)}
-                                className="w-28 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-20 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="0"
                                 disabled={!canEdit}
                               />
@@ -1054,7 +1133,7 @@ export function EnhancedSubnationalBreakdown({
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <span className="text-foreground font-semibold text-sm w-28 text-right">
+                            <span className="text-foreground font-semibold text-sm w-20 text-right">
                               {totalPercentage.toFixed(2)}
                             </span>
                             <span className="text-xs text-foreground font-semibold w-8 text-left">%</span>
@@ -1068,7 +1147,7 @@ export function EnhancedSubnationalBreakdown({
               </div>
             ) : (
               <div className="text-center py-12 border rounded-lg">
-                <img src="/images/empty-fish.png" alt="No administrative units" className="h-32 mx-auto mb-4 opacity-50" />
+                <img src="/images/empty-fish.webp" alt="No administrative units" className="h-32 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium mb-2">No administrative units</h3>
                 <p className="text-muted-foreground">
                   Use the dropdown above or click on the map to add regions.

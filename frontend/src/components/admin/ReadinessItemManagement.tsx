@@ -324,7 +324,7 @@ export function ReadinessItemManagement({
                   <TableHead>Required</TableHead>
                   <TableHead>Conditions</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right" />
                 </TableRow>
               </TableHeader>
               <TableBody>

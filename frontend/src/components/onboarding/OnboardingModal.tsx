@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { RequiredDot } from "@/components/ui/required-dot";
 import {
   Dialog,
   DialogContent,
@@ -155,7 +156,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
-                  First Name <span className="text-destructive">*</span>
+                  First Name <RequiredDot />
                 </label>
                 <input
                   type="text"
@@ -167,7 +168,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
-                  Last Name <span className="text-destructive">*</span>
+                  Last Name <RequiredDot />
                 </label>
                 <input
                   type="text"
@@ -192,7 +193,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           <Onboarding.Step step={1} className="space-y-4">
             <div>
               <label className="mb-1.5 block text-sm font-medium">
-                Organization <span className="text-destructive">*</span>
+                Organization <RequiredDot />
               </label>
               <OrganizationSearchableSelect
                 organizations={organizations}

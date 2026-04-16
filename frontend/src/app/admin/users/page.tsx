@@ -774,7 +774,7 @@ export default function UserManagement() {
                                 )}
                               </button>
                             </th>
-                            <th className="text-right p-4 font-medium w-32">Actions</th>
+                            <th className="text-right p-4 font-medium w-32" />
                           </tr>
                         </thead>
                         <tbody>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { RequiredDot } from "@/components/ui/required-dot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,38 @@ import {
   AlertCircle,
   CheckCircle,
   AlertTriangle,
+  HelpCircle,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const RequiredLabel = ({ children, tooltip }: { children: React.ReactNode; tooltip: string }) => (
+  <Label className="flex items-center gap-1.5">
+    <span>{children}</span>
+    <RequiredDot />
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </Label>
+);
+
+const OptionalLabel = ({ children, tooltip }: { children: React.ReactNode; tooltip: string }) => (
+  <Label className="flex items-center gap-1.5">
+    <span>{children}</span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </Label>
+);
 import {
   NationalPlan,
   NationalPriority,
@@ -293,9 +325,9 @@ export function NationalPrioritiesSection({
         </div>
 
         {allocations.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-            <img src="/images/empty-tuning-fork.png" alt="No plan alignments" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No plan alignments</h3>
+          <div className="text-center py-12">
+            <img src="/images/empty-tuning-fork.webp" alt="No plan alignments" className="h-32 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium mb-2">No plan alignments</h3>
             <p className="text-muted-foreground">
               Use the Add Alignment button to align this activity to a national plan or strategy.
             </p>
@@ -306,11 +338,9 @@ export function NationalPrioritiesSection({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Plan</TableHead>
-                    <TableHead className="w-[110px]">Category</TableHead>
-                    <TableHead className="w-[120px]">Type</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead className="w-[140px]">Significance</TableHead>
+                    <TableHead className="w-[20%]">Plan</TableHead>
+                    <TableHead className="w-[20%]">Priority</TableHead>
+                    <TableHead className="w-[130px]">Significance</TableHead>
                     <TableHead>Rationale</TableHead>
                     <TableHead className="w-[90px]"></TableHead>
                   </TableRow>
@@ -320,14 +350,6 @@ export function NationalPrioritiesSection({
                     <TableRow key={allocation.id}>
                       <TableCell className="text-sm whitespace-normal align-top">
                         {allocation.nationalPriority?.planName || "—"}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {allocation.nationalPriority?.planCategory
-                          ? PLAN_TYPE_LABELS[allocation.nationalPriority.planCategory]
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {allocation.nationalPriority?.levelLabel || "—"}
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -343,7 +365,7 @@ export function NationalPrioritiesSection({
                           {ALIGNMENT_SIGNIFICANCE_LABELS[allocation.significance]}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-normal align-top">
+                      <TableCell className="text-sm whitespace-normal align-top">
                         {allocation.rationale || "—"}
                       </TableCell>
                       <TableCell className="text-right">
@@ -420,7 +442,7 @@ export function NationalPrioritiesSection({
               <>
             {/* Plan selector */}
             <div className="space-y-2">
-              <Label>Plan / Strategy</Label>
+              <RequiredLabel tooltip="Select the national plan or strategy this activity aligns with.">Plan / Strategy</RequiredLabel>
               <Select
                 value={selectedPlanId}
                 onValueChange={setSelectedPlanId}
@@ -454,7 +476,7 @@ export function NationalPrioritiesSection({
             {/* Priority selector (shown after plan is selected) */}
             {selectedPlanId && (
               <div className="space-y-2">
-                <Label>Priority</Label>
+                <RequiredLabel tooltip="Choose the specific priority, outcome, or intervention from the selected plan.">Priority</RequiredLabel>
                 {loadingPriorities ? (
                   <Skeleton className="h-10 w-full" />
                 ) : (
@@ -473,7 +495,7 @@ export function NationalPrioritiesSection({
                           </SelectLabel>
                           {priorities.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
-                              <span className="font-mono text-xs mr-2">{p.code}</span>
+                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">{p.code}</span>
                               {p.name}
                             </SelectItem>
                           ))}
@@ -493,7 +515,7 @@ export function NationalPrioritiesSection({
             )}
 
             <div className="space-y-2">
-              <Label>Significance</Label>
+              <RequiredLabel tooltip="Principal: a main objective of the activity. Significant: an important but secondary objective.">Significance</RequiredLabel>
               <Select
                 value={significance}
                 onValueChange={(val) => setSignificance(val as AlignmentSignificance)}
@@ -532,7 +554,7 @@ export function NationalPrioritiesSection({
             </div>
 
             <div className="space-y-2">
-              <Label>Rationale (optional)</Label>
+              <OptionalLabel tooltip="Briefly explain how this activity contributes to the selected priority.">Rationale (optional)</OptionalLabel>
               <Textarea
                 value={rationale}
                 onChange={(e) => setRationale(e.target.value)}

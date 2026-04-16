@@ -328,7 +328,7 @@ export function IATIImportLogsManagement() {
                       <TableHead>Organisation</TableHead>
                       <TableHead>Source</TableHead>
                       <TableHead>When</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
+                      <TableHead className="w-[100px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

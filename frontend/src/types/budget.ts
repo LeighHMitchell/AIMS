@@ -19,6 +19,7 @@ export const BUDGET_STATUS_LABELS: Record<BudgetStatus, string> = {
 // Budget interface matching database schema
 export interface Budget {
   id: string;
+  auto_ref?: string;
   activity_id: string;
   type: BudgetType | number; // Can be number from DB or string type
   status: BudgetStatus | number; // Can be number from DB or string type

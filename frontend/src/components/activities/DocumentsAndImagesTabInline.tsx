@@ -832,7 +832,7 @@ export function DocumentsAndImagesTabInline({
                                     <TableHead>Category</TableHead>
                                     <TableHead>Languages</TableHead>
                                     <TableHead>Date</TableHead>
-                                    <TableHead className="w-40">Actions</TableHead>
+                                    <TableHead className="w-40" />
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>

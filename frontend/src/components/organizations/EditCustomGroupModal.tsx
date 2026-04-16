@@ -318,7 +318,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Edit Custom Group

@@ -5,9 +5,10 @@ import { MapPin } from 'lucide-react';
 import { Map, MapControls, useMap } from '@/components/ui/map';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
 import { apiFetch } from '@/lib/api-fetch';
+import { MAP_STYLES, DEFAULT_MAP_STYLE, type MapStyleKey } from '@/lib/map-styles';
+import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
 
 // Simplified location interface for embedded map
 export interface EmbeddedLocation {
@@ -33,50 +34,6 @@ interface EmbeddedAtlasMapProps {
   showControls?: boolean;
 }
 
-// HOT (Humanitarian OpenStreetMap Team) raster tile style
-// Using local proxy to bypass CORS restrictions
-const HOT_STYLE = {
-  version: 8 as const,
-  sources: {
-    'hot-osm': {
-      type: 'raster' as const,
-      tiles: [
-        '/api/tiles/hot/{z}/{x}/{y}.png'
-      ],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
-      maxzoom: 19
-    }
-  },
-  layers: [{
-    id: 'hot-osm-layer',
-    type: 'raster' as const,
-    source: 'hot-osm',
-    minzoom: 0,
-    maxzoom: 22
-  }]
-};
-
-// Map style configurations
-const MAP_STYLES = {
-  streets: {
-    name: 'Streets',
-    light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-    dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  },
-  voyager: {
-    name: 'Voyager',
-    light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
-    dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  },
-  hot: {
-    name: 'Humanitarian',
-    light: HOT_STYLE,
-    dark: HOT_STYLE,
-  },
-};
-
-type MapStyleKey = keyof typeof MAP_STYLES;
 
 const getStatusInfo = (status?: string): { label: string; color: string; bgColor: string } => {
   const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
@@ -285,7 +242,7 @@ export default function EmbeddedAtlasMap({
   // Home country coordinates from system settings
   const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
   const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM);
-  const [mapStyle, setMapStyle] = useState<MapStyleKey>('streets');
+  const [mapStyle, setMapStyle] = useState<MapStyleKey>(DEFAULT_MAP_STYLE);
 
   // Fetch home country from system settings
   useEffect(() => {
@@ -338,25 +295,14 @@ export default function EmbeddedAtlasMap({
     <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ height }}>
       {/* Map Style Selector */}
       <div className="absolute top-2 right-2 z-10">
-        <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-          <SelectTrigger className="w-[130px] bg-white shadow-md border-gray-300 text-xs h-8">
-            <SelectValue placeholder="Map style" />
-          </SelectTrigger>
-          <SelectContent className="z-[9999]">
-            {Object.entries(MAP_STYLES).map(([key, style]) => (
-              <SelectItem key={key} value={key} className="text-xs">
-                {style.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[170px] h-8" />
       </div>
 
       <Map
         key={`atlas-map-${mapStyle}`}
         styles={{
-          light: MAP_STYLES[mapStyle].light as string | object,
-          dark: MAP_STYLES[mapStyle].dark as string | object,
+          light: MAP_STYLES[mapStyle].light,
+          dark: MAP_STYLES[mapStyle].dark,
         }}
         center={[homeCountryCenter[1], homeCountryCenter[0]]} // MapLibre uses [lng, lat]
         zoom={homeCountryZoom}

@@ -453,7 +453,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
 
         {contacts.length === 0 ? (
           <div className="text-center py-12">
-            <img src="/images/empty-cardholder.png" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
+            <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No contacts</h3>
             <p className="text-muted-foreground">
               {!readOnly ? 'Use the search above to add your first contact.' : 'No contacts have been added to this activity yet.'}
@@ -467,7 +467,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                 <TableHead>Role</TableHead>
                 <TableHead>Organisation</TableHead>
                 <TableHead>Email</TableHead>
-                {!readOnly && <TableHead className="w-[80px]">Actions</TableHead>}
+                {!readOnly && <TableHead className="w-[80px]" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -490,10 +490,10 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                             {initials}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{fullName || 'Unknown Contact'}</span>
+                        <span className="text-sm">{fullName || 'Unknown Contact'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm">
                       {contact.jobTitle || contact.position || '-'}
                     </TableCell>
                     <TableCell className="text-sm">
@@ -508,7 +508,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                         </div>
                       ) : '-'}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm">
                       {contact.email ? (
                         <div className="flex items-center gap-1 group/email">
                           <span>{contact.email}</span>

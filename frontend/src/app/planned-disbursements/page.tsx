@@ -504,7 +504,7 @@ export default function PlannedDisbursementsPage() {
           <PlannedDisbursementsListSkeleton />
         ) : disbursements.length === 0 ? (
           <EmptyState
-            illustration="/images/empty-hourglass.png"
+            illustration="/images/empty-hourglass.webp"
             title="No planned disbursements found"
             message="There are no planned disbursements in the system yet."
           />

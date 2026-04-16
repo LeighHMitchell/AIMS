@@ -1866,6 +1866,22 @@ export default function ActivityDetailPage() {
                       <div className="space-y-3">
                         {/* First Row: Activity ID, IATI ID and Status Badges */}
                         <div className="flex flex-wrap items-center gap-3 py-3 border-y border-border">
+                          {(activity as any).auto_ref && (
+                            <div className="flex items-center gap-1 group">
+                              <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                                {(activity as any).auto_ref}
+                              </code>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText((activity as any).auto_ref);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
+                                title="Copy App ID"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
                           {activity.partnerId && (
                             <div className="flex items-center gap-1 group">
                               <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
@@ -4573,7 +4589,7 @@ export default function ActivityDetailPage() {
                           )
                         ) : (
                           <div className="text-center py-12">
-                            <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
+                            <img src="/images/empty-pushpin.webp" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
                             <h3 className="text-lg font-medium mb-2">No locations</h3>
                             <p className="text-muted-foreground">Add locations to show where this activity takes place.</p>
                           </div>

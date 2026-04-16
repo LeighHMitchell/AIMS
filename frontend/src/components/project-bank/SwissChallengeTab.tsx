@@ -252,7 +252,7 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
                     <th className="text-right py-2 px-2 font-medium text-muted-foreground">Bid</th>
                     <th className="text-right py-2 px-2 font-medium text-muted-foreground">Score</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Status</th>
-                    <th className="text-right py-2 px-2 font-medium text-muted-foreground">Actions</th>
+                    <th className="text-right py-2 px-2 font-medium text-muted-foreground" />
                   </tr>
                 </thead>
                 <tbody className="divide-y">

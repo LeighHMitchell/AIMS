@@ -65,6 +65,10 @@ export async function GET(
           name,
           acronym,
           logo
+        ),
+        users:user_id (
+          id,
+          job_title
         )
       `, { count: 'exact' });
 
@@ -84,10 +88,70 @@ export async function GET(
 
     console.log('[Contacts API] Found contacts:', contacts?.length || 0);
 
+    // Look up users by email so we can surface their job_title even when user_id
+    // isn't set on the activity_contacts row (legacy records).
+    const contactEmails = Array.from(new Set(
+      (contacts || [])
+        .map((c: any) => (c.contacts?.email || c.primary_email || c.email || '').toLowerCase())
+        .filter(Boolean)
+    ));
+    const usersByEmail = new Map<string, any>();
+    if (contactEmails.length > 0) {
+      const { data: emailUsers } = await supabase
+        .from('users')
+        .select('id, email, job_title')
+        .in('email', contactEmails);
+      (emailUsers || []).forEach((u: any) => {
+        if (u.email) usersByEmail.set(u.email.toLowerCase(), u);
+      });
+    }
+
+    // Resolve organization logos by name for contacts that have org text but no organisation_id
+    const orgNames = Array.from(new Set(
+      (contacts || [])
+        .map((c: any) => {
+          const hasJoined = c.contacts?.organizations || c.organizations;
+          if (hasJoined) return null;
+          return c.contacts?.organisation || c.organisation_name || c.organisation || null;
+        })
+        .filter(Boolean)
+        .map((n: string) => n.trim())
+    ));
+    const orgsByName = new Map<string, any>();
+    if (orgNames.length > 0) {
+      const { data: namedOrgs } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, logo')
+        .in('name', orgNames);
+      (namedOrgs || []).forEach((o: any) => {
+        if (o.name) orgsByName.set(o.name.toLowerCase(), o);
+      });
+    }
+
     // Transform: prefer data from contacts table, fallback to activity_contacts columns
+    // Values that historically leaked into `position` from users.role — never display these
+    const USER_ROLE_VALUES = new Set([
+      'super_user', 'admin', 'orphan',
+      'dev_partner_tier_1', 'dev_partner_tier_2',
+      'gov_partner_tier_1', 'gov_partner_tier_2',
+    ]);
+    const cleanPosition = (v: any) => {
+      if (!v) return v;
+      return USER_ROLE_VALUES.has(String(v)) ? null : v;
+    };
+    const clean = cleanPosition;
+
     const transformedContacts = (contacts || []).map((contact: any) => {
       const c = contact.contacts; // joined contacts record (may be null for pre-migration rows)
-      const orgData = c?.organizations || contact.organizations;
+      const rawOrgName = (c?.organisation || contact.organisation_name || contact.organisation || '').trim();
+      const orgData = c?.organizations || contact.organizations || (rawOrgName ? orgsByName.get(rawOrgName.toLowerCase()) : null);
+      const contactEmail = (c?.email || contact.primary_email || contact.email || '').toLowerCase();
+      const emailUser = contactEmail ? usersByEmail.get(contactEmail) : null;
+      const linkedUserJobTitle = contact.users?.job_title || emailUser?.job_title || null;
+      const safePosition = clean(c?.position) || clean(contact.position) || null;
+      const safeContactsJobTitle = clean(c?.job_title);
+      const safeAcJobTitle = clean(contact.job_title);
+      const resolvedJobTitle = safeContactsJobTitle || safeAcJobTitle || linkedUserJobTitle || safePosition || null;
 
       return {
         id: contact.id,
@@ -96,8 +160,8 @@ export async function GET(
         title: c?.title || contact.title,
         firstName: c?.first_name || contact.first_name,
         lastName: c?.last_name || contact.last_name,
-        jobTitle: c?.job_title || contact.job_title || c?.position || contact.position,
-        position: c?.position || contact.position,
+        jobTitle: resolvedJobTitle,
+        position: safePosition,
         department: c?.department || contact.department,
         organisation: orgData?.name || c?.organisation || contact.organisation_name || contact.organisation,
         organisationId: c?.organisation_id || contact.organisation_id,

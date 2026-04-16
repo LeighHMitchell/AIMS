@@ -8,6 +8,7 @@ export type TransactionColumnId =
   | "checkbox"
   // Default visible
   | "activity"
+  | "systemId"
   | "transactionDate"
   | "transactionType"
   | "organizations"
@@ -47,6 +48,7 @@ export const transactionColumns: ColumnConfig<TransactionColumnId>[] = [
   // Default columns (8 default visible + 2 always visible)
   { id: "checkbox", label: "Select", group: "default", alwaysVisible: true, defaultVisible: true },
   { id: "activity", label: "Activity", group: "default", defaultVisible: true },
+  { id: "systemId", label: "Transaction ID", group: "default", defaultVisible: true },
   { id: "transactionDate", label: "Date", group: "default", defaultVisible: true },
   { id: "transactionType", label: "Type", group: "default", defaultVisible: true },
   { id: "organizations", label: "Provider → Receiver", group: "default", defaultVisible: true },
@@ -109,9 +111,9 @@ export const defaultVisibleTransactionColumns: TransactionColumnId[] = transacti
 /**
  * localStorage key for persisting column visibility
  */
-export const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = "aims_transaction_list_visible_columns";
+export const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = "aims_transaction_list_visible_columns_v2";
 
 /**
  * localStorage key for persisting column order
  */
-export const TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_transaction_list_column_order";
+export const TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_transaction_list_column_order_v2";

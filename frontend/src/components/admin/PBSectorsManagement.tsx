@@ -447,7 +447,7 @@ export function PBSectorsManagement() {
             <span className="flex-1">Name</span>
             <span className="w-[100px]">Sub-sectors</span>
             <span className="w-[80px]">Status</span>
-            <span className="w-[100px] text-right">Actions</span>
+            <span className="w-[100px] text-right" />
           </div>
 
           {/* Sector Rows */}

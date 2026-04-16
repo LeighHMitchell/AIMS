@@ -8,15 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates'
 import dynamic from 'next/dynamic'
 import { Map, MapControls, MapMarker, MarkerContent, useMap } from '@/components/ui/map'
+import { MAP_STYLES, DEFAULT_MAP_STYLE, type MapStyleKey } from '@/lib/map-styles'
+import { MapStyleSelect } from '@/components/maps/MapStyleSelect'
 
 const MapFlyTo = dynamic(() => import('@/components/maps-v2/MapFlyTo'), { ssr: false })
-
-const MAP_STYLES = {
-  carto_light: {
-    light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-    dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  },
-}
 
 interface GeoLocation {
   countryCode: string
@@ -74,6 +69,7 @@ export function SDGGeographyMap({ locations, sdgColor }: SDGGeographyMapProps) {
   const [homeCenter, setHomeCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER)
   const [homeZoom, setHomeZoom] = useState<number>(DEFAULT_MAP_ZOOM)
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null)
+  const [mapStyle, setMapStyle] = useState<MapStyleKey>(DEFAULT_MAP_STYLE)
 
   useEffect(() => {
     const fetchHomeCountry = async () => {
@@ -135,10 +131,15 @@ export function SDGGeographyMap({ locations, sdgColor }: SDGGeographyMapProps) {
         </div>
       </div>
 
+      <div className="absolute top-14 left-3 z-20">
+        <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="h-9" />
+      </div>
+
       <Map
+        key={`sdg-geo-map-${mapStyle}`}
         styles={{
-          light: MAP_STYLES.carto_light.light,
-          dark: MAP_STYLES.carto_light.dark,
+          light: MAP_STYLES[mapStyle].light,
+          dark: MAP_STYLES[mapStyle].dark,
         }}
         center={[homeCenter[1], homeCenter[0]]}
         zoom={homeZoom}

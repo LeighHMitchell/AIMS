@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select('*', { count: 'exact', head: true });
 
-    const { data: aimsOrgs } = await supabase!
+    const { count: aimsOrgsCount } = await supabase!
       .from('organizations')
-      .select('id', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true });
 
     // Land Bank stats
     let landCount = 0;
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       },
       aims: {
         activities: aimsCount || 0,
-        donors: aimsOrgs?.length || 0,
+        donors: aimsOrgsCount || 0,
       },
       landBank: {
         parcels: landCount,

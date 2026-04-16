@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
+import { RequiredDot } from "@/components/ui/required-dot"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -793,7 +794,7 @@ export function FS1ReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
-                        <span className="text-destructive ml-1">*</span>
+                        <RequiredDot />
                       )}
                     </Label>
                     <Textarea

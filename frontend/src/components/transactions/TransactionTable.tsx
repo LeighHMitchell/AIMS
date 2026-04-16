@@ -347,7 +347,7 @@ export function TransactionTable({
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [activityDetails, setActivityDetails] = useState<Record<string, {title: string; iati_identifier: string; acronym?: string; reporting_org?: string} | null>>({});
+  const [activityDetails, setActivityDetails] = useState<Record<string, {title: string; iati_identifier: string; acronym?: string; reporting_org?: string; reporting_org_acronym?: string; partner_id?: string} | null>>({});
   const [loadingActivities, setLoadingActivities] = useState<Set<string>>(new Set());
   const fetchedActivitiesRef = useRef<Set<string>>(new Set());
 
@@ -409,7 +409,9 @@ export function TransactionTable({
             title: activity.title_narrative || activity.title || 'Untitled Activity',
             iati_identifier: activity.iati_identifier || '',
             acronym: activity.acronym,
-            reporting_org: activity.created_by_org_name || activity.created_by_org_acronym || undefined
+            reporting_org: activity.created_by_org_name || activity.created_by_org_acronym || undefined,
+            reporting_org_acronym: activity.created_by_org_acronym || undefined,
+            partner_id: activity.partner_id || activity.other_identifier || undefined
           }
         }));
       } else {
@@ -657,9 +659,10 @@ export function TransactionTable({
                       <div className="flex items-center gap-1"><span>Activity Title</span>{getSortIcon("activity", sortField, sortOrder)}</div>
                     </SortableTableHeader>
                   ) : null,
+                  systemId: <SortableTableHeader key="systemId" id="systemId">Transaction ID</SortableTableHeader>,
                   activityId: <SortableTableHeader key="activityId" id="activityId">Activity ID</SortableTableHeader>,
                   iatiIdentifier: <SortableTableHeader key="iatiIdentifier" id="iatiIdentifier">IATI Identifier</SortableTableHeader>,
-                  reportingOrg: <SortableTableHeader key="reportingOrg" id="reportingOrg">Reporting Org</SortableTableHeader>,
+                  reportingOrg: <SortableTableHeader key="reportingOrg" id="reportingOrg">Reporting Organisation</SortableTableHeader>,
                   transactionDate: (
                     <SortableTableHeader key="transactionDate" id="transactionDate" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("transaction_date")}>
                       <div className="flex items-center gap-1"><span>Date</span>{getSortIcon("transaction_date", sortField, sortOrder)}</div>
@@ -881,37 +884,58 @@ export function TransactionTable({
                   const txCellMap: Record<string, React.ReactNode> = {
                     activity: variant === "full" ? (
                       <td key="activity" className="py-3 px-4">
-                        <div className="space-y-0.5 cursor-pointer hover:opacity-75 group" onClick={(e) => { e.stopPropagation(); if (transaction.activity_id) { window.location.href = `/activities/${transaction.activity_id}`; } }}>
-                          <div className="flex items-start gap-1">
-                            <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
-                              {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
-                              {(transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier) && (
-                                <span className="text-xs font-mono font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
-                                  {transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier}
-                                </span>
-                              )}
-                              <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity', 'title', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-title` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy activity title</p></TooltipContent></Tooltip>
-                            </div>
+                        <div className="cursor-pointer hover:opacity-75 group" onClick={(e) => { e.stopPropagation(); if (transaction.activity_id) { window.location.href = `/activities/${transaction.activity_id}`; } }}>
+                          <div className="text-sm">
+                            {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
+                            {(transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier) && (
+                              <span className="text-xs font-mono font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
+                                {transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier}
+                              </span>
+                            )}
+                            {(() => {
+                              const iatiId = transaction.activityIatiIdentifier || activityDetails[transaction.activity_id]?.iati_identifier || transaction.activity?.iati_identifier;
+                              return iatiId ? (
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(iatiId, 'iati', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-iati` ? <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy IATI Identifier</p></TooltipContent></Tooltip>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                       </td>
                     ) : null,
+                    systemId: (
+                      <td key="systemId" className="py-3 px-4 whitespace-nowrap">
+                        {(transaction as any).auto_ref ? (
+                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{(transaction as any).auto_ref}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    ),
                     activityId: (
-                      <td key="activityId" className="py-3 px-4 whitespace-nowrap"><span className="text-xs font-mono text-muted-foreground">{transaction.activity_id || '—'}</span></td>
+                      <td key="activityId" className="py-3 px-4 whitespace-nowrap">{(() => { const pid = (transaction.activity_id && activityDetails[transaction.activity_id]?.partner_id) || transaction.activity?.partner_id; return pid ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{pid}</span> : <span className="text-muted-foreground">—</span>; })()}</td>
                     ),
-                    iatiIdentifier: (
-                      <td key="iatiIdentifier" className="py-3 px-4 whitespace-nowrap">{transaction.activity?.iati_identifier ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.activity.iati_identifier}</span> : <span className="text-muted-foreground">—</span>}</td>
-                    ),
-                    reportingOrg: (
-                      <td key="reportingOrg" className="py-3 px-4 whitespace-nowrap"><span className="text-sm">{transaction.activity?.created_by_org_acronym || transaction.activity?.created_by_org_name || '—'}</span></td>
-                    ),
+                    iatiIdentifier: (() => {
+                      const iati = transaction.activityIatiIdentifier || (transaction.activity_id && activityDetails[transaction.activity_id]?.iati_identifier) || transaction.activity?.iati_identifier;
+                      return (
+                        <td key="iatiIdentifier" className="py-3 px-4 whitespace-nowrap">{iati ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{iati}</span> : <span className="text-muted-foreground">—</span>}</td>
+                      );
+                    })(),
+                    reportingOrg: (() => {
+                      const fetched = transaction.activity_id ? activityDetails[transaction.activity_id] : undefined;
+                      const name = transaction.activity?.created_by_org_name || fetched?.reporting_org;
+                      const acronym = transaction.activity?.created_by_org_acronym || fetched?.reporting_org_acronym;
+                      const display = acronym && name && acronym !== name ? `${name} (${acronym})` : (name || acronym);
+                      return (
+                        <td key="reportingOrg" className="py-3 px-4 whitespace-nowrap"><span className="text-sm">{display || '—'}</span></td>
+                      );
+                    })(),
                     transactionDate: (
                       <td key="transactionDate" className="py-3 px-4 whitespace-nowrap">{formatTransactionDate(transaction.transaction_date)}</td>
                     ),
                     transactionType: (
                       <td key="transactionType" className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Tooltip><TooltipTrigger asChild><span className="text-sm font-medium text-foreground">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="text-sm cursor-help inline-flex items-center gap-1.5"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.transaction_type}</span><span className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
                           {transaction.status === 'draft' && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -964,7 +988,7 @@ export function TransactionTable({
                     ),
                     organizations: (
                       <td key="organizations" className="py-3 px-4">
-                        <div className="text-sm font-medium text-foreground">
+                        <div className="text-sm">
                           <div className="flex items-start gap-2">
                             <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-sm cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
                             <span className="text-muted-foreground mt-1">→</span>
@@ -978,9 +1002,9 @@ export function TransactionTable({
                         {paId || transaction.provider_org_activity_id ? (
                           <Link href={`/activities/${paId || transaction.provider_org_activity_id}`} className="text-xs hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
                             <div className="space-y-0.5">
-                              {paDetails?.acronym && <div className="font-medium">{paDetails.acronym}</div>}
-                              {(paDetails?.title_narrative || paDetails?.title) && <div className="text-muted-foreground">{paDetails.title_narrative || paDetails.title}</div>}
-                              <div className="font-mono text-muted-foreground">{paDetails?.iati_identifier || transaction.provider_org_activity_id}</div>
+                              {paDetails?.acronym && <div className="text-sm">{paDetails.acronym}</div>}
+                              {(paDetails?.title_narrative || paDetails?.title) && <div className="text-sm">{paDetails.title_narrative || paDetails.title}</div>}
+                              <div className="whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{paDetails?.iati_identifier || transaction.provider_org_activity_id}</span></div>
                             </div>
                           </Link>
                         ) : <span className="text-muted-foreground">—</span>}
@@ -991,9 +1015,9 @@ export function TransactionTable({
                         {raId || transaction.receiver_org_activity_id ? (
                           <Link href={`/activities/${raId || transaction.receiver_org_activity_id}`} className="text-xs hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
                             <div className="space-y-0.5">
-                              {raDetails?.acronym && <div className="font-medium">{raDetails.acronym}</div>}
-                              {(raDetails?.title_narrative || raDetails?.title) && <div className="text-muted-foreground">{raDetails.title_narrative || raDetails.title}</div>}
-                              <div className="font-mono text-muted-foreground">{raDetails?.iati_identifier || transaction.receiver_org_activity_id}</div>
+                              {raDetails?.acronym && <div className="text-sm">{raDetails.acronym}</div>}
+                              {(raDetails?.title_narrative || raDetails?.title) && <div className="text-sm">{raDetails.title_narrative || raDetails.title}</div>}
+                              <div className="whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{raDetails?.iati_identifier || transaction.receiver_org_activity_id}</span></div>
                             </div>
                           </Link>
                         ) : <span className="text-muted-foreground">—</span>}
@@ -1002,7 +1026,7 @@ export function TransactionTable({
                     amount: (
                       <td key="amount" className="py-3 px-4 text-right whitespace-nowrap">
                         {transaction.value != null && transaction.currency ? (
-                          <div className="font-medium"><span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(transaction.value)}</div>
+                          <div className="text-sm"><span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(transaction.value)}</div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -1020,7 +1044,7 @@ export function TransactionTable({
                           ) : usdValues[transactionId]?.usd != null ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="font-medium cursor-help flex items-center gap-1">
+                                <span className="text-sm cursor-help flex items-center gap-1">
                                   <span className="w-4 shrink-0 flex items-center justify-center">
                                     {(transaction as any).exchange_rate_manual && (
                                       <PenLine className="h-3.5 w-3.5 text-orange-500" />
@@ -1064,34 +1088,50 @@ export function TransactionTable({
                         </div>
                       </td>
                     ),
-                    financeType: (
-                      <td key="financeType" className="py-3 px-4 whitespace-nowrap">
-                        {(transaction.finance_type || transaction.effective_finance_type) ? (
-                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-xs">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${transaction.effective_finance_type || transaction.finance_type} — ${FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || 'Unknown'}`}</p></TooltipContent></Tooltip>
-                        ) : <span className="text-sm font-normal text-muted-foreground">—</span>}
-                      </td>
-                    ),
-                    aidType: (
-                      <td key="aidType" className="py-3 px-4 whitespace-nowrap">
-                        {(transaction.aid_type || transaction.effective_aid_type) ? (
-                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.aid_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{AID_TYPE_LABELS[transaction.effective_aid_type || transaction.aid_type]?.short || transaction.effective_aid_type || transaction.aid_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </td>
-                    ),
-                    flowType: (
-                      <td key="flowType" className="py-3 px-4 whitespace-nowrap">
-                        {(transaction.flow_type || transaction.effective_flow_type) ? (
-                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.flow_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{FLOW_TYPE_LABELS[transaction.effective_flow_type || transaction.flow_type] || transaction.effective_flow_type || transaction.flow_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </td>
-                    ),
-                    tiedStatus: (
-                      <td key="tiedStatus" className="py-3 px-4 whitespace-nowrap">
-                        {(transaction.tied_status || transaction.effective_tied_status) ? (
-                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.tied_status_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{TIED_STATUS_LABELS[(transaction.effective_tied_status || transaction.tied_status) as keyof typeof TIED_STATUS_LABELS] || transaction.effective_tied_status || transaction.tied_status}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </td>
-                    ),
+                    financeType: (() => {
+                      const code = transaction.effective_finance_type || transaction.finance_type;
+                      const label = FINANCE_TYPE_LABELS[code]?.full;
+                      return (
+                        <td key="financeType" className="py-3 px-4 whitespace-nowrap">
+                          {code ? (
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-xs">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                          ) : <span className="text-sm font-normal text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })(),
+                    aidType: (() => {
+                      const code = transaction.effective_aid_type || transaction.aid_type;
+                      const label = AID_TYPE_LABELS[code]?.full || AID_TYPE_LABELS[code]?.short;
+                      return (
+                        <td key="aidType" className="py-3 px-4 whitespace-nowrap">
+                          {code ? (
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })(),
+                    flowType: (() => {
+                      const code = transaction.effective_flow_type || transaction.flow_type;
+                      const label = FLOW_TYPE_LABELS[code];
+                      return (
+                        <td key="flowType" className="py-3 px-4 whitespace-nowrap">
+                          {code ? (
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.flow_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })(),
+                    tiedStatus: (() => {
+                      const code = (transaction.effective_tied_status || transaction.tied_status) as keyof typeof TIED_STATUS_LABELS | undefined;
+                      const label = code ? TIED_STATUS_LABELS[code] : undefined;
+                      return (
+                        <td key="tiedStatus" className="py-3 px-4 whitespace-nowrap">
+                          {code ? (
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.tied_status_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })(),
                     humanitarian: (
                       <td key="humanitarian" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.is_humanitarian ? (
@@ -1102,14 +1142,14 @@ export function TransactionTable({
                     description: (
                       <td key="description" className="py-3 px-4 max-w-[200px]">
                         {transaction.description ? (
-                          <Tooltip><TooltipTrigger asChild><span className="text-sm text-muted-foreground line-clamp-2 cursor-help">{transaction.description}</span></TooltipTrigger><TooltipContent side="left" className="max-w-[300px]"><p className="text-sm">{transaction.description}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="text-sm line-clamp-2 cursor-help">{transaction.description}</span></TooltipTrigger><TooltipContent side="left" className="max-w-[300px]"><p className="text-sm">{transaction.description}</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     disbursementChannel: (
                       <td key="disbursementChannel" className="py-3 px-4 whitespace-nowrap">
                         {transaction.disbursement_channel ? (
-                          <Tooltip><TooltipTrigger asChild><span className="text-sm font-medium cursor-help">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><span className="text-sm cursor-help">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),

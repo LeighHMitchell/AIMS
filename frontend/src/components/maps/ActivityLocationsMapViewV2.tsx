@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Map, MapControls, useMap } from '@/components/ui/map';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
 import { Button } from '@/components/ui/button';
 import { CircleDot, Flame, MapPin, RotateCcw, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,11 @@ const MAP_STYLES = {
     name: 'Voyager',
     light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
     dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  },
+  osm_liberty: {
+    name: 'OpenStreetMap Liberty',
+    light: 'https://tiles.openfreemap.org/styles/liberty',
+    dark: 'https://tiles.openfreemap.org/styles/liberty',
   },
   hot: {
     name: 'Humanitarian (HOT)',
@@ -314,18 +319,7 @@ export default function ActivityLocationsMapViewV2({
       {/* Controls overlay */}
       <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
         {/* Map Style Selector */}
-        <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-          <SelectTrigger className="w-[160px] bg-white shadow-md border-gray-300 text-xs h-8">
-            <SelectValue placeholder="Map style" />
-          </SelectTrigger>
-          <SelectContent className="z-[9999]">
-            {Object.entries(MAP_STYLES).map(([key, style]) => (
-              <SelectItem key={key} value={key} className="text-xs">
-                {style.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[170px] h-8" />
 
         {/* View Mode Toggle */}
         <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">

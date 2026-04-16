@@ -147,7 +147,7 @@ export function AdvancedGroup({
       // Lock long enough to survive the preloading layout shift (500ms preload + render time)
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'linked_activities')) {
+      if (prevInitialSection.current !== initialSection || isFirstRender.current) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return

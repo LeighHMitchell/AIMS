@@ -29,14 +29,21 @@ export interface SystemTotals {
   cachedAt: string;
 }
 
-// Server-side in-memory cache
+// Server-side in-memory cache with stale-while-revalidate.
+// - Within STALE_TTL_MS: cache is fresh, return as-is.
+// - Between STALE_TTL_MS and HARD_TTL_MS: return cached value immediately and
+//   trigger a background refresh so users never block on a cold fetch.
+// - After HARD_TTL_MS or if no cache: await a fresh fetch.
 interface CacheEntry {
   data: SystemTotals;
-  expiresAt: number;
+  staleAt: number;
+  hardExpiresAt: number;
 }
 
 let systemTotalsCache: CacheEntry | null = null;
-const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+let backgroundRefreshInFlight: Promise<SystemTotals> | null = null;
+const STALE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const HARD_TTL_MS = 30 * 60 * 1000; // 30 minutes (absolute upper bound)
 
 /**
  * Fetches system-wide totals from the database with caching.
@@ -53,13 +60,32 @@ const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
 export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTotals> {
   const now = Date.now();
 
-  // Return cached data if valid and not forcing refresh
-  if (!forceRefresh && systemTotalsCache && now < systemTotalsCache.expiresAt) {
-    console.log('[System Totals] Returning cached totals, expires in', 
-      Math.round((systemTotalsCache.expiresAt - now) / 1000), 'seconds');
+  if (!forceRefresh && systemTotalsCache && now < systemTotalsCache.hardExpiresAt) {
+    const isFresh = now < systemTotalsCache.staleAt;
+    if (isFresh) {
+      console.log('[System Totals] Returning cached totals, fresh for',
+        Math.round((systemTotalsCache.staleAt - now) / 1000), 'seconds');
+    } else {
+      // Stale but within hard TTL: serve cached, refresh in background.
+      console.log('[System Totals] Returning stale cached totals; triggering background refresh');
+      if (!backgroundRefreshInFlight) {
+        backgroundRefreshInFlight = refreshSystemTotals().finally(() => {
+          backgroundRefreshInFlight = null;
+        });
+        // Swallow background errors so they don't surface as unhandled rejections.
+        backgroundRefreshInFlight.catch((err) =>
+          console.error('[System Totals] Background refresh failed:', err)
+        );
+      }
+    }
     return systemTotalsCache.data;
   }
 
+  // Cold path: no cache or past hard TTL — must await.
+  return refreshSystemTotals();
+}
+
+async function refreshSystemTotals(): Promise<SystemTotals> {
   console.log('[System Totals] Fetching fresh system totals...');
   const startTime = Date.now();
 
@@ -70,48 +96,26 @@ export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTot
   }
 
   try {
-    // Run all aggregation queries in parallel for performance
-    const [budgetResult, plannedDisbursementResult, transactionResult] = await Promise.all([
-      // Total budget from activity_budgets table
-      supabase
-        .from('activity_budgets')
-        .select('usd_value')
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[System Totals] Budget query error:', error);
-            return 0;
-          }
-          return data?.reduce((sum, row) => sum + (row.usd_value || 0), 0) || 0;
-        }),
-
-      // Total planned disbursements from planned_disbursements table
-      supabase
-        .from('planned_disbursements')
-        .select('usd_amount')
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[System Totals] Planned disbursements query error:', error);
-            return 0;
-          }
-          return data?.reduce((sum, row) => sum + (row.usd_amount || 0), 0) || 0;
-        }),
-
-      // Transaction totals from materialized view (with fallback to transactions table)
+    // Push aggregation into Postgres: one-row SUM responses instead of full-table scans.
+    const [budgetSum, plannedDisbursementSum, transactionResult] = await Promise.all([
+      sumColumn(supabase, 'activity_budgets', 'usd_value'),
+      sumColumn(supabase, 'planned_disbursements', 'usd_amount'),
       fetchTransactionTotals(supabase)
     ]);
 
     const totals: SystemTotals = {
-      totalBudget: budgetResult,
-      totalPlannedDisbursements: plannedDisbursementResult,
+      totalBudget: budgetSum,
+      totalPlannedDisbursements: plannedDisbursementSum,
       totalCommitments: transactionResult.commitments,
       totalDisbursements: transactionResult.disbursements,
       cachedAt: new Date().toISOString()
     };
 
-    // Cache the result
+    const now = Date.now();
     systemTotalsCache = {
       data: totals,
-      expiresAt: now + CACHE_TTL_MS
+      staleAt: now + STALE_TTL_MS,
+      hardExpiresAt: now + HARD_TTL_MS
     };
 
     const queryTime = Date.now() - startTime;
@@ -130,6 +134,19 @@ export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTot
   }
 }
 
+async function sumColumn(supabase: any, table: string, column: string): Promise<number> {
+  const { data, error } = await supabase
+    .from(table)
+    .select(`${column}.sum()`)
+    .single();
+  if (error) {
+    console.error(`[System Totals] ${table}.${column} aggregate error:`, error);
+    return 0;
+  }
+  const value = data?.sum ?? data?.[column] ?? 0;
+  return typeof value === 'number' ? value : Number(value) || 0;
+}
+
 /**
  * Fetches transaction totals directly from transactions table using USD values.
  * 
@@ -138,36 +155,37 @@ export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTot
  * consistency with activity-level values displayed in the UI.
  */
 async function fetchTransactionTotals(supabase: any): Promise<{ commitments: number; disbursements: number }> {
-  // Query transactions table directly using USD values for accuracy
-  // Exclude internal transfers (pooled fund flows) to avoid double-counting
+  // Sum commitments (type '2') and disbursements (type '3') directly in Postgres,
+  // excluding internal transfers (pooled fund flows) to avoid double-counting.
   const pooledFundIds = await getPooledFundIds(supabase);
-  let query = supabase
-    .from('transactions')
-    .select('transaction_type, value_usd');
-  query = excludeInternalTransfers(query, pooledFundIds, ['2', '3']);
-  const { data: transactions, error } = await query;
 
-  if (error || !transactions) {
-    console.error('[System Totals] Transaction query error:', error);
-    return { commitments: 0, disbursements: 0 };
+  const buildSum = (type: '2' | '3') => {
+    let q = supabase
+      .from('transactions')
+      .select('value_usd.sum()')
+      .eq('transaction_type', type);
+    q = excludeInternalTransfers(q, pooledFundIds, [type]);
+    return q.single();
+  };
+
+  const [commitmentRes, disbursementRes] = await Promise.all([buildSum('2'), buildSum('3')]);
+
+  if (commitmentRes.error) {
+    console.error('[System Totals] Commitment aggregate error:', commitmentRes.error);
+  }
+  if (disbursementRes.error) {
+    console.error('[System Totals] Disbursement aggregate error:', disbursementRes.error);
   }
 
-  let commitments = 0;
-  let disbursements = 0;
+  const pick = (res: any) => {
+    const v = res?.data?.sum ?? res?.data?.value_usd ?? 0;
+    return typeof v === 'number' ? v : Number(v) || 0;
+  };
 
-  transactions.forEach((t: any) => {
-    const value = t.value_usd || 0;
-    switch (t.transaction_type) {
-      case '2': // Outgoing Commitment
-        commitments += value;
-        break;
-      case '3': // Disbursement
-        disbursements += value;
-        break;
-    }
-  });
-
-  return { commitments, disbursements };
+  return {
+    commitments: pick(commitmentRes),
+    disbursements: pick(disbursementRes),
+  };
 }
 
 /**

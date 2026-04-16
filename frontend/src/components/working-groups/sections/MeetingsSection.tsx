@@ -212,7 +212,7 @@ function EditMeetingModal({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
       <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="sticky top-0 z-10">
+        <DialogHeader className="sticky top-0 z-10 mx-0 mt-0 rounded-t-lg">
           <DialogTitle>Edit Meeting</DialogTitle>
           <DialogDescription>Update meeting details, location, and documents</DialogDescription>
         </DialogHeader>
@@ -404,7 +404,7 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
             <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Time</th>
             <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Location</th>
             <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
-            <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
+            <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -646,7 +646,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
       {/* Add Meeting Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-          <DialogHeader className="sticky top-0 z-10">
+          <DialogHeader className="sticky top-0 z-10 mx-0 mt-0 rounded-t-lg">
             <DialogTitle>Schedule Meeting</DialogTitle>
             <DialogDescription>Create a new meeting for this working group</DialogDescription>
           </DialogHeader>

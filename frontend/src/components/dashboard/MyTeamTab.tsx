@@ -222,7 +222,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
       <CardContent>
         {filteredPeople.length === 0 ? (
           <EmptyState
-            illustration="/images/empty-badges.png"
+            illustration="/images/empty-badges.webp"
             title={searchQuery ? 'No team members match your search' : 'No team members found'}
             message={searchQuery ? 'Try adjusting your search terms.' : 'There are no team members to display.'}
           />

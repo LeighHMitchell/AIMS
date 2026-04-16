@@ -680,7 +680,7 @@ export default function ForwardSpendingSurveyTab({
                       <TableHead className="py-3 px-4 text-right w-1/5">Amount</TableHead>
                       <TableHead className="py-3 px-4 w-1/5">Value Date</TableHead>
                       <TableHead className="py-3 px-4 text-right w-1/5">USD Value</TableHead>
-                      {!isReadOnly && <TableHead className="py-3 px-4 text-center w-1/5">Actions</TableHead>}
+                      {!isReadOnly && <TableHead className="py-3 px-4 text-center w-1/5" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -763,10 +763,10 @@ export default function ForwardSpendingSurveyTab({
       {!fss && !isReadOnly && (
         <Card>
           <CardContent className="py-12 text-center">
-            <TrendingUp className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <img src="/images/empty-seed-packet.webp" alt="No Forward Spending Survey" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-semibold mb-2">No Forward Spending Survey</h3>
             <p className="text-muted-foreground mb-6">
-              Create a Forward Spending Survey to track multi-year forecast spending commitments
+              Create a Forward Spending Survey to track multi-year forecast spending commitments.
             </p>
             <Button
               onClick={async () => {

@@ -1174,15 +1174,15 @@ export async function GET(
     // If created_by_org_name is missing but reporting_org_id exists, look up the org
     let resolvedOrgName = activity.created_by_org_name || activity.reporting_org_name || '';
     let resolvedOrgAcronym = activity.created_by_org_acronym || '';
-    if (!resolvedOrgName && activity.reporting_org_id) {
+    if ((!resolvedOrgName || !resolvedOrgAcronym) && activity.reporting_org_id) {
       const { data: reportingOrg } = await supabase
         .from('organizations')
         .select('name, acronym')
         .eq('id', activity.reporting_org_id)
         .single();
       if (reportingOrg) {
-        resolvedOrgName = reportingOrg.name || '';
-        resolvedOrgAcronym = reportingOrg.acronym || resolvedOrgAcronym;
+        resolvedOrgName = resolvedOrgName || reportingOrg.name || '';
+        resolvedOrgAcronym = resolvedOrgAcronym || reportingOrg.acronym || '';
       }
     }
     console.log('[AIMS API] Resolved org for sidebar:', {
@@ -1208,6 +1208,8 @@ export async function GET(
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,
+      autoRef: activity.auto_ref,
+      auto_ref: activity.auto_ref,
       created_by_org_name: resolvedOrgName,
       created_by_org_acronym: resolvedOrgAcronym,
       collaborationType: activity.collaboration_type,

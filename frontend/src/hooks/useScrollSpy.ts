@@ -118,6 +118,41 @@ export function useScrollSpy(
         .filter(([_, ratio]) => ratio > 0)
 
       if (intersecting.length === 0) {
+        // Bottom-of-scroll fallback: if the scroll container is at (or very near)
+        // its bottom, the last section may be unable to enter the intersection
+        // active band (upper portion of viewport) because the browser can't scroll
+        // further. In that case, force-activate the last section that is visible
+        // in the viewport at all. Without this, activeSection stays stale and
+        // "Next" navigation skips the last section.
+        const scrollEl: Element | Window =
+          root || (typeof document !== 'undefined' ? document.scrollingElement || document.documentElement : null as any)
+        if (!scrollEl) return
+        const scrollTop = 'scrollTop' in scrollEl ? (scrollEl as Element).scrollTop : 0
+        const scrollHeight = 'scrollHeight' in scrollEl ? (scrollEl as Element).scrollHeight : 0
+        const clientHeight = 'clientHeight' in scrollEl ? (scrollEl as Element).clientHeight : 0
+        const nearBottom = scrollHeight - (scrollTop + clientHeight) < 4
+        if (!nearBottom) return
+
+        // Pick the last section (in declared order) whose element is currently
+        // within the viewport at all (top above viewport bottom, bottom below top).
+        let fallback: string | null = null
+        for (const { id, ref } of sections) {
+          const el = ref.current
+          if (!el) continue
+          const rect = el.getBoundingClientRect()
+          const rootRect =
+            root instanceof Element
+              ? root.getBoundingClientRect()
+              : { top: 0, bottom: typeof window !== 'undefined' ? window.innerHeight : 0 }
+          if (rect.top < rootRect.bottom && rect.bottom > rootRect.top) {
+            fallback = id
+          }
+        }
+        if (fallback && fallback !== activeSectionRef.current) {
+          startTransition(() => {
+            setActiveSection(fallback!)
+          })
+        }
         return
       }
 
@@ -143,7 +178,7 @@ export function useScrollSpy(
         })
       }
     }, debounceMs)
-  }, [sections, debounceMs])
+  }, [sections, debounceMs, root])
 
   // Set up Intersection Observer
   useEffect(() => {
@@ -173,8 +208,23 @@ export function useScrollSpy(
       }
     })
 
+    // Also listen for scroll on the root so the bottom-of-scroll fallback fires
+    // even when no section is intersecting (so no observer callback runs).
+    const scrollTarget: EventTarget | null =
+      root ||
+      (typeof document !== 'undefined'
+        ? (document.scrollingElement || document.documentElement || window)
+        : null)
+    const handleScroll = () => updateActiveSection()
+    if (scrollTarget) {
+      scrollTarget.addEventListener('scroll', handleScroll, { passive: true })
+    }
+
     return () => {
       observer.disconnect()
+      if (scrollTarget) {
+        scrollTarget.removeEventListener('scroll', handleScroll)
+      }
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current)
       }

@@ -462,7 +462,7 @@ export function PreviewTable({
                       <TableHead className={sortableHeaderClasses} onClick={() => handleActivitySort('end_date')}>
                         <div className="flex items-center gap-1">End Date {getSortIcon('end_date', activitySortField, activitySortDir)}</div>
                       </TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -564,7 +564,7 @@ export function PreviewTable({
                       <TableHead className={sortableHeaderClasses} onClick={() => handleTxnSort('receiver')}>
                         <div className="flex items-center gap-1">Receiver {getSortIcon('receiver', txnSortField, txnSortDir)}</div>
                       </TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

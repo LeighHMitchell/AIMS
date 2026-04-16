@@ -202,7 +202,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
 
       {!transactions.length ? (
         <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-          <img src="/images/empty-circuit-board.png" alt={linkedActivityCount === 0 ? 'No linked activities' : 'No linked transactions'} className="h-32 mx-auto mb-4 opacity-50" />
+          <img src="/images/empty-circuit-board.webp" alt={linkedActivityCount === 0 ? 'No linked activities' : 'No linked transactions'} className="h-32 mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-semibold mb-2">
             {linkedActivityCount === 0 ? 'No linked activities' : 'No linked transactions'}
           </h3>

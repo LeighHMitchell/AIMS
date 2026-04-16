@@ -5,6 +5,7 @@ import { ColumnConfig } from "@/components/ui/column-selector";
  */
 export type BudgetColumnId =
   | "activity"
+  | "systemId"
   | "periodStart"
   | "periodEnd"
   | "type"
@@ -19,6 +20,7 @@ export type BudgetColumnId =
  */
 export const budgetColumns: ColumnConfig<BudgetColumnId>[] = [
   { id: "activity", label: "Activity Title", group: "default", defaultVisible: true },
+  { id: "systemId", label: "Budget ID", group: "default", defaultVisible: true },
   { id: "reportingOrganisation", label: "Reporting Org", group: "default", defaultVisible: true },
   { id: "periodStart", label: "Start Date", group: "default", defaultVisible: true },
   { id: "periodEnd", label: "End Date", group: "default", defaultVisible: true },
@@ -47,9 +49,9 @@ export const defaultVisibleBudgetColumns: BudgetColumnId[] = budgetColumns
 /**
  * localStorage key for persisting column visibility
  */
-export const BUDGET_COLUMNS_LOCALSTORAGE_KEY = "aims_budget_table_visible_columns";
+export const BUDGET_COLUMNS_LOCALSTORAGE_KEY = "aims_budget_table_visible_columns_v3";
 
 /**
  * localStorage key for persisting column order
  */
-export const BUDGET_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_budget_table_column_order";
+export const BUDGET_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_budget_table_column_order_v3";

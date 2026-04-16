@@ -105,7 +105,7 @@ const ACTIVITY_EDITOR_COLUMN_CONFIGS: ActivityEditorColumnConfig[] = [
   // Activity context columns (optional)
   { id: 'activityId', label: 'Activity ID', group: 'activityContext', defaultVisible: false },
   { id: 'iatiIdentifier', label: 'IATI Identifier', group: 'activityContext', defaultVisible: false },
-  { id: 'reportingOrg', label: 'Reporting Org', group: 'activityContext', defaultVisible: false },
+  { id: 'reportingOrg', label: 'Reporting Organisation', group: 'activityContext', defaultVisible: false },
   { id: 'providerActivity', label: 'Provider Activity', group: 'activityContext', defaultVisible: false },
   { id: 'receiverActivity', label: 'Receiver Activity', group: 'activityContext', defaultVisible: false },
   
@@ -1072,9 +1072,8 @@ export default function TransactionsManager({
               </Button>
               {transactions.length > 0 && (
                 <>
-                  <Button variant="outline" onClick={handleExport}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                    <Download className="h-4 w-4" />
                   </Button>
                 </>
               )}
@@ -1124,7 +1123,7 @@ export default function TransactionsManager({
             <div className="text-center py-12">
               {transactions.length === 0 ? (
                 <>
-                  <img src="/images/empty-dormouse.png" alt="No transactions" className="h-32 mx-auto mb-4 opacity-50" />
+                  <img src="/images/empty-dormouse.webp" alt="No transactions" className="h-32 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No transactions</h3>
                   <p className="text-muted-foreground mb-4">
                     Use the button above to add your first transaction.

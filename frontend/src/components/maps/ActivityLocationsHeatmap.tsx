@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { MapPin, Download, RotateCcw, CircleDot, Flame, Mountain, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MapStyleSelect } from "@/components/maps/MapStyleSelect"
 import html2canvas from 'html2canvas'
 import { toast } from "sonner"
 import type { LocationSchema } from '@/lib/schemas/location'
@@ -432,18 +432,7 @@ export default function ActivityLocationsHeatmap({
         {/* Controls toolbar — outside the map */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           {/* Map tile style selector */}
-          <Select value={mapStyle} onValueChange={(value) => handleStyleChange(value as MapStyleKey)}>
-            <SelectTrigger className="w-44 text-xs h-8">
-              <SelectValue placeholder="Select map style" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(MAP_STYLES).map(([key, style]) => (
-                <SelectItem key={key} value={key}>
-                  {style.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MapStyleSelect value={mapStyle} onChange={handleStyleChange} triggerClassName="w-44 h-8 text-xs" />
 
           {/* View mode toggle (markers / heatmap) */}
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5">

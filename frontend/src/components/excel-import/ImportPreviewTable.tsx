@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { Check, AlertTriangle, X, Minus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -86,7 +87,7 @@ function PreviewTableRow({
       <td className="px-4 py-2.5">
         <span className="text-foreground">
           {fieldLabel}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <RequiredDot />}
         </span>
       </td>
 

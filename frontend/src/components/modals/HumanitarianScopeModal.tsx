@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { HumanitarianScope } from '@/types/humanitarian';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { HumanitarianVocabularySelect } from '@/components/forms/HumanitarianVocabularySelect';
 import { HumanitarianTypeSelect } from '@/components/forms/HumanitarianTypeSelect';
 import { EmergencySearchableSelect } from '@/components/forms/EmergencySearchableSelect';
@@ -111,7 +112,7 @@ export function HumanitarianScopeModal({
 
         <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
           <div className="space-y-2">
-            <Label>Type <RequiredDot /></Label>
+            <Label>Type <RequiredDot /><HelpTextTooltip content="The IATI humanitarian scope type: 1 = Emergency (a specific emergency or disaster) or 2 = Appeal (a humanitarian appeal issued in response to one or more emergencies)." /></Label>
             <HumanitarianTypeSelect
               value={formData.type}
               onValueChange={(value) => setFormData({ ...formData, type: value as '1' | '2' })}
@@ -120,7 +121,7 @@ export function HumanitarianScopeModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Vocabulary <RequiredDot /></Label>
+            <Label>Vocabulary <RequiredDot /><HelpTextTooltip content="The code list used to identify the emergency or appeal (e.g. 1-2 = GLIDE, 2-1 = HRP, 99 = reporting-organisation-specific)." /></Label>
             <HumanitarianVocabularySelect
               value={formData.vocabulary}
               onValueChange={(value) => {
@@ -135,7 +136,7 @@ export function HumanitarianScopeModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Code <RequiredDot /></Label>
+            <Label>Code <RequiredDot /><HelpTextTooltip content="The reference code from the chosen vocabulary (e.g. a GLIDE number such as EQ-2015-000048-NPL, or an HRP code). If using vocabulary 99, use your own reference." /></Label>
             {formData.vocabulary === '98' ? (
               <EmergencySearchableSelect
                 value={formData.code}
@@ -164,7 +165,7 @@ export function HumanitarianScopeModal({
           )}
 
           <div className="space-y-2">
-            <Label>Response Description <RequiredDot /></Label>
+            <Label>Response Activity Description <RequiredDot /><HelpTextTooltip content="Describe how this activity contributes to the humanitarian response to the selected emergency or appeal. Free-text narrative; multilingual entries supported." /></Label>
             {formData.narratives.map((narrative, index) => (
               <div key={index} className="space-y-2">
                 <Textarea

@@ -779,7 +779,7 @@ export function AdminUserTable() {
                     {getSortIcon('lastLogin', sortField, sortOrder)}
                   </div>
                 </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>

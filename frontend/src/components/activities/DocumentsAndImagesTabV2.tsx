@@ -665,7 +665,7 @@ export function DocumentsAndImagesTabV2({
                   <TableHead className="font-medium w-[120px]">Language</TableHead>
                   <TableHead className="font-medium w-[120px]">Date</TableHead>
                   <TableHead className="font-medium w-[100px]">Type</TableHead>
-                  <TableHead className="font-medium text-right w-[150px]">Actions</TableHead>
+                  <TableHead className="font-medium text-right w-[150px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>

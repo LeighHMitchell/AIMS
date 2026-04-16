@@ -205,7 +205,7 @@ export function TaskDetailModal({
           </div>
         ) : task ? (
           <>
-            <DialogHeader>
+            <DialogHeader className="mx-0 mt-0 rounded-t-lg">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">

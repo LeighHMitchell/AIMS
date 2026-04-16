@@ -277,7 +277,7 @@ export default function FundsPage() {
           <div className="text-center py-12 text-muted-foreground"><p>{error}</p></div>
         ) : filteredFunds.length === 0 ? (
           <EmptyState
-            illustration="/images/empty-loom.png"
+            illustration="/images/empty-loom.webp"
             title="No pooled funds found"
             message={
               searchQuery || statusFilter !== 'all'

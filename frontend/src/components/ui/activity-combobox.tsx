@@ -146,58 +146,24 @@ export function ActivityCombobox({
       return;
     }
 
-    // Fetch from API as fallback (e.g. initial mount with a pre-set value)
+    // Fetch from search API (lightweight — includes reporting_org in one shot)
     let cancelled = false;
-    apiFetch(`/api/activities/${value}`)
-      .then(response => {
-        if (response.ok) return response.json();
-        return null;
-      })
-      .then(async (activity) => {
-        if (cancelled || !activity) return;
-
-        // The individual activity endpoint doesn't include the nested reporting_org.
-        // Construct it from available fields, then enrich with a org lookup if possible.
-        if (!activity.reporting_org) {
-          const orgId = activity.reportingOrgId || activity.reporting_org_id;
-          if (orgId) {
-            // Build a minimal reporting_org from what we have
-            activity.reporting_org = {
-              id: orgId,
-              name: activity.created_by_org_name || activity.reporting_org_name || '',
-              acronym: activity.created_by_org_acronym || '',
-            };
-            // Enrich with full org details (logo, type, country)
-            try {
-              const orgRes = await apiFetch(`/api/organizations/${orgId}`);
-              if (orgRes.ok) {
-                const org = await orgRes.json();
-                activity.reporting_org = {
-                  id: orgId,
-                  name: org.name || activity.reporting_org.name,
-                  acronym: org.acronym || activity.reporting_org.acronym,
-                  logo: org.logo,
-                  country: org.country,
-                  type: org.type,
-                  Organisation_Type_Code: org.Organisation_Type_Code,
-                  Organisation_Type_Name: org.Organisation_Type_Name,
-                };
-              }
-            } catch {
-              // Keep the minimal reporting_org
-            }
-          }
-        }
-
-        if (!cancelled) setSelectedActivity(activity);
+    apiFetch(`/api/activities/search?id=${encodeURIComponent(value)}&limit=1`)
+      .then(response => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const activity = (data.activities || [])[0];
+        if (activity) setSelectedActivity(activity);
       })
       .catch(() => {});
 
     return () => { cancelled = true; };
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch activities — always use the search endpoint for consistent data shape
+  // Fetch activities only when the popover is open
   React.useEffect(() => {
+    if (!open) return;
+
     const fetchActivities = async () => {
       setLoading(true);
       try {
@@ -219,13 +185,12 @@ export function ActivityCombobox({
       }
     };
 
-    // Debounce search
     const timeoutId = setTimeout(() => {
       fetchActivities();
-    }, 300);
+    }, searchQuery ? 300 : 0);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, open]);
 
   const getActivityTitle = (activity: Activity) => {
     return activity.title_narrative || activity.title || 'Untitled Activity';

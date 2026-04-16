@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { RequiredDot } from '@/components/ui/required-dot'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -270,7 +271,7 @@ export default function SubGroupsSection({
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="sg-label">Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="sg-label">Name <RequiredDot /></Label>
               <Input
                 id="sg-label"
                 placeholder="e.g. Reproductive Health Sub-Working Group"
@@ -279,7 +280,7 @@ export default function SubGroupsSection({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sg-code">Code <span className="text-red-500">*</span></Label>
+              <Label htmlFor="sg-code">Code <RequiredDot /></Label>
               <Input
                 id="sg-code"
                 placeholder="e.g. SWG-ReproductiveHealth"

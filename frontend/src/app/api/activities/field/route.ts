@@ -495,56 +495,65 @@ export async function POST(request: Request) {
 
           // Insert new contacts if any
           if (Array.isArray(body.value) && body.value.length > 0) {
-            // Resolve contact_ids first, then build junction rows
+            const toNullIfEmpty = (value: any) => {
+              if (value === '' || value === undefined || value === null || value === '__none__') return null;
+              return value;
+            };
+
+            const isValidUUID = (value: any) => {
+              if (!value || value === '') return false;
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+              return uuidRegex.test(value);
+            };
+
+            // Resolve all contact_ids in parallel (was sequential — caused slow saves)
+            const resolvedIds = await Promise.all(
+              body.value.map(async (contact: any) => {
+                const firstName = contact.firstName?.trim() || 'Unknown';
+                const lastName = contact.lastName?.trim() || 'Unknown';
+                const position = (contact.position && contact.position.trim() !== '')
+                  ? contact.position.trim()
+                  : 'Not specified';
+                try {
+                  return await getOrCreateContact(supabase, {
+                    email: toNullIfEmpty(contact.email) || undefined,
+                    firstName: firstName !== 'Unknown' ? firstName : undefined,
+                    lastName: lastName !== 'Unknown' ? lastName : undefined,
+                    middleName: toNullIfEmpty(contact.middleName) || undefined,
+                    title: toNullIfEmpty(contact.title) || undefined,
+                    position: position !== 'Not specified' ? position : undefined,
+                    jobTitle: toNullIfEmpty(contact.jobTitle) || undefined,
+                    department: toNullIfEmpty(contact.department) || undefined,
+                    organisation: toNullIfEmpty(contact.organisation) || undefined,
+                    organisationId: isValidUUID(contact.organisationId) ? contact.organisationId : undefined,
+                    phone: toNullIfEmpty(contact.phone) || undefined,
+                    phoneNumber: toNullIfEmpty(contact.phoneNumber || contact.phone) || undefined,
+                    countryCode: toNullIfEmpty(contact.countryCode) || undefined,
+                    fax: toNullIfEmpty(contact.fax) || undefined,
+                    faxCountryCode: toNullIfEmpty(contact.faxCountryCode) || undefined,
+                    faxNumber: toNullIfEmpty(contact.faxNumber) || undefined,
+                    secondaryEmail: toNullIfEmpty(contact.secondaryEmail) || undefined,
+                    website: toNullIfEmpty(contact.website) || undefined,
+                    mailingAddress: toNullIfEmpty(contact.mailingAddress) || undefined,
+                    profilePhoto: toNullIfEmpty(contact.profilePhoto) || undefined,
+                    notes: toNullIfEmpty(contact.notes) || undefined,
+                  });
+                } catch (err) {
+                  console.warn('[Field API] Failed to resolve contact, proceeding without contact_id:', err);
+                  return null;
+                }
+              })
+            );
+
             const contactsData: any[] = [];
-            for (const contact of body.value) {
+            body.value.forEach((contact: any, idx: number) => {
               const type = contact.type || '1';
               const firstName = contact.firstName?.trim() || 'Unknown';
               const lastName = contact.lastName?.trim() || 'Unknown';
               const position = (contact.position && contact.position.trim() !== '')
                 ? contact.position.trim()
                 : 'Not specified';
-
-              const toNullIfEmpty = (value: any) => {
-                if (value === '' || value === undefined || value === null || value === '__none__') return null;
-                return value;
-              };
-
-              const isValidUUID = (value: any) => {
-                if (!value || value === '') return false;
-                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-                return uuidRegex.test(value);
-              };
-
-              // Resolve or create in the contacts table
-              let resolvedContactId: string | null = null;
-              try {
-                resolvedContactId = await getOrCreateContact(supabase, {
-                  email: toNullIfEmpty(contact.email) || undefined,
-                  firstName: firstName !== 'Unknown' ? firstName : undefined,
-                  lastName: lastName !== 'Unknown' ? lastName : undefined,
-                  middleName: toNullIfEmpty(contact.middleName) || undefined,
-                  title: toNullIfEmpty(contact.title) || undefined,
-                  position: position !== 'Not specified' ? position : undefined,
-                  jobTitle: toNullIfEmpty(contact.jobTitle) || undefined,
-                  department: toNullIfEmpty(contact.department) || undefined,
-                  organisation: toNullIfEmpty(contact.organisation) || undefined,
-                  organisationId: isValidUUID(contact.organisationId) ? contact.organisationId : undefined,
-                  phone: toNullIfEmpty(contact.phone) || undefined,
-                  phoneNumber: toNullIfEmpty(contact.phoneNumber || contact.phone) || undefined,
-                  countryCode: toNullIfEmpty(contact.countryCode) || undefined,
-                  fax: toNullIfEmpty(contact.fax) || undefined,
-                  faxCountryCode: toNullIfEmpty(contact.faxCountryCode) || undefined,
-                  faxNumber: toNullIfEmpty(contact.faxNumber) || undefined,
-                  secondaryEmail: toNullIfEmpty(contact.secondaryEmail) || undefined,
-                  website: toNullIfEmpty(contact.website) || undefined,
-                  mailingAddress: toNullIfEmpty(contact.mailingAddress) || undefined,
-                  profilePhoto: toNullIfEmpty(contact.profilePhoto) || undefined,
-                  notes: toNullIfEmpty(contact.notes) || undefined,
-                });
-              } catch (err) {
-                console.warn('[Field API] Failed to resolve contact, proceeding without contact_id:', err);
-              }
+              const resolvedContactId = resolvedIds[idx];
 
               const orgValue = toNullIfEmpty(contact.organisation);
               const contactData: any = {
@@ -585,7 +594,7 @@ export async function POST(request: Request) {
               };
 
               contactsData.push(contactData);
-            }
+            });
 
             console.log('[Field API] 📝 About to insert contacts data:', JSON.stringify(contactsData, null, 2));
             console.log('[Field API] Number of contacts to insert:', contactsData.length);

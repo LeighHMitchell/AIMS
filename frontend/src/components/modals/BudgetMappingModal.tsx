@@ -285,7 +285,7 @@ export function BudgetMappingModal({
                       <TableHead className="font-medium">Code</TableHead>
                       <TableHead className="font-medium">Percentage</TableHead>
                       <TableHead className="font-medium">Description</TableHead>
-                      <TableHead className="font-medium text-right">Actions</TableHead>
+                      <TableHead className="font-medium text-right" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

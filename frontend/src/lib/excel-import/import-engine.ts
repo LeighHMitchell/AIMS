@@ -113,6 +113,39 @@ function stripCodePrefix(value: string): string {
  * Extract resolved values from preview rows as a flat key-value map.
  * Only includes fields with valid or warning status that have a resolved value.
  */
+/**
+ * Check that repeating-group percentages sum to 100 (±0.01) for given groups.
+ * Returns warning messages per group, e.g. { sector: "Sector percentages total 85% (should be 100%)" }.
+ */
+export function validateRepeatingPercentages(
+  preview: PreviewRow[],
+  groups: { key: string; percentageFieldPrefix: string; label: string }[]
+): Record<string, string> {
+  const warnings: Record<string, string> = {};
+  const byKey = new Map(preview.map(r => [r.fieldKey, r]));
+
+  for (const group of groups) {
+    let total = 0;
+    let hasAny = false;
+    for (let i = 1; i <= 20; i++) {
+      const row = byKey.get(`${group.percentageFieldPrefix}_${i}`);
+      if (!row) continue;
+      const raw = row.importedValue.raw?.trim();
+      if (!raw) continue;
+      const num = parseFloat(raw.replace(/,/g, ''));
+      if (!isNaN(num)) {
+        total += num;
+        hasAny = true;
+      }
+    }
+    if (hasAny && Math.abs(total - 100) > 0.01) {
+      warnings[group.key] = `${group.label} percentages total ${total}% (should be 100%)`;
+    }
+  }
+
+  return warnings;
+}
+
 export function extractResolvedValues(preview: PreviewRow[]): Record<string, string> {
   const result: Record<string, string> = {};
 

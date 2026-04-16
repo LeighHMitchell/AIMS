@@ -3,14 +3,8 @@
 import React, { useState, useCallback, useEffect, useRef } from "react"
 import { Map, MapControls, useMap } from "@/components/ui/map"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Map as MapIcon, Mountain, RotateCcw } from "lucide-react"
+import { MapStyleSelect } from "@/components/maps/MapStyleSelect"
 import type MapLibreGL from "maplibre-gl"
 
 // ── Map style configurations (same as Atlas) ──────────────────────────
@@ -256,20 +250,7 @@ function MapStyleSwitcher({
   value: MapStyleKey
   onChange: (v: MapStyleKey) => void
 }) {
-  return (
-    <Select value={value} onValueChange={(v) => onChange(v as MapStyleKey)}>
-      <SelectTrigger className="w-[200px] bg-white shadow-md border-gray-300 text-xs h-9">
-        <SelectValue placeholder="Map style" />
-      </SelectTrigger>
-      <SelectContent className="z-[9999]">
-        {Object.entries(MAP_STYLES).map(([key, style]) => (
-          <SelectItem key={key} value={key}>
-            {style.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
+  return <MapStyleSelect value={value} onChange={onChange} />
 }
 
 // ── Public shell component ────────────────────────────────────────────

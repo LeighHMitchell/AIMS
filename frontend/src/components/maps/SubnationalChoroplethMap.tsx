@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Map, MapControls, useMap } from '@/components/ui/map';
 import type MapLibreGL from 'maplibre-gl';
 import type maplibregl from 'maplibre-gl';
@@ -106,6 +107,9 @@ interface SubnationalChoroplethMapProps {
   onViewLevelChange: (level: ViewLevel) => void;
   onFeatureClick?: (pcode: string, name: string, level: AllocationLevel) => void;
   isExpanded?: boolean;
+  // Region-keyed totals, passed through to the township tooltip so it can show
+  // the parent region's aggregate percentage alongside the township value.
+  regionTotals?: Record<string, number>;
 }
 
 // Get color for a percentage value using linear interpolation
@@ -223,21 +227,37 @@ function ChoroplethLayer({
     return lookup;
   }, [breakdowns]);
 
+  // Township layer matches on TS_PCODE (not TS name) because MIMU township
+  // names differ from our locations data source — pcodes are stable.
+  const nameProperty = viewLevel === 'township' ? 'TS_PCODE' : 'ST';
+
+  // When a region's 100% is split evenly across its townships, each township's
+  // raw percentage is tiny (e.g. 3.3% for 30 townships) and falls at the very
+  // light end of the color scale. To keep the map legible, the township view
+  // scales colors relative to the max value in the current breakdown so the
+  // darkest township uses the full color range. Tooltips still show raw %.
+  const colorScale = useMemo(() => {
+    if (viewLevel !== 'township') return 1;
+    const values = Object.values(percentageLookup);
+    const max = values.length > 0 ? Math.max(...values) : 0;
+    return max > 0 && max < 100 ? 100 / max : 1;
+  }, [percentageLookup, viewLevel]);
+
   // Build color expression for MapLibre (GPU-accelerated)
   const colorExpression = useMemo(() => {
-    // Create a match expression: ['match', ['get', 'TS'], 'Township1', '#color1', 'Township2', '#color2', ..., '#default']
-    const nameProperty = viewLevel === 'township' ? 'TS' : 'ST';
     const matchPairs: (string | number)[] = [];
+    const seen = new Set<string>();
 
-    Object.entries(percentageLookup).forEach(([name, percentage]) => {
-      // For regions, we need to map full name back to short name
-      let lookupName = name;
+    Object.entries(percentageLookup).forEach(([key, percentage]) => {
+      // For regions, map full name back to short name (GeoJSON uses short ST codes)
+      let lookupKey = key;
       if (viewLevel === 'region') {
-        // Find the short name from the mapping
-        const shortName = Object.entries(REGION_NAME_MAPPING).find(([, fullName]) => fullName === name)?.[0];
-        if (shortName) lookupName = shortName;
+        const shortName = Object.entries(REGION_NAME_MAPPING).find(([, fullName]) => fullName === key)?.[0];
+        if (shortName) lookupKey = shortName;
       }
-      matchPairs.push(lookupName, getColorForValue(percentage));
+      if (seen.has(lookupKey)) return;
+      seen.add(lookupKey);
+      matchPairs.push(lookupKey, getColorForValue(percentage * colorScale));
     });
 
     if (matchPairs.length === 0) {
@@ -245,23 +265,25 @@ function ChoroplethLayer({
     }
 
     return ['match', ['get', nameProperty], ...matchPairs, DEFAULT_COLOR_SCALE.nullColor];
-  }, [percentageLookup, viewLevel]);
+  }, [percentageLookup, viewLevel, nameProperty, colorScale]);
 
   // Build extrusion height expression for 3D mode (height based on percentage)
   const extrusionHeightExpression = useMemo(() => {
-    const nameProperty = viewLevel === 'township' ? 'TS' : 'ST';
     const matchPairs: (string | number)[] = [];
     const maxHeight = viewLevel === 'township' ? 50000 : 100000; // Max height in meters
+    const seen = new Set<string>();
 
-    Object.entries(percentageLookup).forEach(([name, percentage]) => {
-      let lookupName = name;
+    Object.entries(percentageLookup).forEach(([key, percentage]) => {
+      let lookupKey = key;
       if (viewLevel === 'region') {
-        const shortName = Object.entries(REGION_NAME_MAPPING).find(([, fullName]) => fullName === name)?.[0];
-        if (shortName) lookupName = shortName;
+        const shortName = Object.entries(REGION_NAME_MAPPING).find(([, fullName]) => fullName === key)?.[0];
+        if (shortName) lookupKey = shortName;
       }
-      // Scale height based on percentage (0-100 -> 0-maxHeight)
-      const height = (percentage / 100) * maxHeight;
-      matchPairs.push(lookupName, height);
+      if (seen.has(lookupKey)) return;
+      seen.add(lookupKey);
+      const scaled = Math.min((percentage * colorScale) / 100, 1);
+      const height = scaled * maxHeight;
+      matchPairs.push(lookupKey, height);
     });
 
     if (matchPairs.length === 0) {
@@ -269,7 +291,7 @@ function ChoroplethLayer({
     }
 
     return ['match', ['get', nameProperty], ...matchPairs, 0];
-  }, [percentageLookup, viewLevel]);
+  }, [percentageLookup, viewLevel, nameProperty, colorScale]);
 
   // Add or update source when GeoJSON is loaded or changes
   useEffect(() => {
@@ -452,16 +474,23 @@ function ChoroplethLayer({
       }
     };
 
-    map.on('mousemove', layerId, onMouseMove);
-    map.on('mouseleave', layerId, onMouseLeave);
-    map.on('click', layerId, onClick);
+    // Attach to both 2D fill and 3D extrusion layers so hover/click work in
+    // either rendering mode (only one is visible at a time).
+    const interactiveLayers = [layerId, extrusionLayerId];
+    interactiveLayers.forEach(id => {
+      map.on('mousemove', id, onMouseMove);
+      map.on('mouseleave', id, onMouseLeave);
+      map.on('click', id, onClick);
+    });
 
     return () => {
-      map.off('mousemove', layerId, onMouseMove);
-      map.off('mouseleave', layerId, onMouseLeave);
-      map.off('click', layerId, onClick);
+      interactiveLayers.forEach(id => {
+        map.off('mousemove', id, onMouseMove);
+        map.off('mouseleave', id, onMouseLeave);
+        map.off('click', id, onClick);
+      });
     };
-  }, [map, isLoaded, geojsonData, visible, sourceId, layerId, viewLevel, onFeatureClick, onHoverChange]);
+  }, [map, isLoaded, geojsonData, visible, sourceId, layerId, extrusionLayerId, viewLevel, onFeatureClick, onHoverChange]);
 
   return null;
 }
@@ -530,10 +559,12 @@ function MapTooltip({
   feature,
   breakdowns,
   viewLevel,
+  regionTotals,
 }: {
   feature: Feature<Geometry> | null;
   breakdowns: MapBreakdowns;
   viewLevel: ViewLevel;
+  regionTotals?: Record<string, number>;
 }) {
   const { map, isLoaded } = useMap();
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -542,6 +573,8 @@ function MapTooltip({
     percentage: number;
     value?: number;
     activityCount?: number;
+    regionName?: string;
+    regionPercentage?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -570,7 +603,8 @@ function MapTooltip({
     let value: number | undefined;
     let activityCount: number | undefined;
 
-    const data = breakdowns[name];
+    const lookupKey = viewLevel === 'township' ? (props.TS_PCODE as string) : name;
+    const data = breakdowns[lookupKey];
     if (typeof data === 'number') {
       percentage = data;
     } else if (data && typeof data === 'object') {
@@ -580,13 +614,23 @@ function MapTooltip({
       activityCount = regionData.activityCount;
     }
 
+    let regionName: string | undefined;
+    let regionPercentage: number | undefined;
+    if (viewLevel === 'township' && regionTotals) {
+      const stShort = props.ST as string;
+      regionName = REGION_NAME_MAPPING[stShort] || stShort;
+      regionPercentage = regionTotals[regionName];
+    }
+
     setTooltipData({
       name: viewLevel === 'township' ? `${props.TS}, ${props.ST}` : name,
       percentage,
       value,
       activityCount,
+      regionName,
+      regionPercentage,
     });
-  }, [feature, breakdowns, viewLevel]);
+  }, [feature, breakdowns, viewLevel, regionTotals]);
 
   if (!tooltipData || !position) return null;
 
@@ -624,6 +668,22 @@ function MapTooltip({
               </td>
             </tr>
           )}
+          {tooltipData.regionName !== undefined && (
+            <tr className="border-t border-border">
+              <td className="pt-2 pb-1 text-muted-foreground">Region</td>
+              <td className="pt-2 pb-1 text-right font-medium text-foreground">
+                {tooltipData.regionName}
+              </td>
+            </tr>
+          )}
+          {tooltipData.regionPercentage !== undefined && (
+            <tr>
+              <td className="py-1 text-muted-foreground">Region total</td>
+              <td className="py-1 text-right font-medium text-foreground">
+                {tooltipData.regionPercentage.toFixed(1)}%
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
@@ -633,8 +693,12 @@ function MapTooltip({
 // 3D Controller Component
 function Map3DController({
   onModeChange,
+  portalTarget,
 }: {
   onModeChange: (is3D: boolean) => void;
+  // When provided, renders the toolbar UI into this element (e.g. a strip above
+  // the map) instead of absolute-positioned over the map.
+  portalTarget?: HTMLElement | null;
 }) {
   const { map, isLoaded } = useMap();
   const [pitch, setPitch] = useState(0);
@@ -694,8 +758,14 @@ function Map3DController({
 
   if (!isLoaded) return null;
 
-  return (
-    <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+  const toolbar = (
+    <div
+      className={
+        portalTarget
+          ? 'flex items-center gap-2'
+          : 'absolute top-4 right-4 z-10 flex items-center gap-2'
+      }
+    >
       {/* 2D/3D Toggle */}
       {is3DMode ? (
         <Button
@@ -746,6 +816,8 @@ function Map3DController({
       </div>
     </div>
   );
+
+  return portalTarget ? createPortal(toolbar, portalTarget) : toolbar;
 }
 
 // Main component
@@ -755,11 +827,14 @@ function SubnationalChoroplethMapComponent({
   onViewLevelChange,
   onFeatureClick,
   isExpanded: isExpandedProp = false,
+  regionTotals,
 }: SubnationalChoroplethMapProps) {
   const [isExpanded, setIsExpanded] = useState(isExpandedProp);
   const [isExporting, setIsExporting] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState<Feature<Geometry> | null>(null);
   const [is3DMode, setIs3DMode] = useState(false);
+  const [cardToolbarEl, setCardToolbarEl] = useState<HTMLDivElement | null>(null);
+  const [dialogToolbarEl, setDialogToolbarEl] = useState<HTMLDivElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   // Pre-load GeoJSON files in background when component mounts
@@ -820,7 +895,7 @@ function SubnationalChoroplethMapComponent({
     }
   };
 
-  const mapContent = (
+  const renderMap = (toolbarTarget: HTMLDivElement | null) => (
     <div className="relative w-full h-full">
       <Map
         center={MYANMAR_CENTER}
@@ -863,10 +938,11 @@ function SubnationalChoroplethMapComponent({
           feature={hoveredFeature}
           breakdowns={breakdowns}
           viewLevel={viewLevel}
+          regionTotals={regionTotals}
         />
 
-        {/* 3D Controller */}
-        <Map3DController onModeChange={handle3DModeChange} />
+        {/* 3D Controller — UI is portalled into the toolbar strip above the map */}
+        <Map3DController onModeChange={handle3DModeChange} portalTarget={toolbarTarget} />
       </Map>
     </div>
   );
@@ -890,7 +966,7 @@ function SubnationalChoroplethMapComponent({
                 onClick={() => onViewLevelChange('region')}
               >
                 <Layers className="h-3 w-3 mr-1" />
-                Regions
+                ADM1
               </Button>
               <Button
                 variant={viewLevel === 'township' ? 'default' : 'ghost'}
@@ -899,7 +975,7 @@ function SubnationalChoroplethMapComponent({
                 onClick={() => onViewLevelChange('township')}
               >
                 <Layers className="h-3 w-3 mr-1" />
-                Townships
+                ADM3
               </Button>
             </div>
             <Button
@@ -914,9 +990,13 @@ function SubnationalChoroplethMapComponent({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-6 flex-1 h-[calc(100%-4rem)]">
-        <div ref={mapContainerRef} className="w-full h-full min-h-[500px]">
-          {mapContent}
+      <CardContent className="p-6 flex-1 h-[calc(100%-4rem)] flex flex-col">
+        <div
+          ref={setCardToolbarEl}
+          className="flex items-center justify-end gap-2 pb-2 min-h-9"
+        />
+        <div ref={mapContainerRef} className="w-full flex-1 min-h-[500px]">
+          {!isExpanded && renderMap(cardToolbarEl)}
         </div>
       </CardContent>
 
@@ -930,7 +1010,7 @@ function SubnationalChoroplethMapComponent({
                   Subnational Allocation Map
                 </DialogTitle>
                 <DialogDescription className="text-base mt-1">
-                  Myanmar {viewLevel === 'region' ? 'States & Regions' : 'Townships'} allocation percentages
+                  Myanmar {viewLevel === 'region' ? 'ADM1 (States & Regions)' : 'ADM3 (Townships)'} allocation percentages
                 </DialogDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -942,7 +1022,7 @@ function SubnationalChoroplethMapComponent({
                     className="h-8 rounded-r-none text-xs"
                     onClick={() => onViewLevelChange('region')}
                   >
-                    Regions
+                    ADM1
                   </Button>
                   <Button
                     variant={viewLevel === 'township' ? 'default' : 'ghost'}
@@ -950,7 +1030,7 @@ function SubnationalChoroplethMapComponent({
                     className="h-8 rounded-l-none text-xs"
                     onClick={() => onViewLevelChange('township')}
                   >
-                    Townships
+                    ADM3
                   </Button>
                 </div>
                 <Button
@@ -967,15 +1047,19 @@ function SubnationalChoroplethMapComponent({
             </div>
           </DialogHeader>
 
-          <div className="mt-4 h-[600px]">
-            {mapContent}
+          <div
+            ref={setDialogToolbarEl}
+            className="flex items-center justify-end gap-2 mt-2 min-h-9"
+          />
+          <div className="mt-2 h-[600px]">
+            {isExpanded && renderMap(dialogToolbarEl)}
           </div>
 
           <p className="text-sm text-muted-foreground mt-4">
             This interactive map provides a geographic visualization of aid distribution across Myanmar.
             Darker shading indicates higher allocation percentages, making it easy to identify regional
-            concentrations and gaps at a glance. Toggle between Region view (15 States/Regions) and
-            Township view (~330 townships) for different levels of detail.
+            concentrations and gaps at a glance. Toggle between ADM1 (15 states/regions/union territory)
+            and ADM3 (~330 townships) for different levels of detail.
           </p>
         </DialogContent>
       </Dialog>

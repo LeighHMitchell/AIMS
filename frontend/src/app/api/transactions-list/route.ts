@@ -70,7 +70,8 @@ export async function GET(request: NextRequest) {
         aid_type,
         provider_activity_uuid,
         receiver_activity_uuid,
-        created_at
+        created_at,
+        auto_ref
       `, { count: 'exact' });
 
     // Apply filters
@@ -167,6 +168,7 @@ export async function GET(request: NextRequest) {
       flow_type: string | null;
       aid_type: string | null;
       created_at: string;
+      auto_ref?: string | null;
     }) => ({
       // Use both uuid and id for compatibility
       uuid: t.uuid,
@@ -195,7 +197,8 @@ export async function GET(request: NextRequest) {
       flow_type: t.flow_type,
       aid_type: t.aid_type,
       created_at: t.created_at,
-      createdAt: t.created_at
+      createdAt: t.created_at,
+      auto_ref: t.auto_ref || null
     }));
 
     const executionTime = Date.now() - startTime;

@@ -247,7 +247,7 @@ export function TaskTable({
               </div>
             </TableHead>
             <TableHead className="w-[80px]">Attachments</TableHead>
-            <TableHead className="w-[60px]">Actions</TableHead>
+            <TableHead className="w-[60px]" />
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -28,7 +28,9 @@ interface FinanceTypeSelectProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const allOptions: FinanceType[] = financeTypes;
+const allOptions: FinanceType[] = (financeTypes as FinanceType[]).filter(
+  ft => !ft.withdrawn && ft.group !== "Indicators / Macroeconomic Stats"
+);
 
 export function FinanceTypeSelect({
   value,

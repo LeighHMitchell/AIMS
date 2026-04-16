@@ -24,6 +24,7 @@ interface HelpTextTooltipProps {
   side?: "top" | "right" | "bottom" | "left"
   align?: "start" | "center" | "end"
   sideOffset?: number
+  contentClassName?: string
 }
 
 export function HelpTextTooltip({
@@ -34,7 +35,8 @@ export function HelpTextTooltip({
   size = "default",
   side,
   align,
-  sideOffset = 4
+  sideOffset = 4,
+  contentClassName,
 }: HelpTextTooltipProps) {
   const resolvedContent = content || text || children
   return (
@@ -51,6 +53,7 @@ export function HelpTextTooltip({
           side={side}
           align={align}
           sideOffset={sideOffset}
+          className={cn("whitespace-normal", contentClassName)}
         >
           <p>{resolvedContent}</p>
         </TooltipContent>

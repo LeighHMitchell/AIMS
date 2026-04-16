@@ -193,7 +193,7 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Status</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Compliance</th>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Submitted</th>
-                    <th className="text-right py-2 px-2 font-medium text-muted-foreground">Actions</th>
+                    <th className="text-right py-2 px-2 font-medium text-muted-foreground" />
                   </tr>
                 </thead>
                 <tbody className="divide-y">

@@ -188,7 +188,7 @@ export function BudgetTable({
   }
 
   if (budgets.length === 0) {
-    return <EmptyState illustration="/images/empty-aqueduct.png" message="No budgets found" />;
+    return <EmptyState illustration="/images/empty-aqueduct.webp" message="No budgets found" />;
   }
 
   // Build header map
@@ -204,6 +204,15 @@ export function BudgetTable({
           <span>Activity Title</span>
           {getSortIcon("activity", sortField, sortOrder)}
         </div>
+      </SortableTableHeader>
+    ),
+    systemId: (
+      <SortableTableHeader
+        key="systemId"
+        id="systemId"
+        className="cursor-pointer hover:bg-muted/80 transition-colors whitespace-nowrap"
+      >
+        <span>Budget ID</span>
       </SortableTableHeader>
     ),
     reportingOrganisation: (
@@ -344,57 +353,50 @@ export function BudgetTable({
               const cellMap: Record<BudgetColumnId, React.ReactNode> = {
                 activity: (
                   <TableCell key="activity" className="py-3 px-4 min-w-[300px] max-w-[500px]">
-                    <span
-                      className="group/title cursor-pointer hover:opacity-75"
-                      onClick={() => {
-                        if (budget.activity_id) {
-                          window.location.href = `/activities/${budget.activity_id}`;
-                        }
-                      }}
-                    >
-                      <span className="text-sm font-medium text-foreground">{activityTitle}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          copyToClipboard(activityTitle, `${budgetId}-title`);
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className="group/title cursor-pointer hover:opacity-75"
+                        onClick={() => {
+                          if (budget.activity_id) {
+                            window.location.href = `/activities/${budget.activity_id}`;
+                          }
                         }}
-                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700 inline-flex align-middle ml-1"
-                        title="Copy Activity Title"
                       >
-                        {copiedId === `${budgetId}-title` ? (
-                          <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
+                        <span className="text-sm">{activityTitle}</span>
+                        {budget.activity?.iati_identifier && (
+                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
+                            {budget.activity.iati_identifier}
+                          </span>
                         )}
-                      </button>
-                    </span>
-                    {budget.reference && (
-                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
-                        {budget.reference}
+                        {budget.activity?.iati_identifier && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              copyToClipboard(budget.activity!.iati_identifier!, `${budgetId}-iati`);
+                            }}
+                            className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700 inline-flex align-middle ml-1"
+                            title="Copy IATI Identifier"
+                          >
+                            {copiedId === `${budgetId}-iati` ? (
+                              <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
+                        )}
                       </span>
-                    )}
-                    {budget.activity?.iati_identifier && (
-                      <span className="group/iati whitespace-nowrap">
-                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
-                          {budget.activity.iati_identifier}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            copyToClipboard(budget.activity!.iati_identifier!, `${budgetId}-iati`);
-                          }}
-                          className="opacity-0 group-hover/iati:opacity-100 transition-opacity duration-200 hover:text-gray-700 inline-flex align-middle ml-1"
-                          title="Copy IATI Identifier"
-                        >
-                          {copiedId === `${budgetId}-iati` ? (
-                            <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                        </button>
+                    </div>
+                  </TableCell>
+                ),
+                systemId: (
+                  <TableCell key="systemId" className="py-3 px-4 whitespace-nowrap">
+                    {budget.auto_ref ? (
+                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block align-middle">
+                        {budget.auto_ref}
                       </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 ),
@@ -407,7 +409,7 @@ export function BudgetTable({
                           name={budget.activity.reporting_org.name}
                           size="sm"
                         />
-                        <span className="text-sm text-foreground whitespace-nowrap">
+                        <span className="text-sm whitespace-nowrap">
                           {budget.activity.reporting_org.acronym || budget.activity.reporting_org.name || '—'}
                         </span>
                       </div>
@@ -427,12 +429,12 @@ export function BudgetTable({
                   </TableCell>
                 ),
                 type: (
-                  <TableCell key="type" className="py-3 px-4 whitespace-nowrap text-sm text-foreground">
+                  <TableCell key="type" className="py-3 px-4 whitespace-nowrap text-sm">
                     {getBudgetTypeLabel(budget.type)}
                   </TableCell>
                 ),
                 status: (
-                  <TableCell key="status" className="py-3 px-4 whitespace-nowrap text-sm text-foreground">
+                  <TableCell key="status" className="py-3 px-4 whitespace-nowrap text-sm">
                     {getBudgetStatusLabel(budget.status)}
                   </TableCell>
                 ),
@@ -449,7 +451,7 @@ export function BudgetTable({
                 valueUsd: (
                   <TableCell key="valueUsd" className="py-3 px-4 text-right whitespace-nowrap">
                     {budget.value_usd != null ? (
-                      <span className="font-medium">
+                      <span className="text-sm">
                         {formatCurrency(budget.value_usd, 'USD')}
                       </span>
                     ) : (

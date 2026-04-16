@@ -85,7 +85,7 @@ export function DocumentPreviewModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-5xl max-h-[95vh] flex flex-col p-0">
         {/* Header */}
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 mx-0 mt-0 rounded-t-lg">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
               <DialogTitle className="text-lg font-semibold line-clamp-1">

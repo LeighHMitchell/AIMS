@@ -12,10 +12,14 @@ export async function GET(request: NextRequest) {
 
   try {
     // Create admin client inline to bypass RLS for activity/org lookups
-    // Note: getSupabaseAdmin() can return null due to module-level env var timing issues
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!serviceRoleKey || !supabaseUrl) {
+      console.error('[Budgets List API] Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL env vars — activity lookups will fail.');
+    }
     const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      supabaseUrl!,
+      serviceRoleKey!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
     const searchParams = request.nextUrl.searchParams;
@@ -132,21 +136,34 @@ export async function GET(request: NextRequest) {
 
     let activitiesMap: Record<string, any> = {};
     if (allActivityIds.size > 0) {
-      const { data: activitiesData, error: activitiesError } = await adminSupabase
+      const activityIdArr = Array.from(allActivityIds);
+      const activitySelect = 'id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym, submission_status, created_by';
+
+      const { data: adminData, error: adminErr } = await adminSupabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym, submission_status, created_by, updated_by')
-        .in('id', Array.from(allActivityIds));
+        .select(activitySelect)
+        .in('id', activityIdArr);
 
-      if (activitiesError) {
-        console.error('[Budgets List API] Error fetching activities:', activitiesError);
+      if (adminErr) {
+        console.error('[Budgets List API] Admin activities query error:', adminErr);
+      }
+      console.log('[Budgets List API] Admin found', (adminData || []).length, 'of', allActivityIds.size);
+
+      let merged = adminData || [];
+
+      // Fallback: if admin returned fewer than expected, try the RLS-scoped client too
+      if (merged.length < allActivityIds.size) {
+        const missing = activityIdArr.filter(id => !merged.some((a: any) => a.id === id));
+        const { data: rlsData, error: rlsErr } = await supabase
+          .from('activities')
+          .select(activitySelect)
+          .in('id', missing);
+        if (rlsErr) console.error('[Budgets List API] RLS fallback activities error:', rlsErr);
+        console.log('[Budgets List API] RLS fallback found', (rlsData || []).length, 'of', missing.length, 'missing');
+        merged = [...merged, ...(rlsData || [])];
       }
 
-      if (activitiesData) {
-        console.log('[Budgets List API] Found', activitiesData.length, 'activities out of', allActivityIds.size, 'requested');
-        activitiesMap = Object.fromEntries(
-          activitiesData.map(a => [a.id, a])
-        );
-      }
+      activitiesMap = Object.fromEntries(merged.map((a: any) => [a.id, a]));
     }
 
     // Fetch reporting organizations for activities

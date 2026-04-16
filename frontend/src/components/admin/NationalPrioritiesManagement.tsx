@@ -537,7 +537,7 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
             <span className="flex-1">Name</span>
             <span className="flex-1">Description</span>
             <span className="w-[60px]">Status</span>
-            <span className="w-[100px] text-right">Actions</span>
+            <span className="w-[100px] text-right" />
           </div>
 
           {/* Tree Content */}

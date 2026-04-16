@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q') || searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const idParam = searchParams.get('id');
 
     console.log('[Activities Search API] Received search request:', { search, limit });
     if (!supabase) {
@@ -42,8 +43,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    // Add search filter if provided
-    if (search) {
+    // Direct id lookup (used by ActivityCombobox to fetch a pre-selected value cheaply)
+    if (idParam) {
+      query = query.eq('id', idParam);
+    } else if (search) {
       const searchFilter = `title_narrative.ilike.%${search}%,acronym.ilike.%${search}%,other_identifier.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`;
       console.log('[Activities Search API] Applying search filter:', searchFilter);
       query = query.or(searchFilter);

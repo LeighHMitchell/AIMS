@@ -75,16 +75,11 @@ export function WorkingGroupsSearchableSelect({
         >
           <span className="truncate">
             {selectedGroups.length > 0 ? (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {selectedGroups.length}
-                </span>
-                <span className="font-medium">
-                  {selectedGroups.length === 1 
-                    ? selectedGroups[0].label 
-                    : `${selectedGroups.length} groups selected`
-                  }
-                </span>
+              <span className="font-medium">
+                {selectedGroups.length === 1
+                  ? selectedGroups[0].label
+                  : `${selectedGroups.length} groups selected`
+                }
               </span>
             ) : (
               placeholder

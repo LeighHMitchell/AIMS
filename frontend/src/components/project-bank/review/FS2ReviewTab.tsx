@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { RequiredDot } from "@/components/ui/required-dot"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -606,7 +607,7 @@ export function FS2ReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
-                        <span className="text-destructive ml-1">*</span>
+                        <RequiredDot />
                       )}
                     </Label>
                     <Textarea
@@ -649,7 +650,7 @@ export function FS2ReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
-                        <span className="text-destructive ml-1">*</span>
+                        <RequiredDot />
                       )}
                     </Label>
                     <Textarea
@@ -727,7 +728,7 @@ export function FS2ReviewTab() {
                     {isOverride ? (
                       <div className="space-y-2">
                         <Label className="text-sm">
-                          Rationale for Override <span className="text-destructive">*</span>
+                          Rationale for Override <RequiredDot />
                         </Label>
                         <p className="text-xs text-muted-foreground">
                           You are selecting a different category than the system recommendation. Please explain why.

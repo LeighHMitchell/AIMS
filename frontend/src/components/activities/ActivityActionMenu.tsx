@@ -56,7 +56,7 @@ export function ActivityActionMenu({
         <DropdownMenuItem onClick={onToggleBookmark}>
           {isBookmarked ? (
             <>
-              <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+              <BookmarkCheck className="h-4 w-4 mr-2" />
               Remove Bookmark
             </>
           ) : (
@@ -69,7 +69,7 @@ export function ActivityActionMenu({
 
         {canEdit && (
           <DropdownMenuItem onClick={onEdit}>
-            <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+            <Pencil className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
         )}

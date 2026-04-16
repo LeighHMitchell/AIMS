@@ -58,16 +58,13 @@ export function UserSearchableSelect({
   const selectedUser = selectedUserData || users.find((user) => user.value === value);
 
   const searchUsers = React.useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < 2) {
-      setUsers([]);
-      return;
-    }
-
     setLoading(true);
     try {
       console.log('[User Search] Searching for:', searchQuery);
-      const response = await apiFetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`
-      );
+      const url = searchQuery.length >= 2
+        ? `/api/users/search?q=${encodeURIComponent(searchQuery)}`
+        : `/api/users/search?limit=50`;
+      const response = await apiFetch(url);
       if (response.ok) {
         const data = await response.json();
         console.log('[User Search] Found users:', data.length);
@@ -143,11 +140,7 @@ export function UserSearchableSelect({
               onValueChange={setQuery}
             />
             <CommandEmpty>
-              {loading
-                ? "Searching..."
-                : query.length < 2
-                ? "Type at least 2 characters to search"
-                : "No users found."}
+              {loading ? "Loading..." : "No users found."}
             </CommandEmpty>
             <CommandGroup className="max-h-64 overflow-auto">
               {users.map((user) => (

@@ -151,7 +151,7 @@ export function ActivityOverviewGroup({
     if (initialSection && isActivityOverviewSection(initialSection) && activityCreated) {
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'general')) {
+      if (prevInitialSection.current !== initialSection || isFirstRender.current) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return

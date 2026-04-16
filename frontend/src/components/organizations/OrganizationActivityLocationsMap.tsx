@@ -10,6 +10,8 @@ import dynamic from 'next/dynamic';
 
 // mapcn map components
 import { Map, MapControls, useMap } from '@/components/ui/map';
+import { MAP_STYLES as SHARED_MAP_STYLES, DEFAULT_MAP_STYLE, type MapStyleKey } from '@/lib/map-styles';
+import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
 
 // Dynamic import for MapLibre-based layers
 const MarkersLayer = dynamic(() => import('@/components/maps-v2/MarkersLayer'), { ssr: false });
@@ -148,6 +150,7 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
   const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
   const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
+  const [mapStyle, setMapStyle] = useState<MapStyleKey>(DEFAULT_MAP_STYLE);
 
   // Fetch home country from system settings
   useEffect(() => {
@@ -277,11 +280,17 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
         </div>
       </div>
 
+      {/* Map style selector */}
+      <div className="absolute top-14 left-3 z-20">
+        <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="h-9" />
+      </div>
+
       {/* MapLibre Map */}
       <Map
+        key={`org-loc-map-${mapStyle}`}
         styles={{
-          light: MAP_STYLES.carto_light.light,
-          dark: MAP_STYLES.carto_light.dark,
+          light: SHARED_MAP_STYLES[mapStyle].light,
+          dark: SHARED_MAP_STYLES[mapStyle].dark,
         }}
         center={[homeCountryCenter[1], homeCountryCenter[0]]}
         zoom={homeCountryZoom}

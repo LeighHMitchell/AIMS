@@ -5,6 +5,7 @@ import { ColumnConfig } from "@/components/ui/column-selector";
  */
 export type PlannedDisbursementColumnId =
   | "activity"
+  | "systemId"
   | "periodStart"
   | "periodEnd"
   | "type"
@@ -19,6 +20,7 @@ export type PlannedDisbursementColumnId =
  */
 export const plannedDisbursementColumns: ColumnConfig<PlannedDisbursementColumnId>[] = [
   { id: "activity", label: "Activity", group: "default", defaultVisible: true },
+  { id: "systemId", label: "Planned Disbursement ID", group: "default", defaultVisible: true },
   { id: "periodStart", label: "Start Date", group: "default", defaultVisible: true },
   { id: "periodEnd", label: "End Date", group: "default", defaultVisible: true },
   { id: "type", label: "Type", group: "default", defaultVisible: true },
@@ -47,9 +49,9 @@ export const defaultVisiblePlannedDisbursementColumns: PlannedDisbursementColumn
 /**
  * localStorage key for persisting column visibility
  */
-export const PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY = "aims_planned_disbursement_table_visible_columns";
+export const PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY = "aims_planned_disbursement_table_visible_columns_v2";
 
 /**
  * localStorage key for persisting column order
  */
-export const PLANNED_DISBURSEMENT_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_planned_disbursement_table_column_order";
+export const PLANNED_DISBURSEMENT_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_planned_disbursement_table_column_order_v2";

@@ -9,7 +9,7 @@ import { ImportPreviewTable, getPreviewStats } from '@/components/excel-import/I
 import { TemplateDownloadButton } from '@/components/excel-import/TemplateDownloadButton';
 import { cn } from '@/lib/utils';
 import { ACTIVITY_IMPORT_FIELDS, ACTIVITY_REPEAT_GROUPS } from '@/lib/excel-import/schemas';
-import { processSingleRowImport } from '@/lib/excel-import/import-engine';
+import { processSingleRowImport, validateRepeatingPercentages } from '@/lib/excel-import/import-engine';
 import type { PreviewRow } from '@/lib/excel-import/types';
 import { apiFetch } from '@/lib/api-fetch';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
@@ -34,21 +34,22 @@ const BLUR_HANDLED_FIELDS = new Set([
 // Fields that should be saved via /api/activities/field
 const FIELD_API_FIELDS = new Set([
   'iati_identifier', 'default_aid_type', 'default_finance_type',
-  'default_flow_type', 'default_tied_status', 'humanitarian',
-  'capital_spend_percentage', 'budget_status', 'on_budget_percentage',
+  'default_flow_type', 'default_tied_status', 'default_currency',
+  'humanitarian', 'capital_spend_percentage', 'budget_status', 'on_budget_percentage',
 ]);
 
-// Map from our field keys to the API field names
+// Map from our field keys to the API field names (the /api/activities/field endpoint uses camelCase)
 const FIELD_API_MAP: Record<string, string> = {
-  iati_identifier: 'iati_identifier',
-  default_aid_type: 'default_aid_type',
-  default_finance_type: 'default_finance_type',
-  default_flow_type: 'default_flow_type',
-  default_tied_status: 'default_tied_status',
+  iati_identifier: 'iatiIdentifier',
+  default_aid_type: 'defaultAidType',
+  default_finance_type: 'defaultFinanceType',
+  default_flow_type: 'defaultFlowType',
+  default_tied_status: 'defaultTiedStatus',
+  default_currency: 'defaultCurrency',
   humanitarian: 'humanitarian',
   capital_spend_percentage: 'capital_spend_percentage',
-  budget_status: 'budget_status',
-  on_budget_percentage: 'on_budget_percentage',
+  budget_status: 'budgetStatus',
+  on_budget_percentage: 'onBudgetPercentage',
 };
 
 export function ActivityExcelImportTab({
@@ -217,28 +218,58 @@ export function ActivityExcelImportTab({
         }
       }
 
-      // 4. Save recipient countries
+      // 4. Save recipient countries + regions (both via countries-regions endpoint)
       const countries = extractRepeatingGroup(resolvedValues, 'country_code', 'country_percentage', 5);
-      if (countries.length > 0) {
+      const regions = extractRepeatingGroup(resolvedValues, 'region_code', 'region_percentage', 5);
+      if (countries.length > 0 || regions.length > 0) {
         try {
-          const countriesToSave = countries.map(c => ({
-            country_code: c.code,
-            percentage: c.percentage ? parseFloat(c.percentage) : null,
-          }));
+          // Fetch current to preserve values for whichever list wasn't imported
+          const currentResp = await apiFetch(`/api/activities/${activityId}/countries-regions`);
+          let existingCountries: any[] = [];
+          let existingRegions: any[] = [];
+          let existingCustom: any[] = [];
+          if (currentResp.ok) {
+            const cur = await currentResp.json();
+            existingCountries = cur.countries || [];
+            existingRegions = cur.regions || [];
+            existingCustom = cur.customGeographies || [];
+          }
 
-          await apiFetch('/api/activities/field', {
-            method: 'POST',
+          const countriesToSave = countries.length > 0
+            ? countries.map(c => ({
+                id: `country-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                country: { code: c.code, name: c.code },
+                percentage: c.percentage ? parseFloat(c.percentage) : 0,
+                vocabulary: '1',
+              }))
+            : existingCountries;
+
+          const regionsToSave = regions.length > 0
+            ? regions.map(r => ({
+                id: `region-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                region: { code: r.code, name: r.code, withdrawn: false },
+                percentage: r.percentage ? parseFloat(r.percentage) : 0,
+                vocabulary: '1',
+              }))
+            : existingRegions;
+
+          const resp = await apiFetch(`/api/activities/${activityId}/countries-regions`, {
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              activityId,
-              field: 'recipient_countries',
-              value: countriesToSave,
+              countries: countriesToSave,
+              regions: regionsToSave,
+              customGeographies: existingCustom,
             }),
           });
-          savedCount += countries.length;
+          if (resp.ok) {
+            savedCount += countries.length + regions.length;
+          } else {
+            errorCount += countries.length + regions.length;
+          }
         } catch (err) {
-          console.error('[Excel Import] Country import error:', err);
-          errorCount += countries.length;
+          console.error('[Excel Import] Country/region import error:', err);
+          errorCount += countries.length + regions.length;
         }
       }
 
@@ -359,7 +390,7 @@ export function ActivityExcelImportTab({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               activityId,
-              field: 'policy_markers',
+              field: 'policyMarkers',
               value: markersToSave,
             }),
           });
@@ -390,6 +421,14 @@ export function ActivityExcelImportTab({
   }, [activityId, setFormData, handleFieldBlur]);
 
   const stats = phase === 'preview' ? getPreviewStats(preview) : null;
+  const percentageWarnings = phase === 'preview'
+    ? validateRepeatingPercentages(preview, [
+        { key: 'sector', percentageFieldPrefix: 'sector_percentage', label: 'Sector' },
+        { key: 'country', percentageFieldPrefix: 'country_percentage', label: 'Country' },
+        { key: 'region', percentageFieldPrefix: 'region_percentage', label: 'Region' },
+        { key: 'sdg', percentageFieldPrefix: 'sdg_percentage', label: 'SDG' },
+      ])
+    : {};
 
   return (
     <div className="space-y-6">
@@ -494,6 +533,19 @@ export function ActivityExcelImportTab({
             )}
             <span>{stats?.populated} of {preview.length} fields populated</span>
           </div>
+
+          {Object.values(percentageWarnings).length > 0 && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {Object.values(percentageWarnings).map((msg) => (
+                    <li key={msg}>{msg}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {unmatchedColumns.length > 0 && (
             <p className="text-xs text-muted-foreground">

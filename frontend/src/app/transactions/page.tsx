@@ -883,13 +883,13 @@ export default function TransactionsPage() {
           </div>
         ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionTypes.length > 0 || filters.statuses.length > 0 || filters.organizations.length > 0 || filters.financeTypes.length > 0) ? (
           <EmptyState
-            illustration="/images/empty-piggybank.png"
+            illustration="/images/empty-piggybank.webp"
             title="No matching transactions found"
             message="Try adjusting your filters to see more results."
           />
         ) : sortedTransactions.length === 0 ? (
           <EmptyState
-            illustration="/images/empty-piggybank.png"
+            illustration="/images/empty-piggybank.webp"
             title="No transactions found"
             message="There are no transactions in the system yet."
           />

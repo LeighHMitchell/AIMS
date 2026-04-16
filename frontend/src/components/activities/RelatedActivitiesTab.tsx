@@ -374,7 +374,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                       <TableHead className={sortableHeaderClasses} onClick={() => handleSort('source')}>
                         <div className="flex items-center gap-1">Source {getSortIcon('source', sortField, sortDirection)}</div>
                       </TableHead>
-                      {!readOnly && <TableHead className="w-[80px]">Actions</TableHead>}
+                      {!readOnly && <TableHead className="w-[80px]" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>

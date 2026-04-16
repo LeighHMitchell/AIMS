@@ -536,7 +536,7 @@ export default function BudgetsPage() {
           </div>
         ) : sortedBudgets.length === 0 ? (
           <EmptyState
-            illustration="/images/empty-aqueduct.png"
+            illustration="/images/empty-aqueduct.webp"
             title="No budgets found"
             message="There are no budgets in the system yet."
           />

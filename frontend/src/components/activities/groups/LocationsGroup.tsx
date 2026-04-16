@@ -222,7 +222,7 @@ export function LocationsGroup({
     if (initialSection && isLocationsSection(initialSection) && activityCreated) {
       lockScrollSpy(2000)
       setActiveSection(initialSection)
-      if (prevInitialSection.current !== initialSection || (isFirstRender.current && initialSection !== 'country-region')) {
+      if (prevInitialSection.current !== initialSection || isFirstRender.current) {
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
@@ -407,12 +407,6 @@ export function LocationsGroup({
           >
             {isSectionActive('subnational-allocation') || activeSections.has('subnational-allocation') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="subnational-allocation"
-                  title={getSectionLabel('subnational-allocation')}
-                  helpText={getSectionHelpText('subnational-allocation')}
-                  showDivider={false}
-                />
                 <EnhancedSubnationalBreakdown
                   activityId={activityId}
                   canEdit={permissions?.canEditActivity ?? true}

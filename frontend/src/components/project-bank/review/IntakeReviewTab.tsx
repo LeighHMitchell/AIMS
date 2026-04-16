@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { RequiredDot } from "@/components/ui/required-dot"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -796,7 +797,7 @@ export function IntakeReviewTab() {
                     <Label className="text-sm">
                       Comments
                       {(decision === "returned" || decision === "returned_to_desk" || decision === "rejected") && (
-                        <span className="text-destructive ml-1">*</span>
+                        <RequiredDot />
                       )}
                     </Label>
                     <Textarea

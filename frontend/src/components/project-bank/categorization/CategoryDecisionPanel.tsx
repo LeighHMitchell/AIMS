@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { RequiredDot } from "@/components/ui/required-dot"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -209,7 +210,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       {isOverride && (
         <div className="space-y-2">
           <Label className="text-sm">
-            Rationale for Override <span className="text-destructive">*</span>
+            Rationale for Override <RequiredDot />
           </Label>
           <p className="text-xs text-muted-foreground">
             You are selecting a different category than the system recommendation. Please explain why.

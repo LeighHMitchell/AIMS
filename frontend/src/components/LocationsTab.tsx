@@ -373,7 +373,7 @@ export default function LocationsTab({
       {/* Locations Display */}
       {locations.length === 0 ? (
         <div className="text-center py-12">
-          <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
+          <img src="/images/empty-pushpin.webp" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium mb-2">No locations added</h3>
           <p className="text-muted-foreground mb-6">
             Add locations to specify where your activity takes place or where beneficiaries are located.
@@ -409,7 +409,7 @@ export default function LocationsTab({
                 <TableHead>Name</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Activity Description</TableHead>
-                {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
+                {canEdit && <TableHead className="w-[100px]" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -433,26 +433,42 @@ export default function LocationsTab({
                   <TableRow key={location.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{location.location_name || 'Unnamed Location'}</span>
+                        <span className="text-sm">{location.location_name || 'Unnamed Location'}</span>
                         {location.id && (
                           <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                         )}
                       </div>
                       {location.latitude && location.longitude && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}
+                        <div className="group/coords flex items-center gap-1 text-xs text-muted-foreground mt-0.5 w-fit">
+                          <span>
+                            {Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const coords = `${Number(location.latitude).toFixed(6)}, ${Number(location.longitude).toFixed(6)}`;
+                              navigator.clipboard.writeText(coords);
+                              toast.success('Coordinates copied');
+                            }}
+                            className="opacity-0 group-hover/coords:opacity-100 transition-opacity hover:text-foreground"
+                            title="Copy coordinates"
+                            aria-label="Copy coordinates"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
                         </div>
                       )}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div>{formatAddress()}</div>
                       {location.location_description && (
-                        <div className="text-sm text-muted-foreground whitespace-normal break-words mt-1">
+                        <div className="text-sm mt-0.5 whitespace-normal break-words">
                           {location.location_description}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[300px]">
+                    <TableCell className="text-sm max-w-[300px]">
                       <div className="flex items-start gap-1.5">
                         <Tooltip>
                           <TooltipTrigger asChild>

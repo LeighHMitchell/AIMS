@@ -29,6 +29,7 @@ import {
 import dynamic from 'next/dynamic';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
+import { MapStyleSelect } from '@/components/maps/MapStyleSelect';
 import { apiFetch } from '@/lib/api-fetch';
 import { Map, MapControls, useMap } from '@/components/ui/map';
 import { useHomeCountry } from '@/contexts/SystemSettingsContext';
@@ -535,21 +536,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               className="w-[240px] h-10 text-xs"
             />
 
-            <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-              <SelectTrigger className="w-[400px] text-xs h-10">
-                <SelectValue placeholder="Map style" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(MAP_STYLES).map(([key, style], index) => (
-                  <SelectItem key={key} value={key} className="pl-2">
-                    <span className="inline-flex items-center gap-2">
-                      <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono">{index + 1}</code>
-                      <span>{style.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[200px] h-10" />
 
             <Button
               onClick={handleReset}

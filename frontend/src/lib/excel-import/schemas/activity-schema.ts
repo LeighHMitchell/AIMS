@@ -46,6 +46,7 @@ const scalarFields: ExcelFieldDefinition[] = [
   { key: 'default_finance_type', label: 'Default Finance Type', type: 'codelist', required: false, codelistKey: 'finance_type' },
   { key: 'default_flow_type', label: 'Default Flow Type', type: 'codelist', required: false, codelistKey: 'flow_type' },
   { key: 'default_tied_status', label: 'Default Tied Status', type: 'codelist', required: false, codelistKey: 'tied_status' },
+  { key: 'default_currency', label: 'Default Currency', type: 'codelist', required: false, codelistKey: 'currency' },
   { key: 'humanitarian', label: 'Humanitarian', type: 'boolean', required: false },
   { key: 'capital_spend_percentage', label: 'Capital Spend %', type: 'number', required: false },
   { key: 'budget_status', label: 'Budget Status', type: 'codelist', required: false, codelistKey: 'budget_status' },
@@ -71,6 +72,16 @@ const countryFields = repeatFields(
   ],
   ['Country Code', 'Country %'],
   ['country_code', 'country_percentage']
+);
+
+const regionFields = repeatFields(
+  'region',
+  [
+    { type: 'codelist', required: false, codelistKey: 'region' },
+    { type: 'number', required: false },
+  ],
+  ['Region Code', 'Region %'],
+  ['region_code', 'region_percentage']
 );
 
 const orgFields = repeatFields(
@@ -110,7 +121,7 @@ const sdgFields = repeatFields(
 const policyMarkerFields = repeatFields(
   'policy_marker',
   [
-    { type: 'string', required: false },
+    { type: 'codelist', required: false, codelistKey: 'policy_marker' },
     { type: 'codelist', required: false, codelistKey: 'policy_significance' },
   ],
   ['Policy Marker Code', 'Policy Marker Significance'],
@@ -121,6 +132,7 @@ export const ACTIVITY_IMPORT_FIELDS: ExcelFieldDefinition[] = [
   ...scalarFields,
   ...sectorFields,
   ...countryFields,
+  ...regionFields,
   ...orgFields,
   ...contactFields,
   ...sdgFields,
@@ -133,6 +145,7 @@ export const ACTIVITY_IMPORT_FIELDS: ExcelFieldDefinition[] = [
 export const ACTIVITY_REPEAT_GROUPS: { key: string; label: string }[] = [
   { key: 'sector', label: 'Sectors (1-5)' },
   { key: 'country', label: 'Countries (1-5)' },
+  { key: 'region', label: 'Recipient Regions (1-5)' },
   { key: 'participating_org', label: 'Participating Organizations (1-5)' },
   { key: 'contact', label: 'Contacts (1-5)' },
   { key: 'sdg', label: 'SDG Alignment (1-5)' },

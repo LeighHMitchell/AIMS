@@ -627,7 +627,7 @@ export function FinancingTermsTab({
                     <th className="text-right p-2 font-medium">Principal Outstanding</th>
                     <th className="text-right p-2 font-medium">Principal Arrears</th>
                     <th className="text-right p-2 font-medium">Interest Arrears</th>
-                    {!readOnly && <th className="text-center p-2 font-medium">Actions</th>}
+                    {!readOnly && <th className="text-center p-2 font-medium" />}
                   </tr>
                 </thead>
                 <tbody>
@@ -681,7 +681,7 @@ export function FinancingTermsTab({
             </div>
           ) : (
             <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-              <img src="/images/empty-galley.png" alt="No loan status entries" className="h-32 mx-auto mb-4 opacity-50" />
+              <img src="/images/empty-galley.webp" alt="No loan status entries" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">No loan status entries</h3>
               <p className="text-muted-foreground">
                 Use the button above to add your first yearly loan status.

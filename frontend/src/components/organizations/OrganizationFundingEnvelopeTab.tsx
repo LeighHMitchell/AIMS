@@ -610,7 +610,7 @@ export default function OrganizationFundingEnvelopeTab({
                           <TableHead>Role</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Funding Types</TableHead>
-                          {!readOnly && <TableHead className="w-[100px]">Actions</TableHead>}
+                          {!readOnly && <TableHead className="w-[100px]" />}
                         </TableRow>
                       </TableHeader>
                       <TableBody>

@@ -2837,7 +2837,7 @@ export default function OrganizationProfilePage() {
                                   )}
                                 </div>
                               </TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead className="text-right" />
                             </TableRow>
                           </TableHeader>
                           <TableBody>

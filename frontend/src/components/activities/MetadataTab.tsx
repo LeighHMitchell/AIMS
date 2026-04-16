@@ -599,10 +599,10 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
           <span className="text-xs text-muted-foreground">({stats.totalLogs} entries)</span>
         </div>
         {logs.length === 0 ? (
-          <div className="p-6 text-center text-muted-foreground">
-            <History className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-            <p>No activity logs found for this activity.</p>
-            <p className="text-sm">Changes will appear here when the activity is modified.</p>
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <img src="/images/empty-fingerprint.webp" alt="No activity logs" className="h-32 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold mb-2">No activity logs</h3>
+            <p className="text-muted-foreground">Changes will appear here when the activity is modified.</p>
           </div>
         ) : (
           <ScrollArea className="h-96">

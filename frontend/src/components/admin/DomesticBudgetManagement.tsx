@@ -678,7 +678,7 @@ export function DomesticBudgetManagement() {
                             {getSortIcon("execution")}
                           </div>
                         </TableHead>
-                        <TableHead className="w-[80px]">Actions</TableHead>
+                        <TableHead className="w-[80px]" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
