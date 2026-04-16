@@ -210,12 +210,12 @@ export function HumanitarianTab({
             <div className="flex items-center gap-2">
               <Heart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {/*
-                Single save indicator only — LabelSaveIndicator renders the
-                spinner/tick inline after the label. The previous markup had a
-                second standalone SaveIndicator right after the HelpTextTooltip
-                which produced an orange circle on BOTH sides of the (?) during
-                save. `hasValue={humanitarian}` makes the green tick confirm the
-                ON state after a save, rather than being permanently suppressed.
+                LabelSaveIndicator renders its spinner/tick after its children.
+                We include the help-text tooltip inside as a child so the render
+                order is: "Humanitarian Activity (?) [tick]" — tick lands after
+                the help glyph instead of between the label and (?).
+                `hasValue={humanitarian}` shows the green tick once the ON state
+                has saved; turning the flag off hides the tick.
               */}
               <LabelSaveIndicator
                 isSaving={isSaving}
@@ -223,9 +223,11 @@ export function HumanitarianTab({
                 hasValue={humanitarian}
                 className="text-sm font-medium cursor-pointer text-foreground"
               >
-                Humanitarian Activity
+                <span className="flex items-center gap-2">
+                  Humanitarian Activity
+                  <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
+                </span>
               </LabelSaveIndicator>
-              <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
