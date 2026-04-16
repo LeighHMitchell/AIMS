@@ -763,7 +763,9 @@ function Map3DController({
       className={
         portalTarget
           ? 'flex items-center gap-2'
-          : 'absolute top-4 right-4 z-10 flex items-center gap-2'
+          // When rendered directly over the map (no portal), anchor top-left
+          // so the top-right overlay can own ADM1/ADM3 + Expand.
+          : 'absolute top-4 left-4 z-10 flex items-center gap-2'
       }
     >
       {/* 2D/3D Toggle */}
@@ -833,7 +835,9 @@ function SubnationalChoroplethMapComponent({
   const [isExporting, setIsExporting] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState<Feature<Geometry> | null>(null);
   const [is3DMode, setIs3DMode] = useState(false);
-  const [cardToolbarEl, setCardToolbarEl] = useState<HTMLDivElement | null>(null);
+  // The card view no longer portals the 3D toolbar — it renders the
+  // controls as an absolute overlay directly over the map. The dialog view
+  // still uses a portal strip above the map for the expanded layout.
   const [dialogToolbarEl, setDialogToolbarEl] = useState<HTMLDivElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -958,52 +962,62 @@ function SubnationalChoroplethMapComponent({
           wraps and the ADM1/ADM3 + Expand controls have their own clear
           alignment.
       */}
-      <CardHeader className="pb-2 space-y-2">
+      {/*
+        Header holds ONLY the title now. All controls (ADM1/ADM3 + Expand on
+        the right; 3D + Reset + Zoom stats on the left) float over the map
+        as absolute-positioned overlays. This pulls every interactive control
+        onto the map surface where it belongs, recovers vertical space the
+        former toolbar strip consumed, and makes the card read as "the map"
+        rather than "a map beneath a toolbar".
+      */}
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
           Map
           <HelpTextTooltip content="Click on regions or townships to add them to the breakdown. Colors show allocation percentages. Toggle between ADM1 (states/regions) and ADM3 (townships) views." />
         </CardTitle>
-        <div className="flex items-center justify-end gap-2">
-          {/* View Level Toggle */}
-          <div className="flex items-center border rounded-md">
-            <Button
-              variant={viewLevel === 'region' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-8 rounded-r-none text-xs"
-              onClick={() => onViewLevelChange('region')}
-            >
-              <Layers className="h-3 w-3 mr-1" />
-              ADM1
-            </Button>
-            <Button
-              variant={viewLevel === 'township' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-8 rounded-l-none text-xs"
-              onClick={() => onViewLevelChange('township')}
-            >
-              <Layers className="h-3 w-3 mr-1" />
-              ADM3
-            </Button>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
       </CardHeader>
       <CardContent className="p-6 flex-1 h-[calc(100%-4rem)] flex flex-col">
-        <div
-          ref={setCardToolbarEl}
-          className="flex items-center justify-end gap-2 pb-2 min-h-9"
-        />
-        <div ref={mapContainerRef} className="w-full flex-1 min-h-[500px]">
-          {!isExpanded && renderMap(cardToolbarEl)}
+        <div ref={mapContainerRef} className="relative w-full flex-1 min-h-[500px]">
+          {/*
+            ADM1/ADM3 view-level toggle + Expand button, anchored top-right
+            over the map. The 3D/Reset/Zoom controls render themselves at
+            top-left (when portalTarget is null — the default).
+          */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <div className="flex items-center border rounded-md bg-card shadow-md">
+              <Button
+                variant={viewLevel === 'region' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-9 rounded-r-none text-xs"
+                onClick={() => onViewLevelChange('region')}
+                title="ADM1 — states and regions"
+              >
+                <Layers className="h-3 w-3 mr-1" />
+                ADM1
+              </Button>
+              <Button
+                variant={viewLevel === 'township' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-9 rounded-l-none text-xs"
+                onClick={() => onViewLevelChange('township')}
+                title="ADM3 — townships"
+              >
+                <Layers className="h-3 w-3 mr-1" />
+                ADM3
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-9 p-0 bg-card shadow-md"
+              onClick={() => setIsExpanded(true)}
+              title="Expand"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {!isExpanded && renderMap(null)}
         </div>
       </CardContent>
 
