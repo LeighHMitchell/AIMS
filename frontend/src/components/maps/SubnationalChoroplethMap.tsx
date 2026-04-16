@@ -949,45 +949,52 @@ function SubnationalChoroplethMapComponent({
 
   return (
     <Card className="w-full h-full">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Subnational Allocation Map
-            <HelpTextTooltip content="Click on regions or townships to add them to the breakdown. Colors show allocation percentages. Toggle between Region and Township views." />
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {/* View Level Toggle */}
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant={viewLevel === 'region' ? 'default' : 'ghost'}
-                size="sm"
-                className="h-8 rounded-r-none text-xs"
-                onClick={() => onViewLevelChange('region')}
-              >
-                <Layers className="h-3 w-3 mr-1" />
-                ADM1
-              </Button>
-              <Button
-                variant={viewLevel === 'township' ? 'default' : 'ghost'}
-                size="sm"
-                className="h-8 rounded-l-none text-xs"
-                onClick={() => onViewLevelChange('township')}
-              >
-                <Layers className="h-3 w-3 mr-1" />
-                ADM3
-              </Button>
-            </div>
+      {/*
+        Header re-layout:
+        - Title shortened to just "Map" (the form's "Sub-national Allocation"
+          title on the right already names the section; repeating it on the
+          map was redundant and forced the heading to wrap).
+        - Toolbar moved below the title on its own row so the heading never
+          wraps and the ADM1/ADM3 + Expand controls have their own clear
+          alignment.
+      */}
+      <CardHeader className="pb-2 space-y-2">
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
+          Map
+          <HelpTextTooltip content="Click on regions or townships to add them to the breakdown. Colors show allocation percentages. Toggle between ADM1 (states/regions) and ADM3 (townships) views." />
+        </CardTitle>
+        <div className="flex items-center justify-end gap-2">
+          {/* View Level Toggle */}
+          <div className="flex items-center border rounded-md">
             <Button
-              variant="outline"
+              variant={viewLevel === 'region' ? 'default' : 'ghost'}
               size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => setIsExpanded(true)}
-              title="Expand"
+              className="h-8 rounded-r-none text-xs"
+              onClick={() => onViewLevelChange('region')}
             >
-              <Maximize2 className="h-3.5 w-3.5" />
+              <Layers className="h-3 w-3 mr-1" />
+              ADM1
+            </Button>
+            <Button
+              variant={viewLevel === 'township' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 rounded-l-none text-xs"
+              onClick={() => onViewLevelChange('township')}
+            >
+              <Layers className="h-3 w-3 mr-1" />
+              ADM3
             </Button>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setIsExpanded(true)}
+            title="Expand"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-6 flex-1 h-[calc(100%-4rem)] flex flex-col">
@@ -1007,7 +1014,7 @@ function SubnationalChoroplethMapComponent({
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-2xl font-bold">
-                  Subnational Allocation Map
+                  Sub-national Allocation Map
                 </DialogTitle>
                 <DialogDescription className="text-base mt-1">
                   Myanmar {viewLevel === 'region' ? 'ADM1 (States & Regions)' : 'ADM3 (Townships)'} allocation percentages
