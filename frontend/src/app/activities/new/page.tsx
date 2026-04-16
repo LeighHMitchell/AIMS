@@ -184,7 +184,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   // State for organizations dropdown
   const [organizations, setOrganizations] = useState<any[]>([]);
 
-  // State to track which additional description fields are visible
+  // State to track which additional description fields are visible.
+  // Defaults from whether content already exists so existing activities keep
+  // their filled fields visible; new activities start clean.
   const [visibleDescriptionFields, setVisibleDescriptionFields] = useState<{
     objectives: boolean;
     targetGroups: boolean;
@@ -194,6 +196,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     targetGroups: !!general.descriptionTargetGroups?.trim(),
     other: !!general.descriptionOther?.trim(),
   });
+
+  // Popover visibility for the "+ Add more detail" chooser
+  const [showAddDetailPopover, setShowAddDetailPopover] = useState(false);
 
   // State to track collapsible date descriptions
   const [showCustomDateDescriptions, setShowCustomDateDescriptions] = useState<Record<number, boolean>>({});
@@ -850,13 +855,132 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-8 min-h-[800px]">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-8">
       {/* Section Heading */}
       <div className="flex items-center gap-3">
         <h2 className="text-3xl font-semibold text-foreground">General</h2>
         <HelpTextTooltip content="This tab brings together the core details that define the activity, including its identifiers, title, description, imagery, collaboration type, status, and dates. Completing this section establishes the basic profile of the activity and provides a clear reference point for all other information entered elsewhere.">
           <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
         </HelpTextTooltip>
+      </div>
+
+      {/* Activity Title and Acronym — the primary handles, placed before Banner/Icon */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" data-tour="editor-title">
+        {/* Activity Title - takes up 2 columns, enlarged for prominence */}
+        <div className="lg:col-span-2 space-y-2">
+          <LabelSaveIndicator
+            isSaving={isSaving}
+            isSaved={!!general.id && !!general.title?.trim()}
+            hasValue={!!general.title?.trim()}
+            isFocused={isTitleFocused}
+            className="text-base font-semibold text-foreground"
+          >
+            <div className="flex items-center gap-2">
+              Activity Title <RequiredDot />
+              <HelpTextTooltip>
+                A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
+              </HelpTextTooltip>
+            </div>
+          </LabelSaveIndicator>
+          <div>
+            <Input
+              id="title"
+              value={general.title || ''}
+              onChange={(e) => {
+                setGeneral((g: any) => ({ ...g, title: e.target.value }));
+                setHasUnsavedChanges(true);
+              }}
+              onFocus={() => setIsTitleFocused(true)}
+              onBlur={() => {
+                setIsTitleFocused(false);
+                // Trigger activity creation when user enters title and navigates away
+                if (general.title?.trim() && !general.id) {
+                  saveActivity({});
+                }
+              }}
+              placeholder="Enter activity title"
+              className="w-full h-12 !text-lg"
+              autoFocus={!general.id}
+              tabIndex={1}
+            />
+          </div>
+        </div>
+
+        {/* Activity Acronym - takes up 1 column */}
+        <div className="lg:col-span-1 space-y-2">
+          <LabelSaveIndicator
+            isSaving={acronymAutosave.state.isSaving}
+            isSaved={acronymAutosave.state.isPersistentlySaved}
+            hasValue={!!general.acronym?.trim()}
+            className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
+          >
+            <div className="flex items-center gap-2">
+              Activity Acronym
+              <HelpTextTooltip>
+                This field is used to record a short acronym or abbreviation for the activity. It helps users quickly identify and reference the activity across the application, especially in lists, cards, and summaries.
+              </HelpTextTooltip>
+              {fieldLockStatus.isLocked && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fieldLockStatus.tooltipMessage}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </LabelSaveIndicator>
+          <div className={`relative ${fieldLockStatus.isLocked ? 'opacity-50' : ''}`}>
+            <Input
+              id="acronym"
+              value={general.acronym || ''}
+              onChange={(e) => {
+                if (!fieldLockStatus.isLocked) {
+                  setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
+                  setHasUnsavedChanges(true);
+                }
+              }}
+              onBlur={(e) => {
+                if (!fieldLockStatus.isLocked && e.target.value.trim()) {
+                  acronymAutosave.triggerFieldSave(e.target.value);
+                }
+              }}
+              placeholder="Enter acronym"
+              className={`w-full h-12 ${getSignificantWordCount(general.title || '') >= 2 ? 'pr-10' : ''}`}
+              disabled={fieldLockStatus.isLocked}
+              tabIndex={general.id ? 2 : -1}
+            />
+            {!fieldLockStatus.isLocked && getSignificantWordCount(general.title || '') >= 2 && (
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 bg-muted hover:bg-muted"
+                        onClick={() => {
+                          const acronym = generateAcronym(general.title || '');
+                          setGeneral((g: any) => ({ ...g, acronym }));
+                          setHasUnsavedChanges(true);
+                          acronymAutosave.triggerFieldSave(acronym);
+                        }}
+                        tabIndex={-1}
+                      >
+                        <Wand2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent align="end">Generate from title</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Banner and Icon Upload */}
@@ -878,7 +1002,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             }}
             label={
               <div className="flex items-center gap-2">
-                Activity Banner
+                Banner
                 <HelpTextTooltip>
                   Upload a banner image (1200×300 pixels) to visually represent the activity. This image will be displayed on the activity profile page, activity cards, and other locations across the application.
                 </HelpTextTooltip>
@@ -955,7 +1079,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               }}
               label={
                 <div className="flex items-center gap-2">
-                  Activity Icon/Logo
+                  Icon
                   <HelpTextTooltip>
                     Upload a square image (256×256 pixels) to represent the activity's icon or logo. This image will be displayed on the activity profile page, activity cards, and summaries across the application. After uploading, use the zoom control to adjust the visible area.
                   </HelpTextTooltip>
@@ -1014,128 +1138,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
         </div>
       </div>
-
-      {/* Field-level Autosave for Title and Acronym */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6" data-tour="editor-title">
-        {/* Activity Title - takes up 2 columns */}
-        <div className="lg:col-span-2 space-y-2">
-          <LabelSaveIndicator
-            isSaving={isSaving}
-            isSaved={!!general.id && !!general.title?.trim()}
-            hasValue={!!general.title?.trim()}
-            isFocused={isTitleFocused}
-            className="text-foreground"
-          >
-            <div className="flex items-center gap-2">
-              Activity Title <RequiredDot />
-              <HelpTextTooltip>
-                A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
-              </HelpTextTooltip>
-            </div>
-          </LabelSaveIndicator>
-          <div>
-            <Input
-              id="title"
-              value={general.title || ''}
-              onChange={(e) => {
-                setGeneral((g: any) => ({ ...g, title: e.target.value }));
-                setHasUnsavedChanges(true);
-              }}
-              onFocus={() => setIsTitleFocused(true)}
-              onBlur={() => {
-                setIsTitleFocused(false);
-                // Trigger activity creation when user enters title and navigates away
-                if (general.title?.trim() && !general.id) {
-                  saveActivity({});
-                }
-              }}
-              placeholder="Enter activity title"
-              className="w-full"
-              autoFocus={!general.id}
-              tabIndex={1}
-            />
-          </div>
-        </div>
-        
-        {/* Create Activity Button removed: activity is created on Save */}
-        
-        {/* Activity Acronym - takes up 1 column */}
-        <div className="lg:col-span-1 space-y-2">
-          <LabelSaveIndicator
-            isSaving={acronymAutosave.state.isSaving}
-            isSaved={acronymAutosave.state.isPersistentlySaved}
-            hasValue={!!general.acronym?.trim()}
-            className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
-          >
-            <div className="flex items-center gap-2">
-              Activity Acronym
-              <HelpTextTooltip>
-                This field is used to record a short acronym or abbreviation for the activity. It helps users quickly identify and reference the activity across the application, especially in lists, cards, and summaries.
-              </HelpTextTooltip>
-              {fieldLockStatus.isLocked && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fieldLockStatus.tooltipMessage}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          </LabelSaveIndicator>
-          <div className={`relative ${fieldLockStatus.isLocked ? 'opacity-50' : ''}`}>
-            <Input
-              id="acronym"
-              value={general.acronym || ''}
-              onChange={(e) => {
-                if (!fieldLockStatus.isLocked) {
-                  setGeneral((g: any) => ({ ...g, acronym: e.target.value }));
-                  setHasUnsavedChanges(true);
-                }
-              }}
-              onBlur={(e) => {
-                if (!fieldLockStatus.isLocked && e.target.value.trim()) {
-                  acronymAutosave.triggerFieldSave(e.target.value);
-                }
-              }}
-              placeholder="Enter acronym"
-              className={`w-full ${getSignificantWordCount(general.title || '') >= 2 ? 'pr-10' : ''}`}
-              disabled={fieldLockStatus.isLocked}
-              tabIndex={general.id ? 2 : -1}
-            />
-            {!fieldLockStatus.isLocked && getSignificantWordCount(general.title || '') >= 2 && (
-              <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7 bg-muted hover:bg-muted"
-                        onClick={() => {
-                          const acronym = generateAcronym(general.title || '');
-                          setGeneral((g: any) => ({ ...g, acronym }));
-                          setHasUnsavedChanges(true);
-                          acronymAutosave.triggerFieldSave(acronym);
-                        }}
-                        tabIndex={-1}
-                      >
-                        <Wand2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent align="end">Generate from title</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
 
       {/* Activity Identifier, IATI Identifier, and UUID Fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" data-tour="editor-identifier">
@@ -1489,7 +1491,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 type="text"
                 value={otherIdentifierForm.code}
                 onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, code: e.target.value }))}
-                placeholder="e.g., 2023000168"
+                placeholder="Enter the identifier code"
               />
             </div>
             <div className="space-y-2">
@@ -1737,223 +1739,265 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         {descriptionAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {descriptionAutosave.state.error.message}</p>}
       </div>
 
-      {/* Additional Description Fields */}
+      {/* Additional Description Fields - progressive disclosure.
+          Optional panels (Objectives, Target Groups, Other) stay hidden until
+          the user opts in via the "+ Add more detail" button. If a field
+          already has content, its panel auto-shows so existing activities
+          aren't silently collapsed. Each panel shows a Remove link only when
+          empty — so users can't accidentally hide filled content. */}
       <div className="space-y-4">
-        {/* Objectives Description - Always shown, collapsible */}
-        <div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: !prev.objectives }))}
-              className={`flex items-center gap-2 text-left hover:text-foreground focus:outline-none ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
-            >
-              <svg
-                className={`w-4 h-4 text-muted-foreground transition-transform ${visibleDescriptionFields.objectives ? 'rotate-90' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {/* Objectives panel */}
+        {visibleDescriptionFields.objectives && (
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <LabelSaveIndicator
+                isSaving={descriptionObjectivesAutosave.state.isSaving}
+                isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
+                hasValue={!!general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== ''}
+                isFocused={isDescriptionObjectivesFocused}
+                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <LabelSaveIndicator
-              isSaving={descriptionObjectivesAutosave.state.isSaving}
-              isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
-              hasValue={!!general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== ''}
-              isFocused={isDescriptionObjectivesFocused}
-              className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
-            >
-              <div className="flex items-center gap-2">
-                Activity Description - Objectives
-                <HelpTextTooltip>
-                  Describe the specific objectives that this activity aims to achieve. This should outline what the activity intends to accomplish and the changes it seeks to bring about.
-                </HelpTextTooltip>
-                {fieldLockStatus.isLocked && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{fieldLockStatus.tooltipMessage}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center gap-2">
+                  Activity Description - Objectives
+                  <HelpTextTooltip>
+                    Describe the specific objectives that this activity aims to achieve. This should outline what the activity intends to accomplish and the changes it seeks to bring about.
+                  </HelpTextTooltip>
+                  {fieldLockStatus.isLocked && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{fieldLockStatus.tooltipMessage}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </LabelSaveIndicator>
+              {/* Remove is only offered when the field is empty — prevents accidental data loss */}
+              {!fieldLockStatus.isLocked &&
+                !(general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== '') && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: false }))}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Remove
+                  </button>
                 )}
-              </div>
-            </LabelSaveIndicator>
-          </div>
-          {visibleDescriptionFields.objectives && (
-            <div className="mt-2">
-              <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <RichTextEditor
-                  content={general.descriptionObjectives || ''}
-                  onChange={(content) => {
-                    if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionObjectives: content }));
-                      descriptionObjectivesAutosave.triggerFieldSave(content);
-                    }
-                  }}
-                  onFocus={() => setIsDescriptionObjectivesFocused(true)}
-                  onBlur={() => {
-                    setIsDescriptionObjectivesFocused(false);
-                    if (general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== '') {
-                      descriptionObjectivesAutosave.triggerFieldSave(general.descriptionObjectives);
-                    }
-                  }}
-                  placeholder="Describe the specific objectives of this activity..."
-                  rows={6}
-                  disabled={fieldLockStatus.isLocked}
-                />
-              </div>
-              {descriptionObjectivesAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionObjectivesAutosave.state.error.message}</p>}
             </div>
-          )}
-        </div>
+            <div className={`mt-2 ${fieldLockStatus.isLocked ? 'opacity-50' : ''}`}>
+              <RichTextEditor
+                content={general.descriptionObjectives || ''}
+                onChange={(content) => {
+                  if (!fieldLockStatus.isLocked) {
+                    setGeneral((g: any) => ({ ...g, descriptionObjectives: content }));
+                    descriptionObjectivesAutosave.triggerFieldSave(content);
+                  }
+                }}
+                onFocus={() => setIsDescriptionObjectivesFocused(true)}
+                onBlur={() => {
+                  setIsDescriptionObjectivesFocused(false);
+                  if (general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== '') {
+                    descriptionObjectivesAutosave.triggerFieldSave(general.descriptionObjectives);
+                  }
+                }}
+                placeholder="Describe the specific objectives of this activity..."
+                rows={6}
+                disabled={fieldLockStatus.isLocked}
+              />
+            </div>
+            {descriptionObjectivesAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionObjectivesAutosave.state.error.message}</p>}
+          </div>
+        )}
 
-        {/* Target Groups Description - Always shown, collapsible */}
-        <div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: !prev.targetGroups }))}
-              className={`flex items-center gap-2 text-left hover:text-foreground focus:outline-none ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
-            >
-              <svg
-                className={`w-4 h-4 text-muted-foreground transition-transform ${visibleDescriptionFields.targetGroups ? 'rotate-90' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {/* Target Groups panel */}
+        {visibleDescriptionFields.targetGroups && (
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <LabelSaveIndicator
+                isSaving={descriptionTargetGroupsAutosave.state.isSaving}
+                isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
+                hasValue={!!general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== ''}
+                isFocused={isDescriptionTargetGroupsFocused}
+                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <LabelSaveIndicator
-              isSaving={descriptionTargetGroupsAutosave.state.isSaving}
-              isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
-              hasValue={!!general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== ''}
-              isFocused={isDescriptionTargetGroupsFocused}
-              className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
-            >
-              <div className="flex items-center gap-2">
-                Activity Description - Target Groups
-                <HelpTextTooltip>
-                  Identify and describe the target groups that will benefit from this activity. Include information about demographics, locations, and any specific characteristics of the intended beneficiaries.
-                </HelpTextTooltip>
-                {fieldLockStatus.isLocked && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{fieldLockStatus.tooltipMessage}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center gap-2">
+                  Activity Description - Target Groups
+                  <HelpTextTooltip>
+                    Identify and describe the target groups that will benefit from this activity. Include information about demographics, locations, and any specific characteristics of the intended beneficiaries.
+                  </HelpTextTooltip>
+                  {fieldLockStatus.isLocked && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{fieldLockStatus.tooltipMessage}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </LabelSaveIndicator>
+              {!fieldLockStatus.isLocked &&
+                !(general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== '') && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: false }))}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Remove
+                  </button>
                 )}
-              </div>
-            </LabelSaveIndicator>
-          </div>
-          {visibleDescriptionFields.targetGroups && (
-            <div className="mt-2">
-              <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <RichTextEditor
-                  content={general.descriptionTargetGroups || ''}
-                  onChange={(content) => {
-                    if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionTargetGroups: content }));
-                      descriptionTargetGroupsAutosave.triggerFieldSave(content);
-                    }
-                  }}
-                  onFocus={() => setIsDescriptionTargetGroupsFocused(true)}
-                  onBlur={() => {
-                    setIsDescriptionTargetGroupsFocused(false);
-                    if (general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== '') {
-                      descriptionTargetGroupsAutosave.triggerFieldSave(general.descriptionTargetGroups);
-                    }
-                  }}
-                  placeholder="Describe the target groups and beneficiaries of this activity..."
-                  rows={6}
-                  disabled={fieldLockStatus.isLocked}
-                />
-              </div>
-              {descriptionTargetGroupsAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionTargetGroupsAutosave.state.error.message}</p>}
             </div>
-          )}
-        </div>
+            <div className={`mt-2 ${fieldLockStatus.isLocked ? 'opacity-50' : ''}`}>
+              <RichTextEditor
+                content={general.descriptionTargetGroups || ''}
+                onChange={(content) => {
+                  if (!fieldLockStatus.isLocked) {
+                    setGeneral((g: any) => ({ ...g, descriptionTargetGroups: content }));
+                    descriptionTargetGroupsAutosave.triggerFieldSave(content);
+                  }
+                }}
+                onFocus={() => setIsDescriptionTargetGroupsFocused(true)}
+                onBlur={() => {
+                  setIsDescriptionTargetGroupsFocused(false);
+                  if (general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== '') {
+                    descriptionTargetGroupsAutosave.triggerFieldSave(general.descriptionTargetGroups);
+                  }
+                }}
+                placeholder="Describe the target groups and beneficiaries of this activity..."
+                rows={6}
+                disabled={fieldLockStatus.isLocked}
+              />
+            </div>
+            {descriptionTargetGroupsAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionTargetGroupsAutosave.state.error.message}</p>}
+          </div>
+        )}
 
-        {/* Other Description - Always shown, collapsible */}
-        <div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: !prev.other }))}
-              className={`flex items-center gap-2 text-left hover:text-foreground focus:outline-none ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
-            >
-              <svg
-                className={`w-4 h-4 text-muted-foreground transition-transform ${visibleDescriptionFields.other ? 'rotate-90' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {/* Other panel */}
+        {visibleDescriptionFields.other && (
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <LabelSaveIndicator
+                isSaving={descriptionOtherAutosave.state.isSaving}
+                isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
+                hasValue={!!general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== ''}
+                isFocused={isDescriptionOtherFocused}
+                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <LabelSaveIndicator
-              isSaving={descriptionOtherAutosave.state.isSaving}
-              isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
-              hasValue={!!general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== ''}
-              isFocused={isDescriptionOtherFocused}
-              className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
-            >
-              <div className="flex items-center gap-2">
-                Activity Description - Other
-                <HelpTextTooltip>
-                  Any additional information about the activity that doesn't fit into the general description or other categories. This could include context, background information, or other relevant details.
-                </HelpTextTooltip>
-                {fieldLockStatus.isLocked && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{fieldLockStatus.tooltipMessage}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center gap-2">
+                  Activity Description - Other
+                  <HelpTextTooltip>
+                    Any additional information about the activity that doesn't fit into the general description or other categories. This could include context, background information, or other relevant details.
+                  </HelpTextTooltip>
+                  {fieldLockStatus.isLocked && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{fieldLockStatus.tooltipMessage}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </LabelSaveIndicator>
+              {!fieldLockStatus.isLocked &&
+                !(general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== '') && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: false }))}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Remove
+                  </button>
                 )}
-              </div>
-            </LabelSaveIndicator>
-          </div>
-          {visibleDescriptionFields.other && (
-            <div className="mt-2">
-              <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <RichTextEditor
-                  content={general.descriptionOther || ''}
-                  onChange={(content) => {
-                    if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionOther: content }));
-                      descriptionOtherAutosave.triggerFieldSave(content);
-                    }
-                  }}
-                  onFocus={() => setIsDescriptionOtherFocused(true)}
-                  onBlur={() => {
-                    setIsDescriptionOtherFocused(false);
-                    if (general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== '') {
-                      descriptionOtherAutosave.triggerFieldSave(general.descriptionOther);
-                    }
-                  }}
-                  placeholder="Add any other relevant information about this activity..."
-                  rows={6}
-                  disabled={fieldLockStatus.isLocked}
-                />
-              </div>
-              {descriptionOtherAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionOtherAutosave.state.error.message}</p>}
             </div>
+            <div className={`mt-2 ${fieldLockStatus.isLocked ? 'opacity-50' : ''}`}>
+              <RichTextEditor
+                content={general.descriptionOther || ''}
+                onChange={(content) => {
+                  if (!fieldLockStatus.isLocked) {
+                    setGeneral((g: any) => ({ ...g, descriptionOther: content }));
+                    descriptionOtherAutosave.triggerFieldSave(content);
+                  }
+                }}
+                onFocus={() => setIsDescriptionOtherFocused(true)}
+                onBlur={() => {
+                  setIsDescriptionOtherFocused(false);
+                  if (general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== '') {
+                    descriptionOtherAutosave.triggerFieldSave(general.descriptionOther);
+                  }
+                }}
+                placeholder="Add any other relevant information about this activity..."
+                rows={6}
+                disabled={fieldLockStatus.isLocked}
+              />
+            </div>
+            {descriptionOtherAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionOtherAutosave.state.error.message}</p>}
+          </div>
+        )}
+
+        {/* "+ Add more detail" — only shown when at least one optional panel is hidden */}
+        {!fieldLockStatus.isLocked &&
+          (!visibleDescriptionFields.objectives || !visibleDescriptionFields.targetGroups || !visibleDescriptionFields.other) && (
+            <Popover open={showAddDetailPopover} onOpenChange={setShowAddDetailPopover}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add more detail
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-64 p-1">
+                {!visibleDescriptionFields.objectives && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisibleDescriptionFields(prev => ({ ...prev, objectives: true }));
+                      setShowAddDetailPopover(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                  >
+                    <div className="font-medium">Objectives</div>
+                    <div className="text-xs text-muted-foreground">What the activity aims to achieve</div>
+                  </button>
+                )}
+                {!visibleDescriptionFields.targetGroups && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: true }));
+                      setShowAddDetailPopover(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                  >
+                    <div className="font-medium">Target groups</div>
+                    <div className="text-xs text-muted-foreground">Who benefits from the activity</div>
+                  </button>
+                )}
+                {!visibleDescriptionFields.other && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisibleDescriptionFields(prev => ({ ...prev, other: true }));
+                      setShowAddDetailPopover(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                  >
+                    <div className="font-medium">Other</div>
+                    <div className="text-xs text-muted-foreground">Context, background, anything else</div>
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
           )}
-        </div>
       </div>
 
       {/* Row 6-7: All Type Selectors */}
