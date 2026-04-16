@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2 } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Keyboard } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -116,6 +116,9 @@ import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 import { PooledFundTypeToggle } from "@/components/activities/PooledFundTypeToggle";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
+import { ActivityEditorCommandPalette } from "@/components/activities/ActivityEditorCommandPalette";
+import { KeyboardShortcutsCheatsheet } from "@/components/activities/KeyboardShortcutsCheatsheet";
+import { useActivityEditorShortcuts } from "@/hooks/useActivityEditorShortcuts";
 import { apiFetch } from '@/lib/api-fetch';
 import {
   ActivityOverviewGroup,
@@ -3083,6 +3086,10 @@ function NewActivityPageContent() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Keyboard shortcut UI state
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showShortcutCheatsheet, setShowShortcutCheatsheet] = useState(false);
+
   // OPTIMIZATION: Track which tabs have been loaded for lazy loading
   const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['general'])); // General is always loaded
 
@@ -5351,6 +5358,27 @@ function NewActivityPageContent() {
   const nextSection = !isLastSection ? allSections[currentSectionIndex + 1] : null;
   const previousSection = !isFirstSection ? allSections[currentSectionIndex - 1] : null;
 
+  // Keyboard shortcuts: Cmd/Ctrl+K (palette), Cmd/Ctrl+/ (cheatsheet),
+  // Cmd/Ctrl+↓/↑ (section nav), Cmd/Ctrl+Enter (save), Esc (close).
+  // Disabled while the palette/cheatsheet are open so their own key handlers win.
+  useActivityEditorShortcuts(
+    {
+      onOpenPalette: () => setShowCommandPalette(true),
+      onOpenCheatsheet: () => setShowShortcutCheatsheet(true),
+      onNextSection: () => {
+        if (nextSection) handleTabChange(nextSection.id);
+      },
+      onPreviousSection: () => {
+        if (previousSection) handleTabChange(previousSection.id);
+      },
+      onSave: () => {
+        // saveActivity is safe to call with no args; matches the Save button behavior
+        saveActivity({});
+      },
+    },
+    { enabled: !showCommandPalette && !showShortcutCheatsheet }
+  );
+
   if (loading) {
     return (
       <MainLayout>
@@ -5796,8 +5824,18 @@ function NewActivityPageContent() {
                 )}
               </div>
 
-              {/* Center: Empty space for cleaner footer */}
-              <div className="flex-1"></div>
+              {/* Center: Keyboard shortcut discovery hint */}
+              <div className="flex-1 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowShortcutCheatsheet(true)}
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded"
+                  title="Show keyboard shortcuts"
+                >
+                  <Keyboard className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Shortcuts</span>
+                </button>
+              </div>
 
               {/* Right side: Comments + Back + Save + Save & Next Navigation Buttons */}
               {/* Hide these buttons on IATI Tools tabs */}
@@ -6023,7 +6061,31 @@ function NewActivityPageContent() {
         onConfirm={handleDeleteActivity}
         activityTitle={general.title || 'Untitled Activity'}
       />
-      
+
+      {/* Keyboard shortcut UI */}
+      <ActivityEditorCommandPalette
+        open={showCommandPalette}
+        onOpenChange={setShowCommandPalette}
+        groups={navigationGroups}
+        actions={[
+          {
+            id: "save",
+            label: "Save activity",
+            onRun: () => saveActivity({}),
+          },
+          {
+            id: "show-shortcuts",
+            label: "Show keyboard shortcuts",
+            onRun: () => setShowShortcutCheatsheet(true),
+          },
+        ]}
+        onSelectSection={(sectionId) => handleTabChange(sectionId)}
+      />
+      <KeyboardShortcutsCheatsheet
+        open={showShortcutCheatsheet}
+        onOpenChange={setShowShortcutCheatsheet}
+      />
+
       {/* Debug Panel - Disabled for field-level autosave */}
       
       {/* Debug Panel - Temporarily disabled to fix loading issue */}
