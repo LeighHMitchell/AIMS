@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -117,7 +117,9 @@ import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 import { PooledFundTypeToggle } from "@/components/activities/PooledFundTypeToggle";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
 import { KeyboardShortcutsCheatsheet } from "@/components/activities/KeyboardShortcutsCheatsheet";
+import { FieldSaveError } from "@/components/activities/FieldSaveError";
 import { useActivityEditorShortcuts } from "@/hooks/useActivityEditorShortcuts";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { apiFetch } from '@/lib/api-fetch';
 import {
   ActivityOverviewGroup,
@@ -199,6 +201,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Popover visibility for the "+ Add more detail" chooser
   const [showAddDetailPopover, setShowAddDetailPopover] = useState(false);
+
+  // Pending delete confirmations — null means dialog closed
+  const [pendingDeleteIdentifierIndex, setPendingDeleteIdentifierIndex] = useState<number | null>(null);
+  const [pendingDeleteCustomDateIndex, setPendingDeleteCustomDateIndex] = useState<number | null>(null);
 
   // State to track collapsible date descriptions
   const [showCustomDateDescriptions, setShowCustomDateDescriptions] = useState<Record<number, boolean>>({});
@@ -811,16 +817,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       setShowActivityCreatedAlert(true);
       setHasUnsavedChanges(false);
       
-      toast.success(
-        <div className="flex items-center gap-2">
-          <PartyPopper className="h-4 w-4" />
-          <span>Activity created! All tabs are now unlocked and ready to use.</span>
-        </div>,
-        {
-          duration: 4000,
-          position: 'top-center'
-        }
-      );
+      toast.success('Activity created. All tabs are now available.', {
+        duration: 3000,
+        position: 'top-center',
+      });
       
     } catch (error: any) {
       console.error('[DEBUG] Failed to create activity:', error);
@@ -1202,7 +1202,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </button>
             )}
           </div>
-          {activityIdAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {activityIdAutosave.state.error.message}</p>}
+          <FieldSaveError
+            error={activityIdAutosave.state.error}
+            onRetry={() => activityIdAutosave.triggerFieldSave(general.otherIdentifier || '')}
+            fieldLabel="the Activity Identifier"
+          />
         </div>
         <div className="space-y-2">
           <LabelSaveIndicator
@@ -1265,7 +1269,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </button>
             )}
           </div>
-          {iatiIdentifierAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {iatiIdentifierAutosave.state.error.message}</p>}
+          <FieldSaveError
+            error={iatiIdentifierAutosave.state.error}
+            onRetry={() => iatiIdentifierAutosave.triggerFieldSave(general.iatiIdentifier || '')}
+            fieldLabel="the IATI Identifier"
+          />
         </div>
         <div className="space-y-2">
           <LabelSaveIndicator
@@ -1413,9 +1421,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== index);
-                        setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
-                        otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                        setPendingDeleteIdentifierIndex(index);
                       }}
                       className="p-1 hover:bg-red-50 rounded"
                       title="Delete identifier"
@@ -1683,7 +1689,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           disabled={fieldLockStatus.isLocked}
           isSaving={isPooledFundAutosave.state.isSaving}
         />
-        {isPooledFundAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {isPooledFundAutosave.state.error.message}</p>}
+        <FieldSaveError
+          error={isPooledFundAutosave.state.error}
+          onRetry={() => isPooledFundAutosave.triggerFieldSave(!!general.is_pooled_fund)}
+          fieldLabel="the Activity Type"
+        />
       </div>
 
       {/* Description with field-level autosave */}
@@ -1736,7 +1746,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             disabled={fieldLockStatus.isLocked}
           />
         </div>
-        {descriptionAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {descriptionAutosave.state.error.message}</p>}
+        <FieldSaveError
+          error={descriptionAutosave.state.error}
+          onRetry={() => descriptionAutosave.triggerFieldSave(general.description || '')}
+          fieldLabel="the description"
+        />
       </div>
 
       {/* Additional Description Fields - progressive disclosure.
@@ -1809,7 +1823,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 disabled={fieldLockStatus.isLocked}
               />
             </div>
-            {descriptionObjectivesAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionObjectivesAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={descriptionObjectivesAutosave.state.error}
+              onRetry={() => descriptionObjectivesAutosave.triggerFieldSave(general.descriptionObjectives || '')}
+              fieldLabel="the objectives"
+              className="mt-2"
+            />
           </div>
         )}
 
@@ -1875,7 +1894,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 disabled={fieldLockStatus.isLocked}
               />
             </div>
-            {descriptionTargetGroupsAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionTargetGroupsAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={descriptionTargetGroupsAutosave.state.error}
+              onRetry={() => descriptionTargetGroupsAutosave.triggerFieldSave(general.descriptionTargetGroups || '')}
+              fieldLabel="the target groups"
+              className="mt-2"
+            />
           </div>
         )}
 
@@ -1941,7 +1965,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 disabled={fieldLockStatus.isLocked}
               />
             </div>
-            {descriptionOtherAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionOtherAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={descriptionOtherAutosave.state.error}
+              onRetry={() => descriptionOtherAutosave.triggerFieldSave(general.descriptionOther || '')}
+              fieldLabel="the other description"
+              className="mt-2"
+            />
           </div>
         )}
 
@@ -2044,7 +2073,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 dropdownId="general-collaboration-type"
               />
             </div>
-            {collaborationTypeAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {collaborationTypeAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={collaborationTypeAutosave.state.error}
+              onRetry={() => collaborationTypeAutosave.triggerFieldSave(general.collaborationType)}
+              fieldLabel="the Collaboration Type"
+            />
           </div>
           <div className="w-full space-y-2">
             <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
@@ -2065,16 +2098,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   setGeneral((g: any) => ({ ...g, id: activityData.id, uuid: activityData.uuid }));
                   // Clear saved form data since activity is now saved to database
                   clearSavedFormData();
-                  toast.success(
-                    <div className="flex items-center gap-2">
-                      <PartyPopper className="h-4 w-4" />
-                      <span>Activity created! All tabs are now unlocked and ready to use.</span>
-                    </div>,
-                    {
-                      duration: 4000,
-                      position: 'top-center'
-                    }
-                  );
+                  toast.success('Activity created. All tabs are now available.', {
+                    duration: 3000,
+                    position: 'top-center',
+                  });
                 }}
                 showOnlyStatus={true}
                 dropdownId="general-activity-status"
@@ -2132,7 +2159,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 dropdownId="general-activity-scope"
               />
             </div>
-            {activityScopeAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {activityScopeAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={activityScopeAutosave.state.error}
+              onRetry={() => activityScopeAutosave.triggerFieldSave(general.activityScope)}
+              fieldLabel="the Activity Scope"
+            />
           </div>
           
           {/* Hierarchy Level */}
@@ -2176,7 +2207,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 dropdownId="general-hierarchy"
               />
             </div>
-            {hierarchyAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {hierarchyAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={hierarchyAutosave.state.error}
+              onRetry={() => hierarchyAutosave.triggerFieldSave(general.hierarchy)}
+              fieldLabel="the Hierarchy Level"
+            />
           </div>
         </div>
       </div>
@@ -2272,7 +2307,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 </Popover>
               }
             />
-            {plannedStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedStartDateAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={plannedStartDateAutosave.state.error}
+              onRetry={() => plannedStartDateAutosave.triggerFieldSave(general.plannedStartDate || '')}
+              fieldLabel="the Planned Start Date"
+            />
           </div>
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -2356,7 +2395,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 </Popover>
               }
             />
-            {plannedEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedEndDateAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={plannedEndDateAutosave.state.error}
+              onRetry={() => plannedEndDateAutosave.triggerFieldSave(general.plannedEndDate || '')}
+              fieldLabel="the Planned End Date"
+            />
           </div>
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -2440,7 +2483,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 </Popover>
               }
             />
-            {actualStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualStartDateAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={actualStartDateAutosave.state.error}
+              onRetry={() => actualStartDateAutosave.triggerFieldSave(general.actualStartDate || '')}
+              fieldLabel="the Actual Start Date"
+            />
           </div>
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -2524,7 +2571,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 </Popover>
               }
             />
-            {actualEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualEndDateAutosave.state.error.message}</p>}
+            <FieldSaveError
+              error={actualEndDateAutosave.state.error}
+              onRetry={() => actualEndDateAutosave.triggerFieldSave(general.actualEndDate || '')}
+              fieldLabel="the Actual End Date"
+            />
           </div>
         </div>
 
@@ -2595,9 +2646,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== index);
-                          setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                          customDatesAutosave.triggerFieldSave(updatedDates);
+                          setPendingDeleteCustomDateIndex(index);
                         }}
                         className="p-1 hover:bg-red-50 rounded"
                         title="Delete date"
@@ -2712,6 +2761,63 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmations — keep destructive actions reversible via explicit confirm */}
+      <ConfirmationDialog
+        open={pendingDeleteIdentifierIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteIdentifierIndex(null);
+        }}
+        onConfirm={() => {
+          if (pendingDeleteIdentifierIndex === null) return;
+          const idx = pendingDeleteIdentifierIndex;
+          const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== idx);
+          setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+          otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+          setPendingDeleteIdentifierIndex(null);
+        }}
+        title="Delete identifier?"
+        description={(() => {
+          if (pendingDeleteIdentifierIndex === null) return "";
+          const ident = (general.otherIdentifiers || [])[pendingDeleteIdentifierIndex];
+          const label = ident?.label || ident?.code || `Identifier ${pendingDeleteIdentifierIndex + 1}`;
+          return (
+            <>
+              This will remove <span className="font-medium text-foreground">{label}</span> from this activity. This can't be undone.
+            </>
+          );
+        })()}
+        confirmText="Delete"
+        isDestructive
+      />
+
+      <ConfirmationDialog
+        open={pendingDeleteCustomDateIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteCustomDateIndex(null);
+        }}
+        onConfirm={() => {
+          if (pendingDeleteCustomDateIndex === null) return;
+          const idx = pendingDeleteCustomDateIndex;
+          const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== idx);
+          setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+          customDatesAutosave.triggerFieldSave(updatedDates);
+          setPendingDeleteCustomDateIndex(null);
+        }}
+        title="Delete activity date?"
+        description={(() => {
+          if (pendingDeleteCustomDateIndex === null) return "";
+          const d = (general.customDates || [])[pendingDeleteCustomDateIndex];
+          const label = d?.label || `Activity Date ${pendingDeleteCustomDateIndex + 1}`;
+          return (
+            <>
+              This will remove <span className="font-medium text-foreground">{label}</span> from this activity. This can't be undone.
+            </>
+          );
+        })()}
+        confirmText="Delete"
+        isDestructive
+      />
     </div>
   );
 }
@@ -5300,16 +5406,10 @@ function NewActivityPageContent() {
       // Show appropriate toast message based on whether we created or updated
       if (!general.id) {
         // Activity was just created
-        toast.success(
-          <div className="flex items-center gap-2">
-            <PartyPopper className="h-4 w-4" />
-            <span>Activity created! All tabs are now unlocked and ready to use.</span>
-          </div>,
-          {
-            duration: 4000,
-            position: 'top-center'
-          }
-        );
+        toast.success('Activity created. All tabs are now available.', {
+          duration: 3000,
+          position: 'top-center',
+        });
       } else {
         // Activity was updated
         toast.success(publish ? 'Published' : 'Saved');
