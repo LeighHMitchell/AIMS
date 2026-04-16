@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
 import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import dynamic from 'next/dynamic'
@@ -83,6 +84,23 @@ export function EnhancedSubnationalBreakdown({
   // Track if initial load is complete and if user has made changes
   const isInitialLoadRef = useRef(true)
   const hasUserChangedDataRef = useRef(false)
+
+  // Myanmar-only guard. The administrative-unit dataset (states, regions,
+  // townships, P-codes) is hardcoded to Myanmar. If the activity reports a
+  // different country, showing Myanmar P-codes would be misleading and lead
+  // to bad data. We detect the country from the countries-regions API
+  // (same endpoint used by the Countries & Regions tab) and gate the form.
+  // null = still checking, true = Myanmar or no countries set, false = other.
+  const [isMyanmarActivity, setIsMyanmarActivity] = useState<boolean | null>(null)
+  const [otherCountryName, setOtherCountryName] = useState<string | null>(null)
+
+  // Pending delete confirmations — null when dialog closed.
+  const [pendingDelete, setPendingDelete] = useState<
+    | { kind: 'region'; regionName: string; townshipCount: number; percentage: number }
+    | { kind: 'township'; entryId: string; name: string; percentage: number }
+    | { kind: 'clearAll' }
+    | null
+  >(null)
 
   // Track which suggested regions have been processed to avoid re-adding
   const processedSuggestedRegionsRef = useRef<Set<string>>(new Set())
@@ -398,6 +416,52 @@ export function EnhancedSubnationalBreakdown({
 
     return () => clearTimeout(timeout)
   }, [activityId, loadData])
+
+  // Myanmar-only guard: detect the activity's country from the
+  // countries-regions API. If the user has picked a non-Myanmar country,
+  // surface a friendly explanation instead of the Myanmar admin unit list.
+  // If no country is set yet, we assume Myanmar (current data) and show the
+  // form — so existing Myanmar flows keep working.
+  useEffect(() => {
+    if (!activityId || activityId === 'undefined' || activityId === 'null') {
+      setIsMyanmarActivity(true)
+      return
+    }
+
+    let cancelled = false
+    apiFetch(`/api/activities/${activityId}/countries-regions`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (cancelled || !data) return
+        const countries = (data.countries || []) as Array<{ country?: { code?: string; name?: string }; code?: string; name?: string }>
+        if (countries.length === 0) {
+          // No country picked yet — show the form, current behavior
+          setIsMyanmarActivity(true)
+          return
+        }
+        // Myanmar ISO codes: MM (alpha-2), MMR (alpha-3). Treat as Myanmar if
+        // ANY of the activity's countries include Myanmar — in mixed-country
+        // activities the Myanmar admin breakdown is still useful.
+        const isMyanmar = countries.some(c => {
+          const code = (c.country?.code || c.code || '').toUpperCase()
+          return code === 'MM' || code === 'MMR'
+        })
+        setIsMyanmarActivity(isMyanmar)
+        if (!isMyanmar) {
+          const first = countries[0]
+          setOtherCountryName(first?.country?.name || first?.name || null)
+        }
+      })
+      .catch(() => {
+        // On API failure, fall back to showing the form — don't block users
+        // over a transient network issue.
+        if (!cancelled) setIsMyanmarActivity(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activityId])
 
   // Handle suggested regions/townships from Activity Sites
   // Only adds the specific townships where sites exist (not all townships in the region)
@@ -868,6 +932,32 @@ export function EnhancedSubnationalBreakdown({
     )
   }
 
+  // Non-Myanmar activity: explain that sub-national allocation is Myanmar-
+  // only for now, rather than silently showing Myanmar states/townships.
+  if (isMyanmarActivity === false) {
+    return (
+      <Card className="max-w-2xl">
+        <CardContent className="pt-8 pb-8 space-y-4 text-center">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-muted">
+            <MapPin className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold">
+            Sub-national allocation is currently available for Myanmar only
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            {otherCountryName
+              ? <>This activity is reported for <span className="font-medium text-foreground">{otherCountryName}</span>. We're working to support additional countries.</>
+              : <>We're working to support additional countries.</>
+            }
+          </p>
+          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+            Use the <span className="font-medium">Countries &amp; Regions</span> tab to record country-level allocations in the meantime.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Two-column layout: Map on left, Form on right */}
@@ -904,21 +994,31 @@ export function EnhancedSubnationalBreakdown({
             {/* Action Buttons */}
             {entries.length > 0 && canEdit && (
               <div className="flex justify-end gap-2">
+                {/*
+                  Distribute Equally — uses the default outline variant.
+                  The previous `bg-foreground text-white` override inverted
+                  the button's color scheme, which didn't match any other
+                  secondary action in the editor.
+                */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={distributeEqually}
-                  className="text-xs bg-foreground hover:bg-foreground/90 text-white"
                 >
                   Distribute Equally
                 </Button>
+                {/*
+                  Clear All is destructive. Red text/icon use the
+                  `destructive` token, and the button now opens a
+                  confirmation instead of wiping immediately.
+                */}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={clearAllocations}
-                  className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
+                  onClick={() => setPendingDelete({ kind: 'clearAll' })}
+                  className="text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Clear All
                 </Button>
               </div>
@@ -926,7 +1026,7 @@ export function EnhancedSubnationalBreakdown({
 
             {/* Percentage Allocation Table */}
             {organizedEntries.length > 0 ? (
-              <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #d1d5db' }}>
+              <div className="rounded-lg overflow-hidden border border-border">
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
@@ -985,10 +1085,16 @@ export function EnhancedSubnationalBreakdown({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removeRegion(item.regionName)}
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 w-7 p-0"
+                                  onClick={() => setPendingDelete({
+                                    kind: 'region',
+                                    regionName: item.regionName,
+                                    townshipCount: item.townshipCount ?? 0,
+                                    percentage: item.regionTotal ?? 0,
+                                  })}
+                                  className="text-destructive hover:text-destructive h-7 w-7 p-0"
+                                  aria-label={`Remove ${item.regionName} and its townships`}
                                 >
-                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </td>
                             )}
@@ -1035,10 +1141,16 @@ export function EnhancedSubnationalBreakdown({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeTownship(entry.id)}
-                                className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 w-7 p-0"
+                                onClick={() => setPendingDelete({
+                                  kind: 'township',
+                                  entryId: entry.id,
+                                  name: entry.adminUnit.name,
+                                  percentage: entry.percentage,
+                                })}
+                                className="text-destructive hover:text-destructive h-7 w-7 p-0"
+                                aria-label={`Remove ${entry.adminUnit.name}`}
                               >
-                                <Trash2 className="h-3 w-3 text-red-500" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </td>
                           )}
@@ -1087,6 +1199,66 @@ export function EnhancedSubnationalBreakdown({
           </CardContent>
         </Card>
       </div>
+
+      {/*
+        Delete / Clear-All confirmations. Destructive actions need a
+        confirm step because there's no undo. For regions specifically
+        the dialog names the township count that will also be removed.
+      */}
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null)
+        }}
+        onConfirm={() => {
+          if (!pendingDelete) return
+          if (pendingDelete.kind === 'region') {
+            removeRegion(pendingDelete.regionName)
+          } else if (pendingDelete.kind === 'township') {
+            removeTownship(pendingDelete.entryId)
+          } else if (pendingDelete.kind === 'clearAll') {
+            clearAllocations()
+          }
+          setPendingDelete(null)
+        }}
+        title={
+          pendingDelete?.kind === 'region' ? 'Remove region and its townships?'
+            : pendingDelete?.kind === 'township' ? 'Remove township?'
+            : pendingDelete?.kind === 'clearAll' ? 'Clear all percentages?'
+            : ''
+        }
+        description={(() => {
+          if (!pendingDelete) return ''
+          if (pendingDelete.kind === 'region') {
+            return (
+              <>
+                This will remove <span className="font-medium text-foreground">{pendingDelete.regionName}</span> and its{' '}
+                <span className="font-medium text-foreground">{pendingDelete.townshipCount} township{pendingDelete.townshipCount === 1 ? '' : 's'}</span>
+                {pendingDelete.percentage > 0 && (
+                  <>, releasing <span className="font-medium text-foreground">{pendingDelete.percentage.toFixed(2)}%</span> back to unallocated</>
+                )}. This can't be undone.
+              </>
+            )
+          }
+          if (pendingDelete.kind === 'township') {
+            return (
+              <>
+                This will remove <span className="font-medium text-foreground">{pendingDelete.name}</span>
+                {pendingDelete.percentage > 0 && (
+                  <>, releasing <span className="font-medium text-foreground">{pendingDelete.percentage.toFixed(2)}%</span> back to unallocated</>
+                )}. This can't be undone.
+              </>
+            )
+          }
+          return (
+            <>
+              This will reset every percentage to 0% but keep the selected administrative units. You'll need to re-enter values to reach 100% again.
+            </>
+          )
+        })()}
+        confirmText={pendingDelete?.kind === 'clearAll' ? 'Clear all' : 'Remove'}
+        isDestructive
+      />
     </div>
   )
 }
