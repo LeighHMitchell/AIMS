@@ -949,7 +949,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="Enter acronym"
-              className={`w-full h-12 ${getSignificantWordCount(general.title || '') >= 2 ? 'pr-10' : ''}`}
+              className={`w-full h-12 !text-lg ${getSignificantWordCount(general.title || '') >= 2 ? 'pr-10' : ''}`}
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 2 : -1}
             />
