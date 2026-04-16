@@ -29,6 +29,8 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 import { useUser } from '@/hooks/useUser';
 import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
@@ -94,6 +96,9 @@ export default function LocationsTab({
   const [editingLocation, setEditingLocation] = useState<LocationSchema | undefined>();
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [activityData, setActivityData] = useState<ActivityData | undefined>();
+
+  // Pending delete confirmation — null when dialog closed.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Get user for autosave
   const { user } = useUser();
@@ -214,7 +219,7 @@ export default function LocationsTab({
       
       console.log('[LocationsTab] 📡 Making API request:', { url, method, isUpdate: !!editingLocation });
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -318,16 +323,25 @@ export default function LocationsTab({
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Activity Locations</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">Activity Locations</h3>
+          <HelpTextTooltip content="Specific points on a map where this activity takes place, or where direct beneficiaries are located. For broader coverage areas (e.g. 'all districts of Kenya'), use the Countries & Regions tab instead." />
+        </div>
 
         <div className="flex items-center gap-2">
           {locations.length > 0 && (
-            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className={cn("h-7 px-2", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn(
+                  "h-7 px-2",
+                  viewMode === 'table'
+                    ? "bg-background shadow-sm text-foreground hover:bg-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-label="Table view"
               >
                 <TableIcon className="h-4 w-4" />
               </Button>
@@ -335,7 +349,13 @@ export default function LocationsTab({
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('cards')}
-                className={cn("h-7 px-2", viewMode === 'cards' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn(
+                  "h-7 px-2",
+                  viewMode === 'cards'
+                    ? "bg-background shadow-sm text-foreground hover:bg-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-label="Card view"
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
@@ -375,8 +395,11 @@ export default function LocationsTab({
         <div className="text-center py-12">
           <img src="/images/empty-pushpin.png" alt="No locations" className="h-32 mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium mb-2">No locations added</h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground mb-2 max-w-xl mx-auto">
             Add locations to specify where your activity takes place or where beneficiaries are located.
+          </p>
+          <p className="text-xs text-muted-foreground mb-6 max-w-xl mx-auto">
+            For broader coverage (an entire country or region), use the Countries &amp; Regions tab instead.
           </p>
           {canEdit && (
             <div className="flex justify-center">
@@ -394,8 +417,15 @@ export default function LocationsTab({
               key={location.id}
               location={location}
               onEdit={handleEditLocation}
-              onDelete={handleDeleteLocation}
-
+              // Route card-view deletions through the same confirmation dialog
+              // as the table view; LocationCard itself doesn't open a confirm.
+              onDelete={(id) => {
+                if (!id) return;
+                setPendingDelete({
+                  id,
+                  name: location.location_name || 'this location',
+                });
+              }}
               canEdit={canEdit}
             />
           ))}
@@ -474,18 +504,24 @@ export default function LocationsTab({
                           <button
                             type="button"
                             onClick={() => handleEditLocation(location)}
-                            className="p-1.5 rounded hover:bg-muted text-gray-600"
+                            className="p-1.5 rounded hover:bg-muted text-muted-foreground"
                             title="Edit location"
                           >
-                            <Pencil className="h-4 w-4 text-slate-500" />
+                            <Pencil className="h-4 w-4" />
                           </button>
-<button
+                          <button
                             type="button"
-                            onClick={() => location.id && handleDeleteLocation(location.id)}
+                            onClick={() => {
+                              if (!location.id) return;
+                              setPendingDelete({
+                                id: location.id,
+                                name: location.location_name || 'this location',
+                              });
+                            }}
                             className="p-1.5 rounded hover:bg-muted text-destructive"
                             title="Delete location"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </TableCell>
@@ -508,6 +544,27 @@ export default function LocationsTab({
         activityId={activityId}
         activityTitle={activityTitle}
         activitySector={activitySector}
+      />
+
+      {/* Delete confirmation — destructive actions need a confirm step. */}
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          handleDeleteLocation(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        title="Remove location?"
+        description={pendingDelete && (
+          <>
+            This will remove <span className="font-medium text-foreground">{pendingDelete.name}</span> from this activity. This can't be undone.
+          </>
+        )}
+        confirmText="Remove"
+        isDestructive
       />
     </div>
   );
