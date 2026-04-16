@@ -835,12 +835,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Removed title autosave toasts and exposure; creation handled by manual save
 
-  // Show initial toast when component mounts if creating a new activity (not editing an existing one)
+  // Show initial toast when component mounts if creating a new activity.
+  // Calmer copy to match the "helpful, approachable" tone — no exclamation,
+  // shorter duration, plain guidance.
   useEffect(() => {
     if (!general.id && !hasShownInitialToast.current && isNewActivity) {
-      toast.info("Start by entering an Activity Title to create the activity and unlock all form fields!", {
+      toast.info('Start with the Activity Title — the other fields unlock once the activity is created.', {
         position: 'top-center',
-        duration: 5000,
+        duration: 4000,
       });
       hasShownInitialToast.current = true;
     }
@@ -1182,9 +1184,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 if (!fieldLockStatus.isLocked && e.target.value.trim()) {
                   if (general.id) {
                     activityIdAutosave.triggerFieldSave(e.target.value);
-                  } else {
-                    toast.success('The Activity Identifier has been stored and will be saved after activity creation.');
                   }
+                  // Pre-create: value is held in local state and will save when the
+                  // activity is created. No toast needed — the input visibly shows
+                  // the entered value, so the user already has feedback.
                 }
               }}
               placeholder="Enter your organization's activity ID"
@@ -1249,9 +1252,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 if (!fieldLockStatus.isLocked && e.target.value.trim()) {
                   if (general.id) {
                     iatiIdentifierAutosave.triggerFieldSave(e.target.value);
-                  } else {
-                    toast.success('The IATI Identifier has been stored and will be saved after activity creation.');
                   }
+                  // Pre-create: held in local state; the input visibly shows the
+                  // entered value, no toast needed.
                 }
               }}
               placeholder="Enter IATI identifier"
@@ -5402,17 +5405,18 @@ function NewActivityPageContent() {
       }
 
       setHasUnsavedChanges(false);
-      
-      // Show appropriate toast message based on whether we created or updated
+
+      // Activity-creation is a one-time milestone → confirm with a toast.
+      // Publishing is also a milestone → confirm.
+      // Routine saves are quiet — the per-field green-tick indicators
+      // already confirm each field, so an extra "Saved" toast is noise.
       if (!general.id) {
-        // Activity was just created
         toast.success('Activity created. All tabs are now available.', {
           duration: 3000,
           position: 'top-center',
         });
-      } else {
-        // Activity was updated
-        toast.success(publish ? 'Published' : 'Saved');
+      } else if (publish) {
+        toast.success('Published');
       }
       
 
