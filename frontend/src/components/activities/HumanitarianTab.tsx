@@ -251,7 +251,7 @@ export function HumanitarianTab({
           <Alert className="mt-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Please create the activity first by adding a title in the General tab.
+              Please create the activity first by adding a title in the Overview tab.
             </AlertDescription>
           </Alert>
         )}

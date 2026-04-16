@@ -63,9 +63,9 @@ export default function ActivityEditorNavigation({
     {
       title: "Activity Overview",
       sections: [
-        { id: "general", label: "General" },
+        { id: "general", label: "Overview" },
         { id: "sectors", label: "Sectors" },
-        { id: "humanitarian", label: "Humanitarian" },
+        { id: "humanitarian", label: "Humanitarian Marker" },
       ]
     },
     {
