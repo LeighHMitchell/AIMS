@@ -147,14 +147,6 @@ export function FundingDeliveryGroup({
           if (!el) return
           const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
           scroll()
-          // Single follow-up re-scroll AFTER lazy-loaded upstream sections
-          // have had time to render in. Earlier/more-frequent retries
-          // compete with scroll-spy and cause flicker.
-          setTimeout(() => {
-            if (Math.abs(el.getBoundingClientRect().top) > 8) {
-              scroll()
-            }
-          }, 1200)
         })
       }
       prevInitialSection.current = initialSection
