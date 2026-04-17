@@ -1567,7 +1567,7 @@ export default function PlannedDisbursementsTab({
           )}
 
           {/* Planned Disbursements Table */}
-          <Card data-planned-tab className="border-0 shadow-none">
+          <Card data-planned-tab className={hideSummaryCards ? "border-0 shadow-none" : ""}>
         <CardHeader className={hideSummaryCards ? "hidden" : ""}>
           <div className="flex items-center justify-between">
             <div>
