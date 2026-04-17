@@ -228,7 +228,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-medium text-foreground">Participating Organisations</CardTitle>
+              <CardTitle className="text-xl font-semibold text-foreground">Participating Organisations</CardTitle>
             </div>
             <div className="h-9 w-40 bg-muted animate-pulse rounded-md" />
           </div>
@@ -292,7 +292,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-medium text-foreground">Participating Organisations</CardTitle>
+              <CardTitle className="text-xl font-semibold text-foreground">Participating Organisations</CardTitle>
               <HelpTextTooltip content={getSectionHelpText('organisations')}>
                 <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
@@ -306,9 +306,14 @@ export default function OrganisationsSection({
         <CardContent>
           {participatingOrganizations.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
-              <img src="/images/empty-puzzle-piece.webp" alt="No participating organisations" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No participating organisations</h3>
-              <p className="text-muted-foreground">
+              {/*
+                Empty-state illustration harmonized across the Stakeholders
+                group: a single thematic lucide icon at ~48px / 40% opacity
+                replaces the previous puzzle-piece image.
+              */}
+              <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+              <h3 className="text-base font-medium mb-2">No participating organisations</h3>
+              <p className="text-sm text-muted-foreground">
                 Use the button above to add your first organisation.
               </p>
             </div>

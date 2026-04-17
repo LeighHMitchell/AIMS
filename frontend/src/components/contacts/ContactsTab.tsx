@@ -403,8 +403,8 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     <div className="space-y-6">
       {/* Search and Add Section */}
       {!readOnly && (
-        <div className="bg-white p-6 rounded-lg border border-border">
-          <h2 className="text-lg font-semibold mb-4">Add Contact to Activity</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-xl font-semibold mb-4">Add Contact to Activity</h2>
           <ContactSearchBar
             onSelect={handleSearchSelect}
             onCreateNew={handleCreateNew}
@@ -425,7 +425,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       {/* Current Contacts List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-xl font-semibold">
             Current Activity Contacts
             {isSaving && <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
           </h2>
@@ -452,10 +452,14 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         </div>
 
         {contacts.length === 0 ? (
-          <div className="text-center py-12">
-            <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No contacts</h3>
-            <p className="text-muted-foreground">
+          <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
+            {/*
+              Empty-state harmonized with the rest of the Stakeholders group:
+              a 48px lucide icon at ~60% opacity instead of a custom image.
+            */}
+            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+            <h3 className="text-base font-medium mb-2">No contacts</h3>
+            <p className="text-sm text-muted-foreground">
               {!readOnly ? 'Use the search above to add your first contact.' : 'No contacts have been added to this activity yet.'}
             </p>
           </div>

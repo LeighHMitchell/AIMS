@@ -9,18 +9,20 @@ import { useUser } from '@/hooks/useUser';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
-import { 
-  UserPlus, 
-  HandPlatter, 
+import {
+  UserPlus,
+  ArrowRightLeft,
   Check,
   CheckCircle,
   X,
-  Users, 
+  Users,
   Building2,
   AlertCircle,
   Loader2,
   Trash2,
-  Clock
+  Clock,
+  ShieldCheck,
+  UserCog
 } from 'lucide-react';
 import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
@@ -528,8 +530,8 @@ export default function FocalPointsTab({
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Building2 className="h-5 w-5 text-slate-600" />
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
                   Government Focal Points
                   {governmentFocalPoints.length > 0 && (
                     <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
@@ -549,10 +551,15 @@ export default function FocalPointsTab({
           </CardHeader>
           <CardContent>
             {governmentFocalPoints.length === 0 ? (
-              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-border rounded-lg">
-                <img src="/images/empty-key-ornate.webp" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">No government focal points</p>
-                <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
+              <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
+                {/*
+                  Unified empty-state — 48px lucide ShieldCheck at 60%
+                  opacity replaces the empty-key-ornate.webp image.
+                  Focal points are roles of responsibility, not keys.
+                */}
+                <ShieldCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+                <p className="text-base font-medium">No government focal points</p>
+                <p className="text-sm text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -567,8 +574,8 @@ export default function FocalPointsTab({
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="h-5 w-5 text-slate-600" />
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                  <Users className="h-5 w-5 text-muted-foreground" />
                   Development Partner Focal Points
                   {developmentPartnerFocalPoints.length > 0 && (
                     <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
@@ -588,10 +595,15 @@ export default function FocalPointsTab({
           </CardHeader>
           <CardContent>
             {developmentPartnerFocalPoints.length === 0 ? (
-              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-border rounded-lg">
-                <img src="/images/empty-key-modern.webp" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">No development partner focal points</p>
-                <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
+              <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
+                {/*
+                  Unified empty-state — UserCog pairs with ShieldCheck above
+                  (administrator/custodian and caretaker/manager) so the two
+                  cards read as a semantic pair rather than two unrelated keys.
+                */}
+                <UserCog className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+                <p className="text-base font-medium">No development partner focal points</p>
+                <p className="text-sm text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
