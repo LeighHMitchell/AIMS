@@ -410,8 +410,8 @@ export function TransactionDocumentUpload({
       {/* Uploaded Documents and Links */}
       {documents.length > 0 && (
         <div>
-          <div style={{ border: '1px solid #d1d5db', borderRadius: '0.375rem', overflow: 'hidden' }}>
-            <div className="bg-surface-muted px-3 py-2" style={{ borderBottom: '1px solid #d1d5db' }}>
+          <div className="rounded-md border border-border overflow-hidden">
+            <div className="bg-surface-muted px-3 py-2 border-b border-border">
               <h4 className="text-sm font-medium">Uploaded Documents and Links</h4>
             </div>
             <table className="w-full text-xs">
