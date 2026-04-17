@@ -272,7 +272,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('linked_activities') }}
           >
             {isSectionActive('linked_activities') || activeSections.has('linked_activities') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="linked_activities"
                   title={getSectionLabel('linked_activities')}
@@ -299,7 +299,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('results') }}
           >
             {isSectionActive('results') || activeSections.has('results') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="results"
                   title={getSectionLabel('results')}
@@ -326,7 +326,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('forward-spending-survey') }}
           >
             {isSectionActive('forward-spending-survey') || activeSections.has('forward-spending-survey') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="forward-spending-survey"
                   title={getSectionLabel('forward-spending-survey')}
@@ -352,7 +352,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('capital-spend') }}
           >
             {isSectionActive('capital-spend') || activeSections.has('capital-spend') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="capital-spend"
                   title={getSectionLabel('capital-spend')}
@@ -378,7 +378,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('financing-terms') }}
           >
             {isSectionActive('financing-terms') || activeSections.has('financing-terms') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="financing-terms"
                   title={getSectionLabel('financing-terms')}
@@ -406,7 +406,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('conditions') }}
           >
             {isSectionActive('conditions') || activeSections.has('conditions') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="conditions"
                   title={getSectionLabel('conditions')}
@@ -433,7 +433,7 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('country-budget') }}
           >
             {isSectionActive('country-budget') || activeSections.has('country-budget') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="country-budget"
                   title={getSectionLabel('country-budget')}

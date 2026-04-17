@@ -10,7 +10,7 @@ export function SectorAllocationSkeleton() {
         <Skeleton className="h-4 w-96 bg-muted" />
       </div>
       
-      <div className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-6 space-y-4">
         {/* Add Sector Button */}
         <div className="flex justify-end">
           <Skeleton className="h-10 w-32 bg-muted rounded" />
@@ -41,7 +41,7 @@ export function OrganisationsSkeleton() {
       {/* Extending Partners */}
       <div>
         <Skeleton className="h-5 w-40 bg-muted mb-4" />
-        <div className="bg-white rounded-lg shadow-sm border border-border p-4">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-4">
           <div className="flex justify-between items-center mb-4">
             <Skeleton className="h-4 w-48 bg-muted" />
             <Skeleton className="h-9 w-32 bg-muted rounded" />
@@ -66,7 +66,7 @@ export function OrganisationsSkeleton() {
       {/* Implementing Partners */}
       <div>
         <Skeleton className="h-5 w-44 bg-muted mb-4" />
-        <div className="bg-white rounded-lg shadow-sm border border-border p-4">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-4">
           <Skeleton className="h-40 w-full bg-muted" />
         </div>
       </div>
@@ -86,7 +86,7 @@ export function FinancesSkeleton() {
       </div>
       
       {/* Transactions Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-border">
+      <div className="bg-card rounded-lg shadow-sm border border-border">
         <div className="p-4 border-b flex justify-between items-center">
           <Skeleton className="h-6 w-48 bg-muted" />
           <Skeleton className="h-9 w-40 bg-muted rounded" />
@@ -123,7 +123,7 @@ export function LocationsSkeleton() {
       </div>
       
       {/* Map Container */}
-      <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="h-96 bg-muted relative">
           <div className="absolute inset-0 flex items-center justify-center">
             <Skeleton className="h-12 w-48 bg-muted" />
@@ -175,7 +175,7 @@ export function LinkedActivitiesSkeleton() {
             <Skeleton className="h-5 w-32 bg-muted" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(2)].map((_, j) => (
-                <div key={j} className="bg-white rounded-lg shadow-sm border border-border p-4 space-y-3">
+                <div key={j} className="bg-card rounded-lg shadow-sm border border-border p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="space-y-2 flex-1">
                       <Skeleton className="h-5 w-3/4 bg-muted" />
@@ -201,7 +201,7 @@ export function LinkedActivitiesSkeleton() {
 // Generic Content Skeleton for other tabs
 export function GenericTabSkeleton() {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="space-y-2">

@@ -433,7 +433,7 @@ export function FAQSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="bg-white rounded-lg shadow-sm border border-border">
+        <div key={i} className="bg-card rounded-lg shadow-sm border border-border">
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <Skeleton variant="text" width="70%" height="1.25rem" />

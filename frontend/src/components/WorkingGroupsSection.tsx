@@ -85,7 +85,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
     .filter((wg): wg is NonNullable<typeof wg> => !!wg);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       <div className="space-y-4">
         <Label htmlFor="working-groups">Add this activity to relevant working groups</Label>
         <WorkingGroupsSearchableSelect

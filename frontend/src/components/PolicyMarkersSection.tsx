@@ -195,7 +195,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-8">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-muted rounded w-1/4"></div>
           <div className="h-4 bg-muted rounded w-3/4"></div>
@@ -210,7 +210,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">

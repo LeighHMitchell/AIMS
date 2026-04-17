@@ -277,7 +277,7 @@ export function ActivityOverviewGroup({
             style={{ minHeight: getSectionMinHeight('sectors') }}
           >
             {isSectionActive('sectors') || activeSections.has('sectors') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="sectors"
                   title={getSectionLabel('sectors')}
@@ -309,7 +309,7 @@ export function ActivityOverviewGroup({
             style={{ minHeight: getSectionMinHeight('humanitarian') }}
           >
             {isSectionActive('humanitarian') || activeSections.has('humanitarian') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="humanitarian"
                   title={getSectionLabel('humanitarian')}

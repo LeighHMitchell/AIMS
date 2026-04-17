@@ -267,7 +267,7 @@ export function FundingDeliveryGroup({
             style={{ minHeight: getSectionMinHeight('finances') }}
           >
             {isSectionActive('finances') || activeSections.has('finances') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="finances"
                   title={getSectionLabel('finances')}
@@ -300,7 +300,7 @@ export function FundingDeliveryGroup({
             style={{ minHeight: getSectionMinHeight('planned-disbursements') }}
           >
             {isSectionActive('planned-disbursements') || activeSections.has('planned-disbursements') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="planned-disbursements"
                   title={getSectionLabel('planned-disbursements')}
@@ -329,7 +329,7 @@ export function FundingDeliveryGroup({
             style={{ minHeight: getSectionMinHeight('budgets') }}
           >
             {isSectionActive('budgets') || activeSections.has('budgets') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="budgets"
                   title={getSectionLabel('budgets')}

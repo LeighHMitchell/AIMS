@@ -184,7 +184,7 @@ export function SectionSkeleton({ sectionId }: { sectionId: string }) {
 
   return (
     <div
-      className="bg-white rounded-lg shadow-sm border border-border p-8 animate-pulse"
+      className="bg-card rounded-lg shadow-sm border border-border p-8 animate-pulse"
       style={{ minHeight }}
     >
       {/* Section header */}
