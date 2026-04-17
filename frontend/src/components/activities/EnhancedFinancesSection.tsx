@@ -80,13 +80,6 @@ export function EnhancedFinancesSection({
   geographyLevel = 'activity',
   activitySectors = []
 }: EnhancedFinancesSectionProps) {
-  const [updateStats, setUpdateStats] = useState({
-    totalUpdates: 0,
-    successfulUpdates: 0,
-    failedUpdates: 0,
-    lastUpdate: null as Date | null
-  });
-
   // State for modality override toggle
   const [modalityOverride, setModalityOverride] = useState(
     general.defaultModalityOverride ?? false
@@ -131,29 +124,12 @@ export function EnhancedFinancesSection({
   onDefaultsChangeRef.current = onDefaultsChange;
 
   const handleFieldUpdate = useCallback((field: string, value: string | null) => {
-
-    // Update stats
-    setUpdateStats(prev => ({
-      ...prev,
-      totalUpdates: prev.totalUpdates + 1,
-      successfulUpdates: prev.successfulUpdates + 1,
-      lastUpdate: new Date()
-    }));
-
     // Call parent callback via ref to avoid stale closure
     onDefaultsChangeRef.current?.(field, value);
   }, []);
 
   const handleFieldError = useCallback((field: string, error: Error) => {
     console.error(`[EnhancedFinancesSection] Field update error for ${field}:`, error);
-
-    // Update stats
-    setUpdateStats(prev => ({
-      ...prev,
-      totalUpdates: prev.totalUpdates + 1,
-      failedUpdates: prev.failedUpdates + 1,
-      lastUpdate: new Date()
-    }));
   }, []);
 
   const handleMissingColumnError = useCallback((field: string, error: Error) => {
@@ -244,13 +220,6 @@ export function EnhancedFinancesSection({
 
   return (
     <div className="space-y-6">
-      {/* Status Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* Update statistics badges removed per user request */}
-        </div>
-      </div>
-
       <Tabs defaultValue="transactions" className="space-y-4">
         <TabsList>
           <TabsTrigger value="transactions" className="flex items-center gap-2">
