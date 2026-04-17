@@ -311,12 +311,7 @@ export default function OrganisationsSection({
         <CardContent>
           {participatingOrganizations.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
-              {/*
-                Empty-state illustration harmonized across the Stakeholders
-                group: a single thematic lucide icon at ~48px / 40% opacity
-                replaces the previous puzzle-piece image.
-              */}
-              <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+              <img src="/images/empty-puzzle-piece.webp" alt="No participating organisations" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-base font-medium mb-2">No participating organisations</h3>
               <p className="text-sm text-muted-foreground">
                 Use the button above to add your first organisation.

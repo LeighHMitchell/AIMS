@@ -432,11 +432,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
 
         {contacts.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
-            {/*
-              Empty-state harmonized with the rest of the Stakeholders group:
-              a 48px lucide icon at ~60% opacity instead of a custom image.
-            */}
-            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+            <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-base font-medium mb-2">No contacts</h3>
             <p className="text-sm text-muted-foreground">
               {!readOnly ? 'Use the search above to add your first contact.' : 'No contacts have been added to this activity yet.'}

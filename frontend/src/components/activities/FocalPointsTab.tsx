@@ -20,9 +20,7 @@ import {
   AlertCircle,
   Loader2,
   Trash2,
-  Clock,
-  ShieldCheck,
-  UserCog
+  Clock
 } from 'lucide-react';
 import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
@@ -552,12 +550,7 @@ export default function FocalPointsTab({
           <CardContent>
             {governmentFocalPoints.length === 0 ? (
               <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
-                {/*
-                  Unified empty-state — 48px lucide ShieldCheck at 60%
-                  opacity replaces the empty-key-ornate.webp image.
-                  Focal points are roles of responsibility, not keys.
-                */}
-                <ShieldCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+                <img src="/images/empty-key-ornate.webp" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="text-base font-medium">No government focal points</p>
                 <p className="text-sm text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
@@ -596,12 +589,7 @@ export default function FocalPointsTab({
           <CardContent>
             {developmentPartnerFocalPoints.length === 0 ? (
               <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
-                {/*
-                  Unified empty-state — UserCog pairs with ShieldCheck above
-                  (administrator/custodian and caretaker/manager) so the two
-                  cards read as a semantic pair rather than two unrelated keys.
-                */}
-                <UserCog className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" aria-hidden="true" />
+                <img src="/images/empty-key-modern.webp" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="text-base font-medium">No development partner focal points</p>
                 <p className="text-sm text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
