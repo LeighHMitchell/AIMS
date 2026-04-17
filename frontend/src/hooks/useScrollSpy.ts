@@ -258,12 +258,30 @@ export function useScrollSpy(
     requestAnimationFrame(() => {
       // Re-query the element in case the DOM shifted during the frame
       const targetElement = document.getElementById(sectionId)
-      if (targetElement) {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        })
-      }
+      if (!targetElement) return
+
+      const scroll = (behavior: ScrollBehavior) =>
+        targetElement.scrollIntoView({ behavior, block: 'start' })
+
+      // Initial smooth scroll for a nice transition
+      scroll('smooth')
+
+      // Follow-up re-scrolls (instant, so they don't fight the smooth one)
+      // handle the case where lazy-loaded upstream sections render in AFTER
+      // the first scroll settles and push the target down. Without these,
+      // deeper sections like Humanitarian Marker, Focal Points, Policy
+      // Markers land midway because the sections above them finish rendering
+      // late.
+      let lastTop = targetElement.getBoundingClientRect().top
+      ;[300, 600, 1100, 1800, 2500].forEach(delay => {
+        setTimeout(() => {
+          const currentTop = targetElement.getBoundingClientRect().top
+          if (Math.abs(currentTop - lastTop) > 5) {
+            scroll('instant' as ScrollBehavior)
+            lastTop = targetElement.getBoundingClientRect().top
+          }
+        }, delay)
+      })
     })
   }, [sections, lockScrollSpy])
 
