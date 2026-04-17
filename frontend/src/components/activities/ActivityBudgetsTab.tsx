@@ -1777,7 +1777,10 @@ export default function ActivityBudgetsTab({
           {renderFilters && hideSummaryCards && budgets.length > 0 && !loading && renderFilters(
             <div className="flex items-end gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  Status
+                  <HelpTextTooltip content="IATI budget status: Indicative (1) means the budget is planned but not yet formally approved; Committed (2) means it has been approved or contracted." />
+                </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px] h-9">
                     <SelectValue placeholder="Status" />
@@ -1800,7 +1803,10 @@ export default function ActivityBudgetsTab({
                 </Select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Type</label>
+                <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  Type
+                  <HelpTextTooltip content="IATI budget revision type: Original (1) is the initial budget entry; Revised (2) is a subsequent update to that entry." />
+                </label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="w-[140px] h-9">
                     <SelectValue placeholder="Type" />

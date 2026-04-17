@@ -1648,7 +1648,10 @@ export default function PlannedDisbursementsTab({
           {renderFilters && hideSummaryCards && disbursements.length > 0 && !loading && renderFilters(
             <div className="flex items-end gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  Status
+                  <HelpTextTooltip content="IATI planned-disbursement revision type: Original (1) is the initial disbursement entry; Revised (2) is a subsequent update to that entry." />
+                </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px] h-9">
                     <SelectValue placeholder="Status" />
