@@ -1082,7 +1082,7 @@ export default function Atlas() {
                                   </div>
                                 </div>
                                 {healthFacilitiesLoading && (
-                                  <div className="h-4 w-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                                  <div className="h-4 w-4 border-2 border-destructive/30 border-t-red-600 rounded-full animate-spin" />
                                 )}
                               </div>
 
@@ -1415,7 +1415,7 @@ export default function Atlas() {
                         {/* Facility Type Badge */}
                         <div className="flex items-center gap-2 mb-2">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
-                            selectedFacility.facility.type === 'hospital' ? 'bg-red-100 text-destructive' :
+                            selectedFacility.facility.type === 'hospital' ? 'bg-destructive/10 text-destructive' :
                             selectedFacility.facility.type === 'clinic' ? 'bg-orange-100 text-orange-700' :
                             selectedFacility.facility.type === 'pharmacy' ? 'bg-green-100 text-green-700' :
                             selectedFacility.facility.type === 'doctors' ? 'bg-cyan-100 text-cyan-700' :

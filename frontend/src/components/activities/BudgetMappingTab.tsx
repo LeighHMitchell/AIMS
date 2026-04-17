@@ -619,7 +619,7 @@ export default function BudgetMappingTab({
 
         <CardContent>
           {error && (
-            <div className="bg-destructive/10 border border-red-200 rounded-md p-4 flex items-start gap-3 mb-4">
+            <div className="bg-destructive/10 border border-destructive/30 rounded-md p-4 flex items-start gap-3 mb-4">
               <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-medium text-red-900">Error</h3>

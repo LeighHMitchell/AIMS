@@ -200,7 +200,7 @@ export function HumanitarianTab({
     <div className={`space-y-6 ${className}`}>
       {/*
         Humanitarian flag — a metadata marker, not a warning. Dropped the
-        border-red-300 / text-red-* / bg-red-600 styling that dressed this
+        border-destructive/30 / text-red-* / bg-destructive styling that dressed this
         section like an error zone. A single <Heart /> icon at the heading
         carries the thematic cue; the active-state Switch keeps a calm red
         tint via accent tokens.

@@ -5651,7 +5651,7 @@ function NewActivityPageContent() {
                       <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
                         general.submissionStatus === 'submitted' ? 'text-blue-600 bg-blue-100' :
                         general.submissionStatus === 'validated' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' :
-                        general.submissionStatus === 'rejected' ? 'text-destructive bg-red-100' :
+                        general.submissionStatus === 'rejected' ? 'text-destructive bg-destructive/10' :
                         general.submissionStatus === 'published' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' : 'text-muted-foreground bg-muted'
                       }`}>
                         {(() => {

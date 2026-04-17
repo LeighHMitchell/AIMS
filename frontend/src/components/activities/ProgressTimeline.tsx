@@ -250,7 +250,7 @@ export function ProgressTimeline({
                     "text-xs",
                     segment.status === 'green' && "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]",
                     segment.status === 'yellow' && "bg-yellow-100 text-yellow-700",
-                    segment.status === 'red' && "bg-red-100 text-destructive",
+                    segment.status === 'red' && "bg-destructive/10 text-destructive",
                     segment.status === 'gray' && "bg-muted text-foreground"
                   )}
                 >
@@ -276,7 +276,7 @@ export function ProgressTimeline({
               "h-2",
               indicator.status?.color === 'green' && "[&>div]:bg-green-600",
               indicator.status?.color === 'yellow' && "[&>div]:bg-yellow-600",
-              indicator.status?.color === 'red' && "[&>div]:bg-red-600"
+              indicator.status?.color === 'red' && "[&>div]:bg-destructive"
             )}
           />
           <div className="flex items-center justify-between text-xs text-muted-foreground">

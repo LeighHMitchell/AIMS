@@ -475,7 +475,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       case 'on_budget':
         return { name: 'On Budget', color: '#7b95a7', badgeClass: 'bg-green-50 text-green-700 border-green-300' };
       case 'off_budget':
-        return { name: 'Off Budget', color: '#dc2625', badgeClass: 'bg-destructive/10 text-destructive border-red-300' };
+        return { name: 'Off Budget', color: '#dc2625', badgeClass: 'bg-destructive/10 text-destructive border-destructive/30' };
       case 'partial':
         return { name: 'Partial', color: '#eab308', badgeClass: 'bg-yellow-50 text-yellow-700 border-yellow-300' };
       case 'unknown':
@@ -496,7 +496,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       case "on_budget":
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">On Budget</Badge>;
       case "off_budget":
-        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-red-300">Off Budget</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">Off Budget</Badge>;
       case "partial":
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Partial</Badge>;
       default:

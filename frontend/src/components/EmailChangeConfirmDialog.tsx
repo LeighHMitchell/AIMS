@@ -124,7 +124,7 @@ export function EmailChangeConfirmDialog({
                 }
               }}
               placeholder="Enter new email address"
-              className={errors.newEmail ? "border-red-500" : ""}
+              className={errors.newEmail ? "border-destructive" : ""}
             />
             {errors.newEmail && (
               <p className="text-xs text-destructive mt-1">{errors.newEmail}</p>
@@ -145,7 +145,7 @@ export function EmailChangeConfirmDialog({
                 }
               }}
               placeholder="Confirm new email address"
-              className={errors.confirmEmail ? "border-red-500" : ""}
+              className={errors.confirmEmail ? "border-destructive" : ""}
             />
             {errors.confirmEmail && (
               <p className="text-xs text-destructive mt-1">{errors.confirmEmail}</p>

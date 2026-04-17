@@ -571,7 +571,7 @@ export function AdminUserTable() {
       <CardContent>
         {error && (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <div className="rounded-full bg-red-100 p-3 mb-4">
+            <div className="rounded-full bg-destructive/10 p-3 mb-4">
               <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load users</h3>

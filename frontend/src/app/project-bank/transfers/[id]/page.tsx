@@ -447,12 +447,12 @@ export default function TransferDetailPage() {
             )}
 
             {/* Danger Zone */}
-            <Card className="border-red-200">
+            <Card className="border-destructive/30">
               <CardContent className="p-6">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full text-destructive border-red-200 hover:bg-destructive/10"
+                  className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
                   onClick={() => setShowDeleteDialog(true)}
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1.5" />

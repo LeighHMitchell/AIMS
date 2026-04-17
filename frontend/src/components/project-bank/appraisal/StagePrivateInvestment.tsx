@@ -214,7 +214,7 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-red-400',
+                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-destructive/10',
               )}
               style={{ width: `${readinessPercent}%` }}
             />

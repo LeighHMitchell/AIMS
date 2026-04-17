@@ -371,7 +371,7 @@ export default function TransactionSectorsTab({
                   value={validation?.totalPercentage || 0} 
                   className={cn(
                     "h-2",
-                    validation?.totalPercentage && validation.totalPercentage > 100 && "bg-red-100"
+                    validation?.totalPercentage && validation.totalPercentage > 100 && "bg-destructive/10"
                   )}
                 />
               </div>

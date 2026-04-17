@@ -204,7 +204,7 @@ export default function LocationEditor({
                   }
                 }}
                 disabled={!canEdit}
-                className="text-destructive border-red-200 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
+                className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-1 text-destructive" />
                 Clear All
@@ -246,7 +246,7 @@ export default function LocationEditor({
                   size="sm"
                   onClick={() => removeLocation(location.id)}
                   disabled={!canEdit}
-                  className="text-destructive hover:text-red-800 hover:bg-destructive/10"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>

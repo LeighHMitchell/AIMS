@@ -258,7 +258,7 @@ export default function BulkImportWizard() {
               <>
                 <Button
                   variant="outline"
-                  className="border-red-300 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => {
                     // Go back to rules step and reset batch state
                     setState(prev => ({

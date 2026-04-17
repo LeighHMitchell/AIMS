@@ -303,7 +303,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
                         e.stopPropagation();
                         removePhoto();
                       }}
-                      className="absolute -top-2 -right-2 bg-destructive/100 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                      className="absolute -top-2 -right-2 bg-destructive/100 text-white rounded-full p-1 hover:bg-destructive transition-colors shadow-lg"
                     >
                       <X className="h-3 w-3" />
                     </button>

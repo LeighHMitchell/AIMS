@@ -1686,7 +1686,7 @@ export default function BulkPreviewStep({
                             <div className="space-y-3">
                               {activity.humanitarian && (
                                 <div>
-                                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-red-200">
+                                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
                                     <Heart className="h-3 w-3 mr-1" />
                                     Humanitarian
                                   </Badge>

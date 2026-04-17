@@ -54,7 +54,7 @@ const getStatusColor = (status?: string) => {
   if (statusNum === 2) return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'; // Active
   if (statusNum === 3) return 'bg-blue-100 text-blue-800'; // Completed
   if (statusNum === 1) return 'bg-yellow-100 text-yellow-800'; // Pipeline
-  if (statusNum === 5) return 'bg-red-100 text-red-800'; // Cancelled
+  if (statusNum === 5) return 'bg-destructive/10 text-red-800'; // Cancelled
   return 'bg-muted text-foreground';
 };
 
@@ -459,7 +459,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDelete(activity.id)}
-                                  className="text-destructive hover:text-red-800 hover:bg-destructive/10"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
                                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>

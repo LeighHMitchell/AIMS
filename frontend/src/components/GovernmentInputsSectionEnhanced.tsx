@@ -79,13 +79,13 @@ const RISK_CATEGORIES = [
 const RISK_LEVELS = [
   { value: 1, label: "Low", color: "text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))]" },
   { value: 2, label: "Medium", color: "text-amber-700 bg-amber-50 border-amber-200" },
-  { value: 3, label: "High", color: "text-destructive bg-destructive/10 border-red-200" },
+  { value: 3, label: "High", color: "text-destructive bg-destructive/10 border-destructive/30" },
 ];
 
 function getRiskLevel(score: number): { label: string; color: string; badgeClass: string } {
   if (score <= 1.5) return { label: "Low", color: "text-[hsl(var(--success-text))]", badgeClass: "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]" };
   if (score <= 2.2) return { label: "Medium", color: "text-amber-700", badgeClass: "bg-amber-100 text-amber-800 border-amber-200" };
-  return { label: "High", color: "text-destructive", badgeClass: "bg-red-100 text-red-800 border-red-200" };
+  return { label: "High", color: "text-destructive", badgeClass: "bg-destructive/10 text-red-800 border-destructive/30" };
 }
 
 // ─── Government Inputs Types ────────────────────────────────────────────────

@@ -52,7 +52,7 @@ const issueTypeConfig = {
     description: 'Transactions without currency attribute',
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    borderColor: 'border-red-200'
+    borderColor: 'border-destructive/30'
   },
   missing_activity: {
     icon: Link2,
@@ -84,7 +84,7 @@ const issueTypeConfig = {
     description: 'Transactions missing date or other required fields',
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    borderColor: 'border-red-200'
+    borderColor: 'border-destructive/30'
   },
   invalid_value: {
     icon: AlertCircle,
@@ -92,7 +92,7 @@ const issueTypeConfig = {
     description: 'Transactions with invalid or zero values',
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    borderColor: 'border-red-200'
+    borderColor: 'border-destructive/30'
   }
 };
 

@@ -271,7 +271,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     disabled={readOnly || saving}
                     className={cn(
                       "pr-10",
-                      error && "border-red-500 focus-visible:ring-red-500"
+                      error && "border-destructive focus-visible:ring-red-500"
                     )}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">

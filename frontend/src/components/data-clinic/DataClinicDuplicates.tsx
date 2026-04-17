@@ -112,7 +112,7 @@ const DETECTION_TYPE_LABELS: Record<string, string> = {
 
 // Confidence colors
 const CONFIDENCE_COLORS: Record<string, string> = {
-  high: 'bg-red-100 text-red-800 border-red-200',
+  high: 'bg-destructive/10 text-red-800 border-destructive/30',
   medium: 'bg-orange-100 text-orange-800 border-orange-200',
   low: 'bg-yellow-100 text-yellow-800 border-yellow-200',
 };

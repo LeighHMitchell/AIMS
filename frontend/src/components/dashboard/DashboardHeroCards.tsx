@@ -175,7 +175,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
 
   if (error) {
     return (
-      <div className="bg-destructive/10 border border-red-200 rounded-lg p-4">
+      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
         <p className="text-sm text-destructive">Failed to load dashboard statistics: {error}</p>
       </div>
     );

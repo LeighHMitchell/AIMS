@@ -142,7 +142,7 @@ export function SEEAssessmentWizard({ transferId }: SEEAssessmentWizardProps) {
         <Card>
           <CardContent className="p-6">
             {errors._form && (
-              <div className="mb-4 text-sm text-destructive bg-destructive/10 border border-red-200 rounded-md p-3">
+              <div className="mb-4 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md p-3">
                 {errors._form}
               </div>
             )}

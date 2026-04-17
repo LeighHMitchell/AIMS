@@ -293,7 +293,7 @@ export default function SectorAllocationForm({
                     </div>
                     <button
                       onClick={() => removeAllocation(allocation.id!)}
-                      className="ml-2 text-destructive hover:text-red-800"
+                      className="ml-2 text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </button>

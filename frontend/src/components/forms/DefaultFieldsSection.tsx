@@ -316,7 +316,7 @@ export function DefaultFieldsSection({
 
         {/* Error Display */}
         {error && (
-          <div className="bg-destructive/10 border border-red-200 rounded-md p-3">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-destructive" />
               <span className="text-sm text-destructive">

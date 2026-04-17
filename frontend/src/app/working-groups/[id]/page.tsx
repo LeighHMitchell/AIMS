@@ -139,7 +139,7 @@ const getStatusBadgeColor = (status: string) => {
   switch (status) {
     case 'scheduled': return 'bg-blue-100 text-blue-800'
     case 'completed': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-    case 'cancelled': return 'bg-red-100 text-red-800'
+    case 'cancelled': return 'bg-destructive/10 text-red-800'
     default: return 'bg-muted text-foreground'
   }
 }

@@ -968,7 +968,7 @@ export function FeedbackManagement() {
                               deleteFeedback(item.id);
                             }}
                             title="Delete"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-red-200 hover:border-red-300"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 hover:border-destructive/30"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

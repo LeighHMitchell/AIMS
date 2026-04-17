@@ -60,7 +60,7 @@ export function AutosaveStatus({
         icon: <AlertCircle className="h-3 w-3" />,
         text: 'Save Failed',
         variant: 'outline' as const,
-        className: 'text-destructive border-red-300 bg-destructive/10'
+        className: 'text-destructive border-destructive/30 bg-destructive/10'
       };
     }
 

@@ -536,7 +536,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
         className={cn(
           "absolute top-2 right-2 rounded-full p-1.5 cursor-pointer transition-colors",
           isPinned 
-            ? "bg-red-100 hover:bg-red-200" 
+            ? "bg-destructive/10 hover:bg-destructive/10" 
             : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
         onClick={(e) => {

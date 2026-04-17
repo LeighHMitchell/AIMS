@@ -153,7 +153,7 @@ export default function NewTransferPage() {
               </div>
 
               {error && (
-                <div className="text-sm text-destructive bg-destructive/10 border border-red-200 rounded-md p-3">
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md p-3">
                   {error}
                 </div>
               )}

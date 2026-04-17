@@ -374,7 +374,7 @@ const InlineDocumentUpload: React.FC<{
               <button
                 type="button"
                 onClick={() => onRemove(fieldName, index)}
-                className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-white border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-red-300 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-white border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/30 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
               >
                 <X className="h-2.5 w-2.5" />
               </button>

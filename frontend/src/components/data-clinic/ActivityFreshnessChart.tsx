@@ -111,7 +111,7 @@ function FreshnessBadge({ bucket }: { bucket: FreshnessBucket }) {
     '1_to_3_months': 'bg-lime-100 text-lime-800 border-lime-200 hover:bg-lime-100',
     '3_to_6_months': 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100',
     '6_to_12_months': 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100',
-    over_12_months: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100',
+    over_12_months: 'bg-destructive/10 text-red-800 border-destructive/30 hover:bg-destructive/10',
   };
 
   return (

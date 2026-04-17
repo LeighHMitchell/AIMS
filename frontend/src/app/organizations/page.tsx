@@ -827,7 +827,7 @@ const DeleteConfirmationModal: React.FC<{
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="bg-destructive/10 border border-red-200 rounded-md p-3">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
             <p className="text-sm text-red-800">
               <strong>Warning:</strong> This action cannot be undone. This will permanently delete the organization 
               <strong> {organization.displayName}</strong> and remove all associated data.
@@ -843,7 +843,7 @@ const DeleteConfirmationModal: React.FC<{
               value={confirmationText}
               onChange={(e) => setConfirmationText(e.target.value)}
               placeholder={`Type "${requiredText}" to confirm`}
-              className={confirmationText && !isConfirmationValid ? 'border-red-500' : ''}
+              className={confirmationText && !isConfirmationValid ? 'border-destructive' : ''}
             />
             {confirmationText && !isConfirmationValid && (
               <p className="text-sm text-destructive">

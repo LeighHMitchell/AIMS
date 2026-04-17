@@ -140,7 +140,7 @@ export default function TestFeedbackUploadPage() {
               )}
 
               {uploadError && (
-                <div className="bg-destructive/10 border border-red-200 p-4 rounded-lg">
+                <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <XCircle className="h-5 w-5 text-destructive" />
                     <h3 className="font-medium text-red-800">Upload Failed</h3>

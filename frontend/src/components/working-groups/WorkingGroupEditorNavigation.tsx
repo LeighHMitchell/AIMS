@@ -250,7 +250,7 @@ export default function WorkingGroupEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-destructive/100 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-destructive/100 text-white hover:bg-destructive transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

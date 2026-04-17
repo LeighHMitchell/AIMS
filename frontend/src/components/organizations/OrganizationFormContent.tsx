@@ -915,7 +915,7 @@ export function OrganizationFormContent({
               value={formData.name || ''}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Danish International Development Agency"
-              className={validationErrors.some(e => e.includes('Name')) ? 'border-red-500' : ''}
+              className={validationErrors.some(e => e.includes('Name')) ? 'border-destructive' : ''}
             />
           </div>
 
@@ -944,7 +944,7 @@ export function OrganizationFormContent({
                 value={formData.acronym || ''}
                 onChange={(e) => handleInputChange('acronym', e.target.value)}
                 placeholder="DANIDA"
-                className={`${validationErrors.some(e => e.includes('Acronym')) ? 'border-red-500' : ''} pr-10`}
+                className={`${validationErrors.some(e => e.includes('Acronym')) ? 'border-destructive' : ''} pr-10`}
               />
               {formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 && (
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
@@ -1001,7 +1001,7 @@ export function OrganizationFormContent({
               open={countrySelectOpen}
               onOpenChange={setCountrySelectOpen}
             >
-              <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-red-500' : ''}>
+              <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Select country or institution">
                   {formData.country_represented && (
                     <div className="flex items-center gap-2">
@@ -1217,7 +1217,7 @@ export function OrganizationFormContent({
               onOpenChange={setOrgTypeSelectOpen}
             >
               <SelectTrigger
-                className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-red-500' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
+                className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-destructive' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
               >
                 <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"}>
                   {formData.Organisation_Type_Code && (
@@ -1944,7 +1944,7 @@ export function OrganizationFormContent({
     if (validationErrors.length === 0) return null
     
     return (
-      <div className="bg-destructive/10 border border-red-200 rounded-md p-3 flex items-start gap-3">
+      <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
         <div className="flex-1">
           <p className="text-sm font-medium text-red-800 mb-1">Please fix the validation errors</p>
@@ -2021,7 +2021,7 @@ export function OrganizationFormContent({
                 <strong>{organization?.name}</strong>.
               </p>
               
-              <div className="bg-destructive/10 border border-red-200 rounded-md p-3 space-y-2">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 space-y-2">
                 <p className="font-medium text-red-800">This action will:</p>
                 <ul className="text-sm text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>

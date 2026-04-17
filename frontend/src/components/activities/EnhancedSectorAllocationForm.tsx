@@ -500,7 +500,7 @@ export default function EnhancedSectorAllocationForm({
             variant="outline" 
             size="sm" 
             onClick={clearAll}
-            className="text-xs text-destructive border-red-200 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
+            className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
           >
             Clear All
           </Button>

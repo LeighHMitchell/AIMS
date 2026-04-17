@@ -377,7 +377,7 @@ function UserPickerInner({
     <div className="space-y-4">
       {/* Error Message */}
       {error && (
-        <div className="p-3 bg-destructive/10 border border-red-200 rounded-lg text-sm text-destructive">
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
           <strong>Error:</strong> {error}
         </div>
       )}

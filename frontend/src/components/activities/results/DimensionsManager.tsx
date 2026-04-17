@@ -219,7 +219,7 @@ export function DimensionsManager({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(dim.id)}
-                  className="text-destructive hover:text-red-800 h-4 w-4 p-0 ml-1"
+                  className="text-destructive hover:text-destructive h-4 w-4 p-0 ml-1"
                 >
                   <X className="h-3 w-3" />
                 </Button>

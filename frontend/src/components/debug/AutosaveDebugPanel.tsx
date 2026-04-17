@@ -103,7 +103,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
 
   const getStatusColor = (type: string) => {
     switch (type) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-300';
+      case 'critical': return 'bg-destructive/10 text-red-800 border-destructive/30';
       case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'info': return 'bg-blue-100 text-blue-800 border-blue-300';
       default: return 'bg-muted text-foreground border-input';

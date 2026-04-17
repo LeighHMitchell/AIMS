@@ -75,7 +75,7 @@ function SeverityBadge({ severity }: { severity: Severity }) {
       );
     case 'severe':
       return (
-        <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+        <Badge className="bg-destructive/10 text-red-800 border-destructive/30 hover:bg-destructive/10">
           Severe
         </Badge>
       );

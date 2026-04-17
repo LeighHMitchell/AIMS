@@ -202,7 +202,7 @@ export default function SectorAnalyticsPage() {
             </div>
           </div>
           <div className="container mx-auto p-6">
-            <Card className="bg-destructive/10 border-red-200">
+            <Card className="bg-destructive/10 border-destructive/30">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 text-destructive">
                   <AlertCircle className="h-6 w-6" />

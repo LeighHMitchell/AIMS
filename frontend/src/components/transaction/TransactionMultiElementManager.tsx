@@ -210,7 +210,7 @@ export function TransactionSectorManager({
                 variant="outline" 
                 size="sm"
                 onClick={clearAll}
-                className="text-xs h-7 text-destructive border-red-200 hover:bg-destructive/10 hover:text-destructive"
+                className="text-xs h-7 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
               >
                 <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                 Clear All

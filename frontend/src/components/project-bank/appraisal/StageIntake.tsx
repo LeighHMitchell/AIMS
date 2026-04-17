@@ -590,7 +590,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             <div className={cn(
               "md:col-span-2 flex items-start gap-2 p-3 rounded-lg border text-sm",
               minSizeResult.enforcement === 'enforce'
-                ? "bg-destructive/10 border-red-200 text-red-800"
+                ? "bg-destructive/10 border-destructive/30 text-red-800"
                 : "bg-amber-50 border-amber-200 text-amber-800"
             )}>
               {minSizeResult.enforcement === 'enforce' ? (

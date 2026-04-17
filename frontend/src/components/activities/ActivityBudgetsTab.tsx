@@ -2289,7 +2289,7 @@ export default function ActivityBudgetsTab({
             <div className="space-y-4 py-4">
               {/* Validation Alert */}
               {validationAlert && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-destructive/10 px-4 py-3 text-sm text-red-800">
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-red-800">
                   <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                   <span>{validationAlert}</span>
                   <button onClick={() => setValidationAlert(null)} className="ml-auto text-destructive hover:text-destructive">
@@ -2315,7 +2315,7 @@ export default function ActivityBudgetsTab({
                       className={cn(
                         "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
                         isReviseMode && "bg-muted cursor-not-allowed",
-                        fieldErrors.type && "border-red-500",
+                        fieldErrors.type && "border-destructive",
                         !modalBudget?.type && "text-muted-foreground"
                       )}
                     >
@@ -2393,7 +2393,7 @@ export default function ActivityBudgetsTab({
                     <PopoverTrigger
                       className={cn(
                         "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-                        fieldErrors.status && "border-red-500",
+                        fieldErrors.status && "border-destructive",
                         !modalBudget?.status && "text-muted-foreground"
                       )}
                     >
@@ -2565,7 +2565,7 @@ export default function ActivityBudgetsTab({
                       setIsEditingValue(false);
                     }}
                     placeholder="0.00"
-                    className={fieldErrors.value ? 'border-red-500' : ''}
+                    className={fieldErrors.value ? 'border-destructive' : ''}
                   />
                   {fieldErrors.value && (
                     <p className="text-xs text-destructive">{fieldErrors.value}</p>

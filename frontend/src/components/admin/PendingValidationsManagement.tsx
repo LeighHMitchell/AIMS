@@ -94,7 +94,7 @@ const getStatusBadge = (status: string | null) => {
     '2': 'bg-blue-100 text-blue-800', // Implementation
     '3': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]', // Finalisation
     '4': 'bg-purple-100 text-purple-800', // Closed
-    '5': 'bg-red-100 text-red-800', // Cancelled
+    '5': 'bg-destructive/10 text-red-800', // Cancelled
     '6': 'bg-yellow-100 text-yellow-800', // Suspended
   };
   const statusLabels: Record<string, string> = {

@@ -163,7 +163,7 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
 
         {/* Error Display */}
         {(fieldState.error || defaultsError) && (
-          <div className="bg-destructive/10 border border-red-200 rounded p-3">
+          <div className="bg-destructive/10 border border-destructive/30 rounded p-3">
             <div className="text-red-800 font-medium">Error Details:</div>
             <div className="text-destructive text-sm mt-1">
               Field State Error: {fieldState.error || 'None'}<br />

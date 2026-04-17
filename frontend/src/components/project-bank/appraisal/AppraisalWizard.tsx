@@ -245,7 +245,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       return {
         icon: XCircle,
         text: lockMessage || 'This project has been rejected.',
-        bgClass: 'bg-destructive/10 border-red-200',
+        bgClass: 'bg-destructive/10 border-destructive/30',
         textClass: 'text-red-800',
         iconClass: 'text-destructive',
       };

@@ -170,7 +170,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
       case '4':
         return 'bg-muted text-foreground' // Closed
       case '5':
-        return 'bg-red-100 text-red-800' // Cancelled
+        return 'bg-destructive/10 text-red-800' // Cancelled
       case '6':
         return 'bg-orange-100 text-orange-800' // Suspended
       default:

@@ -157,7 +157,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
           onClick={() => submitRating(false)}
           className={cn(
             'flex items-center gap-2',
-            userRating === false && 'bg-destructive/10 border-red-300 text-destructive'
+            userRating === false && 'bg-destructive/10 border-destructive/30 text-destructive'
           )}
         >
           <ThumbsDown className={cn('h-4 w-4', userRating === false && 'fill-red-500')} />
@@ -187,7 +187,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
                   variant="outline"
                   size="sm"
                   onClick={() => setPendingRating(false)}
-                  className={cn(pendingRating === false && 'bg-destructive/10 border-red-300')}
+                  className={cn(pendingRating === false && 'bg-destructive/10 border-destructive/30')}
                 >
                   <ThumbsDown className="h-4 w-4" />
                 </Button>

@@ -611,7 +611,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Implementation" ? "bg-blue-100 text-blue-800" :
                         ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Finalisation" ? "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]" :
                         ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Closed" ? "bg-muted text-foreground" :
-                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Cancelled" ? "bg-red-100 text-red-800" : 
+                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Cancelled" ? "bg-destructive/10 text-red-800" : 
                         "bg-muted text-foreground"
                       }
                     >

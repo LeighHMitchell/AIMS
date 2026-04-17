@@ -147,7 +147,7 @@ export default function TransparencyIndexPage() {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))]"
     if (score >= 40) return "text-yellow-600 bg-yellow-50 border-yellow-200"
-    return "text-destructive bg-destructive/10 border-red-200"
+    return "text-destructive bg-destructive/10 border-destructive/30"
   }
 
   const toggleExpand = (id: string) => {
@@ -289,7 +289,7 @@ export default function TransparencyIndexPage() {
                     <div className="lg:col-span-5 mb-2 flex items-center gap-2 text-sm">
                       <span className="font-medium text-foreground">Timeliness Multiplier:</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        project.breakdown.multiplier === 1.0 ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' : 'bg-red-100 text-destructive'
+                        project.breakdown.multiplier === 1.0 ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' : 'bg-destructive/10 text-destructive'
                       }`}>
                         x{project.breakdown.multiplier}
                       </span>

@@ -33,7 +33,7 @@ export function NormalizedOrgRef({
   
   const baseClasses = `text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${className}`;
   const invalidClasses = !refDisplay.isValid && showValidationIndicator 
-    ? 'border border-red-300' 
+    ? 'border border-destructive/30' 
     : '';
   
   return (

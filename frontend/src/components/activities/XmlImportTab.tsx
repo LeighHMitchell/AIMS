@@ -619,7 +619,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           
                           return (
                             <span className="flex items-center gap-1 mt-0.5">
-                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                 {refDisplay.normalized}
                               </code>
                               {!refDisplay.isValid && (
@@ -804,7 +804,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               <>
                                 <span className="text-muted-foreground">|</span>
                                 <span className="flex items-center gap-1">
-                                  <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                  <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                     {refDisplay.normalized}
                                   </code>
                                   {!refDisplay.isValid && (
@@ -8520,7 +8520,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             </Badge>
           )}
           {(field as any).hasNonDacSectors && !(field as any).refinedSectors && (
-            <Badge variant="outline" className="text-xs border-red-400 text-destructive">
+            <Badge variant="outline" className="text-xs border-destructive text-destructive">
               <AlertCircle className="h-3 w-3 mr-1" />
               {(field as any).nonDacSectors?.length || 0} non-DAC sectors excluded
             </Badge>

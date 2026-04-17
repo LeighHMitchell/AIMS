@@ -577,7 +577,7 @@ export function ConditionsTab({
                           size="sm"
                           onClick={() => handleDeleteCondition(condition.id)}
                           disabled={isDeleting === condition.id}
-                          className="text-destructive hover:text-red-800"
+                          className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

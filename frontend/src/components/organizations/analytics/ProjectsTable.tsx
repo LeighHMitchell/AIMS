@@ -65,8 +65,8 @@ const STATUS_COLORS: { [key: string]: string } = {
   'pipeline': 'bg-blue-100 text-blue-800',
   '3': 'bg-muted text-foreground',
   'completed': 'bg-muted text-foreground',
-  '5': 'bg-red-100 text-red-800',
-  'cancelled': 'bg-red-100 text-red-800',
+  '5': 'bg-destructive/10 text-red-800',
+  'cancelled': 'bg-destructive/10 text-red-800',
 };
 
 export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps) {

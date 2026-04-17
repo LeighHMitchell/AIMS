@@ -130,7 +130,7 @@ export function SupabaseSelect({
           className={cn(
             className,
             state.isUpdating && 'opacity-50',
-            state.error && 'border-red-300 focus:border-red-500 focus:ring-red-500',
+            state.error && 'border-destructive/30 focus:border-destructive focus:ring-red-500',
             isOptimistic && 'border-blue-300'
           )}
         >

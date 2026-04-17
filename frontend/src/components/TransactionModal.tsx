@@ -2725,7 +2725,7 @@ export default function TransactionModal({
                   </LabelWithInfoAndSave>
                   <div className={cn(
                     "flex items-center justify-between h-10 px-3 border rounded-md",
-                    formData.is_humanitarian && "border-red-200 bg-destructive/10"
+                    formData.is_humanitarian && "border-destructive/30 bg-destructive/10"
                   )}>
                     <span className={cn(
                       "text-sm flex items-center gap-1.5",

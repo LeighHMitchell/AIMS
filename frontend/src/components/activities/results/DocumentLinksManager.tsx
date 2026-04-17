@@ -308,7 +308,7 @@ export function DocumentLinksManager({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(doc.id)}
-                  className="text-destructive hover:text-red-800 ml-2"
+                  className="text-destructive hover:text-destructive ml-2"
                 >
                   <Trash2 className="h-3 w-3 text-destructive" />
                 </Button>

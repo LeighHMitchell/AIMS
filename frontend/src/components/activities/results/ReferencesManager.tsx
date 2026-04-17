@@ -233,7 +233,7 @@ export function ReferencesManager({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(ref.id)}
-                  className="text-destructive hover:text-red-800"
+                  className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3 w-3 text-destructive" />
                 </Button>

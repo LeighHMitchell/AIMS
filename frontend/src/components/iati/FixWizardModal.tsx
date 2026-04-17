@@ -504,7 +504,7 @@ export function FixWizardModal({
               const txIndex = detail.transactionIndex || 0;
               
               return (
-                <div key={idx} className="p-4 border border-red-200 rounded-lg space-y-2">
+                <div key={idx} className="p-4 border border-destructive/30 rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">

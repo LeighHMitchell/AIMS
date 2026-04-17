@@ -160,7 +160,7 @@ export function TransactionValueDisplay({
       return {
         status: 'unconvertible',
         badge: 'No USD rate',
-        color: 'bg-red-100 text-red-800',
+        color: 'bg-destructive/10 text-red-800',
         icon: <AlertCircle className="h-3 w-3" />,
         tooltip: 'Currency not supported for automatic USD conversion'
       };

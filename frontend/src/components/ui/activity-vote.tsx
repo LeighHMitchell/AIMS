@@ -205,7 +205,7 @@ export function ActivityVote({
                 'flex items-center justify-center rounded-md transition-colors',
                 config.button,
                 userVote === -1
-                  ? 'bg-destructive/10 text-destructive hover:bg-red-100'
+                  ? 'bg-destructive/10 text-destructive hover:bg-destructive/10'
                   : 'text-muted-foreground hover:text-destructive hover:bg-muted',
                 (!userId || isVoting) && 'opacity-50 cursor-not-allowed',
                 'focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-1'

@@ -188,7 +188,7 @@ export function AcronymReviewModal({
                         onChange={(e) => handleAcronymChange(activity.iatiIdentifier, e.target.value)}
                         placeholder="Enter acronym or leave blank..."
                         maxLength={25}
-                        className={hasError ? 'border-red-500' : hasWarning ? 'border-yellow-500' : ''}
+                        className={hasError ? 'border-destructive' : hasWarning ? 'border-yellow-500' : ''}
                       />
                       {error && (
                         <div className={`flex items-center gap-1 text-xs ${hasError ? 'text-destructive' : 'text-yellow-600'}`}>

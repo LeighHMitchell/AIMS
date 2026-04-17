@@ -1156,7 +1156,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                           
                                           return (
                                             <span className="whitespace-nowrap flex items-center gap-1">
-                                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                                 {refDisplay.normalized}
                                               </code>
                                               {!refDisplay.isValid && (

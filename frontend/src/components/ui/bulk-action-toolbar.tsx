@@ -148,7 +148,7 @@ export function BulkActionToolbar({
               size="sm"
               onClick={onRejectLinked}
               disabled={isProcessing}
-              className="flex items-center gap-2 text-destructive border-red-200 hover:bg-destructive/10"
+              className="flex items-center gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
             >
               <UserX className="h-4 w-4" />
               {isRejecting ? "Rejecting..." : `Reject ${linkedTransactionCount}`}

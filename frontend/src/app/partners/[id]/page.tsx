@@ -676,7 +676,7 @@ export default function PartnerProfilePage() {
                   }
                 }}
                 placeholder="e.g., XM-DAC-12-1"
-                className={validationErrors.iatiOrgId ? "border-red-500" : ""}
+                className={validationErrors.iatiOrgId ? "border-destructive" : ""}
               />
               {validationErrors.iatiOrgId && (
                 <p className="text-sm text-destructive mt-1">{validationErrors.iatiOrgId}</p>
@@ -699,7 +699,7 @@ export default function PartnerProfilePage() {
                   }
                 }}
                 placeholder="e.g., Australian Department of Foreign Affairs and Trade"
-                className={validationErrors.fullName ? "border-red-500" : ""}
+                className={validationErrors.fullName ? "border-destructive" : ""}
                 required
               />
               {validationErrors.fullName && (
@@ -723,7 +723,7 @@ export default function PartnerProfilePage() {
                   }
                 }}
                 placeholder="e.g., DFAT"
-                className={validationErrors.acronym ? "border-red-500" : ""}
+                className={validationErrors.acronym ? "border-destructive" : ""}
                 required
               />
               {validationErrors.acronym && (
@@ -748,7 +748,7 @@ export default function PartnerProfilePage() {
               >
                 <SelectTrigger 
                   id="country"
-                  className={validationErrors.countryRepresented ? "border-red-500" : ""}
+                  className={validationErrors.countryRepresented ? "border-destructive" : ""}
                 >
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
@@ -787,7 +787,7 @@ export default function PartnerProfilePage() {
               >
                 <SelectTrigger 
                   id="organisationType"
-                  className={`text-left ${validationErrors.organisationType ? "border-red-500" : ""}`}
+                  className={`text-left ${validationErrors.organisationType ? "border-destructive" : ""}`}
                 >
                   <SelectValue placeholder="Select organisation type" />
                 </SelectTrigger>

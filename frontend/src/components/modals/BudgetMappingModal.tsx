@@ -268,7 +268,7 @@ export function BudgetMappingModal({
 
             {/* Validation Messages */}
             {!validation.isValid && budgetItems.length > 0 && (
-              <div className="bg-destructive/10 border border-red-200 rounded-md p-3">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
                   <div className="text-sm text-red-800">{validation.error}</div>

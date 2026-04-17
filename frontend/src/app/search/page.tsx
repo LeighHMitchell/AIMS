@@ -254,7 +254,7 @@ function SearchPageContent() {
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 p-6 text-center border border-red-200 rounded-lg bg-destructive/10">
+          <div className="mb-6 p-6 text-center border border-destructive/30 rounded-lg bg-destructive/10">
             <div className="text-destructive mb-2">Search Error</div>
             <div className="text-muted-foreground">{error}</div>
           </div>

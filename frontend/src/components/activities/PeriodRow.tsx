@@ -217,7 +217,7 @@ export function PeriodRow({
       "grid grid-cols-6 gap-2 items-center px-3 py-2 rounded-lg hover:bg-muted transition-colors",
       status.color === 'green' && "bg-green-50 border border-green-200",
       status.color === 'yellow' && "bg-yellow-50 border border-yellow-200", 
-      status.color === 'red' && "bg-destructive/10 border border-red-200",
+      status.color === 'red' && "bg-destructive/10 border border-destructive/30",
       status.color === 'gray' && "bg-muted border border-border"
     )}>
       {/* Facet */}

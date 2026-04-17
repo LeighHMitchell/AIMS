@@ -145,7 +145,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
               {!isUploading && (
                 <button
                   onClick={removeAvatar}
-                  className="absolute -top-2 -right-2 p-1 bg-destructive/100 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                  className="absolute -top-2 -right-2 p-1 bg-destructive/100 text-white rounded-full hover:bg-destructive transition-colors opacity-0 group-hover:opacity-100"
                   type="button"
                   aria-label="Remove profile picture"
                 >

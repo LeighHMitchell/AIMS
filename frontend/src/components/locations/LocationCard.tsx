@@ -57,7 +57,7 @@ function MapThumbnail({
           latitude={location.latitude}
         >
           <MarkerContent>
-            <div className="w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-sm" />
+            <div className="w-3 h-3 bg-destructive rounded-full border-2 border-white shadow-sm" />
           </MarkerContent>
         </MapMarker>
       </Map>

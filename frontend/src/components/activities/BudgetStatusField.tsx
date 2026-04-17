@@ -238,7 +238,7 @@ export function BudgetStatusField({
               value={localPercentage}
               onChange={handlePercentageChange}
               placeholder="e.g., 60"
-              className={`w-32 bg-white ${percentageError ? "border-red-500" : ""}`}
+              className={`w-32 bg-white ${percentageError ? "border-destructive" : ""}`}
               disabled={disabled}
             />
             <span className="text-muted-foreground">%</span>

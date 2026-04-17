@@ -152,7 +152,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
       case 'completed':
         return 'bg-blue-100 text-blue-800';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-red-800';
       default:
         return 'bg-muted text-foreground';
     }

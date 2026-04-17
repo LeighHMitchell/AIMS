@@ -684,7 +684,7 @@ export function EditOrganizationModal({
         
         {/* Validation Error Banner */}
         {validationErrors.length > 0 && (
-          <div className="bg-destructive/10 border border-red-200 rounded-md p-3 flex items-start gap-3 mx-6">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 flex items-start gap-3 mx-6">
             <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-red-800 mb-1">Please fix the validation errors</p>
@@ -735,7 +735,7 @@ export function EditOrganizationModal({
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Danish International Development Agency"
-                  className={validationErrors.some(e => e.includes('Name')) ? 'border-red-500' : ''}
+                  className={validationErrors.some(e => e.includes('Name')) ? 'border-destructive' : ''}
                 />
               </div>
 
@@ -749,7 +749,7 @@ export function EditOrganizationModal({
                   value={formData.acronym || ''}
                   onChange={(e) => handleInputChange('acronym', e.target.value)}
                   placeholder="DANIDA"
-                  className={validationErrors.some(e => e.includes('Acronym')) ? 'border-red-500' : ''}
+                  className={validationErrors.some(e => e.includes('Acronym')) ? 'border-destructive' : ''}
                 />
               </div>
 
@@ -768,7 +768,7 @@ export function EditOrganizationModal({
                   open={countrySelectOpen}
                   onOpenChange={setCountrySelectOpen}
                 >
-                  <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-red-500' : ''}>
+                  <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select country or institution">
                       {formData.country_represented && (
                         <div className="flex items-center gap-2">
@@ -920,7 +920,7 @@ export function EditOrganizationModal({
                   disabled={loadingTypes}
                 >
                   <SelectTrigger 
-                    className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-red-500' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
+                    className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-destructive' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
                   >
                     <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"}>
                       {formData.Organisation_Type_Code && (
@@ -1706,7 +1706,7 @@ export function EditOrganizationModal({
                 <strong>{organization?.name}</strong>.
               </p>
               
-              <div className="bg-destructive/10 border border-red-200 rounded-md p-3 space-y-2">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 space-y-2">
                 <p className="font-medium text-red-800">This action will:</p>
                 <ul className="text-sm text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>

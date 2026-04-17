@@ -983,7 +983,7 @@ export function TransactionTable({
                         ) : transaction.acceptance_status === 'accepted' ? (
                           <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Accepted Transaction</p></TooltipContent></Tooltip>
                         ) : transaction.acceptance_status === 'rejected' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-destructive/10 border-red-200 text-destructive px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-destructive/10 border-destructive/30 text-destructive px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),

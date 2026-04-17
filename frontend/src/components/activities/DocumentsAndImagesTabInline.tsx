@@ -736,7 +736,7 @@ export function DocumentsAndImagesTabInline({
                     className={cn(
                       "h-2",
                       upload.status === 'success' && "bg-muted",
-                      upload.status === 'error' && "bg-red-100"
+                      upload.status === 'error' && "bg-destructive/10"
                     )}
                   />
                 </div>

@@ -127,7 +127,7 @@ export function AutosaveFormWrapper({
 
     if (state.lastError) {
       return (
-        <Badge variant="outline" className="text-destructive border-red-300">
+        <Badge variant="outline" className="text-destructive border-destructive/30">
           <AlertCircle className="h-3 w-3 mr-1" />
           Save Failed
         </Badge>
@@ -205,7 +205,7 @@ export function AutosaveFormWrapper({
                     clearError();
                     forceSave();
                   }}
-                  className="ml-4 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                  className="ml-4 px-3 py-1 bg-destructive text-white text-sm rounded hover:bg-destructive"
                 >
                   Retry
                 </button>

@@ -48,7 +48,7 @@ function FlowBar({
       <div className="flex-1 flex items-center gap-1">
         <div
           className={`h-6 rounded transition-all ${
-            isOutgoing ? 'bg-red-200' : 'bg-green-200'
+            isOutgoing ? 'bg-destructive/10' : 'bg-green-200'
           }`}
           style={{ width: `${width}%` }}
         >

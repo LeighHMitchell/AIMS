@@ -63,7 +63,7 @@ const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> =
   '2': { label: 'Implementation', color: 'bg-blue-100 text-blue-700' },
   '3': { label: 'Finalisation', color: 'bg-purple-100 text-purple-700' },
   '4': { label: 'Closed', color: 'bg-muted text-foreground' },
-  '5': { label: 'Cancelled', color: 'bg-red-100 text-destructive' },
+  '5': { label: 'Cancelled', color: 'bg-destructive/10 text-destructive' },
   '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
 };
 
@@ -72,7 +72,7 @@ const VALIDATION_STATUS_LABELS: Record<string, { label: string; color: string }>
   draft: { label: 'Draft', color: 'bg-muted text-foreground' },
   submitted: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
   validated: { label: 'Validated', color: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' },
-  rejected: { label: 'Rejected', color: 'bg-red-100 text-destructive' },
+  rejected: { label: 'Rejected', color: 'bg-destructive/10 text-destructive' },
   more_info_requested: { label: 'Info Requested', color: 'bg-orange-100 text-orange-700' },
 };
 

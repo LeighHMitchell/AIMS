@@ -1474,7 +1474,7 @@ export default function BulkImportSourceStep({
           )}
 
           {fetchStatus === 'error' && (
-            <Card className="border-red-200">
+            <Card className="border-destructive/30">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-destructive/10 rounded-lg">

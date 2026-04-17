@@ -568,7 +568,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     {user && (comment.author?.userId === user.id || ['super_user', 'admin'].includes(user.role)) && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs text-destructive hover:text-red-800"
+                        className="text-xs text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-3 w-3 inline mr-1 text-destructive" />
                         Delete

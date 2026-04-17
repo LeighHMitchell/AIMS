@@ -1341,7 +1341,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                       {refDisplay.normalized && (
                                         <>
                                           {' '}
-                                          <code className={`text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                          <code className={`text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                             {refDisplay.normalized}
                                           </code>
                                           {!refDisplay.isValid && (
@@ -12060,7 +12060,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </Badge>
           )}
           {(field as any).hasNonDacSectors && !(field as any).refinedSectors && (
-            <Badge variant="outline" className="text-xs border-red-400 text-destructive">
+            <Badge variant="outline" className="text-xs border-destructive text-destructive">
               <AlertCircle className="h-3 w-3 mr-1" />
               {(field as any).nonDacSectors?.length || 0} non-DAC sectors excluded
             </Badge>
@@ -12434,7 +12434,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           description: 'Returned to XML Import tab.'
                         });
                       }}
-                      className="text-destructive border-red-200 hover:bg-destructive/10"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
                     >
                       Cancel Import
                     </Button>
@@ -12449,7 +12449,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           description: 'The import will stop after the current operation completes.'
                         });
                       }}
-                      className="text-destructive border-red-200 hover:bg-destructive/10"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
                     >
                       Cancel Import
                     </Button>
@@ -14322,7 +14322,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                         {isExact ? (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] transition-colors duration-200" />
                         ) : isOverAllocated ? (
-                          <Badge variant="outline" className="text-xs text-destructive border-red-600 transition-colors duration-200 flex items-center gap-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive transition-colors duration-200 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Over by: {Math.abs(remainingPercentage).toFixed(0)}%
                           </Badge>

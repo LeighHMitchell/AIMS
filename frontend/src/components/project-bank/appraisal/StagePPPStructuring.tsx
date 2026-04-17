@@ -448,7 +448,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
         <div className={cn(
           "flex items-start gap-2 p-3 rounded-lg border text-sm",
           equityResult.enforcement === 'enforce'
-            ? "bg-destructive/10 border-red-200 text-red-800"
+            ? "bg-destructive/10 border-destructive/30 text-red-800"
             : "bg-amber-50 border-amber-200 text-amber-800"
         )}>
           {equityResult.enforcement === 'enforce' ? (
@@ -560,7 +560,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-red-400',
+                readinessPercent === 100 ? 'bg-green-500' : readinessPercent >= 50 ? 'bg-amber-500' : 'bg-destructive/10',
               )}
               style={{ width: `${readinessPercent}%` }}
             />
