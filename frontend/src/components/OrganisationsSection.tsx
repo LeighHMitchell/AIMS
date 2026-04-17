@@ -1,16 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-import { Plus, Pencil, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2, HelpCircle, CheckCircle2 } from 'lucide-react';
-import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { Plus, Pencil, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2, CheckCircle2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ParticipatingOrgModal, ParticipatingOrgData } from '@/components/modals/ParticipatingOrgModal';
 import { useParticipatingOrganizations } from '@/hooks/use-participating-organizations';
-import { getSectionHelpText } from '@/components/activities/groups/SectionHeader';
 import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
 import { getOrganizationTypeName } from '@/data/iati-organization-types';
@@ -217,10 +215,13 @@ export default function OrganisationsSection({
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-xl font-semibold text-foreground">Participating Organisations</CardTitle>
-            </div>
+          {/*
+            The parent SectionHeader (rendered by StakeholdersGroup) already
+            titles this tab as "Participating Organisations", so we don't
+            render it a second time inside the Card. The card header now
+            carries only the Add button (mirrored by the loaded state).
+          */}
+          <div className="flex items-center justify-end">
             <div className="h-9 w-40 bg-muted animate-pulse rounded-md" />
           </div>
         </CardHeader>
@@ -281,13 +282,14 @@ export default function OrganisationsSection({
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-xl font-semibold text-foreground">Participating Organisations</CardTitle>
-              <HelpTextTooltip content={getSectionHelpText('organisations')}>
-                <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
-              </HelpTextTooltip>
-            </div>
+          {/*
+            Tab title + help text live on the parent SectionHeader
+            (see StakeholdersGroup). Keeping a second CardTitle here
+            duplicated the heading at a different font size, which is
+            what surfaced the reported mismatch with the Contacts tab.
+            The card now opens with just the Add Organization button.
+          */}
+          <div className="flex items-center justify-end">
             <Button onClick={handleAdd} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Organization
