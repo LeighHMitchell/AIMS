@@ -107,7 +107,7 @@ export function IATIImportSkeleton() {
           <CardContent>
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="border-l-4 border-border pl-4 py-2">
+                <div key={i} className="pl-4 py-2">
                   <Skeleton variant="text" width="60%" height="1rem" className="mb-1" />
                   <Skeleton variant="text" width="80%" height="0.875rem" />
                 </div>

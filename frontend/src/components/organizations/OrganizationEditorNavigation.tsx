@@ -217,15 +217,17 @@ export default function OrganizationEditorNavigation({
                         disabled={isLocked || disabled}
                         data-tab={section.id}
                         className={cn(
+                          // Active state is carried by the background fill + text
+                          // weight/color. Removed the 3px left-stripe accent that
+                          // duplicated those signals and is a common AI-slop tell.
                           "w-full text-left py-2 px-3 ml-2 rounded text-sm font-normal transition-all duration-200 ease-in-out",
                           "focus:outline-none focus:ring-2 focus:ring-[#5f7f7a]/50 focus:ring-opacity-50 focus:ring-offset-1",
-                          "border-l-3 border-transparent",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
                             ? "text-gray-400 cursor-not-allowed opacity-60"
                             : isActive
-                              ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium border-l-3 border-[#3C6255] shadow-sm"
-                              : "text-gray-600 hover:bg-[#5f7f7a]/8 hover:text-black hover:border-l-3 hover:border-[#5f7f7a]/30"
+                              ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
+                              : "text-gray-600 hover:bg-[#5f7f7a]/8 hover:text-black"
                         )}
                         aria-current={isActive ? "page" : undefined}
                         aria-describedby={undefined}

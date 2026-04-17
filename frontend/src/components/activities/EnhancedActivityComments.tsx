@@ -608,7 +608,7 @@ export function EnhancedActivityComments({
 
   return (
     <TooltipProvider>
-      <div className={`space-y-6 ${showInline ? 'border-l-4 border-blue-200 pl-4' : ''}`}>
+      <div className={`space-y-6 ${showInline ? 'rounded-md bg-blue-50/50 p-4' : ''}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1174,7 +1174,7 @@ function CommentCard({
           
           {/* Replies */}
           {comment.replies && comment.replies.length > 0 && (
-            <div className="ml-6 border-l-2 border-gray-200 pl-4 space-y-4">
+            <div className="ml-6 border-l border-border pl-4 space-y-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -1202,7 +1202,7 @@ function CommentCard({
           
           {/* Reply Form */}
           {replyingTo === comment.id && (
-            <div className="ml-6 border-l-2 border-blue-200 pl-4 space-y-3">
+            <div className="ml-6 border-l border-primary/40 pl-4 space-y-3">
               <Textarea
                 placeholder="Write your reply..."
                 value={replyContent}

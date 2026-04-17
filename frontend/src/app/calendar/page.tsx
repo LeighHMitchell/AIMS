@@ -402,10 +402,7 @@ export default function CalendarPage() {
                 .map(event => (
                   <div
                     key={event.id}
-                    className={`p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
-                      event.status === 'pending' ? 'border-l-4 border-dashed' : 'border-l-4'
-                    }`}
-                    style={{ borderLeftColor: event.color || '#4c5568' }}
+                    className="p-3 bg-white rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => {
                       setSelectedEvent(event)
                       setShowDetailModal(true)
@@ -413,7 +410,21 @@ export default function CalendarPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm text-[#4c5568] truncate">{event.title}</h4>
+                        <h4 className="font-medium text-sm text-[#4c5568] truncate flex items-center gap-2">
+                          {/*
+                            Leading colored dot replaces the former border-l-4
+                            accent stripe. Dashed dot for pending events carries
+                            the same signal the dashed border did.
+                          */}
+                          <span
+                            className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${
+                              event.status === 'pending' ? 'ring-1 ring-dashed' : ''
+                            }`}
+                            style={{ backgroundColor: event.color || '#4c5568' }}
+                            aria-hidden="true"
+                          />
+                          <span className="truncate">{event.title}</span>
+                        </h4>
                         <div className="flex items-center gap-1 mt-1 text-xs text-[#7b95a7]">
                           <Calendar className="h-3 w-3" />
                           {new Date(event.start).toLocaleDateString('en-US', {

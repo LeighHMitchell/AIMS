@@ -331,7 +331,7 @@ export default function SDGAlignmentSectionSimplified({
             const isExpanded = expandedGoals[goalId];
 
             return (
-              <Card key={goalId} className="border-l-4" style={{ borderLeftColor: goal.color }}>
+              <Card key={goalId}>
                 <CardContent className="p-6">
                   {/* Goal Header */}
                   <div className="flex items-center justify-between mb-3">

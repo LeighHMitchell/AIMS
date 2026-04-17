@@ -704,7 +704,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 
                 {/* Replies */}
                 {comment.replies && comment.replies.length > 0 && (
-                  <div className="mt-3 space-y-2 border-l-2 border-gray-200 pl-4">
+                  <div className="mt-3 space-y-2 border-l border-border pl-4">
                     {comment.replies.map(reply => (
                       <div key={reply.id} className="text-sm">
                         <div className="flex items-center gap-2 mb-1">

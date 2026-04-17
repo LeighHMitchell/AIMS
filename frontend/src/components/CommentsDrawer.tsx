@@ -504,7 +504,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   
                   {/* Replies */}
                   {comment.replies && comment.replies.length > 0 && (
-                    <div className="ml-4 mt-3 space-y-2 border-l-2 border-gray-200 pl-3">
+                    <div className="ml-4 mt-3 space-y-2 border-l border-border pl-3">
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="bg-gray-50 p-2 rounded space-y-2">
                           <div className="flex items-start justify-between">

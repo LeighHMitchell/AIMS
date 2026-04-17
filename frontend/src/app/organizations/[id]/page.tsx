@@ -3487,7 +3487,7 @@ export default function OrganizationProfilePage() {
                                             {col}
                                           </TableHead>
                                         ))}
-                                        <TableHead className="text-sm font-medium text-foreground py-3 px-4 text-center whitespace-nowrap bg-surface-muted min-w-[80px] border-l-2 border-border">
+                                        <TableHead className="text-sm font-medium text-foreground py-3 px-4 text-center whitespace-nowrap bg-surface-muted min-w-[80px] border-l border-border">
                                           Total
                                         </TableHead>
                                       </TableRow>
@@ -3522,7 +3522,7 @@ export default function OrganizationProfilePage() {
                                               </TableCell>
                                             );
                                           })}
-                                          <TableCell className="py-3 px-4 text-center font-bold bg-[#f1f4f8] text-foreground border-l-2 border-border">
+                                          <TableCell className="py-3 px-4 text-center font-bold bg-[#f1f4f8] text-foreground border-l border-border">
                                             {getRowTotal(row.key)}
                                           </TableCell>
                                         </TableRow>
@@ -3537,7 +3537,7 @@ export default function OrganizationProfilePage() {
                                             {getColumnTotal(col)}
                                           </TableCell>
                                         ))}
-                                        <TableCell className="py-3 px-4 text-center font-bold text-foreground bg-[#f1f4f8] border-l-2 border-border">
+                                        <TableCell className="py-3 px-4 text-center font-bold text-foreground bg-[#f1f4f8] border-l border-border">
                                           {getGrandTotal()}
                                         </TableCell>
                                       </TableRow>

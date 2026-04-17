@@ -189,15 +189,17 @@ export default function WorkingGroupEditorNavigation({
                         disabled={isLocked || disabled}
                         data-tab={section.id}
                         className={cn(
+                          // Active state carried by background fill + text
+                          // weight/color. Removed the 3px left-stripe accent
+                          // that duplicated those signals (AI-slop tell).
                           "w-full text-left py-2 px-3 rounded text-sm font-normal transition-all duration-200 ease-in-out",
                           "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",
-                          "border-l-3 border-transparent",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
                             ? "text-gray-400 cursor-not-allowed opacity-60"
                             : isActive
-                              ? "bg-blue-100 text-blue-700 font-medium border-l-3 border-blue-600 shadow-sm"
-                              : "text-gray-600 hover:bg-gray-50 hover:text-black hover:border-l-3 hover:border-gray-300"
+                              ? "bg-blue-100 text-blue-700 font-medium shadow-sm"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-black"
                         )}
                         aria-current={isActive ? "page" : undefined}
                         title={disabled ? "Please wait while saving..." : undefined}

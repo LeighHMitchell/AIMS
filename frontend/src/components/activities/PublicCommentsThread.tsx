@@ -249,7 +249,7 @@ function CommentItem({
       exit={{ opacity: 0, height: 0 }}
       className={cn(
         "relative group",
-        isReply ? "ml-8 pl-4 border-l-2 border-border/40" : "mb-6"
+        isReply ? "ml-8 pl-4 border-l border-border" : "mb-6"
       )}
     >
       <div className="flex gap-4">

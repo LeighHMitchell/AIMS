@@ -839,7 +839,9 @@ export function TransactionTable({
               className={cn(
                 "border-b border-border/40 hover:bg-muted/30 transition-colors",
                 isSelected && "bg-blue-50 border-blue-200",
-                transaction.transaction_source === 'linked' && "border-l-4 border-l-orange-400 bg-orange-50/30",
+                // Linked transactions: subtle background tint only (removed the
+                // 4px left-stripe accent that flagged as AI-slop).
+                transaction.transaction_source === 'linked' && "bg-orange-50/40",
                 transaction.acceptance_status === 'rejected' && "opacity-60"
               )}
             >

@@ -394,7 +394,7 @@ export default function GovernmentEndorsementTab({
 
       {/* Validation Status Overview */}
       {formData.validation_status && (
-        <Card className="border-l-4 border-l-blue-500">
+        <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
