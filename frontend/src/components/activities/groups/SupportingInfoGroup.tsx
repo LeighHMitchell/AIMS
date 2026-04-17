@@ -240,7 +240,7 @@ export function SupportingInfoGroup({
           <section
             id="documents"
             ref={documentsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('documents') }}
           >
             {isSectionActive('documents') || activeSections.has('documents') ? (
@@ -270,7 +270,7 @@ export function SupportingInfoGroup({
           <section
             id="aid_effectiveness"
             ref={aidEffectivenessRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('aid_effectiveness') }}
           >
             {isSectionActive('aid_effectiveness') || activeSections.has('aid_effectiveness') ? (

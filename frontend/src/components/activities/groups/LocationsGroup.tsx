@@ -374,7 +374,7 @@ export function LocationsGroup({
           <section
             id="locations"
             ref={locationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('locations') }}
           >
             {isSectionActive('locations') || activeSections.has('locations') ? (
@@ -402,7 +402,7 @@ export function LocationsGroup({
           <section
             id="subnational-allocation"
             ref={subnationalRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('subnational-allocation') || 400 }}
           >
             {isSectionActive('subnational-allocation') || activeSections.has('subnational-allocation') ? (

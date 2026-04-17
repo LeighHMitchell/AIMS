@@ -301,7 +301,7 @@ export function AdvancedGroup({
           <section
             id="results"
             ref={resultsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('results') }}
           >
             {isSectionActive('results') || activeSections.has('results') ? (
@@ -328,7 +328,7 @@ export function AdvancedGroup({
           <section
             id="forward-spending-survey"
             ref={forwardSpendRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('forward-spending-survey') }}
           >
             {isSectionActive('forward-spending-survey') || activeSections.has('forward-spending-survey') ? (
@@ -354,7 +354,7 @@ export function AdvancedGroup({
           <section
             id="capital-spend"
             ref={capitalSpendRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('capital-spend') }}
           >
             {isSectionActive('capital-spend') || activeSections.has('capital-spend') ? (
@@ -380,7 +380,7 @@ export function AdvancedGroup({
           <section
             id="financing-terms"
             ref={financingTermsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('financing-terms') }}
           >
             {isSectionActive('financing-terms') || activeSections.has('financing-terms') ? (
@@ -408,7 +408,7 @@ export function AdvancedGroup({
           <section
             id="conditions"
             ref={conditionsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('conditions') }}
           >
             {isSectionActive('conditions') || activeSections.has('conditions') ? (
@@ -427,7 +427,7 @@ export function AdvancedGroup({
           <section
             id="country-budget"
             ref={countryBudgetRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
+            className="scroll-mt-0 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('country-budget') }}
           >
             {isSectionActive('country-budget') || activeSections.has('country-budget') ? (
