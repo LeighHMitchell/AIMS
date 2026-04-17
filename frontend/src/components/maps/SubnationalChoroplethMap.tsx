@@ -973,7 +973,7 @@ function SubnationalChoroplethMapComponent({
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          Map
+          Sub-national Map
           <HelpTextTooltip content="Click on regions or townships to add them to the breakdown. Colors show allocation percentages. Toggle between ADM1 (states/regions) and ADM3 (townships) views." />
         </CardTitle>
       </CardHeader>

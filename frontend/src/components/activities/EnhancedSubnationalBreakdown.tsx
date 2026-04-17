@@ -8,7 +8,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
-import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
+import { MapPin, Trash2, Loader2, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
@@ -896,6 +896,24 @@ export function EnhancedSubnationalBreakdown({
     })
   }
 
+  // All region names currently represented in the allocations table. Used
+  // to power the Expand All / Collapse All bulk action in township view.
+  const allRegionNames = useMemo(
+    () => Array.from(regionSummaries.keys()),
+    [regionSummaries]
+  )
+  const areAllRegionsExpanded =
+    allRegionNames.length > 0 &&
+    allRegionNames.every(name => expandedRegions.has(name))
+
+  const toggleExpandAll = () => {
+    if (areAllRegionsExpanded) {
+      setExpandedRegions(new Set())
+    } else {
+      setExpandedRegions(new Set(allRegionNames))
+    }
+  }
+
   // Distribute 100% equally across all township entries
   const distributeEqually = () => {
     if (entries.length === 0) return
@@ -1073,6 +1091,31 @@ export function EnhancedSubnationalBreakdown({
             {entries.length > 0 && canEdit && (
               <div className="flex justify-end gap-2">
                 {/*
+                  Expand All / Collapse All — only meaningful in ADM3
+                  (township) view where regions have collapsible children.
+                  Hidden in ADM1 view to avoid a dead control.
+                */}
+                {viewLevel === 'township' && allRegionNames.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleExpandAll}
+                    aria-label={areAllRegionsExpanded ? 'Collapse all regions' : 'Expand all regions'}
+                  >
+                    {areAllRegionsExpanded ? (
+                      <>
+                        <ChevronsDownUp className="h-4 w-4 mr-2" />
+                        Collapse All
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsUpDown className="h-4 w-4 mr-2" />
+                        Expand All
+                      </>
+                    )}
+                  </Button>
+                )}
+                {/*
                   Distribute Equally — uses the default outline variant.
                   The previous `bg-foreground text-white` override inverted
                   the button's color scheme, which didn't match any other
@@ -1126,19 +1169,25 @@ export function EnhancedSubnationalBreakdown({
                           <tr key={`region-${item.regionName}`} className="border-t bg-muted/20">
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                {viewLevel === 'township' ? (
+                                {/*
+                                  Chevron is only rendered in ADM3 (township)
+                                  view, where expand/collapse is meaningful.
+                                  In ADM1 view there's no placeholder spacer
+                                  — region names sit flush-left with the
+                                  column edge.
+                                */}
+                                {viewLevel === 'township' && (
                                   <button
                                     type="button"
                                     onClick={() => toggleRegionExpansion(item.regionName)}
                                     className="p-0.5 hover:bg-muted rounded"
+                                    aria-label={isExpanded ? `Collapse ${item.regionName}` : `Expand ${item.regionName}`}
                                   >
                                     {isExpanded
                                       ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                       : <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                     }
                                   </button>
-                                ) : (
-                                  <span className="w-5" aria-hidden />
                                 )}
                                 <span className="text-sm font-semibold">{item.regionName}</span>
                               </div>
