@@ -106,7 +106,7 @@ export function IATIImportPreferences({ organizationId }: { organizationId?: str
 
       {Object.entries(grouped).map(([category, fields]) => (
         <div key={category} className="border rounded-md">
-          <div className="px-3 py-2 font-medium bg-gray-50">{category}</div>
+          <div className="px-3 py-2 font-medium bg-muted">{category}</div>
           <Separator />
           <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             {fields.map((f) => (
@@ -118,7 +118,7 @@ export function IATIImportPreferences({ organizationId }: { organizationId?: str
                       <HelpTextTooltip content="Not yet supported in AIMS; shown for future compatibility." />
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 truncate">{f.id}</div>
+                  <div className="text-xs text-muted-foreground truncate">{f.id}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   {f.docs && (

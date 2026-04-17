@@ -81,7 +81,7 @@ export function TransactionIdentifiersExample() {
   
   return (
     <div className="space-y-4 pb-4 border-b border-border">
-      <h3 className="text-sm font-semibold text-gray-900">Transaction Identifiers</h3>
+      <h3 className="text-sm font-semibold text-foreground">Transaction Identifiers</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CopyField
           label="Transaction UUID"
@@ -200,7 +200,7 @@ export function TransactionModalIdentifiersExample({
 
   return (
     <div className="space-y-4 pb-4 border-b border-border">
-      <h3 className="text-sm font-semibold text-gray-900">Transaction Identifiers</h3>
+      <h3 className="text-sm font-semibold text-foreground">Transaction Identifiers</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CopyField
           label="Transaction UUID"

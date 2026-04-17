@@ -193,7 +193,7 @@ export function OptimizedActivityList({
       <div className="flex flex-col sm:flex-row gap-4">
         {showSearch && (
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search activities..."
               value={query}
@@ -242,7 +242,7 @@ export function OptimizedActivityList({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         {searchResults ? (
           `Found ${searchResults.total} activities`
         ) : (
@@ -253,7 +253,7 @@ export function OptimizedActivityList({
 
       {/* Error Display */}
       {searchError && (
-        <div className="text-red-600 text-sm p-2 bg-red-50 rounded">
+        <div className="text-destructive text-sm p-2 bg-destructive/10 rounded">
           {searchError}
         </div>
       )}

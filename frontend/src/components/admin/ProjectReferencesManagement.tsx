@@ -352,7 +352,7 @@ export function ProjectReferencesManagement() {
       case "donor":
         return "border-blue-300 text-blue-700 bg-blue-50";
       case "internal":
-        return "border-input text-gray-700 bg-gray-50";
+        return "border-input text-foreground bg-muted";
       default:
         return "";
     }
@@ -392,7 +392,7 @@ export function ProjectReferencesManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>
@@ -584,14 +584,14 @@ export function ProjectReferencesManagement() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => handleEdit(ref)}>
-                                  <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                                  <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(ref)}
-                                  className="text-red-600"
+                                  className="text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>

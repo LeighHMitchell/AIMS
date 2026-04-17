@@ -132,7 +132,7 @@ export function ReadinessStageSignoff({
               <h4 className="font-semibold">Sign Off: {stage.name}</h4>
             </div>
 
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               By signing off, you certify that all applicable items in this stage have been properly completed or appropriately marked as not required.
             </p>
 
@@ -164,7 +164,7 @@ export function ReadinessStageSignoff({
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {stage.progress.completed} completed, {stage.progress.not_required} not required
               </div>
               <div className="flex gap-2">

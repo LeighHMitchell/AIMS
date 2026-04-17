@@ -448,7 +448,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
         <div className={cn(
           "flex items-start gap-2 p-3 rounded-lg border text-sm",
           equityResult.enforcement === 'enforce'
-            ? "bg-red-50 border-red-200 text-red-800"
+            ? "bg-destructive/10 border-red-200 text-red-800"
             : "bg-amber-50 border-amber-200 text-amber-800"
         )}>
           {equityResult.enforcement === 'enforce' ? (

@@ -25,7 +25,7 @@ export default function SkeletonDemoPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-muted p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Skeleton Loading Animations Demo</h1>
           <p className="text-muted-foreground mb-8">

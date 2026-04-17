@@ -539,10 +539,10 @@ function ContactCard({
           variant="ghost"
           size="sm"
           onClick={() => contact.id && onDelete(contact.id)}
-          className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-md"
+          className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive rounded-md"
           title="Delete contact"
         >
-          <Trash2 className="h-4 w-4 text-red-500" />
+          <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
 
@@ -794,10 +794,10 @@ function ContactsTable({
                       variant="ghost"
                       size="sm"
                       onClick={() => contact.id && onDelete(contact.id)}
-                      className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive"
                       title="Delete contact"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </td>
@@ -1014,7 +1014,7 @@ function ContactFormDialog({
                         e.stopPropagation();
                         removePhoto();
                       }}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                      className="absolute -top-2 -right-2 bg-destructive/100 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -1047,7 +1047,7 @@ function ContactFormDialog({
                 Drag & drop or click to upload<br />Max 2MB
               </p>
               {errors.profilePhoto && (
-                <p className="text-xs text-red-500 text-center">{errors.profilePhoto}</p>
+                <p className="text-xs text-destructive text-center">{errors.profilePhoto}</p>
               )}
             </div>
           </div>
@@ -1114,7 +1114,7 @@ function ContactFormDialog({
                 </Command>
               </PopoverContent>
             </Popover>
-            {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type}</p>}
+            {errors.type && <p className="text-xs text-destructive mt-1">{errors.type}</p>}
           </div>
 
           {/* Name Row */}
@@ -1149,7 +1149,7 @@ function ContactFormDialog({
                 onChange={(e) => handleChange('firstName', e.target.value)}
                 placeholder="John"
               />
-              {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
+              {errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
             </div>
 
             <div className="col-span-5">
@@ -1162,7 +1162,7 @@ function ContactFormDialog({
                 onChange={(e) => handleChange('lastName', e.target.value)}
                 placeholder="Smith"
               />
-              {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
+              {errors.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName}</p>}
             </div>
           </div>
 
@@ -1211,7 +1211,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="john.smith@example.org"
             />
-            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
           </div>
 
           {/* Phone Number with Country Code */}
@@ -1246,7 +1246,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('website', e.target.value)}
               placeholder="https://example.org"
             />
-            {errors.website && <p className="text-xs text-red-500 mt-1">{errors.website}</p>}
+            {errors.website && <p className="text-xs text-destructive mt-1">{errors.website}</p>}
           </div>
 
           {/* Mailing Address */}

@@ -117,28 +117,28 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         return (
           <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
             <div className="bg-surface-muted px-3 py-2 border-b border-border">
-              <p className="font-semibold text-slate-900 text-sm">
+              <p className="font-semibold text-foreground text-sm">
                 {item.title}{item.acronym ? ` (${item.acronym})` : ''}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">{orgDisplay}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{orgDisplay}</p>
             </div>
             <div className="p-2">
               <table className="w-full text-xs">
                 <tbody>
                   <tr>
-                    <td className="py-0.5 text-slate-500">Upvotes</td>
+                    <td className="py-0.5 text-muted-foreground">Upvotes</td>
                     <td className="py-0.5 text-right font-medium" style={{ color: COLORS.coolSteel }}>
                       +{item.upvoteCount}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-0.5 text-slate-500">Downvotes</td>
+                    <td className="py-0.5 text-muted-foreground">Downvotes</td>
                     <td className="py-0.5 text-right font-medium" style={{ color: COLORS.primaryScarlet }}>
                       -{item.downvoteCount}
                     </td>
                   </tr>
                   <tr className="border-t border-border">
-                    <td className="py-0.5 pt-1 text-slate-600 font-medium">Net Score</td>
+                    <td className="py-0.5 pt-1 text-muted-foreground font-medium">Net Score</td>
                     <td className="py-0.5 pt-1 text-right font-semibold" style={{ color: item.voteScore >= 0 ? COLORS.coolSteel : COLORS.primaryScarlet }}>
                       {item.voteScore > 0 ? '+' : ''}{item.voteScore}
                     </td>
@@ -172,10 +172,10 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
 
   if (hasNoData && compact) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center text-slate-500">
+      <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground">
         <TrendingUp className="h-8 w-8 text-slate-300 mb-2" />
         <p className="text-sm">No voted activities yet</p>
-        <p className="text-xs text-slate-400 mt-1">Activities will appear here when users vote on them</p>
+        <p className="text-xs text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
       </div>
     )
   }
@@ -326,10 +326,10 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
       {/* Chart or Empty State */}
       <div className="flex-1">
         {hasNoData ? (
-          <div className="h-full w-full flex flex-col items-center justify-center text-slate-500 min-h-[300px]">
+          <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground min-h-[300px]">
             <TrendingUp className="h-8 w-8 text-slate-300 mb-2" />
             <p className="text-sm">No voted activities yet</p>
-            <p className="text-xs text-slate-400 mt-1">Activities will appear here when users vote on them</p>
+            <p className="text-xs text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
           </div>
         ) : (
           viewMode === 'score' ? renderScoreChart() : renderPyramidChart()
@@ -341,11 +341,11 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         <div className="flex items-center justify-center gap-6 text-xs mt-3">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.primaryScarlet }} />
-            <span className="text-slate-600">Downvotes</span>
+            <span className="text-muted-foreground">Downvotes</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.coolSteel }} />
-            <span className="text-slate-600">Upvotes</span>
+            <span className="text-muted-foreground">Upvotes</span>
           </div>
         </div>
       )}

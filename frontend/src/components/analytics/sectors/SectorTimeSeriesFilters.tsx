@@ -142,7 +142,7 @@ export function SectorTimeSeriesFilters({
                 {filteredSectors.map((sector) => (
                   <div
                     key={sector}
-                    className="flex items-center space-x-2 p-2 rounded hover:bg-slate-100 cursor-pointer"
+                    className="flex items-center space-x-2 p-2 rounded hover:bg-muted cursor-pointer"
                     onClick={() => handleSectorToggle(sector)}
                   >
                     <Checkbox
@@ -153,7 +153,7 @@ export function SectorTimeSeriesFilters({
                   </div>
                 ))}
                 {filteredSectors.length === 0 && (
-                  <p className="text-sm text-slate-500 p-2">No sectors found</p>
+                  <p className="text-sm text-muted-foreground p-2">No sectors found</p>
                 )}
               </div>
             </ScrollArea>
@@ -166,7 +166,7 @@ export function SectorTimeSeriesFilters({
               <Badge 
                 key={sector} 
                 variant="secondary" 
-                className="text-xs cursor-pointer hover:bg-slate-200"
+                className="text-xs cursor-pointer hover:bg-muted"
                 onClick={() => handleSectorToggle(sector)}
               >
                 {sector.length > 20 ? sector.substring(0, 20) + '...' : sector}

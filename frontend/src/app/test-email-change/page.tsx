@@ -106,7 +106,7 @@ export default function TestEmailChangePage() {
           </div>
 
           {result && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <div className="mt-4 p-4 bg-muted rounded-lg">
               <h3 className="font-medium mb-2">Test Result:</h3>
               <pre className="text-sm overflow-auto">
                 {JSON.stringify(result, null, 2)}
@@ -114,7 +114,7 @@ export default function TestEmailChangePage() {
             </div>
           )}
 
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             <p><strong>Test User ID:</strong> local-test-user</p>
             <p><strong>Original Email:</strong> test@example.com</p>
             <p><strong>User Role:</strong> super_user</p>

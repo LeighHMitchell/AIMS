@@ -100,7 +100,7 @@ export function MultiLingualNarrativeInput({
     <div className={`space-y-3 ${className}`}>
       {/* Primary Language Input */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-foreground">
           {label} ({getLanguageName(primaryLanguage)})
         </label>
         <textarea
@@ -131,7 +131,7 @@ export function MultiLingualNarrativeInput({
       {showAdditionalLanguages && (
         <div className="space-y-3 border-t pt-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700">Additional Languages</h4>
+            <h4 className="text-sm font-medium text-foreground">Additional Languages</h4>
             {availableLanguages.length > 0 && (
               <Button
                 type="button"
@@ -148,9 +148,9 @@ export function MultiLingualNarrativeInput({
           </div>
 
           {additionalLanguages.map((lang) => (
-            <div key={lang} className="space-y-2 p-3 bg-gray-50 rounded-md relative">
+            <div key={lang} className="space-y-2 p-3 bg-muted rounded-md relative">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   {getLanguageName(lang)} ({lang})
                 </label>
                 <Button

@@ -79,13 +79,13 @@ const RISK_CATEGORIES = [
 const RISK_LEVELS = [
   { value: 1, label: "Low", color: "text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))]" },
   { value: 2, label: "Medium", color: "text-amber-700 bg-amber-50 border-amber-200" },
-  { value: 3, label: "High", color: "text-red-700 bg-red-50 border-red-200" },
+  { value: 3, label: "High", color: "text-destructive bg-destructive/10 border-red-200" },
 ];
 
 function getRiskLevel(score: number): { label: string; color: string; badgeClass: string } {
   if (score <= 1.5) return { label: "Low", color: "text-[hsl(var(--success-text))]", badgeClass: "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]" };
   if (score <= 2.2) return { label: "Medium", color: "text-amber-700", badgeClass: "bg-amber-100 text-amber-800 border-amber-200" };
-  return { label: "High", color: "text-red-700", badgeClass: "bg-red-100 text-red-800 border-red-200" };
+  return { label: "High", color: "text-destructive", badgeClass: "bg-red-100 text-red-800 border-red-200" };
 }
 
 // ─── Government Inputs Types ────────────────────────────────────────────────
@@ -165,11 +165,11 @@ function getDimensionHelp(key: string): string {
 function getStatusIcon(status: string | undefined) {
   switch (status) {
     case "Yes":
-      return <CheckCircle2 className="h-4 w-4 text-gray-600" />;
+      return <CheckCircle2 className="h-4 w-4 text-muted-foreground" />;
     case "Partial":
-      return <CircleSlash className="h-4 w-4 text-gray-500" />;
+      return <CircleSlash className="h-4 w-4 text-muted-foreground" />;
     case "No":
-      return <Circle className="h-4 w-4 text-gray-400" />;
+      return <Circle className="h-4 w-4 text-muted-foreground" />;
     default:
       return <Circle className="h-4 w-4 text-gray-300" />;
   }
@@ -393,8 +393,8 @@ export function GovernmentInputsSectionEnhanced({
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <FileCheck className="h-5 w-5 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <FileCheck className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">Budget Classification</CardTitle>
@@ -404,7 +404,7 @@ export function GovernmentInputsSectionEnhanced({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium text-slate-700">
+                    <div className="text-sm font-medium text-foreground">
                       {completedDimensions} of {budgetDimensions.length} completed
                     </div>
                     <Progress value={budgetProgress} className="w-24 h-2 mt-1" />
@@ -415,7 +415,7 @@ export function GovernmentInputsSectionEnhanced({
                 {budgetDimensions.map((dimension) => (
                   <div key={dimension.key} className="p-4 border rounded-lg bg-white">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-medium text-slate-900">{dimension.label}</h4>
+                      <h4 className="font-medium text-foreground">{dimension.label}</h4>
                       <div className="flex items-center gap-1">
                         {getStatusIcon(
                           typeof governmentInputs.onBudgetClassification?.[
@@ -472,11 +472,11 @@ export function GovernmentInputsSectionEnhanced({
                 {/* Supporting Documents */}
                 <div className="mt-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <FileText className="h-5 w-5 text-slate-500" />
-                    <h4 className="font-medium text-slate-900">Supporting Documents</h4>
-                    <span className="text-xs bg-slate-100 px-2 py-1 rounded">Optional</span>
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <h4 className="font-medium text-foreground">Supporting Documents</h4>
+                    <span className="text-xs bg-muted px-2 py-1 rounded">Optional</span>
                   </div>
-                  <p className="text-sm text-slate-600 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Upload documents that support your &quot;Yes&quot; or &quot;Partial&quot; classifications
                   </p>
                   <DocumentDropzone
@@ -493,8 +493,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <Wallet className="h-5 w-5 text-gray-600" />
+                  <div className="p-2 bg-muted rounded-lg">
+                    <Wallet className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Government Financial Contribution</CardTitle>
@@ -507,7 +507,7 @@ export function GovernmentInputsSectionEnhanced({
               <CardContent className="space-y-4">
                 {/* Is Government Contributing */}
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium text-slate-900 mb-3">
+                  <h4 className="font-medium text-foreground mb-3">
                     Does the government provide financial contribution?
                   </h4>
                   <RadioGroup
@@ -536,10 +536,10 @@ export function GovernmentInputsSectionEnhanced({
                 {governmentInputs.rgcContribution?.isProvided && (
                   <>
                     {/* Currency + Value Date */}
-                    <div className="p-4 bg-gray-50 border border-border rounded-lg space-y-4">
+                    <div className="p-4 bg-muted border border-border rounded-lg space-y-4">
                       <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="h-5 w-5 text-gray-600" />
-                        <h4 className="font-semibold text-gray-900">Contribution Details</h4>
+                        <DollarSign className="h-5 w-5 text-muted-foreground" />
+                        <h4 className="font-semibold text-foreground">Contribution Details</h4>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -611,7 +611,7 @@ export function GovernmentInputsSectionEnhanced({
                                 updateField("rgcContribution.exchangeRate", isNaN(val) ? null : val);
                               }}
                               disabled={!rgc.exchangeRateManual || isLoadingRate}
-                              className={cn("h-9", !rgc.exchangeRateManual && 'bg-gray-100')}
+                              className={cn("h-9", !rgc.exchangeRateManual && 'bg-muted')}
                               placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
                             />
                             {isLoadingRate && (
@@ -624,7 +624,7 @@ export function GovernmentInputsSectionEnhanced({
                             </p>
                           )}
                           {rateError && (
-                            <p className="text-xs text-red-500 mt-1">{rateError}</p>
+                            <p className="text-xs text-destructive mt-1">{rateError}</p>
                           )}
                         </div>
                       )}
@@ -652,7 +652,7 @@ export function GovernmentInputsSectionEnhanced({
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium">USD Equivalent</Label>
-                          <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                          <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
                             {computedTotalUSD !== null ? (
                               <>$ {computedTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                             ) : (
@@ -667,7 +667,7 @@ export function GovernmentInputsSectionEnhanced({
 
                     {/* Distribution Mode */}
                     <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium text-slate-900 mb-3">Distribution Mode</h4>
+                      <h4 className="font-medium text-foreground mb-3">Distribution Mode</h4>
                       <RadioGroup
                         value={rgc?.distributionMode || 'lump_sum'}
                         onValueChange={(value) =>
@@ -695,7 +695,7 @@ export function GovernmentInputsSectionEnhanced({
                     {rgc?.distributionMode === 'annual' && (
                       <div className="p-4 border rounded-lg space-y-4">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-slate-900">Annual Breakdown</h4>
+                          <h4 className="font-medium text-foreground">Annual Breakdown</h4>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
@@ -781,7 +781,7 @@ export function GovernmentInputsSectionEnhanced({
                                             const newAnnual = (rgc?.annual || []).filter((_, i) => i !== index);
                                             updateField("rgcContribution.annual", newAnnual);
                                           }}
-                                          className="text-muted-foreground hover:text-red-500 transition-colors"
+                                          className="text-muted-foreground hover:text-destructive transition-colors"
                                         >
                                           <Trash2 className="h-3.5 w-3.5" />
                                         </button>
@@ -834,7 +834,7 @@ export function GovernmentInputsSectionEnhanced({
                     {/* Additional Details */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           In-Kind Contributions
                         </label>
                         <Textarea
@@ -845,7 +845,7 @@ export function GovernmentInputsSectionEnhanced({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Source of Funding
                         </label>
                         <Textarea
@@ -868,7 +868,7 @@ export function GovernmentInputsSectionEnhanced({
             <div className="border rounded-lg p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <ShieldAlert className="h-5 w-5 text-slate-600" />
+                  <ShieldAlert className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <h3 className="text-lg font-semibold">Risk Summary</h3>
                     <p className="text-sm text-muted-foreground">
@@ -899,7 +899,7 @@ export function GovernmentInputsSectionEnhanced({
                             {level.label}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs text-gray-400 border-border">
+                          <Badge variant="outline" className="text-xs text-muted-foreground border-border">
                             --
                           </Badge>
                         )}
@@ -930,7 +930,7 @@ export function GovernmentInputsSectionEnhanced({
                     const currentScore = riskAssessment[question.id]?.score;
                     return (
                       <div key={question.id} className="p-4 border rounded-lg bg-white">
-                        <p className="text-sm font-medium text-slate-900 mb-3">{question.text}</p>
+                        <p className="text-sm font-medium text-foreground mb-3">{question.text}</p>
                         <RadioGroup
                           value={currentScore?.toString() || ""}
                           onValueChange={(value) =>
@@ -969,8 +969,8 @@ export function GovernmentInputsSectionEnhanced({
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <BarChart3 className="h-5 w-5 text-gray-600" />
+                  <div className="p-2 bg-muted rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Evaluation & Results Framework</CardTitle>
@@ -982,7 +982,7 @@ export function GovernmentInputsSectionEnhanced({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium text-slate-900 mb-3">
+                  <h4 className="font-medium text-foreground mb-3">
                     Has this activity been evaluated by government?
                   </h4>
                   <RadioGroup
@@ -1012,10 +1012,10 @@ export function GovernmentInputsSectionEnhanced({
                     {/* Evaluation Documents */}
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-5 w-5 text-slate-500" />
-                        <span className="font-medium text-slate-900">Evaluation Documents</span>
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium text-foreground">Evaluation Documents</span>
                       </div>
-                      <p className="text-sm text-slate-600 mb-3">
+                      <p className="text-sm text-muted-foreground mb-3">
                         Upload the government evaluation report(s)
                       </p>
                       <DocumentDropzone
@@ -1028,7 +1028,7 @@ export function GovernmentInputsSectionEnhanced({
 
                     {/* National Results Framework */}
                     <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium text-slate-900 mb-3">
+                      <h4 className="font-medium text-foreground mb-3">
                         Is this included in national results framework?
                       </h4>
                       <RadioGroup
@@ -1055,7 +1055,7 @@ export function GovernmentInputsSectionEnhanced({
 
                     {governmentInputs.evaluationResults?.inNationalFramework && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           National Indicator Reference
                         </label>
                         <Input

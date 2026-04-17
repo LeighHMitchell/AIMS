@@ -473,7 +473,7 @@ export default function WorkingGroupsPage() {
                                     <GitBranch className="h-4 w-4 mr-2" /> Create Sub-Group
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-red-600" onClick={() => setWgToDelete(wg)}>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => setWgToDelete(wg)}>
                                     <Trash2 className="h-4 w-4 mr-2" /> Delete
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -530,7 +530,7 @@ export default function WorkingGroupsPage() {
                                       <Eye className="h-4 w-4 mr-2" /> View Profile
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-red-600" onClick={() => setWgToDelete(sg)}>
+                                    <DropdownMenuItem className="text-destructive" onClick={() => setWgToDelete(sg)}>
                                       <Trash2 className="h-4 w-4 mr-2" /> Delete
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -591,7 +591,7 @@ export default function WorkingGroupsPage() {
                                 <Eye className="h-4 w-4 mr-2" /> View Profile
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600" onClick={() => setWgToDelete(sg)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setWgToDelete(sg)}>
                                 <Trash2 className="h-4 w-4 mr-2" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -652,7 +652,7 @@ export default function WorkingGroupsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-slate-200 text-slate-900' : ''}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-muted text-foreground' : ''}`}
                       >
                         {pageNum}
                       </Button>

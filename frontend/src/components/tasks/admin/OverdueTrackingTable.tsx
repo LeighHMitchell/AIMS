@@ -69,7 +69,7 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
-        <AlertTriangle className="mb-2 h-8 w-8 text-slate-400" />
+        <AlertTriangle className="mb-2 h-8 w-8 text-muted-foreground" />
         <p className="text-lg font-medium text-foreground">No Overdue Tasks</p>
         <p className="text-sm">All tasks are on track</p>
       </div>
@@ -125,7 +125,7 @@ export function OverdueTrackingTable({ tasks }: OverdueTrackingTableProps) {
                 <div className="flex items-center gap-1">
                   <AlertTriangle
                     className={`h-4 w-4 ${
-                      task.days_overdue > 7 ? 'text-slate-700' : 'text-slate-500'
+                      task.days_overdue > 7 ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   />
                   <span className="text-sm text-foreground">

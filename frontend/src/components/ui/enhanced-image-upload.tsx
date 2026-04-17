@@ -275,7 +275,7 @@ export function EnhancedImageUpload({
             {/* Image display */}
             {canZoom ? (
               <div
-                className="w-full h-full flex items-center justify-center bg-slate-100"
+                className="w-full h-full flex items-center justify-center bg-muted"
                 style={{ overflow: 'hidden' }}
               >
                 <img
@@ -309,7 +309,7 @@ export function EnhancedImageUpload({
             {isRepositioning && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                 <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                  <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Move className="h-4 w-4" />
                     Drag up or down to reposition
                   </p>
@@ -393,7 +393,7 @@ export function EnhancedImageUpload({
 
           {/* Reposition controls */}
           {isRepositioning && (
-            <div className="flex items-center justify-end bg-slate-50 rounded-lg p-3 gap-2">
+            <div className="flex items-center justify-end bg-muted rounded-lg p-3 gap-2">
               <Button size="sm" variant="ghost" onClick={cancelReposition} type="button">
                 Cancel
               </Button>
@@ -406,7 +406,7 @@ export function EnhancedImageUpload({
 
           {/* Zoom controls */}
           {isZooming && (
-            <div className="flex items-center justify-end bg-slate-50 rounded-lg p-3 gap-2">
+            <div className="flex items-center justify-end bg-muted rounded-lg p-3 gap-2">
               <Button size="sm" variant="ghost" onClick={cancelZoom} type="button">
                 Cancel
               </Button>
@@ -433,8 +433,8 @@ export function EnhancedImageUpload({
           <input {...getInputProps()} />
           {isProcessing ? (
             <>
-              <Upload className="h-8 w-8 text-gray-400 animate-pulse" />
-              <p className="text-sm text-gray-600 mt-2"><LoadingText>Uploading...</LoadingText></p>
+              <Upload className="h-8 w-8 text-muted-foreground animate-pulse" />
+              <p className="text-sm text-muted-foreground mt-2"><LoadingText>Uploading...</LoadingText></p>
             </>
           ) : isDragActive ? (
             <>
@@ -443,9 +443,9 @@ export function EnhancedImageUpload({
             </>
           ) : (
             <>
-              <ImageIcon className="h-8 w-8 text-gray-400" />
-              <p className="text-sm text-gray-600 mt-2 text-center">Drag & drop or click to upload</p>
-              <p className="text-xs text-gray-400 mt-1 text-center">{recommendedSize} (auto-compressed)</p>
+              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mt-2 text-center">Drag & drop or click to upload</p>
+              <p className="text-xs text-muted-foreground mt-1 text-center">{recommendedSize} (auto-compressed)</p>
             </>
           )}
         </div>

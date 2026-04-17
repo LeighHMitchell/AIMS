@@ -218,7 +218,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
           {isRepositioning && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
               <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Move className="h-4 w-4" />
                   Drag up or down to reposition
                 </p>
@@ -264,8 +264,8 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
 
         {/* Reposition controls */}
         {isRepositioning && (
-          <div className="flex items-center justify-between bg-slate-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Position: {Math.round(position)}%</span>
               <input
                 type="range"
@@ -302,13 +302,13 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full flex flex-col items-center justify-center text-gray-500">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
           <ImageIcon className="h-12 w-12 mb-3" />
           <p className="text-sm font-medium">
             {isDragActive ? "Drop the image here" : "Drag & drop a banner image here"}
           </p>
           <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 10MB (auto-compressed)</p>
+          <p className="text-xs mt-2 text-muted-foreground">PNG, JPG, GIF up to 10MB (auto-compressed)</p>
         </div>
       </div>
     </div>

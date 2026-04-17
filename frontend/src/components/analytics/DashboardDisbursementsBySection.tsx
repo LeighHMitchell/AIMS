@@ -57,9 +57,9 @@ export function DashboardDisbursementsBySection({
 
   if (error) {
     return (
-      <Card className="bg-red-50 border-red-200">
+      <Card className="bg-destructive/10 border-red-200">
         <CardContent className="p-6">
-          <p className="text-red-700">Error loading disbursements data: {error}</p>
+          <p className="text-destructive">Error loading disbursements data: {error}</p>
         </CardContent>
       </Card>
     );

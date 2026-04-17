@@ -44,13 +44,13 @@ export default function TransactionGroupingDemoPage() {
       case 'commitments': return 'bg-blue-50 border-blue-200'
       case 'disbursements': return 'bg-green-50 border-green-200'
       case 'returns': return 'bg-orange-50 border-orange-200'
-      default: return 'bg-gray-50 border-border'
+      default: return 'bg-muted border-border'
     }
   }
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-muted p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Transaction Grouping Demo</h1>
           <p className="text-muted-foreground mb-8">
@@ -117,7 +117,7 @@ export default function TransactionGroupingDemoPage() {
                           <Badge className={group === 'commitments' ? 'bg-blue-100 text-blue-800' :
                                             group === 'disbursements' ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' :
                                             group === 'returns' ? 'bg-orange-100 text-orange-800' :
-                                            'bg-gray-100 text-gray-800'}>
+                                            'bg-muted text-foreground'}>
                             {group.charAt(0).toUpperCase() + group.slice(1)}
                           </Badge>
                         </TableCell>

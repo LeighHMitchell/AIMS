@@ -399,13 +399,13 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   onDrop={handleDrop}
                 >
                   <div className="space-y-2">
-                    <Upload className={`mx-auto h-8 w-8 ${isDragOver ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <Upload className={`mx-auto h-8 w-8 ${isDragOver ? 'text-blue-500' : 'text-muted-foreground'}`} />
                     <div>
                       <label htmlFor="file-upload" className="cursor-pointer">
                         <span className="text-sm font-medium text-blue-600 hover:text-blue-500">
                           Click to upload
                         </span>
-                        <span className="text-sm text-gray-500"> or drag and drop</span>
+                        <span className="text-sm text-muted-foreground"> or drag and drop</span>
                       </label>
                       <input
                         id="file-upload"
@@ -416,7 +416,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         disabled={isSubmitting || isUploading}
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Images, PDFs, or documents up to 10MB
                     </p>
                   </div>
@@ -427,11 +427,11 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     <div className="flex items-center gap-3">
                       {(() => {
                         const IconComponent = getFileIcon(selectedFile.type);
-                        return <IconComponent className="h-5 w-5 text-gray-500" />;
+                        return <IconComponent className="h-5 w-5 text-muted-foreground" />;
                       })()}
                       <div>
                         <p className="text-sm font-medium">{selectedFile.name}</p>
-                        <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
                       </div>
                     </div>
                     <Button

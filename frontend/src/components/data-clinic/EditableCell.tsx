@@ -290,10 +290,10 @@ export function EditableCell({
                     <div className="text-xs space-y-1">
                       <p className="font-semibold">Invalid IATI Organization Identifier</p>
                       <p>Required format: AGENCY-REGISTRATION</p>
-                      <p className="text-gray-400">Examples:</p>
-                      <p className="text-gray-400">• XI-IATI-1234</p>
-                      <p className="text-gray-400">• GB-COH-123456</p>
-                      <p className="text-gray-400">• US-EIN-12-3456789</p>
+                      <p className="text-muted-foreground">Examples:</p>
+                      <p className="text-muted-foreground">• XI-IATI-1234</p>
+                      <p className="text-muted-foreground">• GB-COH-123456</p>
+                      <p className="text-muted-foreground">• US-EIN-12-3456789</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -433,7 +433,7 @@ export function EditableCell({
                 {/* Institutional Groups */}
                 {hasInstitutionalResults && (
                   <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
                       Institutional Groups
                     </div>
                     {filteredInstitutionalGroups.map((group) => (
@@ -457,7 +457,7 @@ export function EditableCell({
                 {/* Country Options */}
                 {hasCountryResults && (
                   <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
                       Countries
                     </div>
                     {filteredCountries.map((country) => (
@@ -473,7 +473,7 @@ export function EditableCell({
 
                 {/* No Results */}
                 {!hasInstitutionalResults && !hasCountryResults && (
-                  <div className="px-2 py-6 text-center text-sm text-gray-500">
+                  <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                     No results found for "{countrySearchTerm}"
                   </div>
                 )}

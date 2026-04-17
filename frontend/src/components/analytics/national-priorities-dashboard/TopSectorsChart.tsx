@@ -213,8 +213,8 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
     return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900 text-sm">
-              {item.sectorCode && <span className="font-mono bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-xs mr-1.5">{item.sectorCode}</span>}
+            <p className="font-semibold text-foreground text-sm">
+              {item.sectorCode && <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs mr-1.5">{item.sectorCode}</span>}
               {item.sectorName}
             </p>
           </div>
@@ -222,13 +222,13 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
             <table className="w-full text-sm">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
-                  <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
-                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                  <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.value)}</td>
                 </tr>
                 {item.activityCount > 0 && (
                   <tr>
-                    <td className="py-1 pr-4 text-slate-700 font-medium">Activities</td>
-                    <td className="py-1 text-right font-semibold text-slate-900">{item.activityCount}</td>
+                    <td className="py-1 pr-4 text-foreground font-medium">Activities</td>
+                    <td className="py-1 text-right font-semibold text-foreground">{item.activityCount}</td>
                   </tr>
                 )}
               </tbody>
@@ -413,14 +413,14 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
             style={{ backgroundColor: item.fill }}
           />
           {item.id !== "others" && item.sectorCode && (
-            <span className="text-xs font-mono bg-muted px-1 rounded text-gray-700">{item.sectorCode}</span>
+            <span className="text-xs font-mono bg-muted px-1 rounded text-foreground">{item.sectorCode}</span>
           )}
           {expanded ? (
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-muted-foreground">
               {item.sectorName}
             </span>
           ) : (
-            <span className="text-xs text-gray-600 truncate max-w-[60px]" title={item.sectorName}>
+            <span className="text-xs text-muted-foreground truncate max-w-[60px]" title={item.sectorName}>
               {item.sectorName.length > 8 ? `${item.sectorName.slice(0, 8)}...` : item.sectorName}
             </span>
           )}
@@ -477,7 +477,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
@@ -486,7 +486,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -495,7 +495,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("table")}
             title="Table"
           >
@@ -543,10 +543,10 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Top Sectors
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 Top 5 DAC sectors by financial allocation
               </CardDescription>
             </div>
@@ -554,10 +554,10 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
@@ -576,7 +576,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   Top Sectors
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">

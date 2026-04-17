@@ -732,7 +732,7 @@ export default function ForwardSpendingSurveyTab({
                                 size="sm"
                                 onClick={() => openForecastModal(forecast)}
                               >
-                                <Pencil className="h-4 w-4 text-slate-500" />
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -743,7 +743,7 @@ export default function ForwardSpendingSurveyTab({
                                 {deleteLoading === forecast.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 )}
                               </Button>
                             </div>
@@ -829,7 +829,7 @@ export default function ForwardSpendingSurveyTab({
                   </SelectContent>
                 </Select>
                 {fieldErrors.forecast_year && (
-                  <p className="text-sm text-red-500">{fieldErrors.forecast_year}</p>
+                  <p className="text-sm text-destructive">{fieldErrors.forecast_year}</p>
                 )}
               </div>
 
@@ -847,7 +847,7 @@ export default function ForwardSpendingSurveyTab({
                   placeholder="0.00"
                 />
                 {fieldErrors.amount && (
-                  <p className="text-sm text-red-500">{fieldErrors.amount}</p>
+                  <p className="text-sm text-destructive">{fieldErrors.amount}</p>
                 )}
               </div>
             </div>
@@ -873,7 +873,7 @@ export default function ForwardSpendingSurveyTab({
                   </SelectContent>
                 </Select>
                 {fieldErrors.currency && (
-                  <p className="text-sm text-red-500">{fieldErrors.currency}</p>
+                  <p className="text-sm text-destructive">{fieldErrors.currency}</p>
                 )}
               </div>
 
@@ -888,7 +888,7 @@ export default function ForwardSpendingSurveyTab({
                   onChange={(e) => updateForecastField('value_date', e.target.value)}
                 />
                 {fieldErrors.value_date && (
-                  <p className="text-sm text-red-500">{fieldErrors.value_date}</p>
+                  <p className="text-sm text-destructive">{fieldErrors.value_date}</p>
                 )}
               </div>
             </div>
@@ -965,7 +965,7 @@ export default function ForwardSpendingSurveyTab({
                     )}
                   </div>
                   {modalRateError && (
-                    <p className="text-xs text-red-500">{modalRateError}</p>
+                    <p className="text-xs text-destructive">{modalRateError}</p>
                   )}
                 </div>
                 <div className="space-y-2">

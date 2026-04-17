@@ -293,7 +293,7 @@ export function TaskTable({
                 key={assignment.id}
                 className={cn(
                   'cursor-pointer hover:bg-muted/50',
-                  isOverdue && 'bg-red-50/50',
+                  isOverdue && 'bg-destructive/10/50',
                   isDueSoon && !isOverdue && 'bg-amber-50/50'
                 )}
                 onClick={() => onViewDetails?.(assignment)}
@@ -321,7 +321,7 @@ export function TaskTable({
                       {getStatusLabel(assignment.status)}
                     </span>
                     {isOverdue && (
-                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
                     )}
                   </div>
                 </TableCell>

@@ -367,7 +367,7 @@ export function DataClinicBudgets() {
             variant="ghost"
             onClick={() => startEditing(budget.id, field, String(value || ''))}
           >
-            <Pencil className="h-3 w-3 text-slate-500" />
+            <Pencil className="h-3 w-3 text-muted-foreground" />
           </Button>
         )}
       </div>

@@ -183,13 +183,13 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-gray-600 mb-4">
+          <div className="text-sm text-muted-foreground mb-4">
             Manage organizations that participate in this activity, including funding, implementing, and other partner roles.
           </div>
 
           {/* Add Organization Form */}
-          <div className="border border-border rounded-lg p-4 bg-gray-50">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Add Organization</h3>
+          <div className="border border-border rounded-lg p-4 bg-muted">
+            <h3 className="text-sm font-medium text-foreground mb-3">Add Organization</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <OrganizationCombobox
@@ -231,7 +231,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
       {participatingOrgs.length === 0 ? (
         <Card>
           <CardContent className="py-8">
-            <div className="text-center text-gray-500">
+            <div className="text-center text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">No participating organizations</p>
               <p className="text-sm">Add organizations to track their roles in this activity.</p>
@@ -246,13 +246,13 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-5 w-5 text-gray-500" />
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-foreground">
                           {org.organization?.name ? (
                             <Link 
                               href={`/organizations/${org.organization.id}`}
-                              className="hover:text-gray-700 transition-colors"
+                              className="hover:text-foreground transition-colors"
                             >
                               {org.organization.name}
                               {org.organization.acronym && ` (${org.organization.acronym})`}
@@ -265,7 +265,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                           )}
                         </div>
                         {org.organization?.iati_org_id && (
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-muted-foreground">
                             IATI ID: {org.organization.iati_org_id}
                           </div>
                         )}
@@ -279,9 +279,9 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                     variant="ghost"
                     size="sm"
                     onClick={() => removeParticipatingOrg(org.organization_id, org.role_type)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </CardContent>

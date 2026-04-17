@@ -6,28 +6,28 @@ export function SectorAllocationSkeleton() {
   return (
     <div className="space-y-6">
       <div>
-        <Skeleton className="h-6 w-48 bg-gray-200 mb-2" />
-        <Skeleton className="h-4 w-96 bg-gray-100" />
+        <Skeleton className="h-6 w-48 bg-muted mb-2" />
+        <Skeleton className="h-4 w-96 bg-muted" />
       </div>
       
       <div className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4">
         {/* Add Sector Button */}
         <div className="flex justify-end">
-          <Skeleton className="h-10 w-32 bg-gray-100 rounded" />
+          <Skeleton className="h-10 w-32 bg-muted rounded" />
         </div>
         
         {/* Sector Rows */}
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded">
-            <Skeleton className="h-10 w-1/2 bg-gray-100" />
-            <Skeleton className="h-10 w-24 bg-gray-100" />
-            <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+          <div key={i} className="flex items-center gap-4 p-4 bg-muted rounded">
+            <Skeleton className="h-10 w-1/2 bg-muted" />
+            <Skeleton className="h-10 w-24 bg-muted" />
+            <Skeleton className="h-8 w-8 bg-muted rounded" />
           </div>
         ))}
         
         {/* Total Percentage */}
         <div className="pt-4 border-t flex justify-end">
-          <Skeleton className="h-6 w-32 bg-gray-200" />
+          <Skeleton className="h-6 w-32 bg-muted" />
         </div>
       </div>
     </div>
@@ -40,23 +40,23 @@ export function OrganisationsSkeleton() {
     <div className="space-y-6">
       {/* Extending Partners */}
       <div>
-        <Skeleton className="h-5 w-40 bg-gray-200 mb-4" />
+        <Skeleton className="h-5 w-40 bg-muted mb-4" />
         <div className="bg-white rounded-lg shadow-sm border border-border p-4">
           <div className="flex justify-between items-center mb-4">
-            <Skeleton className="h-4 w-48 bg-gray-100" />
-            <Skeleton className="h-9 w-32 bg-gray-100 rounded" />
+            <Skeleton className="h-4 w-48 bg-muted" />
+            <Skeleton className="h-9 w-32 bg-muted rounded" />
           </div>
           <div className="space-y-2">
             {[...Array(2)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+              <div key={i} className="flex items-center justify-between p-3 bg-muted rounded">
                 <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 bg-gray-100 rounded-full" />
+                  <Skeleton className="h-10 w-10 bg-muted rounded-full" />
                   <div className="space-y-1">
-                    <Skeleton className="h-4 w-32 bg-gray-200" />
-                    <Skeleton className="h-3 w-24 bg-gray-100" />
+                    <Skeleton className="h-4 w-32 bg-muted" />
+                    <Skeleton className="h-3 w-24 bg-muted" />
                   </div>
                 </div>
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
               </div>
             ))}
           </div>
@@ -65,9 +65,9 @@ export function OrganisationsSkeleton() {
       
       {/* Implementing Partners */}
       <div>
-        <Skeleton className="h-5 w-44 bg-gray-200 mb-4" />
+        <Skeleton className="h-5 w-44 bg-muted mb-4" />
         <div className="bg-white rounded-lg shadow-sm border border-border p-4">
-          <Skeleton className="h-40 w-full bg-gray-50" />
+          <Skeleton className="h-40 w-full bg-muted" />
         </div>
       </div>
     </div>
@@ -81,21 +81,21 @@ export function FinancesSkeleton() {
       {/* Tab Navigation */}
       <div className="flex gap-4 border-b">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-10 w-32 bg-gray-100" />
+          <Skeleton key={i} className="h-10 w-32 bg-muted" />
         ))}
       </div>
       
       {/* Transactions Table */}
       <div className="bg-white rounded-lg shadow-sm border border-border">
         <div className="p-4 border-b flex justify-between items-center">
-          <Skeleton className="h-6 w-48 bg-gray-200" />
-          <Skeleton className="h-9 w-40 bg-gray-100 rounded" />
+          <Skeleton className="h-6 w-48 bg-muted" />
+          <Skeleton className="h-9 w-40 bg-muted rounded" />
         </div>
         
         {/* Table Header */}
-        <div className="grid grid-cols-6 gap-4 p-4 bg-gray-50 border-b">
+        <div className="grid grid-cols-6 gap-4 p-4 bg-muted border-b">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-4 bg-gray-200" />
+            <Skeleton key={i} className="h-4 bg-muted" />
           ))}
         </div>
         
@@ -103,7 +103,7 @@ export function FinancesSkeleton() {
         {[...Array(4)].map((_, i) => (
           <div key={i} className="grid grid-cols-6 gap-4 p-4 border-b">
             {[...Array(6)].map((_, j) => (
-              <Skeleton key={j} className="h-4 bg-gray-100" />
+              <Skeleton key={j} className="h-4 bg-muted" />
             ))}
           </div>
         ))}
@@ -118,32 +118,32 @@ export function LocationsSkeleton() {
     <div className="space-y-6">
       {/* Tab Navigation */}
       <div className="flex gap-4 border-b">
-        <Skeleton className="h-10 w-40 bg-gray-100" />
-        <Skeleton className="h-10 w-40 bg-gray-100" />
+        <Skeleton className="h-10 w-40 bg-muted" />
+        <Skeleton className="h-10 w-40 bg-muted" />
       </div>
       
       {/* Map Container */}
       <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
-        <div className="h-96 bg-gray-100 relative">
+        <div className="h-96 bg-muted relative">
           <div className="absolute inset-0 flex items-center justify-center">
-            <Skeleton className="h-12 w-48 bg-gray-200" />
+            <Skeleton className="h-12 w-48 bg-muted" />
           </div>
         </div>
         
         {/* Location List */}
         <div className="p-4 border-t">
           <div className="flex justify-between items-center mb-4">
-            <Skeleton className="h-5 w-32 bg-gray-200" />
-            <Skeleton className="h-9 w-32 bg-gray-100 rounded" />
+            <Skeleton className="h-5 w-32 bg-muted" />
+            <Skeleton className="h-9 w-32 bg-muted rounded" />
           </div>
           <div className="space-y-2">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+              <div key={i} className="flex items-center justify-between p-3 bg-muted rounded">
                 <div className="space-y-1">
-                  <Skeleton className="h-4 w-48 bg-gray-200" />
-                  <Skeleton className="h-3 w-32 bg-gray-100" />
+                  <Skeleton className="h-4 w-48 bg-muted" />
+                  <Skeleton className="h-3 w-32 bg-muted" />
                 </div>
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
               </div>
             ))}
           </div>
@@ -159,34 +159,34 @@ export function LinkedActivitiesSkeleton() {
     <div className="space-y-6">
       {/* Search Bar */}
       <div className="flex gap-4">
-        <Skeleton className="h-10 flex-1 bg-gray-100 rounded" />
-        <Skeleton className="h-10 w-32 bg-gray-100 rounded" />
+        <Skeleton className="h-10 flex-1 bg-muted rounded" />
+        <Skeleton className="h-10 w-32 bg-muted rounded" />
       </div>
       
       {/* View Toggle */}
       <div className="flex justify-end">
-        <Skeleton className="h-9 w-24 bg-gray-100 rounded" />
+        <Skeleton className="h-9 w-24 bg-muted rounded" />
       </div>
       
       {/* Activity Cards */}
       <div className="space-y-4">
         {['Parent', 'Child', 'Sibling'].map((type, i) => (
           <div key={type} className="space-y-3">
-            <Skeleton className="h-5 w-32 bg-gray-200" />
+            <Skeleton className="h-5 w-32 bg-muted" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(2)].map((_, j) => (
                 <div key={j} className="bg-white rounded-lg shadow-sm border border-border p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="space-y-2 flex-1">
-                      <Skeleton className="h-5 w-3/4 bg-gray-200" />
-                      <Skeleton className="h-4 w-full bg-gray-100" />
-                      <Skeleton className="h-4 w-2/3 bg-gray-100" />
+                      <Skeleton className="h-5 w-3/4 bg-muted" />
+                      <Skeleton className="h-4 w-full bg-muted" />
+                      <Skeleton className="h-4 w-2/3 bg-muted" />
                     </div>
-                    <Skeleton className="h-6 w-16 bg-gray-100 rounded-full" />
+                    <Skeleton className="h-6 w-16 bg-muted rounded-full" />
                   </div>
                   <div className="flex gap-2">
-                    <Skeleton className="h-8 w-20 bg-gray-100 rounded" />
-                    <Skeleton className="h-8 w-20 bg-gray-100 rounded" />
+                    <Skeleton className="h-8 w-20 bg-muted rounded" />
+                    <Skeleton className="h-8 w-20 bg-muted rounded" />
                   </div>
                 </div>
               ))}
@@ -205,8 +205,8 @@ export function GenericTabSkeleton() {
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="space-y-2">
-            <Skeleton className="h-4 w-32 bg-gray-100" />
-            <Skeleton className="h-10 w-full bg-gray-50 rounded" />
+            <Skeleton className="h-4 w-32 bg-muted" />
+            <Skeleton className="h-10 w-full bg-muted rounded" />
           </div>
         ))}
       </div>
@@ -588,30 +588,30 @@ export function FinancialAnalyticsSkeleton() {
         <div className="p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-2">
-              <Skeleton className="h-6 w-64 bg-gray-200" />
-              <Skeleton className="h-4 w-96 bg-gray-100" />
+              <Skeleton className="h-6 w-64 bg-muted" />
+              <Skeleton className="h-4 w-96 bg-muted" />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Toggle buttons */}
-              <Skeleton className="h-8 w-32 bg-gray-100 rounded-lg" />
-              <Skeleton className="h-8 w-36 bg-gray-100 rounded-lg" />
+              <Skeleton className="h-8 w-32 bg-muted rounded-lg" />
+              <Skeleton className="h-8 w-36 bg-muted rounded-lg" />
               {/* Chart type buttons */}
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-20 bg-gray-100 rounded" />
+                  <Skeleton key={i} className="h-8 w-20 bg-muted rounded" />
                 ))}
               </div>
               {/* Export buttons */}
               <div className="flex gap-1">
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
               </div>
             </div>
           </div>
         </div>
         <div className="p-6">
           {/* Chart area */}
-          <Skeleton className="h-[500px] w-full bg-gray-50 rounded" />
+          <Skeleton className="h-[500px] w-full bg-muted rounded" />
         </div>
       </div>
 
@@ -620,29 +620,29 @@ export function FinancialAnalyticsSkeleton() {
         <div className="p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-2">
-              <Skeleton className="h-6 w-72 bg-gray-200" />
-              <Skeleton className="h-4 w-80 bg-gray-100" />
+              <Skeleton className="h-6 w-72 bg-muted" />
+              <Skeleton className="h-4 w-80 bg-muted" />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Toggle buttons */}
-              <Skeleton className="h-8 w-32 bg-gray-100 rounded-lg" />
+              <Skeleton className="h-8 w-32 bg-muted rounded-lg" />
               {/* Chart type buttons */}
               <div className="flex gap-1">
                 {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-20 bg-gray-100 rounded" />
+                  <Skeleton key={i} className="h-8 w-20 bg-muted rounded" />
                 ))}
               </div>
               {/* Export buttons */}
               <div className="flex gap-1">
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
               </div>
             </div>
           </div>
         </div>
         <div className="p-6">
           {/* Chart area */}
-          <Skeleton className="h-[400px] w-full bg-gray-50 rounded" />
+          <Skeleton className="h-[400px] w-full bg-muted rounded" />
         </div>
       </div>
 
@@ -651,23 +651,23 @@ export function FinancialAnalyticsSkeleton() {
         <div className="p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-2">
-              <Skeleton className="h-6 w-56 bg-gray-200" />
-              <Skeleton className="h-4 w-64 bg-gray-100" />
+              <Skeleton className="h-6 w-56 bg-muted" />
+              <Skeleton className="h-4 w-64 bg-muted" />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Chart/Table toggle */}
-              <Skeleton className="h-8 w-24 bg-gray-100 rounded-lg" />
+              <Skeleton className="h-8 w-24 bg-muted rounded-lg" />
               {/* Export buttons */}
               <div className="flex gap-1">
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
-                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
+                <Skeleton className="h-8 w-8 bg-muted rounded" />
               </div>
             </div>
           </div>
         </div>
         <div className="p-6">
           {/* Chart/Sankey area */}
-          <Skeleton className="h-[500px] w-full bg-gray-50 rounded" />
+          <Skeleton className="h-[500px] w-full bg-muted rounded" />
         </div>
       </div>
     </div>

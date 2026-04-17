@@ -415,7 +415,7 @@ export function UserActivityDashboard() {
                           <TableCell>
                             {user.organizationName ? (
                               <div className="flex items-center gap-2">
-                                <Building2 className="h-4 w-4 text-gray-400" />
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm">{user.organizationName}</span>
                               </div>
                             ) : (
@@ -594,7 +594,7 @@ export function UserActivityDashboard() {
                                 {formatDistanceToNow(new Date(user.lastActivity), { addSuffix: true })}
                               </span>
                             ) : (
-                              <span className="text-red-500">Never logged in</span>
+                              <span className="text-destructive">Never logged in</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">{user.totalActions}</TableCell>

@@ -143,7 +143,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 View
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(group)}>
-                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -151,7 +151,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 onClick={() => onDelete(group)}
                 style={{ color: colors.primaryScarlet }}
               >
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

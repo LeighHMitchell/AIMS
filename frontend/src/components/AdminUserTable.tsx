@@ -524,7 +524,7 @@ export function AdminUserTable() {
       <Card>
         <CardContent className="py-12">
           <div className="text-center">
-            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
             <p className="text-lg font-semibold mb-2">Access Denied</p>
             <p className="text-muted-foreground">Only super users can access user management</p>
           </div>
@@ -574,9 +574,9 @@ export function AdminUserTable() {
         {error && (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <div className="rounded-full bg-red-100 p-3 mb-4">
-              <AlertCircle className="h-8 w-8 text-red-600" />
+              <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load users</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load users</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
               {error}
             </p>
@@ -597,7 +597,7 @@ export function AdminUserTable() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6 items-end">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, email, or organization..."
               value={searchQuery}
@@ -662,7 +662,7 @@ export function AdminUserTable() {
                       >
                         <Check className={cn("h-4 w-4 flex-shrink-0", orgFilter === "all" ? "opacity-100" : "opacity-0")} />
                         <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center ml-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <span className="ml-2">All Organisations</span>
                       </CommandItem>
@@ -695,7 +695,7 @@ export function AdminUserTable() {
                                   }}
                                 />
                               ) : null}
-                              <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
+                              <Building2 className={cn("h-4 w-4 text-muted-foreground", org.logo ? "hidden" : "")} />
                             </div>
                             <span className="truncate ml-2">
                               {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
@@ -849,7 +849,7 @@ export function AdminUserTable() {
                                 className="h-5 w-5 p-0"
                                 onClick={cancelEmailEdit}
                               >
-                                <X className="h-3 w-3 text-red-600" />
+                                <X className="h-3 w-3 text-destructive" />
                               </Button>
                             </>
                           )}
@@ -873,7 +873,7 @@ export function AdminUserTable() {
                             }}
                             title="Edit email"
                           >
-                            <Pencil className="h-3 w-3 text-slate-500" />
+                            <Pencil className="h-3 w-3 text-muted-foreground" />
                           </Button>
                         </span>
                       )}
@@ -908,7 +908,7 @@ export function AdminUserTable() {
                               </AvatarFallback>
                             </Avatar>
                           ) : (
-                            <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           )}
                           <span className="text-sm text-foreground">
                             {user.organization.name}
@@ -929,7 +929,7 @@ export function AdminUserTable() {
                           disabled={savingUserId === user.id}
                           aria-label={`Toggle ${user.name} active status`}
                         />
-                        <span className={`text-xs ${user.isActive ? 'text-[#4C5568]' : 'text-gray-500'}`}>
+                        <span className={`text-xs ${user.isActive ? 'text-[#4C5568]' : 'text-muted-foreground'}`}>
                           {savingUserId === user.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
@@ -959,7 +959,7 @@ export function AdminUserTable() {
                               className="h-8 w-8"
                               onClick={() => handleEditUser(user.id)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -1012,9 +1012,9 @@ export function AdminUserTable() {
                               size="icon"
                               onClick={() => setDeleteUserTarget(user)}
                               disabled={user.id === currentUser?.id}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -1041,7 +1041,7 @@ export function AdminUserTable() {
         {filteredUsers.length > 0 && (
           <div className="bg-white rounded-lg border border-border shadow-sm p-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {startIndex + 1} to {endIndex} of {filteredUsers.length} users
               </div>
               
@@ -1084,7 +1084,7 @@ export function AdminUserTable() {
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -1113,7 +1113,7 @@ export function AdminUserTable() {
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-sm text-muted-foreground">Items per page:</label>
                 <Select 
                   value={pageLimit.toString()} 
                   onValueChange={(value) => handlePageLimitChange(Number(value))}

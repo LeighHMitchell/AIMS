@@ -172,7 +172,7 @@ export default function DebugSectorsPage() {
             <div className="mb-4">
               <strong>Sectors Count:</strong> {activityData.sectors?.length || 0}
             </div>
-            <pre className="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-64">
+            <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-64">
               {JSON.stringify(activityData.sectors, null, 2)}
             </pre>
           </CardContent>
@@ -189,7 +189,7 @@ export default function DebugSectorsPage() {
             <div className="mb-4">
               <strong>Sectors Count:</strong> {sectorsFromDB.length}
             </div>
-            <pre className="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-64">
+            <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-64">
               {JSON.stringify(sectorsFromDB, null, 2)}
             </pre>
           </CardContent>
@@ -204,7 +204,7 @@ export default function DebugSectorsPage() {
         <CardContent>
           <div className="bg-black text-green-400 p-4 rounded font-mono text-xs max-h-96 overflow-y-auto">
             {logs.length === 0 ? (
-              <div className="text-gray-500">No logs yet. Click buttons above to start debugging.</div>
+              <div className="text-muted-foreground">No logs yet. Click buttons above to start debugging.</div>
             ) : (
               logs.map((log, index) => (
                 <div key={index} className="mb-1">

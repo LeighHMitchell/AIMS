@@ -383,14 +383,14 @@ export function IATIBudgetManager({
                     size="sm"
                     onClick={() => handleEditBudget(budget)}
                   >
-                    <Pencil className="h-4 w-4 text-slate-500" />
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteBudget(budgetIndex)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               )}
@@ -430,7 +430,7 @@ export function IATIBudgetManager({
                 {budget.budgetLines.map((line, lineIndex) => (
                   <div
                     key={line.id || lineIndex}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                    className="flex items-center justify-between p-2 bg-muted rounded-md"
                   >
                     <div className="flex-1">
                       <div className="text-sm font-medium">
@@ -448,14 +448,14 @@ export function IATIBudgetManager({
                           size="sm"
                           onClick={() => handleEditBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Pencil className="h-3 w-3 text-slate-500" />
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Trash2 className="h-3 w-3 text-red-500" />
+                          <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
                       </div>
                     )}
@@ -487,8 +487,8 @@ export function IATIBudgetManager({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <span className="ml-2 text-gray-500">Loading budgets...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading budgets...</span>
       </div>
     );
   }
@@ -496,7 +496,7 @@ export function IATIBudgetManager({
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-500">
+      <div className="flex items-center justify-center py-12 text-destructive">
         <AlertCircle className="h-6 w-6 mr-2" />
         <span>{error}</span>
         <Button variant="link" onClick={fetchBudgets} className="ml-2">
@@ -559,7 +559,7 @@ export function IATIBudgetManager({
               ) : (
                 <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                   <type.icon className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500 mb-4">No {type.label.toLowerCase()} budgets added yet</p>
+                  <p className="text-muted-foreground mb-4">No {type.label.toLowerCase()} budgets added yet</p>
                   {!readOnly && (
                     <Button
                       variant="outline"

@@ -271,7 +271,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem className="text-red-500 focus:text-red-600 cursor-pointer" onSelect={onLogout}>
+                <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onSelect={onLogout}>
                   <LogOut className="h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

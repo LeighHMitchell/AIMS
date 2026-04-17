@@ -13,31 +13,31 @@ const STANDARD_IATI_SCORE_OPTIONS = [
     value: 0,
     label: "Not targeted",
     description: "The activity does not target this policy objective",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 1,
     label: "Significant objective", 
     description: "Important and deliberate objective, but not the principal reason for the activity",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 2,
     label: "Principal objective",
     description: "The policy objective is the principal reason for undertaking the activity",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 3,
     label: "Most funding targeted",
     description: "Most, but not all of the funding is targeted to the objective",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 4,
     label: "Explicit primary objective",
     description: "All funding is targeted to this policy objective",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   }
 ];
 
@@ -47,31 +47,31 @@ const RMNCH_IATI_SCORE_OPTIONS = [
     value: 0,
     label: "Negligible or no funding",
     description: "Negligible or no funding is targeted to RMNCH activities/results. RMNCH is not an objective of the project/programme.",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 1,
     label: "At least a quarter of funding",
     description: "At least a quarter of the funding is targeted to the objective.",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 2,
     label: "Half of the funding",
     description: "Half of the funding is targeted to the objective.",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 3,
     label: "Most funding targeted",
     description: "Most, but not all of the funding is targeted to the objective.",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   },
   {
     value: 4,
     label: "Explicit primary objective",
     description: "Explicit primary objective - all funding is targeted to RMNCH activities/results.",
-    color: "bg-gray-100 text-gray-700"
+    color: "bg-muted text-foreground"
   }
 ];
 

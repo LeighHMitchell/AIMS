@@ -960,7 +960,7 @@ export function FinancialTotalsBarChart({
                             className={`
                               px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                               ${isStartOrEnd
-                                ? 'bg-slate-200 text-slate-900'
+                                ? 'bg-muted text-foreground'
                                 : inRange
                                   ? 'bg-primary/20 text-primary'
                                   : 'text-muted-foreground hover:bg-muted'

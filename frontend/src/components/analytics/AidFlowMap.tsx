@@ -253,14 +253,14 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2 mt-4">
-          <div className="inline-flex rounded-lg border border-border p-1 bg-slate-50">
+          <div className="inline-flex rounded-lg border border-border p-1 bg-muted">
             <button
               onClick={() => setViewMode('transaction')}
               className={cn(
                 "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
                 viewMode === 'transaction'
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
               <ArrowLeftRight className="h-4 w-4" />
@@ -271,8 +271,8 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
               className={cn(
                 "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
                 viewMode === 'activity'
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
               <Activity className="h-4 w-4" />
@@ -282,12 +282,12 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         </div>
         
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 p-4 bg-slate-50 rounded-lg border">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 p-4 bg-muted rounded-lg border">
           {/* Search */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Search Organization</label>
+            <label className="text-sm font-medium text-foreground">Search Organization</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search..."
@@ -300,7 +300,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           
           {/* Time Period */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Time Period</label>
+            <label className="text-sm font-medium text-foreground">Time Period</label>
             <Select value={selectedTimePeriod} onValueChange={handlePresetSelect}>
               <SelectTrigger className="w-full h-10 bg-white">
                 <SelectValue />
@@ -318,7 +318,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           {/* Transaction Type - only show in transaction view */}
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Transaction Type</label>
+              <label className="text-sm font-medium text-foreground">Transaction Type</label>
               <MultiSelect
                 options={TRANSACTION_TYPE_OPTIONS}
                 selected={stagedTransactionTypes}
@@ -348,8 +348,8 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Relationship Types</label>
-              <div className="w-full h-10 px-3 flex items-center text-sm text-slate-500 bg-white border rounded-md">
+              <label className="text-sm font-medium text-foreground">Relationship Types</label>
+              <div className="w-full h-10 px-3 flex items-center text-sm text-muted-foreground bg-white border rounded-md">
                 All relationship types
               </div>
             </div>
@@ -358,7 +358,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           {/* Transaction Status - only show in transaction view */}
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Transaction Status</label>
+              <label className="text-sm font-medium text-foreground">Transaction Status</label>
               <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
                 <SelectTrigger className="w-full h-10 bg-white">
                   <SelectValue />
@@ -372,8 +372,8 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Activity Status</label>
-              <div className="w-full h-10 px-3 flex items-center text-sm text-slate-500 bg-white border rounded-md">
+              <label className="text-sm font-medium text-foreground">Activity Status</label>
+              <div className="w-full h-10 px-3 flex items-center text-sm text-muted-foreground bg-white border rounded-md">
                 All statuses
               </div>
             </div>
@@ -390,7 +390,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         {error && (
           <div className="flex items-center justify-center h-[400px]">
             <div className="text-center">
-              <p className="text-red-500 mb-2">{error}</p>
+              <p className="text-destructive mb-2">{error}</p>
               <Button variant="outline" onClick={fetchAidFlowData}>
                 Try Again
               </Button>
@@ -427,7 +427,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         
         {!loading && !error && !graphData && (
           <div className="flex items-center justify-center h-[400px]">
-            <p className="text-slate-500">No data available for the selected date range</p>
+            <p className="text-muted-foreground">No data available for the selected date range</p>
           </div>
         )}
       </CardContent>

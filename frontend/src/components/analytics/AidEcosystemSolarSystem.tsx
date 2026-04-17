@@ -494,7 +494,7 @@ export function AidEcosystemSolarSystem({
   // Render error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="text-sm">{error}</p>
       </div>
@@ -504,7 +504,7 @@ export function AidEcosystemSolarSystem({
   // Render empty state (only when no filter is applied - otherwise show full UI with empty message)
   if (!chartData.nodes.length && visibleSectors.size === 0 && !compact) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="text-sm">No organization data available</p>
       </div>
@@ -566,10 +566,10 @@ export function AidEcosystemSolarSystem({
               transform: tooltipPos.x > width / 2 ? 'translateX(-100%)' : undefined
             }}
           >
-            <p className="font-medium text-xs text-slate-900 truncate max-w-[150px]">
+            <p className="font-medium text-xs text-foreground truncate max-w-[150px]">
               {hoveredOrg.name}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               #{hoveredOrg.rank} - {formatCurrency(hoveredOrg.totalValue)}
             </p>
           </div>
@@ -602,11 +602,11 @@ export function AidEcosystemSolarSystem({
         {/* Sector Filter Controls */}
         <div className="flex items-center gap-2">
           {/* Aggregation Level Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setAggregationLevel('group')}
             >
               Sector Category
@@ -614,7 +614,7 @@ export function AidEcosystemSolarSystem({
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setAggregationLevel('category')}
             >
               Sector
@@ -622,7 +622,7 @@ export function AidEcosystemSolarSystem({
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+              className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setAggregationLevel('sector')}
             >
               Sub-sector
@@ -636,7 +636,7 @@ export function AidEcosystemSolarSystem({
                 <SlidersHorizontal className="h-4 w-4" />
                 Filter
                 {(isFilterOpen ? pendingSectors.size : visibleSectors.size) > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-900 rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-muted text-foreground rounded-full">
                     {isFilterOpen ? pendingSectors.size : visibleSectors.size}
                   </span>
                 )}
@@ -645,19 +645,19 @@ export function AidEcosystemSolarSystem({
             <DropdownMenuContent align="end" className="p-3 w-[340px]">
               {/* Header with All/Clear */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-slate-700">
+                <span className="text-xs font-medium text-foreground">
                   Filter by {aggregationLevel === 'group' ? 'Sector Category' : aggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
                 </span>
                 <div className="flex gap-1">
                   <button
                     onClick={selectAllSectors}
-                    className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                   >
                     All
                   </button>
                   <button
                     onClick={clearAllSectors}
-                    className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                   >
                     Clear
                   </button>
@@ -666,7 +666,7 @@ export function AidEcosystemSolarSystem({
 
               {/* Search box */}
               <div className="relative mb-2">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search by code or name..."
@@ -678,12 +678,12 @@ export function AidEcosystemSolarSystem({
 
               {/* Quick select buttons */}
               <div className="flex gap-1 mb-2 flex-wrap">
-                <span className="text-[10px] text-slate-500 self-center mr-1">Quick:</span>
+                <span className="text-[10px] text-muted-foreground self-center mr-1">Quick:</span>
                 {[3, 5, 10].map(n => (
                   <button
                     key={n}
                     onClick={() => selectTopNSectors(n)}
-                    className="text-[10px] px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600"
+                    className="text-[10px] px-2 py-0.5 bg-muted hover:bg-muted rounded text-muted-foreground"
                   >
                     Top {n}
                   </button>
@@ -693,7 +693,7 @@ export function AidEcosystemSolarSystem({
               {/* Checkbox list */}
               <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
                 {filteredSectors.length === 0 ? (
-                  <div className="text-center text-xs text-slate-400 py-4">
+                  <div className="text-center text-xs text-muted-foreground py-4">
                     No matching items found
                   </div>
                 ) : (
@@ -703,7 +703,7 @@ export function AidEcosystemSolarSystem({
                       <button
                         key={item.code}
                         onClick={() => toggleSectorVisibility(item.code)}
-                        className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-slate-50"
+                        className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-muted"
                       >
                         <div className={`
                           w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
@@ -714,7 +714,7 @@ export function AidEcosystemSolarSystem({
                         <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                           {item.code}
                         </span>
-                        <span className="text-sm text-slate-700 leading-tight">
+                        <span className="text-sm text-foreground leading-tight">
                           {item.name}
                         </span>
                       </button>
@@ -724,11 +724,11 @@ export function AidEcosystemSolarSystem({
               </div>
 
               {/* Footer summary */}
-              <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t text-center">
+              <p className="text-[10px] text-muted-foreground mt-2 pt-2 border-t text-center">
                 {pendingSectors.size} of {aggregatedSectorData.length} {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
                 {pendingSectors.size === 0 && ' (showing all organizations)'}
               </p>
-              <p className="text-[10px] text-slate-500 mt-1 text-center italic">
+              <p className="text-[10px] text-muted-foreground mt-1 text-center italic">
                 Close dropdown to apply filter
               </p>
             </DropdownMenuContent>
@@ -747,8 +747,8 @@ export function AidEcosystemSolarSystem({
         {data.length === 0 && visibleSectors.size > 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <AlertCircle className="h-12 w-12 text-slate-300 mb-4" />
-            <p className="text-slate-600 font-medium">No organizations found</p>
-            <p className="text-sm text-slate-400 mt-1 max-w-md">
+            <p className="text-muted-foreground font-medium">No organizations found</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-md">
               No organizations have transactions in the selected {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'}.
               Try selecting different sectors or clearing the filter.
             </p>
@@ -867,30 +867,30 @@ export function AidEcosystemSolarSystem({
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: ORG_TYPE_COLORS[hoveredOrg.organisationType || '90'] }}
               />
-              <span className="font-semibold text-slate-900 text-sm truncate">
+              <span className="font-semibold text-foreground text-sm truncate">
                 {hoveredOrg.name}
               </span>
             </div>
             {hoveredOrg.organisationType && (
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="text-xs text-muted-foreground mb-2">
                 {getOrgTypeLabel(hoveredOrg.organisationType)}
               </p>
             )}
             <div className="space-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-600">Rank:</span>
-                <span className="font-medium text-slate-900">#{hoveredOrg.rank}</span>
+                <span className="text-muted-foreground">Rank:</span>
+                <span className="font-medium text-foreground">#{hoveredOrg.rank}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Total Value:</span>
-                <span className="font-medium text-slate-900">{formatCurrency(hoveredOrg.totalValue)}</span>
+                <span className="text-muted-foreground">Total Value:</span>
+                <span className="font-medium text-foreground">{formatCurrency(hoveredOrg.totalValue)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Ring:</span>
-                <span className="font-medium text-slate-900 capitalize">{hoveredOrg.ringTier}</span>
+                <span className="text-muted-foreground">Ring:</span>
+                <span className="font-medium text-foreground capitalize">{hoveredOrg.ringTier}</span>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-border">
+            <p className="text-[10px] text-muted-foreground mt-2 pt-2 border-t border-border">
               Click to view organization profile
             </p>
           </div>

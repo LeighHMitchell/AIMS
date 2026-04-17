@@ -107,17 +107,17 @@ export function FixOrphanedTransactionsStep({
           <div className="text-center p-3 bg-green-50 rounded-lg">
             <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
             <p className="text-sm font-medium">{resolvedCount}</p>
-            <p className="text-xs text-gray-600">Resolved</p>
+            <p className="text-xs text-muted-foreground">Resolved</p>
           </div>
           <div className="text-center p-3 bg-yellow-50 rounded-lg">
             <Link2 className="h-5 w-5 mx-auto mb-1 text-yellow-600" />
             <p className="text-sm font-medium">{orphanTransactions.length - resolvedCount - skippedCount}</p>
-            <p className="text-xs text-gray-600">Remaining</p>
+            <p className="text-xs text-muted-foreground">Remaining</p>
           </div>
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <SkipForward className="h-5 w-5 mx-auto mb-1 text-gray-600" />
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <SkipForward className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
             <p className="text-sm font-medium">{skippedCount}</p>
-            <p className="text-xs text-gray-600">Skipped</p>
+            <p className="text-xs text-muted-foreground">Skipped</p>
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export function FixOrphanedTransactionsStep({
                   className={`flex items-center justify-between p-2 rounded-lg border ${
                     isCurrent ? 'border-primary bg-primary/5' : 
                     isResolved ? 'border-green-200 bg-green-50' : 
-                    isSkipped ? 'border-border bg-gray-50' : 
+                    isSkipped ? 'border-border bg-muted' : 
                     'border-border'
                   }`}
                 >
@@ -152,7 +152,7 @@ export function FixOrphanedTransactionsStep({
                   </div>
                   <div>
                     {isResolved && <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
-                    {isSkipped && <SkipForward className="h-4 w-4 text-gray-500" />}
+                    {isSkipped && <SkipForward className="h-4 w-4 text-muted-foreground" />}
                     {isCurrent && !isResolved && !isSkipped && (
                       <ArrowRight className="h-4 w-4 text-primary animate-pulse" />
                     )}

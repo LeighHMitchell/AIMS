@@ -167,7 +167,7 @@ function SortableDocumentCard({
             <div
               {...attributes}
               {...listeners}
-              className="cursor-grab active:cursor-grabbing mt-1 text-gray-400 hover:text-gray-600"
+              className="cursor-grab active:cursor-grabbing mt-1 text-muted-foreground hover:text-muted-foreground"
             >
               <GripVertical className="h-5 w-5" />
             </div>
@@ -207,14 +207,14 @@ function SortableDocumentCard({
                 size="sm"
                 onClick={() => onEdit(document)}
               >
-                <Pencil className="h-4 w-4 text-slate-500" />
+                <Pencil className="h-4 w-4 text-muted-foreground" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete(index)}
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
           )}
@@ -623,8 +623,8 @@ export function IATIDocumentManager({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <span className="ml-2 text-gray-500">Loading documents...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading documents...</span>
       </div>
     );
   }
@@ -632,7 +632,7 @@ export function IATIDocumentManager({
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-500">
+      <div className="flex items-center justify-center py-12 text-destructive">
         <AlertCircle className="h-6 w-6 mr-2" />
         <span>{error}</span>
         <Button variant="link" onClick={fetchDocuments} className="ml-2">
@@ -690,7 +690,7 @@ export function IATIDocumentManager({
         ) : (
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <Upload className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 mb-4">No documents added yet</p>
+            <p className="text-muted-foreground mb-4">No documents added yet</p>
             {!readOnly && (
               <Button variant="outline" onClick={handleAddDocument}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -792,7 +792,7 @@ export function IATIDocumentManager({
                           size="sm"
                           onClick={() => removeTitle(index)}
                         >
-                          <Trash2 className="h-3 w-3 text-red-500" />
+                          <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
                       )}
                     </div>
@@ -836,7 +836,7 @@ export function IATIDocumentManager({
                           size="sm"
                           onClick={() => removeDescription(index)}
                         >
-                          <Trash2 className="h-3 w-3 text-red-500" />
+                          <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
                       </div>
                       <Textarea
@@ -958,7 +958,7 @@ export function IATIDocumentManager({
                         size="sm"
                         onClick={() => removeRecipientCountry(index)}
                       >
-                        <Trash2 className="h-3 w-3 text-red-500" />
+                        <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
                     </div>
                   ))}

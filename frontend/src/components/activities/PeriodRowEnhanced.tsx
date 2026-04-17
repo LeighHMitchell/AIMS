@@ -159,14 +159,14 @@ export function PeriodRowEnhanced({
   // Edit mode
   if (isEditing && !readOnly) {
     return (
-      <div className="grid grid-cols-6 gap-2 items-center px-3 py-2 bg-gray-100 rounded-lg border border-input">
+      <div className="grid grid-cols-6 gap-2 items-center px-3 py-2 bg-muted rounded-lg border border-input">
         {/* Facet */}
         <div className="text-xs font-medium">
           {period.facet}
         </div>
 
         {/* Start Value (Baseline) - Read only */}
-        <div className="text-xs text-gray-600">
+        <div className="text-xs text-muted-foreground">
           {indicator.baseline ? formatValue(indicator.baseline.value, indicator.measure) : '—'}
         </div>
 
@@ -257,11 +257,11 @@ export function PeriodRowEnhanced({
   return (
     <>
     <div className={cn(
-      "grid grid-cols-6 gap-2 items-center px-3 py-3 rounded-lg hover:bg-gray-50 transition-all group",
-      status.color === 'gray-900' && "bg-gray-100 border border-input hover:bg-gray-200",
-      status.color === 'gray-600' && "bg-gray-50 border border-border hover:bg-gray-100", 
-      status.color === 'gray-500' && "bg-gray-50 border border-border hover:bg-gray-100",
-      status.color === 'gray' && "bg-gray-50 border border-border"
+      "grid grid-cols-6 gap-2 items-center px-3 py-3 rounded-lg hover:bg-muted transition-all group",
+      status.color === 'gray-900' && "bg-muted border border-input hover:bg-muted",
+      status.color === 'gray-600' && "bg-muted border border-border hover:bg-muted", 
+      status.color === 'gray-500' && "bg-muted border border-border hover:bg-muted",
+      status.color === 'gray' && "bg-muted border border-border"
     )}>
       {/* Facet */}
       <div className="text-xs font-medium">
@@ -270,21 +270,21 @@ export function PeriodRowEnhanced({
 
       {/* Start Value (Baseline) */}
       <div className="text-xs">
-        <div className="font-medium text-gray-700">
+        <div className="font-medium text-foreground">
           {indicator.baseline ? formatValue(indicator.baseline.value, indicator.measure) : '—'}
         </div>
         {indicator.baseline && (
-          <div className="text-gray-500">Baseline</div>
+          <div className="text-muted-foreground">Baseline</div>
         )}
       </div>
 
       {/* Target */}
       <div className="text-xs">
-        <div className="font-medium text-gray-900">
+        <div className="font-medium text-foreground">
           {formatValue(period.target_value, indicator.measure)}
         </div>
         {period.target_comment && (
-          <div className="text-gray-500 truncate" title={period.target_comment}>
+          <div className="text-muted-foreground truncate" title={period.target_comment}>
             {period.target_comment}
           </div>
         )}
@@ -292,20 +292,20 @@ export function PeriodRowEnhanced({
 
       {/* Current */}
       <div className="text-xs">
-        <div className="font-medium text-gray-900 flex items-center gap-1">
+        <div className="font-medium text-foreground flex items-center gap-1">
           {formatValue(period.actual_value, indicator.measure)}
           {progress && (
             <>
               {progress.isPositive ? (
-                <TrendingUp className="h-3 w-3 text-gray-700" />
+                <TrendingUp className="h-3 w-3 text-foreground" />
               ) : (
-                <TrendingDown className="h-3 w-3 text-gray-500" />
+                <TrendingDown className="h-3 w-3 text-muted-foreground" />
               )}
             </>
           )}
         </div>
         {period.actual_comment && (
-          <div className="text-gray-500 truncate" title={period.actual_comment}>
+          <div className="text-muted-foreground truncate" title={period.actual_comment}>
             {period.actual_comment}
           </div>
         )}
@@ -313,7 +313,7 @@ export function PeriodRowEnhanced({
           <HelpTextTooltip>
             <div className={cn(
               "text-xs",
-              progress.isPositive ? "text-gray-700" : "text-gray-600"
+              progress.isPositive ? "text-foreground" : "text-muted-foreground"
             )}>
               {progress.isPositive ? '+' : ''}{progress.percentChange.toFixed(1)}% from baseline
             </div>
@@ -327,18 +327,18 @@ export function PeriodRowEnhanced({
             {React.createElement(status.icon, { 
               className: cn(
                 "h-4 w-4",
-                status.color === 'gray-900' && "text-gray-900",
-                status.color === 'gray-600' && "text-gray-600",
-                status.color === 'gray-500' && "text-gray-500",
-                status.color === 'gray' && "text-gray-400"
+                status.color === 'gray-900' && "text-foreground",
+                status.color === 'gray-600' && "text-muted-foreground",
+                status.color === 'gray-500' && "text-muted-foreground",
+                status.color === 'gray' && "text-muted-foreground"
               )
             })}
             <span className={cn(
               "text-xs font-medium",
-              status.color === 'gray-900' && "text-gray-900",
-              status.color === 'gray-600' && "text-gray-700",
-              status.color === 'gray-500' && "text-gray-600",
-              status.color === 'gray' && "text-gray-500"
+              status.color === 'gray-900' && "text-foreground",
+              status.color === 'gray-600' && "text-foreground",
+              status.color === 'gray-500' && "text-muted-foreground",
+              status.color === 'gray' && "text-muted-foreground"
             )}>
               {achievementRate > 0 ? `${achievementRate}%` : '—'}
             </span>
@@ -355,10 +355,10 @@ export function PeriodRowEnhanced({
         />
         <span className={cn(
           "text-xs",
-          status.color === 'gray-900' && "text-gray-700",
-          status.color === 'gray-600' && "text-gray-600",
-          status.color === 'gray-500' && "text-gray-500",
-          status.color === 'gray' && "text-gray-400"
+          status.color === 'gray-900' && "text-foreground",
+          status.color === 'gray-600' && "text-muted-foreground",
+          status.color === 'gray-500' && "text-muted-foreground",
+          status.color === 'gray' && "text-muted-foreground"
         )}>
           {status.label}
         </span>
@@ -367,10 +367,10 @@ export function PeriodRowEnhanced({
       {/* Period */}
       <div className="flex items-center justify-between">
         <div className="text-xs">
-          <div className="font-medium text-gray-700">
+          <div className="font-medium text-foreground">
             {formatDateRange()}
           </div>
-          <div className="text-gray-500">
+          <div className="text-muted-foreground">
             {Math.ceil((new Date(period.period_end).getTime() - new Date(period.period_start).getTime()) / (1000 * 60 * 60 * 24 * 30))} months
           </div>
         </div>
@@ -383,15 +383,15 @@ export function PeriodRowEnhanced({
               onClick={() => setIsEditing(true)}
               className="h-6 w-6 p-0"
             >
-              <Pencil className="h-3 w-3 text-slate-500" />
+              <Pencil className="h-3 w-3 text-muted-foreground" />
             </Button>
             <Button 
               variant="ghost" 
               size="sm"
               onClick={handleDeletePeriod}
-              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
             >
-              <Trash2 className="h-3 w-3 text-red-500" />
+              <Trash2 className="h-3 w-3 text-destructive" />
             </Button>
           </div>
         )}

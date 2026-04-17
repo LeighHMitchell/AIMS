@@ -281,7 +281,7 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
                             </Button>
                           )}
                           {b.status !== 'winner' && b.status !== 'rejected' && (
-                            <Button variant="ghost" size="sm" onClick={() => updateBidderStatus(b.id, 'rejected')} className="text-red-500">
+                            <Button variant="ghost" size="sm" onClick={() => updateBidderStatus(b.id, 'rejected')} className="text-destructive">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           )}

@@ -1043,7 +1043,7 @@ export function SectorMappingsManagement() {
             onClick={cancelEditing}
             disabled={saving}
           >
-            <X className="h-4 w-4 text-muted-foreground hover:text-red-600" />
+            <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
           </Button>
         </div>
       );
@@ -1182,7 +1182,7 @@ export function SectorMappingsManagement() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-md">
+            <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>

@@ -127,7 +127,7 @@ export function OrganizationAnalytics({
 
   if (!data) {
     return (
-      <div className="p-6 text-center text-slate-500">
+      <div className="p-6 text-center text-muted-foreground">
         <p>No analytics data available</p>
       </div>
     );
@@ -137,7 +137,7 @@ export function OrganizationAnalytics({
     <div className="space-y-6 p-6">
       {/* Interactive Map Tab */}
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           Geographic Footprint
         </h2>
         <Tabs defaultValue="map" className="w-full">
@@ -155,7 +155,7 @@ export function OrganizationAnalytics({
             <OrgProjectMap organizationId={organizationId} />
           </TabsContent>
           <TabsContent value="data" className="mt-4">
-            <div className="text-sm text-slate-600 p-4 border border-border rounded-lg bg-slate-50">
+            <div className="text-sm text-muted-foreground p-4 border border-border rounded-lg bg-muted">
               Location data summary: {data.allProjects.length} projects across multiple locations.
               Switch to Map View to see geographic distribution.
             </div>
@@ -165,7 +165,7 @@ export function OrganizationAnalytics({
 
       {/* Top Projects Chart */}
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           Top Projects by Budget
         </h2>
         <TopProjectsChart projects={data.topProjects} currency={currency} />
@@ -174,13 +174,13 @@ export function OrganizationAnalytics({
       {/* Aid Over Time and Project Status - Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-4">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Financial Trends
           </h2>
           <AidOverTimeChart data={data.timeSeriesData} currency={currency} />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-4">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Project Portfolio Status
           </h2>
           <ProjectStatusChart data={data.projectStatusDistribution} />
@@ -189,7 +189,7 @@ export function OrganizationAnalytics({
 
       {/* Sector Analysis */}
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           Sector Analysis
         </h2>
         <TopSectorsChart data={data.sectorData} currency={currency} />
@@ -197,7 +197,7 @@ export function OrganizationAnalytics({
 
       {/* Projects Table */}
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           All Projects
         </h2>
         <ProjectsTable projects={data.allProjects} currency={currency} />

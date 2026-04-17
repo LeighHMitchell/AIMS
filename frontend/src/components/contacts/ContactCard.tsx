@@ -68,10 +68,10 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
           variant="ghost"
           size="sm"
           onClick={() => contact.id && onDelete(contact.id)}
-          className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-md"
+          className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive hover:text-destructive rounded-md"
           title="Delete contact"
         >
-          <Trash2 className="h-4 w-4 text-red-500" />
+          <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
 

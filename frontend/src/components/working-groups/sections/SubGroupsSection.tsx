@@ -170,7 +170,7 @@ export default function SubGroupsSection({
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-gray-900">Sub-Working Groups</h2>
+          <h2 className="text-xl font-semibold text-foreground">Sub-Working Groups</h2>
           <HelpTextTooltip text="Create specialized sub-groups under this working group. Each sub-group has its own members, meetings, and documents." />
         </div>
         <Button className="gap-2" onClick={() => setShowCreateDialog(true)}>
@@ -183,7 +183,7 @@ export default function SubGroupsSection({
       {loading ? (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       ) : subGroups.length === 0 ? (
@@ -246,7 +246,7 @@ export default function SubGroupsSection({
                       <Eye className="h-4 w-4 mr-2" /> View Profile
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTarget(sg)}>
+                    <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(sg)}>
                       <Trash2 className="h-4 w-4 mr-2" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

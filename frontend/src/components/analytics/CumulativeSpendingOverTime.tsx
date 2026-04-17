@@ -199,7 +199,7 @@ export function CumulativeSpendingOverTime({
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{label}</p>
+          <p className="font-semibold text-foreground mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
@@ -236,7 +236,7 @@ export function CumulativeSpendingOverTime({
             className={`h-7 px-3 text-xs ${
               timePeriod === period.value
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-white text-slate-600 border-input hover:bg-slate-50'
+                : 'bg-white text-muted-foreground border-input hover:bg-muted'
             }`}
           >
             {period.label}
@@ -250,7 +250,7 @@ export function CumulativeSpendingOverTime({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Cumulative Spending Over Time
           </CardTitle>
           <CardDescription>
@@ -268,7 +268,7 @@ export function CumulativeSpendingOverTime({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Cumulative Spending Over Time
           </CardTitle>
           <CardDescription>
@@ -276,7 +276,7 @@ export function CumulativeSpendingOverTime({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -292,7 +292,7 @@ export function CumulativeSpendingOverTime({
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Cumulative Spending Over Time
             </CardTitle>
             <CardDescription>
@@ -327,7 +327,7 @@ export function CumulativeSpendingOverTime({
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No cumulative spending data available</p>

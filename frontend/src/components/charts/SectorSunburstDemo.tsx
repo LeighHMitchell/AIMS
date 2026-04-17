@@ -32,10 +32,10 @@ export default function SectorSunburstDemo() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Sector Sunburst Visualization Demo
         </h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-2xl mx-auto">
           This demonstration shows the sector allocation sunburst chart with sample data.
           The chart automatically builds a 3-level hierarchy from 5-digit DAC sector codes.
         </p>
@@ -43,7 +43,7 @@ export default function SectorSunburstDemo() {
 
       {/* Simple Example */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           Simple Example - Education Sectors Only
         </h2>
         <SectorSunburstVisualization 
@@ -54,7 +54,7 @@ export default function SectorSunburstDemo() {
 
       {/* Diverse Example */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           Complex Example - Multiple DAC Categories
         </h2>
         <SectorSunburstVisualization 
@@ -64,9 +64,9 @@ export default function SectorSunburstDemo() {
       </div>
 
       {/* Usage Instructions */}
-      <div className="bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">How to Use</h3>
-        <div className="space-y-4 text-sm text-gray-700">
+      <div className="bg-muted p-6 rounded-lg">
+        <h3 className="text-lg font-semibold text-foreground mb-4">How to Use</h3>
+        <div className="space-y-4 text-sm text-foreground">
           <div>
             <strong>Data Structure:</strong> Simply pass an array of sector allocations with the format:
             <pre className="mt-2 p-3 bg-white rounded border text-xs overflow-x-auto">

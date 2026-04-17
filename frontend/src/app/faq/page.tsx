@@ -449,7 +449,7 @@ export default function FAQPage() {
             ) : error ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <div className="text-red-600 mb-4">
+                  <div className="text-destructive mb-4">
                     <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium mb-2">Error Loading FAQs</h3>
                     <p className="text-muted-foreground">{error}</p>
@@ -521,9 +521,9 @@ export default function FAQPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(faq.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         )}
@@ -689,7 +689,7 @@ export default function FAQPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                           >
                             {pageNum}
                           </Button>

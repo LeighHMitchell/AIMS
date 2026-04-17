@@ -284,7 +284,7 @@ export function DocumentUploadZone({
                 variant="ghost"
                 size="sm"
                 onClick={() => handleRemovePending(idx)}
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -363,7 +363,7 @@ export function DocumentUploadZone({
                   size="sm"
                   onClick={() => handleDelete(doc.id)}
                   disabled={deleting === doc.id}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                 >
                   {deleting === doc.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

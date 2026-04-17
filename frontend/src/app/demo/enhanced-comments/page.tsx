@@ -343,7 +343,7 @@ export default function EnhancedCommentsDemo() {
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-red-500" />
+              <Heart className="h-5 w-5 text-destructive" />
               Advanced Features Summary
             </CardTitle>
           </CardHeader>

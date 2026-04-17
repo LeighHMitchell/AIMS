@@ -189,8 +189,8 @@ export function HumanitarianTab({
     return (
       <div className="p-6 space-y-4">
         <div className="animate-pulse space-y-4">
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-40 bg-gray-200 rounded"></div>
+          <div className="h-20 bg-muted rounded"></div>
+          <div className="h-40 bg-muted rounded"></div>
         </div>
       </div>
     );
@@ -330,7 +330,7 @@ export function HumanitarianTab({
                                 rel="noopener noreferrer"
                                 className="inline-block"
                               >
-                                <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-gray-200 cursor-pointer transition-colors whitespace-nowrap">
+                                <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-muted cursor-pointer transition-colors whitespace-nowrap">
                                   {scope.code}
                                 </code>
                               </a>
@@ -358,14 +358,14 @@ export function HumanitarianTab({
                           {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (
                             <span>{emergencyMap[scope.code].location}</span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                         <TableCell className="align-top text-sm whitespace-nowrap">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] && formatEmergencyDateRange(emergencyMap[scope.code]) ? (
                             <span>{formatEmergencyDateRange(emergencyMap[scope.code])}</span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                         {!readOnly && (
@@ -375,19 +375,19 @@ export function HumanitarianTab({
                                 type="button"
                                 onClick={() => handleEditScope(scope)}
                                 disabled={isSaving}
-                                className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                                className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                                 title="Edit"
                               >
-                                <Pencil className="h-4 w-4 text-slate-500" />
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteScope(scope.id)}
                                 disabled={isSaving}
-                                className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                                className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </button>
                             </div>
                           </TableCell>

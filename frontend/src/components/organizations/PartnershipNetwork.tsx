@@ -102,15 +102,15 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
   }, [organizationId, activities, allOrganizations]);
 
   const getRelationshipColor = () => {
-    return 'bg-slate-100 text-slate-700 border-border';
+    return 'bg-muted text-foreground border-border';
   };
 
   const getOrgTypeColor = () => {
-    return 'bg-slate-50 border-border';
+    return 'bg-muted border-border';
   };
 
   const getStatusColor = () => {
-    return 'text-slate-600';
+    return 'text-muted-foreground';
   };
 
   return (
@@ -128,31 +128,31 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
         <div className="space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
-              <Users className="h-6 w-6 mx-auto mb-2 text-slate-500" />
-              <p className="text-2xl font-bold text-slate-900">{partnershipData.totalPartners}</p>
-              <p className="text-sm text-slate-600">Partner Organizations</p>
+            <div className="text-center p-4 bg-muted rounded-lg border border-border">
+              <Users className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-2xl font-bold text-foreground">{partnershipData.totalPartners}</p>
+              <p className="text-sm text-muted-foreground">Partner Organizations</p>
             </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
-              <Activity className="h-6 w-6 mx-auto mb-2 text-slate-500" />
-              <p className="text-2xl font-bold text-slate-900">{partnershipData.totalCollaborations}</p>
-              <p className="text-sm text-slate-600">Total Collaborations</p>
+            <div className="text-center p-4 bg-muted rounded-lg border border-border">
+              <Activity className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-2xl font-bold text-foreground">{partnershipData.totalCollaborations}</p>
+              <p className="text-sm text-muted-foreground">Total Collaborations</p>
             </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
-              <Building2 className="h-6 w-6 mx-auto mb-2 text-slate-500" />
-              <p className="text-2xl font-bold text-slate-900">
+            <div className="text-center p-4 bg-muted rounded-lg border border-border">
+              <Building2 className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-2xl font-bold text-foreground">
                 {partnershipData.partnerships.length > 0
                   ? Math.round(partnershipData.totalCollaborations / partnershipData.partnerships.length * 10) / 10
                   : 0}
               </p>
-              <p className="text-sm text-slate-600">Avg. Collaborations</p>
+              <p className="text-sm text-muted-foreground">Avg. Collaborations</p>
             </div>
           </div>
 
           {/* Partnership List */}
           {partnershipData.partnerships.length > 0 ? (
             <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900">Key Partners</h4>
+              <h4 className="font-semibold text-foreground">Key Partners</h4>
               <ScrollArea className="h-96">
                 <div className="space-y-4">
                   {partnershipData.partnerships.map((partnership) => (
@@ -163,12 +163,12 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                       {/* Partner Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <Building2 className="h-5 w-5 text-gray-500" />
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
                           <div>
-                            <h5 className="font-medium text-gray-900">
+                            <h5 className="font-medium text-foreground">
                               {partnership.organization.name}
                               {partnership.organization.acronym && (
-                                <span className="text-gray-600 ml-1">
+                                <span className="text-muted-foreground ml-1">
                                   ({partnership.organization.acronym})
                                 </span>
                               )}
@@ -178,7 +178,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                                 {partnership.organization.organisation_type}
                               </Badge>
                               {partnership.organization.country && (
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-muted-foreground">
                                   {partnership.organization.country}
                                 </span>
                               )}
@@ -186,10 +186,10 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-semibold text-gray-900">
+                          <p className="text-lg font-semibold text-foreground">
                             {partnership.collaborationCount}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {partnership.collaborationCount === 1 ? 'Collaboration' : 'Collaborations'}
                           </p>
                         </div>
@@ -197,7 +197,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
 
                       {/* Relationship Types */}
                       <div className="mb-3">
-                        <p className="text-xs text-gray-600 mb-1">Partnership Types:</p>
+                        <p className="text-xs text-muted-foreground mb-1">Partnership Types:</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(partnership.relationshipTypes).map(type => (
                             <Badge 
@@ -213,7 +213,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
 
                       {/* Shared Activities */}
                       <div>
-                        <p className="text-xs text-gray-600 mb-2">Recent Collaborations:</p>
+                        <p className="text-xs text-muted-foreground mb-2">Recent Collaborations:</p>
                         <div className="space-y-1">
                           {partnership.sharedActivities.slice(0, 3).map(activity => (
                             <div key={activity.id} className="flex items-center gap-2 text-xs">
@@ -227,7 +227,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                             </div>
                           ))}
                           {partnership.sharedActivities.length > 3 && (
-                            <p className="text-xs text-gray-500 italic">
+                            <p className="text-xs text-muted-foreground italic">
                               +{partnership.sharedActivities.length - 3} more activities
                             </p>
                           )}
@@ -239,7 +239,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
               </ScrollArea>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <Network className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No partnerships found</p>
               <p className="text-sm">Partner organizations will appear here when activities include multiple organizations</p>

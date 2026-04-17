@@ -108,7 +108,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
         </DialogHeader>
 
         {/* Export Options */}
-        <div className="flex flex-wrap gap-2 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex flex-wrap gap-2 mb-6 p-4 bg-muted rounded-lg">
           <Button
             onClick={handleExportJPG}
             disabled={isExporting}
@@ -143,7 +143,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
 
         {/* Preview */}
         <div className="space-y-4">
-          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
             <div className="font-medium text-blue-900 mb-1">🎨 Optimized Image Export</div>
             <ul className="text-blue-800 text-xs space-y-1">
               <li>• Optimized dimensions (800x600px) for better sharing</li>
@@ -155,7 +155,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
           </div>
 
           {/* Export Preview */}
-          <div className="bg-gray-100 p-6 rounded-lg flex justify-center">
+          <div className="bg-muted p-6 rounded-lg flex justify-center">
             <ActivityCardForExport 
               ref={exportRef}
               activity={activity}
@@ -164,7 +164,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
           </div>
         </div>
 
-        <div className="text-xs text-gray-500 text-center pt-4 border-t">
+        <div className="text-xs text-muted-foreground text-center pt-4 border-t">
           <p>💡 This optimized layout is specifically designed for image exports and sharing while keeping your card UI unchanged.</p>
         </div>
       </DialogContent>

@@ -98,7 +98,7 @@ export function CreateActivityModal({ isOpen, onClose }: CreateActivityModalProp
               className="w-full"
               autoFocus
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               This will be the main identifier for your activity.
             </p>
           </div>

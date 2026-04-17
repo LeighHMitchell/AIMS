@@ -299,7 +299,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-500">{error}</p>
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }
@@ -417,7 +417,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'activity' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -431,7 +431,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'period_start' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -445,7 +445,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'status' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -459,7 +459,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'provider' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -473,7 +473,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'amount' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -487,7 +487,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'value_date' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -501,7 +501,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     {sortColumn === 'usd_amount' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -695,7 +695,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {Math.min(startIndex + 1, sortedDisbursements.length)} to {Math.min(endIndex, sortedDisbursements.length)} of {sortedDisbursements.length} planned disbursements
               </div>
 
@@ -738,7 +738,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -767,7 +767,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-sm text-muted-foreground">Items per page:</label>
                 <Select
                   value={itemsPerPage.toString()}
                   onValueChange={(value) => {

@@ -109,11 +109,11 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
 
   const statusColors: Record<string, string> = {
     'Pipeline/identification': 'bg-muted text-foreground',
-    'Implementation': 'bg-gray-200 text-gray-700',
-    'Completion': 'bg-gray-300 text-gray-800',
-    'Post-completion': 'bg-gray-100 text-gray-600',
-    'Cancelled': 'bg-gray-100 text-gray-500',
-    'Suspended': 'bg-gray-100 text-gray-500',
+    'Implementation': 'bg-muted text-foreground',
+    'Completion': 'bg-gray-300 text-foreground',
+    'Post-completion': 'bg-muted text-muted-foreground',
+    'Cancelled': 'bg-muted text-muted-foreground',
+    'Suspended': 'bg-muted text-muted-foreground',
   }
 
   return (

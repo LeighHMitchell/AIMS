@@ -1801,7 +1801,7 @@ export default function PlannedDisbursementsTab({
                         <TableRow
                           className={cn(
                             "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                            disbursement.hasError ? 'bg-red-50' : '',
+                            disbursement.hasError ? 'bg-destructive/10' : '',
                             selectedDisbursementIds.has(disbursement.id!) && "bg-blue-50 border-blue-200"
                           )}
                         >
@@ -1962,7 +1962,7 @@ export default function PlannedDisbursementsTab({
                               ) : (
                                 <div className="flex items-center gap-1">
                                   {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.error ? (
-                                    <span className="text-sm text-red-500">
+                                    <span className="text-sm text-destructive">
                                       {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].error}
                                     </span>
                                   ) : (
@@ -1977,7 +1977,7 @@ export default function PlannedDisbursementsTab({
                                 <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" aria-label="Saved" />
                               )}
                               {saveStatus[disbursement.id || ''] === 'error' && (
-                                <span className="text-xs text-red-500">Failed</span>
+                                <span className="text-xs text-destructive">Failed</span>
                               )}
                             </div>
                           </TableCell>
@@ -2001,12 +2001,12 @@ export default function PlannedDisbursementsTab({
                                   <DropdownMenuItem
                                     onClick={() => setDeleteConfirmId(disbursement.id || '')}
                                     disabled={isReadOnly || deleteLoading === disbursement.id}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     {deleteLoading === disbursement.id ? (
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
-                                      <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                      <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                                     )}
                                     Delete
                                   </DropdownMenuItem>
@@ -2066,7 +2066,7 @@ export default function PlannedDisbursementsTab({
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                            className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                           >
                             {pageNum}
                           </Button>
@@ -2150,10 +2150,10 @@ export default function PlannedDisbursementsTab({
           <div className="space-y-6">
             {/* Validation Alert */}
             {validationAlert && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-destructive/10 px-4 py-3 text-sm text-red-800">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                 <span>{validationAlert}</span>
-                <button onClick={() => setValidationAlert(null)} className="ml-auto text-red-500 hover:text-red-700">
+                <button onClick={() => setValidationAlert(null)} className="ml-auto text-destructive hover:text-destructive">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -2233,7 +2233,7 @@ export default function PlannedDisbursementsTab({
                 </PopoverContent>
               </Popover>
               {fieldErrors.type && (
-                <p className="text-xs text-red-500">{fieldErrors.type}</p>
+                <p className="text-xs text-destructive">{fieldErrors.type}</p>
               )}
             </div>
 
@@ -2256,7 +2256,7 @@ export default function PlannedDisbursementsTab({
                   dropdownId="pd-modal-period-start"
                 />
                 {fieldErrors.period_start && (
-                  <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.period_start}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -2276,7 +2276,7 @@ export default function PlannedDisbursementsTab({
                   dropdownId="pd-modal-period-end"
                 />
                 {fieldErrors.period_end && (
-                  <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.period_end}</p>
                 )}
               </div>
             </div>
@@ -2329,7 +2329,7 @@ export default function PlannedDisbursementsTab({
                   disabled={savingId === modalDisbursement?.id}
                 />
                 {fieldErrors.amount && (
-                  <p className="text-xs text-red-500">{fieldErrors.amount}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.amount}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -2348,7 +2348,7 @@ export default function PlannedDisbursementsTab({
                   placeholder="Select currency"
                 />
                 {fieldErrors.currency && (
-                  <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.currency}</p>
                 )}
               </div>
             </div>
@@ -2372,7 +2372,7 @@ export default function PlannedDisbursementsTab({
                   dropdownId="pd-modal-value-date"
                 />
                 {fieldErrors.value_date && (
-                  <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.value_date}</p>
                 )}
               </div>
               {modalDisbursement?.currency && (
@@ -2446,7 +2446,7 @@ export default function PlannedDisbursementsTab({
                     )}
                   </div>
                   {modalRateError && (
-                    <p className="text-xs text-red-500">{modalRateError}</p>
+                    <p className="text-xs text-destructive">{modalRateError}</p>
                   )}
                 </div>
               )}

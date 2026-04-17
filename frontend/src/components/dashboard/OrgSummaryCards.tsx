@@ -48,8 +48,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-sm text-red-700">Failed to load dashboard statistics: {error}</p>
+      <div className="bg-destructive/10 border border-red-200 rounded-lg p-4">
+        <p className="text-sm text-destructive">Failed to load dashboard statistics: {error}</p>
       </div>
     );
   }
@@ -61,8 +61,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: Activity,
       description: 'Activities reported by your organization',
       onClick: () => handleCardClick(),
-      color: 'text-slate-500',
-      bgColor: 'hover:bg-slate-50',
+      color: 'text-muted-foreground',
+      bgColor: 'hover:bg-muted',
     },
     {
       title: 'Unpublished',
@@ -70,8 +70,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: Pencil,
       description: 'Draft activities awaiting publication',
       onClick: () => handleCardClick('publicationStatus=draft'),
-      color: 'text-slate-500',
-      bgColor: 'hover:bg-slate-50',
+      color: 'text-muted-foreground',
+      bgColor: 'hover:bg-muted',
     },
     {
       title: 'Pending Validation',
@@ -79,8 +79,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: Clock,
       description: 'Activities submitted for government review',
       onClick: () => handleCardClick('submissionStatuses=submitted'),
-      color: 'text-slate-500',
-      bgColor: 'hover:bg-slate-50',
+      color: 'text-muted-foreground',
+      bgColor: 'hover:bg-muted',
     },
     {
       title: 'Validated',
@@ -88,8 +88,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: CheckCircle,
       description: 'Activities approved by government',
       onClick: () => handleCardClick('submissionStatuses=validated'),
-      color: 'text-slate-500',
-      bgColor: 'hover:bg-slate-50',
+      color: 'text-muted-foreground',
+      bgColor: 'hover:bg-muted',
     },
   ];
 
@@ -102,13 +102,13 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
           onClick={card.onClick}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               {card.title}
             </CardTitle>
             <card.icon className={`h-4 w-4 ${card.color}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{card.value}</div>
+            <div className="text-2xl font-bold text-foreground">{card.value}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {card.description}
             </p>

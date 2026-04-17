@@ -492,7 +492,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load map: {error}</p>
+          <p className="text-sm text-destructive">Failed to load map: {error}</p>
         </CardContent>
       </Card>
     );
@@ -502,7 +502,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     <Card className="bg-white">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-slate-600" />
+          <MapPin className="h-5 w-5 text-muted-foreground" />
           Activity Locations
         </CardTitle>
         <div className="flex items-center gap-3">
@@ -596,11 +596,11 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
           {/* Map View Tab */}
           <TabsContent value="map" className="space-y-4">
             {validLocations.length === 0 ? (
-              <div className="h-[700px] flex items-center justify-center bg-slate-50 rounded-lg">
+              <div className="h-[700px] flex items-center justify-center bg-muted rounded-lg">
                 <div className="text-center">
                   <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">No locations recorded</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-sm text-muted-foreground">No locations recorded</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Add locations to your activities to see them here
                   </p>
                 </div>
@@ -668,10 +668,10 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
 
               {subnationalLoading ? (
                 <div className="space-y-4">
-                  <div className="h-[700px] w-full bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="h-[700px] w-full bg-muted rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                      <div className="text-sm text-gray-600">Loading sub-national breakdown data...</div>
+                      <div className="text-sm text-muted-foreground">Loading sub-national breakdown data...</div>
                     </div>
                   </div>
                 </div>

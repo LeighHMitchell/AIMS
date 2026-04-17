@@ -109,17 +109,17 @@ export function TopDistrictsChart({
       const data = payload[0].payload;
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{label}</p>
+          <p className="font-semibold text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-700">Value</span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-sm text-foreground">Value</span>
+              <span className="text-sm font-medium text-foreground">
                 {formatCurrency(data.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-700">Percentage</span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-sm text-foreground">Percentage</span>
+              <span className="text-sm font-medium text-foreground">
                 {formatPercent(data.value, grandTotal)}
               </span>
             </div>
@@ -152,7 +152,7 @@ export function TopDistrictsChart({
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-gray-600 truncate max-w-[80px]" title={item.name}>
+          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -274,7 +274,7 @@ export function TopDistrictsChart({
         <Button
           variant="ghost"
           size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+          className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
           onClick={() => setViewMode("bar")}
           title="Bar Chart"
         >
@@ -283,7 +283,7 @@ export function TopDistrictsChart({
         <Button
           variant="ghost"
           size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+          className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
           onClick={() => setViewMode("pie")}
           title="Pie Chart"
         >
@@ -292,7 +292,7 @@ export function TopDistrictsChart({
         <Button
           variant="ghost"
           size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+          className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
           onClick={() => setViewMode("table")}
           title="Table"
         >

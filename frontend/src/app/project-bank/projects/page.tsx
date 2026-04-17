@@ -469,7 +469,7 @@ export default function ProjectListPage() {
                                 e.preventDefault()
                                 copyToClipboard(p.name, 'name', p.id)
                               }}
-                              className="flex-shrink-0 mt-0.5 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                              className="flex-shrink-0 mt-0.5 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-foreground"
                               title="Copy Project Title"
                             >
                               {copiedId === `${p.id}-name` ? (
@@ -488,7 +488,7 @@ export default function ProjectListPage() {
                                   e.preventDefault()
                                   copyToClipboard(p.project_code, 'code', p.id)
                                 }}
-                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
                                 title="Copy Project ID"
                               >
                                 {copiedId === `${p.id}-code` ? (

@@ -23,8 +23,8 @@ export default function ActivitiesSection({ activities }: ActivitiesSectionProps
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Linked Activities</h2>
-        <p className="text-sm text-gray-500 mt-1">Activities associated with this working group</p>
+        <h2 className="text-xl font-semibold text-foreground">Linked Activities</h2>
+        <p className="text-sm text-muted-foreground mt-1">Activities associated with this working group</p>
       </div>
 
       {activities.length === 0 ? (
@@ -40,13 +40,13 @@ export default function ActivitiesSection({ activities }: ActivitiesSectionProps
           {activities.map((activity) => (
             <div
               key={activity.id}
-              className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              className="p-4 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
               onClick={() => router.push(`/activities/${activity.id}`)}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h4 className="font-medium">{activity.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {activity.iati_id && <span>{activity.iati_id} &middot; </span>}
                     {activity.partner_name}
                   </p>

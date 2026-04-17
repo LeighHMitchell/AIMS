@@ -11,15 +11,15 @@ const STAGE_LABELS: Record<ScoringStage, string> = {
 }
 
 const STAGE_COLORS: Record<ScoringStage, string> = {
-  intake: 'bg-slate-100 text-slate-700',
+  intake: 'bg-muted text-foreground',
   fs1: 'bg-sky-100 text-sky-700',
   fs2: 'bg-indigo-100 text-indigo-700',
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 70) return 'text-slate-700'
+  if (score >= 70) return 'text-foreground'
   if (score >= 40) return 'text-steel-600'
-  return 'text-red-600'
+  return 'text-destructive'
 }
 
 interface ScoreHistoryTimelineProps {

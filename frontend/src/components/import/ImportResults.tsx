@@ -104,12 +104,12 @@ export function ImportResults({
               {successRate}%
             </Badge>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-all ${
                 successRate >= 80 ? 'bg-green-500' : 
                 successRate >= 50 ? 'bg-yellow-500' : 
-                'bg-red-500'
+                'bg-destructive/100'
               }`}
               style={{ width: `${successRate}%` }}
             />

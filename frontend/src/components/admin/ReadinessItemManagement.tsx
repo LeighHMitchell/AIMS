@@ -301,15 +301,15 @@ export function ReadinessItemManagement({
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="flex items-center gap-2 text-red-600 mb-4">
+            <div className="flex items-center gap-2 text-destructive mb-4">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
             </div>
           )}
 
           {items.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <ListChecks className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <div className="text-center py-8 text-muted-foreground">
+              <ListChecks className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p>No items in this template yet.</p>
               <Button variant="link" onClick={openCreateDialog}>
                 Create your first item
@@ -332,14 +332,14 @@ export function ReadinessItemManagement({
                   <TableRow key={item.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
                         {item.display_order}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{item.title}</div>
-                        <div className="text-xs text-gray-500 font-mono">{item.code}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{item.code}</div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -356,7 +356,7 @@ export function ReadinessItemManagement({
                           Conditional
                         </Badge>
                       ) : (
-                        <span className="text-xs text-gray-500">All projects</span>
+                        <span className="text-xs text-muted-foreground">All projects</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -372,15 +372,15 @@ export function ReadinessItemManagement({
                           size="sm"
                           onClick={() => openEditDialog(item)}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500" />
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(item)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>
@@ -502,7 +502,7 @@ export function ReadinessItemManagement({
             {/* Applicable Conditions */}
             <div className="border rounded-lg p-4 space-y-4">
               <h4 className="font-medium text-sm">Applicable Conditions</h4>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Set conditions for when this item should appear. Leave empty to show for all projects.
               </p>
 

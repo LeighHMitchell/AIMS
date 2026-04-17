@@ -112,7 +112,7 @@ export function SectorAllocationModeToggle({
             "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
             mode === 'activity'
               ? "ring-border bg-primary/5"
-              : "ring-border bg-background hover:bg-gray-50",
+              : "ring-border bg-background hover:bg-muted",
             (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -144,7 +144,7 @@ export function SectorAllocationModeToggle({
             "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
             mode === 'transaction'
               ? "ring-border bg-primary/5"
-              : "ring-border bg-background hover:bg-gray-50",
+              : "ring-border bg-background hover:bg-muted",
             (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
           )}
         >

@@ -141,10 +141,10 @@ export function OrganizationAvatarGroup({
               ))}
               {remainingCount > 0 && (
                 <Avatar
-                  className={`${sizeClass} ring-2 ring-white bg-gray-100`}
+                  className={`${sizeClass} ring-2 ring-white bg-muted`}
                   style={{ zIndex: 0 }}
                 >
-                  <AvatarFallback className="bg-gray-100 text-gray-600 font-medium">
+                  <AvatarFallback className="bg-muted text-muted-foreground font-medium">
                     +{remainingCount}
                   </AvatarFallback>
                 </Avatar>

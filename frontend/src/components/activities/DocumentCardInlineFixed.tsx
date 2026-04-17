@@ -202,7 +202,7 @@ export function DocumentCardInlineFixed({
           {/* Thumbnail/Icon */}
           <div className="flex-shrink-0">
             {formData.thumbnailUrl ? (
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
                 <img
                   src={formData.thumbnailUrl}
                   alt={primaryTitle?.text || 'Document thumbnail'}
@@ -214,12 +214,12 @@ export function DocumentCardInlineFixed({
                   }}
                 />
                 <div className="hidden w-full h-full flex items-center justify-center">
-                  <FileIcon className="w-8 h-8 text-gray-500" />
+                  <FileIcon className="w-8 h-8 text-muted-foreground" />
                 </div>
                 </div>
             ) : (
-              <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                <FileIcon className="w-8 h-8 text-gray-500" />
+              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                <FileIcon className="w-8 h-8 text-muted-foreground" />
               </div>
             )}
           </div>
@@ -228,11 +228,11 @@ export function DocumentCardInlineFixed({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">
+                    <h3 className="font-medium text-foreground truncate">
                       {primaryTitle?.text || 'Untitled Document'}
                     </h3>
                 {primaryDescription && primaryDescription.text && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                         {primaryDescription.text}
                       </p>
                 )}
@@ -313,7 +313,7 @@ export function DocumentCardInlineFixed({
                     onClick={() => onEdit?.()}
                     className="text-xs gap-1 h-7 px-2"
             >
-              <Pencil className="w-3 h-3 text-slate-500" />
+              <Pencil className="w-3 h-3 text-muted-foreground" />
               Edit
             </Button>
             
@@ -331,9 +331,9 @@ export function DocumentCardInlineFixed({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(formData.url)}
-                    className="text-xs gap-1 h-7 px-2 text-red-600 hover:text-red-700"
+                    className="text-xs gap-1 h-7 px-2 text-destructive hover:text-destructive"
             >
-              <Trash2 className="w-3 h-3 text-red-500" />
+              <Trash2 className="w-3 h-3 text-destructive" />
               Delete
             </Button>
                 </div>

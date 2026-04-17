@@ -171,10 +171,10 @@ export default function FinancialCompletenessPage() {
           {error && (
             <Card className="border-border bg-surface-muted mb-6">
               <CardContent className="flex items-center gap-3 py-6">
-                <AlertCircle className="h-8 w-8 text-slate-400" />
+                <AlertCircle className="h-8 w-8 text-muted-foreground" />
                 <div>
-                  <p className="font-medium text-slate-700">Unable to load financial completeness data.</p>
-                  <p className="text-sm text-slate-500">{error}</p>
+                  <p className="font-medium text-foreground">Unable to load financial completeness data.</p>
+                  <p className="text-sm text-muted-foreground">{error}</p>
                 </div>
                 <Button 
                   variant="outline" 

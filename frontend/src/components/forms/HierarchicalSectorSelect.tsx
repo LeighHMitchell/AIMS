@@ -215,7 +215,7 @@ export function HierarchicalSectorSelect({
               {selectedSubsectors.length === 0 ? (
                 <span className="text-muted-foreground">{placeholder}</span>
               ) : (
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-foreground">
                   {selectedSubsectors.length} sector{selectedSubsectors.length !== 1 ? 's' : ''} selected
                 </span>
               )}
@@ -223,7 +223,7 @@ export function HierarchicalSectorSelect({
             <div className="flex items-center gap-2 ml-2">
               {selectedSubsectors.length > 0 && (
                 <X
-                  className="h-4 w-4 cursor-pointer hover:text-red-500"
+                  className="h-4 w-4 cursor-pointer hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClearAll();
@@ -256,7 +256,7 @@ export function HierarchicalSectorSelect({
                   <div key={category.code} className="mb-2">
                     {/* Category Header - Non-selectable */}
                     <div 
-                      className="px-3 py-2 text-sm font-semibold text-gray-900 bg-muted border-t border-border first:border-t-0"
+                      className="px-3 py-2 text-sm font-semibold text-foreground bg-muted border-t border-border first:border-t-0"
                       role="heading"
                       aria-level={3}
                     >
@@ -268,7 +268,7 @@ export function HierarchicalSectorSelect({
                       <div key={sector.code}>
                         {/* 3-digit Sector Header - Non-selectable */}
                         <div
-                          className="px-3 py-1.5 text-sm font-semibold text-gray-700 bg-muted/50 cursor-default"
+                          className="px-3 py-1.5 text-sm font-semibold text-foreground bg-muted/50 cursor-default"
                           role="heading"
                           aria-level={4}
                         >
@@ -287,7 +287,7 @@ export function HierarchicalSectorSelect({
                                 "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-colors",
                                 isSelected && "bg-blue-100 text-blue-900",
                                 !isSelected && !isDisabled && "hover:bg-muted",
-                                isDisabled && "text-gray-400 cursor-not-allowed"
+                                isDisabled && "text-muted-foreground cursor-not-allowed"
                               )}
                               onClick={() => !isDisabled && handleSelect(subsector.code)}
                               role="option"

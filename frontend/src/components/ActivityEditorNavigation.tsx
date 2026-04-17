@@ -161,7 +161,7 @@ export default function ActivityEditorNavigation({
               <div
                 className={cn(
                   "absolute left-[12px] top-0 bottom-0 w-px",
-                  "bg-gray-200"
+                  "bg-muted"
                 )}
                 style={{ height: '100%' }}
               />
@@ -196,10 +196,10 @@ export default function ActivityEditorNavigation({
                         "focus:outline-none focus:ring-2 focus:ring-[#5f7f7a]/50 focus:ring-opacity-50 focus:ring-offset-1",
                         !isLocked && !disabled && "active:scale-[0.98] transform",
                         (isLocked || disabled)
-                          ? "text-gray-400 cursor-not-allowed opacity-60"
+                          ? "text-muted-foreground cursor-not-allowed opacity-60"
                           : isActive
                             ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
-                            : "text-gray-600 hover:bg-[#5f7f7a]/8 hover:text-black"
+                            : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-black"
                       )}
                       aria-current={isActive ? "page" : undefined}
                       aria-describedby={undefined}
@@ -207,7 +207,7 @@ export default function ActivityEditorNavigation({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
+                          {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                           <span>{section.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export default function ActivityEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-destructive/100 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

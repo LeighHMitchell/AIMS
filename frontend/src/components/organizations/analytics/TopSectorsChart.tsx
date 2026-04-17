@@ -90,12 +90,12 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
     return (
       <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Sector Analysis
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-96 flex items-center justify-center text-slate-500">
+          <div className="h-96 flex items-center justify-center text-muted-foreground">
             <p>No sector data available</p>
           </div>
         </CardContent>
@@ -106,7 +106,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Sector Analysis
         </CardTitle>
       </CardHeader>
@@ -169,7 +169,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                   className="w-full h-full"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-500">
+                <div className="h-full flex items-center justify-center text-muted-foreground">
                   <p>No sector allocation data available</p>
                 </div>
               )}
@@ -184,7 +184,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
                   className="w-full h-full"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-500">
+                <div className="h-full flex items-center justify-center text-muted-foreground">
                   <p>No sector flow data available</p>
                 </div>
               )}

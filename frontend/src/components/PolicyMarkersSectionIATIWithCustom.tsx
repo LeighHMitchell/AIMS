@@ -119,7 +119,7 @@ const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: Vis
     case 'organization':
       return <Building2 className={`${className} text-amber-600`} />;
     case 'hidden':
-      return <EyeOff className={`${className} text-red-600`} />;
+      return <EyeOff className={`${className} text-destructive`} />;
     default:
       return <Globe className={`${className} text-[hsl(var(--success-icon))]`} />;
   }
@@ -603,10 +603,10 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeMarker(markerUuid)}
-                                  className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                   aria-label={`Remove ${marker.name}`}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
                             )}
@@ -690,8 +690,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                                 <Button variant="ghost" size="icon" onClick={() => openEditModal(markerUuid)} className="hover:bg-blue-50 hover:text-blue-600">
                                   <Pencil className="h-4 w-4 text-muted-foreground" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-red-600 hover:bg-red-50 hover:text-red-700">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                <Button variant="ghost" size="icon" onClick={() => removeMarker(markerUuid)} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
                             </TableCell>

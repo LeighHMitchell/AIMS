@@ -161,7 +161,7 @@ function TreeNode({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(node)}>
-                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAddChild(node)}>
@@ -170,9 +170,9 @@ function TreeNode({
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(node)}
-                className="text-red-600"
+                className="text-destructive"
               >
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -536,7 +536,7 @@ export function BudgetClassificationsManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>

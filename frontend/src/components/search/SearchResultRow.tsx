@@ -292,10 +292,10 @@ export function SearchResultRow({
         {/* Code pill + Title */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {code && <CodePill code={code} />}
-          <span className="font-medium text-sm text-gray-900 truncate">
+          <span className="font-medium text-sm text-foreground truncate">
             {highlightText(result.title, searchQuery)}
             {result.type === 'activity' && result.metadata.acronym && (
-              <span className="text-gray-500"> ({result.metadata.acronym})</span>
+              <span className="text-muted-foreground"> ({result.metadata.acronym})</span>
             )}
           </span>
         </div>
@@ -336,24 +336,24 @@ export function SearchResultRow({
           <h3 className="text-base text-blue-800 group-hover:underline font-medium">
             {highlightText(result.title, searchQuery)}
             {result.type === 'activity' && result.metadata.acronym && (
-              <span className="text-gray-600 font-normal"> ({result.metadata.acronym})</span>
+              <span className="text-muted-foreground font-normal"> ({result.metadata.acronym})</span>
             )}
             {result.type === 'organisation' && result.metadata.acronym && (
-              <span className="text-gray-600 font-normal"> ({result.metadata.acronym})</span>
+              <span className="text-muted-foreground font-normal"> ({result.metadata.acronym})</span>
             )}
           </h3>
         </div>
 
         {/* Subtitle/description */}
         {subtitle && (
-          <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
             {highlightText(subtitle, searchQuery)}
           </p>
         )}
 
         {/* Type indicator + Updated date (subtle) */}
         {showTypeIndicator && (
-          <div className="text-xs text-gray-400 mt-1.5">
+          <div className="text-xs text-muted-foreground mt-1.5">
             {resultTypeLabels[result.type]}
             {updatedAt && (
               <span> • Updated {format(new Date(updatedAt), 'MMM d, yyyy')}</span>

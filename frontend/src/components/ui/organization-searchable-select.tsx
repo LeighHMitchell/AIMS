@@ -199,8 +199,8 @@ export function OrganizationSearchableSelect({
               renderOrganizationDisplay(selectedOrganization, true)
             ) : fallbackRef ? (
               <span className="flex flex-col min-w-0 text-left leading-relaxed">
-                <span className="truncate font-medium text-red-600">{fallbackRef}</span>
-                <span className="text-sm text-red-500 truncate mt-0.5">Organization not found in list</span>
+                <span className="truncate font-medium text-destructive">{fallbackRef}</span>
+                <span className="text-sm text-destructive truncate mt-0.5">Organization not found in list</span>
               </span>
             ) : (
               placeholder

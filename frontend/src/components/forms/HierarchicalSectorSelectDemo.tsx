@@ -112,7 +112,7 @@ export function HierarchicalSectorSelectDemo() {
           <CardTitle>Usage Example</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="text-xs bg-gray-100 p-3 rounded-md overflow-x-auto">
+          <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
 {`import { HierarchicalSectorSelect } from '@/components/forms/HierarchicalSectorSelect';
 
 function MyForm() {

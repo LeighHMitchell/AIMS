@@ -234,16 +234,16 @@ export default function AuthCallbackPage() {
     };
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-muted p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <div className="text-red-500 mb-4">
+          <div className="text-destructive mb-4">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">{getErrorTitle()}</h2>
-          <p className="text-gray-600 mb-2">{getErrorDescription()}</p>
-          <p className="text-sm text-gray-500 mb-6">{errorMessage}</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">{getErrorTitle()}</h2>
+          <p className="text-muted-foreground mb-2">{getErrorDescription()}</p>
+          <p className="text-sm text-muted-foreground mb-6">{errorMessage}</p>
           <button
             onClick={() => router.push('/login')}
             className="w-full bg-gray-900 text-white py-2 px-4 rounded-md hover:bg-black transition"
@@ -253,14 +253,14 @@ export default function AuthCallbackPage() {
           {authType === 'signup' && (
             <button
               onClick={() => router.push('/register')}
-              className="w-full mt-2 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition"
+              className="w-full mt-2 bg-muted text-foreground py-2 px-4 rounded-md hover:bg-muted transition"
             >
               Register Again
             </button>
           )}
           <button
             onClick={() => router.push('/')}
-            className="w-full mt-2 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition"
+            className="w-full mt-2 bg-muted text-foreground py-2 px-4 rounded-md hover:bg-muted transition"
           >
             Go Home
           </button>
@@ -270,11 +270,11 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-muted">
       <div className="text-center">
-        <Loader2 className="w-12 h-12 animate-spin text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600">Completing sign in...</p>
-        <p className="text-sm text-gray-400 mt-2">Please wait while we set up your account</p>
+        <Loader2 className="w-12 h-12 animate-spin text-muted-foreground mx-auto mb-4" />
+        <p className="text-muted-foreground">Completing sign in...</p>
+        <p className="text-sm text-muted-foreground mt-2">Please wait while we set up your account</p>
       </div>
     </div>
   );

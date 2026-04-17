@@ -119,7 +119,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                 </td>
                 <td className="p-1.5">
                   {!disabled && (
-                    <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-red-500">
+                    <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}

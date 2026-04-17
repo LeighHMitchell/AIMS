@@ -38,10 +38,10 @@ export function SidebarUserMenu() {
         size="lg"
       />
       <div className="flex flex-col items-start text-left flex-1 min-w-0">
-        <span className="text-sm font-medium text-gray-900 truncate w-full">
+        <span className="text-sm font-medium text-foreground truncate w-full">
           {userName}
         </span>
-        <span className="text-xs text-gray-500 truncate w-full" title={userEmail}>
+        <span className="text-xs text-muted-foreground truncate w-full" title={userEmail}>
           {userEmail}
         </span>
       </div>

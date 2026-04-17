@@ -667,9 +667,9 @@ export function FinancingTermsTab({
                               onClick={() => handleDeleteLoanStatus(status.id, status.year)}
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </td>

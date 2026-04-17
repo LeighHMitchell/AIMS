@@ -316,7 +316,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
 
     return (
       <div className="flex items-center justify-between mt-3 pt-3 border-t">
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-muted-foreground">
           Page {currentPage} of {totalPages}
         </span>
         <div className="flex items-center gap-1">
@@ -390,15 +390,15 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-end gap-4">
-        <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+        <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowArchived(false)}
             className={cn(
               !showArchived
-                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white shadow-sm text-foreground hover:bg-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             Active
@@ -409,8 +409,8 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
             onClick={() => setShowArchived(true)}
             className={cn(
               showArchived
-                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white shadow-sm text-foreground hover:bg-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Archive className="h-4 w-4 mr-1" />
@@ -418,7 +418,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Per page:</label>
+          <label className="text-sm text-muted-foreground">Per page:</label>
           <Select
             value={pageLimit.toString()}
             onValueChange={(value) => handlePageLimitChange(Number(value))}

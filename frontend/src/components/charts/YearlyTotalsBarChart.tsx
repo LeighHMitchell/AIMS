@@ -237,7 +237,7 @@ export function YearlyTotalsBarChart({
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
+            <p className="font-semibold text-foreground text-sm">{formatYearLabel(label)}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
@@ -251,7 +251,7 @@ export function YearlyTotalsBarChart({
                           className="w-3 h-3 rounded-sm flex-shrink-0"
                           style={{ backgroundColor: entry.color }}
                         />
-                        <span className="text-slate-700 font-medium flex items-center gap-2">
+                        <span className="text-foreground font-medium flex items-center gap-2">
                           {typeConfig && (
                             <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                               {entry.dataKey}
@@ -260,7 +260,7 @@ export function YearlyTotalsBarChart({
                           <span>{typeConfig?.label || entry.name}</span>
                         </span>
                       </td>
-                      <td className="py-1.5 text-right font-semibold text-slate-900">
+                      <td className="py-1.5 text-right font-semibold text-foreground">
                         {formatTooltipValue(entry.value)}
                       </td>
                     </tr>
@@ -280,8 +280,8 @@ export function YearlyTotalsBarChart({
     if (active && payload && payload.length && payload[0].value > 0) {
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
-          <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
-          <p className="font-bold text-slate-900 text-lg">{formatTooltipValue(payload[0].value)}</p>
+          <p className="font-semibold text-foreground text-sm">{formatYearLabel(label)}</p>
+          <p className="font-bold text-foreground text-lg">{formatTooltipValue(payload[0].value)}</p>
         </div>
       )
     }
@@ -305,7 +305,7 @@ export function YearlyTotalsBarChart({
                 className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground">
                 {typeConfig?.label || entry.value}
               </span>
             </li>
@@ -330,9 +330,9 @@ export function YearlyTotalsBarChart({
           <table className="w-full text-sm">
             <thead className="bg-surface-muted">
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
+                <th className="text-left py-3 px-4 font-medium text-foreground bg-muted">Year</th>
                 {activeTransactionTypes.map(type => (
-                  <th key={type} className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">
+                  <th key={type} className="text-right py-3 px-4 font-medium text-foreground bg-muted">
                     <div className="flex items-center justify-end gap-2">
                       <span
                         className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
@@ -344,21 +344,21 @@ export function YearlyTotalsBarChart({
                     </div>
                   </th>
                 ))}
-                <th className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">Total</th>
+                <th className="text-right py-3 px-4 font-medium text-foreground bg-muted">Total</th>
               </tr>
             </thead>
             <tbody>
               {chartData.map((row, idx) => {
                 const rowTotal = activeTransactionTypes.reduce((sum, type) => sum + (Number(row[type]) || 0), 0)
                 return (
-                  <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                    <td className="py-2.5 px-4 font-medium text-slate-900">{formatYearLabel(row.year)}</td>
+                  <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-muted/50'}>
+                    <td className="py-2.5 px-4 font-medium text-foreground">{formatYearLabel(row.year)}</td>
                     {activeTransactionTypes.map(type => (
-                      <td key={type} className="text-right py-2.5 px-4 text-slate-700 font-mono text-xs">
+                      <td key={type} className="text-right py-2.5 px-4 text-foreground font-mono text-xs">
                         {row[type] ? formatTooltipValue(Number(row[type])) : '—'}
                       </td>
                     ))}
-                    <td className="text-right py-2.5 px-4 font-semibold text-slate-900 font-mono text-xs">
+                    <td className="text-right py-2.5 px-4 font-semibold text-foreground font-mono text-xs">
                       {formatTooltipValue(rowTotal)}
                     </td>
                   </tr>
@@ -366,14 +366,14 @@ export function YearlyTotalsBarChart({
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-input bg-slate-100">
-                <td className="py-3 px-4 font-bold text-slate-900">Total</td>
+              <tr className="border-t-2 border-input bg-muted">
+                <td className="py-3 px-4 font-bold text-foreground">Total</td>
                 {activeTransactionTypes.map(type => (
-                  <td key={type} className="text-right py-3 px-4 font-bold text-slate-900 font-mono text-xs">
+                  <td key={type} className="text-right py-3 px-4 font-bold text-foreground font-mono text-xs">
                     {formatTooltipValue(grandTotals[type])}
                   </td>
                 ))}
-                <td className="text-right py-3 px-4 font-bold text-slate-900 font-mono text-xs">
+                <td className="text-right py-3 px-4 font-bold text-foreground font-mono text-xs">
                   {formatTooltipValue(grandTotal)}
                 </td>
               </tr>
@@ -391,24 +391,24 @@ export function YearlyTotalsBarChart({
         <table className="w-full text-sm">
           <thead className="bg-surface-muted">
             <tr className="border-b border-border">
-              <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
-              <th className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">{singleSeriesLabel}</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground bg-muted">Year</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground bg-muted">{singleSeriesLabel}</th>
             </tr>
           </thead>
           <tbody>
             {chartData.map((row, idx) => (
-              <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                <td className="py-2.5 px-4 font-medium text-slate-900">{formatYearLabel(row.year)}</td>
-                <td className="text-right py-2.5 px-4 text-slate-700 font-mono text-xs">
+              <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-muted/50'}>
+                <td className="py-2.5 px-4 font-medium text-foreground">{formatYearLabel(row.year)}</td>
+                <td className="text-right py-2.5 px-4 text-foreground font-mono text-xs">
                   {row.total ? formatTooltipValue(Number(row.total)) : '—'}
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-input bg-slate-100">
-              <td className="py-3 px-4 font-bold text-slate-900">Total</td>
-              <td className="text-right py-3 px-4 font-bold text-slate-900 font-mono text-xs">
+            <tr className="border-t-2 border-input bg-muted">
+              <td className="py-3 px-4 font-bold text-foreground">Total</td>
+              <td className="text-right py-3 px-4 font-bold text-foreground font-mono text-xs">
                 {formatTooltipValue(grandTotal)}
               </td>
             </tr>
@@ -540,7 +540,7 @@ export function YearlyTotalsBarChart({
       type="single"
       value={viewMode}
       onValueChange={(value) => value && setViewMode(value as ViewMode)}
-      className="bg-slate-100 p-0.5 rounded-md"
+      className="bg-muted p-0.5 rounded-md"
     >
       <ToggleGroupItem
         value="bar"
@@ -663,7 +663,7 @@ export function YearlyTotalsBarChart({
         : `${getYearDisplayLabel(startYear!)} – ${getYearDisplayLabel(endYear!)}`
 
     return (
-      <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+      <div className="flex gap-1 rounded-lg p-1 bg-muted">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
@@ -676,17 +676,17 @@ export function YearlyTotalsBarChart({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="p-3 w-auto">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+              <span className="text-xs font-medium text-foreground">Select Year Range</span>
               <div className="flex gap-1">
                 <button
                   onClick={selectAllYears}
-                  className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                  className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                 >
                   All
                 </button>
                 <button
                   onClick={selectDataRange}
-                  className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                  className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                 >
                   Data
                 </button>
@@ -707,7 +707,7 @@ export function YearlyTotalsBarChart({
                         ? 'bg-primary text-primary-foreground'
                         : inRange
                           ? 'bg-primary/20 text-primary'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          : 'text-muted-foreground hover:bg-muted'
                       }
                     `}
                     title="Click to select start, then click another to select end"
@@ -717,7 +717,7 @@ export function YearlyTotalsBarChart({
                 )
               })}
             </div>
-            <p className="text-[10px] text-slate-400 mt-2 text-center">
+            <p className="text-[10px] text-muted-foreground mt-2 text-center">
               Click start year, then click end year
             </p>
           </DropdownMenuContent>
@@ -740,7 +740,7 @@ export function YearlyTotalsBarChart({
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </Button>
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
               {description && <CardDescription>{description}</CardDescription>}
             </div>
           </div>
@@ -755,7 +755,7 @@ export function YearlyTotalsBarChart({
               className="h-8 w-8 p-0"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-400" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
@@ -784,7 +784,7 @@ export function YearlyTotalsBarChart({
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </Button>
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
               {description && <CardDescription>{description}</CardDescription>}
             </div>
           </div>
@@ -797,10 +797,10 @@ export function YearlyTotalsBarChart({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(true)}
-                className="h-8 w-8 p-0 hover:bg-slate-100"
+                className="h-8 w-8 p-0 hover:bg-muted"
                 title="Expand to full screen"
               >
-                <Maximize2 className="h-4 w-4 text-slate-600" />
+                <Maximize2 className="h-4 w-4 text-muted-foreground" />
               </Button>
             )}
           </div>
@@ -814,7 +814,7 @@ export function YearlyTotalsBarChart({
                 {viewMode === 'table' && <TableView />}
               </>
             ) : (
-              <div className="flex items-center justify-center text-slate-400" style={{ height }}>
+              <div className="flex items-center justify-center text-muted-foreground" style={{ height }}>
                 <p className="text-sm">No data available</p>
               </div>
             )}
@@ -828,7 +828,7 @@ export function YearlyTotalsBarChart({
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   {title}
                 </DialogTitle>
                 {description && (
@@ -854,7 +854,7 @@ export function YearlyTotalsBarChart({
                 {viewMode === 'table' && <TableView />}
               </>
             ) : (
-              <div className="flex items-center justify-center text-slate-400 h-[500px]">
+              <div className="flex items-center justify-center text-muted-foreground h-[500px]">
                 <p className="text-sm">No data available</p>
               </div>
             )}

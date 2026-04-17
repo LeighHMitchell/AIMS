@@ -362,7 +362,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                 </div>
               )
             })}
-            <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-slate-400 h-6 w-6" />
+            <ArrowRight className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground h-6 w-6" />
           </div>
         </div>
 

@@ -97,13 +97,13 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       const data = payload[0].payload
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900">{data.category}</p>
+          <p className="font-semibold text-foreground">{data.category}</p>
           <div className="space-y-1 text-sm">
-            <p className="text-slate-900">Untied: {data.untied_count} ({data.untied_percentage}%)</p>
-            <p className="text-slate-600">Partially Tied: {data.partially_tied_count} ({data.partially_tied_percentage}%)</p>
-            <p className="text-slate-400">Tied: {data.tied_count} ({data.tied_percentage}%)</p>
+            <p className="text-foreground">Untied: {data.untied_count} ({data.untied_percentage}%)</p>
+            <p className="text-muted-foreground">Partially Tied: {data.partially_tied_count} ({data.partially_tied_percentage}%)</p>
+            <p className="text-muted-foreground">Tied: {data.tied_count} ({data.tied_percentage}%)</p>
           </div>
-          <p className="text-xs text-slate-500 mt-1">Total: {data.total_activities} activities</p>
+          <p className="text-xs text-muted-foreground mt-1">Total: {data.total_activities} activities</p>
         </div>
       )
     }
@@ -140,8 +140,8 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-slate-500" />
-          <h3 className="text-lg font-semibold text-slate-900">Aid Tying Analysis</h3>
+          <Globe className="h-5 w-5 text-muted-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">Aid Tying Analysis</h3>
         </div>
         
         <Select value={groupBy} onValueChange={setGroupBy}>
@@ -164,11 +164,11 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Untied Aid</p>
-                  <p className="text-2xl font-bold text-slate-900">{summary.overall_untied_percentage}%</p>
-                  <p className="text-sm text-slate-500">Best practice compliance</p>
+                  <p className="text-sm font-medium text-muted-foreground">Untied Aid</p>
+                  <p className="text-2xl font-bold text-foreground">{summary.overall_untied_percentage}%</p>
+                  <p className="text-sm text-muted-foreground">Best practice compliance</p>
                 </div>
-                <CheckCircle2 className="h-6 w-6 text-slate-400" />
+                <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -177,11 +177,11 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Partially Tied</p>
-                  <p className="text-2xl font-bold text-slate-900">{summary.overall_partially_tied_percentage}%</p>
-                  <p className="text-sm text-slate-500">Some restrictions</p>
+                  <p className="text-sm font-medium text-muted-foreground">Partially Tied</p>
+                  <p className="text-2xl font-bold text-foreground">{summary.overall_partially_tied_percentage}%</p>
+                  <p className="text-sm text-muted-foreground">Some restrictions</p>
                 </div>
-                <AlertTriangle className="h-6 w-6 text-slate-400" />
+                <AlertTriangle className="h-6 w-6 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -190,11 +190,11 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Tied Aid</p>
-                  <p className="text-2xl font-bold text-slate-900">{summary.overall_tied_percentage}%</p>
-                  <p className="text-sm text-slate-500">Needs improvement</p>
+                  <p className="text-sm font-medium text-muted-foreground">Tied Aid</p>
+                  <p className="text-2xl font-bold text-foreground">{summary.overall_tied_percentage}%</p>
+                  <p className="text-sm text-muted-foreground">Needs improvement</p>
                 </div>
-                <Handshake className="h-6 w-6 text-slate-400" />
+                <Handshake className="h-6 w-6 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -205,7 +205,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
         {/* Overall Distribution */}
         <Card className="bg-white border-border">
           <CardHeader>
-            <CardTitle className="text-lg font-medium text-slate-700">Overall Distribution</CardTitle>
+            <CardTitle className="text-lg font-medium text-foreground">Overall Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -242,7 +242,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
         {groupBy !== 'overall' && (
           <Card className="bg-white border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-medium text-slate-700">
+              <CardTitle className="text-lg font-medium text-foreground">
                 Breakdown by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
               </CardTitle>
             </CardHeader>
@@ -280,17 +280,17 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-slate-500" />
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                 Best Performer
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold text-slate-900">{summary.best_performer.category}</p>
-              <p className="text-sm text-slate-600">
+              <p className="font-semibold text-foreground">{summary.best_performer.category}</p>
+              <p className="text-sm text-muted-foreground">
                 {summary.best_performer.untied_percentage}% untied aid
               </p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {summary.best_performer.untied_count} of {summary.best_performer.total_activities} activities
               </p>
             </CardContent>
@@ -298,17 +298,17 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-slate-500" />
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 Needs Improvement
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold text-slate-900">{summary.needs_improvement.category}</p>
-              <p className="text-sm text-slate-600">
+              <p className="font-semibold text-foreground">{summary.needs_improvement.category}</p>
+              <p className="text-sm text-muted-foreground">
                 {summary.needs_improvement.tied_percentage}% tied aid
               </p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {summary.needs_improvement.tied_count} of {summary.needs_improvement.total_activities} activities
               </p>
             </CardContent>

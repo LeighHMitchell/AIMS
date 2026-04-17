@@ -203,7 +203,7 @@ export function PersonCard({
 
   if (compact) {
     return (
-      <div className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-slate-50 transition-colors">
+      <div className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors">
         <div className="flex items-start space-x-3 min-w-0 flex-1">
           <UserAvatar
             src={person.profile_photo}
@@ -215,7 +215,7 @@ export function PersonCard({
           
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-slate-900 break-words leading-tight">
+              <p className="text-sm font-medium text-foreground break-words leading-tight">
                 {displayName}
               </p>
               <div className="flex items-center space-x-1 ml-2">
@@ -263,19 +263,19 @@ export function PersonCard({
               )}
               
               {jobInfo && (
-                <div className="text-xs text-slate-500 break-words">
+                <div className="text-xs text-muted-foreground break-words">
                   {jobInfo}
                 </div>
               )}
               
               {departmentInfo && (
-                <div className="text-xs text-slate-500 break-words">
+                <div className="text-xs text-muted-foreground break-words">
                   {departmentInfo}
                 </div>
               )}
               
               {organizationInfo && (
-                <div className="text-xs text-slate-500 break-words" title={organizationInfo}>
+                <div className="text-xs text-muted-foreground break-words" title={organizationInfo}>
                   {organizationInfo}
                 </div>
               )}
@@ -341,9 +341,9 @@ export function PersonCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleDeleteContact}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                     Delete Contact
                   </DropdownMenuItem>
                 </>
@@ -401,9 +401,9 @@ export function PersonCard({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleDeleteContact}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
               Delete Contact
             </DropdownMenuItem>
           </>

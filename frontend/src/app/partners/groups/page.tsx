@@ -258,16 +258,16 @@ export default function ManageGroupsPage() {
                       onClick={() => router.push(`/partners/groups/${group.id}/edit`)}
                       className="flex-1"
                     >
-                      <Pencil className="h-3 w-3 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                      <Pencil className="h-3 w-3 mr-1 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                       Edit
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(group.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-3 w-3 text-red-500" />
+                      <Trash2 className="h-3 w-3 text-destructive" />
                     </Button>
                   </div>
                 </CardContent>

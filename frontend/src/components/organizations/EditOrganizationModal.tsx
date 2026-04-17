@@ -687,11 +687,11 @@ export function EditOrganizationModal({
         
         {/* Validation Error Banner */}
         {validationErrors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-3 mx-6">
-            <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div className="bg-destructive/10 border border-red-200 rounded-md p-3 flex items-start gap-3 mx-6">
+            <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-red-800 mb-1">Please fix the validation errors</p>
-              <ul className="text-sm text-red-700 space-y-0.5">
+              <ul className="text-sm text-destructive space-y-0.5">
                 {validationErrors.map((error, index) => (
                   <li key={index}>• {error}</li>
                 ))}
@@ -703,10 +703,10 @@ export function EditOrganizationModal({
         {/* Organization Name Header - shown when editing existing org */}
         {!isCreating && (
           <div className="px-6 pb-4">
-            <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+            <h2 className="text-2xl font-bold text-foreground leading-tight">
               {formData.name || 'Untitled Organization'}
               {formData.acronym && (
-                <span className="text-xl font-medium text-gray-500 ml-2">({formData.acronym})</span>
+                <span className="text-xl font-medium text-muted-foreground ml-2">({formData.acronym})</span>
               )}
             </h2>
             <Separator className="mt-4" />
@@ -858,7 +858,7 @@ export function EditOrganizationModal({
                           {/* Institutional Groups */}
                           {hasInstitutionalResults && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
                                 Institutional Groups
                               </div>
                               {filteredInstitutionalGroups.map((group) => (
@@ -882,7 +882,7 @@ export function EditOrganizationModal({
                           {/* Country Options */}
                           {hasCountryResults && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
                                 Countries
                               </div>
                               {filteredCountries.map((country) => (
@@ -898,7 +898,7 @@ export function EditOrganizationModal({
 
                           {/* No Results */}
                           {!hasInstitutionalResults && !hasCountryResults && (
-                            <div className="px-2 py-6 text-center text-sm text-gray-500">
+                            <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                               No results found for "{countrySearchTerm}"
                             </div>
                           )}
@@ -1055,7 +1055,7 @@ export function EditOrganizationModal({
                       id="uuid_class"
                       value={formData.id || ''}
                       readOnly
-                      className="bg-gray-50 text-gray-600"
+                      className="bg-muted text-muted-foreground"
                     />
                     <Button
                       variant="outline"
@@ -1306,12 +1306,12 @@ export function EditOrganizationModal({
           <TabsContent value="contact" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
             {/* Contact Information Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Contact Information</h3>
+              <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Information</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-500" />
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     Email
                   </Label>
                   <Input
@@ -1325,7 +1325,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-500" />
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                     Phone
                   </Label>
                   <Input
@@ -1338,7 +1338,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="website" className="text-sm font-medium flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-gray-500" />
+                    <Globe className="h-4 w-4 text-muted-foreground" />
                     Website
                   </Label>
                   <Input
@@ -1352,7 +1352,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
                     Mailing Address
                   </Label>
                   <Textarea
@@ -1369,13 +1369,13 @@ export function EditOrganizationModal({
 
             {/* Social Media Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Social Media</h3>
+              <h3 className="text-sm font-semibold text-foreground border-b pb-2">Social Media</h3>
               <p className="text-sm text-muted-foreground">Add social media profiles for your organization</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="social_twitter" className="text-sm font-medium flex items-center gap-2">
-                    <Twitter className="h-4 w-4 text-gray-500" />
+                    <Twitter className="h-4 w-4 text-muted-foreground" />
                     Twitter / X
                   </Label>
                   <Input
@@ -1388,7 +1388,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="social_facebook" className="text-sm font-medium flex items-center gap-2">
-                    <Facebook className="h-4 w-4 text-gray-500" />
+                    <Facebook className="h-4 w-4 text-muted-foreground" />
                     Facebook
                   </Label>
                   <Input
@@ -1401,7 +1401,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="social_linkedin" className="text-sm font-medium flex items-center gap-2">
-                    <Linkedin className="h-4 w-4 text-gray-500" />
+                    <Linkedin className="h-4 w-4 text-muted-foreground" />
                     LinkedIn
                   </Label>
                   <Input
@@ -1414,7 +1414,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="social_instagram" className="text-sm font-medium flex items-center gap-2">
-                    <Instagram className="h-4 w-4 text-gray-500" />
+                    <Instagram className="h-4 w-4 text-muted-foreground" />
                     Instagram
                   </Label>
                   <Input
@@ -1427,7 +1427,7 @@ export function EditOrganizationModal({
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="social_youtube" className="text-sm font-medium flex items-center gap-2">
-                    <Youtube className="h-4 w-4 text-gray-500" />
+                    <Youtube className="h-4 w-4 text-muted-foreground" />
                     YouTube
                   </Label>
                   <Input
@@ -1499,7 +1499,7 @@ export function EditOrganizationModal({
               />
             </div>
 
-            <div className="text-sm text-gray-500 border-t pt-4">
+            <div className="text-sm text-muted-foreground border-t pt-4">
               <p className="font-medium mb-2">How Aliases Work:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
@@ -1513,11 +1513,11 @@ export function EditOrganizationModal({
             {!isCreating && (
               <div className="border-t pt-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Merge className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-base font-semibold text-gray-900">Merge Another Organization</h3>
+                  <Merge className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-base font-semibold text-foreground">Merge Another Organization</h3>
                 </div>
                 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Merge a duplicate organization into this one. All activities, transactions, and references 
                   will be transferred to this organization, and the duplicate will be deleted.
                 </p>
@@ -1534,7 +1534,7 @@ export function EditOrganizationModal({
 
                 {/* Loading state */}
                 {loadingMergePreview && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading impact preview...
                   </div>
@@ -1611,8 +1611,8 @@ export function EditOrganizationModal({
                   </div>
                 )}
 
-                <div className="bg-gray-50 border border-border rounded-md p-3 text-sm text-gray-600">
-                  <p className="font-medium text-gray-700 mb-1">Note:</p>
+                <div className="bg-muted border border-border rounded-md p-3 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground mb-1">Note:</p>
                   <p>
                     Merging is permanent and cannot be undone. The source organization will be deleted 
                     after all its references are transferred to this organization.
@@ -1700,7 +1700,7 @@ export function EditOrganizationModal({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
             Confirm Organization Merge
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
@@ -1710,16 +1710,16 @@ export function EditOrganizationModal({
                 <strong>{organization?.name}</strong>.
               </p>
               
-              <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-2">
+              <div className="bg-destructive/10 border border-red-200 rounded-md p-3 space-y-2">
                 <p className="font-medium text-red-800">This action will:</p>
-                <ul className="text-sm text-red-700 space-y-1">
+                <ul className="text-sm text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>
                   <li>• Add the source IATI ID as an alias</li>
                   <li>• <strong>Permanently delete</strong> the source organization</li>
                 </ul>
               </div>
               
-              <p className="font-medium text-red-600">
+              <p className="font-medium text-destructive">
                 This action cannot be undone.
               </p>
             </div>

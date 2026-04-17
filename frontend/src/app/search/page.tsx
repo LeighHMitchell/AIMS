@@ -237,7 +237,7 @@ function SearchPageContent() {
           
           {/* Results Summary - shown when there's a query */}
           {query && (
-            <div className="mt-4 text-sm text-gray-600">
+            <div className="mt-4 text-sm text-muted-foreground">
               {loading ? (
                 <span>Searching...</span>
               ) : (
@@ -254,9 +254,9 @@ function SearchPageContent() {
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 p-6 text-center border border-red-200 rounded-lg bg-red-50">
-            <div className="text-red-600 mb-2">Search Error</div>
-            <div className="text-gray-600">{error}</div>
+          <div className="mb-6 p-6 text-center border border-red-200 rounded-lg bg-destructive/10">
+            <div className="text-destructive mb-2">Search Error</div>
+            <div className="text-muted-foreground">{error}</div>
           </div>
         )}
 
@@ -266,7 +266,7 @@ function SearchPageContent() {
             <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
               <TabsTrigger
                 value="all"
-                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
               >
                 <Search className="h-4 w-4" />
                 All ({resultCounts.all})
@@ -277,7 +277,7 @@ function SearchPageContent() {
                   <TabsTrigger
                     key={type}
                     value={type}
-                    className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                   >
                     <Icon className="h-4 w-4" />
                     {resultTypeLabels[type]} ({resultCounts[type]})

@@ -628,7 +628,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format('.1f');
@@ -732,7 +732,7 @@ export default function SectorSankeyVisualization({
         
         tooltip.html(`
           <div class="font-semibold">${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}</div>
-          <div class="text-lg font-bold mt-1 text-slate-600">${format(d.value)}%</div>
+          <div class="text-lg font-bold mt-1 text-muted-foreground">${format(d.value)}%</div>
           ${financialHtml}
         `)
           .style('left', (event.pageX + 10) + 'px')
@@ -1002,7 +1002,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = metricMode === 'percentage' ? d3.format('.1f') : d3.format(',.0f');
@@ -1114,7 +1114,7 @@ export default function SectorSankeyVisualization({
 
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-foreground border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format(',.0f');
@@ -1140,11 +1140,11 @@ export default function SectorSankeyVisualization({
         const percentage = (d.value / total * 100).toFixed(1);
         const sectors = 'sectors' in d ? (d.sectors as { code: string; name: string; value: number }[] | undefined) : undefined;
         const sectorsInfo = sectors && sectors.length > 0 ? 
-          `<div class="text-xs text-slate-500 mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
+          `<div class="text-xs text-muted-foreground mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
         tooltip.html(`
           <div class="font-semibold">${d.code} - ${d.name}</div>
           <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : '$' + format(d.value)}</div>
-          <div class="text-xs text-slate-500">${percentage}% of total</div>
+          <div class="text-xs text-muted-foreground">${percentage}% of total</div>
           ${sectorsInfo}
         `)
           .style('left', (event.pageX + 10) + 'px')
@@ -1451,7 +1451,7 @@ export default function SectorSankeyVisualization({
                   </TableRow>
                 );
               })}
-            <TableRow className="font-semibold bg-slate-50 border-t-2">
+            <TableRow className="font-semibold bg-muted border-t-2">
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="text-right">{formatPercentage(totalPercentage)}</TableCell>
               <TableCell className={`text-right ${metricMode === 'budget' ? 'bg-blue-50' : ''}`}>
@@ -1474,7 +1474,7 @@ export default function SectorSankeyVisualization({
 
   if (allocations.length === 0) {
     return (
-      <div className={`flex items-center justify-center h-96 text-gray-500 ${className}`}>
+      <div className={`flex items-center justify-center h-96 text-muted-foreground ${className}`}>
         <div className="text-center">
           <div className="text-lg font-medium">No sector data available</div>
           <div className="text-sm mt-1">Add sector allocations to see the Sankey flow visualization</div>
@@ -1528,12 +1528,12 @@ export default function SectorSankeyVisualization({
 
             {/* Bar grouping buttons - only show when bar view is active */}
             {viewMode === 'bar' && (
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('group')}
-                  className={cn("h-7 text-xs px-3", barGroupingMode === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-7 text-xs px-3", barGroupingMode === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Sector Category
                 </Button>
@@ -1541,7 +1541,7 @@ export default function SectorSankeyVisualization({
                   variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('category')}
-                  className={cn("h-7 text-xs px-3", barGroupingMode === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-7 text-xs px-3", barGroupingMode === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Sector
                 </Button>
@@ -1549,7 +1549,7 @@ export default function SectorSankeyVisualization({
                   variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('sector')}
-                  className={cn("h-7 text-xs px-3", barGroupingMode === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-7 text-xs px-3", barGroupingMode === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Sub Sector
                 </Button>

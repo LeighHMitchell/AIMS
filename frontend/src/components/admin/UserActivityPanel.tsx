@@ -51,24 +51,24 @@ const getActionIcon = (actionType: string, entityType?: string) => {
     create: entityType === 'organization' ? <Building2 className="h-4 w-4 text-[hsl(var(--success-icon))]" /> : 
             entityType === 'user' ? <UserPlus className="h-4 w-4 text-[hsl(var(--success-icon))]" /> :
             <Plus className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
-    edit: <Pencil className="h-4 w-4 text-slate-500" />,
-    delete: <Trash2 className="h-4 w-4 text-red-500" />,
+    edit: <Pencil className="h-4 w-4 text-muted-foreground" />,
+    delete: <Trash2 className="h-4 w-4 text-destructive" />,
     submit_validation: <Send className="h-4 w-4 text-purple-600" />,
     validate: <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
-    reject: <XCircle className="h-4 w-4 text-red-600" />,
+    reject: <XCircle className="h-4 w-4 text-destructive" />,
     publish: <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
     unpublish: <XCircle className="h-4 w-4 text-orange-600" />,
     add_contact: <UserPlus className="h-4 w-4 text-blue-600" />,
-    remove_contact: <UserPlus className="h-4 w-4 text-red-600" />,
+    remove_contact: <UserPlus className="h-4 w-4 text-destructive" />,
     add_transaction: <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
     edit_transaction: <DollarSign className="h-4 w-4 text-blue-600" />,
-    delete_transaction: <DollarSign className="h-4 w-4 text-red-600" />,
+    delete_transaction: <DollarSign className="h-4 w-4 text-destructive" />,
     login: <LogIn className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
-    logout: <LogOut className="h-4 w-4 text-gray-600" />,
-    login_failed: <AlertTriangle className="h-4 w-4 text-red-600" />,
+    logout: <LogOut className="h-4 w-4 text-muted-foreground" />,
+    login_failed: <AlertTriangle className="h-4 w-4 text-destructive" />,
     status_change: <RefreshCw className="h-4 w-4 text-purple-600" />,
   }
-  return iconMap[actionType] || <Activity className="h-4 w-4 text-gray-600" />
+  return iconMap[actionType] || <Activity className="h-4 w-4 text-muted-foreground" />
 }
 
 // Generate human-readable action descriptions

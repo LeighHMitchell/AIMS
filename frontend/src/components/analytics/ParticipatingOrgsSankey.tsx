@@ -356,9 +356,9 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
 
   if (error || !data) {
     return (
-      <Card className="bg-red-50 border-red-200">
+      <Card className="bg-destructive/10 border-red-200">
         <CardContent className="p-6">
-          <p className="text-red-700">{error || 'No data available'}</p>
+          <p className="text-destructive">{error || 'No data available'}</p>
         </CardContent>
       </Card>
     )

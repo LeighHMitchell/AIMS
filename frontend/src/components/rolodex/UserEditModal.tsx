@@ -322,12 +322,12 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
 
           {/* Current Assignment Display */}
           {selectedOrg && (
-            <div className="bg-slate-50 p-4 rounded-md">
-              <div className="text-sm font-medium text-slate-700 mb-2">Current Assignment</div>
-              <div className="text-sm text-slate-600">
+            <div className="bg-muted p-4 rounded-md">
+              <div className="text-sm font-medium text-foreground mb-2">Current Assignment</div>
+              <div className="text-sm text-muted-foreground">
                 <strong>Organization:</strong> {selectedOrg.name} {selectedOrg.acronym && `(${selectedOrg.acronym})`}
               </div>
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-muted-foreground">
                 <strong>Role:</strong> {USER_ROLES.find(r => r.value === formData.role)?.label || formData.role}
               </div>
             </div>

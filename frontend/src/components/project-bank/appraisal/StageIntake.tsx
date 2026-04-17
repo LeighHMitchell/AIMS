@@ -259,9 +259,9 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               }}
             />
             <div className="h-48 border-2 border-dashed border-input rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
-              <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-sm font-medium text-gray-700 mb-1">Click or drag image to upload</p>
-              <p className="text-xs text-gray-500">Max size: 5 MB</p>
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
+              <p className="text-sm font-medium text-foreground mb-1">Click or drag image to upload</p>
+              <p className="text-xs text-muted-foreground">Max size: 5 MB</p>
             </div>
           </label>
         )}
@@ -590,7 +590,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             <div className={cn(
               "md:col-span-2 flex items-start gap-2 p-3 rounded-lg border text-sm",
               minSizeResult.enforcement === 'enforce'
-                ? "bg-red-50 border-red-200 text-red-800"
+                ? "bg-destructive/10 border-red-200 text-red-800"
                 : "bg-amber-50 border-amber-200 text-amber-800"
             )}>
               {minSizeResult.enforcement === 'enforce' ? (

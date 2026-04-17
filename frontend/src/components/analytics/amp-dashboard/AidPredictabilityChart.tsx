@@ -127,7 +127,7 @@ export function AidPredictabilityChart() {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
+          <p className="font-semibold text-foreground mb-2">Year {label}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
@@ -324,7 +324,7 @@ export function AidPredictabilityChart() {
                 <TableCell className="text-sm text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
                 <TableCell className={cn(
                   "text-sm text-right font-medium",
-                  variance > 0 ? "text-green-600" : variance < 0 ? "text-red-600" : "text-slate-500"
+                  variance > 0 ? "text-green-600" : variance < 0 ? "text-destructive" : "text-muted-foreground"
                 )}>
                   {variance > 0 ? "+" : ""}{formatCurrency(variance)}
                 </TableCell>
@@ -382,7 +382,7 @@ export function AidPredictabilityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType("bar")}
               title="Bar Chart"
             >
@@ -391,7 +391,7 @@ export function AidPredictabilityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === "line" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType("line")}
               title="Line Chart"
             >
@@ -400,7 +400,7 @@ export function AidPredictabilityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", chartType === "area" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setChartType("area")}
               title="Area Chart"
             >
@@ -415,7 +415,7 @@ export function AidPredictabilityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === "chart" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", viewMode === "chart" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setViewMode("chart")}
               title="Chart"
             >
@@ -424,7 +424,7 @@ export function AidPredictabilityChart() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+              className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
               onClick={() => setViewMode("table")}
               title="Table"
             >
@@ -467,7 +467,7 @@ export function AidPredictabilityChart() {
       {/* Compact Card View */}
       <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+          <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
             Aid Predictability
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">

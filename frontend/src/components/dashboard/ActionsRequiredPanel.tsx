@@ -42,42 +42,42 @@ const ACTION_CONFIG: Record<ActionType, {
 }> = {
   validation_returned: {
     icon: AlertCircle,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
+    badgeStyle: 'bg-muted text-foreground hover:bg-slate-300',
     label: 'Validation Returned',
   },
   missing_data: {
     icon: AlertTriangle,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
+    badgeStyle: 'bg-muted text-foreground hover:bg-slate-300',
     label: 'Missing Data',
   },
   closing_soon: {
     icon: Clock,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
+    badgeStyle: 'bg-muted text-foreground hover:bg-slate-300',
     label: 'Closing Soon',
   },
   out_of_date: {
     icon: History,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
+    badgeStyle: 'bg-muted text-foreground hover:bg-slate-300',
     label: 'Needs Update',
   },
   new_comment: {
     icon: MessageSquare,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
+    badgeStyle: 'bg-muted text-foreground hover:bg-slate-300',
     label: 'New Comment',
   },
 };
@@ -176,12 +176,12 @@ export function ActionsRequiredPanel({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-slate-600" />
+            <AlertCircle className="h-5 w-5 text-muted-foreground" />
             Actions Required
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load actions: {error}</p>
+          <p className="text-sm text-destructive">Failed to load actions: {error}</p>
         </CardContent>
       </Card>
     );
@@ -193,7 +193,7 @@ export function ActionsRequiredPanel({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-slate-600" />
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
             Actions Required
           </CardTitle>
           <CardDescription>
@@ -202,9 +202,9 @@ export function ActionsRequiredPanel({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-slate-400 mb-3" />
-            <p className="text-lg font-medium text-slate-700">All caught up!</p>
-            <p className="text-sm text-slate-500 mt-1">
+            <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-3" />
+            <p className="text-lg font-medium text-foreground">All caught up!</p>
+            <p className="text-sm text-muted-foreground mt-1">
               You have no pending actions at the moment.
             </p>
           </div>
@@ -219,7 +219,7 @@ export function ActionsRequiredPanel({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-slate-600" />
+              <AlertTriangle className="h-5 w-5 text-muted-foreground" />
               Actions Required
             </CardTitle>
             <CardDescription>
@@ -258,17 +258,17 @@ export function ActionsRequiredPanel({
                       {config.label}
                     </Badge>
                   </div>
-                  <p className="font-medium text-sm text-slate-900 truncate">
+                  <p className="font-medium text-sm text-foreground truncate">
                     {action.activityTitle}
                   </p>
-                  <p className="text-xs text-slate-600 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {action.message}
                   </p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="shrink-0 text-slate-600 hover:text-slate-900"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleActionClick(action.activityId, action.type, action.metadata);

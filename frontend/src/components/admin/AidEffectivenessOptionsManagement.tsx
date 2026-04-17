@@ -420,7 +420,7 @@ export function AidEffectivenessOptionsManagement() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8 text-red-600">
+      <div className="flex items-center justify-center py-8 text-destructive">
         <AlertCircle className="h-5 w-5 mr-2" />
         <span>{error}</span>
       </div>
@@ -430,7 +430,7 @@ export function AidEffectivenessOptionsManagement() {
   return (
     <div className="space-y-4">
       {/* Category tabs */}
-      <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+      <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
         {CATEGORIES.map(cat => (
           <Button
             key={cat.value}
@@ -438,8 +438,8 @@ export function AidEffectivenessOptionsManagement() {
             size="sm"
             className={cn(
               activeCategory === cat.value
-                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white shadow-sm text-foreground hover:bg-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => setActiveCategory(cat.value)}
           >
@@ -514,14 +514,14 @@ export function AidEffectivenessOptionsManagement() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleEdit(option)}>
-                    <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDelete(option)}
-                    className="text-red-600 focus:text-red-600"
+                    className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                    <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -595,7 +595,7 @@ export function AidEffectivenessOptionsManagement() {
                         {m.name} ({m.code})
                         <button
                           type="button"
-                          className="ml-0.5 hover:text-red-500"
+                          className="ml-0.5 hover:text-destructive"
                           onClick={() => setFormMinistries(prev => prev.filter(x => x.id !== m.id))}
                         >
                           <X className="h-3 w-3" />

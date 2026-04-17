@@ -85,17 +85,17 @@ export function BulkActionToolbar({
         }
       `}</style>
       <div className="bg-white shadow-lg rounded-lg border border-border px-6 py-3 flex items-center gap-4">
-        <div className="text-sm font-medium text-gray-700">
+        <div className="text-sm font-medium text-foreground">
           <div>
             {selectedCount} {getItemLabel(itemType, selectedCount)} selected
           </div>
           {hasLinkedTransactions && (
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               {linkedTransactionCount} linked transaction{linkedTransactionCount === 1 ? '' : 's'}
             </div>
           )}
           {itemType === 'documents' && deletableCount !== undefined && deletableCount < selectedCount && (
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               {deletableCount} can be deleted (standalone only)
             </div>
           )}
@@ -148,7 +148,7 @@ export function BulkActionToolbar({
               size="sm"
               onClick={onRejectLinked}
               disabled={isProcessing}
-              className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+              className="flex items-center gap-2 text-destructive border-red-200 hover:bg-destructive/10"
             >
               <UserX className="h-4 w-4" />
               {isRejecting ? "Rejecting..." : `Reject ${linkedTransactionCount}`}
@@ -164,7 +164,7 @@ export function BulkActionToolbar({
               disabled={isProcessing}
               className="flex items-center gap-2"
             >
-              <Trash2 className="h-4 w-4 text-red-500" />
+              <Trash2 className="h-4 w-4 text-destructive" />
               {isDeleting ? "Deleting..." : `Delete ${actualDeletableCount}`}
             </Button>
           )}

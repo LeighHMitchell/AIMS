@@ -102,7 +102,7 @@ export function DocumentCard({
             </DropdownMenuItem>
             {onEdit && document.sourceType === 'standalone' && (
               <DropdownMenuItem onClick={onEdit}>
-                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
             )}
@@ -134,7 +134,7 @@ export function DocumentCard({
                   onClick={onDelete}
                   className="text-destructive focus:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                   Delete
                 </DropdownMenuItem>
               </>

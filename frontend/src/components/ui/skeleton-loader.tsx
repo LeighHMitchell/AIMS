@@ -17,7 +17,7 @@ export function Skeleton({
   ...props
 }: SkeletonProps) {
   const baseClasses = cn(
-    animation === 'shimmer-blush' ? "bg-rose-100/50" : "bg-gray-200/50",
+    animation === 'shimmer-blush' ? "bg-rose-100/50" : "bg-muted/50",
     animation === 'pulse' && "animate-pulse",
     animation === 'shimmer' && "skeleton-shimmer",
     animation === 'shimmer-blush' && "skeleton-shimmer-blush",
@@ -127,7 +127,7 @@ export function DashboardStatsSkeleton() {
 export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; columns?: number }) {
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="border-b border-border bg-gray-50 px-6 py-3">
+      <div className="border-b border-border bg-muted px-6 py-3">
         <div className="flex gap-4">
           {[...Array(columns)].map((_, i) => (
             <Skeleton key={i} variant="text" width={`${100 / columns}%`} height="1rem" />
@@ -190,7 +190,7 @@ export function BarChartSkeleton({ height = "384px", bars = 6, showLegend = true
     <div className="w-full">
       {/* Legend skeleton */}
       {showLegend && (
-        <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-2">
               <Skeleton variant="rectangular" width="16px" height="16px" />
@@ -293,7 +293,7 @@ export function MapSkeleton({ height = "600px" }: { height?: string }) {
           <Skeleton variant="rounded" width="100px" height="32px" />
         </div>
         <div 
-          className="bg-gray-100/50 skeleton-shimmer rounded-md"
+          className="bg-muted/50 skeleton-shimmer rounded-md"
           style={{ height }}
         />
       </div>

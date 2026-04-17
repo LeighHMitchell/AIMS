@@ -761,7 +761,7 @@ export default function EnhancedAidFlowGraph({
           
           return (
             <div 
-              className="absolute z-20 bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-border min-w-[280px] max-w-[320px]"
+              className="absolute z-20 bg-white text-foreground p-4 rounded-xl shadow-xl border border-border min-w-[280px] max-w-[320px]"
               style={{
                 left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 340),
                 top: selectedNodePosition.y + 15
@@ -775,7 +775,7 @@ export default function EnhancedAidFlowGraph({
                   setSelectedNodePosition(null)
                   setNestedPopup(null)
                 }}
-                className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute top-3 right-3 text-muted-foreground hover:text-muted-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -802,7 +802,7 @@ export default function EnhancedAidFlowGraph({
                   {selectedNode.acronym?.substring(0, 2) || selectedNode.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-slate-900 leading-tight">{selectedNode.name}</div>
+                  <div className="font-semibold text-foreground leading-tight">{selectedNode.name}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <span 
                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
@@ -811,7 +811,7 @@ export default function EnhancedAidFlowGraph({
                       {selectedNode.type || 'Organization'}
                     </span>
                     {flowRole !== 'Organization' && (
-                      <span className="text-xs text-slate-500">{flowRole}</span>
+                      <span className="text-xs text-muted-foreground">{flowRole}</span>
                     )}
                   </div>
                 </div>
@@ -819,12 +819,12 @@ export default function EnhancedAidFlowGraph({
               
               {/* Financial Summary */}
               {(inflow > 0 || outflow > 0) && (
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg space-y-2">
-                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Financial Summary</div>
+                <div className="mt-4 p-3 bg-muted rounded-lg space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Financial Summary</div>
                   
                   {inflow > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-600 flex items-center gap-1.5">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                         Inflow
                       </span>
@@ -833,7 +833,7 @@ export default function EnhancedAidFlowGraph({
                   )}
                   {outflow > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-600 flex items-center gap-1.5">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                         Outflow
                       </span>
@@ -844,8 +844,8 @@ export default function EnhancedAidFlowGraph({
                     <>
                       <div className="border-t border-border pt-2 mt-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-slate-700">Net Flow</span>
-                          <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          <span className="text-sm font-medium text-foreground">Net Flow</span>
+                          <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
                             {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
                           </span>
                         </div>
@@ -853,7 +853,7 @@ export default function EnhancedAidFlowGraph({
                     </>
                   )}
                   {totalFlow > 0 && (
-                    <div className="flex justify-between items-center text-xs text-slate-500 pt-1">
+                    <div className="flex justify-between items-center text-xs text-muted-foreground pt-1">
                       <span>Total Volume</span>
                       <span>{formatCurrency(totalFlow)}</span>
                     </div>
@@ -864,30 +864,30 @@ export default function EnhancedAidFlowGraph({
               {/* Connection Stats - Clickable */}
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <button 
-                  className="bg-slate-50 hover:bg-slate-100 rounded-lg p-3 text-center transition-colors cursor-pointer"
+                  className="bg-muted hover:bg-muted rounded-lg p-3 text-center transition-colors cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setNestedPopup({ type: 'partners', data: connectionStats.partners })
                   }}
                 >
-                  <div className="text-2xl font-bold text-slate-900">{connectionStats.partnerCount}</div>
-                  <div className="text-xs text-slate-500">Partners</div>
+                  <div className="text-2xl font-bold text-foreground">{connectionStats.partnerCount}</div>
+                  <div className="text-xs text-muted-foreground">Partners</div>
                 </button>
                 <button 
-                  className="bg-slate-50 hover:bg-slate-100 rounded-lg p-3 text-center transition-colors cursor-pointer"
+                  className="bg-muted hover:bg-muted rounded-lg p-3 text-center transition-colors cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     setNestedPopup({ type: 'transactions', data: connectionStats.allTransactions })
                   }}
                 >
-                  <div className="text-2xl font-bold text-slate-900">{connectionStats.totalConnections}</div>
-                  <div className="text-xs text-slate-500">Transactions</div>
+                  <div className="text-2xl font-bold text-foreground">{connectionStats.totalConnections}</div>
+                  <div className="text-xs text-muted-foreground">Transactions</div>
                 </button>
               </div>
               
               {/* Flow Direction Breakdown - Clickable */}
               {(connectionStats.incomingCount > 0 || connectionStats.outgoingCount > 0) && (
-                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-slate-500">
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
                   {connectionStats.incomingCount > 0 && (
                     <button 
                       className="flex items-center gap-1 hover:text-emerald-600 transition-colors cursor-pointer"
@@ -917,7 +917,7 @@ export default function EnhancedAidFlowGraph({
               {nestedPopup && (
                 <div className="mt-3 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   <div className="sticky top-0 bg-white border-b border-border px-3 py-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-700 capitalize">
+                    <span className="text-sm font-medium text-foreground capitalize">
                       {nestedPopup.type === 'partners' ? 'Partners' : 
                        nestedPopup.type === 'incoming' ? 'Incoming Transactions' :
                        nestedPopup.type === 'outgoing' ? 'Outgoing Transactions' : 'All Transactions'}
@@ -927,7 +927,7 @@ export default function EnhancedAidFlowGraph({
                         e.stopPropagation()
                         setNestedPopup(null)
                       }}
-                      className="text-slate-400 hover:text-slate-600"
+                      className="text-muted-foreground hover:text-muted-foreground"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -948,13 +948,13 @@ export default function EnhancedAidFlowGraph({
                               }}
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
                               {partner.name.substring(0, 2).toUpperCase()}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-slate-900 truncate">{partner.name}</div>
-                            <div className="text-xs text-slate-500 flex items-center gap-1">
+                            <div className="text-sm text-foreground truncate">{partner.name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <span className="capitalize">{partner.type || 'Organization'}</span>
                               <span>•</span>
                               <span className={partner.direction === 'incoming' ? 'text-emerald-500' : partner.direction === 'outgoing' ? 'text-blue-500' : 'text-purple-500'}>
@@ -965,7 +965,7 @@ export default function EnhancedAidFlowGraph({
                         </div>
                       ))}
                       {nestedPopup.data.length === 0 && (
-                        <div className="px-3 py-4 text-center text-sm text-slate-500">No partners</div>
+                        <div className="px-3 py-4 text-center text-sm text-muted-foreground">No partners</div>
                       )}
                     </div>
                   ) : (
@@ -984,19 +984,19 @@ export default function EnhancedAidFlowGraph({
                                 }}
                               />
                             ) : (
-                              <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600">
+                              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
                                 {tx.partnerName.substring(0, 2).toUpperCase()}
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm text-slate-900 truncate">{tx.partnerName}</div>
-                              <div className="text-xs text-slate-500">{tx.typeName}</div>
+                              <div className="text-sm text-foreground truncate">{tx.partnerName}</div>
+                              <div className="text-xs text-muted-foreground">{tx.typeName}</div>
                             </div>
                             <div className="text-right">
                               <div className={`text-sm font-medium ${tx.direction === 'incoming' ? 'text-emerald-600' : 'text-blue-600'}`}>
                                 {tx.direction === 'incoming' ? '+' : '-'}{formatCurrency(tx.value)}
                               </div>
-                              <div className="text-xs text-slate-400">
+                              <div className="text-xs text-muted-foreground">
                                 {tx.direction === 'incoming' ? '↓ In' : '↑ Out'}
                               </div>
                             </div>
@@ -1004,7 +1004,7 @@ export default function EnhancedAidFlowGraph({
                         </div>
                       ))}
                       {nestedPopup.data.length === 0 && (
-                        <div className="px-3 py-4 text-center text-sm text-slate-500">No transactions</div>
+                        <div className="px-3 py-4 text-center text-sm text-muted-foreground">No transactions</div>
                       )}
                     </div>
                   )}
@@ -1018,7 +1018,7 @@ export default function EnhancedAidFlowGraph({
         <svg ref={svgRef} className="w-full h-full"></svg>
 
         {/* Help Text */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs text-slate-500">
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs text-muted-foreground">
           <Info className="h-3 w-3" />
           <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
         </div>

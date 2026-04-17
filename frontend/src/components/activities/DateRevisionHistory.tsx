@@ -140,7 +140,7 @@ export function DateRevisionHistory({
             </div>
           ) : error ? (
             <div className="px-3 py-4 text-center">
-              <p className="text-sm text-red-500">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
               <button
                 onClick={fetchHistory}
                 className="mt-2 text-xs text-blue-600 hover:underline"

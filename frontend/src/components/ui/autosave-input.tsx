@@ -102,7 +102,7 @@ export function AutosaveInput({
         isSaved={showSaved}
         hasValue={hasValue}
         isFocused={isFocused}
-        className="text-gray-700"
+        className="text-foreground"
       >
         <div className="flex items-center gap-2">
           <span>
@@ -131,7 +131,7 @@ export function AutosaveInput({
           </div>
         )}
         {autosaveState.error && (
-          <p className="text-xs text-red-600 mt-1">{autosaveState.error.toString()}</p>
+          <p className="text-xs text-destructive mt-1">{autosaveState.error.toString()}</p>
         )}
       </div>
     </div>
@@ -209,7 +209,7 @@ export function AutosaveTextarea({
         isSaved={autosaveState.isPersistentlySaved || false}
         hasValue={hasValue}
         isFocused={isFocused}
-        className="text-gray-700"
+        className="text-foreground"
       >
         <div className="flex items-center gap-2">
           <span>
@@ -232,7 +232,7 @@ export function AutosaveTextarea({
           rows={rows}
         />
         {autosaveState.error && (
-          <p className="text-xs text-red-600 mt-1">{autosaveState.error.toString()}</p>
+          <p className="text-xs text-destructive mt-1">{autosaveState.error.toString()}</p>
         )}
       </div>
     </div>

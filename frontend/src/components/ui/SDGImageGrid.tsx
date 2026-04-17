@@ -111,7 +111,7 @@ export function SDGImageGrid({
 
   if (validSDGs.length === 0) {
     return (
-      <div className={`inline-flex items-center px-3 py-1 rounded-md text-sm text-gray-500 bg-gray-100 border border-dashed border-input ${className}`}>
+      <div className={`inline-flex items-center px-3 py-1 rounded-md text-sm text-muted-foreground bg-muted border border-dashed border-input ${className}`}>
         No SDG assigned
       </div>
     );
@@ -166,7 +166,7 @@ export function SDGImageGrid({
             <div className="text-left">
               <div className="font-semibold">Goal {goalNumber}: {goalName}</div>
               {SDG_GOALS.find(g => g.id === goalNumber)?.description && (
-                <div className="text-xs text-gray-600 mt-1">
+                <div className="text-xs text-muted-foreground mt-1">
                   {SDG_GOALS.find(g => g.id === goalNumber)?.description}
                 </div>
               )}
@@ -189,7 +189,7 @@ export function SDGImageGrid({
       ))}
       
       {remainingCount > 0 && (
-        <div className={`${containerClass} flex items-center justify-center bg-gray-100 text-gray-600 text-sm font-medium rounded-md border border-border`}>
+        <div className={`${containerClass} flex items-center justify-center bg-muted text-muted-foreground text-sm font-medium rounded-md border border-border`}>
           +{remainingCount}
         </div>
       )}

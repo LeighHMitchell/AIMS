@@ -36,7 +36,7 @@ function HelpTip({ text }: { text: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="text-muted-foreground hover:text-muted-foreground transition-colors" onClick={(e) => e.stopPropagation()}>
           <HelpCircle className="h-3.5 w-3.5" />
         </button>
       </TooltipTrigger>
@@ -70,8 +70,8 @@ function RadioOption({
     <label
       className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
         checked
-          ? 'border-2 border-gray-900 bg-gray-50'
-          : 'border border-border hover:border-gray-400 hover:bg-gray-50'
+          ? 'border-2 border-gray-900 bg-muted'
+          : 'border border-border hover:border-gray-400 hover:bg-muted'
       }`}
     >
       <input
@@ -82,13 +82,13 @@ function RadioOption({
         onChange={onChange}
         className="sr-only"
       />
-      <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${checked ? 'text-gray-900' : 'text-gray-400'}`} />
+      <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${checked ? 'text-foreground' : 'text-muted-foreground'}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
-          <span className={`text-sm ${checked ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{label}</span>
+          <span className={`text-sm ${checked ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>{label}</span>
           {helpTip && <HelpTip text={helpTip} />}
         </div>
-        <p className="text-xs mt-0.5 text-gray-500">{description}</p>
+        <p className="text-xs mt-0.5 text-muted-foreground">{description}</p>
       </div>
     </label>
   )
@@ -135,13 +135,13 @@ export default function BulkImportRulesStep({
         <Card className="border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <GitMerge className="h-5 w-5 text-gray-700" />
+              <div className="p-2 bg-muted rounded-lg">
+                <GitMerge className="h-5 w-5 text-foreground" />
               </div>
               <div className="flex items-center gap-1.5">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Activity Matching</h3>
-                  <p className="text-xs text-gray-500">Handle existing activities</p>
+                  <h3 className="font-semibold text-foreground">Activity Matching</h3>
+                  <p className="text-xs text-muted-foreground">Handle existing activities</p>
                 </div>
                 <HelpTip text="Controls what happens when an imported activity already exists in your system (matched by IATI identifier). Choose how to handle duplicates." />
               </div>
@@ -185,13 +185,13 @@ export default function BulkImportRulesStep({
         <Card className="border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Receipt className="h-5 w-5 text-gray-700" />
+              <div className="p-2 bg-muted rounded-lg">
+                <Receipt className="h-5 w-5 text-foreground" />
               </div>
               <div className="flex items-center gap-1.5">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Transaction Handling</h3>
-                  <p className="text-xs text-gray-500">Handle transaction data</p>
+                  <h3 className="font-semibold text-foreground">Transaction Handling</h3>
+                  <p className="text-xs text-muted-foreground">Handle transaction data</p>
                 </div>
                 <HelpTip text="Controls how financial transactions (disbursements, commitments, expenditures) are imported for each activity." />
               </div>
@@ -235,13 +235,13 @@ export default function BulkImportRulesStep({
         <Card className="border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Users className="h-5 w-5 text-gray-700" />
+              <div className="p-2 bg-muted rounded-lg">
+                <Users className="h-5 w-5 text-foreground" />
               </div>
               <div className="flex items-center gap-1.5">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Organization Resolution</h3>
-                  <p className="text-xs text-gray-500">Match referenced orgs</p>
+                  <h3 className="font-semibold text-foreground">Organization Resolution</h3>
+                  <p className="text-xs text-muted-foreground">Match referenced orgs</p>
                 </div>
                 <HelpTip text="IATI data references organizations by name and ID. This setting controls whether to automatically link them to organizations in your system, or create new ones." />
               </div>
@@ -249,18 +249,18 @@ export default function BulkImportRulesStep({
             <div
               className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
                 rules.autoMatchOrganizations
-                  ? 'border-2 border-gray-900 bg-gray-50'
+                  ? 'border-2 border-gray-900 bg-muted'
                   : 'border border-border hover:border-gray-400'
               }`}
               onClick={() => onRulesChange({ ...rules, autoMatchOrganizations: !rules.autoMatchOrganizations })}
             >
               <div className="flex items-center gap-3">
-                <Building2 className={`h-4 w-4 ${rules.autoMatchOrganizations ? 'text-gray-900' : 'text-gray-400'}`} />
+                <Building2 className={`h-4 w-4 ${rules.autoMatchOrganizations ? 'text-foreground' : 'text-muted-foreground'}`} />
                 <div>
-                  <Label className={`text-sm cursor-pointer ${rules.autoMatchOrganizations ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                  <Label className={`text-sm cursor-pointer ${rules.autoMatchOrganizations ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
                     Auto-match by IATI ID
                   </Label>
-                  <p className="text-xs mt-0.5 text-gray-500">
+                  <p className="text-xs mt-0.5 text-muted-foreground">
                     Find or create orgs automatically
                   </p>
                 </div>
@@ -270,7 +270,7 @@ export default function BulkImportRulesStep({
                 onCheckedChange={(checked) => onRulesChange({ ...rules, autoMatchOrganizations: checked })}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-3 px-1">
+            <p className="text-xs text-muted-foreground mt-3 px-1">
               When enabled, organizations referenced in transactions will be matched by their IATI identifier or created if not found.
             </p>
           </CardContent>
@@ -284,19 +284,19 @@ export default function BulkImportRulesStep({
             <div
               className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
                 rules.enableAutoSync
-                  ? 'border-2 border-gray-900 bg-gray-50'
+                  ? 'border-2 border-gray-900 bg-muted'
                   : 'border border-border hover:border-gray-400'
               }`}
               onClick={() => onRulesChange({ ...rules, enableAutoSync: !rules.enableAutoSync })}
             >
               <div className="flex items-center gap-3">
-                <RefreshCw className={`h-4 w-4 ${rules.enableAutoSync ? 'text-gray-900' : 'text-gray-400'}`} />
+                <RefreshCw className={`h-4 w-4 ${rules.enableAutoSync ? 'text-foreground' : 'text-muted-foreground'}`} />
                 <div className="flex items-center gap-1.5">
                   <div>
-                    <Label className={`text-sm cursor-pointer ${rules.enableAutoSync ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                    <Label className={`text-sm cursor-pointer ${rules.enableAutoSync ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
                       Enable Auto-Sync
                     </Label>
-                    <p className="text-xs mt-0.5 text-gray-500">
+                    <p className="text-xs mt-0.5 text-muted-foreground">
                       Keep these activities synchronized with the IATI Datastore
                     </p>
                   </div>
@@ -308,7 +308,7 @@ export default function BulkImportRulesStep({
                 onCheckedChange={(checked) => onRulesChange({ ...rules, enableAutoSync: checked })}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-3 px-1">
+            <p className="text-xs text-muted-foreground mt-3 px-1">
               When enabled, imported activities will be flagged for synchronisation with the IATI Datastore. Use the Sync panel on each activity to manually sync, or ask an administrator to enable scheduled sync.
             </p>
           </CardContent>
@@ -316,32 +316,32 @@ export default function BulkImportRulesStep({
       )}
 
       {/* Impact Preview - monochrome */}
-      <Card className="border-input bg-gray-50">
+      <Card className="border-input bg-muted">
         <CardContent className="p-5">
           <div className="flex items-center gap-1.5 mb-4">
-            <h3 className="font-semibold text-gray-900">Import Impact Preview</h3>
+            <h3 className="font-semibold text-foreground">Import Impact Preview</h3>
             <HelpTip text="A summary of what will happen when you start the import, based on your selected activities and the rules above. These numbers update as you change settings." />
           </div>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-3 bg-white rounded-lg border border-border">
-              <Plus className="h-5 w-5 mx-auto mb-1 text-gray-700" />
-              <p className="text-2xl font-bold text-gray-900">{impact.toCreate}</p>
-              <p className="text-xs text-gray-500">Will be created</p>
+              <Plus className="h-5 w-5 mx-auto mb-1 text-foreground" />
+              <p className="text-2xl font-bold text-foreground">{impact.toCreate}</p>
+              <p className="text-xs text-muted-foreground">Will be created</p>
             </div>
             <div className="text-center p-3 bg-white rounded-lg border border-border">
-              <RefreshCw className="h-5 w-5 mx-auto mb-1 text-gray-700" />
-              <p className="text-2xl font-bold text-gray-900">{impact.toUpdate}</p>
-              <p className="text-xs text-gray-500">Will be updated</p>
+              <RefreshCw className="h-5 w-5 mx-auto mb-1 text-foreground" />
+              <p className="text-2xl font-bold text-foreground">{impact.toUpdate}</p>
+              <p className="text-xs text-muted-foreground">Will be updated</p>
             </div>
             <div className="text-center p-3 bg-white rounded-lg border border-border">
-              <SkipForward className="h-5 w-5 mx-auto mb-1 text-gray-700" />
-              <p className="text-2xl font-bold text-gray-900">{impact.toSkip}</p>
-              <p className="text-xs text-gray-500">Will be skipped</p>
+              <SkipForward className="h-5 w-5 mx-auto mb-1 text-foreground" />
+              <p className="text-2xl font-bold text-foreground">{impact.toSkip}</p>
+              <p className="text-xs text-muted-foreground">Will be skipped</p>
             </div>
             <div className="text-center p-3 bg-white rounded-lg border border-border">
-              <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-gray-700" />
-              <p className="text-2xl font-bold text-gray-900">{impact.totalTransactions}</p>
-              <p className="text-xs text-gray-500">Transactions</p>
+              <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-foreground" />
+              <p className="text-2xl font-bold text-foreground">{impact.totalTransactions}</p>
+              <p className="text-xs text-muted-foreground">Transactions</p>
             </div>
           </div>
         </CardContent>

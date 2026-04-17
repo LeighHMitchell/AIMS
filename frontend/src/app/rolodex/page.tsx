@@ -221,7 +221,7 @@ export default function RolodexPage() {
                 size="sm"
                 onClick={() => pagination.goToPage(page)}
                 disabled={loading}
-                className={`w-8 h-8 p-0 ${page === pagination.page ? "bg-slate-200 text-slate-900" : ""}`}
+                className={`w-8 h-8 p-0 ${page === pagination.page ? "bg-muted text-foreground" : ""}`}
               >
                 {page}
               </Button>

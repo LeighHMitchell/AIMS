@@ -199,11 +199,11 @@ export function SDGTable({
           <CardDescription>Detailed view of SDG coverage data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-2 opacity-50" />
-              <p className="text-slate-600 font-medium">No SDG data available</p>
-              <p className="text-sm text-slate-500 mt-2">Try adjusting your filters</p>
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-muted-foreground font-medium">No SDG data available</p>
+              <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters</p>
             </div>
           </div>
         </CardContent>

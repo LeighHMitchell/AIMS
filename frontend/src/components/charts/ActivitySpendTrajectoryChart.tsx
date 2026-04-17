@@ -276,7 +276,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
+            <p className="font-semibold text-foreground text-sm">{formattedDate}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
@@ -287,9 +287,9 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: COLOURS.coolSteel }}
                     />
-                    <span className="text-slate-700 font-medium">Perfect spend</span>
+                    <span className="text-foreground font-medium">Perfect spend</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipCurrency(perfectSpend)}
                   </td>
                 </tr>
@@ -299,16 +299,16 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: COLOURS.primaryScarlet }}
                     />
-                    <span className="text-slate-700 font-medium">Actual spend</span>
+                    <span className="text-foreground font-medium">Actual spend</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipCurrency(cumulative)}
                   </td>
                 </tr>
                 <tr className="border-b border-border last:border-b-0">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 flex-shrink-0" />
-                    <span className="text-slate-700 font-medium">
+                    <span className="text-foreground font-medium">
                       {variance >= 0 ? 'Ahead' : 'Behind'}
                     </span>
                   </td>
@@ -332,16 +332,16 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Spend Trajectory
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-slate-500">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
-              <Info className="h-12 w-12 mx-auto mb-3 text-slate-400" />
+              <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium">No total budget reported for this activity.</p>
-              <p className="text-sm mt-2 text-slate-400">
+              <p className="text-sm mt-2 text-muted-foreground">
                 Add budget data to view the spend trajectory chart.
               </p>
             </div>
@@ -355,7 +355,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Spend Trajectory
           </CardTitle>
           <CardDescription>
@@ -373,12 +373,12 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Spend Trajectory
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-red-500">
+          <div className="flex items-center justify-center h-64 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-3" />
               <p className="font-medium">{error}</p>
@@ -399,7 +399,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Spend Trajectory
             </CardTitle>
             <CardDescription>

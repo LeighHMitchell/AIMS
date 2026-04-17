@@ -130,7 +130,7 @@ export default function MonitoringDashboardPage() {
                         </td>
                         <td className="px-4 py-2 text-sm text-foreground">{proj?.sector || '—'}</td>
                         <td className="px-4 py-2 text-sm">
-                          <span className={isOverdue ? 'text-red-600 font-medium' : 'text-foreground'}>
+                          <span className={isOverdue ? 'text-destructive font-medium' : 'text-foreground'}>
                             {s.next_due_date || '—'}
                           </span>
                         </td>

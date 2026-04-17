@@ -237,7 +237,7 @@ export default function LocationsTabNew({
       <div className="space-y-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading locations...</span>
+          <span className="ml-2 text-muted-foreground">Loading locations...</span>
         </div>
       </div>
     );
@@ -284,8 +284,8 @@ export default function LocationsTabNew({
       {locations.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No locations added</h4>
-          <p className="text-gray-600 mb-4">
+          <h4 className="text-lg font-medium text-foreground mb-2">No locations added</h4>
+          <p className="text-muted-foreground mb-4">
             Add locations to specify where your activity takes place or where beneficiaries are located.
           </p>
           {canEdit && (

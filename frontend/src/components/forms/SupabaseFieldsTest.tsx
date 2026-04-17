@@ -82,7 +82,7 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
       return <Badge variant="outline" className="text-blue-600"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Updating</Badge>;
     }
     if (fieldState.error || defaultsError) {
-      return <Badge variant="outline" className="text-red-600"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>;
+      return <Badge variant="outline" className="text-destructive"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>;
     }
     if (fieldState.lastUpdated) {
       return <Badge variant="outline" className="text-[hsl(var(--success-icon))]"><CheckCircle className="h-3 w-3 mr-1" />Connected</Badge>;
@@ -104,7 +104,7 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
 
       <CardContent className="space-y-4 pt-4">
         {/* Test Info */}
-        <div className="bg-gray-50 p-3 rounded text-sm">
+        <div className="bg-muted p-3 rounded text-sm">
           <div><strong>Activity ID:</strong> {activityId || 'None (will fail)'}</div>
           <div><strong>Current Values:</strong></div>
           <pre className="text-xs mt-1 overflow-auto max-h-20">
@@ -163,9 +163,9 @@ export function SupabaseFieldsTest({ activityId, currentDefaults }: SupabaseFiel
 
         {/* Error Display */}
         {(fieldState.error || defaultsError) && (
-          <div className="bg-red-50 border border-red-200 rounded p-3">
+          <div className="bg-destructive/10 border border-red-200 rounded p-3">
             <div className="text-red-800 font-medium">Error Details:</div>
-            <div className="text-red-600 text-sm mt-1">
+            <div className="text-destructive text-sm mt-1">
               Field State Error: {fieldState.error || 'None'}<br />
               Defaults Error: {defaultsError || 'None'}
             </div>

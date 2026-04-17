@@ -714,10 +714,10 @@ export function SectorDisbursementOverTime({
         <div className="p-3 pb-2 border-b bg-surface-muted rounded-t-lg">
           <span className="font-semibold text-sm">{label}</span>
           {customYears.find(cy => cy.id === calendarType)?.name && (
-            <p className="text-xs text-slate-400">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+            <p className="text-xs text-muted-foreground">{customYears.find(cy => cy.id === calendarType)!.name}</p>
           )}
-          <div className="text-xs text-gray-500 mt-1">
-            Total: <span className="font-bold text-gray-900">{formatCurrencyCompact(total)}</span>
+          <div className="text-xs text-muted-foreground mt-1">
+            Total: <span className="font-bold text-foreground">{formatCurrencyCompact(total)}</span>
           </div>
         </div>
 
@@ -745,14 +745,14 @@ export function SectorDisbursementOverTime({
                         className="w-3 h-3 rounded-sm flex-shrink-0 mt-0.5"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-700 flex-shrink-0">
+                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground flex-shrink-0">
                         {entry.dataKey}
                       </span>
-                      <span className="text-sm text-slate-700">
+                      <span className="text-sm text-foreground">
                         {item?.name}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-slate-900 flex-shrink-0">
+                    <span className="text-sm font-semibold text-foreground flex-shrink-0">
                       {formatCurrencyCompact(entry.value)}
                     </span>
                   </div>
@@ -764,12 +764,12 @@ export function SectorDisbursementOverTime({
               <div key={group.groupCode} className="border-b last:border-b-0 pb-2 last:pb-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1">
-                    <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">
+                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
                       {group.groupCode}
                     </span>
-                    <span className="text-xs font-semibold text-slate-800">{group.groupName}</span>
+                    <span className="text-xs font-semibold text-foreground">{group.groupName}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-900">{formatCurrencyCompact(group.groupTotal)}</span>
+                  <span className="text-xs font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
                 </div>
                 <div className="ml-3 space-y-1">
                   {Array.from(group.categories.values())
@@ -784,11 +784,11 @@ export function SectorDisbursementOverTime({
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0">
                             {cat.categoryCode}
                           </span>
-                          <span className="text-xs text-slate-600">
+                          <span className="text-xs text-muted-foreground">
                             {cat.categoryName}
                           </span>
                         </div>
-                        <span className="text-xs font-medium text-slate-700 flex-shrink-0">
+                        <span className="text-xs font-medium text-foreground flex-shrink-0">
                           {formatCurrencyCompact(cat.categoryTotal)}
                         </span>
                       </div>
@@ -802,12 +802,12 @@ export function SectorDisbursementOverTime({
               <div key={group.groupCode} className="border-b last:border-b-0 pb-2 last:pb-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1">
-                    <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">
+                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
                       {group.groupCode}
                     </span>
-                    <span className="text-xs font-semibold text-slate-800">{group.groupName}</span>
+                    <span className="text-xs font-semibold text-foreground">{group.groupName}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-900">{formatCurrencyCompact(group.groupTotal)}</span>
+                  <span className="text-xs font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
                 </div>
                 <div className="ml-3 space-y-1">
                   {Array.from(group.categories.values())
@@ -819,9 +819,9 @@ export function SectorDisbursementOverTime({
                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                               {category.categoryCode}
                             </span>
-                            <span className="text-xs text-slate-600">{category.categoryName}</span>
+                            <span className="text-xs text-muted-foreground">{category.categoryName}</span>
                           </div>
-                          <span className="text-xs font-medium text-slate-700">{formatCurrencyCompact(category.categoryTotal)}</span>
+                          <span className="text-xs font-medium text-foreground">{formatCurrencyCompact(category.categoryTotal)}</span>
                         </div>
                         <div className="ml-3 space-y-0.5">
                           {category.items
@@ -833,11 +833,11 @@ export function SectorDisbursementOverTime({
                                     className="w-2 h-2 rounded-sm flex-shrink-0 mt-0.5"
                                     style={{ backgroundColor: item.color }}
                                   />
-                                  <span className="text-xs text-gray-600">
+                                  <span className="text-xs text-muted-foreground">
                                     {item.name}
                                   </span>
                                 </div>
-                                <span className="text-xs font-medium text-gray-700 flex-shrink-0">
+                                <span className="text-xs font-medium text-foreground flex-shrink-0">
                                   {formatCurrencyCompact(item.value)}
                                 </span>
                               </div>
@@ -854,8 +854,8 @@ export function SectorDisbursementOverTime({
         
         {/* Scroll indicator */}
         {hasMoreContent && (
-          <div className="px-3 py-1.5 border-t bg-slate-50 text-center rounded-b-lg">
-            <span className="text-xs text-slate-500">↓ Scroll for more</span>
+          <div className="px-3 py-1.5 border-t bg-muted text-center rounded-b-lg">
+            <span className="text-xs text-muted-foreground">↓ Scroll for more</span>
           </div>
         )}
       </div>
@@ -891,11 +891,11 @@ export function SectorDisbursementOverTime({
       return <div className="h-full w-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
-      return <div className="h-full w-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
+      return <div className="h-full w-full flex items-center justify-center text-destructive"><p className="text-sm">{error}</p></div>
     }
     if (timeSeriesData.length === 0) {
       return (
-        <div className="h-full w-full flex items-center justify-center text-slate-500">
+        <div className="h-full w-full flex items-center justify-center text-muted-foreground">
           No data available
         </div>
       )
@@ -949,7 +949,7 @@ export function SectorDisbursementOverTime({
   if (error) {
     return (
       <div className="p-6">
-        <p className="text-red-600">Error loading data: {error}</p>
+        <p className="text-destructive">Error loading data: {error}</p>
       </div>
     )
   }
@@ -977,7 +977,7 @@ export function SectorDisbursementOverTime({
                       {sortCustomYearsCalendarFirst(customYears).map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
-                          className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                          className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
                           <span className="flex items-center gap-2">
@@ -1013,18 +1013,18 @@ export function SectorDisbursementOverTime({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                          <span className="text-xs font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                               title="Select all available years"
                             >
                               All
                             </button>
                             <button
                               onClick={selectDataRange}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                               title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
                             >
                               Data
@@ -1044,10 +1044,10 @@ export function SectorDisbursementOverTime({
                                 className={`
                                   px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                   ${isStartOrEnd
-                                    ? 'bg-slate-200 text-slate-900'
+                                    ? 'bg-muted text-foreground'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
-                                      : 'text-slate-600 hover:bg-slate-100'
+                                      : 'text-muted-foreground hover:bg-muted'
                                   }
                                 `}
                                 title="Click to select start, then click another to select end"
@@ -1057,7 +1057,7 @@ export function SectorDisbursementOverTime({
                             )
                           })}
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-2 text-center">
+                        <p className="text-[10px] text-muted-foreground mt-2 text-center">
                           Click start year, then click end year
                         </p>
                       </DropdownMenuContent>
@@ -1066,7 +1066,7 @@ export function SectorDisbursementOverTime({
                   {/* Date Range Indicator */}
                   {localDateRange?.from && localDateRange?.to &&
                    !isNaN(localDateRange.from.getTime()) && !isNaN(localDateRange.to.getTime()) && (
-                    <span className="text-xs text-slate-500 text-center">
+                    <span className="text-xs text-muted-foreground text-center">
                       {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                     </span>
                   )}
@@ -1078,11 +1078,11 @@ export function SectorDisbursementOverTime({
           {/* Controls - Right Side */}
           <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
             {/* Data Mode Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", dataMode === 'planned' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", dataMode === 'planned' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setDataMode('planned')}
               >
                 Planned
@@ -1090,7 +1090,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", dataMode === 'actual' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", dataMode === 'actual' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setDataMode('actual')}
               >
                 Actual
@@ -1098,11 +1098,11 @@ export function SectorDisbursementOverTime({
             </div>
 
             {/* Aggregation Level Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setAggregationLevel('group')}
               >
                 Sector Category
@@ -1110,7 +1110,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setAggregationLevel('category')}
               >
                 Sector
@@ -1118,7 +1118,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setAggregationLevel('sector')}
               >
                 Sub-sector
@@ -1137,7 +1137,7 @@ export function SectorDisbursementOverTime({
                     <SlidersHorizontal className="h-4 w-4" />
                     Filter
                     {visibleItemData.length < aggregatedData.length && (
-                      <span className="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-900 rounded-full">
+                      <span className="ml-1 px-1.5 py-0.5 text-xs bg-muted text-foreground rounded-full">
                         {visibleItemData.length}
                       </span>
                     )}
@@ -1148,19 +1148,19 @@ export function SectorDisbursementOverTime({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="p-3 w-[340px]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-slate-700">
+                    <span className="text-xs font-medium text-foreground">
                       Filter {aggregationLevel === 'group' ? 'Sector Categories' : aggregationLevel === 'category' ? 'Sectors' : 'Sub-sectors'}
                     </span>
                     <div className="flex gap-1">
                       <button
                         onClick={() => selectAllItems()}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                       >
                         All
                       </button>
                       <button
                         onClick={() => clearAllItems()}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                       >
                         Clear
                       </button>
@@ -1169,7 +1169,7 @@ export function SectorDisbursementOverTime({
 
                   {/* Search box */}
                   <div className="relative mb-2">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <input
                       type="text"
                       placeholder="Search by code or name..."
@@ -1181,12 +1181,12 @@ export function SectorDisbursementOverTime({
 
                   {/* Top N shortcuts */}
                   <div className="flex gap-1 mb-2 flex-wrap">
-                    <span className="text-[10px] text-slate-500 self-center mr-1">Quick:</span>
+                    <span className="text-[10px] text-muted-foreground self-center mr-1">Quick:</span>
                     {[3, 5, 10].map(n => (
                       <button
                         key={n}
                         onClick={() => selectTopN(n)}
-                        className="text-[10px] px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600"
+                        className="text-[10px] px-2 py-0.5 bg-muted hover:bg-muted rounded text-muted-foreground"
                       >
                         Top {n}
                       </button>
@@ -1196,7 +1196,7 @@ export function SectorDisbursementOverTime({
                   {/* Flat list of items at current level */}
                   <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
                     {filteredItems.length === 0 ? (
-                      <div className="text-center text-xs text-slate-400 py-4">
+                      <div className="text-center text-xs text-muted-foreground py-4">
                         No matching items found
                       </div>
                     ) : (
@@ -1207,7 +1207,7 @@ export function SectorDisbursementOverTime({
                           <button
                             key={item.code}
                             onClick={() => toggleItemVisibility(item.code)}
-                            className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-slate-50"
+                            className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-muted"
                           >
                             <div className={`
                               w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
@@ -1218,7 +1218,7 @@ export function SectorDisbursementOverTime({
                             <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                               {item.code}
                             </span>
-                            <span className="text-sm text-slate-700 leading-tight">
+                            <span className="text-sm text-foreground leading-tight">
                               {item.name}
                             </span>
                           </button>
@@ -1227,7 +1227,7 @@ export function SectorDisbursementOverTime({
                     )}
                   </div>
 
-                  <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t text-center">
+                  <p className="text-[10px] text-muted-foreground mt-2 pt-2 border-t text-center">
                     {visibleItemData.length} of {aggregatedData.length} {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
                   </p>
                 </DropdownMenuContent>
@@ -1235,11 +1235,11 @@ export function SectorDisbursementOverTime({
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", viewMode === 'area' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", viewMode === 'area' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('area')}
                 title="Area"
               >
@@ -1248,7 +1248,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", viewMode === 'line' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", viewMode === 'line' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('line')}
                 title="Line"
               >
@@ -1257,7 +1257,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('table')}
                 title="Table"
               >
@@ -1284,13 +1284,13 @@ export function SectorDisbursementOverTime({
           {/* Charts */}
           {viewMode === 'area' ? (
             visibleItemData.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
+              <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
+                <p className="text-xs text-muted-foreground">Use the Filter button to select items to compare</p>
               </div>
             ) : timeSeriesData.length === 0 ? (
-              <div className="h-80 flex items-center justify-center text-slate-500">
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
                 No data available
               </div>
             ) : (
@@ -1329,13 +1329,13 @@ export function SectorDisbursementOverTime({
             )
           ) : viewMode === 'line' ? (
             visibleItemData.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
+              <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
+                <p className="text-xs text-muted-foreground">Use the Filter button to select items to compare</p>
               </div>
             ) : timeSeriesData.length === 0 ? (
-              <div className="h-80 flex items-center justify-center text-slate-500">
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
                 No data available
               </div>
             ) : (
@@ -1375,21 +1375,21 @@ export function SectorDisbursementOverTime({
           ) : (
             /* Table View */
             visibleItemData.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
+              <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
+                <p className="text-xs text-muted-foreground">Use the Filter button to select items to compare</p>
               </div>
             ) : (
             <div className="overflow-auto max-h-[500px]">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-medium text-gray-700 sticky left-0 bg-muted/50">
+                    <TableHead className="font-medium text-foreground sticky left-0 bg-muted/50">
                       Year
                     </TableHead>
                     {visibleItemData.map(item => (
-                      <TableHead key={item.code} className="text-right font-medium text-gray-700 min-w-[120px]">
+                      <TableHead key={item.code} className="text-right font-medium text-foreground min-w-[120px]">
                         <div className="flex flex-col items-end">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground mb-1">
                             {item.code}
@@ -1398,13 +1398,13 @@ export function SectorDisbursementOverTime({
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-right font-medium text-gray-700">Total</TableHead>
+                    <TableHead className="text-right font-medium text-foreground">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {timeSeriesData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={visibleItemData.length + 2} className="text-center text-gray-500 py-8">
+                      <TableCell colSpan={visibleItemData.length + 2} className="text-center text-muted-foreground py-8">
                         No data available
                       </TableCell>
                     </TableRow>

@@ -350,7 +350,7 @@ export function DataClinicActivities() {
             variant="ghost"
             onClick={() => setEditingField({ activityId: activity.id, field })}
           >
-            <Pencil className="h-3 w-3 text-slate-500" />
+            <Pencil className="h-3 w-3 text-muted-foreground" />
           </Button>
         )}
       </div>
@@ -388,7 +388,7 @@ export function DataClinicActivities() {
               Please run the migration to enable full Data Clinic functionality.
             </p>
             <div className="bg-white rounded-lg p-4 border border-orange-200">
-              <p className="text-sm font-mono text-gray-700">
+              <p className="text-sm font-mono text-foreground">
                 psql -h your-host -U your-user -d your-db -f frontend/sql/add_data_clinic_fields.sql
               </p>
             </div>

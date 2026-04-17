@@ -209,7 +209,7 @@ export function CashFlowTable({
                         <button
                           type="button"
                           onClick={() => clearColumn(col)}
-                          className="text-muted-foreground/50 hover:text-red-500 transition-colors"
+                          className="text-muted-foreground/50 hover:text-destructive transition-colors"
                           title={`Clear all ${COLUMN_LABELS[col]} values`}
                         >
                           <X className="h-3 w-3" />
@@ -259,7 +259,7 @@ export function CashFlowTable({
                   {showNet && (
                     <td className={cn(
                       'p-1.5 text-right tabular-nums text-sm font-medium',
-                      net >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
+                      net >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
                     )}>
                       {formatNum(net)}
                     </td>
@@ -268,7 +268,7 @@ export function CashFlowTable({
                     <td className="p-1.5">
                       <button
                         onClick={() => removeRow(idx)}
-                        className="text-muted-foreground hover:text-red-500 transition-colors"
+                        className="text-muted-foreground hover:text-destructive transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -290,7 +290,7 @@ export function CashFlowTable({
                 {showNet && (
                   <td className={cn(
                     'p-2 tabular-nums text-sm font-medium',
-                    totals.revenue - totals.capex - totals.opex >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
+                    totals.revenue - totals.capex - totals.opex >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
                   )} style={{ textAlign: 'right' }}>
                     {formatNum(totals.revenue - totals.capex - totals.opex)}
                   </td>
@@ -362,7 +362,7 @@ function CashFlowTooltip({ active, payload, label }: any) {
 
   return (
     <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-      <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
+      <p className="font-semibold text-foreground mb-2">Year {label}</p>
       <div className="border-t pt-2 space-y-1">
         {nonZero.map((entry: any, index: number) => (
           <div key={index} className="flex items-center justify-between gap-4">
@@ -371,11 +371,11 @@ function CashFlowTooltip({ active, payload, label }: any) {
                 className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: entry.dataKey === 'Net' ? (entry.value >= 0 ? '#5f7f7a' : '#dc2625') : entry.color }}
               />
-              <span className="text-sm text-slate-700">{entry.name}</span>
+              <span className="text-sm text-foreground">{entry.name}</span>
             </div>
             <span className={cn(
               'text-sm font-medium',
-              entry.dataKey === 'Net' ? (entry.value >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : 'text-slate-900',
+              entry.dataKey === 'Net' ? (entry.value >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : 'text-foreground',
             )}>
               {Math.abs(entry.value).toLocaleString('en-US')}
               {entry.value < 0 ? ' (deficit)' : ''}
@@ -488,7 +488,7 @@ function CashFlowChart({
               )}
             >
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
-              <span className="text-slate-700">{entry.value}</span>
+              <span className="text-foreground">{entry.value}</span>
             </button>
           );
         })}
@@ -528,8 +528,8 @@ function CashFlowChart({
                 className={cn(
                   'text-[10px] px-2 py-0.5 rounded transition-colors',
                   chartMode === mode
-                    ? 'bg-slate-200 text-slate-900 font-semibold'
-                    : 'text-gray-600 hover:bg-muted',
+                    ? 'bg-muted text-foreground font-semibold'
+                    : 'text-muted-foreground hover:bg-muted',
                 )}
               >
                 {mode === 'annual' ? 'Annual' : 'Cumulative'}
@@ -539,7 +539,7 @@ function CashFlowChart({
           <button
             type="button"
             onClick={downloadCsv}
-            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border text-gray-600 hover:bg-muted transition-colors"
+            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border text-muted-foreground hover:bg-muted transition-colors"
             title="Download CSV"
           >
             <Download className="h-3 w-3" />

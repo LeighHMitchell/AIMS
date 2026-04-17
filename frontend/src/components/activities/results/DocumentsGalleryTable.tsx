@@ -93,7 +93,7 @@ const getFormatIcon = (format?: string) => {
   if (!format) return <File className="h-4 w-4" />;
   
   const f = format.toLowerCase();
-  if (f.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
+  if (f.includes('pdf')) return <FileText className="h-4 w-4 text-destructive" />;
   if (f.includes('xls') || f.includes('spreadsheet') || f.includes('csv')) {
     return <FileSpreadsheet className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
   }

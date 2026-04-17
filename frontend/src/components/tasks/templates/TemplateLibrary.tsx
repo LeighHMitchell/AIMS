@@ -128,7 +128,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <p className="text-red-500 mb-4">{error}</p>
+          <p className="text-destructive mb-4">{error}</p>
           <Button variant="outline" onClick={() => fetchTemplates()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
@@ -232,14 +232,14 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
                           {!template.is_system_template && (
                             <>
                               <DropdownMenuItem disabled>
-                                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                className="text-red-600"
+                                className="text-destructive"
                                 onClick={() => setDeleteConfirmId(template.id)}
                               >
-                                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                                <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                                 Delete
                               </DropdownMenuItem>
                             </>

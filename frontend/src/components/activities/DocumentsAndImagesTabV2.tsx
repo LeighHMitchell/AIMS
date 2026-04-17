@@ -470,8 +470,8 @@ export function DocumentsAndImagesTabV2({
       {/* Header with Stats */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Documents & Images</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="text-lg font-semibold text-foreground">Documents & Images</h3>
+          <p className="text-sm text-muted-foreground mt-1">
             Upload files or link to external documents
           </p>
         </div>
@@ -491,8 +491,8 @@ export function DocumentsAndImagesTabV2({
           <div className="mt-4">
             <div 
               className={cn(
-                "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-gray-100",
+                "bg-muted rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+                isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted",
                 !activityId && "opacity-50 cursor-not-allowed"
               )}
               onDragOver={handleDragOver}
@@ -505,13 +505,13 @@ export function DocumentsAndImagesTabV2({
                   {isDragOver ? (
                     <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
                   ) : (
-                    <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <Upload className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   )}
                 </div>
-                <h4 className="text-2xl font-medium text-gray-900 mb-3">
+                <h4 className="text-2xl font-medium text-foreground mb-3">
                   {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
                 </h4>
-                <p className="text-gray-600 mb-6 text-lg">
+                <p className="text-muted-foreground mb-6 text-lg">
                   Drag and drop files anywhere in this area, or click to browse your computer
                 </p>
                 <Button 
@@ -526,7 +526,7 @@ export function DocumentsAndImagesTabV2({
                   <Upload className="w-5 h-5" />
                   Choose Files
                 </Button>
-                <p className="text-sm text-gray-500 mt-4">
+                <p className="text-sm text-muted-foreground mt-4">
                   Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
                 </p>
                 <input
@@ -549,7 +549,7 @@ export function DocumentsAndImagesTabV2({
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 min-w-0">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -594,13 +594,13 @@ export function DocumentsAndImagesTabV2({
       {uploadingFiles.length > 0 && (
         <div className="space-y-2">
           {uploadingFiles.map(upload => (
-            <div key={upload.id} className="bg-gray-50 rounded-lg p-3">
+            <div key={upload.id} className="bg-muted rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium truncate flex-1">
                   {upload.file.name}
                 </span>
                 {upload.status === 'error' && (
-                  <span className="text-xs text-red-600">{upload.error}</span>
+                  <span className="text-xs text-destructive">{upload.error}</span>
                 )}
               </div>
               <Progress value={upload.progress} className="h-2" />
@@ -615,7 +615,7 @@ export function DocumentsAndImagesTabV2({
           <div className="bg-white rounded-2xl shadow-2xl p-12 flex flex-col items-center gap-4">
             <FileUp className="w-16 h-16 text-blue-500" />
             <p className="text-xl font-semibold">Drop files to upload</p>
-            <p className="text-sm text-gray-500">Images and documents supported</p>
+            <p className="text-sm text-muted-foreground">Images and documents supported</p>
           </div>
         </div>
       )}
@@ -629,13 +629,13 @@ export function DocumentsAndImagesTabV2({
           )}
         >
           {documents.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
+            <div className="text-center py-16 text-muted-foreground">
               <div className="flex justify-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Cloud className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                  <Cloud className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <ExternalLink className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                  <ExternalLink className="w-8 h-8 text-muted-foreground" />
                 </div>
               </div>
               <h3 className="text-lg font-medium mb-2">No documents</h3>
@@ -646,8 +646,8 @@ export function DocumentsAndImagesTabV2({
             </div>
           ) : (
             <>
-              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">No documents match your filters</p>
+              <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">No documents match your filters</p>
             </>
           )}
         </div>
@@ -683,7 +683,7 @@ export function DocumentsAndImagesTabV2({
                       <TableCell className="font-medium">
                         <div className="flex items-start gap-3">
                           {(isImageMime(doc.format) || doc.thumbnailUrl) ? (
-                            <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 flex-shrink-0">
+                            <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
                               <img
                                 src={doc.thumbnailUrl || doc.url}
                                 alt={primaryTitle.text}
@@ -694,15 +694,15 @@ export function DocumentsAndImagesTabV2({
                               />
                             </div>
                           ) : (
-                            <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
-                              <FileText className="w-5 h-5 text-gray-500" />
+                            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 text-muted-foreground" />
                             </div>
                           )}
                           <span>{primaryTitle.text}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           {primaryDescription?.text || '-'}
                         </span>
                       </TableCell>
@@ -746,28 +746,28 @@ export function DocumentsAndImagesTabV2({
                           <button
                             type="button"
                             onClick={() => handleOpenDocument(doc.url)}
-                            className="p-1.5 rounded hover:bg-gray-100"
+                            className="p-1.5 rounded hover:bg-muted"
                             title="Open document"
                           >
-                            <ExternalLink className="h-[18px] w-[18px] text-slate-500" />
+                            <ExternalLink className="h-[18px] w-[18px] text-muted-foreground" />
                           </button>
                           {!readOnly && (
                             <>
                               <button
                                 type="button"
                                 onClick={() => handleEditDocument(doc)}
-                                className="p-1.5 rounded hover:bg-gray-100"
+                                className="p-1.5 rounded hover:bg-muted"
                                 title="Edit"
                               >
-                                <Pencil className="h-[18px] w-[18px] text-slate-500" />
+                                <Pencil className="h-[18px] w-[18px] text-muted-foreground" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteDocument(doc.url)}
-                                className="p-1.5 rounded hover:bg-gray-100"
+                                className="p-1.5 rounded hover:bg-muted"
                                 title="Delete"
                               >
-                                <Trash2 className="h-[18px] w-[18px] text-red-500" />
+                                <Trash2 className="h-[18px] w-[18px] text-destructive" />
                               </button>
                             </>
                           )}
@@ -824,7 +824,7 @@ export function DocumentsAndImagesTabV2({
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>

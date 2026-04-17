@@ -91,7 +91,7 @@ export function StringArrayInput({
       )}
       
       {description && (
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       )}
 
       {/* Input field with Add button */}
@@ -122,7 +122,7 @@ export function StringArrayInput({
 
       {/* Error message */}
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {/* Display current values as badges */}

@@ -312,7 +312,7 @@ export default function ProjectDetailPage() {
               </span>
             )}
             {project.proceeding_independently && (
-              <Badge variant="outline" className="text-gray-600 border-gray-400">
+              <Badge variant="outline" className="text-muted-foreground border-gray-400">
                 Proceeding Independently (MIC)
               </Badge>
             )}

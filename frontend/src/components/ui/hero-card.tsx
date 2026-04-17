@@ -188,13 +188,13 @@ export function HeroCard<T = any>({
     switch (variant) {
       case 'error':
         return {
-          cardClass: 'bg-red-50',
-          valueClass: 'text-red-600'
+          cardClass: 'bg-destructive/10',
+          valueClass: 'text-destructive'
         };
       case 'error-text':
         return {
           cardClass: 'bg-white',
-          valueClass: 'text-red-600'
+          valueClass: 'text-destructive'
         };
       case 'warning':
         return {
@@ -209,7 +209,7 @@ export function HeroCard<T = any>({
       default:
         return {
           cardClass: 'bg-white',
-          valueClass: 'text-gray-900'
+          valueClass: 'text-foreground'
         };
     }
   };
@@ -228,7 +228,7 @@ export function HeroCard<T = any>({
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1">
-                <p className="text-sm font-medium text-gray-600">{title}</p>
+                <p className="text-sm font-medium text-muted-foreground">{title}</p>
                 {helpText && (
                   <Tooltip>
                     <TooltipTrigger>
@@ -276,13 +276,13 @@ export function HeroCard<T = any>({
             <p className={cn(
               "text-2xl font-bold transition-all duration-500",
               valueClass,
-              (isUpdating || isAnimating) && "scale-105 text-gray-900",
+              (isUpdating || isAnimating) && "scale-105 text-foreground",
               justUpdated && !isUpdating && !isAnimating && "scale-105 text-[hsl(var(--success-icon))]"
             )}>
               {formatValue(animate ? currentValue : calculatedValue)}
             </p>
             {subtitle && (
-              <p className="text-xs text-gray-500">{subtitle}</p>
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
             )}
             
             {/* Render secondary values */}
@@ -290,7 +290,7 @@ export function HeroCard<T = any>({
               <div className="mt-2 pt-2 space-y-2 border-t border-border">
                 {secondaryValues.map((item, index) => (
                   <div key={index}>
-                    <p className="text-xs text-gray-500">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
                     <p className={cn("text-lg font-semibold transition-all duration-500", valueClass)}>
                       {formatValue(item.value)}
                     </p>
@@ -302,7 +302,7 @@ export function HeroCard<T = any>({
             {/* Legacy: Single secondary value support */}
             {!secondaryValues && secondaryValue !== undefined && secondaryLabel && (
               <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-xs text-gray-500">{secondaryLabel}</p>
+                <p className="text-xs text-muted-foreground">{secondaryLabel}</p>
                 <p className={cn("text-lg font-semibold transition-all duration-500", valueClass)}>
                   {formatValue(secondaryValue)}
                 </p>
@@ -335,7 +335,7 @@ export function HeroCard<T = any>({
                           return (
                             <div className="bg-white p-2 border border-border rounded shadow-lg">
                               <p className="text-sm font-semibold">{payload[0].payload.year}</p>
-                              <p className="text-sm text-gray-600">{formatChartCurrency(payload[0].value as number)}</p>
+                              <p className="text-sm text-muted-foreground">{formatChartCurrency(payload[0].value as number)}</p>
                             </div>
                           );
                         }

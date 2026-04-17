@@ -67,7 +67,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-surface-muted">
-                <tr className="bg-slate-50">
+                <tr className="bg-muted">
                   <th className="text-left p-2 border-b border-border font-medium">
                     {swapAxes ? 'Category' : 'Donor'}
                   </th>
@@ -83,8 +83,8 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 {rows.map((row: any) => {
                   const isOthers = row.id === 'others';
                   return (
-                    <tr key={row.id} className="hover:bg-slate-50/50">
-                      <td className={`p-2 border-b border-border font-medium ${isOthers ? 'text-red-600' : ''}`}>
+                    <tr key={row.id} className="hover:bg-muted/50">
+                      <td className={`p-2 border-b border-border font-medium ${isOthers ? 'text-destructive' : ''}`}>
                         {isOthers ? 'OTHERS' : (row.acronym || row.code || row.name)}
                       </td>
                       {columns.map((col: any) => {
@@ -103,7 +103,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                     </tr>
                   );
                 })}
-                <tr className="bg-slate-50 font-bold">
+                <tr className="bg-muted font-bold">
                   <td className="p-2 border-t border-border">Total</td>
                   {columns.map((col: any) => (
                     <td key={col.id} className="text-right p-2 border-t border-border tabular-nums">
@@ -165,7 +165,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="text-xs font-medium text-slate-600 cursor-help block leading-tight whitespace-normal">
+                        <span className="text-xs font-medium text-muted-foreground cursor-help block leading-tight whitespace-normal">
                           {getColumnLabel(col)}
                         </span>
                       </TooltipTrigger>
@@ -189,7 +189,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 <th 
                   className="border-b border-border p-1 align-bottom text-center"
                 >
-                  <span className="text-xs font-bold text-slate-700">
+                  <span className="text-xs font-bold text-foreground">
                     Totals
                   </span>
                 </th>
@@ -204,11 +204,11 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   : 0;
                 
                 return (
-                  <tr key={row.id} className="hover:bg-slate-50/50">
+                  <tr key={row.id} className="hover:bg-muted/50">
                     {/* Row name cell */}
                     <td 
                       className={`sticky left-0 bg-white z-10 px-2 py-1 text-xs font-medium border-b border-border ${
-                        isOthers ? 'text-red-600' : 'text-slate-700'
+                        isOthers ? 'text-destructive' : 'text-foreground'
                       }`}
                       style={{ width: 100 }}
                     >
@@ -317,9 +317,9 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 );
               })}
               {/* Totals row */}
-              <tr className="bg-slate-50 font-medium">
+              <tr className="bg-muted font-medium">
                 <td 
-                  className="sticky left-0 bg-slate-50 z-10 px-2 py-1 text-xs font-bold text-slate-700 border-t border-border"
+                  className="sticky left-0 bg-muted z-10 px-2 py-1 text-xs font-bold text-foreground border-t border-border"
                   style={{ width: 100 }}
                 >
                   Totals
@@ -329,7 +329,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                     key={col.id}
                     className="p-0.5 text-center border-t border-border"
                   >
-                    <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
+                    <div className="px-1 py-1 text-[11px] font-bold text-foreground">
                       100%
                     </div>
                   </td>
@@ -337,7 +337,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 <td
                   className="p-0.5 text-center border-t border-border"
                 >
-                  <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
+                  <div className="px-1 py-1 text-[11px] font-bold text-foreground">
                     100%
                   </div>
                 </td>
@@ -348,7 +348,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
 
         {/* Legend - horizontal bar at bottom */}
         <div className="flex items-center gap-2 pt-2">
-          <span className="text-xs font-medium text-slate-600 mr-2">LEGENDS</span>
+          <span className="text-xs font-medium text-muted-foreground mr-2">LEGENDS</span>
           <div className="flex items-center">
             {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
               <div

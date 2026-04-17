@@ -188,8 +188,8 @@ export function SystemsSettings() {
           <Card key={i}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="h-5 w-5 bg-gray-200 rounded animate-pulse" />
-                <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 w-5 bg-muted rounded animate-pulse" />
+                <div className="h-5 w-24 bg-muted rounded animate-pulse" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -214,7 +214,7 @@ export function SystemsSettings() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center py-8 text-red-600">
+            <div className="flex items-center justify-center py-8 text-destructive">
               <div className="text-center">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2" />
                 <p className="text-sm">Error: {error}</p>

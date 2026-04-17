@@ -42,7 +42,7 @@ function getDocumentIcon(url: string, format?: string) {
 
   // Check for PDF
   if (lowerUrl.endsWith('.pdf') || lowerFormat.includes('pdf')) {
-    return <FileText className="h-10 w-10 text-red-500" />
+    return <FileText className="h-10 w-10 text-destructive" />
   }
 
   // Check for spreadsheets
@@ -100,7 +100,7 @@ function getDocumentIcon(url: string, format?: string) {
   }
 
   // Default file icon
-  return <File className="h-10 w-10 text-slate-500" />
+  return <File className="h-10 w-10 text-muted-foreground" />
 }
 
 // Get background color based on file type
@@ -109,7 +109,7 @@ function getBackgroundColor(url: string, format?: string): string {
   const lowerFormat = (format || '').toLowerCase()
 
   if (lowerUrl.endsWith('.pdf') || lowerFormat.includes('pdf')) {
-    return 'bg-red-50'
+    return 'bg-destructive/10'
   }
   if (lowerUrl.match(/\.(xlsx?|csv|ods)$/) || lowerFormat.includes('spreadsheet')) {
     return 'bg-green-50'
@@ -123,7 +123,7 @@ function getBackgroundColor(url: string, format?: string): string {
   if (lowerUrl.match(/\.(docx?|odt)$/) || lowerFormat.includes('word')) {
     return 'bg-blue-50'
   }
-  return 'bg-slate-50'
+  return 'bg-muted'
 }
 
 export function DocumentThumbnail({
@@ -256,7 +256,7 @@ export function DocumentThumbnail({
     return (
       <div
         ref={containerRef}
-        className={`relative overflow-hidden bg-slate-100 ${className}`}
+        className={`relative overflow-hidden bg-muted ${className}`}
         style={styleObj}
       >
         <img
@@ -279,7 +279,7 @@ export function DocumentThumbnail({
     return (
       <div
         ref={containerRef}
-        className={`relative overflow-hidden bg-slate-100 ${className}`}
+        className={`relative overflow-hidden bg-muted ${className}`}
         style={styleObj}
       >
         <img
@@ -317,10 +317,10 @@ export function DocumentThumbnail({
 
         {/* Loading state */}
         {loading && !pdfRendered && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <div className="text-center">
-              <Loader2 className="h-6 w-6 text-slate-400 animate-spin mx-auto mb-2" />
-              <span className="text-xs text-slate-400">Loading...</span>
+              <Loader2 className="h-6 w-6 text-muted-foreground animate-spin mx-auto mb-2" />
+              <span className="text-xs text-muted-foreground">Loading...</span>
             </div>
           </div>
         )}
@@ -329,7 +329,7 @@ export function DocumentThumbnail({
         {!loading && !pdfRendered && (
           <div className="flex flex-col items-center justify-center">
             {getDocumentIcon(url, format)}
-            <span className="text-xs text-slate-500 mt-2 font-medium">PDF</span>
+            <span className="text-xs text-muted-foreground mt-2 font-medium">PDF</span>
           </div>
         )}
       </div>
@@ -345,7 +345,7 @@ export function DocumentThumbnail({
     >
       {getDocumentIcon(url, format)}
       {format && (
-        <span className="text-xs text-slate-500 mt-2 font-medium uppercase">
+        <span className="text-xs text-muted-foreground mt-2 font-medium uppercase">
           {format.split('/').pop()?.replace('application/', '').slice(0, 10)}
         </span>
       )}

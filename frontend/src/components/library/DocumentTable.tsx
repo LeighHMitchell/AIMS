@@ -235,8 +235,8 @@ export function DocumentTable({
                             {doc.reportingOrgLogo ? (
                               <img src={doc.reportingOrgLogo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
                             ) : (
-                              <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                              <div className="h-5 w-5 rounded-sm bg-muted dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[10px] font-medium text-muted-foreground dark:text-muted-foreground">
                                   {(doc.reportingOrgAcronym || doc.reportingOrgName || '?')[0].toUpperCase()}
                                 </span>
                               </div>
@@ -296,7 +296,7 @@ export function DocumentTable({
                       </DropdownMenuItem>
                       {onEdit && doc.sourceType === 'standalone' && (
                         <DropdownMenuItem onClick={() => onEdit(doc)}>
-                          <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                          <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                           Edit
                         </DropdownMenuItem>
                       )}
@@ -328,7 +328,7 @@ export function DocumentTable({
                             onClick={() => onDelete(doc)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                            <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                             Delete
                           </DropdownMenuItem>
                         </>

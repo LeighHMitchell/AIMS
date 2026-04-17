@@ -90,7 +90,7 @@ const getTransactionTypeLabel = (type: string) => {
 // Helper to get activity status badge
 const getStatusBadge = (status: string | null) => {
   const statusColors: Record<string, string> = {
-    '1': 'bg-gray-100 text-gray-800', // Pipeline/Identification
+    '1': 'bg-muted text-foreground', // Pipeline/Identification
     '2': 'bg-blue-100 text-blue-800', // Implementation
     '3': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]', // Finalisation
     '4': 'bg-purple-100 text-purple-800', // Closed
@@ -106,7 +106,7 @@ const getStatusBadge = (status: string | null) => {
     '6': 'Suspended',
   };
   return (
-    <Badge className={cn('text-xs', statusColors[status || ''] || 'bg-gray-100 text-gray-800')}>
+    <Badge className={cn('text-xs', statusColors[status || ''] || 'bg-muted text-foreground')}>
       {statusLabels[status || ''] || status || 'Unknown'}
     </Badge>
   );

@@ -1058,7 +1058,7 @@ export function ExternalPublisherModal({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                        className="h-4 w-4 p-0 rounded-full hover:bg-muted focus:bg-muted"
                         type="button"
                         aria-label="Help"
                         tabIndex={-1}
@@ -1092,7 +1092,7 @@ export function ExternalPublisherModal({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                        className="h-4 w-4 p-0 rounded-full hover:bg-muted focus:bg-muted"
                         type="button"
                         aria-label="Help"
                         tabIndex={-1}
@@ -1149,7 +1149,7 @@ export function ExternalPublisherModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-5 w-5 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                          className="h-5 w-5 p-0 rounded-full hover:bg-muted focus:bg-muted"
                           type="button"
                           aria-label="Show examples"
                         >
@@ -1163,7 +1163,7 @@ export function ExternalPublisherModal({
                       </TooltipContent>
                     </Tooltip>
                   </Label>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {iatiImportStrings['option.merge.help']}
                   </p>
                 </div>
@@ -1185,7 +1185,7 @@ export function ExternalPublisherModal({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-5 w-5 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
+                            className="h-5 w-5 p-0 rounded-full hover:bg-muted focus:bg-muted"
                             type="button"
                             aria-label="Show examples"
                           >
@@ -1199,7 +1199,7 @@ export function ExternalPublisherModal({
                         </TooltipContent>
                       </Tooltip>
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {iatiImportStrings['option.reportingOrg.help']}
                     </p>
                   </div>
@@ -1211,7 +1211,7 @@ export function ExternalPublisherModal({
         </div>
 
         {/* Footnote */}
-        <div className="text-xs text-gray-500 p-3">
+        <div className="text-xs text-muted-foreground p-3">
           <Info className="h-3 w-3 inline mr-1" />
           {iatiImportStrings.footnote}
         </div>

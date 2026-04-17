@@ -143,7 +143,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>
@@ -167,22 +167,22 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   return (
     <div className="w-full">
       {/* Chart Legend */}
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.budget }}></div>
-          <span className="text-sm font-medium text-slate-700">Budget</span>
+          <span className="text-sm font-medium text-foreground">Budget</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.disbursements }}></div>
-          <span className="text-sm font-medium text-slate-700">Disbursements</span>
+          <span className="text-sm font-medium text-foreground">Disbursements</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.expenditures }}></div>
-          <span className="text-sm font-medium text-slate-700">Expenditures</span>
+          <span className="text-sm font-medium text-foreground">Expenditures</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.totalSpending }}></div>
-          <span className="text-sm font-medium text-slate-700">Total Spending</span>
+          <span className="text-sm font-medium text-foreground">Total Spending</span>
         </div>
       </div>
 

@@ -38,7 +38,7 @@ export function SimpleSaveIndicator({
   const getIndicator = () => {
     // Priority order: Red > Orange > Green
     if (showRed) {
-      return <XCircle className="w-4 h-4 text-red-600 ml-2" title={errorMessage} />;
+      return <XCircle className="w-4 h-4 text-destructive ml-2" title={errorMessage} />;
     }
     
     if (showOrange) {
@@ -54,7 +54,7 @@ export function SimpleSaveIndicator({
   
   return (
     <div className="space-y-2">
-      <label className={`text-sm font-medium flex items-center text-gray-700 ${className}`}>
+      <label className={`text-sm font-medium flex items-center text-foreground ${className}`}>
         <div className="flex items-center gap-2">
           <span>
             {label}
@@ -70,7 +70,7 @@ export function SimpleSaveIndicator({
       </div>
       
       {errorMessage && showRed && (
-        <p className="text-xs text-red-600 mt-1">{errorMessage}</p>
+        <p className="text-xs text-destructive mt-1">{errorMessage}</p>
       )}
     </div>
   );

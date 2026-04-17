@@ -216,10 +216,10 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
         <div className="text-center">
-          <p className="text-slate-600">No sector data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          <p className="text-muted-foreground">No sector data available</p>
+          <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )

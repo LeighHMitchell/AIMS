@@ -64,7 +64,7 @@ export const DisbursementGauge: React.FC<DisbursementGaugeProps> = ({
         </ResponsiveContainer>
         <div className="text-center mt-4">
           <div className="text-3xl font-bold">{percentage.toFixed(1)}%</div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             ${totalDisbursement.toLocaleString()} of ${totalCommitment.toLocaleString()}
           </div>
         </div>

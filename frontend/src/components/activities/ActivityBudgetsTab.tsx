@@ -2010,7 +2010,7 @@ export default function ActivityBudgetsTab({
                     <TableRow
                       className={cn(
                         "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                        budget.hasError ? 'bg-red-50' : '',
+                        budget.hasError ? 'bg-destructive/10' : '',
                         selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
                     >
@@ -2105,7 +2105,7 @@ export default function ActivityBudgetsTab({
                         ) : (
                           <div className="flex items-center gap-1">
                             {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.error ? (
-                              <span className="text-sm text-red-500">
+                              <span className="text-sm text-destructive">
                                 {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].error}
                               </span>
                             ) : (
@@ -2120,7 +2120,7 @@ export default function ActivityBudgetsTab({
                             <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" aria-label="Saved" />
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'error' && (
-                            <span className="text-xs text-red-500">Failed</span>
+                            <span className="text-xs text-destructive">Failed</span>
                         )}
                         </div>
                       </TableCell>
@@ -2142,8 +2142,8 @@ export default function ActivityBudgetsTab({
                               <DropdownMenuItem onClick={() => duplicateForward(index)}>
                                 <Copy className="h-4 w-4 mr-2" /> Duplicate
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => deleteBudget(index)} className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2 text-red-500" /> Delete
+                              <DropdownMenuItem onClick={() => deleteBudget(index)} className="text-destructive">
+                                <Trash2 className="h-4 w-4 mr-2 text-destructive" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -2203,7 +2203,7 @@ export default function ActivityBudgetsTab({
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -2309,10 +2309,10 @@ export default function ActivityBudgetsTab({
             <div className="space-y-4 py-4">
               {/* Validation Alert */}
               {validationAlert && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-destructive/10 px-4 py-3 text-sm text-red-800">
+                  <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                   <span>{validationAlert}</span>
-                  <button onClick={() => setValidationAlert(null)} className="ml-auto text-red-500 hover:text-red-700">
+                  <button onClick={() => setValidationAlert(null)} className="ml-auto text-destructive hover:text-destructive">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -2395,7 +2395,7 @@ export default function ActivityBudgetsTab({
                     </PopoverContent>
                   </Popover>
                   {fieldErrors.type && (
-                    <p className="text-xs text-red-500">{fieldErrors.type}</p>
+                    <p className="text-xs text-destructive">{fieldErrors.type}</p>
                   )}
                 </div>
 
@@ -2473,7 +2473,7 @@ export default function ActivityBudgetsTab({
                   </PopoverContent>
                 </Popover>
                 {fieldErrors.status && (
-                  <p className="text-xs text-red-500">{fieldErrors.status}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.status}</p>
                 )}
               </div>
               </div>
@@ -2496,7 +2496,7 @@ export default function ActivityBudgetsTab({
                     dropdownId="budget-modal-period-start"
                   />
                   {fieldErrors.period_start && (
-                    <p className="text-xs text-red-500">{fieldErrors.period_start}</p>
+                    <p className="text-xs text-destructive">{fieldErrors.period_start}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -2515,7 +2515,7 @@ export default function ActivityBudgetsTab({
                     dropdownId="budget-modal-period-end"
                   />
                   {fieldErrors.period_end && (
-                    <p className="text-xs text-red-500">{fieldErrors.period_end}</p>
+                    <p className="text-xs text-destructive">{fieldErrors.period_end}</p>
                   )}
                 </div>
               </div>
@@ -2537,7 +2537,7 @@ export default function ActivityBudgetsTab({
                     placeholder="Select currency"
                   />
                   {fieldErrors.currency && (
-                    <p className="text-xs text-red-500">{fieldErrors.currency}</p>
+                    <p className="text-xs text-destructive">{fieldErrors.currency}</p>
                   )}
                 </div>
               </div>
@@ -2588,7 +2588,7 @@ export default function ActivityBudgetsTab({
                     className={fieldErrors.value ? 'border-red-500' : ''}
                   />
                   {fieldErrors.value && (
-                    <p className="text-xs text-red-500">{fieldErrors.value}</p>
+                    <p className="text-xs text-destructive">{fieldErrors.value}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -2607,7 +2607,7 @@ export default function ActivityBudgetsTab({
                     dropdownId="budget-modal-value-date"
                   />
                   {fieldErrors.value_date && (
-                    <p className="text-xs text-red-500">{fieldErrors.value_date}</p>
+                    <p className="text-xs text-destructive">{fieldErrors.value_date}</p>
                   )}
                 </div>
               </div>
@@ -2685,7 +2685,7 @@ export default function ActivityBudgetsTab({
                       )}
                     </div>
                     {modalRateError && (
-                      <p className="text-xs text-red-500">{modalRateError}</p>
+                      <p className="text-xs text-destructive">{modalRateError}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -2763,10 +2763,10 @@ export default function ActivityBudgetsTab({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => removeBudgetLine(index)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   type="button"
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
 

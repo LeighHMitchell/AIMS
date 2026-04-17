@@ -335,7 +335,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
                   }}
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
-                  <Pencil className="h-4 w-4 mr-1 text-slate-500" />
+                  <Pencil className="h-4 w-4 mr-1 text-muted-foreground" />
                   Edit & Merge
                 </Button>
               )}

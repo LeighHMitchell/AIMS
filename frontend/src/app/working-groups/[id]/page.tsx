@@ -122,8 +122,8 @@ const getRoleBadgeColor = (role: string) => {
     case 'deputy_chair': return 'bg-violet-100 text-violet-800'
     case 'secretariat': return 'bg-blue-100 text-blue-800'
     case 'member': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-    case 'observer': return 'bg-gray-100 text-gray-800'
-    default: return 'bg-gray-100 text-gray-800'
+    case 'observer': return 'bg-muted text-foreground'
+    default: return 'bg-muted text-foreground'
   }
 }
 
@@ -140,7 +140,7 @@ const getStatusBadgeColor = (status: string) => {
     case 'scheduled': return 'bg-blue-100 text-blue-800'
     case 'completed': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
     case 'cancelled': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
+    default: return 'bg-muted text-foreground'
   }
 }
 

@@ -192,7 +192,7 @@ export default function IatiImportDemoPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">IATI External Publisher Import Demo</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Demonstration of the external publisher detection and import modal system
         </p>
       </div>
@@ -233,7 +233,7 @@ export default function IatiImportDemoPage() {
               className="mt-1"
             />
             {selectedFile && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
               </p>
             )}
@@ -247,7 +247,7 @@ export default function IatiImportDemoPage() {
             {uploading ? 'Processing...' : 'Upload and Analyse'}
           </Button>
 
-          <div className="text-xs text-gray-500 space-y-1">
+          <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>Expected behavior:</strong></p>
             <ul className="list-disc list-inside space-y-1">
               <li>If reporting-org matches {MOCK_USER.publisherRefs.join(' or ')}: Direct import as owned activity</li>

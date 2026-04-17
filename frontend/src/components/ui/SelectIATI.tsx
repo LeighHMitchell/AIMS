@@ -277,7 +277,7 @@ export function SelectIATI({
 
       {/* Error message */}
       {error && (
-        <div className="flex items-center gap-1 text-xs text-red-600">
+        <div className="flex items-center gap-1 text-xs text-destructive">
           <AlertCircle className="h-3 w-3" />
           <span>{error}</span>
         </div>

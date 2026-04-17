@@ -83,8 +83,8 @@ const getRoleBadgeColor = (role: string) => {
     case 'deputy_chair': return 'bg-violet-100 text-violet-800'
     case 'secretariat': return 'bg-blue-100 text-blue-800'
     case 'member': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-    case 'observer': return 'bg-muted text-gray-800'
-    default: return 'bg-muted text-gray-800'
+    case 'observer': return 'bg-muted text-foreground'
+    default: return 'bg-muted text-foreground'
   }
 }
 
@@ -466,10 +466,10 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="text-destructive"
                           onClick={() => setMemberToDelete(member)}
                         >
-                          <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                          <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -599,7 +599,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-red-500"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
                     onClick={clearSelectedContact}
                   >
                     <X className="h-4 w-4" />

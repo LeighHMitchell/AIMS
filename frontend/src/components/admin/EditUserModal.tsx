@@ -317,7 +317,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5 text-slate-500" />
+            <Pencil className="h-5 w-5 text-muted-foreground" />
             Edit User: {user.name}
           </DialogTitle>
           <DialogDescription>

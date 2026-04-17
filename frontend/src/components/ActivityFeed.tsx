@@ -35,26 +35,26 @@ const getActionIcon = (actionType: string, entityType?: string) => {
             entityType === 'user' ? <UserPlus className="h-4 w-4 text-[hsl(var(--success-icon))]" /> :
             <Plus className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
     edit: entityType === 'organization' ? <Building2 className="h-4 w-4 text-blue-600" /> :
-          entityType === 'user' ? <Pencil className="h-4 w-4 text-slate-500" /> :
-          <Pencil className="h-4 w-4 text-slate-500" />,
-    delete: <Trash2 className="h-4 w-4 text-red-500" />,
+          entityType === 'user' ? <Pencil className="h-4 w-4 text-muted-foreground" /> :
+          <Pencil className="h-4 w-4 text-muted-foreground" />,
+    delete: <Trash2 className="h-4 w-4 text-destructive" />,
     submit_validation: <Send className="h-4 w-4 text-purple-600" />,
     validate: <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
-    reject: <XCircle className="h-4 w-4 text-red-600" />,
+    reject: <XCircle className="h-4 w-4 text-destructive" />,
     publish: <FileUp className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
     unpublish: <FileDown className="h-4 w-4 text-orange-600" />,
     add_contact: <UserPlus className="h-4 w-4 text-blue-600" />,
-    remove_contact: <UserMinus className="h-4 w-4 text-red-600" />,
+    remove_contact: <UserMinus className="h-4 w-4 text-destructive" />,
     add_transaction: <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
     edit_transaction: <DollarSign className="h-4 w-4 text-blue-600" />,
-    delete_transaction: <DollarSign className="h-4 w-4 text-red-600" />,
+    delete_transaction: <DollarSign className="h-4 w-4 text-destructive" />,
     add_partner: <Building2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />,
     update_partner: <Building2 className="h-4 w-4 text-blue-600" />,
     status_change: <RefreshCw className="h-4 w-4 text-purple-600" />,
     add_tag: <Plus className="h-4 w-4 text-blue-600" />,
     remove_tag: <XCircle className="h-4 w-4 text-orange-600" />,
   };
-  return iconMap[actionType] || <AlertCircle className="h-4 w-4 text-gray-600" />;
+  return iconMap[actionType] || <AlertCircle className="h-4 w-4 text-muted-foreground" />;
 };
 
 // Generate human-readable action descriptions
@@ -224,7 +224,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
         )}
         <CardContent>
           <div className="text-center py-8">
-            <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+            <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">{error}</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
               Try Again

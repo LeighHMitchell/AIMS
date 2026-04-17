@@ -207,7 +207,7 @@ export function ActivityEditorWithProperIndicators({
       <Card>
         <CardHeader>
           <CardTitle>Activity Editor - Proper Save Indicators</CardTitle>
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             This example demonstrates the correct save indicator behavior for all field types including uploads.
           </p>
         </CardHeader>
@@ -377,7 +377,7 @@ export function ActivityEditorWithProperIndicators({
                   id="uuid"
                   value={formData.uuid}
                   readOnly={true}
-                  className="bg-gray-50 cursor-default"
+                  className="bg-muted cursor-default"
                 />
               </PrefilledFieldWrapper>
             </div>

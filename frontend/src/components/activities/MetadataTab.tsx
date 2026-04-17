@@ -131,31 +131,31 @@ const getActionIcon = (action: string) => {
   switch (action.toLowerCase()) {
     case 'create':
     case 'created':
-      return <Plus className="h-4 w-4 text-gray-600" />;
+      return <Plus className="h-4 w-4 text-muted-foreground" />;
     case 'edit':
     case 'update':
     case 'updated':
-      return <Pencil className="h-4 w-4 text-slate-500" />;
+      return <Pencil className="h-4 w-4 text-muted-foreground" />;
     case 'delete':
     case 'deleted':
-      return <Trash2 className="h-4 w-4 text-red-500" />;
+      return <Trash2 className="h-4 w-4 text-destructive" />;
     case 'publish':
     case 'published':
-      return <Upload className="h-4 w-4 text-gray-600" />;
+      return <Upload className="h-4 w-4 text-muted-foreground" />;
     case 'unpublish':
     case 'unpublished':
-      return <Download className="h-4 w-4 text-gray-600" />;
+      return <Download className="h-4 w-4 text-muted-foreground" />;
     case 'sync':
     case 'synced':
-      return <RefreshCw className="h-4 w-4 text-gray-600" />;
+      return <RefreshCw className="h-4 w-4 text-muted-foreground" />;
     case 'view':
     case 'viewed':
-      return <Eye className="h-4 w-4 text-gray-500" />;
+      return <Eye className="h-4 w-4 text-muted-foreground" />;
     case 'validate':
     case 'validated':
-      return <UserCheck className="h-4 w-4 text-gray-600" />;
+      return <UserCheck className="h-4 w-4 text-muted-foreground" />;
     default:
-      return <Activity className="h-4 w-4 text-gray-500" />;
+      return <Activity className="h-4 w-4 text-muted-foreground" />;
   }
 };
 
@@ -633,7 +633,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                         <span className="font-medium">Field:</span> {log.details.metadata.fieldChanged}
                         {log.details.metadata.oldValue && log.details.metadata.newValue && (
                           <div className="mt-1 font-mono">
-                            <span className="text-red-600">- {JSON.stringify(log.details.metadata.oldValue)}</span>
+                            <span className="text-destructive">- {JSON.stringify(log.details.metadata.oldValue)}</span>
                             <br />
                             <span className="text-[hsl(var(--success-icon))]">+ {JSON.stringify(log.details.metadata.newValue)}</span>
                           </div>

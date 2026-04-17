@@ -51,13 +51,13 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
       return <CheckCheck className="h-5 w-5 text-[hsl(var(--success-icon))]" />
     }
     if (notification.title.includes("Rejected")) {
-      return <XCircle className="h-5 w-5 text-red-500" />
+      return <XCircle className="h-5 w-5 text-destructive" />
     }
     if (notification.title.includes("Requested")) {
       return <Info className="h-5 w-5 text-yellow-500" />
     }
 
-    return <AlertCircle className="h-5 w-5 text-gray-500" />
+    return <AlertCircle className="h-5 w-5 text-muted-foreground" />
   }
 
   return (
@@ -73,25 +73,25 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <h4 className="font-medium text-gray-900 text-sm mb-1">
+                <h4 className="font-medium text-foreground text-sm mb-1">
                   {notification.title}
                 </h4>
                 {(() => {
                   const parsed = parseDescription(notification.description)
                   if (parsed.isKeyValue) {
                     return (
-                      <div className="text-sm text-gray-600 mb-2 space-y-0.5">
+                      <div className="text-sm text-muted-foreground mb-2 space-y-0.5">
                         {parsed.items.map((item, idx) => (
                           <div key={idx} className="flex gap-2">
-                            <span className="text-gray-500 font-medium min-w-[100px] text-xs">{item.key}:</span>
-                            <span className="text-gray-700 text-xs">{item.value}</span>
+                            <span className="text-muted-foreground font-medium min-w-[100px] text-xs">{item.key}:</span>
+                            <span className="text-foreground text-xs">{item.value}</span>
                           </div>
                         ))}
                       </div>
                     )
                   }
                   return (
-                    <p className="text-xs text-gray-600 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       {notification.description}
                     </p>
                   )
@@ -137,7 +137,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     variant="ghost"
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}
-                    className="h-7 w-7 p-0 text-destructive hover:text-red-700"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                     title="Delete permanently"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -152,7 +152,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                 {notification.activityId && (
                   <Link
                     href={`/activities/${notification.activityId}`}
-                    className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
                     View Activity
                     <ExternalLink className="h-3 w-3" />
@@ -161,7 +161,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                 {!notification.activityId && notification.link && (
                   <Link
                     href={notification.link}
-                    className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {notification.link.includes('/tasks') ? 'View Task' :
                      notification.link.includes('/admin') ? 'View in Admin' :

@@ -47,12 +47,12 @@ const StatusIcon = ({ status }: { status: BudgetStatusType }) => {
     case "on_budget":
       return <CheckCircle className={`${iconClass} text-[hsl(var(--success-icon))]`} />;
     case "off_budget":
-      return <XCircle className={`${iconClass} text-red-600`} />;
+      return <XCircle className={`${iconClass} text-destructive`} />;
     case "partial":
       return <PieChart className={`${iconClass} text-yellow-600`} />;
     case "unknown":
     default:
-      return <HelpCircle className={`${iconClass} text-gray-400`} />;
+      return <HelpCircle className={`${iconClass} text-muted-foreground`} />;
   }
 };
 
@@ -152,9 +152,9 @@ export function BudgetStatusField({
   const isPartial = budgetStatus === "partial";
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+    <div className="space-y-4 p-4 bg-muted rounded-lg border">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           Budget Status
           <HelpTextTooltip>
             <p className="text-sm">
@@ -193,7 +193,7 @@ export function BudgetStatusField({
           isSaving={statusAutosave.state.isSaving}
           isSaved={statusAutosave.state.isPersistentlySaved || budgetStatus !== "unknown"}
           hasValue={budgetStatus !== "unknown"}
-          className="text-gray-700"
+          className="text-foreground"
         >
           Status
         </LabelSaveIndicator>
@@ -225,7 +225,7 @@ export function BudgetStatusField({
             isSaving={percentageAutosave.state.isSaving}
             isSaved={percentageAutosave.state.isPersistentlySaved || !!onBudgetPercentage}
             hasValue={!!onBudgetPercentage}
-            className="text-gray-700"
+            className="text-foreground"
           >
             On-Budget Percentage
           </LabelSaveIndicator>
@@ -241,9 +241,9 @@ export function BudgetStatusField({
               className={`w-32 bg-white ${percentageError ? "border-red-500" : ""}`}
               disabled={disabled}
             />
-            <span className="text-gray-600">%</span>
+            <span className="text-muted-foreground">%</span>
             {percentageError && (
-              <div className="flex items-center gap-1 text-red-600 text-xs">
+              <div className="flex items-center gap-1 text-destructive text-xs">
                 <AlertTriangle className="h-3 w-3" />
                 {percentageError}
               </div>
@@ -261,7 +261,7 @@ export function BudgetStatusField({
           isSaving={notesAutosave.state.isSaving}
           isSaved={notesAutosave.state.isPersistentlySaved || !!budgetStatusNotes}
           hasValue={!!budgetStatusNotes}
-          className="text-gray-700"
+          className="text-foreground"
         >
           Notes
         </LabelSaveIndicator>

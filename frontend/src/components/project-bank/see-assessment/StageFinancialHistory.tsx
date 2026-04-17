@@ -154,7 +154,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                   <td className="px-2 py-1">
                     <button
                       onClick={() => removeRow(globalIdx)}
-                      className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

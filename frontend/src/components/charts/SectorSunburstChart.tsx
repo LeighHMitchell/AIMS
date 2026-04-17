@@ -259,8 +259,8 @@ export default function SectorSunburstChart({
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <div className="text-sm font-medium text-gray-500">No Sector Data</div>
-          <div className="text-xs text-gray-400">Add sectors to see the sunburst visualization</div>
+          <div className="text-sm font-medium text-muted-foreground">No Sector Data</div>
+          <div className="text-xs text-muted-foreground">Add sectors to see the sunburst visualization</div>
         </div>
       </div>
     );

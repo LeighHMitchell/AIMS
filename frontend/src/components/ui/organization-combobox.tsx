@@ -154,30 +154,30 @@ export function OrganizationCombobox({
       <div className="flex items-center gap-2 flex-wrap">
         {/* IATI Org ID Badge */}
         {iatiRef ? (
-          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-gray-600">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-muted-foreground">
             {iatiRef}
           </span>
         ) : (
-          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-gray-600">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-muted-foreground">
             ID: {org.id}
           </span>
         )}
         
         {/* Organization Type Code Badge */}
         {orgTypeCode && (
-          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-gray-600">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-muted-foreground">
             {orgTypeCode}
           </span>
         )}
         
         {/* Dot separator */}
         {orgTypeCode && orgTypeText && (
-          <span className="text-xs text-gray-400">·</span>
+          <span className="text-xs text-muted-foreground">·</span>
         )}
         
         {/* Organization Type Text */}
         {orgTypeText && (
-          <span className="text-xs text-gray-500 hover:text-gray-500">
+          <span className="text-xs text-muted-foreground hover:text-muted-foreground">
             {orgTypeText}
           </span>
         )}
@@ -227,7 +227,7 @@ export function OrganizationCombobox({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-input hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-input hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-foreground",
               className
             )}
           >
@@ -256,14 +256,14 @@ export function OrganizationCombobox({
                     </div>
                   ) : (
                     <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-muted rounded-sm">
-                      <Building2 className="h-4 w-4 text-gray-400" />
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}
 
                   {/* Organization details - two line layout */}
                   <div className="min-w-0 flex-1">
                     {/* Line 1: Name, acronym, and IATI ID */}
-                    <div className="flex items-center gap-1.5 font-medium text-sm text-gray-900">
+                    <div className="flex items-center gap-1.5 font-medium text-sm text-foreground">
                       <span className="truncate">{selected.name}{selected.acronym && selected.acronym !== selected.name ? ` (${selected.acronym})` : ''}</span>
                       <span className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-muted-foreground whitespace-nowrap shrink-0 font-normal">
                         {iatiRef || `ID: ${selected.id.substring(0, 8)}`}
@@ -271,7 +271,7 @@ export function OrganizationCombobox({
                     </div>
 
                     {/* Line 2: Type and Country with flag */}
-                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500 overflow-hidden">
+                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground overflow-hidden">
                       {/* Organization Type */}
                       {(orgTypeCode || orgTypeName) && (
                         <>
@@ -405,14 +405,14 @@ export function OrganizationCombobox({
                       </div>
                     ) : (
                       <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-muted rounded-sm mt-0.5">
-                        <Building2 className="h-5 w-5 text-gray-400" />
+                        <Building2 className="h-5 w-5 text-muted-foreground" />
                       </div>
                     )}
 
                     {/* Organization details - two line layout */}
                     <div className="min-w-0 flex-1">
                       {/* Line 1: Name, acronym, and IATI ID */}
-                      <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
+                      <div className="flex items-center gap-2 font-medium text-foreground text-sm">
                         <span className="truncate">{org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}</span>
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 font-normal">
                           {iatiRef || `ID: ${org.id.substring(0, 8)}...`}
@@ -428,7 +428,7 @@ export function OrganizationCombobox({
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{orgTypeCode}</span>
                             )}
                             {orgTypeName && (
-                              <span className="text-xs text-gray-500 truncate">{orgTypeName}</span>
+                              <span className="text-xs text-muted-foreground truncate">{orgTypeName}</span>
                             )}
                           </>
                         )}
@@ -437,7 +437,7 @@ export function OrganizationCombobox({
                         {org.country && (
                           <>
                             {(orgTypeCode || orgTypeName) && <span className="text-gray-300 shrink-0">·</span>}
-                            <span className="flex items-center gap-1 text-xs text-gray-500 shrink-0 whitespace-nowrap">
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               {getCountryCode(org.country) && (
                                 <img

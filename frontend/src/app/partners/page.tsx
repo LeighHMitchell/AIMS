@@ -578,7 +578,7 @@ export default function PartnersPage() {
           <td className="py-3 px-2 text-center font-semibold">
             {country.organizations.reduce((sum, org) => sum + (org.reportedActivities || 0), 0)}
           </td>
-          <td className="py-3 px-2 text-center font-semibold text-xs text-gray-700">
+          <td className="py-3 px-2 text-center font-semibold text-xs text-foreground">
             {country.organizations.reduce((sum, org) => sum + (org.providerTransactionCount || 0), 0)}
             {' / '}
             {country.organizations.reduce((sum, org) => sum + (org.receiverTransactionCount || 0), 0)}
@@ -644,7 +644,7 @@ export default function PartnersPage() {
               <td className="py-3 px-2 text-center font-semibold">
                 {org.reportedActivities || 0}
               </td>
-              <td className="py-3 px-2 text-center font-semibold text-xs text-gray-700">
+              <td className="py-3 px-2 text-center font-semibold text-xs text-foreground">
                 {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
               </td>
               <td className="py-3 px-2 text-center font-semibold">
@@ -837,7 +837,7 @@ export default function PartnersPage() {
           <td className="py-3 px-2 text-center font-semibold">
             {org.reportedActivities || 0}
           </td>
-          <td className="py-3 px-2 text-center font-semibold text-xs text-gray-700">
+          <td className="py-3 px-2 text-center font-semibold text-xs text-foreground">
             {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
           </td>
           <td className="py-3 px-2 text-center font-semibold">
@@ -940,7 +940,7 @@ export default function PartnersPage() {
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600 mb-4">{error || 'Failed to load data'}</p>
+            <p className="text-destructive mb-4">{error || 'Failed to load data'}</p>
             <Button onClick={fetchSummaryData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
@@ -968,11 +968,11 @@ export default function PartnersPage() {
           <Tabs value={groupBy} onValueChange={(value) => setGroupBy(value as 'type' | 'custom')}>
             <div className="flex items-center justify-between mb-6">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                <TabsTrigger value="type" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+                <TabsTrigger value="type" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Building2 className="h-4 w-4" />
                   Development Partners
                 </TabsTrigger>
-                <TabsTrigger value="custom" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+                <TabsTrigger value="custom" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <FolderOpen className="h-4 w-4" />
                   Custom Groups
                 </TabsTrigger>
@@ -1586,11 +1586,11 @@ export default function PartnersPage() {
                   className="h-10 w-10 object-contain rounded"
                 />
               ) : (
-                <Building2 className="h-10 w-10 text-slate-400" />
+                <Building2 className="h-10 w-10 text-muted-foreground" />
               )}
               <div>
                 <div className="font-semibold">{selectedOrg?.name}</div>
-                <div className="text-sm text-slate-500 font-normal">{selectedOrg?.fullName}</div>
+                <div className="text-sm text-muted-foreground font-normal">{selectedOrg?.fullName}</div>
               </div>
             </DialogTitle>
             <DialogDescription>View organization details, contact information, and activity involvement.</DialogDescription>
@@ -1601,32 +1601,32 @@ export default function PartnersPage() {
               {/* Organization Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Acronym</label>
-                  <p className="text-slate-900">{selectedOrg.acronym || 'N/A'}</p>
+                  <label className="text-sm font-medium text-foreground">Acronym</label>
+                  <p className="text-foreground">{selectedOrg.acronym || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Type</label>
-                  <p className="text-slate-900">{selectedOrg.organisationType}</p>
+                  <label className="text-sm font-medium text-foreground">Type</label>
+                  <p className="text-foreground">{selectedOrg.organisationType}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Country</label>
-                  <p className="text-slate-900">{selectedOrg.countryRepresented || 'N/A'}</p>
+                  <label className="text-sm font-medium text-foreground">Country</label>
+                  <p className="text-foreground">{selectedOrg.countryRepresented || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Activities</label>
-                  <p className="text-slate-900">{selectedOrg.activeProjects}</p>
+                  <label className="text-sm font-medium text-foreground">Activities</label>
+                  <p className="text-foreground">{selectedOrg.activeProjects}</p>
                 </div>
               </div>
 
               {/* Financial Summary */}
               <div>
-                <h4 className="font-medium text-slate-900 mb-3">
+                <h4 className="font-medium text-foreground mb-3">
                   Financial Summary ({transactionType === 'C' ? 'Commitments' : 'Disbursements'})
                 </h4>
                 <div className="grid grid-cols-3 gap-4">
                   {[2022, 2023, 2024, 2025, 2026, 2027].map(year => (
-                    <div key={year} className="text-center p-3 bg-slate-50 rounded">
-                      <div className="text-sm text-slate-600">{year}</div>
+                    <div key={year} className="text-center p-3 bg-muted rounded">
+                      <div className="text-sm text-muted-foreground">{year}</div>
                       <div className="font-mono font-medium">
                         {formatCurrency(selectedOrg.financialData[year.toString()] || 0)}
                       </div>
@@ -1635,7 +1635,7 @@ export default function PartnersPage() {
                 </div>
                 <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-slate-700">Total:</span>
+                    <span className="font-medium text-foreground">Total:</span>
                     <span className="font-mono font-bold text-lg">
                       {formatCurrency(selectedOrg.totalAmount)}
                     </span>

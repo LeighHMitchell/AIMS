@@ -63,7 +63,7 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
   return (
     <Card className="w-full shadow-sm border-border">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-slate-800">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Activity Completion
         </CardTitle>
       </CardHeader>
@@ -71,8 +71,8 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
         {/* Percentage Display */}
         <div className="space-y-3">
           <div className="flex items-baseline justify-between">
-            <h3 className="text-3xl font-bold text-slate-900">{completionPercentage}%</h3>
-            <span className="text-sm text-slate-500">
+            <h3 className="text-3xl font-bold text-foreground">{completionPercentage}%</h3>
+            <span className="text-sm text-muted-foreground">
               {filledFields.length} of {totalFields} fields completed
             </span>
           </div>
@@ -80,7 +80,7 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
           {/* Progress Bar */}
           <Progress 
             value={completionPercentage} 
-            className="h-3 bg-slate-100"
+            className="h-3 bg-muted"
             style={{
               '--progress-foreground': completionPercentage === 100 
                 ? '#059669' // green-600
@@ -103,12 +103,12 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
           </Alert>
         ) : (
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-slate-700">Missing Fields:</h4>
+            <h4 className="text-sm font-medium text-foreground">Missing Fields:</h4>
             <ul className="space-y-2">
               {missingFields.map((field) => (
                 <li key={field.key} className="flex items-start gap-2 text-sm">
-                  <Circle className="h-3 w-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">{field.label}</span>
+                  <Circle className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">{field.label}</span>
                 </li>
               ))}
             </ul>
@@ -116,9 +116,9 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
         )}
 
         {/* Information Section */}
-        <div className="bg-slate-50 rounded-lg p-4 flex gap-3">
-          <Info className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-slate-600 leading-relaxed">
+        <div className="bg-muted rounded-lg p-4 flex gap-3">
+          <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-muted-foreground leading-relaxed">
             This completion score reflects the number of key data fields filled out in your 
             activity form. Completing all fields improves transparency, validation, and 
             analytics quality.

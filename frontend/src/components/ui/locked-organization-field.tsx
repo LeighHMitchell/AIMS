@@ -76,7 +76,7 @@ export function LockedOrganizationField({
       <div className="flex items-center justify-between">
         <Label className={cn(
           "text-sm font-medium",
-          isFieldDisabled && "text-gray-400"
+          isFieldDisabled && "text-muted-foreground"
         )}>
           {label}
         </Label>
@@ -108,7 +108,7 @@ export function LockedOrganizationField({
                   {isUnlocked ? (
                     <Unlock className="h-3 w-3 text-[hsl(var(--success-icon))]" />
                   ) : (
-                    <Lock className="h-3 w-3 text-gray-500" />
+                    <Lock className="h-3 w-3 text-muted-foreground" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -127,12 +127,12 @@ export function LockedOrganizationField({
         placeholder={placeholder}
         disabled={isFieldDisabled}
         className={cn(
-          isFieldDisabled && "bg-muted/50 text-gray-400 cursor-not-allowed opacity-50"
+          isFieldDisabled && "bg-muted/50 text-muted-foreground cursor-not-allowed opacity-50"
         )}
       />
       
       {isFieldDisabled && (
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           Unlock to edit this field
         </p>
       )}

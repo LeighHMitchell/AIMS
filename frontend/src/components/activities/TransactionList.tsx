@@ -400,7 +400,7 @@ function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
                 </>
               ) : (
                 <>
-                  <FileClock className="h-4 w-4 text-gray-400" />
+                  <FileClock className="h-4 w-4 text-muted-foreground" />
                   <span className="sr-only">Unvalidated Transaction</span>
                 </>
               )}
@@ -880,11 +880,11 @@ export default function TransactionList({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
     }
     return sortDirection === 'asc' 
-      ? <ChevronUp className="h-4 w-4 text-gray-400" />
-      : <ChevronDown className="h-4 w-4 text-gray-400" />;
+      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+      : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
   };
 
   const handleSubmit = async (data: TransactionFormData) => {
@@ -1795,7 +1795,7 @@ export default function TransactionList({
                             const isInherited = transaction.finance_type_inherited || (!transaction.finance_type && displayValue);
                             
                             if (!displayValue) {
-                              return <span className="text-gray-400">—</span>;
+                              return <span className="text-muted-foreground">—</span>;
                             }
                             
                             if (isInherited) {
@@ -1803,7 +1803,7 @@ export default function TransactionList({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <div className="flex items-center gap-1.5 text-gray-400 opacity-70 cursor-help">
+                                      <div className="flex items-center gap-1.5 text-muted-foreground opacity-70 cursor-help">
                                         <span className="text-sm">
                                           {FINANCE_TYPE_LABELS[displayValue] || displayValue}
                                         </span>
@@ -1844,14 +1844,14 @@ export default function TransactionList({
                           {(() => {
                             const displayValue = transaction.effective_aid_type || transaction.aid_type || defaultAidType;
                             const isInherited = transaction.aid_type_inherited || (!transaction.aid_type && displayValue);
-                            if (!displayValue) return <span className="text-gray-400">—</span>;
+                            if (!displayValue) return <span className="text-muted-foreground">—</span>;
                             
                             if (isInherited) {
                               return (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
+                                      <div className="flex items-center gap-2 text-muted-foreground opacity-70 cursor-help">
                                         <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{displayValue}</span>
                                         <span className="text-sm truncate max-w-[140px]">{AID_TYPE_LABELS[displayValue] || displayValue}</span>
                                       </div>
@@ -1879,14 +1879,14 @@ export default function TransactionList({
                           {(() => {
                             const displayValue = transaction.effective_flow_type || transaction.flow_type || defaultFlowType;
                             const isInherited = transaction.flow_type_inherited || (!transaction.flow_type && displayValue);
-                            if (!displayValue) return <span className="text-gray-400">—</span>;
+                            if (!displayValue) return <span className="text-muted-foreground">—</span>;
                             
                             if (isInherited) {
                               return (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-gray-400 opacity-70 cursor-help text-sm">
+                                      <span className="text-muted-foreground opacity-70 cursor-help text-sm">
                                         {FLOW_TYPE_LABELS[displayValue] || displayValue}
                                       </span>
                                     </TooltipTrigger>
@@ -1908,14 +1908,14 @@ export default function TransactionList({
                           {(() => {
                             const displayValue = transaction.effective_tied_status || transaction.tied_status || defaultTiedStatus;
                             const isInherited = transaction.tied_status_inherited || (!transaction.tied_status && displayValue);
-                            if (!displayValue) return <span className="text-gray-400">—</span>;
+                            if (!displayValue) return <span className="text-muted-foreground">—</span>;
                             
                             if (isInherited) {
                               return (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-gray-400 opacity-70 cursor-help text-sm">
+                                      <span className="text-muted-foreground opacity-70 cursor-help text-sm">
                                         {TIED_STATUS_LABELS[displayValue] || displayValue}
                                       </span>
                                     </TooltipTrigger>
@@ -1935,9 +1935,9 @@ export default function TransactionList({
                       {isColumnVisible('humanitarian') && (
                         <TableCell className="py-3 px-4 text-center whitespace-nowrap">
                           {transaction.is_humanitarian ? (
-                            <Heart className="h-4 w-4 text-red-500 mx-auto" />
+                            <Heart className="h-4 w-4 text-destructive mx-auto" />
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       )}
@@ -1956,7 +1956,7 @@ export default function TransactionList({
                               {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
                                 <Link
                                   href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
-                                  className={`truncate hover:text-gray-700 transition-colors block ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}
+                                  className={`truncate hover:text-foreground transition-colors block ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
@@ -1990,7 +1990,7 @@ export default function TransactionList({
                               {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
                                 <Link
                                   href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
-                                  className={`truncate hover:text-gray-700 transition-colors block ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}
+                                  className={`truncate hover:text-foreground transition-colors block ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
@@ -2043,7 +2043,7 @@ export default function TransactionList({
                               )}
                             </div>
                           ) : (
-                            <span className="text-red-600">Invalid</span>
+                            <span className="text-destructive">Invalid</span>
                           )}
                         </TableCell>
                       )}
@@ -2113,7 +2113,7 @@ export default function TransactionList({
                               </Tooltip>
                             </TooltipProvider>
                             ) : (
-                              <span className="text-gray-400">—</span>
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </div>
                         </TableCell>
@@ -2130,7 +2130,7 @@ export default function TransactionList({
                               )}
                             </span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       )}
@@ -2139,7 +2139,7 @@ export default function TransactionList({
                       {isColumnVisible('description') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
                           <span className="text-sm truncate max-w-[180px] block">
-                            {transaction.description || <span className="text-gray-400">—</span>}
+                            {transaction.description || <span className="text-muted-foreground">—</span>}
                           </span>
                         </TableCell>
                       )}
@@ -2152,7 +2152,7 @@ export default function TransactionList({
                               {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}
                             </span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       )}
@@ -2206,8 +2206,8 @@ export default function TransactionList({
                                       </>
                                     ) : (
                                       <>
-                                        <FileClock className="h-4 w-4 text-gray-400" />
-                                        <span className="text-xs text-gray-600 font-medium">Unvalidated</span>
+                                        <FileClock className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-xs text-muted-foreground font-medium">Unvalidated</span>
                                       </>
                                     )}
                                   </div>
@@ -2221,7 +2221,7 @@ export default function TransactionList({
                                   {usdValues[transaction.uuid || transaction.id]?.usd != null ? (
                                     <span className="font-medium"><span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                   ) : (
-                                    <span className="text-gray-400">—</span>
+                                    <span className="text-muted-foreground">—</span>
                                   )}
                                 </div>
                                 <div className="flex items-start gap-2">
@@ -2245,7 +2245,7 @@ export default function TransactionList({
                               {transaction.description && (
                                 <div className="pt-4 border-t border-border">
                                   <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Description</h4>
-                                  <p className="ml-4 text-gray-700 text-xs leading-relaxed">{transaction.description}</p>
+                                  <p className="ml-4 text-foreground text-xs leading-relaxed">{transaction.description}</p>
                                 </div>
                               )}
                             </div>
@@ -2262,7 +2262,7 @@ export default function TransactionList({
                                       {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
                                         <Link 
                                           href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
-                                          className={`font-medium hover:text-gray-700 transition-colors ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}
+                                          className={`font-medium hover:text-foreground transition-colors ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}
@@ -2308,7 +2308,7 @@ export default function TransactionList({
                                       {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
                                         <Link 
                                           href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
-                                          className={`font-medium hover:text-gray-700 transition-colors ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}
+                                          className={`font-medium hover:text-foreground transition-colors ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}
@@ -2431,7 +2431,7 @@ export default function TransactionList({
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <div className={`flex items-center gap-2 ${(transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType) ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                          <div className={`flex items-center gap-2 ${(transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType) ? 'text-muted-foreground opacity-70 cursor-help' : ''}`}>
                                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                               {transaction.aid_type || defaultAidType}
                                             </span>
@@ -2458,7 +2458,7 @@ export default function TransactionList({
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <div className={`flex items-center gap-2 ${(transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType) ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                          <div className={`flex items-center gap-2 ${(transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType) ? 'text-muted-foreground opacity-70 cursor-help' : ''}`}>
                                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                               {transaction.flow_type || defaultFlowType}
                                             </span>
@@ -2490,7 +2490,7 @@ export default function TransactionList({
                                       <TooltipProvider>
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className={`flex items-center gap-1.5 cursor-help ${isInherited ? 'text-gray-400 opacity-70' : ''}`}>
+                                            <div className={`flex items-center gap-1.5 cursor-help ${isInherited ? 'text-muted-foreground opacity-70' : ''}`}>
                                               <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                                 {displayValue}
                                               </span>
@@ -2521,7 +2521,7 @@ export default function TransactionList({
                                       <TooltipProvider>
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className={`flex items-center gap-2 ${isInherited ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                            <div className={`flex items-center gap-2 ${isInherited ? 'text-muted-foreground opacity-70 cursor-help' : ''}`}>
                                               <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                                 {displayValue}
                                               </span>
@@ -2612,7 +2612,7 @@ export default function TransactionList({
                                 {transaction.validation_comments && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Validation Notes:</span>
-                                    <span className="text-xs text-gray-700 italic">{transaction.validation_comments}</span>
+                                    <span className="text-xs text-foreground italic">{transaction.validation_comments}</span>
                                   </div>
                                 )}
                                 </div>
@@ -2641,7 +2641,7 @@ export default function TransactionList({
                                             {doc.file_name || doc.external_url}
                                           </a>
                                           {doc.description && (
-                                            <p className="text-xs text-gray-500 mt-0.5">{doc.description}</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
                                           )}
                                         </div>
                                       </div>
@@ -2740,7 +2740,7 @@ export default function TransactionList({
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>

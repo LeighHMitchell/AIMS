@@ -234,25 +234,25 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
     return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+            <p className="font-semibold text-foreground text-sm">{item.name}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
-                  <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
-                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                  <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.value)}</td>
                 </tr>
                 {item.activityCount > 0 && (
                   <tr className="border-b border-border last:border-b-0">
-                    <td className="py-1 pr-4 text-slate-700 font-medium">Activities</td>
-                    <td className="py-1 text-right font-semibold text-slate-900">{item.activityCount}</td>
+                    <td className="py-1 pr-4 text-foreground font-medium">Activities</td>
+                    <td className="py-1 text-right font-semibold text-foreground">{item.activityCount}</td>
                   </tr>
                 )}
                 {item.orgCount > 0 && (
                   <tr>
-                    <td className="py-1 pr-4 text-slate-700 font-medium">Organizations</td>
-                    <td className="py-1 text-right font-semibold text-slate-900">{item.orgCount}</td>
+                    <td className="py-1 pr-4 text-foreground font-medium">Organizations</td>
+                    <td className="py-1 text-right font-semibold text-foreground">{item.orgCount}</td>
                   </tr>
                 )}
               </tbody>
@@ -358,7 +358,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.fill }}
           />
-          <span className="text-xs text-gray-600">{item.name}</span>
+          <span className="text-xs text-muted-foreground">{item.name}</span>
         </div>
       ))}
     </div>
@@ -412,7 +412,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
@@ -421,7 +421,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -430,7 +430,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("table")}
             title="Table"
           >
@@ -497,10 +497,10 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Top Donor Groups
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 Top 5 donors grouped by country or multilateral institution
               </CardDescription>
             </div>
@@ -508,10 +508,10 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
@@ -530,7 +530,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   Top Donor Groups
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">

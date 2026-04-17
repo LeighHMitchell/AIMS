@@ -79,7 +79,7 @@ export function ReadinessConfigSection({
             Financing Type
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>Select whether this project is funded through a loan, grant, or other financing mechanism.</p>
@@ -103,7 +103,7 @@ export function ReadinessConfigSection({
                 <SelectItem key={option.value} value={option.value} className="pl-2">
                   <div>
                     <div>{option.label}</div>
-                    <div className="text-xs text-gray-500">{option.description}</div>
+                    <div className="text-xs text-muted-foreground">{option.description}</div>
                   </div>
                 </SelectItem>
               ))}
@@ -117,7 +117,7 @@ export function ReadinessConfigSection({
             Financing Modality
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>Select the modality of financing. This determines which checklist items are applicable.</p>
@@ -141,7 +141,7 @@ export function ReadinessConfigSection({
                 <SelectItem key={option.value} value={option.value} className="pl-2">
                   <div>
                     <div>{option.label}</div>
-                    <div className="text-xs text-gray-500">{option.description}</div>
+                    <div className="text-xs text-muted-foreground">{option.description}</div>
                   </div>
                 </SelectItem>
               ))}
@@ -155,7 +155,7 @@ export function ReadinessConfigSection({
             Infrastructure Project
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-sm">
                 <p className="font-medium mb-1">Enable if the project includes physical works such as:</p>
@@ -178,7 +178,7 @@ export function ReadinessConfigSection({
             />
             <Label
               htmlFor="is-infrastructure"
-              className="text-sm font-normal text-gray-600 cursor-pointer"
+              className="text-sm font-normal text-muted-foreground cursor-pointer"
             >
               {localConfig.is_infrastructure ? 'Yes' : 'No'}
             </Label>

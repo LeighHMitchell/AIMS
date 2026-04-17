@@ -314,16 +314,16 @@ export function IntakeReviewTab() {
             </div>
           </div>
           <div className="flex items-center border rounded-md ml-auto">
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("kanban")} className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}>
+            <Button variant="ghost" size="sm" onClick={() => setViewMode("kanban")} className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
               <KanbanSquare className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("card")} className={`rounded-none h-9 ${viewMode === "card" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}>
+            <Button variant="ghost" size="sm" onClick={() => setViewMode("card")} className={`rounded-none h-9 ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
               <LayoutGrid className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("list")} className={`rounded-none h-9 ${viewMode === "list" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}>
+            <Button variant="ghost" size="sm" onClick={() => setViewMode("list")} className={`rounded-none h-9 ${viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
               <List className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("table")} className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}>
+            <Button variant="ghost" size="sm" onClick={() => setViewMode("table")} className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
               <Table2 className="h-4 w-4" />
             </Button>
           </div>
@@ -390,7 +390,7 @@ export function IntakeReviewTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("kanban")}
-            className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <KanbanSquare className="h-4 w-4" />
           </Button>
@@ -398,7 +398,7 @@ export function IntakeReviewTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("card")}
-            className={`rounded-none h-9 ${viewMode === "card" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-none h-9 ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -406,7 +406,7 @@ export function IntakeReviewTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("list")}
-            className={`rounded-none h-9 ${viewMode === "list" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-none h-9 ${viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <List className="h-4 w-4" />
           </Button>
@@ -414,7 +414,7 @@ export function IntakeReviewTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("table")}
-            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <Table2 className="h-4 w-4" />
           </Button>
@@ -470,7 +470,7 @@ export function IntakeReviewTab() {
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center">
-                    <Building2 className="h-14 w-14 text-gray-500/30" />
+                    <Building2 className="h-14 w-14 text-muted-foreground/30" />
                   </div>
                 )}
                 {/* Title overlay */}
@@ -492,7 +492,7 @@ export function IntakeReviewTab() {
                       <span className="truncate">{p.nominating_ministry}</span>
                     </div>
                     {p.implementing_agency && (
-                      <p className="ml-[18px] text-gray-400 truncate">{p.implementing_agency}</p>
+                      <p className="ml-[18px] text-muted-foreground truncate">{p.implementing_agency}</p>
                     )}
                   </div>
                 </div>
@@ -575,7 +575,7 @@ export function IntakeReviewTab() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-gray-500/30" />
+                    <Building2 className="h-6 w-6 text-muted-foreground/30" />
                   </div>
                 )}
               </div>

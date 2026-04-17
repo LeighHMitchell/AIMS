@@ -364,7 +364,7 @@ export function DocumentFormEnhanced({
                       <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
                     )}
                     {urlMetadata.size && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     )}
@@ -774,7 +774,7 @@ export function DocumentFormEnhanced({
                         {code}
                         <button
                           onClick={() => removeCountry(code)}
-                          className="ml-1 hover:text-red-600"
+                          className="ml-1 hover:text-destructive"
                         >
                           <X className="w-3 h-3" />
                         </button>

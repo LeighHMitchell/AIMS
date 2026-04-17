@@ -347,7 +347,7 @@ function EditMeetingModal({
                       </a>
                       <button
                         onClick={() => handleDeleteDoc(doc.id)}
-                        className="p-1 text-muted-foreground hover:text-red-600 transition-colors"
+                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
                         title="Remove"
                       >
                         <X className="h-4 w-4" />
@@ -364,13 +364,13 @@ function EditMeetingModal({
           <Button
             variant="outline"
             size="sm"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={() => {
               onClose()
               onDelete(meeting)
             }}
           >
-            <Trash2 className="h-4 w-4 mr-1 text-red-500" />
+            <Trash2 className="h-4 w-4 mr-1 text-destructive" />
             Delete
           </Button>
           <div className="flex gap-2">
@@ -442,7 +442,7 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => onDelete(meeting)}
                     title="Delete"
                   >

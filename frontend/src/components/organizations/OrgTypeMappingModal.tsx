@@ -148,14 +148,14 @@ export function OrgTypeMappingModal({
           {/* Organization Info */}
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-border">
             <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-md border border-border">
-              <Building2 className="h-5 w-5 text-gray-400" />
+              <Building2 className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-900 truncate">
+              <div className="font-medium text-foreground truncate">
                 {orgDisplayName}
               </div>
               {organization.country && (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   {organization.country}
                 </div>
               )}
@@ -203,7 +203,7 @@ export function OrgTypeMappingModal({
                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                           {option.code}
                         </code>
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-foreground">
                           {option.label}
                         </span>
                         {isSuggested && (
@@ -212,7 +212,7 @@ export function OrgTypeMappingModal({
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">
+                      <div className="text-sm text-muted-foreground mt-1">
                         {option.description}
                       </div>
                     </div>

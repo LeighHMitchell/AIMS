@@ -133,7 +133,7 @@ export function ExampleActivityEditor() {
           <CardTitle>Activity Editor - Documents & Images Example</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             This example demonstrates the Documents & Images tab with various document types,
             including a PDF project document, an image with caption, a results brief, 
             an evaluation report, and an invalid document to showcase validation.
@@ -180,7 +180,7 @@ export function ExampleActivityEditor() {
                   </ScrollArea>
                 )}
                 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Note: Only valid documents are included in the XML output.
                   Documents with validation errors are automatically excluded.
                 </p>
@@ -208,7 +208,7 @@ export function ExampleActivityEditor() {
                   </ScrollArea>
                 )}
                 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   This JSON format mirrors the structure expected by your API endpoints.
                 </p>
               </div>

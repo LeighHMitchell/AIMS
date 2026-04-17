@@ -1272,11 +1272,11 @@ const router = useRouter();
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+      return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
     }
     return sortOrder === 'asc' 
-      ? <ChevronUp className="h-4 w-4 text-gray-400" />
-      : <ChevronDown className="h-4 w-4 text-gray-400" />;
+      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+      : <ChevronDown className="h-4 w-4 text-muted-foreground" />;
   };
 
   // Helper to render column header text with tooltip
@@ -1840,7 +1840,7 @@ const router = useRouter();
             variant="ghost"
             size="sm"
             onClick={() => setViewMode('table')}
-            className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+            className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
           >
             <TableIcon className="h-4 w-4" />
           </Button>
@@ -1848,7 +1848,7 @@ const router = useRouter();
             variant="ghost"
             size="sm"
             onClick={() => setViewMode('card')}
-            className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+            className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -1862,10 +1862,10 @@ const router = useRouter();
       ) : error ? (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
           <div className="space-y-4">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
             <div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Activities</h3>
-              <p className="text-slate-500 mb-4">{error}</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Activities</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
               <Button 
                 onClick={() => usingOptimization ? safeOptimizedData.refetch() : fetchActivities(1, true)} 
                 variant="outline"
@@ -2327,7 +2327,7 @@ const router = useRouter();
                         downvotes: (
                           <SortableTableHeader key="downvotes" id="downvotes" className="py-3 text-center min-w-[80px]">
                             <div className="flex items-center justify-center gap-1">
-                              <ChevronDown className="h-4 w-4 text-red-500" />
+                              <ChevronDown className="h-4 w-4 text-destructive" />
                               <ColumnHeaderText columnId="downvotes">Downvotes</ColumnHeaderText>
                             </div>
                           </SortableTableHeader>
@@ -2620,7 +2620,7 @@ const router = useRouter();
                                       : activity.title;
                                     copyToClipboard(textToCopy, 'title', activity.id);
                                   }}
-                                  className="ml-1 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                  className="ml-1 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-foreground"
                                   title={activity.acronym ? "Copy Activity Title and Acronym" : "Copy Activity Title"}
                                 >
                                   {copiedId === `${activity.id}-title` ? (
@@ -2641,7 +2641,7 @@ const router = useRouter();
                                         e.preventDefault();
                                         copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
                                       }}
-                                      className="opacity-0 group-hover/pid:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                      className="opacity-0 group-hover/pid:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
                                       title="Copy Activity ID"
                                     >
                                       {copiedId === `${activity.id}-partnerId` ? (
@@ -2662,7 +2662,7 @@ const router = useRouter();
                                         e.preventDefault();
                                         copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
                                       }}
-                                      className="opacity-0 group-hover/iati:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                      className="opacity-0 group-hover/iati:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0"
                                       title="Copy IATI Identifier"
                                     >
                                       {copiedId === `${activity.id}-iatiIdentifier` ? (
@@ -2795,7 +2795,7 @@ const router = useRouter();
                               <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                              <p className="text-sm text-gray-600 font-normal">
+                              <p className="text-sm text-muted-foreground font-normal">
                                 Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
                             </TooltipContent>
@@ -2811,7 +2811,7 @@ const router = useRouter();
                               <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left whitespace-normal">
-                              <p className="text-sm text-gray-600 font-normal">
+                              <p className="text-sm text-muted-foreground font-normal">
                                 Total value of all planned disbursements for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
                             </TooltipContent>
@@ -3275,7 +3275,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                   Percentage of activity budget allocated to capital investment (infrastructure, equipment, fixed assets).
                                 </p>
                               </TooltipContent>
@@ -3296,7 +3296,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                   Capital spend portion of Total Budget (Total Budget × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3317,7 +3317,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                   Capital spend portion of Planned Disbursements (Planned Disbursements × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3338,7 +3338,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                   Capital spend portion of Commitments (Commitments × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3359,7 +3359,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-muted-foreground">
                                   Capital spend portion of Disbursements (Disbursements × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3370,7 +3370,7 @@ const router = useRouter();
                           voteScore: (
 <td key="voteScore" className="px-4 py-2 text-sm text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <span className={`font-medium ${(activity.vote_score || 0) > 0 ? 'text-primary' : (activity.vote_score || 0) < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            <span className={`font-medium ${(activity.vote_score || 0) > 0 ? 'text-primary' : (activity.vote_score || 0) < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                               {(activity.vote_score || 0) > 0 ? '+' : ''}{activity.vote_score || 0}
                             </span>
                           </div>
@@ -3389,8 +3389,8 @@ const router = useRouter();
                           downvotes: (
 <td key="downvotes" className="px-4 py-2 text-sm text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <ChevronDown className="h-4 w-4 text-red-500" />
-                            <span className={(activity.downvote_count || 0) > 0 ? 'font-medium text-red-500' : 'text-muted-foreground'}>
+                            <ChevronDown className="h-4 w-4 text-destructive" />
+                            <span className={(activity.downvote_count || 0) > 0 ? 'font-medium text-destructive' : 'text-muted-foreground'}>
                               {activity.downvote_count || 0}
                             </span>
                           </div>
@@ -3628,7 +3628,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600 font-normal">
+                                <p className="text-sm text-muted-foreground font-normal">
                                   Activity budget: USD {formatCurrency((activity as any).totalBudget || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalBudget || 0)}
                                 </p>
@@ -3650,7 +3650,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600 font-normal">
+                                <p className="text-sm text-muted-foreground font-normal">
                                   Activity planned disbursements: USD {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalPlannedDisbursements || 0)}
                                 </p>
@@ -3672,7 +3672,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600 font-normal">
+                                <p className="text-sm text-muted-foreground font-normal">
                                   Activity commitments: USD {formatCurrency(activity.commitments || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalCommitments || 0)}
                                 </p>
@@ -3694,7 +3694,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-gray-600 font-normal">
+                                <p className="text-sm text-muted-foreground font-normal">
                                   Activity disbursements: USD {formatCurrency(activity.disbursements || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalDisbursements || 0)}
                                 </p>
@@ -3764,7 +3764,7 @@ const router = useRouter();
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className={`cursor-pointer ${isOverdue ? 'text-red-600 font-medium' : ''}`}>
+                                    <div className={`cursor-pointer ${isOverdue ? 'text-destructive font-medium' : ''}`}>
                                       <span>{isOverdue ? 'Overdue' : formatDurationHuman(duration)}</span>
                                       {percent !== null && !isOverdue && (
                                         <span className="text-xs text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
@@ -3921,7 +3921,7 @@ const router = useRouter();
       {!isShowingAll && totalActivities > 0 && (
         <div className="bg-card rounded-lg border border-border shadow-sm p-4" data-tour="activities-pagination">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities
             </div>
               
@@ -3971,7 +3971,7 @@ const router = useRouter();
                         onClick={() => {
                           usingOptimization ? safeOptimizedData.setPage(pageNum) : setCurrentPage(pageNum);
                         }}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -4005,7 +4005,7 @@ const router = useRouter();
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-sm text-muted-foreground">Items per page:</label>
                 <Select 
                   value={pageLimit.toString()} 
                   onValueChange={(value) => handlePageLimitChange(Number(value))}

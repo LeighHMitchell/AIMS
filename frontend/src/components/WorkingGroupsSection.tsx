@@ -153,10 +153,10 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
                             variant="ghost"
                             size="icon"
                             onClick={() => removeWorkingGroup(wg.code)}
-                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             aria-label={`Remove ${wg.label}`}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
@@ -205,10 +205,10 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
                         variant="ghost"
                         size="icon"
                         onClick={() => removeWorkingGroup(wg.code)}
-                        className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         aria-label={`Remove ${wg.label}`}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </div>

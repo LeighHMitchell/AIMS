@@ -62,8 +62,8 @@ export function IATISyncStatusIndicator({
         return {
           icon: XCircle,
           label: 'Error',
-          color: 'text-red-600',
-          bgColor: 'bg-red-50',
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
           borderColor: 'border-red-200',
           description: 'Sync failed - check IATI identifier'
         };
@@ -72,8 +72,8 @@ export function IATISyncStatusIndicator({
         return {
           icon: Clock,
           label: 'Not synced',
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-50',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted',
           borderColor: 'border-border',
           description: 'Never synced with IATI'
         };
@@ -162,10 +162,10 @@ export function IATISyncStatusBadge({
       case 'outdated':
         return <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />;
       case 'error':
-        return <XCircle className="h-3.5 w-3.5 text-red-600" />;
+        return <XCircle className="h-3.5 w-3.5 text-destructive" />;
       case 'never':
       default:
-        return <Clock className="h-3.5 w-3.5 text-gray-400" />;
+        return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
     }
   };
 

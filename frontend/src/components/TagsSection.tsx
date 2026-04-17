@@ -274,7 +274,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                   className="w-full pr-10"
                 />
               </PopoverTrigger>
-              <Hash className="absolute right-3 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Hash className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
                 <Command shouldFilter={true}>
                   <CommandInput placeholder="Search tags..." autoFocus />
@@ -373,7 +373,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                               <FileCode className="w-3 h-3" />
                               Imported from IATI XML
                             </p>
-                            <div className="mt-1 space-y-0.5 text-gray-600">
+                            <div className="mt-1 space-y-0.5 text-muted-foreground">
                               <p>Vocabulary: {tag.vocabulary === '1' ? 'IATI Standard' : tag.vocabulary === '99' ? 'Custom' : tag.vocabulary}</p>
                               <p>Code: {tag.code}</p>
                               {tag.vocabulary_uri && (
@@ -389,7 +389,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                         ) : (
                           <p>Added by Unknown User</p>
                         )}
-                        <p className="text-gray-500">
+                        <p className="text-muted-foreground">
                           {formatTooltipDate(tag.addedAt)}
                         </p>
                       </div>

@@ -160,17 +160,17 @@ function TimelineProgress({
   
   return (
     <div className="mb-3">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-2">Project Timeline</div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Project Timeline</div>
       
       {/* Date labels */}
       <div className="flex justify-between mb-1.5">
         <div>
-          <div className="text-[10px] text-slate-400">Actual Start</div>
-          <div className="text-xs font-semibold text-slate-800">{formatTimelineDate(actualStartDate)}</div>
+          <div className="text-[10px] text-muted-foreground">Actual Start</div>
+          <div className="text-xs font-semibold text-foreground">{formatTimelineDate(actualStartDate)}</div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-slate-400">Planned End</div>
-          <div className="text-xs font-semibold text-slate-800">{formatTimelineDate(plannedEndDate)}</div>
+          <div className="text-[10px] text-muted-foreground">Planned End</div>
+          <div className="text-xs font-semibold text-foreground">{formatTimelineDate(plannedEndDate)}</div>
         </div>
       </div>
       
@@ -208,8 +208,8 @@ function TimelineProgress({
       {/* Progress percentage */}
       <div className="flex justify-end">
         <div className="text-right">
-          <div className="text-[10px] text-slate-400">Progress by time</div>
-          <div className="text-xs font-semibold text-slate-800">{Math.round(progressPercent)}%</div>
+          <div className="text-[10px] text-muted-foreground">Progress by time</div>
+          <div className="text-xs font-semibold text-foreground">{Math.round(progressPercent)}%</div>
         </div>
       </div>
     </div>
@@ -228,10 +228,10 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
   
   return (
     <div className="mb-3">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">Sector Breakdown</div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">Sector Breakdown</div>
       <HoverCard openDelay={200} closeDelay={100}>
         <HoverCardTrigger asChild>
-          <div className="flex h-3 rounded-full overflow-hidden bg-slate-100 cursor-pointer">
+          <div className="flex h-3 rounded-full overflow-hidden bg-muted cursor-pointer">
             {normalizedSectors.map((sector, idx) => {
               const color = getSectorColor(sector.categoryCode || sector.code);
               const width = Math.max(sector.normalizedPercentage, 2);
@@ -251,7 +251,7 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
           align="start"
           style={{ backgroundColor: 'white' }}
         >
-          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-2">Sectors</div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Sectors</div>
           <div className="space-y-1.5">
             {normalizedSectors.map((sector, idx) => {
               const color = getSectorColor(sector.categoryCode || sector.code);
@@ -261,10 +261,10 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
                     className="w-2.5 h-2.5 rounded-sm flex-shrink-0" 
                     style={{ backgroundColor: color }}
                   />
-                  <span className="text-xs text-slate-700 flex-1">
+                  <span className="text-xs text-foreground flex-1">
                     {sector.name || sector.categoryName || 'Unknown Sector'}
                   </span>
-                  <span className="text-xs font-semibold text-slate-800">
+                  <span className="text-xs font-semibold text-foreground">
                     {sector.percentage}%
                   </span>
                 </div>
@@ -346,29 +346,29 @@ function ActivityLocationMarker({
         
         <div className="p-2.5">
           {/* Title */}
-          <div className="font-semibold text-xs text-slate-700 mb-2 line-clamp-2">
+          <div className="font-semibold text-xs text-foreground mb-2 line-clamp-2">
             {activity?.title || 'Untitled Activity'}
           </div>
           
           {/* Quick info */}
           <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-            <div className="text-slate-500">Location</div>
-            <div className="text-slate-700 truncate">{location.location_name || 'Unnamed'}</div>
+            <div className="text-muted-foreground">Location</div>
+            <div className="text-foreground truncate">{location.location_name || 'Unnamed'}</div>
             
             {activity?.organization_name && (
               <>
-                <div className="text-slate-500">Organisation</div>
-                <div className="text-slate-700 truncate">{activity.organization_name}</div>
+                <div className="text-muted-foreground">Organisation</div>
+                <div className="text-foreground truncate">{activity.organization_name}</div>
               </>
             )}
             
-            <div className="text-slate-500">Status</div>
-            <div className="text-slate-700">{statusInfo.label}</div>
+            <div className="text-muted-foreground">Status</div>
+            <div className="text-foreground">{statusInfo.label}</div>
             
             {'site_type' in location && location.site_type && (
               <>
-                <div className="text-slate-500">Site Type</div>
-                <div className="text-slate-700">{formatSiteType(location.site_type)}</div>
+                <div className="text-muted-foreground">Site Type</div>
+                <div className="text-foreground">{formatSiteType(location.site_type)}</div>
               </>
             )}
           </div>
@@ -385,7 +385,7 @@ function ActivityLocationMarker({
         )}
         
         {/* Location Name */}
-        <h3 className="text-sm font-semibold text-slate-800 mb-0.5 leading-tight">
+        <h3 className="text-sm font-semibold text-foreground mb-0.5 leading-tight">
           {location.location_name || 'Unnamed Location'}
         </h3>
         
@@ -393,12 +393,12 @@ function ActivityLocationMarker({
         {activity?.id ? (
           <a 
             href={`/activities/${activity.id}`}
-            className="block text-xs text-slate-500 mb-3 hover:text-slate-700 cursor-pointer transition-colors"
+            className="block text-xs text-muted-foreground mb-3 hover:text-foreground cursor-pointer transition-colors"
           >
             {activity?.title || 'Untitled Activity'}
           </a>
         ) : (
-          <div className="text-xs text-slate-500 mb-3">
+          <div className="text-xs text-muted-foreground mb-3">
             {activity?.title || 'Untitled Activity'}
           </div>
         )}
@@ -407,7 +407,7 @@ function ActivityLocationMarker({
         
         {/* Reporting Organisation */}
         <div className="mb-2">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">Reporting Organisation</div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-1">Reporting Organisation</div>
           <div className="flex items-center gap-2">
             {activity?.organization_logo ? (
               <img 
@@ -416,14 +416,14 @@ function ActivityLocationMarker({
                 className="h-6 w-6 rounded object-contain flex-shrink-0"
               />
             ) : (
-              <div className="h-6 w-6 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-4 w-4 text-slate-400" />
+              <div className="h-6 w-6 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
               </div>
             )}
-            <span className="text-xs text-slate-700">
+            <span className="text-xs text-foreground">
               {activity?.organization_name || '-'}
               {activity?.organization_acronym && activity?.organization_acronym !== activity?.organization_name && (
-                <span className="text-slate-500"> ({activity.organization_acronym})</span>
+                <span className="text-muted-foreground"> ({activity.organization_acronym})</span>
               )}
             </span>
           </div>
@@ -431,7 +431,7 @@ function ActivityLocationMarker({
         
         {/* Status */}
         <div className="mb-3">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">Status</div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-1">Status</div>
           <Badge 
             variant="secondary" 
             className="text-xs px-2 py-0.5"
@@ -444,22 +444,22 @@ function ActivityLocationMarker({
         {/* Site Type */}
         {'site_type' in location && location.site_type && (
           <div className="mb-3">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Site Type</div>
-            <div className="text-xs text-slate-700">{formatSiteType(location.site_type)}</div>
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Site Type</div>
+            <div className="text-xs text-foreground">{formatSiteType(location.site_type)}</div>
           </div>
         )}
         
         {/* Address */}
         <div className="mb-3">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Address</div>
-          <div className="text-xs text-slate-700 leading-snug">{getFullAddress(location)}</div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Address</div>
+          <div className="text-xs text-foreground leading-snug">{getFullAddress(location)}</div>
         </div>
         
         {/* Coordinates */}
         <div className="mb-3">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Coordinates</div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Coordinates</div>
           <div className="flex items-center gap-2">
-            <div className="font-mono text-xs text-slate-700 bg-slate-50 px-2 py-1 rounded">
+            <div className="font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
               {lat.toFixed(6)}, {lng.toFixed(6)}
             </div>
             <a 
@@ -481,8 +481,8 @@ function ActivityLocationMarker({
         {/* Description */}
         {(location.description || location.location_description || ('activity_location_description' in location && location.activity_location_description)) && (
           <div className="mb-3">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Description</div>
-            <div className="text-xs text-slate-600 leading-snug italic">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Description</div>
+            <div className="text-xs text-muted-foreground leading-snug italic">
               {location.description || location.location_description || ('activity_location_description' in location && location.activity_location_description)}
             </div>
           </div>
@@ -494,23 +494,23 @@ function ActivityLocationMarker({
         {/* Financial Summary */}
         {activity && (activity.totalBudget || activity.totalPlannedDisbursement || activity.totalCommitments || activity.totalDisbursed) && (
           <div className="mb-3">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">Financial Summary</div>
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">Financial Summary</div>
             <div className="rounded border border-border overflow-hidden">
               <div className="flex justify-between px-2.5 py-1.5 bg-white">
-                <span className="text-xs text-slate-500">Total Budgeted</span>
-                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalBudget)}</span>
+                <span className="text-xs text-muted-foreground">Total Budgeted</span>
+                <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(activity.totalBudget)}</span>
               </div>
-              <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
-                <span className="text-xs text-slate-500">Total Planned Disbursement</span>
-                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalPlannedDisbursement)}</span>
+              <div className="flex justify-between px-2.5 py-1.5 bg-muted">
+                <span className="text-xs text-muted-foreground">Total Planned Disbursement</span>
+                <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(activity.totalPlannedDisbursement)}</span>
               </div>
               <div className="flex justify-between px-2.5 py-1.5 bg-white">
-                <span className="text-xs text-slate-500">Total Committed</span>
-                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalCommitments)}</span>
+                <span className="text-xs text-muted-foreground">Total Committed</span>
+                <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(activity.totalCommitments)}</span>
               </div>
-              <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
-                <span className="text-xs text-slate-500">Total Disbursed</span>
-                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalDisbursed)}</span>
+              <div className="flex justify-between px-2.5 py-1.5 bg-muted">
+                <span className="text-xs text-muted-foreground">Total Disbursed</span>
+                <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(activity.totalDisbursed)}</span>
               </div>
             </div>
           </div>

@@ -105,7 +105,7 @@ export function DocumentCard({
           {/* Preview/Icon */}
           <div className="flex-shrink-0">
             {(isImage || document.thumbnailUrl) ? (
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
                 <img
                   src={document.thumbnailUrl || document.url}
                   alt={primaryTitle.text}
@@ -114,7 +114,7 @@ export function DocumentCard({
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.parentElement!.innerHTML = `
                       <div class="w-16 h-16 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -123,8 +123,8 @@ export function DocumentCard({
                 />
               </div>
             ) : (
-              <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                <FileIcon className="w-8 h-8 text-gray-500" />
+              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                <FileIcon className="w-8 h-8 text-muted-foreground" />
               </div>
             )}
           </div>
@@ -133,11 +133,11 @@ export function DocumentCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 break-words">
+                  <h3 className="font-medium text-foreground break-words">
                     {primaryTitle.text}
                   </h3>
                 {primaryDescription && (
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {primaryDescription.text}
                   </p>
                 )}
@@ -225,7 +225,7 @@ export function DocumentCard({
               onClick={() => onEdit(document)}
               className="text-xs gap-1"
             >
-              <Pencil className="w-3 h-3 text-slate-500" />
+              <Pencil className="w-3 h-3 text-muted-foreground" />
               Edit
             </Button>
           )}
@@ -245,9 +245,9 @@ export function DocumentCard({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(document.url)}
-              className="text-xs gap-1 text-red-600 hover:text-red-700"
+              className="text-xs gap-1 text-destructive hover:text-destructive"
             >
-              <Trash2 className="w-3 h-3 text-red-500" />
+              <Trash2 className="w-3 h-3 text-destructive" />
               Delete
             </Button>
           )}

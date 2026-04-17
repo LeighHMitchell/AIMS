@@ -165,7 +165,7 @@ export function SectorMiniBar({
   // Handle empty state
   if (!sectors || sectors.length === 0) {
     return (
-      <div className={`flex items-center justify-center text-xs text-gray-400 ${className}`}>
+      <div className={`flex items-center justify-center text-xs text-muted-foreground ${className}`}>
         —
       </div>
     )
@@ -225,7 +225,7 @@ export function SectorMiniBar({
 
   const barContent = (
     <div 
-      className={`flex w-full rounded overflow-hidden bg-gray-100 ${className}`}
+      className={`flex w-full rounded overflow-hidden bg-muted ${className}`}
       style={{ height: `${height}px` }}
     >
       {normalizedSectors.map((sector, index) => {
@@ -249,7 +249,7 @@ export function SectorMiniBar({
               <TooltipContent side="top" className="max-w-xs">
                 <div className="text-xs">
                   <div className="font-medium">{sector.code} {displayName.replace(/^\d+\s*[-–]\s*/, '')}</div>
-                  <div className="text-gray-500">{percentage}%</div>
+                  <div className="text-muted-foreground">{percentage}%</div>
                 </div>
               </TooltipContent>
             </Tooltip>

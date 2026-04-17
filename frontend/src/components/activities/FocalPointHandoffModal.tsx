@@ -152,9 +152,9 @@ export function FocalPointHandoffModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <Alert variant="default" className="bg-slate-50 border-border">
-            <AlertCircle className="h-4 w-4 text-slate-600" />
-            <AlertDescription className="text-slate-700">
+          <Alert variant="default" className="bg-muted border-border">
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <AlertDescription className="text-foreground">
               You are currently the <strong>{typeLabel}</strong> for this activity.
               Select a user to transfer this role to. They will receive a notification
               and must accept the handoff before becoming the new focal point.
@@ -172,7 +172,7 @@ export function FocalPointHandoffModal({
                   {selectedUser.avatarUrl && (
                     <AvatarImage src={selectedUser.avatarUrl} alt={selectedUser.name} />
                   )}
-                  <AvatarFallback className="bg-slate-100 text-xs">
+                  <AvatarFallback className="bg-muted text-xs">
                     {getInitials(selectedUser.firstName, selectedUser.lastName)}
                   </AvatarFallback>
                 </Avatar>
@@ -198,7 +198,7 @@ export function FocalPointHandoffModal({
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search by name or email..."
@@ -209,7 +209,7 @@ export function FocalPointHandoffModal({
                   className="pl-10"
                 />
                 {isSearching && (
-                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
                 )}
               </div>
             )}
@@ -217,7 +217,7 @@ export function FocalPointHandoffModal({
             {showResults && filteredResults.length > 0 && !selectedUser && (
               <div className="mt-2 bg-white border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                 <div className="p-2">
-                  <p className="text-xs text-gray-500 px-2 py-1">
+                  <p className="text-xs text-muted-foreground px-2 py-1">
                     {query
                       ? `Found ${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''}`
                       : `${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
@@ -232,21 +232,21 @@ export function FocalPointHandoffModal({
                       <div className="flex items-start gap-3">
                         <Avatar className="h-10 w-10 flex-shrink-0">
                           {u.avatarUrl && <AvatarImage src={u.avatarUrl} alt={u.name} />}
-                          <AvatarFallback className="bg-slate-100">
-                            <span className="text-sm font-medium text-slate-600">
+                          <AvatarFallback className="bg-muted">
+                            <span className="text-sm font-medium text-muted-foreground">
                               {getInitials(u.firstName, u.lastName)}
                             </span>
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">{u.name}</p>
+                          <p className="font-semibold text-foreground truncate">{u.name}</p>
                           {(u.jobTitle || u.department) && (
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {[u.jobTitle, u.department].filter(Boolean).join(' · ')}
                             </p>
                           )}
                           {u.organization && (
-                            <p className="text-xs text-gray-500 truncate">{u.organization}</p>
+                            <p className="text-xs text-muted-foreground truncate">{u.organization}</p>
                           )}
                         </div>
                       </div>
@@ -258,17 +258,17 @@ export function FocalPointHandoffModal({
 
             {showResults && filteredResults.length === 0 && !isSearching && !selectedUser && (
               <div className="mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
-                <p className="text-sm text-gray-600 text-center">No users found{query ? ` matching "${query}"` : ''}</p>
+                <p className="text-sm text-muted-foreground text-center">No users found{query ? ` matching "${query}"` : ''}</p>
               </div>
             )}
           </div>
 
           {selectedUser && (
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p className="text-sm text-slate-600">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
                 <span className="font-medium">{currentFocalPointName}</span>
                 {' → '}
-                <span className="font-medium text-slate-900">{selectedUser.name}</span>
+                <span className="font-medium text-foreground">{selectedUser.name}</span>
               </p>
             </div>
           )}

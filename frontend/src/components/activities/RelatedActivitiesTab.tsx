@@ -459,9 +459,9 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDelete(activity.id)}
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                  className="text-destructive hover:text-red-800 hover:bg-destructive/10"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
                               ) : null}
                             </div>

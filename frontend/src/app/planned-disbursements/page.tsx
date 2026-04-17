@@ -536,7 +536,7 @@ export default function PlannedDisbursementsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalDisbursements)} to {Math.min(endIndex, totalDisbursements)} of {totalDisbursements} planned disbursements
                 </div>
 
@@ -582,7 +582,7 @@ export default function PlannedDisbursementsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>
@@ -614,7 +614,7 @@ export default function PlannedDisbursementsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Items per page:</label>
+                  <label className="text-sm text-muted-foreground">Items per page:</label>
                   <Select
                     value={pageLimit.toString()}
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

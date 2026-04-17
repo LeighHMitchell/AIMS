@@ -145,7 +145,7 @@ function getTaskOverallStatus(task: Task): { label: string; color: string } {
     return { label: 'All Completed', color: 'text-[#5f7f7a] bg-[#5f7f7a]/10 border-[#5f7f7a]/30' };
   }
   if (declined === assignments.length) {
-    return { label: 'All Declined', color: 'text-gray-600 bg-gray-50 border-border' };
+    return { label: 'All Declined', color: 'text-muted-foreground bg-muted border-border' };
   }
   if (inProgress > 0) {
     return { label: 'In Progress', color: 'text-blue-600 bg-blue-50 border-blue-200' };
@@ -153,7 +153,7 @@ function getTaskOverallStatus(task: Task): { label: string; color: string } {
   if (completed > 0) {
     return { label: 'Partial', color: 'text-amber-600 bg-amber-50 border-amber-200' };
   }
-  return { label: 'Pending', color: 'text-slate-600 bg-slate-50 border-border' };
+  return { label: 'Pending', color: 'text-muted-foreground bg-muted border-border' };
 }
 
 // Get progress percentage for a task
@@ -317,7 +317,7 @@ export function CreatedTasksTable({
                 key={task.id}
                 className={cn(
                   'cursor-pointer hover:bg-muted/50',
-                  isOverdue && 'bg-red-50/50',
+                  isOverdue && 'bg-destructive/10/50',
                   isDueSoon && !isOverdue && 'bg-amber-50/50'
                 )}
                 onClick={() => onViewDetails?.(task)}
@@ -533,7 +533,7 @@ export function CreatedTasksTable({
                           onEdit(task);
                         }}
                       >
-                        <Pencil className="h-4 w-4 text-slate-500" />
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     )}
                     {onDelete && (
@@ -542,10 +542,10 @@ export function CreatedTasksTable({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             disabled={deletingTaskId === task.id}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

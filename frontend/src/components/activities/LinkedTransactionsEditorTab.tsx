@@ -166,7 +166,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
         return <ChevronDownRight className="w-4 h-4 text-[hsl(var(--success-icon))]" />;
       case '3':
       case '4':
-        return <ChevronUpRight className="w-4 h-4 text-red-600" />;
+        return <ChevronUpRight className="w-4 h-4 text-destructive" />;
       default:
         return <DollarSign className="w-4 h-4 text-muted-foreground" />;
     }

@@ -459,7 +459,7 @@ export function EventDetailModal({
                 <>
                   {!isEditing ? (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                      <Pencil className="h-4 w-4 text-slate-500" />
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   ) : (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
@@ -468,7 +468,7 @@ export function EventDetailModal({
                   )}
                   {(isOrganizer || user?.role === 'admin') && (
                     <Button variant="ghost" size="sm" onClick={handleDelete} className="text-[#dc2625]">
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
                 </>
@@ -1036,7 +1036,7 @@ export function EventDetailModal({
                             onClick={() => handleDeleteDocument(doc)}
                             title="Delete"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </div>

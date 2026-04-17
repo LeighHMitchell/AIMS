@@ -305,7 +305,7 @@ const TIED_STATUS_OPTIONS = [
 const FieldWithDescription: React.FC<{ description: string; children: React.ReactNode }> = ({ description, children }) => (
   <div className="space-y-1">
     {children}
-    <p className="text-xs text-slate-500">{description}</p>
+    <p className="text-xs text-muted-foreground">{description}</p>
   </div>
 );
 
@@ -343,7 +343,7 @@ const InlineDocumentUpload: React.FC<{
         <Button
           variant="outline"
           size="sm"
-          className="h-9 px-3 text-xs text-slate-600 hover:text-slate-800 flex-shrink-0"
+          className="h-9 px-3 text-xs text-muted-foreground hover:text-foreground flex-shrink-0"
           onClick={() => document.getElementById(inputId)?.click()}
           disabled={uploading}
         >
@@ -364,17 +364,17 @@ const InlineDocumentUpload: React.FC<{
                 target="_blank"
                 rel="noopener noreferrer"
                 title={doc.fileName}
-                className="flex flex-col items-center justify-center w-10 h-12 bg-muted rounded border border-border hover:border-slate-400 hover:bg-slate-100 transition-colors"
+                className="flex flex-col items-center justify-center w-10 h-12 bg-muted rounded border border-border hover:border-slate-400 hover:bg-muted transition-colors"
               >
-                <FileText className="h-5 w-5 text-slate-400" />
-                <span className="text-[8px] text-slate-500 mt-0.5 truncate w-8 text-center">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <span className="text-[8px] text-muted-foreground mt-0.5 truncate w-8 text-center">
                   {doc.fileName.split('.').pop()?.toUpperCase()}
                 </span>
               </a>
               <button
                 type="button"
                 onClick={() => onRemove(fieldName, index)}
-                className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-white border border-border rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-300 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-white border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-red-300 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -409,23 +409,23 @@ const RadioButtonField: React.FC<{
       >
         <div className="flex items-center gap-1">
           <RadioGroupItem value="yes" id={`${id}-yes`} className="border-orange-300 text-orange-500" />
-          <Label htmlFor={`${id}-yes`} className="text-xs font-medium cursor-pointer text-slate-600">Yes</Label>
+          <Label htmlFor={`${id}-yes`} className="text-xs font-medium cursor-pointer text-muted-foreground">Yes</Label>
         </div>
         <div className="flex items-center gap-1">
           <RadioGroupItem value="no" id={`${id}-no`} className="border-orange-300 text-orange-500" />
-          <Label htmlFor={`${id}-no`} className="text-xs font-medium cursor-pointer text-slate-600">No</Label>
+          <Label htmlFor={`${id}-no`} className="text-xs font-medium cursor-pointer text-muted-foreground">No</Label>
         </div>
       </RadioGroup>
       <div className="flex-1 flex items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <Label className="text-sm font-medium leading-tight text-slate-800">
+          <Label className="text-sm font-medium leading-tight text-foreground">
             {label}
           </Label>
           {tooltip && (
-            <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{tooltip}</p>
           )}
           {description && (
-            <p className="text-xs text-slate-400 italic">{description}</p>
+            <p className="text-xs text-muted-foreground italic">{description}</p>
           )}
         </div>
         {documentUpload && onDocUpload && onDocRemove && (
@@ -454,11 +454,11 @@ const DropdownField: React.FC<{
   <div className="py-3 border-b border-border last:border-b-0">
     <div className="space-y-2">
       <div className="space-y-0.5">
-        <Label className="text-sm font-medium leading-tight text-slate-800">
+        <Label className="text-sm font-medium leading-tight text-foreground">
           {label}
         </Label>
         {tooltip && (
-          <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{tooltip}</p>
         )}
       </div>
       <Select value={value || ""} onValueChange={onValueChange}>
@@ -471,7 +471,7 @@ const DropdownField: React.FC<{
               <div>
                 <span className="font-medium">{option.label}</span>
                 {option.description && (
-                  <span className="text-xs text-gray-500 ml-2">{option.description}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{option.description}</span>
                 )}
               </div>
             </SelectItem>
@@ -525,14 +525,14 @@ const CountryDropdownField: React.FC<{
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-0.5">
-            <Label className="text-sm font-medium leading-tight text-slate-800">
+            <Label className="text-sm font-medium leading-tight text-foreground">
               {label}
             </Label>
             {tooltip && (
-              <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{tooltip}</p>
             )}
             {description && (
-              <p className="text-xs text-slate-400 italic">{description}</p>
+              <p className="text-xs text-muted-foreground italic">{description}</p>
             )}
           </div>
           {documentUpload && onDocUpload && onDocRemove && (
@@ -631,12 +631,12 @@ const ContactCard: React.FC<{
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-slate-900 text-sm truncate">{fullName}</h4>
+          <h4 className="font-semibold text-foreground text-sm truncate">{fullName}</h4>
           {contact.position && (
-            <p className="text-xs text-slate-600 truncate">{contact.position}</p>
+            <p className="text-xs text-muted-foreground truncate">{contact.position}</p>
           )}
           {contact.organisationName && (
-            <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
               <Building2 className="h-3 w-3" />
               {contact.organisationName}
             </p>
@@ -646,7 +646,7 @@ const ContactCard: React.FC<{
         <Button
           variant="ghost"
           size="sm"
-          className="text-gray-400 hover:text-red-500 h-8 w-8 p-0"
+          className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
           onClick={onRemove}
         >
           <X className="h-4 w-4" />
@@ -656,16 +656,16 @@ const ContactCard: React.FC<{
       <div className="mt-3 space-y-1.5">
         {contact.email && (
           <div className="flex items-center gap-2 text-xs">
-            <Mail className="h-3.5 w-3.5 text-slate-400" />
-            <a href={`mailto:${contact.email}`} className="text-slate-700 hover:text-blue-600 truncate">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+            <a href={`mailto:${contact.email}`} className="text-foreground hover:text-blue-600 truncate">
               {contact.email}
             </a>
           </div>
         )}
         {(contact.phone || contact.phoneNumber) && (
           <div className="flex items-center gap-2 text-xs">
-            <Phone className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-700">
+            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-foreground">
               {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
             </span>
           </div>
@@ -1169,13 +1169,13 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 1: Government Ownership & Strategic Alignment ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Building2 className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Government Ownership & Strategic Alignment</h3>
+            <Building2 className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Government Ownership & Strategic Alignment</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 1</Badge>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               Implementing Partner
               <HelpTextTooltip content={TOOLTIPS.implementingPartner}>
                 <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
@@ -1266,7 +1266,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
           <div className="space-y-2 max-w-xs">
             <FieldWithDescription description={TOOLTIPS.numOutcomeIndicators}>
-              <Label className="text-sm font-medium text-slate-700">Number of Outcome Indicators</Label>
+              <Label className="text-sm font-medium text-foreground">Number of Outcome Indicators</Label>
             </FieldWithDescription>
             <Input
               type="number"
@@ -1282,8 +1282,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 2: Use of Country PFM & Procurement Systems ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Globe className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Use of Country Public Financial & Procurement Systems</h3>
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Use of Country Public Financial & Procurement Systems</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 5a</Badge>
           </div>
 
@@ -1351,8 +1351,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 3: Predictability & Aid Characteristics ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Calendar className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Predictability & Aid Characteristics</h3>
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Predictability & Aid Characteristics</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicators 5b, 6, 10</Badge>
           </div>
 
@@ -1382,7 +1382,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
           <div className="space-y-2 max-w-md">
             <FieldWithDescription description={TOOLTIPS.tiedStatus}>
-              <Label className="text-sm font-medium text-slate-700">Tied Aid Status</Label>
+              <Label className="text-sm font-medium text-foreground">Tied Aid Status</Label>
             </FieldWithDescription>
             <Select
               value={formData.tiedStatus || ""}
@@ -1396,7 +1396,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                   <SelectItem key={option.value} value={option.value} className="pl-2">
                     <div>
                       <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-gray-500 ml-2">{option.description}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{option.description}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -1408,8 +1408,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 4: Transparency & Timely Reporting ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Eye className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Transparency & Timely Reporting</h3>
+            <Eye className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Transparency & Timely Reporting</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 4</Badge>
           </div>
 
@@ -1453,7 +1453,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
           {formData.finalEvalPlanned === 'yes' && (
             <div className="ml-6 space-y-2">
-              <Label className="text-sm text-gray-600">Planned Evaluation Date</Label>
+              <Label className="text-sm text-muted-foreground">Planned Evaluation Date</Label>
               <Input
                 type="date"
                 value={formData.finalEvalDate || ""}
@@ -1467,12 +1467,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 5: Mutual Accountability ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Handshake className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Mutual Accountability</h3>
+            <Handshake className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Mutual Accountability</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 7</Badge>
           </div>
 
-          <p className="text-xs text-gray-500 italic">
+          <p className="text-xs text-muted-foreground italic">
             Note: Indicator 7 is formally country-level. These questions approximate it at activity level.
           </p>
 
@@ -1506,12 +1506,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 6: Civil Society & Private Sector Engagement ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Users className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Civil Society & Private Sector Engagement</h3>
+            <Users className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Civil Society & Private Sector Engagement</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicators 2 & 3</Badge>
           </div>
 
-          <p className="text-xs text-gray-500 italic">
+          <p className="text-xs text-muted-foreground italic">
             Note: Indicators 2 and 3 are partially systemic, but these are measurable proxies.
           </p>
 
@@ -1561,8 +1561,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 7: Gender Equality & Inclusion ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Heart className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Gender Equality & Inclusion</h3>
+            <Heart className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Gender Equality & Inclusion</h3>
             <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 8</Badge>
           </div>
 
@@ -1595,8 +1595,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 8: Contact Details ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <MessageSquare className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Contacts</h3>
+            <MessageSquare className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Contacts</h3>
           </div>
 
           {formData.contacts && formData.contacts.length > 0 && (
@@ -1619,7 +1619,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">First Name <RequiredDot /></Label>
+                    <Label className="text-xs text-muted-foreground">First Name <RequiredDot /></Label>
                     <Input
                       value={formData.editingContact.firstName || ""}
                       onChange={(e) => updateField('editingContact', { ...formData.editingContact, firstName: e.target.value })}
@@ -1628,7 +1628,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">Last Name <RequiredDot /></Label>
+                    <Label className="text-xs text-muted-foreground">Last Name <RequiredDot /></Label>
                     <Input
                       value={formData.editingContact.lastName || ""}
                       onChange={(e) => updateField('editingContact', { ...formData.editingContact, lastName: e.target.value })}
@@ -1639,7 +1639,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">Email</Label>
+                    <Label className="text-xs text-muted-foreground">Email</Label>
                     <Input
                       type="email"
                       value={formData.editingContact.email || ""}
@@ -1649,7 +1649,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">Phone</Label>
+                    <Label className="text-xs text-muted-foreground">Phone</Label>
                     <Input
                       type="tel"
                       value={formData.editingContact.phone || ""}
@@ -1660,7 +1660,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-gray-600">Organisation</Label>
+                  <Label className="text-xs text-muted-foreground">Organisation</Label>
                   <OrganizationCombobox
                     organizations={organizations}
                     value={formData.editingContact.organisationId}
@@ -1711,13 +1711,13 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 9: Documents ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <FileText className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Supporting Documentation</h3>
+            <FileText className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Supporting Documentation</h3>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Upload Supporting Document</Label>
+              <Label className="text-sm font-medium text-foreground">Upload Supporting Document</Label>
               <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-input transition-colors">
                 {formData.uploadedDocument ? (
                   <div className="space-y-2">
@@ -1742,15 +1742,15 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                         updateField('uploadedDocument', undefined);
                         updateField('uploadedDocumentUrl', undefined);
                       }}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-1 text-red-500" />
+                      <Trash2 className="h-4 w-4 mr-1 text-destructive" />
                       Remove
                     </Button>
                   </div>
                 ) : (
                   <>
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                     <Input
                       type="file"
                       accept=".pdf,.doc,.docx,.xls,.xlsx"
@@ -1777,16 +1777,16 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                         'Choose File'
                       )}
                     </Button>
-                    <p className="text-xs text-gray-500 mt-2">PDF, Word, or Excel (max 10MB)</p>
+                    <p className="text-xs text-muted-foreground mt-2">PDF, Word, or Excel (max 10MB)</p>
                   </>
                 )}
               </div>
             </div>
 
             <div className="space-y-2 w-full">
-              <Label className="text-sm font-medium text-gray-700">External Document Link</Label>
+              <Label className="text-sm font-medium text-foreground">External Document Link</Label>
               <div className="relative w-full">
-                <Link2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Link2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="url"
                   value={formData.externalDocumentLink || ""}
@@ -1799,8 +1799,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
             {/* Evidence Documents */}
             <div className="space-y-2 w-full">
-              <Label className="text-sm font-medium text-gray-700">Evidence Documents</Label>
-              <p className="text-xs text-slate-500">Upload supporting evidence for any of the questions above</p>
+              <Label className="text-sm font-medium text-foreground">Evidence Documents</Label>
+              <p className="text-xs text-muted-foreground">Upload supporting evidence for any of the questions above</p>
               <InlineDocumentUpload
                 fieldName="evidence"
                 document={formData.documents?.evidence}
@@ -1815,13 +1815,13 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 10: Remarks ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <FileText className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-gray-900">Additional Remarks</h3>
+            <FileText className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Additional Remarks</h3>
           </div>
 
           <div className="space-y-2">
             <FieldWithDescription description={TOOLTIPS.remarks}>
-              <Label className="text-sm font-medium text-slate-700">Additional Notes</Label>
+              <Label className="text-sm font-medium text-foreground">Additional Notes</Label>
             </FieldWithDescription>
             <Textarea
               value={formData.remarks || ""}
@@ -1834,8 +1834,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       </div>
 
       {/* Footer */}
-      <div className="border-t px-6 py-3 bg-gray-50 flex items-center justify-between">
-        <p className="text-xs text-gray-500">
+      <div className="border-t px-6 py-3 bg-muted flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
           Data is automatically saved as you make changes
         </p>
         <Button variant="outline" size="sm" onClick={handleExportXLSX}>

@@ -190,24 +190,24 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
       const percentage = grandTotal > 0 ? ((item.value / grandTotal) * 100).toFixed(1) : "0";
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{item.name}</p>
+          <p className="font-semibold text-foreground mb-2">{item.name}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-700">Value</span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-sm text-foreground">Value</span>
+              <span className="text-sm font-medium text-foreground">
                 {formatCurrency(item.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-700">Percentage</span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-sm text-foreground">Percentage</span>
+              <span className="text-sm font-medium text-foreground">
                 {percentage}%
               </span>
             </div>
             {item.activityCount > 0 && (
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-slate-700">Activities</span>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-sm text-foreground">Activities</span>
+                <span className="text-sm font-medium text-foreground">
                   {item.activityCount}
                 </span>
               </div>
@@ -227,7 +227,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-gray-600 truncate max-w-[100px]" title={item.name}>
+          <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -372,7 +372,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <TableRow>
             <TableHead>
               <button
-                className="flex items-center hover:text-slate-900 transition-colors"
+                className="flex items-center hover:text-foreground transition-colors"
                 onClick={() => handleSort("name")}
               >
                 State/Region
@@ -381,7 +381,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             </TableHead>
             <TableHead className="text-right">
               <button
-                className="flex items-center justify-end w-full hover:text-slate-900 transition-colors"
+                className="flex items-center justify-end w-full hover:text-foreground transition-colors"
                 onClick={() => handleSort("value")}
               >
                 Value (USD)
@@ -390,7 +390,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             </TableHead>
             <TableHead className="text-right">
               <button
-                className="flex items-center justify-end w-full hover:text-slate-900 transition-colors"
+                className="flex items-center justify-end w-full hover:text-foreground transition-colors"
                 onClick={() => handleSort("percentage")}
               >
                 %
@@ -399,7 +399,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             </TableHead>
             <TableHead className="text-right">
               <button
-                className="flex items-center justify-end w-full hover:text-slate-900 transition-colors"
+                className="flex items-center justify-end w-full hover:text-foreground transition-colors"
                 onClick={() => handleSort("activityCount")}
               >
                 Activities
@@ -477,7 +477,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
@@ -486,7 +486,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -517,10 +517,10 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         <CardHeader className="pb-1 pt-4 px-4 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Subnational Allocations
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 States and regions by financial allocation
               </CardDescription>
             </div>
@@ -528,10 +528,10 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
@@ -576,7 +576,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   Subnational Allocations
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">
@@ -601,7 +601,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+                className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
                 onClick={() => setViewMode("bar")}
                 title="Bar Chart"
               >
@@ -610,7 +610,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+                className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
                 onClick={() => setViewMode("pie")}
                 title="Pie Chart"
               >
@@ -635,7 +635,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <div className="mt-4">{renderContent(true)}</div>
 
           {/* Description below chart */}
-          <p className="text-sm text-slate-600 mt-4">
+          <p className="text-sm text-muted-foreground mt-4">
             This chart visualizes how development assistance is distributed across Myanmar's states and regions.
             Understanding subnational allocation patterns helps identify geographic priorities, reveals potential
             gaps in coverage, and supports more equitable distribution of aid resources. Use the metric selector
@@ -669,7 +669,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             </div>
           </DialogHeader>
 
-          <p className="text-sm text-slate-600 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             This table provides precise figures for aid allocations across Myanmar's states and regions.
             The data shows the exact USD value, percentage share, and number of activities for each location.
             Use this detailed breakdown to analyze funding concentration, compare regional investments,

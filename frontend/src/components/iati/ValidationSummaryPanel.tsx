@@ -50,8 +50,8 @@ const issueTypeConfig = {
     icon: DollarSign,
     title: 'Missing Currency',
     description: 'Transactions without currency attribute',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
     borderColor: 'border-red-200'
   },
   missing_activity: {
@@ -82,16 +82,16 @@ const issueTypeConfig = {
     icon: FileWarning,
     title: 'Missing Required Fields',
     description: 'Transactions missing date or other required fields',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
     borderColor: 'border-red-200'
   },
   invalid_value: {
     icon: AlertCircle,
     title: 'Invalid Values',
     description: 'Transactions with invalid or zero values',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
     borderColor: 'border-red-200'
   }
 };
@@ -115,7 +115,7 @@ export function ValidationSummaryPanel({
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Activities
             </CardTitle>
           </CardHeader>
@@ -126,7 +126,7 @@ export function ValidationSummaryPanel({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Transactions
             </CardTitle>
           </CardHeader>
@@ -137,7 +137,7 @@ export function ValidationSummaryPanel({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Valid Transactions
             </CardTitle>
           </CardHeader>
@@ -154,7 +154,7 @@ export function ValidationSummaryPanel({
         {summary.transactionsNeedingAssignment !== undefined && summary.transactionsNeedingAssignment > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Need Assignment
               </CardTitle>
             </CardHeader>
@@ -171,7 +171,7 @@ export function ValidationSummaryPanel({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Success Rate
             </CardTitle>
           </CardHeader>
@@ -181,9 +181,9 @@ export function ValidationSummaryPanel({
                 {successRate}%
               </div>
               <div className="flex-1">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div 
-                    className={`h-full ${successRate > 80 ? 'bg-green-500' : successRate > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                    className={`h-full ${successRate > 80 ? 'bg-green-500' : successRate > 50 ? 'bg-yellow-500' : 'bg-destructive/100'}`}
                     style={{ width: `${successRate}%` }}
                   />
                 </div>
@@ -266,7 +266,7 @@ export function ValidationSummaryPanel({
                           {issue.count} {issue.count === 1 ? 'issue' : 'issues'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {config.description}
                       </p>
                     </div>

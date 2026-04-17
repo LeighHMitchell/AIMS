@@ -319,9 +319,9 @@ function CommentItem({
                 {canDelete && onDelete && (
                   <DropdownMenuItem
                     onClick={() => onDelete(comment.id)}
-                    className="text-red-600 focus:text-red-600"
+                    className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="h-3.5 w-3.5 mr-2 text-red-500" />
+                    <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
                     Delete
                   </DropdownMenuItem>
                 )}
@@ -744,7 +744,7 @@ export function CommentsDrawer({
           {/* Header */}
           <header className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold tracking-tight text-red-500">
+              <h2 className="text-lg font-semibold tracking-tight text-destructive">
                 NEW DRAWER TEST
               </h2>
               <Badge variant="secondary" className="font-normal">
@@ -794,7 +794,7 @@ export function CommentsDrawer({
             )}
 
             {error && (
-              <div className="text-center py-8 text-sm text-red-500">
+              <div className="text-center py-8 text-sm text-destructive">
                 {error}
               </div>
             )}

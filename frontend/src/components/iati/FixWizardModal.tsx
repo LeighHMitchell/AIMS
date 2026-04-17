@@ -241,7 +241,7 @@ export function FixWizardModal({
                       <p className="text-sm font-medium">
                         Transaction #{txIndex + 1}
                       </p>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-muted-foreground">
                         {transaction?.type} - {transaction?.value} on {transaction?.date}
                       </p>
                     </div>
@@ -299,7 +299,7 @@ export function FixWizardModal({
               <div key={iatiId} className="p-4 border rounded-lg space-y-3">
                 <div>
                   <p className="font-medium">IATI ID: {iatiId}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {missingActivityDetails.filter(d => d.activityId === iatiId).length} transactions
                   </p>
                 </div>
@@ -326,7 +326,7 @@ export function FixWizardModal({
                         Create new activity
                       </span>
                     </SelectItem>
-                    <div className="my-2 h-px bg-gray-200" />
+                    <div className="my-2 h-px bg-muted" />
                     {activities.map(activity => (
                       <SelectItem key={activity.id} value={activity.id}>
                         {activity.title} ({activity.iati_id})
@@ -510,7 +510,7 @@ export function FixWizardModal({
                       <p className="text-sm font-medium">
                         Transaction #{txIndex + 1}
                       </p>
-                      <p className="text-xs text-red-600">
+                      <p className="text-xs text-destructive">
                         {detail.message}
                       </p>
                     </div>

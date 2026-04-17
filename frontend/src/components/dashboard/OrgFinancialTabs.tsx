@@ -65,7 +65,7 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
     <Card className="bg-white">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-slate-600" />
+          <DollarSign className="h-5 w-5 text-muted-foreground" />
           {isPortfolio ? 'My Financial Data' : "My Organisation\u2019s Data"}
           <HelpTextTooltip size="sm" content={isPortfolio
             ? 'Activities and financial records you have entered'

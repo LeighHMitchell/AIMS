@@ -347,7 +347,7 @@ export default function ActivityLocationEditor({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           The scope determines the geographic level of your activity
         </p>
       </div>
@@ -382,8 +382,8 @@ export default function ActivityLocationEditor({
               <CardTitle className="text-sm">Coverage Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 bg-gray-100 rounded flex items-center justify-center">
-                <p className="text-gray-500">
+              <div className="h-64 bg-muted rounded flex items-center justify-center">
+                <p className="text-muted-foreground">
                   Map preview for {scope === "2" ? selectedRegions.length : selectedCountries.length} selected areas
                 </p>
               </div>
@@ -577,7 +577,7 @@ export default function ActivityLocationEditor({
                     <MapControls position="top-right" showZoom />
                   </Map>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Click on the map to add a specific location within this township
                 </p>
               </CardContent>
@@ -638,7 +638,7 @@ export default function ActivityLocationEditor({
                   </MapMarker>
                 </Map>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Click on the map or search for an address to set the location
               </p>
             </CardContent>
@@ -730,7 +730,7 @@ export default function ActivityLocationEditor({
             <CardTitle className="text-sm">Location Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               {scope === "2" && `${selectedRegions.length} region(s) selected`}
               {scope === "3" && `${selectedCountries.length} country/countries selected`}
               {scope === "4" && `National scope: ${COUNTRIES.find(c => c.value === selectedCountry)?.label}`}

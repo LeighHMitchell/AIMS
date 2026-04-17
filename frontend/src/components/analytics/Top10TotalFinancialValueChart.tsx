@@ -138,11 +138,11 @@ export function Top10TotalFinancialValueChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
         <div className="text-center">
-          <BarChart3 className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No financial data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No financial data available</p>
+          <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )

@@ -60,13 +60,13 @@ function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode
   return (
     <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
       <button
-        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-slate-200 text-slate-900' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-muted text-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
         onClick={() => onChange('count')}
       >
         #
       </button>
       <button
-        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-slate-200 text-slate-900' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-muted text-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
         onClick={() => onChange('value')}
       >
         $
@@ -98,10 +98,10 @@ export default function ProjectBankDashboard() {
   }
 
   const getSortIcon = (field: string) => {
-    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-400" />
+    if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
     return sortOrder === 'asc'
-      ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" />
-      : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+      ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+      : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
   }
 
   useEffect(() => {

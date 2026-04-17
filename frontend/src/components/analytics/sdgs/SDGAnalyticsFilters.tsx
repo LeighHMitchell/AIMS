@@ -72,7 +72,7 @@ export function SDGAnalyticsFilters({
   }
 
   return (
-    <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-border">
+    <div className="space-y-4 p-4 bg-muted rounded-lg border border-border">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Organization Filter */}
         <div className="space-y-2">
@@ -208,8 +208,8 @@ export function SDGAnalyticsFilters({
                     <div
                       key={goal.id}
                       className={cn(
-                        "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-slate-100",
-                        selectedSdgs.includes(goal.id) && "bg-slate-200"
+                        "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted",
+                        selectedSdgs.includes(goal.id) && "bg-muted"
                       )}
                       onClick={() => toggleSdg(goal.id)}
                     >
@@ -220,7 +220,7 @@ export function SDGAnalyticsFilters({
                         className="rounded"
                       />
                       <span className="text-xs font-medium">SDG {goal.id}</span>
-                      <span className="text-xs text-slate-600 truncate">{goal.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">{goal.name}</span>
                     </div>
                   ))}
                 </div>
@@ -233,7 +233,7 @@ export function SDGAnalyticsFilters({
       {/* Selected SDGs Display */}
       {selectedSdgs.length > 0 && (
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-slate-600">Selected:</span>
+          <span className="text-sm text-muted-foreground">Selected:</span>
           {selectedSdgs.map((sdgId) => {
             const goal = SDG_GOALS.find(g => g.id === sdgId)
             return (

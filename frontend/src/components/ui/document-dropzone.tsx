@@ -46,14 +46,14 @@ function getFileIcon(mimeType: string) {
   if (mimeType.startsWith("image/"))
     return <FileImage className="h-4 w-4 text-blue-500" />;
   if (mimeType.includes("pdf"))
-    return <FileText className="h-4 w-4 text-red-500" />;
+    return <FileText className="h-4 w-4 text-destructive" />;
   if (
     mimeType.includes("spreadsheet") ||
     mimeType.includes("excel") ||
     mimeType.includes("csv")
   )
     return <FileSpreadsheet className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
-  return <File className="h-4 w-4 text-slate-500" />;
+  return <File className="h-4 w-4 text-muted-foreground" />;
 }
 
 function formatFileSize(bytes: number): string {
@@ -196,14 +196,14 @@ export function DocumentDropzone({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <Upload className="h-8 w-8 text-slate-400" />
+            <Upload className="h-8 w-8 text-muted-foreground" />
             {isDragActive ? (
               <p className="text-sm font-medium text-primary">
                 Drop files here
               </p>
             ) : (
               <>
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-foreground">
                   Drag & drop files here, or click to browse
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -221,7 +221,7 @@ export function DocumentDropzone({
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="flex items-center gap-3 p-2.5 bg-slate-50 border rounded-lg group"
+              className="flex items-center gap-3 p-2.5 bg-muted border rounded-lg group"
             >
               {getFileIcon(doc.mimeType)}
               <div className="flex-1 min-w-0">
@@ -248,7 +248,7 @@ export function DocumentDropzone({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(doc.id);

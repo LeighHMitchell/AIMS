@@ -254,7 +254,7 @@ export function StaleTransactionsTable() {
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5" />
             Activities Without Recent Transactions
           </CardTitle>
@@ -274,17 +274,17 @@ export function StaleTransactionsTable() {
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5" />
             Activities Without Recent Transactions
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-2" />
-              <p className="text-slate-600 font-medium">Failed to load data</p>
-              <p className="text-sm text-slate-500 mt-2">{error}</p>
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-2" />
+              <p className="text-muted-foreground font-medium">Failed to load data</p>
+              <p className="text-sm text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
         </CardContent>
@@ -297,7 +297,7 @@ export function StaleTransactionsTable() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <Clock className="h-5 w-5" />
               Activities Without Recent Transactions
             </CardTitle>
@@ -316,7 +316,7 @@ export function StaleTransactionsTable() {
         {/* Time Period Filter */}
         <div className="flex items-center gap-4 mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">No transaction in:</span>
+            <span className="text-sm text-muted-foreground">No transaction in:</span>
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Select period" />
@@ -336,11 +336,11 @@ export function StaleTransactionsTable() {
       <CardContent>
         {/* Empty state */}
         {filteredActivities.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-center h-[200px] bg-muted rounded-lg">
             <div className="text-center">
               <Clock className="h-12 w-12 text-green-400 mx-auto mb-2" />
-              <p className="text-slate-600 font-medium">All caught up!</p>
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-muted-foreground font-medium">All caught up!</p>
+              <p className="text-sm text-muted-foreground mt-2">
                 All ongoing activities have transactions within the last {TIME_PERIOD_OPTIONS.find(o => o.value === selectedPeriod)?.label.toLowerCase()}
               </p>
             </div>
@@ -425,25 +425,25 @@ export function StaleTransactionsTable() {
                       {activity.reporting_org_name ? (
                         <div className="min-w-[150px]">
                           {activity.reporting_org_acronym && (
-                            <span className="font-medium text-slate-700">
+                            <span className="font-medium text-foreground">
                               {activity.reporting_org_acronym}
                             </span>
                           )}
-                          <span className="block text-xs text-slate-500 break-words">
+                          <span className="block text-xs text-muted-foreground break-words">
                             {activity.reporting_org_name}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell>
                       {activity.last_transaction_date ? (
                         <div>
-                          <span className="text-slate-700">
+                          <span className="text-foreground">
                             {format(parseISO(activity.last_transaction_date), 'MMM d, yyyy')}
                           </span>
-                          <span className="block text-xs text-slate-500">
+                          <span className="block text-xs text-muted-foreground">
                             {activity.days_since_transaction} days ago
                           </span>
                         </div>
@@ -453,15 +453,15 @@ export function StaleTransactionsTable() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-muted-foreground">
                       {activity.last_transaction_type
                         ? TRANSACTION_TYPE_LABELS[activity.last_transaction_type] || activity.last_transaction_type
                         : '—'}
                     </TableCell>
-                    <TableCell className="text-right text-slate-700">
+                    <TableCell className="text-right text-foreground">
                       {formatCurrency(activity.last_transaction_value, activity.last_transaction_currency)}
                     </TableCell>
-                    <TableCell className="text-right text-slate-700">
+                    <TableCell className="text-right text-foreground">
                       {formatCurrency(activity.last_transaction_value_usd, 'USD')}
                     </TableCell>
                     <TableCell>
@@ -471,7 +471,7 @@ export function StaleTransactionsTable() {
                         onClick={() => router.push(`/activities/new?id=${activity.id}&section=finances`)}
                         title="Edit transactions"
                       >
-                        <Pencil className="h-4 w-4 text-slate-500" />
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -479,7 +479,7 @@ export function StaleTransactionsTable() {
               </TableBody>
             </Table>
             {sortedActivities.length > 100 && (
-              <div className="p-3 text-center text-sm text-slate-500 border-t">
+              <div className="p-3 text-center text-sm text-muted-foreground border-t">
                 Showing 100 of {sortedActivities.length} activities
               </div>
             )}

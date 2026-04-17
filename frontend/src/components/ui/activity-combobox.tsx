@@ -241,11 +241,11 @@ export function ActivityCombobox({
                 </div>
               </>
             ) : fallbackIatiId ? (
-              <span className="text-gray-500 truncate">
+              <span className="text-muted-foreground truncate">
                 {fallbackIatiId}
               </span>
             ) : (
-              <span className="text-gray-400 text-base leading-relaxed">{placeholder}</span>
+              <span className="text-muted-foreground text-base leading-relaxed">{placeholder}</span>
             )}
           </div>
           <div className="flex items-center gap-1 ml-2">

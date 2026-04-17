@@ -133,7 +133,7 @@ export function NationalDevelopmentGoals() {
                   <Button variant="ghost" size="sm" onClick={() => openEdit(goal)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(goal.id)} className="text-red-500 hover:text-red-700">
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(goal.id)} className="text-destructive hover:text-destructive">
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>

@@ -245,11 +245,11 @@ export default function ReportsPage() {
         {/* Tabs for Standard vs Custom Reports */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <FileText className="h-4 w-4" />
               Standard Reports
             </TabsTrigger>
-            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <BarChart3 className="h-4 w-4" />
               Design Your Own
               <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white group-data-[state=active]:bg-white group-data-[state=active]:text-[#3C6255]">
@@ -262,7 +262,7 @@ export default function ReportsPage() {
           <TabsContent value="standard" className="space-y-8 mt-0 border-0 p-0">
             {/* Activity Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Activity Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -282,7 +282,7 @@ export default function ReportsPage() {
 
             {/* Financial Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Financial Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -302,7 +302,7 @@ export default function ReportsPage() {
 
             {/* Organization Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Organization Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -322,7 +322,7 @@ export default function ReportsPage() {
 
             {/* Fund Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Pooled Fund Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -342,7 +342,7 @@ export default function ReportsPage() {
 
             {/* Data Quality Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
                 Data Quality Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

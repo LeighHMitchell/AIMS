@@ -72,7 +72,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({
   if (activities.length === 0 && !loading) {
     return (
       <div className={`text-center py-12 ${className}`}>
-        <div className="text-gray-500">
+        <div className="text-muted-foreground">
           <p className="text-lg font-medium mb-2">No activities found</p>
           <p className="text-sm">There are no activities in the system yet.</p>
         </div>

@@ -44,7 +44,7 @@ export function NormalizedOrgRef({
       {!refDisplay.isValid && showValidationIndicator && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="text-red-500 text-xs cursor-help">⚠</span>
+            <span className="text-destructive text-xs cursor-help">⚠</span>
           </TooltipTrigger>
           <TooltipContent>
             <p className="text-xs">Invalid IATI organization identifier format</p>

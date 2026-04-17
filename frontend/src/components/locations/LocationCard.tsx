@@ -36,14 +36,14 @@ function MapThumbnail({
   // Only site locations have coordinates
   if (location.location_type !== 'site' || !location.latitude || !location.longitude) {
     return (
-      <div className={`${className} bg-gray-100 rounded flex items-center justify-center border border-border`}>
-        <MapPin className="h-5 w-5 text-gray-400" />
+      <div className={`${className} bg-muted rounded flex items-center justify-center border border-border`}>
+        <MapPin className="h-5 w-5 text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className={`${className} bg-gray-100 rounded overflow-hidden relative border border-border [&_.maplibregl-ctrl-attrib]:hidden [&_.mapboxgl-ctrl-attrib]:hidden`}>
+    <div className={`${className} bg-muted rounded overflow-hidden relative border border-border [&_.maplibregl-ctrl-attrib]:hidden [&_.mapboxgl-ctrl-attrib]:hidden`}>
       <Map
         center={[location.longitude, location.latitude]}
         zoom={13}
@@ -181,7 +181,7 @@ export default function LocationCard({
             <div className="flex-1 space-y-2">
               {/* 1. Location Name */}
               <div className="flex items-center gap-1.5">
-                <h4 className="font-semibold text-gray-900 break-words">
+                <h4 className="font-semibold text-foreground break-words">
                   {location.location_name}
                 </h4>
                 {location.id && (
@@ -191,7 +191,7 @@ export default function LocationCard({
 
               {/* 2. Location Description */}
               {(location.location_description || location.description) && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   {(() => {
                     const desc = location.location_description || location.description || '';
                     return showFullDescription || desc.length <= 100 ? (
@@ -223,23 +223,23 @@ export default function LocationCard({
 
               {/* 3. Activity Description */}
               {location.activity_location_description && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   <span>{location.activity_location_description}</span>
                 </div>
               )}
 
               {/* 4. Coordinates */}
               {location.latitude && location.longitude && (
-                <div className="text-sm text-gray-600 flex items-center gap-1">
+                <div className="text-sm text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3 w-3 flex-shrink-0" />
                   <span>{formatCoordinates(location.latitude, location.longitude)}</span>
                 </div>
               )}
 
               {/* 5. Address */}
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 {formatAddress() === 'No address' ? (
-                  <span className="text-gray-400 italic">No address</span>
+                  <span className="text-muted-foreground italic">No address</span>
                 ) : (
                   formatAddress()
                 )}
@@ -257,15 +257,15 @@ export default function LocationCard({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => onEdit(location)}>
-                      <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                      <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onDelete(location.id!)}
-                      className="text-red-600 focus:text-red-600"
+                      className="text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                      <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

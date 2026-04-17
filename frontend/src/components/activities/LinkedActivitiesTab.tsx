@@ -361,7 +361,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                             {currentUserId && (
                               <button
                                 onClick={() => handleDeleteLink(la.id)}
-                                className="text-red-500 hover:text-red-700 transition-colors ml-2"
+                                className="text-destructive hover:text-destructive transition-colors ml-2"
                                 title="Remove link"
                               >
                                 <X className="w-4 h-4" />
@@ -408,7 +408,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                         {currentUserId && (
                           <button
                             onClick={() => handleDeleteLink(la.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
+                            className="text-destructive hover:text-destructive transition-colors"
                             title="Remove link"
                           >
                             <X className="w-4 h-4" />
@@ -438,7 +438,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                     {currentUserId && !la.isExternal && (
                       <button
                         onClick={() => handleDeleteLink(la.id)}
-                        className="bg-card rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-red-500 hover:text-red-700"
+                        className="bg-card rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-destructive hover:text-destructive"
                         title="Remove link"
                       >
                         <X className="w-3 h-3" />

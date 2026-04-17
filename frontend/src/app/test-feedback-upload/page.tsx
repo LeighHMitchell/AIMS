@@ -81,7 +81,7 @@ export default function TestFeedbackUploadPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {!user ? (
-            <div className="text-center text-red-600">
+            <div className="text-center text-destructive">
               Please log in to test file upload
             </div>
           ) : (
@@ -94,14 +94,14 @@ export default function TestFeedbackUploadPage() {
                   type="file"
                   onChange={handleFileSelect}
                   accept="image/*,.pdf,.txt,.doc,.docx"
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
 
               {selectedFile && (
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-muted p-4 rounded-lg">
                   <h3 className="font-medium mb-2">Selected File:</h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     <p><strong>Name:</strong> {selectedFile.name}</p>
                     <p><strong>Size:</strong> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                     <p><strong>Type:</strong> {selectedFile.type}</p>
@@ -143,16 +143,16 @@ export default function TestFeedbackUploadPage() {
               )}
 
               {uploadError && (
-                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <div className="bg-destructive/10 border border-red-200 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                    <XCircle className="h-5 w-5 text-destructive" />
                     <h3 className="font-medium text-red-800">Upload Failed</h3>
                   </div>
-                  <p className="text-sm text-red-700">{uploadError}</p>
+                  <p className="text-sm text-destructive">{uploadError}</p>
                 </div>
               )}
 
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 <p><strong>User ID:</strong> {user.id}</p>
                 <p><strong>User Email:</strong> {user.email}</p>
               </div>

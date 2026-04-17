@@ -59,7 +59,7 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span>On-Time Completion</span>
-            <span className="font-medium text-slate-700">{summary.on_time_rate}%</span>
+            <span className="font-medium text-foreground">{summary.on_time_rate}%</span>
           </div>
           <div className="flex h-3 overflow-hidden rounded-full bg-muted">
             <div
@@ -84,9 +84,9 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
         <div className="space-y-3">
           {byPriority.map((item) => {
             const colors: Record<string, { bar: string; text: string }> = {
-              high: { bar: 'bg-slate-800', text: 'text-slate-800' },
-              medium: { bar: 'bg-slate-500', text: 'text-slate-600' },
-              low: { bar: 'bg-slate-300', text: 'text-slate-500' },
+              high: { bar: 'bg-slate-800', text: 'text-foreground' },
+              medium: { bar: 'bg-muted0', text: 'text-muted-foreground' },
+              low: { bar: 'bg-slate-300', text: 'text-muted-foreground' },
             };
             const color = colors[item.priority] || colors.low;
 

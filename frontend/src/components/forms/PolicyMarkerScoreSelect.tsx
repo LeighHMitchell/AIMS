@@ -56,7 +56,7 @@ export function PolicyMarkerScoreSelect({
           <span className="truncate">
             {selectedOption ? (
               <span className="flex items-center gap-2">
-                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-foreground">
                   {selectedOption.value}
                 </span>
                 <span className="font-medium">{selectedOption.label}</span>
@@ -107,7 +107,7 @@ export function PolicyMarkerScoreSelect({
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">
+                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-foreground">
                           {option.value}
                         </span>
                         <span className="font-medium text-foreground">{option.label}</span>

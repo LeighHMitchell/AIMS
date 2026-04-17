@@ -280,7 +280,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
         </div>
         
         {groupBy === 'fiscal' && (
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-muted-foreground">
             Financial Year: July–June
           </div>
         )}

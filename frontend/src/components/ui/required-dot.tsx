@@ -15,7 +15,7 @@ export function RequiredDot({ className }: RequiredDotProps) {
   return (
     <span
       className={cn(
-        "inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle",
+        "inline-block w-1.5 h-1.5 rounded-full bg-destructive/100 ml-1 align-middle",
         className
       )}
       aria-hidden="true"

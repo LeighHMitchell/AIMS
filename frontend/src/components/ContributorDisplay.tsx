@@ -57,7 +57,7 @@ export function ContributorDisplay({
       case 'implementer': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] hover:bg-[hsl(var(--success-bg))]/80';
       case 'coordinator': return 'bg-purple-100 text-purple-700 hover:bg-purple-200';
       case 'partner': return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
-      default: return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+      default: return 'bg-muted text-foreground hover:bg-muted';
     }
   };
 
@@ -83,7 +83,7 @@ export function ContributorDisplay({
                 {contributor.organizationId ? (
                   <Link 
                     href={`/organizations/${contributor.organizationId}`}
-                    className="font-medium hover:text-gray-700 transition-colors"
+                    className="font-medium hover:text-foreground transition-colors"
                   >
                     {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
                       ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
@@ -121,12 +121,12 @@ export function ContributorDisplay({
             {contributor.organizationId ? (
               <Link 
                 href={`/organizations/${contributor.organizationId}`}
-                className="text-gray-900 hover:text-gray-700 transition-colors"
+                className="text-foreground hover:text-foreground transition-colors"
               >
                 {formatOrganizationName(contributor)}
               </Link>
             ) : (
-              <span className="text-gray-900">
+              <span className="text-foreground">
                 {formatOrganizationName(contributor)}
               </span>
             )}
@@ -178,7 +178,7 @@ export function ContributorDisplayCompact({
         {contributor.organizationId ? (
           <Link 
             href={`/organizations/${contributor.organizationId}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {contributor.organizationAcronym || contributor.organizationName}
           </Link>
@@ -205,7 +205,7 @@ export function ContributorDisplayCompact({
                 {contributor.organizationId ? (
                   <Link 
                     href={`/organizations/${contributor.organizationId}`}
-                    className="font-medium hover:text-gray-700 transition-colors"
+                    className="font-medium hover:text-foreground transition-colors"
                   >
                     {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
                       ? `${contributor.organizationAcronym} • ${contributor.organizationName}`

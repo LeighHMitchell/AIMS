@@ -113,8 +113,8 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
       const data = payload[0]?.payload;
       return (
         <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-1">{data?.aidTypeName || label}</p>
-          <p className="text-xs text-gray-600 mb-2">Code: {data?.aidType}</p>
+          <p className="font-semibold text-foreground mb-1">{data?.aidTypeName || label}</p>
+          <p className="text-xs text-muted-foreground mb-2">Code: {data?.aidType}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
@@ -126,7 +126,7 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
           ))}
           {payload.length >= 3 && (
             <div className="border-t pt-2 mt-2">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 Execution Rate: {payload[0]?.payload?.budget > 0 
                   ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
                   : 0}%
@@ -146,7 +146,7 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>
@@ -168,7 +168,7 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
           <span className="text-sm font-medium">Budget</span>

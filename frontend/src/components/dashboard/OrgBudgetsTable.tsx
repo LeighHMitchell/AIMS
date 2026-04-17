@@ -150,7 +150,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
   }
 
   if (error) {
-    return <p className="text-sm text-red-600">Failed to load budgets: {error}</p>;
+    return <p className="text-sm text-destructive">Failed to load budgets: {error}</p>;
   }
 
   return (
@@ -176,7 +176,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
       {budgets.length === 0 ? (
         <div className="text-center py-8">
           <Wallet className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">No budgets found</p>
+          <p className="text-sm text-muted-foreground">No budgets found</p>
         </div>
       ) : (
         <>
@@ -214,14 +214,14 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                       <span className="text-sm">
                         {budget.activity?.title_narrative || 'Unknown Activity'}{' '}
                         {budget.activity?.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded whitespace-nowrap">
+                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
                             {budget.activity.iati_identifier}
                           </code>
                         )}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-slate-600 whitespace-nowrap">
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
                         {budget.period_start ? format(new Date(budget.period_start), 'MMM yyyy') : '-'}
                         {' — '}
                         {budget.period_end ? format(new Date(budget.period_end), 'MMM yyyy') : '-'}
@@ -232,27 +232,27 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-foreground">
                           <span className="text-xs text-muted-foreground mr-1 font-normal">{budget.currency}</span>
                           {formatCurrency(budget.value)}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-slate-600 whitespace-nowrap">
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
                         {budget.value_date ? format(new Date(budget.value_date), 'dd MMM yyyy') : '-'}
                       </span>
                     </TableCell>
                     <TableCell>
                       {budget.value_usd != null ? (
                         <div className="flex items-center gap-1">
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-foreground">
                             <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
                             {formatCurrency(budget.value_usd)}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-slate-400">-</span>
+                        <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -267,7 +267,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
           {/* Pagination Controls */}
           <div className="flex items-center justify-between mt-4 pt-4 border-t">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">Rows per page:</span>
+              <span className="text-sm text-muted-foreground">Rows per page:</span>
               <Select
                 value={pageSize.toString()}
                 onValueChange={(val) => { setPageSize(parseInt(val)); setPage(1); }}
@@ -283,7 +283,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 Page {page} of {Math.max(totalPages, 1)}
               </span>
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>

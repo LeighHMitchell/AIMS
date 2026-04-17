@@ -175,7 +175,7 @@ export function RegionSearchableSelect({
               )}
               <div className={cn(
                 "text-sm font-medium",
-                isValidTotal ? "text-[hsl(var(--success-icon))]" : totalPercentage > 100 ? "text-red-600" : "text-amber-600"
+                isValidTotal ? "text-[hsl(var(--success-icon))]" : totalPercentage > 100 ? "text-destructive" : "text-amber-600"
               )}>
                 Total: {totalPercentage.toFixed(1)}%
               </div>
@@ -228,7 +228,7 @@ export function RegionSearchableSelect({
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         {allocationStatus[regionName] === 'error' && (
-                          <AlertCircle className="h-4 w-4 text-red-600" />
+                          <AlertCircle className="h-4 w-4 text-destructive" />
                         )}
                       </div>
                     </div>
@@ -251,7 +251,7 @@ export function RegionSearchableSelect({
           {!isValidTotal && Object.keys(selectedRegions).length > 0 && (
             <div className={cn(
               "text-xs",
-              totalPercentage > 100 ? "text-red-600" : "text-amber-600"
+              totalPercentage > 100 ? "text-destructive" : "text-amber-600"
             )}>
               {totalPercentage > 100 
                 ? `Reduce allocations by ${(totalPercentage - 100).toFixed(1)}% to reach 100%`

@@ -126,14 +126,14 @@ export function Dashboard() {
         <TabsList className="bg-muted p-1 h-auto gap-1 border">
           <TabsTrigger
             value="bar-charts"
-            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <BarChart3 className="h-4 w-4" />
             Bar Charts
           </TabsTrigger>
           <TabsTrigger
             value="fragmentation"
-            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <Grid3X3 className="h-4 w-4" />
             Fragmentation
@@ -184,11 +184,11 @@ export function Dashboard() {
             <div className="space-y-8">
               <Card className="border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-foreground uppercase tracking-wide">
                     Program Fragmentation
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <p>Shows how donors distribute their aid across National Priorities. Each cell shows the percentage of that category&apos;s total funding contributed by each donor.</p>
@@ -203,11 +203,11 @@ export function Dashboard() {
 
               <Card className="border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-foreground uppercase tracking-wide">
                     Sector Fragmentation
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <p>Shows how donors distribute their aid across DAC Sectors. Each cell shows the percentage of that sector&apos;s total funding contributed by each donor.</p>
@@ -222,11 +222,11 @@ export function Dashboard() {
 
               <Card className="border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-foreground uppercase tracking-wide">
                     Location Fragmentation
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <p>Shows how donors distribute their aid across geographic regions. Each cell shows the percentage of that location&apos;s total funding contributed by each donor.</p>

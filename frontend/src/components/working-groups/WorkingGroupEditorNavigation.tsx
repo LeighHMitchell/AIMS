@@ -106,10 +106,10 @@ export default function WorkingGroupEditorNavigation({
         {/* Working Group Header */}
         {workingGroup && workingGroup.label && (
           <div className="pb-4 border-b border-border">
-            <h2 className="text-lg font-bold text-slate-900 group leading-tight">
+            <h2 className="text-lg font-bold text-foreground group leading-tight">
               <button
                 onClick={() => router.push(`/working-groups/${workingGroup.id}`)}
-                className="text-left hover:text-slate-600 transition-colors"
+                className="text-left hover:text-muted-foreground transition-colors"
                 title="View Working Group profile"
               >
                 {workingGroup.label}
@@ -170,7 +170,7 @@ export default function WorkingGroupEditorNavigation({
             {group.sections.length > 0 && (
               <div className="relative">
                 <div
-                  className="absolute left-[12px] top-0 bottom-0 w-px bg-gray-200"
+                  className="absolute left-[12px] top-0 bottom-0 w-px bg-muted"
                   style={{ height: '100%' }}
                 />
 
@@ -196,17 +196,17 @@ export default function WorkingGroupEditorNavigation({
                           "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
-                            ? "text-gray-400 cursor-not-allowed opacity-60"
+                            ? "text-muted-foreground cursor-not-allowed opacity-60"
                             : isActive
                               ? "bg-blue-100 text-blue-700 font-medium shadow-sm"
-                              : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                              : "text-muted-foreground hover:bg-muted hover:text-black"
                         )}
                         aria-current={isActive ? "page" : undefined}
                         title={disabled ? "Please wait while saving..." : undefined}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
+                            {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                             <span>{section.label}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export default function WorkingGroupEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-destructive/100 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

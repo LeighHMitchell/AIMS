@@ -148,16 +148,16 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
       const item = payload[0].payload;
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-1">{item.name}</p>
+          <p className="font-semibold text-foreground mb-1">{item.name}</p>
           <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-foreground">
               {formatCurrency(item.value)}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {formatPercent(item.value, grandTotal)}
             </p>
             {item.activityCount > 0 && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {item.activityCount} activities
               </p>
             )}
@@ -324,7 +324,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
@@ -333,7 +333,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -342,7 +342,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("table")}
             title="Table"
           >
@@ -372,10 +372,10 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 Recipient Government Bodies
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 Government bodies receiving funds
               </CardDescription>
             </div>
@@ -383,10 +383,10 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
@@ -405,7 +405,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   Recipient Government Bodies
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">

@@ -810,9 +810,9 @@ export default function Atlas() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-gray-500">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
-              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="font-medium">Failed to load map data</p>
               <p className="text-sm">{error}</p>
             </div>
@@ -981,7 +981,7 @@ export default function Atlas() {
                                       }}
                                     />
                                   ) : null}
-                                  <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
+                                  <Building2 className={cn("h-4 w-4 text-muted-foreground", org.logo ? "hidden" : "")} />
                                 </div>
                                 <span className="break-words">
                                   {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
@@ -1074,7 +1074,7 @@ export default function Atlas() {
                                 <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-input'}`}>
                                   {showHealthFacilities && <Check className="h-3 w-3 text-white" />}
                                 </div>
-                                <Cross className="h-4 w-4 text-red-500" />
+                                <Cross className="h-4 w-4 text-destructive" />
                                 <div className="flex-1">
                                   <div className="text-sm font-medium">OSM Health Facilities</div>
                                   <div className="text-xs text-muted-foreground">
@@ -1332,7 +1332,7 @@ export default function Atlas() {
                       </Popover>
 
                       {/* View Mode Toggle */}
-                      <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+                      <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                         <Button
                           onClick={() => setViewMode('markers')}
                           variant="ghost"
@@ -1341,8 +1341,8 @@ export default function Atlas() {
                           className={cn(
                             "h-9 w-9 p-0",
                             viewMode === 'markers'
-                              ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                              : "text-slate-500 hover:text-slate-700"
+                              ? "bg-white shadow-sm text-foreground hover:bg-white"
+                              : "text-muted-foreground hover:text-foreground"
                           )}
                         >
                           <CircleDot className="h-4 w-4" />
@@ -1355,8 +1355,8 @@ export default function Atlas() {
                           className={cn(
                             "h-9 w-9 p-0",
                             viewMode === 'heatmap'
-                              ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                              : "text-slate-500 hover:text-slate-700"
+                              ? "bg-white shadow-sm text-foreground hover:bg-white"
+                              : "text-muted-foreground hover:text-foreground"
                           )}
                         >
                           <Flame className="h-4 w-4" />
@@ -1417,7 +1417,7 @@ export default function Atlas() {
                         {/* Facility Type Badge */}
                         <div className="flex items-center gap-2 mb-2">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
-                            selectedFacility.facility.type === 'hospital' ? 'bg-red-100 text-red-700' :
+                            selectedFacility.facility.type === 'hospital' ? 'bg-red-100 text-destructive' :
                             selectedFacility.facility.type === 'clinic' ? 'bg-orange-100 text-orange-700' :
                             selectedFacility.facility.type === 'pharmacy' ? 'bg-green-100 text-green-700' :
                             selectedFacility.facility.type === 'doctors' ? 'bg-cyan-100 text-cyan-700' :
@@ -1427,14 +1427,14 @@ export default function Atlas() {
                             {selectedFacility.facility.type.replace('_', ' ')}
                           </span>
                           {selectedFacility.facility.emergency && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-destructive/100 text-white">
                               Emergency
                             </span>
                           )}
                         </div>
 
                         {/* Name */}
-                        <h3 className="font-bold text-sm text-slate-800 mb-2">
+                        <h3 className="font-bold text-sm text-foreground mb-2">
                           {selectedFacility.facility.name}
                         </h3>
 
@@ -1444,33 +1444,33 @@ export default function Atlas() {
                         <div className="space-y-1.5 text-xs">
                           {selectedFacility.facility.operator && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Operator</span>
-                              <span className="text-slate-700 text-right max-w-[180px] truncate">
+                              <span className="text-muted-foreground">Operator</span>
+                              <span className="text-foreground text-right max-w-[180px] truncate">
                                 {selectedFacility.facility.operator}
                               </span>
                             </div>
                           )}
                           {selectedFacility.facility.operatorType && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Operator Type</span>
-                              <span className="text-slate-700 capitalize">
+                              <span className="text-muted-foreground">Operator Type</span>
+                              <span className="text-foreground capitalize">
                                 {selectedFacility.facility.operatorType}
                               </span>
                             </div>
                           )}
                           {selectedFacility.facility.beds && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Beds</span>
-                              <span className="text-slate-700">{selectedFacility.facility.beds}</span>
+                              <span className="text-muted-foreground">Beds</span>
+                              <span className="text-foreground">{selectedFacility.facility.beds}</span>
                             </div>
                           )}
                           {selectedFacility.facility.wheelchair && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Wheelchair Access</span>
+                              <span className="text-muted-foreground">Wheelchair Access</span>
                               <span className={`capitalize ${
                                 selectedFacility.facility.wheelchair === 'yes' ? 'text-[hsl(var(--success-icon))]' :
-                                selectedFacility.facility.wheelchair === 'no' ? 'text-red-600' :
-                                'text-slate-700'
+                                selectedFacility.facility.wheelchair === 'no' ? 'text-destructive' :
+                                'text-foreground'
                               }`}>
                                 {selectedFacility.facility.wheelchair}
                               </span>
@@ -1478,7 +1478,7 @@ export default function Atlas() {
                           )}
                           {selectedFacility.facility.phone && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Phone</span>
+                              <span className="text-muted-foreground">Phone</span>
                               <a href={`tel:${selectedFacility.facility.phone}`} className="text-blue-600 hover:underline">
                                 {selectedFacility.facility.phone}
                               </a>
@@ -1486,8 +1486,8 @@ export default function Atlas() {
                           )}
                           {selectedFacility.facility.openingHours && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Hours</span>
-                              <span className="text-slate-700 text-right max-w-[180px]">
+                              <span className="text-muted-foreground">Hours</span>
+                              <span className="text-foreground text-right max-w-[180px]">
                                 {selectedFacility.facility.openingHours}
                               </span>
                             </div>
@@ -1496,7 +1496,7 @@ export default function Atlas() {
 
                         {/* Source Attribution */}
                         <div className="mt-3 pt-2 border-t border-border">
-                          <p className="text-[10px] text-slate-400">
+                          <p className="text-[10px] text-muted-foreground">
                             Data from OpenStreetMap
                           </p>
                         </div>
@@ -1536,11 +1536,11 @@ export default function Atlas() {
                 </Map>
                 
                 {filteredLocations.length === 0 && !loading && (
-                  <div className="absolute inset-0 bg-gray-50/90 flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 bg-muted/90 flex items-center justify-center pointer-events-none">
                     <div className="text-center">
-                      <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="font-medium text-gray-600">No locations found</p>
-                      <p className="text-sm text-gray-500">
+                      <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="font-medium text-muted-foreground">No locations found</p>
+                      <p className="text-sm text-muted-foreground">
                         Try adjusting your filters or check if activities have location data
                       </p>
                     </div>
@@ -1557,10 +1557,10 @@ export default function Atlas() {
                 
                 {subnationalLoading ? (
                   <div className="space-y-4">
-                    <div className="h-[85vh] min-h-[700px] w-full bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="h-[85vh] min-h-[700px] w-full bg-muted rounded-lg flex items-center justify-center">
                       <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                        <div className="text-sm text-gray-600">Loading sub-national breakdown data...</div>
+                        <div className="text-sm text-muted-foreground">Loading sub-national breakdown data...</div>
                       </div>
                     </div>
                   </div>

@@ -110,7 +110,7 @@ export function SupabaseSelect({
       return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
     }
     if (state.error) {
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className="h-4 w-4 text-destructive" />;
     }
     if (state.lastUpdated && !isOptimistic) {
       return <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
@@ -148,7 +148,7 @@ export function SupabaseSelect({
 
       {/* Error message */}
       {state.error && showStatus && (
-        <div className="mt-1 text-xs text-red-600">
+        <div className="mt-1 text-xs text-destructive">
           Update failed: {state.error}
         </div>
       )}

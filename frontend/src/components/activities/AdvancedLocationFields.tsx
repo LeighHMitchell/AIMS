@@ -202,7 +202,7 @@ export default function AdvancedLocationFields({
     <Card className="w-full">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+          <CardHeader className="cursor-pointer hover:bg-muted transition-colors">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -248,7 +248,7 @@ export default function AdvancedLocationFields({
                     <CardContent className="p-6 space-y-4">
                       {/* Location Header */}
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm text-gray-700">
+                        <h4 className="font-medium text-sm text-foreground">
                           Location {index + 1}
                         </h4>
                         {canEdit && (
@@ -256,9 +256,9 @@ export default function AdvancedLocationFields({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeLocation(location.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </div>

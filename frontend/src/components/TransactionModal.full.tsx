@@ -787,7 +787,7 @@ export default function TransactionModal({
 
   const SectionHeader = ({ title }: { title: string }) => (
     <div className="flex items-center gap-2 mb-4">
-      <h3 className="text-base font-semibold text-slate-700">{title}</h3>
+      <h3 className="text-base font-semibold text-foreground">{title}</h3>
     </div>
   );
 
@@ -1240,14 +1240,14 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
                         formData.status === 'actual' 
                           ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
                     </div>
                   ) : (
                     // Read-only status display for users without permission
-                    <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-gray-50 px-4 py-3">
+                    <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-muted px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">
                           {formData.status === 'actual' ? 'Validated Transaction' : 'Unvalidated Transaction'}
@@ -1259,7 +1259,7 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-full ${
                         formData.status === 'actual'
                           ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
@@ -1392,7 +1392,7 @@ export default function TransactionModal({
               <div className="space-y-6">
                 {/* Provider Organization */}
                 <div className="space-y-4 border rounded-lg p-6">
-                  <h4 className="font-medium text-gray-900">Provider Organization</h4>
+                  <h4 className="font-medium text-foreground">Provider Organization</h4>
                   <div className="space-y-3">
                     <OrganizationSearchableSelect
                       organizations={organizations}
@@ -1422,7 +1422,7 @@ export default function TransactionModal({
 
                 {/* Receiver Organization */}
                 <div className="space-y-4 border rounded-lg p-6">
-                  <h4 className="font-medium text-gray-900">Receiver Organization</h4>
+                  <h4 className="font-medium text-foreground">Receiver Organization</h4>
                   <div className="space-y-3">
                     <OrganizationSearchableSelect
                       organizations={organizations}
@@ -1674,7 +1674,7 @@ export default function TransactionModal({
                     onCheckedChange={checked => setFormData({ ...formData, is_humanitarian: checked })}
                   />
                   <Label htmlFor="is_humanitarian" className="text-sm font-normal cursor-pointer ml-3 flex items-center gap-2">
-                    <Siren className="h-4 w-4 text-red-500" />
+                    <Siren className="h-4 w-4 text-destructive" />
                     Humanitarian Transaction
                     <InfoTooltip text="Tick this if the transaction qualifies as humanitarian assistance under IATI or OCHA guidelines, including emergency response, disaster relief, or protection activities." />
                   </Label>
@@ -1690,10 +1690,10 @@ export default function TransactionModal({
                 You can also add links to documents hosted elsewhere.
               </div>
               {!(createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) ? (
-                <div className="text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded p-3 my-2">
+                <div className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded p-3 my-2">
                   You must complete the required fields before uploading documents.<br />
                   <strong>Required:</strong> Transaction Type, Date, Value, Currency, Activity ID.<br />
-                  {creationError && <span className="text-red-500">{creationError}</span>}
+                  {creationError && <span className="text-destructive">{creationError}</span>}
                 </div>
               ) : (
                 <TransactionDocumentUpload
@@ -1710,7 +1710,7 @@ export default function TransactionModal({
 
             {/* Transaction Identifiers moved to bottom */}
             {isEditing && (
-              <div className="mt-8 p-4 bg-slate-50 rounded-lg">
+              <div className="mt-8 p-4 bg-muted rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <CopyField
                     label="Transaction UUID"

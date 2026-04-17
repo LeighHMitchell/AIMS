@@ -568,17 +568,17 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
 
     return (
       <div key={comment.id} className={`border rounded-lg ${
-        comment.status === 'Resolved' ? 'bg-gray-50' : ''
-      } ${comment.isArchived ? 'bg-gray-100 opacity-75' : ''}`}>
+        comment.status === 'Resolved' ? 'bg-muted' : ''
+      } ${comment.isArchived ? 'bg-muted opacity-75' : ''}`}>
         <Collapsible open={isExpanded} onOpenChange={() => toggleExpandComment(comment.id)}>
           <div className="p-4">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1">
                 <CollapsibleTrigger className="mt-1">
                   {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   )}
                 </CollapsibleTrigger>
                 
@@ -605,7 +605,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                           </Badge>
                         )}
                         {comment.isArchived && (
-                          <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
+                          <Badge variant="outline" className="text-xs border-gray-400 text-muted-foreground">
                             <Archive className="h-3 w-3 mr-1" />
                             Archived
                           </Badge>
@@ -613,7 +613,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                       </div>
                       
                       {/* Top Right: Date/Time */}
-                      <span className="text-gray-500 text-xs">
+                      <span className="text-muted-foreground text-xs">
                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                       </span>
                     </div>
@@ -636,14 +636,14 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                   </div>
                   
                   {comment.status === 'Resolved' && !isExpanded && comment.resolvedAt && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       <CheckCircle className="h-3 w-3 inline mr-1 text-[hsl(var(--success-icon))]" />
                       Resolved by {comment.resolvedBy?.name} • {formatDistanceToNow(new Date(comment.resolvedAt), { addSuffix: true })}
                     </div>
                   )}
                   {comment.isArchived && !isExpanded && comment.archivedAt && (
-                    <div className="text-sm text-gray-600">
-                      <Archive className="h-3 w-3 inline mr-1 text-gray-500" />
+                    <div className="text-sm text-muted-foreground">
+                      <Archive className="h-3 w-3 inline mr-1 text-muted-foreground" />
                       Archived by {comment.archivedBy?.name} • {formatDistanceToNow(new Date(comment.archivedAt), { addSuffix: true })}
                     </div>
                   )}
@@ -651,11 +651,11 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
               </div>
               
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                 </span>
                 {comment.status === 'Open' ? (
-                  <Circle className="h-4 w-4 text-gray-400" />
+                  <Circle className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                 )}
@@ -712,11 +712,11 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                           <Badge variant="outline" className="text-xs">
                             {reply.author?.role || 'user'}
                           </Badge>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-gray-700 whitespace-pre-wrap">{reply.message}</p>
+                        <p className="text-foreground whitespace-pre-wrap">{reply.message}</p>
                       </div>
                     ))}
                   </div>
@@ -785,9 +785,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteComment(comment.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Trash2 className="h-3 w-3 mr-1 text-red-500" />
+                      <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                       Delete
                     </Button>
                   )}
@@ -837,7 +837,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center text-gray-500">Loading comments...</div>
+          <div className="text-center text-muted-foreground">Loading comments...</div>
         </CardContent>
       </Card>
     );
@@ -866,7 +866,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           {/* Search Bar */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search comments..."
                 value={searchTerm}
@@ -974,7 +974,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           </div>
           
           <div className="flex justify-between items-center">
-            <div className="text-xs text-gray-500 flex items-center gap-4">
+            <div className="text-xs text-muted-foreground flex items-center gap-4">
               {commentType === 'Question' && (
                 <span className="flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
@@ -1039,7 +1039,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           
           <TabsContent value="open" className="space-y-3">
             {sortedComments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                 <p>No open comments yet</p>
                 <p className="text-sm mt-1">Be the first to start a discussion!</p>
@@ -1051,7 +1051,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           
           <TabsContent value="resolved" className="space-y-3">
             {sortedComments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                 <p>No resolved comments</p>
               </div>

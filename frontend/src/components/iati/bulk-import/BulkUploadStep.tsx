@@ -177,31 +177,31 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">File Size:</span>{' '}
+                      <span className="text-muted-foreground">File Size:</span>{' '}
                       <span className="font-medium">{formatFileSize(currentMeta.fileSize ?? 0)}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">IATI Version:</span>{' '}
+                      <span className="text-muted-foreground">IATI Version:</span>{' '}
                       <span className="font-medium">{currentMeta.iatiVersion || 'Unknown'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Reporting Org:</span>{' '}
+                      <span className="text-muted-foreground">Reporting Org:</span>{' '}
                       <span className="font-medium">{currentMeta.reportingOrgName || currentMeta.reportingOrgRef || 'Unknown'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Activities:</span>{' '}
+                      <span className="text-muted-foreground">Activities:</span>{' '}
                       <span className="font-medium text-blue-600">{currentMeta.activityCount}</span>
                     </div>
                   </div>
                   {currentMeta.fileHash && (
-                    <p className="text-xs text-gray-400 font-mono">SHA-256: {currentMeta.fileHash.substring(0, 16)}...</p>
+                    <p className="text-xs text-muted-foreground font-mono">SHA-256: {currentMeta.fileHash.substring(0, 16)}...</p>
                   )}
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t">
                 <button
                   onClick={() => onFileReady(null as any, null as any)}
-                  className="text-sm text-gray-500 hover:text-gray-700 underline"
+                  className="text-sm text-muted-foreground hover:text-foreground underline"
                 >
                   Choose a different file
                 </button>
@@ -234,8 +234,8 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
           {processing ? (
             <>
               <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-lg font-medium text-gray-700">Processing file...</p>
-              <p className="text-sm text-gray-500 mt-2">Extracting metadata and computing file hash</p>
+              <p className="text-lg font-medium text-foreground">Processing file...</p>
+              <p className="text-sm text-muted-foreground mt-2">Extracting metadata and computing file hash</p>
             </>
           ) : isDragActive ? (
             <>
@@ -244,12 +244,12 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
             </>
           ) : (
             <>
-              <FileCode className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium text-gray-700">
+              <FileCode className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-lg font-medium text-foreground">
                 Drop your IATI XML file here
               </p>
-              <p className="text-sm text-gray-500 mt-2">or click to select file</p>
-              <p className="text-xs text-gray-400 mt-4">Supports IATI 2.03 format, max 50MB</p>
+              <p className="text-sm text-muted-foreground mt-2">or click to select file</p>
+              <p className="text-xs text-muted-foreground mt-4">Supports IATI 2.03 format, max 50MB</p>
             </>
           )}
         </div>

@@ -184,7 +184,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
   };
 
   const getNotificationIcon = (type: string) => {
-    const iconClass = "h-4 w-4 text-gray-500";
+    const iconClass = "h-4 w-4 text-muted-foreground";
     switch (type) {
       case 'faq_question_answered':
         return <HelpCircle className={iconClass} />;
@@ -247,7 +247,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto p-1 text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="h-auto p-1 text-xs text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100"
               onClick={(e) => {
                 e.preventDefault();
                 markAllAsRead();
@@ -261,11 +261,11 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         <DropdownMenuSeparator />
 
         {loading ? (
-          <div className="py-8 text-center text-sm text-gray-500">
+          <div className="py-8 text-center text-sm text-muted-foreground">
             <LoadingText>Loading notifications...</LoadingText>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="py-8 text-center text-sm text-gray-500">
+          <div className="py-8 text-center text-sm text-muted-foreground">
             No notifications
           </div>
         ) : (
@@ -275,7 +275,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
                 key={notification.id}
                 className={cn(
                   'flex flex-col items-start gap-1 p-3 cursor-pointer',
-                  !notification.is_read && 'bg-gray-50 dark:bg-gray-800/50'
+                  !notification.is_read && 'bg-muted dark:bg-gray-800/50'
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -288,15 +288,15 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
                     )}>
                       {notification.title}
                     </p>
-                    <p className="text-xs text-gray-600 break-words">
+                    <p className="text-xs text-muted-foreground break-words">
                       {notification.message}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                     </p>
                   </div>
                   {notification.link && (
-                    <ExternalLink className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                    <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                   )}
                 </div>
               </DropdownMenuItem>
@@ -306,7 +306,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="text-center text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 cursor-pointer justify-center"
+          className="text-center text-sm text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100 cursor-pointer justify-center"
           onClick={() => {
             router.push('/dashboard?tab=notifications');
             setOpen(false);

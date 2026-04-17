@@ -448,7 +448,7 @@ export default function SectorSunburstVisualization({
             </TableRow>
             {/* Unallocated row */}
             {unallocatedPercentage > 0 && (
-              <TableRow className="text-gray-500">
+              <TableRow className="text-muted-foreground">
                 <TableCell colSpan={4}>Unallocated</TableCell>
                 <TableCell className="text-right font-mono">
                   {unallocatedPercentage.toFixed(1)}%
@@ -465,8 +465,8 @@ export default function SectorSunburstVisualization({
     return (
       <Card className={`p-8 ${className}`}>
         <div className="text-center">
-          <div className="text-lg font-medium text-gray-500 mb-2">No Sector Allocations</div>
-          <div className="text-sm text-gray-400">Add sector allocations to see the visualization</div>
+          <div className="text-lg font-medium text-muted-foreground mb-2">No Sector Allocations</div>
+          <div className="text-sm text-muted-foreground">Add sector allocations to see the visualization</div>
         </div>
       </Card>
     );

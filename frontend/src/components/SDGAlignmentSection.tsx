@@ -395,7 +395,7 @@ export default function SDGAlignmentSection({
                       </TableCell>
                       <TableCell>
                         <span className="text-sm flex items-center gap-1.5">
-                          <span className="font-mono text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{alignmentOption?.code || '1'}</span>
+                          <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{alignmentOption?.code || '1'}</span>
                           {alignmentOption?.label || 'Primary'}
                         </span>
                       </TableCell>
@@ -444,9 +444,9 @@ export default function SDGAlignmentSection({
                               variant="ghost"
                               size="sm"
                               onClick={(e) => { e.stopPropagation(); removeGoal(goalId); }}
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>
@@ -491,12 +491,12 @@ export default function SDGAlignmentSection({
               <div className="space-y-5 pt-2">
                 {/* Alignment Strength */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Alignment Strength
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
                           How closely this activity aligns with the SDG: Primary (core focus), Secondary (significant but not main focus), or Indirect (contributing benefit).
@@ -515,7 +515,7 @@ export default function SDGAlignmentSection({
                           const sel = ALIGNMENT_OPTIONS.find(o => o.value === (goalMapping?.alignmentStrength || 'primary'));
                           return sel ? (
                             <>
-                              <span className="font-mono text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{sel.code}</span>
+                              <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sel.code}</span>
                               <span>{sel.label}</span>
                             </>
                           ) : 'Select alignment strength';
@@ -526,7 +526,7 @@ export default function SDGAlignmentSection({
                       {ALIGNMENT_OPTIONS.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{option.code}</span>
+                            <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                             <span>{option.label}</span>
                             <span className="text-muted-foreground text-xs">- {option.description}</span>
                           </div>
@@ -538,12 +538,12 @@ export default function SDGAlignmentSection({
 
                 {/* Specific Targets */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Specific Targets
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
                           Optional: select one or more official SDG targets under this goal that this activity contributes to.
@@ -657,12 +657,12 @@ export default function SDGAlignmentSection({
                         return target ? (
                           <div
                             key={target.id}
-                            className="flex items-start justify-between gap-2 p-2.5 bg-gray-50 rounded-md text-sm"
+                            className="flex items-start justify-between gap-2 p-2.5 bg-muted rounded-md text-sm"
                           >
                             <div className="flex items-start gap-2 min-w-0 flex-1">
                               <div className="min-w-0">
                                 <span className="font-medium">Target {target.id}:</span>{' '}
-                                <span className="text-gray-600">{target.description}</span>
+                                <span className="text-muted-foreground">{target.description}</span>
                               </div>
                             </div>
                             {canEdit && (
@@ -670,7 +670,7 @@ export default function SDGAlignmentSection({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeTarget(goalId, target.id)}
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 flex-shrink-0"
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
                               >
                                 <X className="h-3.5 w-3.5" />
                               </Button>
@@ -684,12 +684,12 @@ export default function SDGAlignmentSection({
 
                 {/* Notes */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     How does this activity contribute?
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
                           A short narrative describing how this activity supports the selected SDG and its targets.
@@ -718,7 +718,7 @@ export default function SDGAlignmentSection({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeGoal(goalId)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

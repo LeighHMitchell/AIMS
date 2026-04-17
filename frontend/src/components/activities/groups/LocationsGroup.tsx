@@ -325,7 +325,7 @@ export function LocationsGroup({
     <div className="locations-group space-y-0">
       {/* Show message if activity not created */}
       {!activityCreated && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Please save the activity first to access location sections.</p>
         </div>
       )}

@@ -40,7 +40,7 @@ CREATE INDEX idx_activity_relationships_related_activity_id ON activity_relation
         </p>
         <div className="bg-white border border-orange-200 rounded-md p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-700">SQL Command:</span>
+            <span className="text-xs font-medium text-foreground">SQL Command:</span>
             <Button
               variant="outline"
               size="sm"
@@ -60,7 +60,7 @@ CREATE INDEX idx_activity_relationships_related_activity_id ON activity_relation
               )}
             </Button>
           </div>
-          <pre className="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap">{sqlCommand}</pre>
+          <pre className="text-xs text-muted-foreground overflow-x-auto whitespace-pre-wrap">{sqlCommand}</pre>
         </div>
         <p className="text-xs text-orange-700">
           Run this SQL in your Supabase dashboard: SQL Editor → New Query → Paste & Run

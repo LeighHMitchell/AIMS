@@ -475,7 +475,7 @@ export default function AidFlowNetworkGraph({
                 <span className="text-xs text-slate-300 capitalize">{tooltip.node.type}</span>
               </div>
               {tooltip.node.sector && (
-                <div className="text-xs text-slate-400 mt-1">Sector: {tooltip.node.sector}</div>
+                <div className="text-xs text-muted-foreground mt-1">Sector: {tooltip.node.sector}</div>
               )}
               <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
                 {tooltip.node.totalIn !== undefined && tooltip.node.totalIn > 0 && (
@@ -492,8 +492,8 @@ export default function AidFlowNetworkGraph({
                 )}
                 {(tooltip.node.totalIn || 0) > 0 && (tooltip.node.totalOut || 0) > 0 && (
                   <div className="flex justify-between text-xs pt-1 border-t border-slate-700">
-                    <span className="text-slate-400">Net Flow:</span>
-                    <span className={`font-medium ${((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className="text-muted-foreground">Net Flow:</span>
+                    <span className={`font-medium ${((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-destructive'}`}>
                       {formatCurrency((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0))}
                     </span>
                   </div>
@@ -508,19 +508,19 @@ export default function AidFlowNetworkGraph({
                 <span className="font-medium truncate max-w-[100px]">
                   {tooltip.sourceNode?.name || 'Unknown'}
                 </span>
-                <ArrowRight className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                 <span className="font-medium truncate max-w-[100px]">
                   {tooltip.targetNode?.name || 'Unknown'}
                 </span>
               </div>
               <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Amount:</span>
+                  <span className="text-muted-foreground">Amount:</span>
                   <span className="font-semibold text-white">{formatCurrency(tooltip.link.value)}</span>
                 </div>
                 {tooltip.link.flowType && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Flow Type:</span>
+                    <span className="text-muted-foreground">Flow Type:</span>
                     <span 
                       className="capitalize font-medium"
                       style={{
@@ -534,13 +534,13 @@ export default function AidFlowNetworkGraph({
                 )}
                 {tooltip.link.transactionType && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Transaction Type:</span>
+                    <span className="text-muted-foreground">Transaction Type:</span>
                     <span className="text-slate-300">{getTransactionTypeName(tooltip.link.transactionType)}</span>
                   </div>
                 )}
                 {tooltip.link.aidType && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Aid Type:</span>
+                    <span className="text-muted-foreground">Aid Type:</span>
                     <span className="text-slate-300">{tooltip.link.aidType}</span>
                   </div>
                 )}
@@ -566,7 +566,7 @@ export default function AidFlowNetworkGraph({
               setSelectedNode(null)
               setSelectedNodePosition(null)
             }}
-            className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors"
+            className="absolute top-2 right-2 text-muted-foreground hover:text-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -584,7 +584,7 @@ export default function AidFlowNetworkGraph({
             <span className="text-xs text-slate-300 capitalize">{selectedNode.type}</span>
           </div>
           {selectedNode.sector && (
-            <div className="text-xs text-slate-400 mt-1">Sector: {selectedNode.sector}</div>
+            <div className="text-xs text-muted-foreground mt-1">Sector: {selectedNode.sector}</div>
           )}
           <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
             {selectedNode.totalIn !== undefined && selectedNode.totalIn > 0 && (
@@ -601,8 +601,8 @@ export default function AidFlowNetworkGraph({
             )}
             {(selectedNode.totalIn || 0) > 0 && (selectedNode.totalOut || 0) > 0 && (
               <div className="flex justify-between text-xs pt-1 border-t border-slate-700">
-                <span className="text-slate-400">Net Flow:</span>
-                <span className={`font-medium ${((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <span className="text-muted-foreground">Net Flow:</span>
+                <span className={`font-medium ${((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-destructive'}`}>
                   {formatCurrency((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0))}
                 </span>
               </div>
@@ -615,7 +615,7 @@ export default function AidFlowNetworkGraph({
       <svg ref={svgRef} className="w-full h-full"></svg>
 
       {/* Help Text */}
-      <div className="absolute bottom-2 left-2 flex items-center gap-2 text-xs text-slate-500">
+      <div className="absolute bottom-2 left-2 flex items-center gap-2 text-xs text-muted-foreground">
         <Info className="h-3 w-3" />
         <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
       </div>

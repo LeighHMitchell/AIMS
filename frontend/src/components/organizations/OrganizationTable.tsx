@@ -188,7 +188,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   if (organizations.length === 0) {
     return (
       <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
-        <div className="text-slate-500">No organizations found</div>
+        <div className="text-muted-foreground">No organizations found</div>
       </div>
     );
   }
@@ -335,7 +335,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                             }}
                           />
                         ) : (
-                          <Building2 className="h-8 w-8 text-gray-400" />
+                          <Building2 className="h-8 w-8 text-muted-foreground" />
                         )}
                       </div>
 
@@ -362,7 +362,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                     <>
                                       {' '}
                                       <span className="inline-flex items-center gap-0.5 whitespace-nowrap align-middle">
-                                        <span className="text-xs font-mono font-normal bg-muted text-gray-600 px-1.5 py-0.5 rounded">
+                                        <span className="text-xs font-mono font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                                           {org.iati_org_id}
                                         </span>
                                         <button
@@ -373,7 +373,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                           className="p-0.5 hover:bg-muted rounded transition-colors"
                                           title="Copy IATI ID"
                                         >
-                                          <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                                          <Copy className="h-3 w-3 text-muted-foreground hover:text-muted-foreground" />
                                         </button>
                                       </span>
                                     </>
@@ -387,7 +387,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                   className="flex-shrink-0 p-1 hover:bg-muted rounded transition-colors"
                                   title="Copy organization name"
                                 >
-                                  <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                                  <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-muted-foreground" />
                                 </button>
                               </div>
                             </TooltipTrigger>

@@ -275,7 +275,7 @@ export function ParticipatingOrgModal({
           {/* Advanced Fields Toggle */}
           <div
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
+            className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             <span>Advanced Fields</span>
             <HelpTextTooltip content="These optional fields provide additional IATI-compliant metadata for specialized reporting requirements." />
@@ -420,12 +420,12 @@ export function ParticipatingOrgModal({
                   <div key={index} className="space-y-2">
                     <div className="flex gap-2 items-start">
                       <div className="w-32">
-                        <Label htmlFor={`narrative-lang-${index}`} className="text-xs text-gray-500">
+                        <Label htmlFor={`narrative-lang-${index}`} className="text-xs text-muted-foreground">
                           Language Code
                         </Label>
                       </div>
                       <div className="flex-1">
-                        <Label htmlFor={`narrative-text-${index}`} className="text-xs text-gray-500">
+                        <Label htmlFor={`narrative-text-${index}`} className="text-xs text-muted-foreground">
                           Name
                         </Label>
                       </div>
@@ -464,7 +464,7 @@ export function ParticipatingOrgModal({
                         onClick={() => removeNarrative(index)}
                         className="px-2 py-1 h-10"
                       >
-                        <Trash2 className="h-3 w-3 text-red-500" />
+                        <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
                     </div>
                   </div>

@@ -127,7 +127,7 @@ export function EmailChangeConfirmDialog({
               className={errors.newEmail ? "border-red-500" : ""}
             />
             {errors.newEmail && (
-              <p className="text-xs text-red-600 mt-1">{errors.newEmail}</p>
+              <p className="text-xs text-destructive mt-1">{errors.newEmail}</p>
             )}
           </div>
 
@@ -148,7 +148,7 @@ export function EmailChangeConfirmDialog({
               className={errors.confirmEmail ? "border-red-500" : ""}
             />
             {errors.confirmEmail && (
-              <p className="text-xs text-red-600 mt-1">{errors.confirmEmail}</p>
+              <p className="text-xs text-destructive mt-1">{errors.confirmEmail}</p>
             )}
           </div>
         </div>

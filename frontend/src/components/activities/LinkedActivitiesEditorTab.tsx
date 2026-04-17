@@ -447,10 +447,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         {/* Search & Link Activities - Full Width */}
         <div className="bg-white rounded-lg p-6 border border-border">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Search & Link Activities</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Search & Link Activities</h3>
             <div className="flex gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search by title, acronym, Activity ID, IATI ID, or organisation..."
@@ -468,7 +468,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                       setSearchResults(allActivities);
                       setShowSearchResults(false);
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center transition-colors text-muted-foreground hover:text-muted-foreground"
                     aria-label="Clear search"
                   >
                     <X className="h-3 w-3" />
@@ -499,10 +499,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 </>
               ) : displayActivities.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {searchQuery.trim() ? `No activities found for "${searchQuery}"` : 'No activities available'}
                   </p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Try a different search term
                   </p>
                             </div>
@@ -520,13 +520,13 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                       <div className="flex-1 min-w-0">
                         {/* First line: Title (Acronym) · Activity ID or IATI ID */}
                         <div className="flex items-center gap-1.5">
-                          <span className="font-medium text-gray-900 line-clamp-1">
+                          <span className="font-medium text-foreground line-clamp-1">
                             {activity.title}
                             {activity.acronym && ` (${activity.acronym})`}
                           </span>
                           {(activity.otherIdentifier || activity.iatiIdentifier) && (
                             <>
-                              <span className="text-gray-400">·</span>
+                              <span className="text-muted-foreground">·</span>
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {activity.otherIdentifier || activity.iatiIdentifier}
                               </span>
@@ -534,7 +534,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           )}
                         </div>
                         {/* Second line: Org logo · Org name (acronym) · Org IATI ID */}
-                        <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                           <OrganizationLogo
                             logo={activity.organizationLogo}
                             name={activity.organizationName}
@@ -548,7 +548,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           )}
                           {activity.organizationIatiId && (
                             <>
-                              <span className="text-gray-400">·</span>
+                              <span className="text-muted-foreground">·</span>
                               <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 {activity.organizationIatiId}
                               </span>
@@ -568,7 +568,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         {/* Linked Activities - Full Width */}
         <div className="bg-white rounded-lg p-6 border border-border">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               Established Links
               <HelpTextTooltip content="Activities linked to this one through IATI relationship types" />
               {/* Save indicator */}
@@ -622,13 +622,13 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         {/* First line: Arrow + Title (Acronym) · Activity ID + Green tick */}
                         <div className="flex items-center gap-1.5 mb-1">
                           {getRelationshipIcon(link.relationshipType)}
-                          <span className="font-medium text-gray-900 text-sm">
+                          <span className="font-medium text-foreground text-sm">
                             {link.activityTitle}
                             {link.acronym && ` (${link.acronym})`}
                           </span>
                           {(link.otherIdentifier || link.iatiIdentifier) && (
                             <>
-                              <span className="text-gray-400">·</span>
+                              <span className="text-muted-foreground">·</span>
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {link.otherIdentifier || link.iatiIdentifier}
                               </span>
@@ -640,7 +640,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         {/* Second line: Narrative or relationship description */}
                         <div className="ml-6 space-y-1">
                           {(link.organizationName || link.organizationAcronym) && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               {link.organizationName}
                               {link.organizationAcronym && ` (${link.organizationAcronym})`}
                             </p>
@@ -653,7 +653,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                                   Imported from XML
                                 </span>
                               ) : (
-                                <p className="text-sm text-gray-600">{link.narrative}</p>
+                                <p className="text-sm text-muted-foreground">{link.narrative}</p>
                               )}
                             </div>
                           )}
@@ -670,17 +670,17 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEdit(link)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(link.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </>
                         )}
@@ -703,7 +703,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
-              <div className="border border-border rounded-lg bg-gray-50 overflow-hidden" style={{ height: '600px' }}>
+              <div className="border border-border rounded-lg bg-muted overflow-hidden" style={{ height: '600px' }}>
                 <LinkedActivitiesGraph
                   currentActivity={currentActivity}
                   linkedActivities={linkedActivities}
@@ -721,10 +721,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900">
+            <DialogTitle className="text-foreground">
               {editingActivity ? 'Edit Link' : 'Link Activity'}
             </DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-muted-foreground">
               {editingActivity 
                 ? 'Update the relationship type and narrative for this link.'
                 : 'Define the relationship between these activities.'}
@@ -734,11 +734,11 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           <div className="space-y-4 py-4">
             {/* Selected Activity Info */}
             {(selectedActivity || editingActivity) && (
-              <div className="bg-gray-50 border border-border rounded-lg p-3">
+              <div className="bg-muted border border-border rounded-lg p-3">
                 <div className="flex-1 min-w-0">
                   {/* First line: Title (Acronym) · ID */}
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-gray-900 text-sm">
+                    <span className="font-medium text-foreground text-sm">
                       {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
                       {(selectedActivity?.acronym || editingActivity?.acronym) && ` (${selectedActivity?.acronym || editingActivity?.acronym})`}
                     </span>
@@ -746,7 +746,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                       const id = selectedActivity?.otherIdentifier || selectedActivity?.iatiIdentifier || editingActivity?.otherIdentifier || editingActivity?.iatiIdentifier;
                       return id ? (
                         <>
-                          <span className="text-gray-400">·</span>
+                          <span className="text-muted-foreground">·</span>
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{id}</span>
                         </>
                       ) : null;
@@ -755,7 +755,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                   {/* Second line: Org name */}
                   {((selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym)) ||
                     (editingActivity && (editingActivity.organizationName || editingActivity.organizationAcronym))) && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {selectedActivity ? (
                         selectedActivity.organizationName && selectedActivity.organizationAcronym
                           ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`
@@ -811,7 +811,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           <Button
               variant="outline"
               onClick={() => setShowModal(false)}
-              className="border-input text-gray-700 hover:bg-gray-100"
+              className="border-input text-foreground hover:bg-muted"
             >
               Cancel
           </Button>

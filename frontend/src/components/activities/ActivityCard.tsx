@@ -225,7 +225,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             >
               {isBookmarked(activity.id) ? (
                 <>
-                  <BookmarkCheck className="mr-2 h-4 w-4 text-slate-600" />
+                  <BookmarkCheck className="mr-2 h-4 w-4 text-muted-foreground" />
                   Remove Bookmark
                 </>
               ) : (
@@ -241,16 +241,16 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
-                <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
                 Edit
               </DropdownMenuItem>
             )}
             {onDelete && (
               <DropdownMenuItem
                 onClick={handleDelete}
-                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                 Delete
               </DropdownMenuItem>
             )}

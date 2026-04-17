@@ -117,7 +117,7 @@ function RecoverModal({
             />
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
 
         {/* Footer */}
@@ -342,7 +342,7 @@ export function RejectedProjectsTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("card")}
-            className={`rounded-r-none h-9 ${viewMode === "card" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-r-none h-9 ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -350,7 +350,7 @@ export function RejectedProjectsTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("table")}
-            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <Table2 className="h-4 w-4" />
           </Button>

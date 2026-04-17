@@ -534,7 +534,7 @@ export function PBSectorsManagement() {
                             <DropdownMenuItem
                               onClick={() => handleEditSector(sector)}
                             >
-                              <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                              <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                               Edit Sector
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -545,9 +545,9 @@ export function PBSectorsManagement() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDeleteSector(sector)}
-                              className="text-red-600"
+                              className="text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                              <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                               Deactivate Sector
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -585,16 +585,16 @@ export function PBSectorsManagement() {
                                   <DropdownMenuItem
                                     onClick={() => handleEditSubSector(ss)}
                                   >
-                                    <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                                     Edit Sub-sector
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       handleDeleteSubSector(ss, sector.id)
                                     }
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                                    <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                                     Remove Sub-sector
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -748,7 +748,7 @@ export function PBSectorsManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-destructive" />
               {deleteTarget?.type === "sector"
                 ? "Deactivate Sector"
                 : "Remove Sub-sector"}

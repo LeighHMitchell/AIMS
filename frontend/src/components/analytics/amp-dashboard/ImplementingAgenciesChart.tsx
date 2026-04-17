@@ -171,19 +171,19 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+            <p className="font-semibold text-foreground text-sm">{item.name}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
-                  <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
-                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                  <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
+                  <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.value)}</td>
                 </tr>
                 {item.activityCount > 0 && (
                   <tr>
-                    <td className="py-1 pr-4 text-slate-700 font-medium">Activities</td>
-                    <td className="py-1 text-right font-semibold text-slate-900">{item.activityCount}</td>
+                    <td className="py-1 pr-4 text-foreground font-medium">Activities</td>
+                    <td className="py-1 text-right font-semibold text-foreground">{item.activityCount}</td>
                   </tr>
                 )}
               </tbody>
@@ -342,7 +342,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.fill }}
           />
-          <span className="text-xs text-gray-600 truncate max-w-[80px]" title={item.name}>
+          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={item.name}>
             {item.acronym}
           </span>
         </div>
@@ -398,7 +398,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
@@ -407,7 +407,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -416,7 +416,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+            className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground")}
             onClick={() => setViewMode("table")}
             title="Table"
           >
@@ -460,7 +460,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
         <CardHeader className="pb-2 pt-3 px-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2">
                 <Building className="h-4 w-4" />
                 Implementing Agencies
               </CardTitle>
@@ -468,7 +468,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
                 Organizations with implementing role
               </p>
             </div>
-            <span className="text-lg font-bold text-slate-500">
+            <span className="text-lg font-bold text-muted-foreground">
               {formatCurrencyUSD(data.reduce((sum, d) => sum + d.value, 0))}
             </span>
           </div>
@@ -497,7 +497,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
                   Top organizations with implementing role by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}.
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
+              <span className="text-2xl font-bold text-muted-foreground">
                 {formatCurrencyUSD(data.reduce((sum, d) => sum + d.value, 0))}
               </span>
             </div>

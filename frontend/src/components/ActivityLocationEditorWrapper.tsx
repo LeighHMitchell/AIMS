@@ -13,14 +13,14 @@ const MyanmarLocationEditor = dynamic(() => import('./MyanmarLocationEditor'), {
     <div className="bg-white rounded-lg shadow-sm border p-6">
       <div className="animate-pulse space-y-6">
         <div>
-          <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+          <div className="h-10 bg-muted rounded"></div>
         </div>
         <div className="space-y-4">
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-64 bg-muted rounded"></div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-muted rounded"></div>
+            <div className="h-10 bg-muted rounded"></div>
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function ActivityLocationEditorWrapper({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Defines the geographic level of the activity according to IATI standards
             </p>
           </div>

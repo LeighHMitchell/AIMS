@@ -103,18 +103,18 @@ export function OrganizationDropdownWithLogo({
           />
         ) : (
           <div className="w-6 h-6 bg-muted rounded-sm flex items-center justify-center">
-            <Building2 className="h-4 w-4 text-gray-400" />
+            <Building2 className="h-4 w-4 text-muted-foreground" />
           </div>
         )}
       </div>
       
       {/* Organization Details */}
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-gray-900 truncate">
+        <div className="font-medium text-foreground truncate">
           {getOrganizationDisplay(org)}
         </div>
         {getIatiCountryLine(org) && (
-          <div className="text-xs text-gray-500 truncate mt-0.5">
+          <div className="text-xs text-muted-foreground truncate mt-0.5">
             {getIatiCountryLine(org)}
           </div>
         )}
@@ -154,7 +154,7 @@ export function OrganizationDropdownWithLogo({
                   />
                 ) : (
                   <div className="w-5 h-5 bg-muted rounded-sm flex items-center justify-center">
-                    <Building2 className="h-3 w-3 text-gray-400" />
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -164,7 +164,7 @@ export function OrganizationDropdownWithLogo({
                   {getOrganizationDisplay(selectedOrg)}
                 </span>
                 {getIatiCountryLine(selectedOrg) && (
-                  <span className="text-sm text-gray-500 truncate">
+                  <span className="text-sm text-muted-foreground truncate">
                     {getIatiCountryLine(selectedOrg)}
                   </span>
                 )}
@@ -180,7 +180,7 @@ export function OrganizationDropdownWithLogo({
               </span>
             </span>
           ) : (
-            <span className="text-gray-400 text-base">{placeholder}</span>
+            <span className="text-muted-foreground text-base">{placeholder}</span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>

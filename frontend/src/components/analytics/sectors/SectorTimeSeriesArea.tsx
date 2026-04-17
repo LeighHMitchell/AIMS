@@ -49,9 +49,9 @@ export function SectorTimeSeriesArea({
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md text-sm">
           <div className="bg-surface-muted px-4 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900">Year: {label}</p>
-            <p className="text-slate-600">
-              Total: <span className="font-bold text-slate-900">{formatTooltipCurrency(total)}</span>
+            <p className="font-semibold text-foreground">Year: {label}</p>
+            <p className="text-muted-foreground">
+              Total: <span className="font-bold text-foreground">{formatTooltipCurrency(total)}</span>
             </p>
           </div>
           <div className="overflow-y-auto max-h-[300px]">
@@ -64,9 +64,9 @@ export function SectorTimeSeriesArea({
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: entry.color }} />
-                          <span className="text-slate-700">
+                          <span className="text-foreground">
                             {code && (
-                              <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-xs mr-1.5">
+                              <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
                                 {code}
                               </code>
                             )}
@@ -74,7 +74,7 @@ export function SectorTimeSeriesArea({
                           </span>
                         </div>
                       </td>
-                      <td className="py-2 px-4 text-right font-medium text-slate-900 whitespace-nowrap">
+                      <td className="py-2 px-4 text-right font-medium text-foreground whitespace-nowrap">
                         {formatTooltipCurrency(entry.value)}
                       </td>
                     </tr>
@@ -105,7 +105,7 @@ export function SectorTimeSeriesArea({
               className="w-3 h-3 rounded-sm"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-slate-700 max-w-[150px] truncate">{entry.value}</span>
+            <span className="text-foreground max-w-[150px] truncate">{entry.value}</span>
           </div>
         ))}
       </div>
@@ -114,8 +114,8 @@ export function SectorTimeSeriesArea({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
-        <p className="text-slate-500">No data available for the selected filters</p>
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
+        <p className="text-muted-foreground">No data available for the selected filters</p>
       </div>
     )
   }

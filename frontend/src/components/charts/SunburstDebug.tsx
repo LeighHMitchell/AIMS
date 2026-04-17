@@ -33,7 +33,7 @@ export default function SunburstDebug({ allocations }: DebugProps) {
   });
   
   return (
-    <div className="p-4 bg-gray-100 rounded text-xs">
+    <div className="p-4 bg-muted rounded text-xs">
       <h3 className="font-bold mb-2">Sunburst Debug Info</h3>
       <div>Total allocations: {allocations.length}</div>
       <div>Unique groups: {Array.from(groups).join(', ')}</div>

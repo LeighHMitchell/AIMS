@@ -75,7 +75,7 @@ export function CompletionRatesChart({ data }: CompletionRatesChartProps) {
                   }}
                 />
                 <div
-                  className="rounded-t bg-slate-400 transition-all hover:bg-slate-500"
+                  className="rounded-t bg-slate-400 transition-all hover:bg-muted0"
                   style={{
                     width: barWidth / 2 - 1,
                     height: Math.max(completedHeight, 2),

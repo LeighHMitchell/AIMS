@@ -227,13 +227,13 @@ function Map3DController({
       </Button>
 
       <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-input shadow-md flex items-center gap-3 whitespace-nowrap">
-        <span className="text-gray-600">Zoom: {zoom}</span>
+        <span className="text-muted-foreground">Zoom: {zoom}</span>
         {is3D && (
           <>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-600">Pitch: {pitch}°</span>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-600">Bearing: {bearing}°</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground">Pitch: {pitch}°</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground">Bearing: {bearing}°</span>
           </>
         )}
       </div>

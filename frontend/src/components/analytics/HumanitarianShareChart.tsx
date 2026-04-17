@@ -163,7 +163,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
           </svg>
         </div>
         <div className="text-xs text-muted-foreground text-center">
-          <span className="text-red-600 font-medium">{formatCurrency(data.humanitarian)}</span>
+          <span className="text-destructive font-medium">{formatCurrency(data.humanitarian)}</span>
           {' / '}
           <span>{formatCurrency(data.total)}</span>
         </div>
@@ -239,7 +239,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
         </svg>
         {/* Percentage text */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-4xl font-bold text-red-700">
+          <span className="text-4xl font-bold text-destructive">
             {data.humanitarianPercent}
             <span className="text-2xl">%</span>
           </span>
@@ -302,7 +302,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
               />
             </svg>
             <div>
-              <p className="font-semibold text-red-700">Humanitarian assistance</p>
+              <p className="font-semibold text-destructive">Humanitarian assistance</p>
               <p className="text-muted-foreground">
                 {formatCurrency(data.humanitarian)} USD ({data.humanitarianPercent}%)
               </p>
@@ -353,9 +353,9 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
       <table className="w-full text-sm">
         <thead className="bg-surface-muted">
           <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 font-medium text-slate-700">Category</th>
-            <th className="text-right py-3 px-4 font-medium text-slate-700">Amount (USD)</th>
-            <th className="text-right py-3 px-4 font-medium text-slate-700">Share</th>
+            <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
+            <th className="text-right py-3 px-4 font-medium text-foreground">Amount (USD)</th>
+            <th className="text-right py-3 px-4 font-medium text-foreground">Share</th>
           </tr>
         </thead>
         <tbody>
@@ -365,9 +365,9 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             <td className="text-right py-3 px-4 text-muted-foreground">{data.developmentPercent}%</td>
           </tr>
           <tr className="border-b border-border">
-            <td className="py-3 px-4 text-red-700 font-medium">Humanitarian assistance</td>
+            <td className="py-3 px-4 text-destructive font-medium">Humanitarian assistance</td>
             <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrency(data.humanitarian)}</td>
-            <td className="text-right py-3 px-4 text-red-600 font-medium">{data.humanitarianPercent}%</td>
+            <td className="text-right py-3 px-4 text-destructive font-medium">{data.humanitarianPercent}%</td>
           </tr>
           <tr className="bg-muted">
             <td className="py-3 px-4 font-semibold text-foreground">Total</td>

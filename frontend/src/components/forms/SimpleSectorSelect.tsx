@@ -253,15 +253,15 @@ export function SimpleSectorSelect({
                         onClick={() => toggleCategory(categoryName)}
                       >
                         {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-gray-600 mr-2 shrink-0" />
+                          <ChevronDown className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-600 mr-2 shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-800 text-sm">
+                          <div className="font-semibold text-foreground text-sm">
                             {categoryName}
                           </div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-muted-foreground">
                             {sectors.length} sector{sectors.length !== 1 ? 's' : ''}
                           </div>
                         </div>
@@ -292,11 +292,11 @@ export function SimpleSectorSelect({
                               )}
                             />
                             <div className="flex-1 min-w-0 space-y-1">
-                              <div className="font-medium text-sm text-gray-900">
+                              <div className="font-medium text-sm text-foreground">
                                 {sector.name}
                               </div>
                               {sector.description && (
-                                <div className="text-xs text-gray-600 leading-relaxed">
+                                <div className="text-xs text-muted-foreground leading-relaxed">
                                   {sector.description}
                                 </div>
                               )}

@@ -149,7 +149,7 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
                   Create Sub-Working Group
                 </DropdownMenuItem>
                 {onDelete && (
-                  <DropdownMenuItem className="text-red-600" onClick={() => onDelete(workingGroup.id)}>
+                  <DropdownMenuItem className="text-destructive" onClick={() => onDelete(workingGroup.id)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </DropdownMenuItem>

@@ -93,8 +93,8 @@ export function SectorMetricsCards({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">{metric.title}</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-2">{metric.value}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{metric.value}</p>
                 </div>
                 <div 
                   className="p-3 rounded-lg"

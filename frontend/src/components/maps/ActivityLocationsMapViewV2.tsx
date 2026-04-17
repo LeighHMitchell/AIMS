@@ -308,7 +308,7 @@ export default function ActivityLocationsMapViewV2({
       <div className="h-full w-full flex items-center justify-center bg-surface-muted rounded-md">
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">No location data available</p>
+          <p className="text-muted-foreground">No location data available</p>
         </div>
       </div>
     );
@@ -322,7 +322,7 @@ export default function ActivityLocationsMapViewV2({
         <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[170px] h-8" />
 
         {/* View Mode Toggle */}
-        <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+        <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
           <Button
             onClick={() => setViewMode('markers')}
             variant="ghost"
@@ -331,8 +331,8 @@ export default function ActivityLocationsMapViewV2({
             className={cn(
               "h-8 w-8 p-0",
               viewMode === 'markers'
-                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white shadow-sm text-foreground hover:bg-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <CircleDot className="h-3.5 w-3.5" />
@@ -345,8 +345,8 @@ export default function ActivityLocationsMapViewV2({
             className={cn(
               "h-8 w-8 p-0",
               viewMode === 'heatmap'
-                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white shadow-sm text-foreground hover:bg-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Flame className="h-3.5 w-3.5" />

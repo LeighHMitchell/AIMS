@@ -134,7 +134,7 @@ export function FlowTypeSelect({
               {selectedOption ? (
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
-                  <span className="font-medium text-sm text-gray-900">{selectedOption.name}</span>
+                  <span className="font-medium text-sm text-foreground">{selectedOption.name}</span>
                 </span>
               ) : (
                 <span className="text-muted-foreground text-sm">{placeholder}</span>
@@ -155,7 +155,7 @@ export function FlowTypeSelect({
                       onValueChange?.(null);
                     }
                   }}
-                  className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                  className="h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Clear selection"
                 >
                   <X className="h-3 w-3 text-muted-foreground" />

@@ -679,7 +679,7 @@ export default function PartnerProfilePage() {
                 className={validationErrors.iatiOrgId ? "border-red-500" : ""}
               />
               {validationErrors.iatiOrgId && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.iatiOrgId}</p>
+                <p className="text-sm text-destructive mt-1">{validationErrors.iatiOrgId}</p>
               )}
             </div>
 
@@ -703,7 +703,7 @@ export default function PartnerProfilePage() {
                 required
               />
               {validationErrors.fullName && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.fullName}</p>
+                <p className="text-sm text-destructive mt-1">{validationErrors.fullName}</p>
               )}
             </div>
 
@@ -727,7 +727,7 @@ export default function PartnerProfilePage() {
                 required
               />
               {validationErrors.acronym && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.acronym}</p>
+                <p className="text-sm text-destructive mt-1">{validationErrors.acronym}</p>
               )}
             </div>
 
@@ -764,7 +764,7 @@ export default function PartnerProfilePage() {
                 Select 'Global / Not Country-Specific' for multilaterals or regional organisations like UN agencies, the World Bank, etc.
               </p>
               {validationErrors.countryRepresented && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.countryRepresented}</p>
+                <p className="text-sm text-destructive mt-1">{validationErrors.countryRepresented}</p>
               )}
             </div>
 
@@ -803,7 +803,7 @@ export default function PartnerProfilePage() {
                 </SelectContent>
               </Select>
               {validationErrors.organisationType && (
-                <p className="text-sm text-red-500 mt-1">{validationErrors.organisationType}</p>
+                <p className="text-sm text-destructive mt-1">{validationErrors.organisationType}</p>
               )}
             </div>
 
@@ -821,7 +821,7 @@ export default function PartnerProfilePage() {
                   homeCountry
                 )}
                 disabled
-                className="bg-gray-100"
+                className="bg-muted"
                 placeholder="Auto-calculated based on country and type"
               />
             </div>

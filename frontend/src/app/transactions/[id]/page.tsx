@@ -130,7 +130,7 @@ export default function TransactionDetailPage() {
         <div className="max-w-4xl mx-auto px-6 py-8">
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-red-600 mb-4">
+              <p className="text-destructive mb-4">
                 {error || "Transaction not found"}
               </p>
               <Button onClick={() => router.back()}>
@@ -162,11 +162,11 @@ export default function TransactionDetailPage() {
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
-              <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-4 w-4 mr-2 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Button>
-            <Button variant="outline" size="sm" className="text-red-600">
-              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+            <Button variant="outline" size="sm" className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2 text-destructive" />
               Delete
             </Button>
           </div>

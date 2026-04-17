@@ -1432,10 +1432,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         e.stopPropagation();
                         setPendingDeleteIdentifierIndex(index);
                       }}
-                      className="p-1 hover:bg-red-50 rounded"
+                      className="p-1 hover:bg-destructive/10 rounded"
                       title="Delete identifier"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                      <Trash2 className="w-3.5 h-3.5 text-destructive hover:text-destructive" />
                     </button>
                   </div>
                 </div>
@@ -2678,10 +2678,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                           e.stopPropagation();
                           setPendingDeleteCustomDateIndex(index);
                         }}
-                        className="p-1 hover:bg-red-50 rounded"
+                        className="p-1 hover:bg-destructive/10 rounded"
                         title="Delete date"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                        <Trash2 className="w-3.5 h-3.5 text-destructive hover:text-destructive" />
                       </button>
                     </div>
                   </div>
@@ -5712,7 +5712,7 @@ function NewActivityPageContent() {
                       <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
                         general.submissionStatus === 'submitted' ? 'text-blue-600 bg-blue-100' :
                         general.submissionStatus === 'validated' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' :
-                        general.submissionStatus === 'rejected' ? 'text-red-600 bg-red-100' :
+                        general.submissionStatus === 'rejected' ? 'text-destructive bg-red-100' :
                         general.submissionStatus === 'published' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' : 'text-muted-foreground bg-muted'
                       }`}>
                         {(() => {

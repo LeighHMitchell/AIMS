@@ -91,7 +91,7 @@ export const OrganizationFieldHelp: React.FC<FieldHelpProps> = ({ field, classNa
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className={`w-4 h-4 text-slate-500 cursor-help inline-block ml-1 ${className}`} />
+          <HelpCircle className={`w-4 h-4 text-muted-foreground cursor-help inline-block ml-1 ${className}`} />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>{helpText}</p>

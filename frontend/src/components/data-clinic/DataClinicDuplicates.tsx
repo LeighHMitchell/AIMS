@@ -348,7 +348,7 @@ export function DataClinicDuplicates() {
                 onClick={() => setConfidenceFilter(confidenceFilter === 'high' ? 'all' : 'high')}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <div className="w-2 h-2 rounded-full bg-destructive/100" />
                   <p className="text-sm text-muted-foreground">High Confidence</p>
                 </div>
                 <p className="text-2xl font-semibold">{currentStats?.byConfidence.high || 0}</p>

@@ -78,14 +78,14 @@ function RuleTable<T extends { id: string }>({
 
   return (
     <div className="border border-border rounded-lg overflow-hidden shadow-sm">
-      <div className="bg-slate-50 px-4 py-3 border-b border-border">
+      <div className="bg-muted px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-medium text-slate-900 flex items-center gap-2">
+            <h3 className="font-medium text-foreground flex items-center gap-2">
               {title}
               <Badge variant="destructive">{items.length}</Badge>
             </h3>
-            <p className="text-sm text-slate-500 mt-0.5">{description}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ function RuleTable<T extends { id: string }>({
         </TableHeader>
         <TableBody>
           {items.map((item) => (
-            <TableRow key={item.id} className="hover:bg-slate-50">
+            <TableRow key={item.id} className="hover:bg-muted">
               {columns.map((col, idx) => (
                 <TableCell key={idx} className={col.className}>
                   {col.accessor(item)}
@@ -112,7 +112,7 @@ function RuleTable<T extends { id: string }>({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                   onClick={() => onEditClick(item.id)}
                   title="Edit activity"
                 >
@@ -382,12 +382,12 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
+            <AlertCircle className="h-5 w-5 text-destructive" />
             Data Quality
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load validation rules data: {error}</p>
+          <p className="text-sm text-destructive">Failed to load validation rules data: {error}</p>
           <Button variant="outline" size="sm" onClick={fetchData} className="mt-2">
             Retry
           </Button>
@@ -421,9 +421,9 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-slate-400 mb-3" />
-            <p className="text-lg font-medium text-slate-700">All data quality checks pass!</p>
-            <p className="text-sm text-slate-500 mt-1">
+            <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-3" />
+            <p className="text-lg font-medium text-foreground">All data quality checks pass!</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Great job! All your activities meet the data quality requirements.
             </p>
           </div>
@@ -444,7 +444,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
               {totalIssues} {totalIssues === 1 ? 'issue' : 'issues'}
             </Badge>
           </h2>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Activities and transactions failing data quality rules
           </p>
         </div>
@@ -483,7 +483,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -494,7 +494,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Planned End',
-                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.planned_end_date)}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.planned_end_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
@@ -517,7 +517,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -528,7 +528,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Actual End Date',
-                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.actual_end_date)}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.actual_end_date)}</span>,
                     className: 'w-[140px]',
                   },
                   {
@@ -552,7 +552,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -582,7 +582,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -593,7 +593,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Planned Start',
-                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.planned_start_date)}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.planned_start_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
@@ -617,7 +617,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -628,7 +628,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Planned End',
-                    accessor: (item) => <span className="text-sm text-slate-700">{formatDate(item.planned_end_date)}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.planned_end_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
@@ -670,7 +670,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -681,7 +681,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Other Transactions',
-                    accessor: (item) => <span className="text-sm text-slate-700">{item.transaction_count}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{item.transaction_count}</span>,
                     className: 'w-[150px]',
                   },
                   {
@@ -723,7 +723,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -734,7 +734,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Locations',
-                    accessor: (item) => <span className="text-sm text-slate-700">{item.location_count}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{item.location_count}</span>,
                     className: 'w-[100px]',
                   },
                   {
@@ -757,7 +757,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -787,7 +787,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -798,7 +798,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Locations',
-                    accessor: (item) => <span className="text-sm text-slate-700">{item.location_count}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{item.location_count}</span>,
                     className: 'w-[100px]',
                   },
                   {
@@ -827,7 +827,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -838,7 +838,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Location',
-                    accessor: (item) => <span className="text-sm text-slate-700">{item.location_name}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{item.location_name}</span>,
                     className: 'w-[200px]',
                   },
                   {
@@ -879,7 +879,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -890,7 +890,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Other Orgs',
-                    accessor: (item) => <span className="text-sm text-slate-700">{item.participating_org_count}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{item.participating_org_count}</span>,
                     className: 'w-[110px]',
                   },
                   {
@@ -932,7 +932,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -943,7 +943,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Sectors',
-                    accessor: (item) => <span className="text-sm text-slate-700">{item.sector_count}</span>,
+                    accessor: (item) => <span className="text-sm text-foreground">{item.sector_count}</span>,
                     className: 'w-[100px]',
                   },
                   {
@@ -966,7 +966,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Activity',
                     accessor: (item) => (
                       <div>
-                        <p className="font-medium text-slate-900">{item.title_narrative}</p>
+                        <p className="font-medium text-foreground">{item.title_narrative}</p>
                         {item.iati_identifier && (
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
                             {item.iati_identifier}
@@ -979,8 +979,8 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Sector',
                     accessor: (item) => (
                       <div>
-                        <span className="text-sm text-slate-900">{item.sector_name}</span>
-                        <code className="text-xs font-mono text-slate-500 block mt-0.5">{item.sector_code}</code>
+                        <span className="text-sm text-foreground">{item.sector_name}</span>
+                        <code className="text-xs font-mono text-muted-foreground block mt-0.5">{item.sector_code}</code>
                       </div>
                     ),
                     className: 'w-[200px]',

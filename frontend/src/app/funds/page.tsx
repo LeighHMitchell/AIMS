@@ -288,7 +288,7 @@ export default function FundsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredFunds.map(fund => {
-              const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
+              const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-destructive' : 'text-muted-foreground'
               const utilisation = fund.totalContributions > 0
                 ? ((fund.totalDisbursements / fund.totalContributions) * 100).toFixed(0)
                 : '0'
@@ -390,7 +390,7 @@ export default function FundsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setDeleteFundId(fund.id)}
-                              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                              className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-red-900/20"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete

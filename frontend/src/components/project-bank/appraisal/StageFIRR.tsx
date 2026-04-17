@@ -38,15 +38,15 @@ function ComparisonTooltip({ active, payload, label }: any) {
 
   return (
     <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-      <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
+      <p className="font-semibold text-foreground mb-2">Year {label}</p>
       <div className="border-t pt-2 space-y-1">
         {nonZero.map((entry: any, index: number) => (
           <div key={index} className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }} />
-              <span className="text-sm text-slate-700">{entry.name}</span>
+              <span className="text-sm text-foreground">{entry.name}</span>
             </div>
-            <span className="text-sm font-medium text-slate-900">
+            <span className="text-sm font-medium text-foreground">
               {Math.abs(entry.value).toLocaleString('en-US')}
             </span>
           </div>
@@ -215,7 +215,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                   <span className="text-sm font-semibold">{formatCurrency(rVal)}</span>
                 </div>
                 {pVal > 0 && diff !== 0 && (
-                  <div className={cn('text-xs mt-0.5', diff > 0 ? (key === 'revenue' ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : (key === 'revenue' ? 'text-red-600' : 'text-[hsl(var(--success-icon))]'))}>
+                  <div className={cn('text-xs mt-0.5', diff > 0 ? (key === 'revenue' ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : (key === 'revenue' ? 'text-destructive' : 'text-[hsl(var(--success-icon))]'))}>
                     {diff > 0 ? '+' : ''}{pctChange.toFixed(1)}% from preliminary
                   </div>
                 )}
@@ -296,8 +296,8 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                   className={cn(
                     'text-[10px] px-2 py-0.5 rounded transition-colors',
                     comparisonView === view
-                      ? 'bg-slate-200 text-slate-900 font-semibold'
-                      : 'text-gray-600 hover:bg-muted',
+                      ? 'bg-muted text-foreground font-semibold'
+                      : 'text-muted-foreground hover:bg-muted',
                   )}
                 >
                   {view === 'net' ? 'Net' : view === 'capex' ? 'CAPEX' : view === 'opex' ? 'OPEX' : 'Revenue'}
@@ -348,7 +348,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                     <td className={cn('p-2 text-right tabular-nums text-sm', s.firr !== null && s.firr >= 10 ? 'text-[hsl(var(--success-icon))]' : 'text-amber-600')}>
                       {s.firr !== null ? `${s.firr.toFixed(1)}%` : 'N/A'}
                     </td>
-                    <td className={cn('p-2 text-right tabular-nums text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600')}>
+                    <td className={cn('p-2 text-right tabular-nums text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
                       {formatCurrency(s.npv)}
                     </td>
                   </tr>

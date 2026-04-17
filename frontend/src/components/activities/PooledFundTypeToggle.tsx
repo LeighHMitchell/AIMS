@@ -33,7 +33,7 @@ export function PooledFundTypeToggle({
         disabled={disabled || isSaving}
         className={cn(
           'relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
-          !isPooledFund ? 'ring-border bg-primary/5' : 'ring-border bg-background hover:bg-gray-50',
+          !isPooledFund ? 'ring-border bg-primary/5' : 'ring-border bg-background hover:bg-muted',
           (disabled || isSaving) && 'opacity-50 cursor-not-allowed'
         )}
       >
@@ -63,7 +63,7 @@ export function PooledFundTypeToggle({
         disabled={disabled || isSaving}
         className={cn(
           'relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
-          isPooledFund ? 'ring-border bg-primary/5' : 'ring-border bg-background hover:bg-gray-50',
+          isPooledFund ? 'ring-border bg-primary/5' : 'ring-border bg-background hover:bg-muted',
           (disabled || isSaving) && 'opacity-50 cursor-not-allowed'
         )}
       >

@@ -97,11 +97,11 @@ export function LinkExternalActivityModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-gray-900">
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <ExternalLink className="h-5 w-5" />
             Link External Activity
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-muted-foreground">
             Link this activity to an external IATI activity that doesn't exist in your database yet.
           </DialogDescription>
         </DialogHeader>
@@ -119,7 +119,7 @@ export function LinkExternalActivityModal({
               onChange={(e) => setExternalIatiId(e.target.value)}
               className="border-input focus:border-gray-500"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               The unique IATI identifier of the related activity
             </p>
           </div>
@@ -134,7 +134,7 @@ export function LinkExternalActivityModal({
               onChange={(e) => setExternalTitle(e.target.value)}
               className="border-input focus:border-gray-500"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Optional title to help identify this activity
             </p>
           </div>
@@ -181,7 +181,7 @@ export function LinkExternalActivityModal({
             variant="outline"
             onClick={handleClose}
             disabled={saving}
-            className="border-input text-gray-700 hover:bg-muted"
+            className="border-input text-foreground hover:bg-muted"
           >
             Cancel
           </Button>

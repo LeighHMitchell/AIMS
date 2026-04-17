@@ -589,7 +589,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
 
   if (events.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No activity data available</p>
           <p className="text-xs mt-2">Start creating activities, transactions, and budgets to see your contribution calendar</p>
@@ -604,7 +604,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {/* Year Type Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             <Button
               variant="ghost"
               size="sm"
@@ -612,8 +612,8 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
               className={cn(
                 'h-7 px-3 text-xs',
                 yearType === 'calendar'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Calendar Year
@@ -625,8 +625,8 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
               className={cn(
                 'h-7 px-3 text-xs',
                 yearType === 'financial'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Financial Year

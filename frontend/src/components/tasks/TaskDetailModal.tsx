@@ -197,7 +197,7 @@ export function TaskDetailModal({
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-24">
-            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-destructive mb-4">{error}</p>
             <Button variant="outline" onClick={fetchTaskDetails}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
@@ -268,7 +268,7 @@ export function TaskDetailModal({
                           </div>
                           <p className={cn(
                             'font-medium',
-                            isOverdue && 'text-red-600'
+                            isOverdue && 'text-destructive'
                           )}>
                             {deadline ? format(deadline, 'PPP') : 'No deadline'}
                           </p>
@@ -430,8 +430,8 @@ export function TaskDetailModal({
                   <TabsContent value="attachments" className="mt-0">
                     {attachmentError ? (
                       <div className="text-center py-8">
-                        <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50 text-red-400" />
-                        <p className="text-red-500">{attachmentError}</p>
+                        <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50 text-destructive" />
+                        <p className="text-destructive">{attachmentError}</p>
                         <Button variant="outline" size="sm" className="mt-4" onClick={fetchTaskDetails}>
                           <RefreshCw className="h-4 w-4 mr-2" />
                           Retry

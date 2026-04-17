@@ -99,9 +99,9 @@ export function FilterPanel({
       <div className="flex items-end gap-3">
         {/* Search */}
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Search</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Search</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Name or email..."
               value={localSearch}
@@ -124,7 +124,7 @@ export function FilterPanel({
 
         {/* Contact Type Filter */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Contact Type</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Contact Type</label>
           <Popover open={openPopover === 'type'} onOpenChange={(open) => setOpenPopover(open ? 'type' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
@@ -141,13 +141,13 @@ export function FilterPanel({
                       {filters.source === 'user' ? 'User Contact' : 'Activity Contact'}
                     </Badge>
                   ) : (
-                    <span className="text-slate-500">Select...</span>
+                    <span className="text-muted-foreground">Select...</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
                   {filters.source && (
                     <X
-                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      className="h-3 w-3 text-muted-foreground hover:text-muted-foreground"
                       onClick={(e) => { e.stopPropagation(); onFiltersChange({ source: undefined }); }}
                     />
                   )}
@@ -184,23 +184,23 @@ export function FilterPanel({
 
         {/* Role Filter */}
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Role</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Role</label>
           <Popover open={openPopover === 'role'} onOpenChange={(open) => setOpenPopover(open ? 'role' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
                 <span className="flex items-center gap-2">
                   {filters.role ? (
-                    <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700">
+                    <Badge variant="secondary" className="text-xs bg-muted text-foreground">
                       {filters.role}
                     </Badge>
                   ) : (
-                    <span className="text-slate-500">Select...</span>
+                    <span className="text-muted-foreground">Select...</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
                   {filters.role && (
                     <X
-                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      className="h-3 w-3 text-muted-foreground hover:text-muted-foreground"
                       onClick={(e) => { e.stopPropagation(); onFiltersChange({ role: undefined }); }}
                     />
                   )}
@@ -230,7 +230,7 @@ export function FilterPanel({
 
         {/* Organization Filter */}
         <div className="flex-1 min-w-[180px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Organization</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Organization</label>
           <Popover open={openPopover === 'org'} onOpenChange={(open) => {
             setOpenPopover(open ? 'org' : null);
             if (open) {
@@ -255,7 +255,7 @@ export function FilterPanel({
                 <span className="flex items-center gap-1">
                   {filters.organization && (
                     <X
-                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      className="h-3 w-3 text-muted-foreground hover:text-muted-foreground"
                       onClick={(e) => { e.stopPropagation(); onFiltersChange({ organization: undefined }); }}
                     />
                   )}
@@ -275,9 +275,9 @@ export function FilterPanel({
               </div>
               <div className="max-h-64 overflow-y-auto space-y-1">
                 {orgSearchLoading ? (
-                  <div className="text-sm text-slate-500 p-2">Searching...</div>
+                  <div className="text-sm text-muted-foreground p-2">Searching...</div>
                 ) : organizations.length === 0 ? (
-                  <div className="text-sm text-slate-500 p-2">No organisations found</div>
+                  <div className="text-sm text-muted-foreground p-2">No organisations found</div>
                 ) : organizations.map((org) => (
                   <Button
                     key={org.id}
@@ -290,8 +290,8 @@ export function FilterPanel({
                       {org.logo ? (
                         <img src={org.logo} alt="" className="h-6 w-6 rounded object-cover flex-shrink-0" />
                       ) : (
-                        <div className="h-6 w-6 rounded bg-slate-200 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-3 w-3 text-slate-500" />
+                        <div className="h-6 w-6 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-3 w-3 text-muted-foreground" />
                         </div>
                       )}
                       <span className="flex-1 text-left whitespace-normal">
@@ -307,7 +307,7 @@ export function FilterPanel({
 
         {/* Organisation Type Filter */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Organisation Type</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Organisation Type</label>
           <Popover open={openPopover === 'orgType'} onOpenChange={(open) => setOpenPopover(open ? 'orgType' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
@@ -319,13 +319,13 @@ export function FilterPanel({
                       <span>{ORG_TYPE_LABELS[filters.orgType]?.label}</span>
                     </span>
                   ) : (
-                    <span className="text-slate-500">Select...</span>
+                    <span className="text-muted-foreground">Select...</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
                   {filters.orgType && (
                     <X
-                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      className="h-3 w-3 text-muted-foreground hover:text-muted-foreground"
                       onClick={(e) => { e.stopPropagation(); onFiltersChange({ orgType: undefined }); }}
                     />
                   )}
@@ -354,7 +354,7 @@ export function FilterPanel({
 
         {/* Activity Filter */}
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Activity</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Activity</label>
           <Popover open={openPopover === 'activity'} onOpenChange={(open) => setOpenPopover(open ? 'activity' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
@@ -369,7 +369,7 @@ export function FilterPanel({
                 <span className="flex items-center gap-1">
                   {filters.activity && (
                     <X
-                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      className="h-3 w-3 text-muted-foreground hover:text-muted-foreground"
                       onClick={(e) => { e.stopPropagation(); onFiltersChange({ activity: undefined }); }}
                     />
                   )}
@@ -398,7 +398,7 @@ export function FilterPanel({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-slate-500">
+      <div className="text-sm text-muted-foreground">
         {loading ? (
           <LoadingText>Loading...</LoadingText>
         ) : (

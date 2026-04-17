@@ -97,28 +97,28 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
-            <CheckCircle className="h-5 w-5 mx-auto text-gray-500 mb-1" />
+            <CheckCircle className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-2xl font-bold text-foreground">{summary.matchedCount}</p>
             <p className="text-xs text-muted-foreground">Matched</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
-            <AlertTriangle className="h-5 w-5 mx-auto text-gray-400 mb-1" />
+            <AlertTriangle className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-2xl font-bold text-foreground">{summary.mismatchCount}</p>
             <p className="text-xs text-muted-foreground">Amount Mismatches</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
-            <XCircle className="h-5 w-5 mx-auto text-gray-400 mb-1" />
+            <XCircle className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-2xl font-bold text-foreground">{summary.unmatchedFundCount + summary.unmatchedChildCount}</p>
             <p className="text-xs text-muted-foreground">Unmatched</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
-            <HelpCircle className="h-5 w-5 mx-auto text-gray-500 mb-1" />
+            <HelpCircle className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-2xl font-bold text-foreground">{summary.percentReconciled}%</p>
             <p className="text-xs text-muted-foreground">Reconciled</p>
           </CardContent>
@@ -165,9 +165,9 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                     </TableCell>
                     <TableCell className="text-center">
                       {!hasIssues ? (
-                        <Badge className="bg-gray-100 text-gray-700 text-xs">Reconciled</Badge>
+                        <Badge className="bg-muted text-foreground text-xs">Reconciled</Badge>
                       ) : (
-                        <Badge className="bg-gray-200 text-gray-700 text-xs">
+                        <Badge className="bg-muted text-foreground text-xs">
                           {child.matches.length} matched, {child.unmatchedFund.length + child.unmatchedChild.length + child.mismatches.length} issues
                         </Badge>
                       )}
@@ -182,7 +182,7 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                           {/* Matches */}
                           {child.matches.length > 0 && (
                             <div>
-                              <p className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                              <p className="text-xs font-semibold text-foreground mb-1 flex items-center gap-1">
                                 <CheckCircle className="h-3 w-3" /> Matched Transactions ({child.matches.length})
                               </p>
                               {child.matches.map((m, i) => (
@@ -196,7 +196,7 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                           {/* Mismatches */}
                           {child.mismatches.length > 0 && (
                             <div>
-                              <p className="text-xs font-semibold text-gray-600 mb-1 flex items-center gap-1">
+                              <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                                 <AlertTriangle className="h-3 w-3" /> Amount Mismatches ({child.mismatches.length})
                               </p>
                               {child.mismatches.map((m, i) => (
@@ -211,7 +211,7 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                           {/* Unmatched fund-side */}
                           {child.unmatchedFund.length > 0 && (
                             <div>
-                              <p className="text-xs font-semibold text-gray-600 mb-1 flex items-center gap-1">
+                              <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                                 <XCircle className="h-3 w-3" /> Unmatched Fund-Side ({child.unmatchedFund.length})
                               </p>
                               {child.unmatchedFund.map((t: any, i: number) => (
@@ -225,7 +225,7 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                           {/* Unmatched child-side */}
                           {child.unmatchedChild.length > 0 && (
                             <div>
-                              <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
+                              <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                                 <XCircle className="h-3 w-3" /> Unmatched Child-Side ({child.unmatchedChild.length})
                               </p>
                               {child.unmatchedChild.map((t: any, i: number) => (

@@ -99,7 +99,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
                   opacity: isHidden ? 0.5 : 1
                 }}
               />
-              <span className={`text-sm ${isHidden ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
+              <span className={`text-sm ${isHidden ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>
                 {entry.value}
               </span>
             </div>
@@ -113,12 +113,12 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
     return (
       <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Top 10 Projects by Budget
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-96 flex items-center justify-center text-slate-500">
+          <div className="h-96 flex items-center justify-center text-muted-foreground">
             <p>No project data available</p>
           </div>
         </CardContent>
@@ -129,7 +129,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Top 10 Projects by Budget
         </CardTitle>
       </CardHeader>

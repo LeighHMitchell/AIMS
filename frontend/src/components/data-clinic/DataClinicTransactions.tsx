@@ -361,7 +361,7 @@ export function DataClinicTransactions() {
             variant="ghost"
             onClick={() => setEditingField({ transactionId: transaction.id, field })}
           >
-            <Pencil className="h-3 w-3 text-slate-500" />
+            <Pencil className="h-3 w-3 text-muted-foreground" />
           </Button>
         )}
       </div>

@@ -140,7 +140,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-slate-600" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             My Team
           </CardTitle>
         </CardHeader>
@@ -165,7 +165,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load team: {error}</p>
+          <p className="text-sm text-destructive">Failed to load team: {error}</p>
         </CardContent>
       </Card>
     );
@@ -176,7 +176,7 @@ export function MyTeamTab({ organizationId }: MyTeamTabProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-slate-600" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             My Team
           </CardTitle>
           <div className="flex items-center gap-3">

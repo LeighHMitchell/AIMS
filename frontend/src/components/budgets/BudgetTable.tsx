@@ -182,7 +182,7 @@ export function BudgetTable({
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading budgets: {error}</p>
+        <p className="text-destructive">Error loading budgets: {error}</p>
       </div>
     );
   }
@@ -375,7 +375,7 @@ export function BudgetTable({
                               e.preventDefault();
                               copyToClipboard(budget.activity!.iati_identifier!, `${budgetId}-iati`);
                             }}
-                            className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700 inline-flex align-middle ml-1"
+                            className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex align-middle ml-1"
                             title="Copy IATI Identifier"
                           >
                             {copiedId === `${budgetId}-iati` ? (
@@ -512,7 +512,7 @@ export function BudgetTable({
 
                   {/* Expanded Row Content */}
                   {isExpanded && (
-                    <TableRow className="bg-slate-50/50">
+                    <TableRow className="bg-muted/50">
                       <td colSpan={visibleColumnCount + 1} className="p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* LEFT COLUMN */}
@@ -521,7 +521,7 @@ export function BudgetTable({
                             <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                  <Calendar className="h-5 w-5 text-slate-600" />
+                                  <Calendar className="h-5 w-5 text-muted-foreground" />
                                   <span className="text-lg font-semibold text-foreground">
                                     {getBudgetTypeLabel(budget.type)} Budget
                                   </span>

@@ -475,32 +475,32 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       case 'on_budget':
         return { name: 'On Budget', color: '#7b95a7', badgeClass: 'bg-green-50 text-green-700 border-green-300' };
       case 'off_budget':
-        return { name: 'Off Budget', color: '#dc2625', badgeClass: 'bg-red-50 text-red-700 border-red-300' };
+        return { name: 'Off Budget', color: '#dc2625', badgeClass: 'bg-destructive/10 text-destructive border-red-300' };
       case 'partial':
         return { name: 'Partial', color: '#eab308', badgeClass: 'bg-yellow-50 text-yellow-700 border-yellow-300' };
       case 'unknown':
-        return { name: 'Unknown', color: '#6b7280', badgeClass: 'bg-gray-50 text-gray-700 border-input' };
+        return { name: 'Unknown', color: '#6b7280', badgeClass: 'bg-muted text-foreground border-input' };
       case 'budget_support':
-        return { name: 'Budget Support', color: '#cfd0d5', badgeClass: 'bg-gray-100 text-gray-700 border-input' };
+        return { name: 'Budget Support', color: '#cfd0d5', badgeClass: 'bg-muted text-foreground border-input' };
       default:
-        return { name: status, color: '#6b7280', badgeClass: 'bg-gray-50 text-gray-700 border-input' };
+        return { name: status, color: '#6b7280', badgeClass: 'bg-muted text-foreground border-input' };
     }
   };
 
   // Get badge variant for budget status
   const getBudgetStatusBadge = (status: BudgetStatusType, isBudgetSupport: boolean) => {
     if (isBudgetSupport) {
-      return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-input">Budget Support</Badge>;
+      return <Badge variant="outline" className="bg-muted text-foreground border-input">Budget Support</Badge>;
     }
     switch (status) {
       case "on_budget":
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">On Budget</Badge>;
       case "off_budget":
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Off Budget</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-red-300">Off Budget</Badge>;
       case "partial":
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Partial</Badge>;
       default:
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-input">Unknown</Badge>;
+        return <Badge variant="outline" className="bg-muted text-foreground border-input">Unknown</Badge>;
     }
   };
 
@@ -995,7 +995,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center h-[700px] text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
             <p className="text-sm text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchData} variant="outline">
@@ -1065,7 +1065,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                           ${isAllSelected
                             ? "bg-primary/20 text-primary"
                             : isStartOrEnd
-                              ? "bg-slate-200 text-slate-900"
+                              ? "bg-muted text-foreground"
                               : inRange
                                 ? "bg-primary/20 text-primary"
                                 : "text-muted-foreground hover:bg-muted"

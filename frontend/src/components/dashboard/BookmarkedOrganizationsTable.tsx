@@ -188,7 +188,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load bookmarked organizations: {error}</p>
+          <p className="text-sm text-destructive">Failed to load bookmarked organizations: {error}</p>
         </CardContent>
       </Card>
     );
@@ -200,7 +200,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-slate-600" />
+              <Building2 className="h-5 w-5 text-muted-foreground" />
               Bookmarked Organizations
             </CardTitle>
             <CardDescription>
@@ -208,15 +208,15 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
             </CardDescription>
           </div>
           {organizations.length > 0 && (
-            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
                   'h-8 w-8 p-0',
                   viewMode === 'card'
-                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
                 onClick={() => setViewMode('card')}
                 title="Card view"
@@ -229,8 +229,8 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                 className={cn(
                   'h-8 w-8 p-0',
                   viewMode === 'table'
-                    ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
                 onClick={() => setViewMode('table')}
                 title="Table view"
@@ -245,8 +245,8 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
         {organizations.length === 0 ? (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500 mb-2">No bookmarked organizations</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-muted-foreground mb-2">No bookmarked organizations</p>
+            <p className="text-xs text-muted-foreground">
               Bookmark organizations from the organization profile or organization cards to see them here.
             </p>
           </div>
@@ -329,8 +329,8 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                           }}
                         />
                       ) : (
-                        <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-4 w-4 text-slate-400" />
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                       <div>
@@ -367,12 +367,12 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 hover:bg-red-50"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10"
                       onClick={(e) => handleRemoveBookmark(e, organization.id)}
                       disabled={removingId === organization.id}
                       title="Remove bookmark"
                     >
-                      <BookmarkX className="h-4 w-4 text-slate-500 hover:text-red-500" />
+                      <BookmarkX className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                     </Button>
                   </TableCell>
                 </TableRow>

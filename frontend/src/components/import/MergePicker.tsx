@@ -139,7 +139,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
   };
 
   const getStatusColor = (status: string | undefined) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
+    if (!status) return 'bg-muted text-foreground';
     
     switch (status.toLowerCase()) {
       case 'active':
@@ -154,7 +154,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -162,7 +162,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
     <div className="space-y-4 h-full flex flex-col">
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder={iatiImportStrings['merge.searchPlaceholder']}
           value={searchQuery}
@@ -176,7 +176,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
           {error && (
-            <div className="flex items-center gap-2 p-4 text-sm text-red-600 bg-red-50 rounded-lg">
+            <div className="flex items-center gap-2 p-4 text-sm text-destructive bg-destructive/10 rounded-lg">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>
@@ -195,14 +195,14 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
           )}
 
           {!loading && !error && activities.length === 0 && searchQuery && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <FileText className="mx-auto h-8 w-8 mb-2 opacity-50" />
               <p>{iatiImportStrings['merge.noResults']}</p>
             </div>
           )}
 
           {!loading && !error && activities.length === 0 && !searchQuery && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <Search className="mx-auto h-8 w-8 mb-2 opacity-50" />
               <p>Start typing to search for activities...</p>
             </div>
@@ -216,7 +216,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedId === activity.id
                       ? 'border-blue-500 bg-blue-50'
-                      : 'border-border hover:border-input hover:bg-gray-50'
+                      : 'border-border hover:border-input hover:bg-muted'
                   }`}
                   onClick={() => handleActivitySelect(activity)}
                   role="button"
@@ -241,12 +241,12 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                       </div>
 
                       {activity.iatiId && (
-                        <div className="text-xs text-gray-600 font-mono bg-muted px-2 py-1 rounded inline-block">
+                        <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded inline-block">
                           {activity.iatiId}
                         </div>
                       )}
 
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <Badge 
                           variant="secondary" 
                           className={`text-xs ${getStatusColor(activity.status)}`}

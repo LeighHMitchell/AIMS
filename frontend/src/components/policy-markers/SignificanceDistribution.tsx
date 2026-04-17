@@ -70,9 +70,9 @@ export function SignificanceDistribution({ distribution, themeColor, compact = f
                     const d = payload[0]?.payload
                     return (
                       <div className={TOOLTIP_CLASSES}>
-                        <p className="font-medium text-xs text-slate-900">{d?.label}</p>
-                        <p className="text-xs text-slate-600">{d?.count} activities</p>
-                        <p className="text-xs text-slate-600">{formatCurrencyShort(d?.totalValue)}</p>
+                        <p className="font-medium text-xs text-foreground">{d?.label}</p>
+                        <p className="text-xs text-muted-foreground">{d?.count} activities</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrencyShort(d?.totalValue)}</p>
                       </div>
                     )
                   }
@@ -88,7 +88,7 @@ export function SignificanceDistribution({ distribution, themeColor, compact = f
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No significance data</div>
+        <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No significance data</div>
       )}
 
       {/* Expandable details list */}
@@ -96,7 +96,7 @@ export function SignificanceDistribution({ distribution, themeColor, compact = f
         <div className="mt-4">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 mb-2"
+            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground mb-2"
           >
             {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
             Significance Breakdown
@@ -117,12 +117,12 @@ export function SignificanceDistribution({ distribution, themeColor, compact = f
                       {d.significance}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900">{d.label}</p>
-                      <p className="text-xs text-slate-500">{d.count} activities ({pctCount}%)</p>
+                      <p className="text-sm font-medium text-foreground">{d.label}</p>
+                      <p className="text-xs text-muted-foreground">{d.count} activities ({pctCount}%)</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-900">{formatCurrencyShort(d.totalValue)}</p>
-                      <p className="text-xs text-slate-500">{pctValue}% of total</p>
+                      <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(d.totalValue)}</p>
+                      <p className="text-xs text-muted-foreground">{pctValue}% of total</p>
                     </div>
                   </div>
                 )

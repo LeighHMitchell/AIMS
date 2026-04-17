@@ -307,7 +307,7 @@ export function MissingImagesCard({
           className={`${sizeClass} rounded border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${
             isDraggedOver
               ? 'border-blue-500 bg-blue-50'
-              : 'border-input bg-slate-50 hover:border-slate-400 hover:bg-slate-100'
+              : 'border-input bg-muted hover:border-slate-400 hover:bg-muted'
           }`}
           onClick={(e) => handleUploadClick(e, activity.id, type)}
           onDrop={(e) => handleDrop(e, activity.id, type)}
@@ -316,11 +316,11 @@ export function MissingImagesCard({
           title={`Click or drag to upload ${type === 'icon' ? 'logo' : 'banner'}`}
         >
           {isUploading ? (
-            <Loader2 className="h-4 w-4 text-slate-400 animate-spin" />
+            <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
           ) : isDraggedOver ? (
             <Upload className="h-4 w-4 text-blue-500" />
           ) : (
-            <Image className="h-4 w-4 text-slate-400" />
+            <Image className="h-4 w-4 text-muted-foreground" />
           )}
         </div>
       </div>
@@ -354,12 +354,12 @@ export function MissingImagesCard({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageOff className="h-5 w-5 text-red-500" />
+            <ImageOff className="h-5 w-5 text-destructive" />
             Activities Missing Images
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load activities: {error}</p>
+          <p className="text-sm text-destructive">Failed to load activities: {error}</p>
         </CardContent>
       </Card>
     );
@@ -381,8 +381,8 @@ export function MissingImagesCard({
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-[hsl(var(--success-icon))] mb-3" />
-            <p className="text-lg font-medium text-slate-700">All activities have images!</p>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-lg font-medium text-foreground">All activities have images!</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Great job! All your activities have banners and logos.
             </p>
           </div>
@@ -408,7 +408,7 @@ export function MissingImagesCard({
             <CardTitle className="flex items-center gap-2">
               <ImageOff className="h-5 w-5 text-[#7b95a7]" />
               Activities Missing Images
-              <span className="text-sm font-normal text-slate-500 ml-2">
+              <span className="text-sm font-normal text-muted-foreground ml-2">
                 ({total} {total === 1 ? 'activity' : 'activities'})
               </span>
             </CardTitle>
@@ -448,14 +448,14 @@ export function MissingImagesCard({
             {activities.map((activity) => (
               <TableRow
                 key={activity.id}
-                className="hover:bg-slate-50"
+                className="hover:bg-muted"
               >
                 <TableCell
                   className="cursor-pointer"
                   onClick={() => handleActivityClick(activity.id)}
                 >
                   <div>
-                    <p className="font-medium text-slate-900 line-clamp-1">
+                    <p className="font-medium text-foreground line-clamp-1">
                       {activity.title}
                     </p>
                     {activity.iatiIdentifier && (
@@ -475,7 +475,7 @@ export function MissingImagesCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-slate-600 hover:text-slate-900"
+                    className="text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleActivityClick(activity.id);

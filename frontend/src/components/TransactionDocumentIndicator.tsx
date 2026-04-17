@@ -62,7 +62,7 @@ export function TransactionDocumentIndicator({
 
   const getFileIcon = (fileType: string) => {
     if (fileType === 'external') return <ExternalLink className="h-3 w-3" />;
-    if (fileType.includes('pdf')) return <FileText className="h-3 w-3 text-red-500" />;
+    if (fileType.includes('pdf')) return <FileText className="h-3 w-3 text-destructive" />;
     if (fileType.includes('image')) return <Eye className="h-3 w-3 text-blue-500" />;
     if (fileType.includes('spreadsheet') || fileType.includes('excel')) return <FileText className="h-3 w-3 text-[hsl(var(--success-icon))]" />;
     return <FileText className="h-3 w-3" />;
@@ -148,7 +148,7 @@ function DocumentsList({
 
   const getFileIcon = (fileType: string) => {
     if (fileType === 'external') return <ExternalLink className="h-4 w-4" />;
-    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
+    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-destructive" />;
     if (fileType.includes('image')) return <Eye className="h-4 w-4 text-blue-500" />;
     if (fileType.includes('spreadsheet') || fileType.includes('excel')) return <FileText className="h-4 w-4 text-[hsl(var(--success-icon))]" />;
     return <FileText className="h-4 w-4" />;

@@ -55,7 +55,7 @@ function ReviewSection({ title, icon: Icon, onEdit, children }: ReviewSectionPro
           onClick={onEdit}
           className="h-7 px-2 text-xs"
         >
-          <Pencil className="h-3 w-3 mr-1 text-slate-500" />
+          <Pencil className="h-3 w-3 mr-1 text-muted-foreground" />
           Edit
         </Button>
       </div>

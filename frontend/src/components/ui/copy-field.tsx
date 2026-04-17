@@ -80,18 +80,18 @@ export function CopyField({
     return (
       <div className={cn("flex items-center gap-3", className)}>
         {!hideLabel && (
-          <label className={cn("text-sm font-medium text-gray-700 min-w-0 flex-shrink-0", labelClassName)}>
+          <label className={cn("text-sm font-medium text-foreground min-w-0 flex-shrink-0", labelClassName)}>
             {label}:
           </label>
         )}
         <div className={cn(
-          "flex items-center justify-between bg-gray-50 border border-border rounded-md px-3 py-2 text-sm flex-1 min-w-0",
+          "flex items-center justify-between bg-muted border border-border rounded-md px-3 py-2 text-sm flex-1 min-w-0",
           "focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500",
           fieldClassName
         )}>
           <span className={cn(
             "truncate flex-1 min-w-0",
-            isPlaceholder ? "text-gray-400 italic" : "text-gray-900 font-mono"
+            isPlaceholder ? "text-muted-foreground italic" : "text-foreground font-mono"
           )}>
             {displayValue}
           </span>
@@ -103,9 +103,9 @@ export function CopyField({
               tabIndex={0}
               aria-label={`Copy ${label} to clipboard`}
               className={cn(
-                "ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0",
+                "ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0",
                 copied && "text-[hsl(var(--success-icon))]",
-                copyError && "text-red-600"
+                copyError && "text-destructive"
               )}
             >
               {copied ? (
@@ -124,18 +124,18 @@ export function CopyField({
   return (
     <div className={cn("space-y-2", className)}>
       {!hideLabel && (
-        <label className={cn("text-sm font-medium text-gray-700", labelClassName)}>
+        <label className={cn("text-sm font-medium text-foreground", labelClassName)}>
           {label}
         </label>
       )}
       <div className={cn(
-        "flex items-center justify-between bg-gray-50 border border-border rounded-md px-3 py-2 text-sm",
+        "flex items-center justify-between bg-muted border border-border rounded-md px-3 py-2 text-sm",
         "focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500",
         fieldClassName
       )}>
         <span className={cn(
           "truncate flex-1 min-w-0",
-          isPlaceholder ? "text-gray-400 italic" : "text-gray-900 font-mono"
+          isPlaceholder ? "text-muted-foreground italic" : "text-foreground font-mono"
         )}>
           {displayValue}
         </span>
@@ -147,9 +147,9 @@ export function CopyField({
             tabIndex={0}
             aria-label={`Copy ${label} to clipboard`}
             className={cn(
-              "ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0",
+              "ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0",
               copied && "text-[hsl(var(--success-icon))]",
-              copyError && "text-red-600"
+              copyError && "text-destructive"
             )}
           >
             {copied ? (
@@ -181,7 +181,7 @@ export function CopyFieldGroup({
   return (
     <div className={cn("space-y-4", className)}>
       {title && (
-        <h3 className="text-sm font-semibold text-gray-900 border-b border-border pb-2">
+        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">
           {title}
         </h3>
       )}

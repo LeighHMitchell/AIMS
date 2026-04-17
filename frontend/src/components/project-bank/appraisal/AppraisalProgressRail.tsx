@@ -42,18 +42,18 @@ interface GateIndicatorProps {
 
 function GateIndicator({ status }: GateIndicatorProps) {
   const configs: Record<GateStatus, { icon: typeof Clock; label: string; textClass: string; bgClass: string }> = {
-    locked: { icon: Lock, label: 'Requires review board approval', textClass: 'text-gray-400', bgClass: 'bg-gray-100' },
-    awaiting_review: { icon: Clock, label: 'Awaiting Review', textClass: 'text-gray-700', bgClass: 'bg-gray-200' },
+    locked: { icon: Lock, label: 'Requires review board approval', textClass: 'text-muted-foreground', bgClass: 'bg-muted' },
+    awaiting_review: { icon: Clock, label: 'Awaiting Review', textClass: 'text-foreground', bgClass: 'bg-muted' },
     approved: { icon: ShieldCheck, label: 'Approved', textClass: 'text-[hsl(var(--success-icon))]', bgClass: 'bg-green-50' },
     returned: { icon: RotateCcw, label: 'Returned', textClass: 'text-amber-600', bgClass: 'bg-amber-50' },
-    rejected: { icon: XCircle, label: 'Rejected', textClass: 'text-red-600', bgClass: 'bg-red-50' },
+    rejected: { icon: XCircle, label: 'Rejected', textClass: 'text-destructive', bgClass: 'bg-destructive/10' },
   };
   const config = configs[status];
   const Icon = config.icon;
 
   return (
     <div className="ml-[14px] my-4 flex items-center gap-2">
-      <div className="w-0.5 h-5 bg-gray-200" />
+      <div className="w-0.5 h-5 bg-muted" />
       <div className={cn('flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-full', config.bgClass, config.textClass)}>
         <Icon className="h-3 w-3" />
         <span>{config.label}</span>
@@ -160,8 +160,8 @@ export function AppraisalProgressRail({
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     intakeComplete && 'bg-gray-800 border-gray-800 text-white',
-                    intakeActive && !intakeComplete && 'border-gray-600 bg-gray-100 text-gray-800',
-                    !intakeComplete && !intakeActive && 'border-input bg-background text-gray-400',
+                    intakeActive && !intakeComplete && 'border-gray-600 bg-muted text-foreground',
+                    !intakeComplete && !intakeActive && 'border-input bg-background text-muted-foreground',
                     (intakeActive || intakeComplete) && 'cursor-pointer hover:scale-110',
                   )}
                 >
@@ -176,8 +176,8 @@ export function AppraisalProgressRail({
                 <span className={cn(
                   'block text-sm leading-snug',
                   intakeActive && 'font-semibold text-foreground',
-                  intakeComplete && !intakeActive && 'text-gray-600',
-                  !intakeComplete && !intakeActive && 'text-gray-400',
+                  intakeComplete && !intakeActive && 'text-muted-foreground',
+                  !intakeComplete && !intakeActive && 'text-muted-foreground',
                 )}>
                   {PHASE_LABELS.intake}
                 </span>
@@ -220,8 +220,8 @@ export function AppraisalProgressRail({
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     fs1Complete && 'bg-gray-800 border-gray-800 text-white',
-                    fs1Active && !fs1Complete && 'border-gray-600 bg-gray-100 text-gray-800',
-                    !fs1Complete && !fs1Active && 'border-input bg-background text-gray-400',
+                    fs1Active && !fs1Complete && 'border-gray-600 bg-muted text-foreground',
+                    !fs1Complete && !fs1Active && 'border-input bg-background text-muted-foreground',
                     !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
                     (fs1Active || fs1Complete) && 'cursor-pointer hover:scale-110',
                   )}
@@ -247,8 +247,8 @@ export function AppraisalProgressRail({
                 <span className={cn(
                   'block text-sm leading-snug',
                   fs1Active && 'font-semibold text-foreground',
-                  fs1Complete && !fs1Active && 'text-gray-600',
-                  !fs1Complete && !fs1Active && 'text-gray-400',
+                  fs1Complete && !fs1Active && 'text-muted-foreground',
+                  !fs1Complete && !fs1Active && 'text-muted-foreground',
                 )}>
                   {PHASE_LABELS.fs1}
                 </span>
@@ -301,8 +301,8 @@ export function AppraisalProgressRail({
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     fs2Complete && 'bg-gray-800 border-gray-800 text-white',
-                    fs2Active && !fs2Complete && 'border-gray-600 bg-gray-100 text-gray-800',
-                    !fs2Complete && !fs2Active && 'border-input bg-background text-gray-400',
+                    fs2Active && !fs2Complete && 'border-gray-600 bg-muted text-foreground',
+                    !fs2Complete && !fs2Active && 'border-input bg-background text-muted-foreground',
                     (fs2Active || fs2Complete) && 'cursor-pointer hover:scale-110',
                   )}
                 >
@@ -326,8 +326,8 @@ export function AppraisalProgressRail({
                 <span className={cn(
                   'block text-sm leading-snug',
                   fs2Active && 'font-semibold text-foreground',
-                  fs2Complete && !fs2Active && 'text-gray-600',
-                  !fs2Complete && !fs2Active && 'text-gray-400',
+                  fs2Complete && !fs2Active && 'text-muted-foreground',
+                  !fs2Complete && !fs2Active && 'text-muted-foreground',
                 )}>
                   {PHASE_LABELS.fs2}
                 </span>
@@ -373,8 +373,8 @@ export function AppraisalProgressRail({
                   disabled={!fs3Active}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
-                    fs3Active && 'border-gray-600 bg-gray-100 text-gray-800 cursor-pointer hover:scale-110',
-                    !fs3Active && 'border-input bg-background text-gray-400',
+                    fs3Active && 'border-gray-600 bg-muted text-foreground cursor-pointer hover:scale-110',
+                    !fs3Active && 'border-input bg-background text-muted-foreground',
                   )}
                 >
                   {!fs3Accessible && !fs3Active ? <Lock className="h-3 w-3 text-gray-300" /> :
@@ -393,7 +393,7 @@ export function AppraisalProgressRail({
                 <span className={cn(
                   'block text-sm leading-snug',
                   fs3Active && 'font-semibold text-foreground',
-                  !fs3Active && 'text-gray-400',
+                  !fs3Active && 'text-muted-foreground',
                 )}>
                   {getFs3Label(categoryDecision)}
                 </span>
@@ -421,29 +421,29 @@ export function AppraisalProgressRail({
         <div className="flex gap-1 overflow-x-auto pb-1">
           {/* Intake bar */}
           <div className="flex-1 min-w-0 text-center">
-            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', intakeComplete ? 'bg-gray-700' : intakeActive ? 'bg-gray-500' : 'bg-gray-200')} />
-            <span className={cn('text-[10px] leading-tight block truncate', intakeActive ? 'font-semibold text-foreground' : intakeComplete ? 'text-gray-600' : 'text-gray-400')}>
+            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', intakeComplete ? 'bg-gray-700' : intakeActive ? 'bg-muted0' : 'bg-muted')} />
+            <span className={cn('text-[10px] leading-tight block truncate', intakeActive ? 'font-semibold text-foreground' : intakeComplete ? 'text-muted-foreground' : 'text-muted-foreground')}>
               Intake
             </span>
           </div>
           {/* FS-1 bar */}
           <div className="flex-1 min-w-0 text-center">
-            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs1Complete ? 'bg-gray-700' : fs1Active ? 'bg-gray-500' : 'bg-gray-200')} />
-            <span className={cn('text-[10px] leading-tight block truncate', fs1Active ? 'font-semibold text-foreground' : fs1Complete ? 'text-gray-600' : 'text-gray-400')}>
+            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs1Complete ? 'bg-gray-700' : fs1Active ? 'bg-muted0' : 'bg-muted')} />
+            <span className={cn('text-[10px] leading-tight block truncate', fs1Active ? 'font-semibold text-foreground' : fs1Complete ? 'text-muted-foreground' : 'text-muted-foreground')}>
               FS-1
             </span>
           </div>
           {/* FS-2 bar */}
           <div className={cn('flex-1 min-w-0 text-center', !fs2Active && !fs2Complete && 'opacity-40')}>
-            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs2Complete ? 'bg-gray-700' : fs2Active ? 'bg-gray-500' : 'bg-gray-200')} />
-            <span className={cn('text-[10px] leading-tight block truncate', fs2Active ? 'font-semibold text-foreground' : fs2Complete ? 'text-gray-600' : 'text-gray-400')}>
+            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs2Complete ? 'bg-gray-700' : fs2Active ? 'bg-muted0' : 'bg-muted')} />
+            <span className={cn('text-[10px] leading-tight block truncate', fs2Active ? 'font-semibold text-foreground' : fs2Complete ? 'text-muted-foreground' : 'text-muted-foreground')}>
               FS-2
             </span>
           </div>
           {/* FS-3 bar */}
           <div className={cn('flex-1 min-w-0 text-center', !fs3Active && 'opacity-40')}>
-            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs3Active ? 'bg-gray-500' : 'bg-gray-200')} />
-            <span className={cn('text-[10px] leading-tight block truncate', fs3Active ? 'font-semibold text-foreground' : 'text-gray-400')}>
+            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs3Active ? 'bg-muted0' : 'bg-muted')} />
+            <span className={cn('text-[10px] leading-tight block truncate', fs3Active ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
               FS-3
             </span>
           </div>

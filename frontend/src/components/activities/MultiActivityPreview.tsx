@@ -165,7 +165,7 @@ export function MultiActivityPreview({
   return (
     <div className="space-y-4">
       {/* Statistics Bar */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
         <div className="flex gap-6">
           <div className="text-sm">
             <span className="font-medium">Total:</span> {stats.total}
@@ -185,7 +185,7 @@ export function MultiActivityPreview({
       {/* Search and Filter Controls */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search activities..."
@@ -235,26 +235,26 @@ export function MultiActivityPreview({
       </div>
 
       {/* Import Mode Selection */}
-      <div className="p-4 bg-gray-50 rounded-lg">
+      <div className="p-4 bg-muted rounded-lg">
         <Label className="text-sm font-medium mb-2 block">Import Mode</Label>
         <RadioGroup value={importMode} onValueChange={handleImportModeChange as any}>
           <div className="flex items-center space-x-2 mb-2">
             <RadioGroupItem value="update_current" id="update_current" disabled={selectedIndices.size !== 1} />
-            <Label htmlFor="update_current" className={selectedIndices.size !== 1 ? 'text-gray-400' : ''}>
+            <Label htmlFor="update_current" className={selectedIndices.size !== 1 ? 'text-muted-foreground' : ''}>
               <RefreshCw className="inline h-3 w-3 mr-1" />
               Update Current Activity (select exactly 1)
             </Label>
           </div>
           <div className="flex items-center space-x-2 mb-2">
             <RadioGroupItem value="create_new" id="create_new" disabled={selectedIndices.size !== 1} />
-            <Label htmlFor="create_new" className={selectedIndices.size !== 1 ? 'text-gray-400' : ''}>
+            <Label htmlFor="create_new" className={selectedIndices.size !== 1 ? 'text-muted-foreground' : ''}>
               <Plus className="inline h-3 w-3 mr-1" />
               Create New Activity (select exactly 1)
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="bulk_create" id="bulk_create" disabled={selectedIndices.size < 1} />
-            <Label htmlFor="bulk_create" className={selectedIndices.size < 1 ? 'text-gray-400' : ''}>
+            <Label htmlFor="bulk_create" className={selectedIndices.size < 1 ? 'text-muted-foreground' : ''}>
               <Plus className="inline h-3 w-3 mr-1" />
               Bulk Create Activities (selected: {selectedIndices.size})
             </Label>
@@ -266,7 +266,7 @@ export function MultiActivityPreview({
       <ScrollArea className="h-[400px] border rounded-lg">
         <div className="p-4 space-y-3">
           {filteredActivities.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center text-muted-foreground py-8">
               No activities match your filters
             </div>
           ) : (
@@ -298,7 +298,7 @@ export function MultiActivityPreview({
                             <h3 className="font-medium text-sm truncate">
                               {activity.title}
                             </h3>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {activity.iatiIdentifier}
                             </p>
                           </div>
@@ -318,7 +318,7 @@ export function MultiActivityPreview({
                         </div>
 
                         {/* Metadata Grid */}
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-2">
                           <div className="flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
                             <span className="truncate">{activity.reportingOrg.name}</span>
@@ -340,7 +340,7 @@ export function MultiActivityPreview({
                         </div>
 
                         {activity.status && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             Status: {getStatusText(activity.status)}
                           </div>
                         )}
@@ -364,7 +364,7 @@ export function MultiActivityPreview({
                               </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-2">
-                              <div className="text-xs text-gray-600 p-2 bg-gray-50 rounded">
+                              <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
                                 <p className="font-medium mb-1">Description:</p>
                                 <p className="whitespace-pre-wrap">{activity.description}</p>
                                 {isExisting && existingInfo && (

@@ -124,7 +124,7 @@ export default function ImprovedSectorsDemoPage() {
                 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-red-600">5</span>
+                    <span className="text-sm font-bold text-destructive">5</span>
                   </div>
                   <div>
                     <p className="font-medium text-sm">Real-time Validation</p>

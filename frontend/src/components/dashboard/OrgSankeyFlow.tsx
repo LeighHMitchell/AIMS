@@ -54,17 +54,17 @@ function FlowBar({
         >
           <div
             className={`h-full rounded ${
-              isOutgoing ? 'bg-red-500' : 'bg-green-500'
+              isOutgoing ? 'bg-destructive/100' : 'bg-green-500'
             }`}
             style={{ width: '100%' }}
           />
         </div>
-        <ArrowRight className={`h-3 w-3 ${isOutgoing ? 'text-red-500' : 'text-green-500'}`} />
+        <ArrowRight className={`h-3 w-3 ${isOutgoing ? 'text-destructive' : 'text-green-500'}`} />
       </div>
       <div className="w-[120px] text-xs truncate" title={target}>
         {target}
       </div>
-      <div className={`w-[80px] text-xs text-right font-medium ${isOutgoing ? 'text-red-600' : 'text-green-600'}`}>
+      <div className={`w-[80px] text-xs text-right font-medium ${isOutgoing ? 'text-destructive' : 'text-green-600'}`}>
         {formatCurrency(value)}
       </div>
     </div>
@@ -167,7 +167,7 @@ export function OrgSankeyFlow({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load flows: {error}</p>
+          <p className="text-sm text-destructive">Failed to load flows: {error}</p>
         </CardContent>
       </Card>
     );
@@ -181,7 +181,7 @@ export function OrgSankeyFlow({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <GitBranch className="h-5 w-5 text-slate-600" />
+              <GitBranch className="h-5 w-5 text-muted-foreground" />
               My Organisation's Aid Flows
             </CardTitle>
             <CardDescription>
@@ -213,11 +213,11 @@ export function OrgSankeyFlow({
       </CardHeader>
       <CardContent>
         {!hasFlows ? (
-          <div className="h-[250px] flex items-center justify-center bg-slate-50 rounded-lg">
+          <div className="h-[250px] flex items-center justify-center bg-muted rounded-lg">
             <div className="text-center">
               <GitBranch className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-500">No transaction flows found</p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-sm text-muted-foreground">No transaction flows found</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Transactions will appear here once recorded
               </p>
             </div>
@@ -230,17 +230,17 @@ export function OrgSankeyFlow({
                 <p className="text-xs text-green-600 font-medium">Total Incoming</p>
                 <p className="text-xl font-bold text-green-700">{formatCurrency(data?.totalIncoming || 0)}</p>
               </div>
-              <div className="bg-red-50 rounded-lg p-3">
-                <p className="text-xs text-red-600 font-medium">Total Outgoing</p>
-                <p className="text-xl font-bold text-red-700">{formatCurrency(data?.totalOutgoing || 0)}</p>
+              <div className="bg-destructive/10 rounded-lg p-3">
+                <p className="text-xs text-destructive font-medium">Total Outgoing</p>
+                <p className="text-xl font-bold text-destructive">{formatCurrency(data?.totalOutgoing || 0)}</p>
               </div>
             </div>
 
             {/* Incoming flows */}
             {incomingLinks.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-slate-700 mb-2">Incoming Flows</h4>
-                <div className="bg-slate-50 rounded-lg p-3 space-y-1">
+                <h4 className="text-sm font-medium text-foreground mb-2">Incoming Flows</h4>
+                <div className="bg-muted rounded-lg p-3 space-y-1">
                   {incomingLinks.slice(0, 5).map((link, index) => (
                     <FlowBar
                       key={`in-${index}`}
@@ -252,7 +252,7 @@ export function OrgSankeyFlow({
                     />
                   ))}
                   {incomingLinks.length > 5 && (
-                    <p className="text-xs text-slate-500 text-center pt-2">
+                    <p className="text-xs text-muted-foreground text-center pt-2">
                       +{incomingLinks.length - 5} more flows
                     </p>
                   )}
@@ -263,8 +263,8 @@ export function OrgSankeyFlow({
             {/* Outgoing flows */}
             {outgoingLinks.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-slate-700 mb-2">Outgoing Flows</h4>
-                <div className="bg-slate-50 rounded-lg p-3 space-y-1">
+                <h4 className="text-sm font-medium text-foreground mb-2">Outgoing Flows</h4>
+                <div className="bg-muted rounded-lg p-3 space-y-1">
                   {outgoingLinks.slice(0, 5).map((link, index) => (
                     <FlowBar
                       key={`out-${index}`}
@@ -276,7 +276,7 @@ export function OrgSankeyFlow({
                     />
                   ))}
                   {outgoingLinks.length > 5 && (
-                    <p className="text-xs text-slate-500 text-center pt-2">
+                    <p className="text-xs text-muted-foreground text-center pt-2">
                       +{outgoingLinks.length - 5} more flows
                     </p>
                   )}

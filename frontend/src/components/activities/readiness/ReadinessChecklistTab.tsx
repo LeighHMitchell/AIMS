@@ -510,7 +510,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                               const iconColor = option.value === 'validated'
                                 ? 'text-[hsl(var(--success-icon))]'
                                 : option.value === 'rejected'
-                                  ? 'text-red-600'
+                                  ? 'text-destructive'
                                   : 'text-amber-600';
                               return (
                                 <SelectItem key={option.value} value={option.value}>
@@ -518,7 +518,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                                     <IconComponent className={`h-4 w-4 mt-0.5 flex-shrink-0 ${iconColor}`} />
                                     <div>
                                       <div className="font-medium">{option.label}</div>
-                                      <div className="text-xs text-gray-500">{option.description}</div>
+                                      <div className="text-xs text-muted-foreground">{option.description}</div>
                                     </div>
                                   </div>
                                 </SelectItem>
@@ -544,7 +544,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                           </SelectTrigger>
                           <SelectContent>
                             {governmentOrgs.length === 0 && !loadingOrgs ? (
-                              <div className="p-2 text-sm text-gray-500">No government organizations found</div>
+                              <div className="p-2 text-sm text-muted-foreground">No government organizations found</div>
                             ) : (
                               governmentOrgs.map((org) => (
                                 <SelectItem key={org.id} value={org.name}>
@@ -560,7 +560,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                                     )}
                                     <div className="flex items-center gap-2">
                                       {org.acronym && (
-                                        <span className="font-medium text-gray-500">{org.acronym}</span>
+                                        <span className="font-medium text-muted-foreground">{org.acronym}</span>
                                       )}
                                       <span>{org.name}</span>
                                     </div>

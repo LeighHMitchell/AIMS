@@ -94,7 +94,7 @@ const DataTypeLegendItem = ({ color, label, isDashed = false }: { color: string;
         <div className="w-6 h-0.5 flex-shrink-0" style={{ backgroundColor: color }} />
       )}
     </div>
-    <span className="text-gray-600">{label}</span>
+    <span className="text-muted-foreground">{label}</span>
   </div>
 )
 
@@ -260,7 +260,7 @@ export function FundingOverTimeAnalytics() {
 
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
-          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-border text-slate-900">
+          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-border text-foreground">
             {label}
           </div>
           <table className="min-w-full text-sm border-collapse">
@@ -289,7 +289,7 @@ export function FundingOverTimeAnalytics() {
                     </td>
                     <td className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                       {formatCurrency(entry.value)}
-                      {txCount && <span className="text-xs text-gray-400 ml-1">({txCount} txns)</span>}
+                      {txCount && <span className="text-xs text-muted-foreground ml-1">({txCount} txns)</span>}
                     </td>
                     <td className="px-3 py-2 text-center" style={{ borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                       <Badge 
@@ -308,7 +308,7 @@ export function FundingOverTimeAnalytics() {
               })}
             </tbody>
           </table>
-          <div className="px-3 py-2 text-xs text-gray-500" style={{ borderTop: `1px solid ${COLORS.paleSlate}`, backgroundColor: COLORS.platinum }}>
+          <div className="px-3 py-2 text-xs text-muted-foreground" style={{ borderTop: `1px solid ${COLORS.paleSlate}`, backgroundColor: COLORS.platinum }}>
             {yearLabel < currentYear && 'Source: Activity transactions (disbursements + expenditures)'}
             {yearLabel === currentYear && 'Source: Activity transactions (year-to-date)'}
             {yearLabel > currentYear && 'Source: Organisation indicative budgets'}
@@ -389,18 +389,18 @@ export function FundingOverTimeAnalytics() {
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-sm p-4 bg-white border shadow-lg">
                     <div className="space-y-2 text-sm">
-                      <p className="font-semibold text-gray-900">About this data</p>
-                      <ul className="space-y-1 text-gray-600">
+                      <p className="font-semibold text-foreground">About this data</p>
+                      <ul className="space-y-1 text-muted-foreground">
                         <li><span className="font-medium" style={{ color: COLORS.actual }}>Past years:</span> Aggregated from published IATI activity transactions (disbursements + expenditures)</li>
                         <li><span className="font-medium" style={{ color: COLORS.partial }}>Current year:</span> Year-to-date transaction totals (partial data)</li>
                         <li><span className="font-medium" style={{ color: COLORS.indicative }}>Future years:</span> Indicative organisation-level budgets (subject to change)</li>
                       </ul>
-                      <p className="text-xs text-gray-500 pt-2 border-t">
+                      <p className="text-xs text-muted-foreground pt-2 border-t">
                         Future projections should not be treated as commitments.
                       </p>
                     </div>

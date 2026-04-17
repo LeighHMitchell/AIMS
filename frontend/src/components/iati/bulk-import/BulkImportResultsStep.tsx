@@ -96,36 +96,36 @@ export default function BulkImportResultsStep({
         <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
-              <Plus className="h-6 w-6 mx-auto mb-1 text-gray-700" />
-              <p className="text-3xl font-bold text-gray-900">{batchStatus.createdCount}</p>
-              <p className="text-sm text-gray-600">Created</p>
+              <Plus className="h-6 w-6 mx-auto mb-1 text-foreground" />
+              <p className="text-3xl font-bold text-foreground">{batchStatus.createdCount}</p>
+              <p className="text-sm text-muted-foreground">Created</p>
             </div>
           </CardContent>
         </Card>
         <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
-              <RefreshCw className="h-6 w-6 mx-auto mb-1 text-gray-700" />
-              <p className="text-3xl font-bold text-gray-900">{batchStatus.updatedCount}</p>
-              <p className="text-sm text-gray-600">Updated</p>
+              <RefreshCw className="h-6 w-6 mx-auto mb-1 text-foreground" />
+              <p className="text-3xl font-bold text-foreground">{batchStatus.updatedCount}</p>
+              <p className="text-sm text-muted-foreground">Updated</p>
             </div>
           </CardContent>
         </Card>
         <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
-              <SkipForward className="h-6 w-6 mx-auto mb-1 text-gray-500" />
-              <p className="text-3xl font-bold text-gray-500">{batchStatus.skippedCount}</p>
-              <p className="text-sm text-gray-600">Skipped</p>
+              <SkipForward className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+              <p className="text-3xl font-bold text-muted-foreground">{batchStatus.skippedCount}</p>
+              <p className="text-sm text-muted-foreground">Skipped</p>
             </div>
           </CardContent>
         </Card>
         <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
-              <XCircle className="h-6 w-6 mx-auto mb-1 text-gray-700" />
-              <p className="text-3xl font-bold text-gray-900">{batchStatus.failedCount}</p>
-              <p className="text-sm text-gray-600">Failed</p>
+              <XCircle className="h-6 w-6 mx-auto mb-1 text-foreground" />
+              <p className="text-3xl font-bold text-foreground">{batchStatus.failedCount}</p>
+              <p className="text-sm text-muted-foreground">Failed</p>
             </div>
           </CardContent>
         </Card>
@@ -133,17 +133,17 @@ export default function BulkImportResultsStep({
 
       {/* Status Alert */}
       {batchStatus.status === 'completed' && batchStatus.failedCount === 0 && (
-        <Alert className="bg-gray-50 border-input">
-          <CheckCircle2 className="h-4 w-4 text-gray-700" />
-          <AlertDescription className="text-gray-800">
+        <Alert className="bg-muted border-input">
+          <CheckCircle2 className="h-4 w-4 text-foreground" />
+          <AlertDescription className="text-foreground">
             All activities were imported successfully!
           </AlertDescription>
         </Alert>
       )}
       {batchStatus.failedCount > 0 && (
-        <Alert className="bg-gray-50 border-input">
-          <AlertTriangle className="h-4 w-4 text-gray-700" />
-          <AlertDescription className="text-gray-800">
+        <Alert className="bg-muted border-input">
+          <AlertTriangle className="h-4 w-4 text-foreground" />
+          <AlertDescription className="text-foreground">
             {batchStatus.failedCount} activit{batchStatus.failedCount === 1 ? 'y' : 'ies'} failed to import. See details below.
           </AlertDescription>
         </Alert>
@@ -153,18 +153,18 @@ export default function BulkImportResultsStep({
       {failedItems.length > 0 && (
         <Card className="border-input">
           <CardHeader>
-            <CardTitle className="text-base text-gray-900">Failed Activities</CardTitle>
+            <CardTitle className="text-base text-foreground">Failed Activities</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {failedItems.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-100 rounded-lg">
-                  <XCircle className="h-4 w-4 text-gray-600 mt-0.5 shrink-0" />
+                <div key={item.id} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                  <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-sm">{item.activityTitle || item.iatiIdentifier}</p>
                     <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{item.iatiIdentifier}</span>
                     {item.errorMessage && (
-                      <p className="text-xs text-gray-600 mt-1">{item.errorMessage}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{item.errorMessage}</p>
                     )}
                   </div>
                 </div>
@@ -203,14 +203,14 @@ export default function BulkImportResultsStep({
                       {item.activityId ? (
                         <button
                           onClick={() => router.push(`/activities/${item.activityId}`)}
-                          className="text-sm text-left hover:text-gray-600 truncate block w-full"
+                          className="text-sm text-left hover:text-muted-foreground truncate block w-full"
                         >
                           {item.activityTitle || item.iatiIdentifier}
                         </button>
                       ) : (
                         <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
                       )}
-                      <span className="text-xs font-mono bg-muted text-gray-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
+                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
                     </TableCell>
                     <TableCell>
                       {item.action === 'create' && (
@@ -226,7 +226,7 @@ export default function BulkImportResultsStep({
                         <Badge variant="outline" className="text-xs">Failed</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-gray-500">
+                    <TableCell className="text-right text-xs text-muted-foreground">
                       {formatImportCounts(item) || '-'}
                     </TableCell>
                   </TableRow>
@@ -245,32 +245,32 @@ export default function BulkImportResultsStep({
         <CardContent>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-500">Batch ID:</span>{' '}
+              <span className="text-muted-foreground">Batch ID:</span>{' '}
               <span className="font-mono text-xs">{batchStatus.id}</span>
             </div>
             <div>
-              <span className="text-gray-500">Source:</span>{' '}
+              <span className="text-muted-foreground">Source:</span>{' '}
               <span className="font-medium">
                 {batchStatus.sourceMode === 'datastore' ? 'IATI Datastore' : (batchStatus.fileName || 'XML Upload')}
               </span>
             </div>
             <div>
-              <span className="text-gray-500">IATI Version:</span>{' '}
+              <span className="text-muted-foreground">IATI Version:</span>{' '}
               <span className="font-medium">{batchStatus.iatiVersion || 'Unknown'}</span>
             </div>
             <div>
-              <span className="text-gray-500">Reporting Org:</span>{' '}
+              <span className="text-muted-foreground">Reporting Org:</span>{' '}
               <span className="font-medium">{batchStatus.reportingOrgName || batchStatus.reportingOrgRef}</span>
             </div>
             {batchStatus.startedAt && (
               <div>
-                <span className="text-gray-500">Started:</span>{' '}
+                <span className="text-muted-foreground">Started:</span>{' '}
                 <span className="font-medium">{new Date(batchStatus.startedAt).toLocaleString()}</span>
               </div>
             )}
             {batchStatus.completedAt && (
               <div>
-                <span className="text-gray-500">Completed:</span>{' '}
+                <span className="text-muted-foreground">Completed:</span>{' '}
                 <span className="font-medium">{new Date(batchStatus.completedAt).toLocaleString()}</span>
               </div>
             )}

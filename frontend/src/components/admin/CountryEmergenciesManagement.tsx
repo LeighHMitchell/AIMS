@@ -246,7 +246,7 @@ export function CountryEmergenciesManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>
@@ -395,7 +395,7 @@ export function CountryEmergenciesManagement() {
                             className={
                               emergency.isActive
                                 ? "bg-green-800"
-                                : "border-input text-gray-500 bg-gray-50"
+                                : "border-input text-muted-foreground bg-muted"
                             }
                           >
                             {emergency.isActive ? "Active" : "Inactive"}
@@ -411,14 +411,14 @@ export function CountryEmergenciesManagement() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => handleEdit(emergency)}>
-                                  <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                                  <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(emergency)}
-                                  className="text-red-600"
+                                  className="text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>

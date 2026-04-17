@@ -216,7 +216,7 @@ export function EnhancedMultiSelect({
                               "text-foreground truncate",
                               option.name.includes('(Entire Group)') && "font-bold text-blue-700",
                               option.name.includes('(Category)') && "font-semibold text-green-700",
-                              option.name.includes('(Sub-sector)') && "font-normal text-gray-700"
+                              option.name.includes('(Sub-sector)') && "font-normal text-foreground"
                             )}>
                               {option.name}
                             </span>

@@ -268,7 +268,7 @@ function HistoryTab() {
       case 'completed':
         return <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>
       case 'failed':
-        return <Badge variant="outline" className="bg-red-50 text-red-700"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
       case 'importing':
         return <Badge variant="outline" className="bg-blue-50 text-blue-700"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Importing</Badge>
       case 'cancelled':
@@ -283,7 +283,7 @@ function HistoryTab() {
       case 'create': return <Plus className="h-3.5 w-3.5 text-foreground" />
       case 'update': return <RefreshCw className="h-3.5 w-3.5 text-foreground" />
       case 'skip': return <SkipForward className="h-3.5 w-3.5 text-muted-foreground" />
-      case 'fail': return <XCircle className="h-3.5 w-3.5 text-red-500" />
+      case 'fail': return <XCircle className="h-3.5 w-3.5 text-destructive" />
       default: return <Clock className="h-3.5 w-3.5 text-muted-foreground" />
     }
   }
@@ -335,7 +335,7 @@ function HistoryTab() {
             </div>
           ) : historyError ? (
             <div className="text-center py-8">
-              <p className="text-red-600 text-sm">{historyError}</p>
+              <p className="text-destructive text-sm">{historyError}</p>
               <Button variant="outline" size="sm" className="mt-2" onClick={fetchHistory}>Retry</Button>
             </div>
           ) : historyData.length === 0 ? (
@@ -377,10 +377,10 @@ function HistoryTab() {
                           {record.createdCount > 0 && <span className="text-foreground">{record.createdCount} created</span>}
                           {record.updatedCount > 0 && <span className="text-foreground">{record.updatedCount} updated</span>}
                           {record.skippedCount > 0 && <span className="text-muted-foreground">{record.skippedCount} skipped</span>}
-                          {record.failedCount > 0 && <span className="text-red-600">{record.failedCount} failed</span>}
+                          {record.failedCount > 0 && <span className="text-destructive">{record.failedCount} failed</span>}
                         </div>
                         {record.errorMessage && (
-                          <p className="text-xs text-red-600 mt-1">{record.errorMessage}</p>
+                          <p className="text-xs text-destructive mt-1">{record.errorMessage}</p>
                         )}
                       </div>
                     </div>
@@ -406,7 +406,7 @@ function HistoryTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           title="Delete import history"
                           disabled={deletingBatchId === record.id}
                           onClick={(e) => deleteBatch(record.id, record.reportingOrgName || record.fileName, e)}
@@ -414,7 +414,7 @@ function HistoryTab() {
                           {deletingBatchId === record.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           )}
                         </Button>
                       )}
@@ -422,7 +422,7 @@ function HistoryTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={async (e) => {
                             e.stopPropagation()
                             if (!(await confirm({ title: 'Cancel this import?', description: 'Items already imported will remain.', confirmLabel: 'Cancel Import', cancelLabel: 'Keep Importing' }))) return
@@ -478,7 +478,7 @@ function HistoryTab() {
                                   <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
                                   <span className="text-xs font-mono bg-card px-1.5 py-0.5 rounded text-muted-foreground border">{item.iatiIdentifier}</span>
                                   {item.errorMessage && (
-                                    <p className="text-xs text-red-500 mt-0.5">{item.errorMessage}</p>
+                                    <p className="text-xs text-destructive mt-0.5">{item.errorMessage}</p>
                                   )}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
@@ -563,7 +563,7 @@ function HistoryTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-slate-200 text-slate-900' : ''}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-muted text-foreground' : ''}`}
                       >
                         {pageNum}
                       </Button>

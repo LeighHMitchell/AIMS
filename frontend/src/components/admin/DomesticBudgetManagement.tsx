@@ -459,7 +459,7 @@ export function DomesticBudgetManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12 text-red-600">
+          <div className="flex items-center justify-center py-12 text-destructive">
             <div className="text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p>Error: {error}</p>
@@ -753,15 +753,15 @@ export function DomesticBudgetManagement() {
                                   onClick={() => handleEdit(item)}
                                   className="h-8 w-8 p-0"
                                 >
-                                  <Pencil className="h-4 w-4 text-slate-500" />
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDelete(item)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
                             </TableCell>

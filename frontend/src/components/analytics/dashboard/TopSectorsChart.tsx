@@ -84,14 +84,14 @@ export function TopSectorsChart({
                 return (
                   <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
                     <div className="bg-surface-muted px-3 py-2 border-b border-border">
-                      <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+                      <p className="font-semibold text-foreground text-sm">{item.name}</p>
                     </div>
                     <div className="p-2">
                       <table className="w-full text-sm">
                         <tbody>
                           <tr>
-                            <td className="py-1 pr-4 text-slate-700 font-medium">Value</td>
-                            <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                            <td className="py-1 pr-4 text-foreground font-medium">Value</td>
+                            <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(item.value)}</td>
                           </tr>
                         </tbody>
                       </table>

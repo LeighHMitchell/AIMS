@@ -41,11 +41,11 @@ export function LandingFooter() {
   return (
     <footer
       aria-labelledby="footer-heading"
-      className="relative w-full overflow-hidden border-t border-border bg-gray-50"
+      className="relative w-full overflow-hidden border-t border-border bg-muted"
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <motion.div
-          className="absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-gray-200/20 blur-[160px]"
+          className="absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-muted/20 blur-[160px]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -80,16 +80,16 @@ export function LandingFooter() {
                 height="28"
                 className="rounded"
               />
-              <span className="font-bold text-xl text-gray-900">aether</span>
+              <span className="font-bold text-xl text-foreground">aether</span>
             </div>
 
-            <p className="mb-4 max-w-md text-sm text-gray-600 leading-relaxed">
+            <p className="mb-4 max-w-md text-sm text-muted-foreground leading-relaxed">
               A Development Finance Management Information System built for
               transparency, coordination, and standards compliance. Aligned with
               IATI Standard v2.03 for international interoperability.
             </p>
 
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Designed for recipient governments and development partners.
             </p>
           </motion.div>
@@ -102,7 +102,7 @@ export function LandingFooter() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: sectionIndex * 0.1 }}
             >
-              <h4 className="mb-4 text-sm font-semibold text-gray-900">
+              <h4 className="mb-4 text-sm font-semibold text-foreground">
                 {section.title}
               </h4>
               <ul className="space-y-2">
@@ -119,7 +119,7 @@ export function LandingFooter() {
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-gray-600 transition-colors hover:text-gray-900"
+                        className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                         <ExternalLink className="h-3 w-3" />
@@ -127,14 +127,14 @@ export function LandingFooter() {
                     ) : link.href.startsWith("#") ? (
                       <a
                         href={link.href}
-                        className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                       </a>
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                       </Link>
@@ -151,7 +151,7 @@ export function LandingFooter() {
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="my-8 h-px bg-gray-200"
+          className="my-8 h-px bg-muted"
         />
 
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
@@ -160,7 +160,7 @@ export function LandingFooter() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.6 }}
-            className="text-sm text-gray-500"
+            className="text-sm text-muted-foreground"
           >
             <span>&copy; {new Date().getFullYear()} aether. All rights reserved.</span>
           </motion.div>

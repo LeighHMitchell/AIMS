@@ -145,7 +145,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             measure={indicator.measure}
           />
         ) : (
-          <div className="flex items-center justify-center text-slate-400 py-8">
+          <div className="flex items-center justify-center text-muted-foreground py-8">
             <Layers className="h-5 w-5 mr-2" />
             No disaggregation data available
           </div>
@@ -159,7 +159,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             {indicator.references!.map((ref: ResultReference) => (
               <div 
                 key={ref.id}
-                className="flex items-start justify-between p-3 rounded-md bg-slate-50 border border-border"
+                className="flex items-start justify-between p-3 rounded-md bg-muted border border-border"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -197,7 +197,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center text-slate-400 py-8">
+          <div className="flex items-center justify-center text-muted-foreground py-8">
             <BookOpen className="h-5 w-5 mr-2" />
             No external references linked
           </div>
@@ -211,15 +211,15 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             {indicator.document_links!.map((doc: DocumentLink) => (
               <div 
                 key={doc.id}
-                className="flex items-center justify-between p-3 rounded-md bg-slate-50 border border-border hover:bg-slate-100 transition-colors"
+                className="flex items-center justify-between p-3 rounded-md bg-muted border border-border hover:bg-muted transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-slate-400" />
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <div className="font-medium text-sm text-slate-700">
+                    <div className="font-medium text-sm text-foreground">
                       {getLocalizedString(doc.title) || 'Untitled Document'}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
                       {doc.format && (
                         <Badge variant="outline" className="text-[10px] h-4">
                           {doc.format.split('/').pop()?.toUpperCase()}
@@ -235,7 +235,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
                       )}
                     </div>
                     {doc.description && (
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                         {getLocalizedString(doc.description)}
                       </p>
                     )}
@@ -253,7 +253,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center text-slate-400 py-8">
+          <div className="flex items-center justify-center text-muted-foreground py-8">
             <FileText className="h-5 w-5 mr-2" />
             No documents attached
           </div>

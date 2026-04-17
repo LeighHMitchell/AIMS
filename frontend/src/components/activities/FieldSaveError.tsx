@@ -36,7 +36,7 @@ export function FieldSaveError({
 
   return (
     <div
-      className={`flex items-start gap-2 text-xs text-red-600 ${className}`}
+      className={`flex items-start gap-2 text-xs text-destructive ${className}`}
       role="alert"
     >
       <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -47,7 +47,7 @@ export function FieldSaveError({
         <button
           type="button"
           onClick={onRetry}
-          className="ml-auto inline-flex items-center gap-1 text-red-700 underline-offset-2 hover:underline focus:outline-none focus-visible:underline"
+          className="ml-auto inline-flex items-center gap-1 text-destructive underline-offset-2 hover:underline focus:outline-none focus-visible:underline"
         >
           <RotateCcw className="h-3 w-3" aria-hidden="true" />
           Retry

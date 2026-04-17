@@ -181,12 +181,12 @@ export function FocalPointCheckCard({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
+            <AlertCircle className="h-5 w-5 text-destructive" />
             Focal Point Check
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">Failed to load focal points data: {error}</p>
+          <p className="text-sm text-destructive">Failed to load focal points data: {error}</p>
         </CardContent>
       </Card>
     );
@@ -208,8 +208,8 @@ export function FocalPointCheckCard({
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-[hsl(var(--success-icon))] mb-3" />
-            <p className="text-lg font-medium text-slate-700">All activities have focal points!</p>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-lg font-medium text-foreground">All activities have focal points!</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Great job! All your activities have both government and development partner focal points assigned.
             </p>
           </div>
@@ -226,7 +226,7 @@ export function FocalPointCheckCard({
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-[#7b95a7]" />
               Focal Point Check
-              <span className="text-sm font-normal text-slate-500 ml-2">
+              <span className="text-sm font-normal text-muted-foreground ml-2">
                 ({total} {total === 1 ? 'activity' : 'activities'})
               </span>
             </CardTitle>
@@ -266,14 +266,14 @@ export function FocalPointCheckCard({
             {activities.map((activity) => (
               <TableRow
                 key={activity.id}
-                className="hover:bg-slate-50"
+                className="hover:bg-muted"
               >
                 <TableCell
                   className="cursor-pointer"
                   onClick={() => handleActivityClick(activity.id)}
                 >
                   <div>
-                    <p className="font-medium text-slate-900 line-clamp-1 hover:text-blue-600 hover:underline">
+                    <p className="font-medium text-foreground line-clamp-1 hover:text-blue-600 hover:underline">
                       {activity.title}
                     </p>
                     {activity.iatiIdentifier && (
@@ -303,7 +303,7 @@ export function FocalPointCheckCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-slate-600 hover:text-slate-900"
+                    className="text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleActivityClick(activity.id);

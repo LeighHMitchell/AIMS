@@ -155,15 +155,15 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               Compare planned vs actual disbursements across sectors
             </CardDescription>
           </div>
-          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('chart')}
               className={cn(
                 viewMode === 'chart'
-                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white shadow-sm text-foreground hover:bg-white"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <BarChart3 className="h-4 w-4" />
@@ -174,8 +174,8 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               onClick={() => setViewMode('table')}
               className={cn(
                 viewMode === 'table'
-                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white shadow-sm text-foreground hover:bg-white"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <TableIcon className="h-4 w-4" />
@@ -325,7 +325,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                         const planned = sector[`planned_${year}`] || 0;
                         const actual = sector[`actual_${year}`] || 0;
                         const variance = actual - planned;
-                        const varianceColor = variance >= 0 ? 'text-green-600' : 'text-red-600';
+                        const varianceColor = variance >= 0 ? 'text-green-600' : 'text-destructive';
 
                         return (
                           <React.Fragment key={year}>
@@ -339,7 +339,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                       })}
                       <TableCell className="text-right font-semibold">{formatCurrency(totalPlanned)}</TableCell>
                       <TableCell className="text-right font-semibold">{formatCurrency(totalActual)}</TableCell>
-                      <TableCell className={`text-right font-semibold ${totalVariance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <TableCell className={`text-right font-semibold ${totalVariance >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                         {formatCurrency(totalVariance)}
                       </TableCell>
                     </TableRow>

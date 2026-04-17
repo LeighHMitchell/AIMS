@@ -476,11 +476,11 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                     className="border-2 border-dashed border-input rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
                   >
                     <input {...logoDropzone.getInputProps()} />
-                    <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <p className="mt-1 text-xs text-gray-600">
+                    <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Drop logo here
                     </p>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF</p>
                   </div>
                 )}
               </div>
@@ -513,11 +513,11 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
                     className="border-2 border-dashed border-input rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
                   >
                     <input {...bannerDropzone.getInputProps()} />
-                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-600">
+                    <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="mt-2 text-sm text-muted-foreground">
                       Drop banner image here or click to browse
                     </p>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
                   </div>
                 )}
               </div>

@@ -237,7 +237,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
     <Popover open={open} onOpenChange={setOpen} className="w-fit">
       <PopoverTrigger
         data-popover-trigger
-        className="inline-flex items-center flex-shrink-0 flex-grow-0 w-fit p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+        className="inline-flex items-center flex-shrink-0 flex-grow-0 w-fit p-1 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded transition-colors"
         title="View all dates and revision history"
         onMouseEnter={handleMouseEnter}
       >
@@ -249,16 +249,16 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
         sideOffset={8}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b">
+        <div className="flex items-center justify-between px-4 py-3 bg-muted border-b">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-slate-500" />
-            <span className="text-sm font-medium text-slate-700">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               Date Revision History
             </span>
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-600"
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -282,7 +282,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                 </div>
               ))}
               {/* Skeleton for additional dates section */}
-              <div className="px-4 py-2.5 flex items-center justify-between bg-slate-50/50">
+              <div className="px-4 py-2.5 flex items-center justify-between bg-muted/50">
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-4 w-4 rounded" />
                   <Skeleton className="h-4 w-4 rounded" />
@@ -293,7 +293,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-sm text-red-500">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
               <button
                 onClick={fetchHistory}
                 className="mt-2 text-xs text-blue-600 hover:underline"
@@ -315,34 +315,34 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                     open={isExpanded}
                     onOpenChange={() => toggleSection(field.key)}
                   >
-                    <CollapsibleTrigger className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                    <CollapsibleTrigger className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-muted transition-colors">
                       <div className="flex items-center gap-2">
                         {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         )}
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-sm font-medium text-foreground">
                           {field.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted-foreground">
                           {formatDateValue(currentValue)}
                         </span>
                         {history.length > 0 && (
-                          <span className="px-1.5 py-0.5 text-xs bg-slate-200 text-slate-600 rounded">
+                          <span className="px-1.5 py-0.5 text-xs bg-muted text-muted-foreground rounded">
                             {history.length} revision{history.length !== 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="px-4 pb-3 pt-1 bg-slate-50/50">
+                      <div className="px-4 pb-3 pt-1 bg-muted/50">
                         {history.length === 0 ? (
                           <div className="py-3 text-center">
                             <Clock className="h-5 w-5 text-slate-300 mx-auto mb-1" />
-                            <p className="text-xs text-slate-400">No revisions recorded</p>
+                            <p className="text-xs text-muted-foreground">No revisions recorded</p>
                           </div>
                         ) : (
                           <div className="space-y-2">
@@ -352,24 +352,24 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                 className="p-2 bg-white rounded border border-border"
                               >
                                 <div className="flex items-center gap-2 mb-1.5">
-                                  <span className="text-xs font-medium text-slate-500">
+                                  <span className="text-xs font-medium text-muted-foreground">
                                     Revision {history.length - index}
                                   </span>
                                 </div>
                                 
                                 {/* Date change visualization */}
                                 <div className="flex items-center gap-2 text-sm mb-2">
-                                  <span className="text-slate-500 line-through text-xs">
+                                  <span className="text-muted-foreground line-through text-xs">
                                     {formatDateValue(change.oldValue)}
                                   </span>
-                                  <ArrowRight className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                                  <span className="text-slate-900 font-medium text-xs">
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                  <span className="text-foreground font-medium text-xs">
                                     {formatDateValue(change.newValue)}
                                   </span>
                                 </div>
 
                                 {/* Metadata */}
-                                <div className="flex items-center gap-3 text-xs text-slate-400">
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                   <div className="flex items-center gap-1">
                                     <User className="h-3 w-3" />
                                     <span>{change.userName}</span>
@@ -395,46 +395,46 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                   open={expandedSections['customDates']}
                   onOpenChange={() => toggleSection('customDates')}
                 >
-                  <CollapsibleTrigger className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 transition-colors bg-slate-50/50">
+                  <CollapsibleTrigger className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-muted transition-colors bg-muted/50">
                     <div className="flex items-center gap-2">
                       {expandedSections['customDates'] ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
-                      <Calendar className="h-4 w-4 text-slate-500" />
-                      <span className="text-sm font-medium text-slate-700">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">
                         Additional Dates
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         {customDates.length} date{customDates.length !== 1 ? 's' : ''}
                       </span>
                       {customDatesHistory.length > 0 && (
-                        <span className="px-1.5 py-0.5 text-xs bg-slate-200 text-slate-600 rounded">
+                        <span className="px-1.5 py-0.5 text-xs bg-muted text-muted-foreground rounded">
                           {customDatesHistory.length} revision{customDatesHistory.length !== 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="px-4 pb-3 pt-1 bg-slate-50/50">
+                    <div className="px-4 pb-3 pt-1 bg-muted/50">
                       {/* Current Custom Dates */}
                       {customDates.length > 0 && (
                         <div className="mb-3">
-                          <div className="text-xs text-slate-400 font-medium mb-1.5">Current Values</div>
+                          <div className="text-xs text-muted-foreground font-medium mb-1.5">Current Values</div>
                           <div className="space-y-1">
                             {customDates.map((customDate, index) => (
                               <div 
                                 key={index}
                                 className="flex items-center justify-between text-xs p-1.5 bg-white rounded border border-border"
                               >
-                                <span className="text-slate-700 font-medium">{customDate.label}</span>
+                                <span className="text-foreground font-medium">{customDate.label}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-slate-500">{formatDateValue(customDate.date)}</span>
+                                  <span className="text-muted-foreground">{formatDateValue(customDate.date)}</span>
                                   {customDate.description && (
-                                    <span className="text-slate-400 italic max-w-[80px] truncate" title={customDate.description}>
+                                    <span className="text-muted-foreground italic max-w-[80px] truncate" title={customDate.description}>
                                       {customDate.description}
                                     </span>
                                   )}
@@ -449,18 +449,18 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                       {customDatesHistory.length === 0 ? (
                         <div className="py-3 text-center">
                           <Clock className="h-5 w-5 text-slate-300 mx-auto mb-1" />
-                          <p className="text-xs text-slate-400">No revisions recorded</p>
+                          <p className="text-xs text-muted-foreground">No revisions recorded</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="text-xs text-slate-400 font-medium mb-1.5">Revision History</div>
+                          <div className="text-xs text-muted-foreground font-medium mb-1.5">Revision History</div>
                           {customDatesHistory.map((change, changeIndex) => (
                             <div 
                               key={change.id} 
                               className="p-2 bg-white rounded border border-border"
                             >
                               <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-xs font-medium text-slate-500">
+                                <span className="text-xs font-medium text-muted-foreground">
                                   Revision {customDatesHistory.length - changeIndex}
                                 </span>
                               </div>
@@ -479,8 +479,8 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                     )}
                                     {diffItem.type === 'removed' && (
                                       <>
-                                        <Minus className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                                        <span className="text-red-700">
+                                        <Minus className="h-3 w-3 text-destructive mt-0.5 flex-shrink-0" />
+                                        <span className="text-destructive">
                                           Removed <span className="font-medium">{diffItem.label}</span>: {formatDateValue(diffItem.oldDate || null)}
                                         </span>
                                       </>
@@ -490,7 +490,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                         <RefreshCw className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
                                         <span className="text-amber-700">
                                           <span className="font-medium">{diffItem.label}</span>:{' '}
-                                          <span className="line-through text-slate-400">{formatDateValue(diffItem.oldDate || null)}</span>
+                                          <span className="line-through text-muted-foreground">{formatDateValue(diffItem.oldDate || null)}</span>
                                           {' → '}
                                           <span>{formatDateValue(diffItem.newDate || null)}</span>
                                         </span>
@@ -499,12 +499,12 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                   </div>
                                 ))}
                                 {change.diff.length === 0 && (
-                                  <span className="text-xs text-slate-400 italic">No changes detected</span>
+                                  <span className="text-xs text-muted-foreground italic">No changes detected</span>
                                 )}
                               </div>
 
                               {/* Metadata */}
-                              <div className="flex items-center gap-3 text-xs text-slate-400">
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <User className="h-3 w-3" />
                                   <span>{change.userName}</span>

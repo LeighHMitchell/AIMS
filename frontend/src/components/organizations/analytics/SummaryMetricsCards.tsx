@@ -65,9 +65,9 @@ export function SummaryMetricsCards({
             {projectsDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
-              <TrendingDown className="h-3 w-3 text-red-600" />
+              <TrendingDown className="h-3 w-3 text-destructive" />
             )}
-            <span className={projectsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
+            <span className={projectsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}>
               {projectsDelta.display} from previous year
             </span>
           </div>
@@ -89,9 +89,9 @@ export function SummaryMetricsCards({
             {commitmentsDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
-              <TrendingDown className="h-3 w-3 text-red-600" />
+              <TrendingDown className="h-3 w-3 text-destructive" />
             )}
-            <span className={commitmentsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
+            <span className={commitmentsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}>
               {commitmentsDelta.isPositive ? '+' : ''}{commitmentsDelta.deltaPercent.toFixed(1)}% from 2024
             </span>
           </div>
@@ -113,9 +113,9 @@ export function SummaryMetricsCards({
             {disbursementsDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
-              <TrendingDown className="h-3 w-3 text-red-600" />
+              <TrendingDown className="h-3 w-3 text-destructive" />
             )}
-            <span className={disbursementsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
+            <span className={disbursementsDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}>
               {disbursementsDelta.isPositive ? '+' : ''}{disbursementsDelta.deltaPercent.toFixed(1)}% from 2024
             </span>
           </div>
@@ -137,9 +137,9 @@ export function SummaryMetricsCards({
             {expendituresDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
-              <TrendingDown className="h-3 w-3 text-red-600" />
+              <TrendingDown className="h-3 w-3 text-destructive" />
             )}
-            <span className={expendituresDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}>
+            <span className={expendituresDelta.isPositive ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}>
               {expendituresDelta.isPositive ? '+' : ''}{expendituresDelta.deltaPercent.toFixed(1)}% from 2024
             </span>
           </div>

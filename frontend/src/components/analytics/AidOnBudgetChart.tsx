@@ -468,9 +468,9 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center h-[700px] text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">Error loading data</p>
-            <p className="text-sm text-gray-500 mb-4">{error}</p>
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry

@@ -154,7 +154,7 @@ function ProjectTypesTab() {
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100" onClick={() => { setEditingId(t.id); setEditCode(t.code); setEditName(t.name); }}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-red-500" onClick={() => handleDelete(t.id)}>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDelete(t.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </>
@@ -291,7 +291,7 @@ function SectorsTab() {
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100" onClick={() => { setEditingId(s.id); setEditCode(s.code); setEditName(s.name); }}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-red-500" onClick={() => handleDeleteSector(s.id)}>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteSector(s.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </>
@@ -302,7 +302,7 @@ function SectorsTab() {
                   {s.sub_sectors.map(ss => (
                     <div key={ss.id} className="flex items-center gap-2 py-1 text-sm group/sub">
                       <span className="flex-1 text-muted-foreground">{ss.name}</span>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover/sub:opacity-100 text-red-500" onClick={() => handleDeleteSubSector(s.id, ss.name)}>
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover/sub:opacity-100 text-destructive" onClick={() => handleDeleteSubSector(s.id, ss.name)}>
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
@@ -354,7 +354,7 @@ export default function ProjectBankAdminPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
           <p className="text-muted-foreground">Access denied</p>
         </div>
       </MainLayout>

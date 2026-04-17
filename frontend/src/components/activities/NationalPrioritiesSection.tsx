@@ -382,13 +382,13 @@ export function NationalPrioritiesSection({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               onClick={() => {
                                 setSelectedAllocation(allocation);
                                 setDeleteDialogOpen(true);
                               }}
                             >
-                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>
                           </div>
                         )}

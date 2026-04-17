@@ -212,7 +212,7 @@ export function OrganizationComments({
       {allowContextSwitch && (
         <div className="flex items-center gap-4 pb-4 border-b">
           <div className="flex-1">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Comment Context</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">Comment Context</label>
             <Select
               value={selectedContextSection}
               onValueChange={setSelectedContextSection}
@@ -243,7 +243,7 @@ export function OrganizationComments({
         <TabsContent value={activeTab} className="space-y-4 mt-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search comments..."
               value={searchTerm}
@@ -290,9 +290,9 @@ export function OrganizationComments({
 
           {/* Comments List */}
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading comments...</div>
+            <div className="text-center py-8 text-muted-foreground">Loading comments...</div>
           ) : filteredComments.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No comments yet</div>
+            <div className="text-center py-8 text-muted-foreground">No comments yet</div>
           ) : (
             <div className="space-y-4">
               {filteredComments.map((comment) => (
@@ -320,13 +320,13 @@ export function OrganizationComments({
                               Resolved
                             </Badge>
                           )}
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">{comment.message}</p>
+                        <p className="text-sm text-foreground">{comment.message}</p>
                         {comment.contextSection && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             Context: {ORGANIZATION_SECTIONS.find(s => s.value === comment.contextSection)?.label}
                             {comment.contextField && ` • ${comment.contextField}`}
                           </div>
@@ -346,11 +346,11 @@ export function OrganizationComments({
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium text-xs">{reply.author.name}</span>
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-muted-foreground">
                                       {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-700 mt-1">{reply.message}</p>
+                                  <p className="text-xs text-foreground mt-1">{reply.message}</p>
                                 </div>
                               </div>
                             ))}

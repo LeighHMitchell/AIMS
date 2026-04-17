@@ -136,7 +136,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
   };
 
   const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 text-slate-400" />;
+    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />;
     return sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
   };
 
@@ -151,7 +151,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
   }
 
   if (error) {
-    return <p className="text-sm text-red-600">Failed to load planned disbursements: {error}</p>;
+    return <p className="text-sm text-destructive">Failed to load planned disbursements: {error}</p>;
   }
 
   return (
@@ -159,7 +159,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
       {disbursements.length === 0 ? (
         <div className="text-center py-8">
           <Banknote className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">No planned disbursements found</p>
+          <p className="text-sm text-muted-foreground">No planned disbursements found</p>
         </div>
       ) : (
         <>
@@ -195,7 +195,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                     <span className="text-sm">
                       {d.activity?.title_narrative || 'Unknown Activity'}{' '}
                       {d.activity?.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded whitespace-nowrap">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
                           {d.activity.iati_identifier}
                         </code>
                       )}
@@ -205,21 +205,21 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                     <div className="flex items-center gap-1.5 flex-wrap" title={`${d.provider_org_name || '-'} → ${d.receiver_org_name || '-'}`}>
                       <span className="flex items-center gap-1.5 flex-shrink-0">
                         <OrganizationLogo logo={d.provider_org_logo} name={d.provider_org_name || 'Unknown'} size="sm" />
-                        <span className="text-sm text-slate-600 whitespace-nowrap">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
                           {d.provider_org_acronym || d.provider_org_name || '-'}
                         </span>
-                        <span className="text-slate-400">→</span>
+                        <span className="text-muted-foreground">→</span>
                       </span>
                       <span className="flex items-center gap-1.5 min-w-0">
                         <OrganizationLogo logo={d.receiver_org_logo} name={d.receiver_org_name || 'Unknown'} size="sm" />
-                        <span className="text-sm text-slate-600 whitespace-nowrap">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
                           {d.receiver_org_acronym || d.receiver_org_name || '-'}
                         </span>
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
                       {d.period_start ? format(new Date(d.period_start), 'MMM yyyy') : '-'}
                       {' — '}
                       {d.period_end ? format(new Date(d.period_end), 'MMM yyyy') : '-'}
@@ -227,33 +227,33 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-foreground">
                         <span className="text-xs text-muted-foreground mr-1 font-normal">{d.currency}</span>
                         {formatCurrency(d.amount)}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
                       {d.value_date ? format(new Date(d.value_date), 'dd MMM yyyy') : '-'}
                     </span>
                   </TableCell>
                   <TableCell>
                     {d.usd_amount != null ? (
                       <div className="flex items-center gap-1">
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-foreground">
                           <span className="text-xs text-muted-foreground mr-1 font-normal">USD</span>
                           {formatCurrency(d.usd_amount)}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-sm text-slate-400">-</span>
+                      <span className="text-sm text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5" title={d.reporting_org_name || '-'}>
                       <OrganizationLogo logo={d.reporting_org_logo} name={d.reporting_org_name || 'Unknown'} size="sm" />
-                      <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                      <span className="text-sm text-muted-foreground truncate max-w-[120px]">
                         {d.reporting_org_acronym || d.reporting_org_name || '-'}
                       </span>
                     </div>
@@ -273,7 +273,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
           {/* Pagination Controls */}
           <div className="flex items-center justify-between mt-4 pt-4 border-t">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">Rows per page:</span>
+              <span className="text-sm text-muted-foreground">Rows per page:</span>
               <Select
                 value={pageSize.toString()}
                 onValueChange={(val) => { setPageSize(parseInt(val)); setPage(1); }}
@@ -289,7 +289,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 Page {page} of {Math.max(totalPages, 1)}
               </span>
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>

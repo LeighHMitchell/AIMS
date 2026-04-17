@@ -185,14 +185,14 @@ export function BookmarkedDocumentsView({
         </div>
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
             <Button
               variant="ghost"
               size="sm"
               className={cn(
                 viewMode === 'card'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => setViewMode('card')}
             >
@@ -203,8 +203,8 @@ export function BookmarkedDocumentsView({
               size="sm"
               className={cn(
                 viewMode === 'table'
-                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => setViewMode('table')}
             >
@@ -271,7 +271,7 @@ export function BookmarkedDocumentsView({
       {totalPages > 1 && (
         <div className="bg-white rounded-lg border border-border shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
             </div>
             <div className="flex items-center gap-2">

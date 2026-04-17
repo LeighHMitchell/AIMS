@@ -168,7 +168,7 @@ export default function OrganizationFundingEnvelopeTab({
         <button
           type="button"
           tabIndex={-1}
-          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+          className="ml-1 text-muted-foreground hover:text-muted-foreground focus:outline-none"
         >
           <HelpCircle className="h-4 w-4" />
         </button>
@@ -516,7 +516,7 @@ export default function OrganizationFundingEnvelopeTab({
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">Funding Envelopes</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Record past, current, and future organisation-level funding declarations
                   </p>
                 </div>
@@ -553,21 +553,21 @@ export default function OrganizationFundingEnvelopeTab({
               {/* Hero Cards for Totals */}
               {sortedEnvelopes.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">Past</div>
-                    <div className="text-lg font-semibold text-gray-900">
+                  <div className="bg-muted rounded-lg p-3 text-center">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Past</div>
+                    <div className="text-lg font-semibold text-foreground">
                       {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.past))}
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">Current</div>
-                    <div className="text-lg font-semibold text-gray-900">
+                  <div className="bg-muted rounded-lg p-3 text-center">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Current</div>
+                    <div className="text-lg font-semibold text-foreground">
                       {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.current))}
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">Future</div>
-                    <div className="text-lg font-semibold text-gray-900">
+                  <div className="bg-muted rounded-lg p-3 text-center">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Future</div>
+                    <div className="text-lg font-semibold text-foreground">
                       {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.future))}
                     </div>
                   </div>
@@ -586,10 +586,10 @@ export default function OrganizationFundingEnvelopeTab({
 
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : sortedEnvelopes.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <p className="text-sm mb-2">No funding envelope entries yet.</p>
                   {!readOnly && (
                     <p className="text-sm">Click &quot;Add Entry&quot; to add a funding declaration.</p>
@@ -637,7 +637,7 @@ export default function OrganizationFundingEnvelopeTab({
                                     year: 'numeric'
                                   })
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-muted-foreground">-</span>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -646,7 +646,7 @@ export default function OrganizationFundingEnvelopeTab({
                                     {formatCurrency(envelope.amount_usd, 'USD')}
                                   </div>
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-muted-foreground">-</span>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -664,7 +664,7 @@ export default function OrganizationFundingEnvelopeTab({
                                     .map(flag => FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag)
                                     .join(', ')
                                 ) : (
-                                  <span className="text-gray-400">None</span>
+                                  <span className="text-muted-foreground">None</span>
                                 )}
                               </TableCell>
                               {!readOnly && (
@@ -676,7 +676,7 @@ export default function OrganizationFundingEnvelopeTab({
                                       onClick={() => openModal(envelope)}
                                       disabled={deleteLoading === envelope.id}
                                     >
-                                      <Pencil className="h-4 w-4 text-slate-500" />
+                                      <Pencil className="h-4 w-4 text-muted-foreground" />
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -687,7 +687,7 @@ export default function OrganizationFundingEnvelopeTab({
                                       {deleteLoading === envelope.id ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       ) : (
-                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                        <Trash2 className="h-4 w-4 text-destructive" />
                                       )}
                                     </Button>
                                   </div>
@@ -854,7 +854,7 @@ export default function OrganizationFundingEnvelopeTab({
                       </SelectContent>
                     </Select>
                     {fieldErrors.year_start && (
-                      <p className="text-sm text-red-600">{fieldErrors.year_start}</p>
+                      <p className="text-sm text-destructive">{fieldErrors.year_start}</p>
                     )}
                   </div>
 
@@ -885,7 +885,7 @@ export default function OrganizationFundingEnvelopeTab({
                         </SelectContent>
                       </Select>
                       {fieldErrors.year_end && (
-                        <p className="text-sm text-red-600">{fieldErrors.year_end}</p>
+                        <p className="text-sm text-destructive">{fieldErrors.year_end}</p>
                       )}
                     </div>
                   ) : (
@@ -912,7 +912,7 @@ export default function OrganizationFundingEnvelopeTab({
                       placeholder="0"
                     />
                     {fieldErrors.amount && (
-                      <p className="text-sm text-red-600">{fieldErrors.amount}</p>
+                      <p className="text-sm text-destructive">{fieldErrors.amount}</p>
                     )}
                   </div>
 
@@ -948,7 +948,7 @@ export default function OrganizationFundingEnvelopeTab({
                       </SelectContent>
                     </Select>
                     {fieldErrors.currency && (
-                      <p className="text-sm text-red-600">{fieldErrors.currency}</p>
+                      <p className="text-sm text-destructive">{fieldErrors.currency}</p>
                     )}
                   </div>
 
@@ -1038,7 +1038,7 @@ export default function OrganizationFundingEnvelopeTab({
                         )}
                       </div>
                       {modalRateError && (
-                        <p className="text-xs text-red-500">{modalRateError}</p>
+                        <p className="text-xs text-destructive">{modalRateError}</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -1108,7 +1108,7 @@ export default function OrganizationFundingEnvelopeTab({
                       <SelectTrigger className="h-auto min-h-[40px]">
                         <span className="text-left py-1">
                           <span className="block">{selectedRole?.label}</span>
-                          <span className="block text-xs text-gray-500">{selectedRole?.description}</span>
+                          <span className="block text-xs text-muted-foreground">{selectedRole?.description}</span>
                         </span>
                       </SelectTrigger>
                       <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -1116,14 +1116,14 @@ export default function OrganizationFundingEnvelopeTab({
                           <SelectItem key={role.value} value={role.value} className="py-2">
                             <div className="text-left">
                               <div className="font-medium">{role.label}</div>
-                              <div className="text-xs text-gray-500">{role.description}</div>
+                              <div className="text-xs text-muted-foreground">{role.description}</div>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {fieldErrors.organization_role && (
-                      <p className="text-sm text-red-600">{fieldErrors.organization_role}</p>
+                      <p className="text-sm text-destructive">{fieldErrors.organization_role}</p>
                     )}
                   </div>
                 </div>
@@ -1143,7 +1143,7 @@ export default function OrganizationFundingEnvelopeTab({
                       <SelectTrigger className="h-auto min-h-[40px]">
                         <span className="text-left py-1">
                           <span className="block">{selectedStatus?.label}</span>
-                          <span className="block text-xs text-gray-500">{selectedStatus?.description}</span>
+                          <span className="block text-xs text-muted-foreground">{selectedStatus?.description}</span>
                         </span>
                       </SelectTrigger>
                       <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -1151,14 +1151,14 @@ export default function OrganizationFundingEnvelopeTab({
                           <SelectItem key={status.value} value={status.value} className="py-2">
                             <div className="text-left">
                               <div className="font-medium">{status.label}</div>
-                              <div className="text-xs text-gray-500">{status.description}</div>
+                              <div className="text-xs text-muted-foreground">{status.description}</div>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {fieldErrors.status && (
-                      <p className="text-sm text-red-600">{fieldErrors.status}</p>
+                      <p className="text-sm text-destructive">{fieldErrors.status}</p>
                     )}
                   </div>
 
@@ -1220,7 +1220,7 @@ export default function OrganizationFundingEnvelopeTab({
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-gray-500">Select funding types...</span>
+                            <span className="text-muted-foreground">Select funding types...</span>
                           )}
                         </div>
                       </SelectTrigger>

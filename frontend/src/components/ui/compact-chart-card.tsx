@@ -125,10 +125,10 @@ export function CompactChartCard({
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-medium text-slate-700 truncate">
+              <CardTitle className="text-base font-medium text-foreground truncate">
                 {title}
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 {shortDescription}
               </CardDescription>
             </div>
@@ -136,10 +136,10 @@ export function CompactChartCard({
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0 ml-2"
               title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4 text-slate-500" />
+              <Maximize2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </CardHeader>
@@ -156,7 +156,7 @@ export function CompactChartCard({
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
-                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                <DialogTitle className="text-2xl font-semibold text-foreground">
                   {title}
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">
@@ -195,7 +195,7 @@ export function CompactChartCard({
           
           {/* Filters section - only shown when expanded */}
           {renderFilters && (
-            <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-border">
+            <div className="mt-4 p-4 bg-muted rounded-lg border border-border">
               {renderFilters()}
             </div>
           )}

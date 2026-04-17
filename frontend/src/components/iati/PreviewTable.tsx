@@ -467,7 +467,7 @@ export function PreviewTable({
                   </TableHeader>
                   <TableBody>
                     {sortedActivities.map((activity, index) => (
-                      <TableRow key={index} className={activity._hasIssues ? 'bg-red-50' : ''}>
+                      <TableRow key={index} className={activity._hasIssues ? 'bg-destructive/10' : ''}>
                         <TableCell>
                           <Checkbox
                             checked={selectedRows.activities.has(index)}
@@ -482,7 +482,7 @@ export function PreviewTable({
                               </Badge>
                             )}
                             {activity._hasIssues ? (
-                              <AlertTriangle className="h-4 w-4 text-red-500" />
+                              <AlertTriangle className="h-4 w-4 text-destructive" />
                             ) : (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                             )}
@@ -569,7 +569,7 @@ export function PreviewTable({
                   </TableHeader>
                   <TableBody>
                     {sortedTransactions.map((transaction, index) => (
-                      <TableRow key={index} className={transaction._hasIssues ? 'bg-red-50' : ''}>
+                      <TableRow key={index} className={transaction._hasIssues ? 'bg-destructive/10' : ''}>
                         <TableCell>
                           <Checkbox
                             checked={selectedRows.transactions?.has(index)}
@@ -578,7 +578,7 @@ export function PreviewTable({
                         </TableCell>
                         <TableCell>
                           {transaction._hasIssues ? (
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
                           ) : (
                             <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                           )}
@@ -587,7 +587,7 @@ export function PreviewTable({
                           <div className="flex items-center space-x-1">
                             <span>{transaction.activityRef}</span>
                             {transaction._needsActivityAssignment && (
-                              <span className="text-red-600" title="Manual assignment required">
+                              <span className="text-destructive" title="Manual assignment required">
                                 <AlertTriangle className="h-3 w-3" />
                               </span>
                             )}

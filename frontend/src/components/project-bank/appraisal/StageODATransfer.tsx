@@ -259,7 +259,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
               <p className="text-xs text-muted-foreground">Enter a donor name to enable transfer.</p>
             )}
             {transferError && (
-              <p className="text-xs text-red-600">{transferError}</p>
+              <p className="text-xs text-destructive">{transferError}</p>
             )}
           </div>
         )}

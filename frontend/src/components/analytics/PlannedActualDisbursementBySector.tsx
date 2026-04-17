@@ -663,7 +663,7 @@ export function PlannedActualDisbursementBySector({
       return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
-      return <div className="h-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
+      return <div className="h-full flex items-center justify-center text-destructive"><p className="text-sm">{error}</p></div>
     }
     return (
       <div ref={chartRef} className="bg-card h-full">
@@ -745,7 +745,7 @@ export function PlannedActualDisbursementBySector({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <p className="text-red-600">Error loading data: {error}</p>
+          <p className="text-destructive">Error loading data: {error}</p>
         </CardContent>
       </Card>
     )
@@ -840,7 +840,7 @@ export function PlannedActualDisbursementBySector({
                                 className={`
                                   px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                   ${isStartOrEnd
-                                    ? 'bg-slate-200 text-slate-900'
+                                    ? 'bg-muted text-foreground'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
                                       : 'text-muted-foreground hover:bg-muted'
@@ -877,7 +877,7 @@ export function PlannedActualDisbursementBySector({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", groupByLevel === '1' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+                className={cn("h-8", groupByLevel === '1' ? "bg-muted text-foreground" : "text-muted-foreground")}
                 onClick={() => setGroupByLevel('1')}
               >
                 Sector Category
@@ -885,7 +885,7 @@ export function PlannedActualDisbursementBySector({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", groupByLevel === '3' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+                className={cn("h-8", groupByLevel === '3' ? "bg-muted text-foreground" : "text-muted-foreground")}
                 onClick={() => setGroupByLevel('3')}
               >
                 Sector
@@ -893,7 +893,7 @@ export function PlannedActualDisbursementBySector({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("h-8", groupByLevel === '5' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
+                className={cn("h-8", groupByLevel === '5' ? "bg-muted text-foreground" : "text-muted-foreground")}
                 onClick={() => setGroupByLevel('5')}
               >
                 Sub-sector

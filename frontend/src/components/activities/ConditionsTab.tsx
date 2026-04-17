@@ -328,11 +328,11 @@ export function ConditionsTab({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Conditions</h3>
+          <h3 className="text-lg font-semibold text-foreground">Conditions</h3>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -376,10 +376,10 @@ export function ConditionsTab({
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <Label htmlFor="conditions-attached" className="text-base font-medium text-gray-900">
+                <Label htmlFor="conditions-attached" className="text-base font-medium text-foreground">
                   Are conditions attached to this activity?
                 </Label>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Toggle whether the conditions listed below apply to this activity
                 </p>
               </div>
@@ -392,7 +392,7 @@ export function ConditionsTab({
                 />
               )}
               {readOnly && (
-                <span className="ml-4 text-sm font-medium text-gray-700">
+                <span className="ml-4 text-sm font-medium text-foreground">
                   {areConditionsAttached ? 'Yes' : 'No'}
                 </span>
               )}
@@ -470,7 +470,7 @@ export function ConditionsTab({
         <Card className="border border-border bg-white">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-semibold text-gray-900">Conditions</CardTitle>
+              <CardTitle className="text-2xl font-semibold text-foreground">Conditions</CardTitle>
               {!readOnly && (
                 <Button
                   size="sm"
@@ -500,7 +500,7 @@ export function ConditionsTab({
                   // Edit Mode
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-base font-medium text-gray-900">
+                      <Label className="text-base font-medium text-foreground">
                         Condition Type
                       </Label>
                       <ConditionTypeSelect
@@ -511,7 +511,7 @@ export function ConditionsTab({
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-base font-medium text-gray-900">
+                      <Label className="text-base font-medium text-foreground">
                         Description
                       </Label>
                       <Textarea
@@ -527,7 +527,7 @@ export function ConditionsTab({
                         onClick={() => handleUpdateCondition(condition.id)}
                         disabled={!editingValues.narrative.trim() || isUpdating === condition.id}
                         size="sm"
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+                        className="bg-muted hover:bg-gray-300 text-foreground border border-gray-400"
                       >
                         {isUpdating === condition.id ? 'Saving...' : 'Save'}
                       </Button>
@@ -546,12 +546,12 @@ export function ConditionsTab({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-lg font-bold text-gray-900">{index + 1}.</span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-200 text-gray-800 border border-gray-400">
+                        <span className="text-lg font-bold text-foreground">{index + 1}.</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-muted text-foreground border border-gray-400">
                           {CONDITION_TYPE_LABELS[condition.type]}
                         </span>
                       </div>
-                      <p className="text-gray-900 ml-7 whitespace-pre-wrap">
+                      <p className="text-foreground ml-7 whitespace-pre-wrap">
                         {condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0]}
                       </p>
                     </div>
@@ -568,7 +568,7 @@ export function ConditionsTab({
                               narrative: condition.narrative[defaultLanguage] || Object.values(condition.narrative)[0] || ''
                             });
                           }}
-                          className="text-gray-600 hover:text-gray-900"
+                          className="text-muted-foreground hover:text-foreground"
                         >
                           Edit
                         </Button>
@@ -577,9 +577,9 @@ export function ConditionsTab({
                           size="sm"
                           onClick={() => handleDeleteCondition(condition.id)}
                           disabled={isDeleting === condition.id}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-destructive hover:text-red-800"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     )}

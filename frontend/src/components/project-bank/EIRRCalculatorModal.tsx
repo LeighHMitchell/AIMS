@@ -176,11 +176,11 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
                       className="h-7 text-sm text-right"
                     />
                   </td>
-                  <td className={`px-3 py-1 text-sm font-mono text-right ${(row.benefit - row.cost * scf) >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}`}>
+                  <td className={`px-3 py-1 text-sm font-mono text-right ${(row.benefit - row.cost * scf) >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}`}>
                     {(row.benefit - row.cost * scf).toFixed(1)}
                   </td>
                   <td className="px-1">
-                    <button onClick={() => removeRow(idx)} className="p-1 text-muted-foreground hover:text-red-500">
+                    <button onClick={() => removeRow(idx)} className="p-1 text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </td>
@@ -201,7 +201,7 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="p-3 bg-muted/50 rounded-lg text-center">
               <div className="text-xs text-muted-foreground mb-1">EIRR</div>
-              <div className={`text-xl font-bold font-mono ${eirrPercent != null ? (eirrPercent >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : 'text-muted-foreground'}`}>
+              <div className={`text-xl font-bold font-mono ${eirrPercent != null ? (eirrPercent >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : 'text-muted-foreground'}`}>
                 {eirrPercent != null ? `${eirrPercent.toFixed(1)}%` : 'N/A'}
               </div>
               {eirrPercent != null && (
@@ -212,7 +212,7 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
               <div className="text-xs text-muted-foreground mb-1">NPV at {sdr}%</div>
-              <div className={`text-xl font-bold font-mono ${results.npv != null ? (results.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600') : 'text-muted-foreground'}`}>
+              <div className={`text-xl font-bold font-mono ${results.npv != null ? (results.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : 'text-muted-foreground'}`}>
                 {results.npv != null ? `${results.npv.toFixed(1)}M` : 'N/A'}
               </div>
             </div>

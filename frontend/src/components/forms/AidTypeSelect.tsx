@@ -182,18 +182,18 @@ export function AidTypeSelect({
           <div className="text-sm">
             <span className={cn(
               "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block mr-1.5",
-              item.level === 0 ? "text-gray-700" : ""
+              item.level === 0 ? "text-foreground" : ""
             )}>
               {item.code}
             </span>
             <span className={cn(
-              item.level === 0 ? "text-gray-600" : "text-gray-700"
+              item.level === 0 ? "text-muted-foreground" : "text-foreground"
             )}>
               – {item.name}
             </span>
           </div>
           {item.description && item.level > 0 && (
-            <div className="text-sm text-gray-500 leading-snug">
+            <div className="text-sm text-muted-foreground leading-snug">
               {item.description}
             </div>
           )}
@@ -202,7 +202,7 @@ export function AidTypeSelect({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3 w-3 text-gray-400 shrink-0 mt-0.5" />
+                <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p className="text-xs">{item.description}</p>
@@ -261,7 +261,7 @@ export function AidTypeSelect({
                     onValueChange?.(null);
                   }
                 }}
-                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                className="h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Clear selection"
               >
                 <X className="h-3 w-3 text-muted-foreground" />

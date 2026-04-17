@@ -225,33 +225,33 @@ export function OrganizationalPositioningMap({
             className="w-3 h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: org.color }}
           />
-          <span className="font-semibold text-slate-900 text-sm truncate">
+          <span className="font-semibold text-foreground text-sm truncate">
             {org.name}
           </span>
         </div>
         {org.organisationType && (
-          <p className="text-xs text-slate-500 mb-2">
+          <p className="text-xs text-muted-foreground mb-2">
             {getOrgTypeLabel(org.organisationType)}
           </p>
         )}
         <div className="space-y-1 text-xs">
           <div className="flex justify-between">
-            <span className="text-slate-600">Total Value:</span>
-            <span className="font-medium text-slate-900">{formatCurrency(org.totalValue)}</span>
+            <span className="text-muted-foreground">Total Value:</span>
+            <span className="font-medium text-foreground">{formatCurrency(org.totalValue)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600">Humanitarian Share:</span>
-            <span className="font-medium text-slate-900">{humanitarianPct}%</span>
+            <span className="text-muted-foreground">Humanitarian Share:</span>
+            <span className="font-medium text-foreground">{humanitarianPct}%</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600">Position:</span>
-            <span className="font-medium text-slate-900">
+            <span className="text-muted-foreground">Position:</span>
+            <span className="font-medium text-foreground">
               {org.funderScore > 0 ? 'Net Funder' : 'Net Implementer'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600">Rank:</span>
-            <span className="font-medium text-slate-900">#{org.rank}</span>
+            <span className="text-muted-foreground">Rank:</span>
+            <span className="font-medium text-foreground">#{org.rank}</span>
           </div>
         </div>
       </div>
@@ -266,7 +266,7 @@ export function OrganizationalPositioningMap({
   // Render error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="text-sm">{error}</p>
       </div>
@@ -276,7 +276,7 @@ export function OrganizationalPositioningMap({
   // Render empty state
   if (!chartData.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="text-sm">No organization data available</p>
       </div>
@@ -325,7 +325,7 @@ export function OrganizationalPositioningMap({
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600">Show labels for top:</span>
+          <span className="text-sm text-muted-foreground">Show labels for top:</span>
           <Select
             value={topNLabels.toString()}
             onValueChange={(v) => setTopNLabels(parseInt(v))}
@@ -341,7 +341,7 @@ export function OrganizationalPositioningMap({
               <SelectItem value="30">30</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-sm text-slate-600">organizations</span>
+          <span className="text-sm text-muted-foreground">organizations</span>
         </div>
 
       </div>

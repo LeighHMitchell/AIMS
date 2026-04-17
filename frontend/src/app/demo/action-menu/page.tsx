@@ -58,10 +58,10 @@ export default function ActionMenuDemoPage() {
                       <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-sm"
                       onClick={() => handleAction('Delete', 'demo')}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                      <Trash2 className="h-4 w-4 text-destructive" /> Delete
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -119,10 +119,10 @@ export default function ActionMenuDemoPage() {
                                 <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                               </button>
                               <button 
-                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                                className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-sm"
                                 onClick={() => handleAction('Delete', item.id)}
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                                <Trash2 className="h-4 w-4 text-destructive" /> Delete
                               </button>
                             </PopoverContent>
                           </Popover>
@@ -180,10 +180,10 @@ export default function ActionMenuDemoPage() {
                     </button>
                     <div className="border-t border-border my-1" />
                     <button 
-                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
+                      className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-sm"
                       onClick={() => handleAction('Delete', 'extended')}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                      <Trash2 className="h-4 w-4 text-destructive" /> Delete
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -212,8 +212,8 @@ import { Button } from "@/components/ui/button"
     <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm" onClick={handleEdit}>
       <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
     </button>
-    <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm" onClick={handleDelete}>
-      <Trash2 className="h-4 w-4 text-red-500" /> Delete
+    <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-destructive text-sm" onClick={handleDelete}>
+      <Trash2 className="h-4 w-4 text-destructive" /> Delete
     </button>
   </PopoverContent>
 </Popover>`}

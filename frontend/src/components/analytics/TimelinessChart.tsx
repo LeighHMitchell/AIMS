@@ -181,7 +181,7 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
   // Don't render if data is empty or invalid
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] text-slate-500">
+      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
         <p>No timeliness data available for the selected period</p>
       </div>
     )
@@ -241,7 +241,7 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
   } catch (error) {
     console.error('[TimelinessChart] Render error:', error)
     return (
-      <div className="flex items-center justify-center h-[400px] text-red-500">
+      <div className="flex items-center justify-center h-[400px] text-destructive">
         <p>Error rendering timeliness chart</p>
       </div>
     )

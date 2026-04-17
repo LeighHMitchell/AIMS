@@ -128,7 +128,7 @@ export function AutosaveFormWrapper({
 
     if (state.lastError) {
       return (
-        <Badge variant="outline" className="text-red-600 border-red-300">
+        <Badge variant="outline" className="text-destructive border-red-300">
           <AlertCircle className="h-3 w-3 mr-1" />
           Save Failed
         </Badge>
@@ -154,7 +154,7 @@ export function AutosaveFormWrapper({
     }
 
     return (
-      <Badge variant="outline" className="text-gray-600">
+      <Badge variant="outline" className="text-muted-foreground">
         {/* No custom message, just show standard status or nothing */}
       </Badge>
     );
@@ -229,7 +229,7 @@ export function AutosaveFormWrapper({
               <div>⏰ Last: {state.lastSaved.toLocaleTimeString()}</div>
             )}
             {state.lastError && (
-              <div className="text-red-400">💥 Error: {state.lastError.message.substring(0, 30)}...</div>
+              <div className="text-destructive">💥 Error: {state.lastError.message.substring(0, 30)}...</div>
             )}
           </div>
         )}

@@ -462,8 +462,8 @@ export default function SectorAllocationPieChart({
       <div className="h-full flex flex-col">
         <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex items-center justify-center">
           <div className="text-center">
-            <div className="text-sm font-medium mb-1 text-gray-500">No Sector Data</div>
-            <div className="text-xs text-gray-400">Add sectors with percentages to see the visualization</div>
+            <div className="text-sm font-medium mb-1 text-muted-foreground">No Sector Data</div>
+            <div className="text-xs text-muted-foreground">Add sectors with percentages to see the visualization</div>
           </div>
         </div>
       </div>

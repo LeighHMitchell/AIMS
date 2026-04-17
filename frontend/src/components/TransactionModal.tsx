@@ -1838,7 +1838,7 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual'
                           ? 'bg-green-700 text-white'
-                          : 'bg-muted text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Unvalidated'}
                       </div>
@@ -1847,7 +1847,7 @@ export default function TransactionModal({
                     // Read-only status display for users without permission
                     <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-muted/50 px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-500">
+                        <span className="text-sm font-medium text-muted-foreground">
                           {formData.status === 'actual' ? 'Validated Transaction' : 'Pending Validation'}
                         </span>
                         <span className="text-xs text-muted-foreground">
@@ -1857,7 +1857,7 @@ export default function TransactionModal({
                       <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
                           ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]'
-                          : 'bg-muted text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {formData.status === 'actual' ? 'Validated' : 'Pending'}
                       </div>
@@ -2076,7 +2076,7 @@ export default function TransactionModal({
                     )}
                   </div>
                   {rateError && (
-                    <p className="text-xs text-red-500">{rateError}</p>
+                    <p className="text-xs text-destructive">{rateError}</p>
                   )}
                   {rateInfoMessage && !rateError && (
                     <p className="text-xs text-muted-foreground">{rateInfoMessage}</p>
@@ -2733,19 +2733,19 @@ export default function TransactionModal({
                   </LabelWithInfoAndSave>
                   <div className={cn(
                     "flex items-center justify-between h-10 px-3 border rounded-md",
-                    formData.is_humanitarian && "border-red-200 bg-red-50"
+                    formData.is_humanitarian && "border-red-200 bg-destructive/10"
                   )}>
                     <span className={cn(
                       "text-sm flex items-center gap-1.5",
-                      formData.is_humanitarian ? "text-red-700 font-medium" : "text-muted-foreground"
+                      formData.is_humanitarian ? "text-destructive font-medium" : "text-muted-foreground"
                     )}>
-                      {formData.is_humanitarian && <Flag className="h-3.5 w-3.5 text-red-500" />}
+                      {formData.is_humanitarian && <Flag className="h-3.5 w-3.5 text-destructive" />}
                       {formData.is_humanitarian ? 'Yes — humanitarian transaction' : 'No'}
                     </span>
                     <Switch
                       id="is_humanitarian"
                       checked={formData.is_humanitarian}
-                      className={cn(formData.is_humanitarian && "data-[state=checked]:bg-red-500")}
+                      className={cn(formData.is_humanitarian && "data-[state=checked]:bg-destructive/100")}
                       onCheckedChange={checked => {
                         setFormData({ ...formData, is_humanitarian: checked });
                         humanitarianAutosave.triggerFieldSave(checked);
@@ -2821,7 +2821,7 @@ export default function TransactionModal({
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
-                        <span className="text-sm font-medium text-gray-700">Geographic Targeting</span>
+                        <span className="text-sm font-medium text-foreground">Geographic Targeting</span>
                         {hasGeographicTargeting && (
                           <Badge variant="secondary" className="text-xs">
                             {formData.recipient_country_code
@@ -2831,7 +2831,7 @@ export default function TransactionModal({
                           </Badge>
                         )}
                       </div>
-                      <Badge variant="outline" className="text-xs text-gray-500">
+                      <Badge variant="outline" className="text-xs text-muted-foreground">
                         {geographyLevel === 'activity' ? 'Activity level' : 'Transaction level'}
                       </Badge>
                     </div>
@@ -2860,7 +2860,7 @@ export default function TransactionModal({
                     {/* Transaction-level geography form */}
                     {geographyLevel === 'transaction' && (
                       <>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-muted-foreground">
                           Per IATI standard, each transaction can have one country OR one region (not both).
                         </p>
 
@@ -2883,7 +2883,7 @@ export default function TransactionModal({
                               className="h-4 w-4 accent-foreground"
                               disabled={isSubmitting}
                             />
-                            <span className="text-sm text-gray-600">Activity-level default</span>
+                            <span className="text-sm text-muted-foreground">Activity-level default</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -3069,12 +3069,12 @@ export default function TransactionModal({
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
-                        <span className="text-sm font-medium text-gray-700">Sector Classifications</span>
+                        <span className="text-sm font-medium text-foreground">Sector Classifications</span>
                         {activitySectors.length === 0 && multipleSectorsCount > 0 && (
                           <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
                         )}
                       </div>
-                      <Badge variant="outline" className="text-xs text-gray-500">
+                      <Badge variant="outline" className="text-xs text-muted-foreground">
                         {activitySectors.length > 0 ? 'Activity level' : 'Transaction level'}
                       </Badge>
                     </div>
@@ -3164,7 +3164,7 @@ export default function TransactionModal({
                     {/* No activity-level sectors: allow transaction-level entry */}
                     {activitySectors.length === 0 && (
                       <div>
-                        <p className="text-xs text-gray-600 mb-3">
+                        <p className="text-xs text-muted-foreground mb-3">
                           No sectors are defined at the activity level. You can specify sector allocations for this transaction below.
                           Percentages must sum to 100%.
                         </p>
@@ -3193,7 +3193,7 @@ export default function TransactionModal({
                   >
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleAidTypes && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Multiple Aid Types</span>
+                      <span className="text-sm font-medium text-foreground">Multiple Aid Types</span>
                       {multipleAidTypesCount > 0 && (
                         <Badge variant="secondary" className="text-xs">{multipleAidTypesCount}</Badge>
                       )}
@@ -3202,7 +3202,7 @@ export default function TransactionModal({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="space-y-4 p-4 border-t">
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-muted-foreground">
                       Specify multiple aid type classifications with different vocabularies.
                     </p>
                     <TransactionAidTypeManager
@@ -3224,7 +3224,7 @@ export default function TransactionModal({
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown className={cn("h-4 w-4 transition-transform", showSystemIdentifiers && "rotate-180")} />
-                    <span className="text-sm font-medium text-gray-700">System Identifiers</span>
+                    <span className="text-sm font-medium text-foreground">System Identifiers</span>
                   </div>
                 </button>
               </CollapsibleTrigger>
@@ -3232,9 +3232,9 @@ export default function TransactionModal({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-t">
                 {/* Activity ID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Activity ID</label>
+                  <label className="text-sm font-medium text-foreground">Activity ID</label>
                   <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
-                    <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
+                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
                       {activityPartnerId || 'Not reported'}
                     </span>
                     {activityPartnerId && (
@@ -3248,7 +3248,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Activity ID to clipboard"
                       >
                         <Copy className="h-4 w-4" />
@@ -3259,9 +3259,9 @@ export default function TransactionModal({
 
                 {/* Activity UUID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Activity UUID</label>
+                  <label className="text-sm font-medium text-foreground">Activity UUID</label>
                   <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
-                    <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
+                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
                       {activityId || 'Not available'}
                     </span>
                     {activityId && (
@@ -3275,7 +3275,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Activity UUID to clipboard"
                       >
                         <Copy className="h-4 w-4" />
@@ -3286,13 +3286,13 @@ export default function TransactionModal({
 
                 {/* Transaction ID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Transaction ID</label>
+                  <label className="text-sm font-medium text-foreground">Transaction ID</label>
                   <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
                     <input
                       value={formData.transaction_reference || ''}
                       onChange={e => handleFieldChange('transaction_reference', e.target.value)}
                       placeholder="Will be auto-generated on save"
-                      className="border-0 bg-transparent p-0 text-sm text-gray-600 placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
+                      className="border-0 bg-transparent p-0 text-sm text-muted-foreground placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
                     />
                     {formData.transaction_reference && (
                       <button
@@ -3305,7 +3305,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Transaction ID to clipboard"
                       >
                         <Copy className="h-4 w-4" />
@@ -3316,9 +3316,9 @@ export default function TransactionModal({
 
                 {/* Transaction UUID */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Transaction UUID</label>
+                  <label className="text-sm font-medium text-foreground">Transaction UUID</label>
                   <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
-                    <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
+                    <span className="flex-1 text-muted-foreground font-mono truncate min-w-0">
                       {transaction?.uuid || 'Generated after save'}
                     </span>
                     {transaction?.uuid && (
@@ -3332,7 +3332,7 @@ export default function TransactionModal({
                             toast.error("Failed to copy to clipboard");
                           }
                         }}
-                        className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
+                        className="ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0"
                         aria-label="Copy Transaction UUID to clipboard"
                       >
                         <Copy className="h-4 w-4" />

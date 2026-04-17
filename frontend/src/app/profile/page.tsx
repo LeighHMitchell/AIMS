@@ -795,15 +795,15 @@ export default function ProfilePage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <User className="h-4 w-4" />
               Personal Info
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="preferences" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Columns3 className="h-4 w-4" />
               Preferences
             </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="system" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Settings className="h-4 w-4" />
               System & Security
             </TabsTrigger>
@@ -1454,7 +1454,7 @@ export default function ProfilePage() {
                 {/* Delete Account */}
                 <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
                   <div className="flex items-center gap-3">
-                    <Trash2 className="h-5 w-5 text-red-500" />
+                    <Trash2 className="h-5 w-5 text-destructive" />
                     <div>
                       <p className="font-medium text-destructive">Delete Account</p>
                       {user.role === 'super_user' || user.role === 'admin' ? (
@@ -1473,7 +1473,7 @@ export default function ProfilePage() {
                       variant="destructive"
                       onClick={() => setDeleteAccountDialogOpen(true)}
                     >
-                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                      <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                       Delete Account
                     </Button>
                   )}

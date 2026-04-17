@@ -323,7 +323,7 @@ export default function TransactionSectorsTab({
                             onChange={(e) => handlePercentageChange(line.id, e.target.value)}
                             className={cn(
                               "w-20 text-right",
-                              isLocked && "bg-gray-100 cursor-not-allowed"
+                              isLocked && "bg-muted cursor-not-allowed"
                             )}
                             disabled={effectiveDisabled}
                           />
@@ -342,9 +342,9 @@ export default function TransactionSectorsTab({
                             variant="ghost"
                             onClick={() => removeSectorLine(line.id)}
                             disabled={effectiveDisabled}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </TableCell>
@@ -362,7 +362,7 @@ export default function TransactionSectorsTab({
                   <span>Total Allocation</span>
                   <span className={cn(
                     "font-medium",
-                    validation?.isValid ? "text-[hsl(var(--success-icon))]" : "text-red-600"
+                    validation?.isValid ? "text-[hsl(var(--success-icon))]" : "text-destructive"
                   )}>
                     {validation?.totalPercentage.toFixed(1)}% of 100%
                   </span>
@@ -404,8 +404,8 @@ export default function TransactionSectorsTab({
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="text-sm text-red-600 font-medium">
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                      <span className="text-sm text-destructive font-medium">
                         {validation.errors[0] || 'Invalid allocation'}
                       </span>
                     </>

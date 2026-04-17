@@ -210,9 +210,9 @@ export function TransactionSectorManager({
                 variant="outline" 
                 size="sm"
                 onClick={clearAll}
-                className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600"
+                className="text-xs h-7 text-destructive border-red-200 hover:bg-destructive/10 hover:text-destructive"
               >
-                <Trash2 className="h-3 w-3 mr-1 text-red-500" />
+                <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                 Clear All
               </Button>
             </div>
@@ -276,7 +276,7 @@ export function TransactionSectorManager({
                           variant="ghost"
                           size="sm"
                           onClick={() => removeSector(index)}
-                          className="h-7 w-7 p-0 text-destructive hover:text-red-700"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -482,19 +482,19 @@ export function TransactionAidTypeManager({
           <div className="flex items-center gap-2">
             <span className={cn(
               "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded",
-              item.level === 0 ? "text-gray-700" : "text-gray-800"
+              item.level === 0 ? "text-foreground" : "text-foreground"
             )}>
               {item.code}
             </span>
             <span className={cn(
               "text-sm",
-              item.level === 0 ? "text-gray-600" : "text-gray-700"
+              item.level === 0 ? "text-muted-foreground" : "text-foreground"
             )}>
               – {item.name}
             </span>
           </div>
           {item.description && item.level > 0 && (
-            <div className="text-sm text-gray-500 leading-snug">
+            <div className="text-sm text-muted-foreground leading-snug">
               {item.description}
             </div>
           )}
@@ -530,7 +530,7 @@ export function TransactionAidTypeManager({
                       {aidType.code}
                     </span>
                   </td>
-                  <td className="py-2 px-3 text-gray-700">
+                  <td className="py-2 px-3 text-foreground">
                     {getAidTypeName(aidType.code)}
                   </td>
                   <td className="py-2 px-3">
@@ -557,7 +557,7 @@ export function TransactionAidTypeManager({
                       onClick={() => removeAidType(index)}
                       className="h-8 w-8 p-0"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </td>
                 </tr>
@@ -920,7 +920,7 @@ export function TransactionRecipientCountryManager({
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                   {country.code}
                 </span>
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-foreground">
                   {getCountryName(country.code)}
                 </span>
               </div>
@@ -946,7 +946,7 @@ export function TransactionRecipientCountryManager({
               onClick={() => removeCountry(index)}
                 className="h-8 w-8 p-0"
             >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
             </div>
           </Card>
@@ -1157,7 +1157,7 @@ export function TransactionRecipientRegionManager({
                 onClick={() => removeRegion(index)}
                 className="ml-auto h-6 w-6 p-0"
               >
-                <Trash2 className="h-3 w-3 text-red-500" />
+                <Trash2 className="h-3 w-3 text-destructive" />
               </Button>
             </div>
             {region.narrative && (

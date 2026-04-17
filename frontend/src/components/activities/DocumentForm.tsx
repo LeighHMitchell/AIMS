@@ -245,7 +245,7 @@ export function DocumentForm({
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="ml-1">
-                            <HelpCircle className="w-3 h-3 text-gray-400" />
+                            <HelpCircle className="w-3 h-3 text-muted-foreground" />
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="text-sm">
@@ -266,7 +266,7 @@ export function DocumentForm({
                       <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
                     )}
                     {urlMetadata.size && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     )}
@@ -346,7 +346,7 @@ export function DocumentForm({
                             size="icon"
                             onClick={() => removeNarrative('title', index)}
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         )}
                       </div>
@@ -397,7 +397,7 @@ export function DocumentForm({
                           size="icon"
                           onClick={() => removeNarrative('description', index)}
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     ))}
@@ -507,7 +507,7 @@ export function DocumentForm({
                         {code}
                         <button
                           onClick={() => removeCountry(code)}
-                          className="ml-1 hover:text-red-600"
+                          className="ml-1 hover:text-destructive"
                         >
                           <X className="w-3 h-3" />
                         </button>

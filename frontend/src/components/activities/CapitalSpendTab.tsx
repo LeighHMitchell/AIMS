@@ -64,7 +64,7 @@ function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: numb
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-gray-600">{data.value.toFixed(1)}%</p>
+          <p className="text-sm text-muted-foreground">{data.value.toFixed(1)}%</p>
         </div>
       );
     }
@@ -274,11 +274,11 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                       error && "border-red-500 focus-visible:ring-red-500"
                     )}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     %
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Fixed assets, infrastructure
                 </p>
               </div>
@@ -298,14 +298,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     type="text"
                     value={recurrentSpend}
                     disabled
-                    className="pr-10 bg-gray-50"
+                    className="pr-10 bg-muted"
                     placeholder="Auto-calculated"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     %
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Operational, running costs
                 </p>
               </div>
@@ -327,7 +327,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                 Examples by Project Type
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2">
-                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside ml-4">
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-4">
                   <li>Infrastructure projects (roads, buildings): typically 80-100% capital</li>
                   <li>Equipment procurement: typically 60-90% capital</li>
                   <li>Training programs: typically 0-10% capital</li>
@@ -341,7 +341,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
         {/* Right column - Donut chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-slate-900">
+            <CardTitle className="text-base font-semibold text-foreground">
               Capital Spend Breakdown
             </CardTitle>
           </CardHeader>

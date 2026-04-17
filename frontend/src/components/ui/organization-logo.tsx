@@ -42,8 +42,8 @@ export function OrganizationLogo({
             const parent = (e.target as HTMLImageElement).parentElement;
             if (parent) {
               parent.innerHTML = `
-                <div class="${sizeClass} bg-gray-100 rounded-sm flex items-center justify-center">
-                  <svg class="${iconSize} text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="${sizeClass} bg-muted rounded-sm flex items-center justify-center">
+                  <svg class="${iconSize} text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                   </svg>
                 </div>
@@ -57,8 +57,8 @@ export function OrganizationLogo({
   
   // Fallback when no logo
   return (
-    <div className={`${sizeClass} bg-gray-100 rounded-sm flex items-center justify-center image-outline ${className}`}>
-      <Building2 className={`${iconSize} text-gray-400`} />
+    <div className={`${sizeClass} bg-muted rounded-sm flex items-center justify-center image-outline ${className}`}>
+      <Building2 className={`${iconSize} text-muted-foreground`} />
     </div>
   );
 }

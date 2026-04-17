@@ -107,7 +107,7 @@ export function ExpandableCard({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {typeof title === 'string' ? (
-                <CardTitle className="text-lg font-medium text-slate-700">
+                <CardTitle className="text-lg font-medium text-foreground">
                   {title}
                 </CardTitle>
               ) : (
@@ -127,13 +127,13 @@ export function ExpandableCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
-                  className="h-8 w-8 p-0 hover:bg-slate-100"
+                  className="h-8 w-8 p-0 hover:bg-muted"
                   title={viewMode === 'chart' ? 'View as table' : 'View as chart'}
                 >
                   {viewMode === 'chart' ? (
-                    <TableIcon className="h-4 w-4 text-slate-600" />
+                    <TableIcon className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <BarChart3 className="h-4 w-4 text-slate-600" />
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
               )}
@@ -142,20 +142,20 @@ export function ExpandableCard({
                   variant="ghost"
                   size="sm"
                   onClick={handleExport}
-                  className="h-8 w-8 p-0 hover:bg-slate-100"
+                  className="h-8 w-8 p-0 hover:bg-muted"
                   title="Export to CSV"
                 >
-                  <Download className="h-4 w-4 text-slate-600" />
+                  <Download className="h-4 w-4 text-muted-foreground" />
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(true)}
-                className="h-8 w-8 p-0 hover:bg-slate-100"
+                className="h-8 w-8 p-0 hover:bg-muted"
                 title="Expand to full screen"
               >
-                <Maximize2 className="h-4 w-4 text-slate-600" />
+                <Maximize2 className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
           </div>
@@ -171,7 +171,7 @@ export function ExpandableCard({
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">
                 {typeof title === 'string' ? (
-                  <DialogTitle className="text-2xl font-semibold text-slate-800">
+                  <DialogTitle className="text-2xl font-semibold text-foreground">
                     {title}
                   </DialogTitle>
                 ) : (

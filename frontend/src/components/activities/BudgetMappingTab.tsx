@@ -441,8 +441,8 @@ export default function BudgetMappingTab({
           {suggestions.hasSectors && showSuggestions && (
             <CardContent>
               {/* Show activity sectors */}
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Activity Sectors:</h4>
+              <div className="mb-4 p-3 bg-muted rounded-lg">
+                <h4 className="text-sm font-medium text-foreground mb-2">Activity Sectors:</h4>
                 <div className="flex flex-wrap gap-2">
                   {suggestions.sectors.map((sector, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs">
@@ -572,7 +572,7 @@ export default function BudgetMappingTab({
                 </>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <Info className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <Info className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm">
                     No sector mappings configured for the assigned sectors.
                   </p>
@@ -619,11 +619,11 @@ export default function BudgetMappingTab({
 
         <CardContent>
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start gap-3 mb-4">
-              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+            <div className="bg-destructive/10 border border-red-200 rounded-md p-4 flex items-start gap-3 mb-4">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-medium text-red-900">Error</h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <p className="text-sm text-destructive mt-1">{error}</p>
               </div>
             </div>
           )}
@@ -644,7 +644,7 @@ export default function BudgetMappingTab({
                   Add Budget Mapping Manually
                 </Button>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   All available vocabularies have been used
                 </p>
               )}
@@ -706,7 +706,7 @@ export default function BudgetMappingTab({
                             </TableCell>
                           )}
                           <TableCell>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-muted-foreground">
                               {getPrimaryDescription(item.description)}
                             </div>
                           </TableCell>
@@ -718,15 +718,15 @@ export default function BudgetMappingTab({
                                 className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted"
                                 title="Edit"
                               >
-                                <Pencil className="h-4 w-4 text-slate-500" />
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDelete(cbi.vocabulary)}
-                                className="p-1 text-muted-foreground hover:text-red-600 rounded hover:bg-muted"
+                                className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-muted"
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </button>
                             </div>
                           </TableCell>

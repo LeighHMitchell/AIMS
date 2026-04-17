@@ -402,15 +402,15 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           <div className="flex items-center gap-4">
             {/* View Toggle - Active/Archived */}
             {activeView === 'assigned' && (
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(false)}
                   className={cn(
                     !showArchived
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <CheckCircle2 className="h-4 w-4 mr-1" />
@@ -422,8 +422,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   onClick={() => setShowArchived(true)}
                   className={cn(
                     showArchived
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Archive className="h-4 w-4 mr-1" />
@@ -449,14 +449,14 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
 
             {/* View Mode Toggle - show for Assigned to Me, Reassigned, and Created by Me tabs */}
             {(activeView === 'assigned' || activeView === 'created' || activeView === 'reassigned') && (
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
                   variant="ghost"
                   size="icon"
                   className={cn(
                     viewMode === 'table'
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => setViewMode('table')}
                 >
@@ -467,8 +467,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   size="icon"
                   className={cn(
                     viewMode === 'cards'
-                      ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white shadow-sm text-foreground hover:bg-white'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => setViewMode('cards')}
                 >

@@ -242,7 +242,7 @@ export function EnhancedDatePicker({
     <div ref={containerRef} className={cn("relative", className)}>
       <div className="relative">
         <CalendarIcon 
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 cursor-pointer z-20 pointer-events-auto" 
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer z-20 pointer-events-auto" 
           onClick={handleCalendarClick}
         />
         <input
@@ -261,7 +261,7 @@ export function EnhancedDatePicker({
           className={cn(
             "w-full pl-10 pr-4 py-2 border border-input rounded-md",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-            "disabled:bg-gray-100 disabled:cursor-not-allowed",
+            "disabled:bg-muted disabled:cursor-not-allowed",
             "text-sm font-normal",
             "bg-white cursor-pointer"
           )}
@@ -322,7 +322,7 @@ export function EnhancedDatePicker({
           
           <div className="grid grid-cols-7 gap-1 mb-2">
             {dayNames.map(day => (
-              <div key={day} className="text-xs text-gray-500 text-center p-1">
+              <div key={day} className="text-xs text-muted-foreground text-center p-1">
                 {day}
               </div>
             ))}

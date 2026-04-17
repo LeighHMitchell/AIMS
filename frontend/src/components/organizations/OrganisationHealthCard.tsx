@@ -16,7 +16,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
   const getHealthStatus = (percent: number) => {
     if (percent <= 20) return { color: 'text-[hsl(var(--success-icon))]', bgColor: 'bg-green-50', icon: CheckCircle, label: 'Good' }
     if (percent <= 50) return { color: 'text-yellow-600', bgColor: 'bg-yellow-50', icon: AlertCircle, label: 'Fair' }
-    return { color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle, label: 'Poor' }
+    return { color: 'text-destructive', bgColor: 'bg-destructive/10', icon: XCircle, label: 'Poor' }
   }
 
   const budgetStatus = getHealthStatus(healthMetrics.missingBudgetsPercent)
@@ -31,7 +31,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
     <Card className="border-border bg-white">
       <CardContent className="p-6">
         <div className="mb-3">
-          <h3 className="text-sm font-semibold text-slate-900">Data Health</h3>
+          <h3 className="text-sm font-semibold text-foreground">Data Health</h3>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {/* Missing Budgets */}
@@ -43,7 +43,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
             <p className={`text-lg font-bold ${budgetStatus.color}`}>
               {healthMetrics.missingBudgetsPercent.toFixed(1)}%
             </p>
-            <p className="text-xs text-slate-600 mt-1">{budgetStatus.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{budgetStatus.label}</p>
           </div>
 
           {/* Missing Planned Disbursements */}
@@ -55,7 +55,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
             <p className={`text-lg font-bold ${disbursementStatus.color}`}>
               {healthMetrics.missingPlannedDisbursementsPercent.toFixed(1)}%
             </p>
-            <p className="text-xs text-slate-600 mt-1">{disbursementStatus.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{disbursementStatus.label}</p>
           </div>
 
           {/* Outdated Data */}
@@ -67,7 +67,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
             <p className={`text-lg font-bold ${dataStatus.color}`}>
               {healthMetrics.outdatedDataPercent.toFixed(1)}%
             </p>
-            <p className="text-xs text-slate-600 mt-1">{dataStatus.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{dataStatus.label}</p>
           </div>
         </div>
       </CardContent>

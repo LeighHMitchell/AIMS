@@ -65,7 +65,7 @@ export function ReadinessStageAccordion({
     if (progress.in_progress > 0 || progress.completed > 0) {
       return <Clock className="h-5 w-5 text-yellow-600" />;
     }
-    return <Circle className="h-5 w-5 text-gray-400" />;
+    return <Circle className="h-5 w-5 text-muted-foreground" />;
   };
 
   return (
@@ -87,11 +87,11 @@ export function ReadinessStageAccordion({
           <div className="flex items-center gap-3">
             {getStatusIcon()}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-foreground">
                 Stage {stage.stage_order}: {stage.name}
               </h3>
               {stage.description && (
-                <p className="text-sm text-gray-600">{stage.description}</p>
+                <p className="text-sm text-muted-foreground">{stage.description}</p>
               )}
             </div>
           </div>
@@ -99,7 +99,7 @@ export function ReadinessStageAccordion({
           <div className="flex items-center gap-4">
             {/* Progress indicator */}
             <div className="hidden md:flex items-center gap-3">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 {progress.completed + progress.not_required} / {progress.total} items
               </div>
               <div className="w-24">
@@ -149,7 +149,7 @@ export function ReadinessStageAccordion({
           {/* Items list */}
           <div className="space-y-3 mt-4">
             {items.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
+              <p className="text-sm text-muted-foreground text-center py-4">
                 No applicable items for this stage based on current configuration.
               </p>
             ) : (

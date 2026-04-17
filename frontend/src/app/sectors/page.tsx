@@ -202,7 +202,7 @@ export default function SectorsListingPage() {
           <div className="w-full p-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Sectors</h2>
                 <p className="text-muted-foreground">{error}</p>
               </CardContent>

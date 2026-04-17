@@ -263,7 +263,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-500">{error}</p>
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }
@@ -414,7 +414,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'activity' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -428,7 +428,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'period_start' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -442,7 +442,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'status' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -456,7 +456,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'type' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -470,7 +470,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'value' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -484,7 +484,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'value_date' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -498,7 +498,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     {sortColumn === 'usd_value' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -642,7 +642,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {Math.min(startIndex + 1, sortedBudgets.length)} to {Math.min(endIndex, sortedBudgets.length)} of {sortedBudgets.length} budgets
               </div>
 
@@ -685,7 +685,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -714,7 +714,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-sm text-muted-foreground">Items per page:</label>
                 <Select
                   value={itemsPerPage.toString()}
                   onValueChange={(value) => {

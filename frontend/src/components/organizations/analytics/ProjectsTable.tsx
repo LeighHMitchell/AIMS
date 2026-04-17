@@ -63,8 +63,8 @@ const STATUS_COLORS: { [key: string]: string } = {
   'active': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
   '1': 'bg-blue-100 text-blue-800',
   'pipeline': 'bg-blue-100 text-blue-800',
-  '3': 'bg-gray-100 text-gray-800',
-  'completed': 'bg-gray-100 text-gray-800',
+  '3': 'bg-muted text-foreground',
+  'completed': 'bg-muted text-foreground',
   '5': 'bg-red-100 text-red-800',
   'cancelled': 'bg-red-100 text-red-800',
 };
@@ -277,7 +277,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                       <TableCell>
                         <Badge
                           className={
-                            STATUS_COLORS[project.status] || 'bg-gray-100 text-gray-800'
+                            STATUS_COLORS[project.status] || 'bg-muted text-foreground'
                           }
                         >
                           {STATUS_LABELS[project.status] || project.status}

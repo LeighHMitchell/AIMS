@@ -43,7 +43,7 @@ const ROLE_COLORS: Record<string, string> = {
 export default function OrganizationRoleFlow({ data, transactions = [] }: OrganizationRoleFlowProps) {
   if (!data || !data.nodes || data.nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96 text-slate-400">
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No organization role data available</p>
           <p className="text-xs mt-2">Add participating organizations to see role-based financial flow</p>
@@ -129,7 +129,7 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
 
   if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96 text-slate-400">
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No role data to display</p>
         </div>
@@ -151,17 +151,17 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
       const data = payload[0].payload
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">{data.role}</p>
-          <p className="text-sm text-slate-600">
+          <p className="font-semibold text-foreground mb-2">{data.role}</p>
+          <p className="text-sm text-muted-foreground">
             <span className="font-medium">Organizations: </span>
             {data.organizations}
           </p>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             <span className="font-medium">Total Value: </span>
             {formatCurrency(data.totalValue)}
           </p>
           {data.orgNames && (
-            <p className="text-xs text-slate-500 mt-2 max-w-xs">
+            <p className="text-xs text-muted-foreground mt-2 max-w-xs">
               {data.orgNames}
             </p>
           )}
@@ -198,21 +198,21 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
       
       {/* Role summary table */}
       <div className="mt-6 space-y-2">
-        <p className="text-sm font-semibold text-slate-900">Role Summary</p>
+        <p className="text-sm font-semibold text-foreground">Role Summary</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {chartData.map((item) => (
-            <div key={item.roleCode} className="p-3 bg-slate-50 rounded-lg">
+            <div key={item.roleCode} className="p-3 bg-muted rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: ROLE_COLORS[item.roleCode] || '#64748B' }}
                   />
-                  <span className="text-sm font-medium text-slate-900">{item.role}</span>
+                  <span className="text-sm font-medium text-foreground">{item.role}</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">{item.organizations} orgs</p>
-                  <p className="text-xs text-slate-600">{formatCurrency(item.totalValue)}</p>
+                  <p className="text-sm font-semibold text-foreground">{item.organizations} orgs</p>
+                  <p className="text-xs text-muted-foreground">{formatCurrency(item.totalValue)}</p>
                 </div>
               </div>
             </div>

@@ -115,7 +115,7 @@ export default function TestFeedbackDebugPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {!user ? (
-            <div className="text-center text-red-600">
+            <div className="text-center text-destructive">
               Please log in to test feedback attachments
             </div>
           ) : (
@@ -134,7 +134,7 @@ export default function TestFeedbackDebugPage() {
                   </Button>
                   
                   {debugData && (
-                    <div className="bg-gray-50 p-4 rounded-lg text-sm">
+                    <div className="bg-muted p-4 rounded-lg text-sm">
                       <h4 className="font-medium mb-2">Summary:</h4>
                       <ul className="space-y-1">
                         <li>• Attachment columns exist: {debugData.summary.hasAttachmentColumns ? '✅ Yes' : '❌ No'}</li>
@@ -162,7 +162,7 @@ export default function TestFeedbackDebugPage() {
                       type="file"
                       onChange={handleFileSelect}
                       accept="image/*,.pdf,.txt,.doc,.docx"
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
                     
                     {selectedFile && (
@@ -199,7 +199,7 @@ export default function TestFeedbackDebugPage() {
               {debugData && (
                 <div>
                   <h3 className="font-medium mb-3">Raw Debug Data</h3>
-                  <details className="bg-gray-50 p-4 rounded-lg">
+                  <details className="bg-muted p-4 rounded-lg">
                     <summary className="cursor-pointer font-medium">Click to expand</summary>
                     <pre className="text-xs mt-2 overflow-auto">
                       {JSON.stringify(debugData, null, 2)}

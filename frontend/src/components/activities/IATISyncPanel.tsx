@@ -144,7 +144,7 @@ export function IATISyncPanel({
         icon: <Activity className="h-4 w-4" />,
         text: 'Not Synced',
         variant: 'secondary' as const,
-        color: 'text-gray-600'
+        color: 'text-muted-foreground'
       };
     }
     switch (syncStatus) {
@@ -168,7 +168,7 @@ export function IATISyncPanel({
           icon: <Activity className="h-4 w-4" />,
           text: 'Not Synced',
           variant: 'secondary' as const,
-          color: 'text-gray-600'
+          color: 'text-muted-foreground'
         };
     }
   };
@@ -378,9 +378,9 @@ export function IATISyncPanel({
   const getSyncBannerConfig = () => {
     if (!autoSync || !currentLastSyncTime) {
       return {
-        bg: 'bg-gray-50 border-border',
-        text: 'text-gray-600',
-        icon: <Clock className="h-4 w-4 text-gray-400" />,
+        bg: 'bg-muted border-border',
+        text: 'text-muted-foreground',
+        icon: <Clock className="h-4 w-4 text-muted-foreground" />,
         label: autoSync ? 'Never synced with IATI Datastore' : 'Auto-sync is disabled',
         detail: null,
       };
@@ -409,9 +409,9 @@ export function IATISyncPanel({
       };
     } else {
       return {
-        bg: 'bg-gray-50 border-border',
-        text: 'text-gray-600',
-        icon: <AlertCircle className="h-4 w-4 text-gray-400" />,
+        bg: 'bg-muted border-border',
+        text: 'text-muted-foreground',
+        icon: <AlertCircle className="h-4 w-4 text-muted-foreground" />,
         label: `Last synced ${relative}`,
         detail: exact,
       };
@@ -488,9 +488,9 @@ export function IATISyncPanel({
       <Card>
         <CardHeader>
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-semibold text-gray-900">IATI Link</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-foreground">IATI Link</CardTitle>
               <HelpTextTooltip content="This tab controls synchronisation with the IATI Registry and Datastore. Enabling sync ensures that updates made to the activity in this system are reflected in your published IATI file, maintaining consistency between internal records and the official public dataset.">
-                <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+                <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
             </div>
             <CardDescription>
@@ -569,7 +569,7 @@ export function IATISyncPanel({
             )}
 
             {/* Auto-sync Toggle */}
-            <div className="flex items-center justify-between space-x-2 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between space-x-2 p-4 bg-muted rounded-lg">
               <div className="space-y-0.5">
                 <Label htmlFor="auto-sync" className="text-base cursor-pointer">
                   Enable auto-sync
@@ -660,13 +660,13 @@ export function IATISyncPanel({
                         {log.import_status === 'success' ? (
                           <CheckCircle className="h-3.5 w-3.5 text-[hsl(var(--success-icon))] shrink-0" />
                         ) : (
-                          <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                          <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
                         )}
                         <Badge variant="outline" className="text-xs font-normal">
                           {log.import_source === 'auto_sync' ? 'Auto sync' : 'Manual sync'}
                         </Badge>
                         {log.error_message && (
-                          <span className="text-xs text-red-600 truncate max-w-[200px]" title={log.error_message}>
+                          <span className="text-xs text-destructive truncate max-w-[200px]" title={log.error_message}>
                             {log.error_message}
                           </span>
                         )}

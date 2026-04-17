@@ -120,7 +120,7 @@ export default function BuildHistoryPage() {
           {/* Timeline */}
           <div className="relative">
             {/* Vertical timeline line */}
-            <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-200" />
+            <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-muted" />
 
             {/* Release entries */}
             <div className="space-y-6">
@@ -136,7 +136,7 @@ export default function BuildHistoryPage() {
                       className={`absolute left-0 top-6 w-10 h-10 rounded-full flex items-center justify-center ${
                         isLatest 
                           ? 'bg-primary text-primary-foreground' 
-                          : 'bg-gray-100 text-gray-500 border-2 border-border'
+                          : 'bg-muted text-muted-foreground border-2 border-border'
                       }`}
                     >
                       {isLatest ? (
@@ -204,8 +204,8 @@ export default function BuildHistoryPage() {
             {/* End of timeline marker (only show on last page) */}
             {currentPage === totalPages && (
               <div className="relative pl-12 pt-6">
-                <div className="absolute left-0 top-6 w-10 h-10 rounded-full bg-gray-50 border-2 border-dashed border-input flex items-center justify-center">
-                  <span className="text-gray-400 text-xs font-medium">...</span>
+                <div className="absolute left-0 top-6 w-10 h-10 rounded-full bg-muted border-2 border-dashed border-input flex items-center justify-center">
+                  <span className="text-muted-foreground text-xs font-medium">...</span>
                 </div>
                 <p className="text-sm text-muted-foreground pt-2 pl-2">
                   End of release history
@@ -218,7 +218,7 @@ export default function BuildHistoryPage() {
           {totalReleases > 0 && (
             <div className="bg-white rounded-lg border border-border shadow-sm p-4 mt-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Showing {startIndex + 1} to {endIndex} of {totalReleases} releases
                 </div>
 
@@ -261,7 +261,7 @@ export default function BuildHistoryPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                          className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                         >
                           {pageNum}
                         </Button>
@@ -290,7 +290,7 @@ export default function BuildHistoryPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Releases per page:</label>
+                  <label className="text-sm text-muted-foreground">Releases per page:</label>
                   <Select
                     value={pageLimit.toString()}
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

@@ -52,7 +52,7 @@ export function StageSEEProfile({ wizard }: StageSEEProfileProps) {
             onChange={e => updateField('see_name', e.target.value)}
             placeholder="e.g. Myanmar Timber Enterprise"
           />
-          {errors.see_name && <p className="text-xs text-red-500 mt-1">{errors.see_name}</p>}
+          {errors.see_name && <p className="text-xs text-destructive mt-1">{errors.see_name}</p>}
         </div>
 
         <div>

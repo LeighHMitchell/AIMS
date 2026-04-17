@@ -171,7 +171,7 @@ export default function SectorProfilePage() {
       <MainLayout>
         <div className="min-h-screen"><div className="w-full p-6">
           <Card><CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Sector</h2>
             <p className="text-muted-foreground mb-4">{error || 'Failed to load'}</p>
             <Button onClick={() => router.push('/sectors')}><ArrowLeft className="h-4 w-4 mr-2" />Back to Sectors</Button>

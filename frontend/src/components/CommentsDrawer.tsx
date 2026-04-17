@@ -408,7 +408,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
             <MessageSquare className="w-5 h-5" />
             <h2 className="text-lg font-semibold">Comments</h2>
             {comments.length > 0 && (
-              <span className="text-sm text-gray-500">({comments.length})</span>
+              <span className="text-sm text-muted-foreground">({comments.length})</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
           <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : error ? (
               <Alert variant="destructive">
@@ -450,7 +450,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             ) : comments.filter(comment => showArchived ? comment.isArchived : !comment.isArchived).length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
+              <p className="text-center text-muted-foreground py-8">
                 {showArchived ? 'No archived comments.' : 'No comments yet. Be the first to comment!'}
               </p>
             ) : (
@@ -458,8 +458,8 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                 .filter(comment => showArchived ? comment.isArchived : !comment.isArchived)
                 .map((comment) => (
                 <div key={comment.id} className={`border rounded-lg p-3 space-y-2 ${
-                  comment.status === 'Resolved' ? 'bg-gray-50' : ''
-                } ${comment.isArchived ? 'bg-gray-100 opacity-75' : ''}`}>
+                  comment.status === 'Resolved' ? 'bg-muted' : ''
+                } ${comment.isArchived ? 'bg-muted opacity-75' : ''}`}>
                   <div className="flex items-start justify-between">
                     {/* Top Left: Comment Type Badge */}
                     <div className="flex items-start gap-2">
@@ -472,7 +472,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                         </Badge>
                       )}
                       {comment.isArchived && (
-                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
+                        <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
                           <Archive className="h-3 w-3 inline mr-1" />
                           Archived
                         </Badge>
@@ -480,7 +480,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     </div>
                     
                     {/* Top Right: Date/Time */}
-                    <p className="text-xs text-gray-400">{formatDate(comment.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</p>
                   </div>
                   
                   {/* User Info Section */}
@@ -500,16 +500,16 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.message}</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{comment.message}</p>
                   
                   {/* Replies */}
                   {comment.replies && comment.replies.length > 0 && (
                     <div className="ml-4 mt-3 space-y-2 border-l border-border pl-3">
                       {comment.replies.map((reply) => (
-                        <div key={reply.id} className="bg-gray-50 p-2 rounded space-y-2">
+                        <div key={reply.id} className="bg-muted p-2 rounded space-y-2">
                           <div className="flex items-start justify-between">
                             {/* Top Right: Date/Time */}
-                            <p className="text-xs text-gray-400">{formatDate(reply.createdAt)}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</p>
                           </div>
                           
                           {/* User Info Section */}
@@ -530,7 +530,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                             </div>
                           </div>
                           
-                          <p className="text-xs text-gray-600 whitespace-pre-wrap ml-8">{reply.message}</p>
+                          <p className="text-xs text-muted-foreground whitespace-pre-wrap ml-8">{reply.message}</p>
                         </div>
                       ))}
                     </div>
@@ -549,7 +549,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     {user && !comment.isArchived && (
                       <button
                         onClick={() => handleArchiveComment(comment.id)}
-                        className="text-xs text-gray-600 hover:text-gray-800"
+                        className="text-xs text-muted-foreground hover:text-foreground"
                       >
                         <Archive className="h-3 w-3 inline mr-1" />
                         Archive
@@ -558,7 +558,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     {user && comment.isArchived && (
                       <button
                         onClick={() => handleUnarchiveComment(comment.id)}
-                        className="text-xs text-gray-600 hover:text-gray-800"
+                        className="text-xs text-muted-foreground hover:text-foreground"
                       >
                         <ArchiveRestore className="h-3 w-3 inline mr-1" />
                         Unarchive
@@ -568,9 +568,9 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     {user && (comment.author?.userId === user.id || ['super_user', 'admin'].includes(user.role)) && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs text-red-600 hover:text-red-800"
+                        className="text-xs text-destructive hover:text-red-800"
                       >
-                        <Trash2 className="h-3 w-3 inline mr-1 text-red-500" />
+                        <Trash2 className="h-3 w-3 inline mr-1 text-destructive" />
                         Delete
                       </button>
                     )}
@@ -578,7 +578,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   
                   {/* Reply form */}
                   {replyingTo === comment.id && (
-                    <div className="mt-3 space-y-2 bg-gray-50 p-3 rounded">
+                    <div className="mt-3 space-y-2 bg-muted p-3 rounded">
                       <textarea
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
@@ -599,7 +599,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                             setReplyingTo(null);
                             setReplyContent('');
                           }}
-                          className="text-xs border px-3 py-1 rounded hover:bg-gray-50"
+                          className="text-xs border px-3 py-1 rounded hover:bg-muted"
                         >
                           Cancel
                         </button>
@@ -695,7 +695,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
               </Button>
             </div>
             {!user && (
-              <p className="text-xs text-gray-500 text-center">Please log in to comment</p>
+              <p className="text-xs text-muted-foreground text-center">Please log in to comment</p>
             )}
           </div>
           )}

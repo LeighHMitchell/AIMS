@@ -71,7 +71,7 @@ export function ProgramFragmentationChart({
             onClick={() => setViewMode('chart')}
             className={cn(
               "h-8 px-3 rounded-none",
-              viewMode === 'chart' ? "bg-slate-200 text-slate-900" : "text-slate-400"
+              viewMode === 'chart' ? "bg-muted text-foreground" : "text-muted-foreground"
             )}
           >
             <BarChart3 className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function ProgramFragmentationChart({
             onClick={() => setViewMode('table')}
             className={cn(
               "h-8 px-3 rounded-none",
-              viewMode === 'table' ? "bg-slate-200 text-slate-900" : "text-slate-400"
+              viewMode === 'table' ? "bg-muted text-foreground" : "text-muted-foreground"
             )}
           >
             <Table className="h-4 w-4" />

@@ -134,11 +134,11 @@ export function Top10DisbursementCommitmentRatioChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
         <div className="text-center">
-          <TrendingUp className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No disbursement data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No disbursement data available</p>
+          <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )

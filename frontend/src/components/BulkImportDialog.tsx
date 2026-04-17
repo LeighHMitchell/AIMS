@@ -330,7 +330,7 @@ export function BulkImportDialog({ open, onOpenChange, onImport, entityType }: B
                     <p>Total records: {importSummary.total}</p>
                     <p className="text-[hsl(var(--success-icon))]">Successful: {importSummary.success}</p>
                     {importSummary.failed > 0 && (
-                      <p className="text-red-600">Failed: {importSummary.failed}</p>
+                      <p className="text-destructive">Failed: {importSummary.failed}</p>
                     )}
                   </div>
                 </div>

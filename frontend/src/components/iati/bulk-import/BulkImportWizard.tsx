@@ -175,10 +175,10 @@ export default function BulkImportWizard() {
                 key={s.key}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? 'bg-gray-100 text-gray-900 font-medium'
+                    ? 'bg-muted text-foreground font-medium'
                     : isPast
-                      ? 'text-gray-700'
-                      : 'text-gray-400'
+                      ? 'text-foreground'
+                      : 'text-muted-foreground'
                 }`}
               >
                 <div
@@ -258,7 +258,7 @@ export default function BulkImportWizard() {
               <>
                 <Button
                   variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="border-red-300 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => {
                     // Go back to rules step and reset batch state
                     setState(prev => ({
@@ -272,7 +272,7 @@ export default function BulkImportWizard() {
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Cancel Import
                 </Button>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   {state.batchStatus?.status === 'completed' || state.batchStatus?.status === 'failed' ? (
                     <Button onClick={goNext}>
                       View Results

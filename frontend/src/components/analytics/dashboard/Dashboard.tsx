@@ -117,14 +117,14 @@ export function Dashboard() {
         <TabsList className="bg-muted p-1 h-auto gap-1 border">
           <TabsTrigger
             value="bar-charts"
-            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <BarChart3 className="h-4 w-4" />
             Bar Charts
           </TabsTrigger>
           <TabsTrigger
             value="fragmentation"
-            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <Grid3X3 className="h-4 w-4" />
             Fragmentation
@@ -136,7 +136,7 @@ export function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Top Donor Agencies
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">By reporting organization</p>
@@ -151,7 +151,7 @@ export function Dashboard() {
 
             <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Top Donor Groups
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">Grouped by country</p>
@@ -166,7 +166,7 @@ export function Dashboard() {
 
             <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Top Sectors
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">DAC 3-digit categories</p>
@@ -183,7 +183,7 @@ export function Dashboard() {
 
             <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Implementing Agencies
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">Organizations with implementing role</p>
@@ -198,7 +198,7 @@ export function Dashboard() {
 
             <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Executing Agencies
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">Organizations managing budgets on behalf of funders</p>
@@ -219,7 +219,7 @@ export function Dashboard() {
             {/* Aid Predictability Chart */}
             <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Aid Predictability
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">Planned vs Actual Disbursements by Year</p>

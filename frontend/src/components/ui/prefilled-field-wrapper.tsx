@@ -64,7 +64,7 @@ export function PrefilledFieldWrapper({
         isSaved={shouldShowSaved()}
         hasValue={hasValue}
         isFocused={isFocused}
-        className="text-gray-700"
+        className="text-foreground"
       >
         <div className="flex items-center gap-2">
           <span>
@@ -80,7 +80,7 @@ export function PrefilledFieldWrapper({
       </div>
       
       {autosaveState?.error && (
-        <p className="text-xs text-red-600 mt-1">{autosaveState.error.toString()}</p>
+        <p className="text-xs text-destructive mt-1">{autosaveState.error.toString()}</p>
       )}
     </div>
   );

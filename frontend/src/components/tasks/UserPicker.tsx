@@ -127,7 +127,7 @@ const OrgRow = memo(function OrgRow({
         <div className="font-medium flex flex-wrap items-baseline gap-x-1.5">
           <span>{org.name}</span>
           {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
-          <span className={cn('text-xs', hasNoMembers ? 'text-gray-500' : 'text-muted-foreground')}>
+          <span className={cn('text-xs', hasNoMembers ? 'text-muted-foreground' : 'text-muted-foreground')}>
             · {hasNoMembers ? 'No members' : `${memberCount} member${memberCount !== 1 ? 's' : ''}`}
           </span>
         </div>
@@ -377,7 +377,7 @@ function UserPickerInner({
     <div className="space-y-4">
       {/* Error Message */}
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="p-3 bg-destructive/10 border border-red-200 rounded-lg text-sm text-destructive">
           <strong>Error:</strong> {error}
         </div>
       )}

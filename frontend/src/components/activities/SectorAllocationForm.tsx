@@ -217,7 +217,7 @@ export default function SectorAllocationForm({
             <p className="text-sm font-medium text-blue-800">
               For better granularity and aggregation, please report activities at the sub-sector level (DAC 5 codes).
             </p>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Aggregated to DAC 3 automatically. Sub-sector level ensures higher reporting quality.
             </p>
           </div>
@@ -230,7 +230,7 @@ export default function SectorAllocationForm({
         <div className="space-y-4">
           {/* Search input */}
           <div className="relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Add Sub-sector
             </label>
             <div className="relative">
@@ -242,7 +242,7 @@ export default function SectorAllocationForm({
                 placeholder="Search DAC 5 code or sub-sector name..."
                 className="w-full pl-10 pr-3 py-2 border border-input rounded-md focus:ring-blue-800 focus:border-blue-800"
               />
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             </div>
             
             {/* Search dropdown */}
@@ -255,7 +255,7 @@ export default function SectorAllocationForm({
                     className="w-full text-left px-4 py-3 hover:bg-muted border-b border-border last:border-b-0"
                   >
                     <div className="font-medium text-sm">{result.dac5_code} – {result.dac5_name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className="text-xs text-muted-foreground mt-0.5">
                       DAC 3: {result.dac3_code} – {result.dac3_name}
                     </div>
                   </button>
@@ -287,20 +287,20 @@ export default function SectorAllocationForm({
                       <div className="font-medium text-sm">
                         {allocation.dac5_code} – {allocation.dac5_name}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         DAC 3: {allocation.dac3_code} – {allocation.dac3_name}
                       </div>
                     </div>
                     <button
                       onClick={() => removeAllocation(allocation.id!)}
-                      className="ml-2 text-red-600 hover:text-red-800"
+                      className="ml-2 text-destructive hover:text-red-800"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </button>
                   </div>
                   
                   <div className="mt-3 flex items-center space-x-2">
-                    <label className="text-sm font-medium text-gray-700">Percentage:</label>
+                    <label className="text-sm font-medium text-foreground">Percentage:</label>
                     <input
                       type="number"
                       min="0"
@@ -311,7 +311,7 @@ export default function SectorAllocationForm({
                       onFocus={() => setActiveAllocationId(allocation.id!)}
                       className="w-24 px-2 py-1 border border-input rounded-md text-sm focus:ring-blue-800 focus:border-blue-800"
                     />
-                    <span className="text-sm text-gray-500">%</span>
+                    <span className="text-sm text-muted-foreground">%</span>
                   </div>
                 </div>
               ))
@@ -323,7 +323,7 @@ export default function SectorAllocationForm({
             <button
               onClick={handleAutoBalance}
               disabled={localAllocations.length === 0}
-              className="text-sm px-3 py-1.5 bg-muted text-gray-700 rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-sm px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Auto-balance
             </button>
@@ -335,7 +335,7 @@ export default function SectorAllocationForm({
                 onChange={handleCSVImport}
                 className="hidden"
               />
-              <span className="inline-flex items-center text-sm px-3 py-1.5 bg-muted text-gray-700 rounded-md hover:bg-muted/80">
+              <span className="inline-flex items-center text-sm px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80">
                 <Upload className="h-4 w-4 mr-1" />
                 Import CSV
               </span>
@@ -343,7 +343,7 @@ export default function SectorAllocationForm({
             
             <button
               onClick={() => setShowCopyDialog(true)}
-              className="text-sm px-3 py-1.5 bg-muted text-gray-700 rounded-md hover:bg-muted/80"
+              className="text-sm px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80"
             >
               <Copy className="h-4 w-4 inline mr-1" />
               Copy from template
@@ -367,7 +367,7 @@ export default function SectorAllocationForm({
           {/* Total percentage display */}
           <div className={`text-lg font-medium ${
             validation.isValid ? 'text-[hsl(var(--success-icon))]' : 
-            validation.totalPercentage > 100 ? 'text-red-600' : 'text-yellow-600'
+            validation.totalPercentage > 100 ? 'text-destructive' : 'text-yellow-600'
           }`}>
             Total: {validation.totalPercentage}%
             {validation.remainingPercentage !== 0 && (
@@ -385,14 +385,14 @@ export default function SectorAllocationForm({
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-medium">Sector Allocation Visualization</h3>
               <HelpTextTooltip content="Interactive sunburst chart showing sector allocation hierarchy and relationships">
-                <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-help" />
+                <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setVisualizationType('donut')}
                 className={`p-2 rounded-md ${
-                  visualizationType === 'donut' ? 'bg-muted text-blue-800' : 'text-gray-600 hover:bg-muted'
+                  visualizationType === 'donut' ? 'bg-muted text-blue-800' : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 <PieChart className="h-5 w-5" />
@@ -400,7 +400,7 @@ export default function SectorAllocationForm({
               <button
                 onClick={() => setVisualizationType('bar')}
                 className={`p-2 rounded-md ${
-                  visualizationType === 'bar' ? 'bg-muted text-blue-800' : 'text-gray-600 hover:bg-muted'
+                  visualizationType === 'bar' ? 'bg-muted text-blue-800' : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 <BarChart2 className="h-5 w-5" />
@@ -417,7 +417,7 @@ export default function SectorAllocationForm({
                 <SectorStackedBar allocations={localAllocations} />
               )
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="flex items-center justify-center h-full text-muted-foreground">
                 <p className="text-sm">Add sectors to see visualization</p>
               </div>
             )}

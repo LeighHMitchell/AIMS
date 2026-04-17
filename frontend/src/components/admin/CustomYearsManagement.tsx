@@ -298,7 +298,7 @@ export function CustomYearsManagement() {
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8 text-red-600">
+      <div className="flex items-center justify-center py-8 text-destructive">
         <AlertCircle className="h-5 w-5 mr-2" />
         <span>{error}</span>
       </div>
@@ -368,7 +368,7 @@ export function CustomYearsManagement() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleEdit(year)}>
-                    <Pencil className="h-4 w-4 mr-2 text-slate-500" />
+                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
                     Edit
                   </DropdownMenuItem>
                   {!year.isDefault && (
@@ -380,9 +380,9 @@ export function CustomYearsManagement() {
                   {!year.isDefault && (
                     <DropdownMenuItem
                       onClick={() => handleDelete(year)}
-                      className="text-red-600 focus:text-red-600"
+                      className="text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                      <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                       Delete
                     </DropdownMenuItem>
                   )}

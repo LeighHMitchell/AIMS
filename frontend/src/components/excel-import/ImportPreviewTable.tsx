@@ -156,8 +156,8 @@ function StatusCell({
       return (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <X className="h-4 w-4 text-red-500 shrink-0" />
-            <span className="text-red-600 text-xs">{importedValue.message}</span>
+            <X className="h-4 w-4 text-destructive shrink-0" />
+            <span className="text-destructive text-xs">{importedValue.message}</span>
           </div>
           {importedValue.suggestions && importedValue.suggestions.length > 0 && (
             <SuggestionSelect

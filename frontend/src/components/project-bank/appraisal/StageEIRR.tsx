@@ -412,7 +412,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
             <div className="text-xs text-muted-foreground">Economic Internal Rate of Return <HelpTooltip text="The social discount rate at which ENPV equals zero." /></div>
             <div className={cn(
               'text-3xl font-bold mt-1',
-              eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
+              eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
             )}>
               {eirrResult.eirr !== null ? `${eirrResult.eirr.toFixed(1)}%` : 'N/A'}
             </div>
@@ -424,7 +424,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
             <div className="text-xs text-muted-foreground">Economic Net Present Value <HelpTooltip text="The total net economic benefit in present-value terms." /></div>
             <div className={cn(
               'text-3xl font-bold mt-1',
-              eirrResult.enpv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600',
+              eirrResult.enpv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
             )}>
               {formatCurrency(eirrResult.enpv)}
             </div>
@@ -531,7 +531,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                       {ecCost.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                     </td>
                     <td className="p-1.5">
-                      <button onClick={() => removeCostRow(idx)} className="text-muted-foreground hover:text-red-500">
+                      <button onClick={() => removeCostRow(idx)} className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -762,7 +762,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                           {rowTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                         </td>
                         <td className="p-1.5">
-                          <button onClick={() => removeBenefitRow(idx)} className="text-muted-foreground hover:text-red-500">
+                          <button onClick={() => removeBenefitRow(idx)} className="text-muted-foreground hover:text-destructive">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </td>
@@ -895,10 +895,10 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                 {sensitivityResults.map((s, i) => (
                   <tr key={i} className={i === 0 ? 'font-medium' : ''}>
                     <td className="p-2 text-sm">{s.scenario}</td>
-                    <td className={cn('p-2 text-right text-sm', s.firr_or_eirr !== null && s.firr_or_eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600')}>
+                    <td className={cn('p-2 text-right text-sm', s.firr_or_eirr !== null && s.firr_or_eirr >= 15 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
                       {s.firr_or_eirr !== null ? `${s.firr_or_eirr.toFixed(1)}%` : 'N/A'}
                     </td>
-                    <td className={cn('p-2 text-right text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-red-600')}>
+                    <td className={cn('p-2 text-right text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
                       {formatCurrency(s.npv)}
                     </td>
                   </tr>

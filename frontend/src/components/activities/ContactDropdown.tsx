@@ -261,7 +261,7 @@ export function ContactDropdown({
                       onClick={() => handleSelectContact(contact)}
                       className="w-full flex items-start gap-3 rounded-sm px-2 py-3 text-sm outline-none hover:bg-accent transition-colors"
                     >
-                      <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         {contact.avatar_url ? (
                           <img
                             src={contact.avatar_url}
@@ -269,7 +269,7 @@ export function ContactDropdown({
                             className="h-8 w-8 rounded-full object-cover"
                           />
                         ) : (
-                          <User className="h-4 w-4 text-gray-600" />
+                          <User className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0 text-left">
@@ -277,17 +277,17 @@ export function ContactDropdown({
                           {getContactDisplay(contact)}
                         </div>
                         {contact.position && (
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-muted-foreground">
                             {contact.position}
                           </div>
                         )}
                         {contact.organisationName && (
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-muted-foreground">
                             {contact.organisationName}
                           </div>
                         )}
                         {contact.email && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             {contact.email}
                           </div>
                         )}

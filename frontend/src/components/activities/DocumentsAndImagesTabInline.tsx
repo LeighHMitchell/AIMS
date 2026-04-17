@@ -672,8 +672,8 @@ export function DocumentsAndImagesTabInline({
             <div className="mt-4">
               <div 
                 className={cn(
-                  "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-gray-100",
+                  "bg-muted rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted",
                   !activityId && "opacity-50 cursor-not-allowed"
                 )}
                 onDragOver={handleDragOver}
@@ -686,13 +686,13 @@ export function DocumentsAndImagesTabInline({
                     {isDragOver ? (
                       <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
                     ) : (
-                      <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <Upload className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                     )}
                   </div>
-                  <h4 className="text-2xl font-medium text-gray-900 mb-3">
+                  <h4 className="text-2xl font-medium text-foreground mb-3">
                     {isDragOver ? "Drop your files here" : "Upload Documents & Images"}
                   </h4>
-                  <p className="text-gray-600 mb-6 text-lg">
+                  <p className="text-muted-foreground mb-6 text-lg">
                     Drag and drop files anywhere in this area, or click to browse your computer
                   </p>
                   <Button 
@@ -707,7 +707,7 @@ export function DocumentsAndImagesTabInline({
                     <Upload className="w-5 h-5" />
                     Choose Files
                   </Button>
-                  <p className="text-sm text-gray-500 mt-4">
+                  <p className="text-sm text-muted-foreground mt-4">
                     Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
                   </p>
                   <input
@@ -726,14 +726,14 @@ export function DocumentsAndImagesTabInline({
           {/* Uploading Files */}
           {uploadingFiles.length > 0 && (
             <div className="space-y-2 mt-6">
-              <h4 className="text-sm font-medium text-gray-700">Uploading Files</h4>
+              <h4 className="text-sm font-medium text-foreground">Uploading Files</h4>
               {uploadingFiles.map(upload => (
-                <div key={upload.id} className="bg-gray-50 rounded-lg p-3">
+                <div key={upload.id} className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium truncate flex-1">
                       {upload.file.name}
                     </span>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-xs text-muted-foreground ml-2">
                       {upload.status === 'uploading' && `${Math.round(upload.progress)}%`}
                       {upload.status === 'success' && 'Complete'}
                       {upload.status === 'error' && 'Failed'}
@@ -743,7 +743,7 @@ export function DocumentsAndImagesTabInline({
                     value={upload.progress} 
                     className={cn(
                       "h-2",
-                      upload.status === 'success' && "bg-gray-100",
+                      upload.status === 'success' && "bg-muted",
                       upload.status === 'error' && "bg-red-100"
                     )}
                   />
@@ -775,7 +775,7 @@ export function DocumentsAndImagesTabInline({
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="w-[640px]">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                       placeholder="Search documents..."
                       value={searchTerm}
@@ -801,7 +801,7 @@ export function DocumentsAndImagesTabInline({
           {documents.length > 0 ? (
             <div className="space-y-6">
               {filteredDocuments.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                <div className="text-center py-12 text-muted-foreground bg-muted rounded-lg">
                   <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-lg font-medium mb-2">No matching documents</h3>
                   <p>Try adjusting your search or filters</p>
@@ -818,8 +818,8 @@ export function DocumentsAndImagesTabInline({
                         {uploadedDocs.length > 0 && (
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b">
-                              <Cloud className="w-5 h-5 text-gray-600" />
-                              <h4 className="font-medium text-gray-900">Uploaded Files</h4>
+                              <Cloud className="w-5 h-5 text-muted-foreground" />
+                              <h4 className="font-medium text-foreground">Uploaded Files</h4>
                             </div>
                             
                             {/* Uploaded Files Table */}
@@ -839,21 +839,21 @@ export function DocumentsAndImagesTabInline({
                                   {uploadedDocs.slice(startIndex, endIndex).map((doc) => (
                                     <TableRow key={doc.url}>
                                       <TableCell>
-                                        <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                                           {isImageMime(doc.format) ? (
-                                            <FileImage className="w-4 h-4 text-gray-600" />
+                                            <FileImage className="w-4 h-4 text-muted-foreground" />
                                           ) : (
-                                            <FileText className="w-4 h-4 text-gray-600" />
+                                            <FileText className="w-4 h-4 text-muted-foreground" />
                                           )}
                                         </div>
                                       </TableCell>
                                       <TableCell>
                                         <div className="max-w-xs">
-                                          <div className="font-medium text-gray-900 truncate">
+                                          <div className="font-medium text-foreground truncate">
                                             {doc.title[0]?.text || 'Untitled Document'}
                                           </div>
                                           {doc.description?.[0]?.text && (
-                                            <div className="text-sm text-gray-500 truncate">
+                                            <div className="text-sm text-muted-foreground truncate">
                                               {doc.description[0].text}
                                             </div>
                                           )}
@@ -888,7 +888,7 @@ export function DocumentsAndImagesTabInline({
                                       </TableCell>
                                       <TableCell>
                                         {doc.documentDate && (
-                                          <span className="text-sm text-gray-600">
+                                          <span className="text-sm text-muted-foreground">
                                             {new Date(doc.documentDate).toLocaleDateString()}
                                           </span>
                                         )}
@@ -898,26 +898,26 @@ export function DocumentsAndImagesTabInline({
                                           <button
                                             type="button"
                                             onClick={() => handleDownloadDocument(doc)}
-                                            className="p-2 rounded hover:bg-gray-100"
+                                            className="p-2 rounded hover:bg-muted"
                                             title="Download"
                                           >
-                                            <Download style={{ width: 18, height: 18 }} className="text-slate-500" />
+                                            <Download style={{ width: 18, height: 18 }} className="text-muted-foreground" />
                                           </button>
                                           <button
                                             type="button"
                                             onClick={() => handleEditDocument(doc)}
-                                            className="p-2 rounded hover:bg-gray-100"
+                                            className="p-2 rounded hover:bg-muted"
                                             title="Edit"
                                           >
-                                            <Pencil style={{ width: 18, height: 18 }} className="text-slate-500" />
+                                            <Pencil style={{ width: 18, height: 18 }} className="text-muted-foreground" />
                                           </button>
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteDocument(doc.url)}
-                                            className="p-2 rounded hover:bg-gray-100"
+                                            className="p-2 rounded hover:bg-muted"
                                             title="Delete"
                                           >
-                                            <Trash2 style={{ width: 18, height: 18 }} className="text-red-500" />
+                                            <Trash2 style={{ width: 18, height: 18 }} className="text-destructive" />
                                           </button>
                                         </div>
                                       </TableCell>
@@ -930,7 +930,7 @@ export function DocumentsAndImagesTabInline({
                             {/* Pagination for Uploaded Files */}
                             {uploadedDocs.length > itemsPerPage && (
                               <div className="flex items-center justify-between px-2">
-                                <div className="text-sm text-gray-700">
+                                <div className="text-sm text-foreground">
                                   Showing {startIndex + 1} to {Math.min(endIndex, uploadedDocs.length)} of {uploadedDocs.length} uploaded files
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -950,7 +950,7 @@ export function DocumentsAndImagesTabInline({
                                   >
                                     <ChevronLeft className="h-4 w-4" />
                                   </Button>
-                                  <span className="text-sm text-gray-700">
+                                  <span className="text-sm text-foreground">
                                     Page {currentPage} of {Math.ceil(uploadedDocs.length / itemsPerPage)}
                                   </span>
                                   <Button
@@ -978,8 +978,8 @@ export function DocumentsAndImagesTabInline({
                         {linkedDocs.length > 0 && (
                           <div className="space-y-3">
                             <div className="flex items-center gap-2 pb-2 border-b">
-                              <ExternalLink className="w-5 h-5 text-gray-600" />
-                              <h4 className="font-medium text-gray-900">Linked Documents</h4>
+                              <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                              <h4 className="font-medium text-foreground">Linked Documents</h4>
                             </div>
                             <div className="space-y-3">
                               {linkedDocs.map((doc, index) => (
@@ -1008,17 +1008,17 @@ export function DocumentsAndImagesTabInline({
             </div>
           ) : (
             /* Empty State */
-            <div className="text-center py-16 text-gray-500">
+            <div className="text-center py-16 text-muted-foreground">
               <div className="flex justify-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Cloud className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                  <Cloud className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <ExternalLink className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                  <ExternalLink className="w-8 h-8 text-muted-foreground" />
                 </div>
               </div>
-              <h3 className="text-xl font-medium mb-2 text-gray-900">No documents yet</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              <h3 className="text-xl font-medium mb-2 text-foreground">No documents yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Get started by uploading files from your computer or linking to documents hosted elsewhere
               </p>
             </div>

@@ -213,7 +213,7 @@ export function WorkingGroupEditor({
     if (needsWG && !currentId && !workingGroupCreated) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500">Please create the working group first by entering a name in the General section</p>
+          <p className="text-muted-foreground">Please create the working group first by entering a name in the General section</p>
         </div>
       )
     }
@@ -266,7 +266,7 @@ export function WorkingGroupEditor({
       default:
         return (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">Section not found</p>
+            <p className="text-muted-foreground">Section not found</p>
           </div>
         )
     }

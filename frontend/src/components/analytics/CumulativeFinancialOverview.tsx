@@ -884,7 +884,7 @@ export function CumulativeFinancialOverview({
                 className="w-3 h-3 rounded-sm flex-shrink-0"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-slate-700 font-medium flex items-center gap-2">
+              <span className="text-foreground font-medium flex items-center gap-2">
                 {transactionTypeCode && (
                   <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                     {transactionTypeCode}
@@ -893,7 +893,7 @@ export function CumulativeFinancialOverview({
                 <span>{entry.name}</span>
               </span>
             </td>
-            <td className="py-1 text-right font-semibold text-slate-900">
+            <td className="py-1 text-right font-semibold text-foreground">
               {formatTooltipValue(entry.displayValue)}
             </td>
           </tr>
@@ -903,9 +903,9 @@ export function CumulativeFinancialOverview({
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-slate-900 text-sm">{fullDate}</p>
+            <p className="font-semibold text-foreground text-sm">{fullDate}</p>
             {customYears.find(cy => cy.id === calendarType)?.name && (
-              <p className="text-xs text-slate-400 mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
             )}
           </div>
           <div className="p-2">
@@ -920,7 +920,7 @@ export function CumulativeFinancialOverview({
             )}
             {plannedBudgets.length > 0 && (
               <>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
                 <table className="w-full text-sm">
                   <tbody>
                     {plannedBudgets.map(renderRow)}
@@ -1004,7 +1004,7 @@ export function CumulativeFinancialOverview({
                   style={{ backgroundColor: entry.color }}
                 />
               )}
-              <span className="text-sm text-slate-700">{entry.value}</span>
+              <span className="text-sm text-foreground">{entry.value}</span>
             </li>
           )
         })}
@@ -1075,7 +1075,7 @@ export function CumulativeFinancialOverview({
     }
     if (error || displayData.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
+        <div className="h-full flex items-center justify-center text-muted-foreground">
           <p className="text-sm">{error || 'No data available'}</p>
         </div>
       )
@@ -1129,7 +1129,7 @@ export function CumulativeFinancialOverview({
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96 text-slate-400">
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
           <p className="font-medium">{error}</p>
@@ -1163,7 +1163,7 @@ export function CumulativeFinancialOverview({
                         {sortCustomYearsCalendarFirst(customYears).map(cy => (
                           <DropdownMenuItem
                             key={cy.id}
-                            className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                            className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                             onClick={() => setCalendarType(cy.id)}
                           >
                             <span className="flex items-center gap-2">
@@ -1199,18 +1199,18 @@ export function CumulativeFinancialOverview({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="p-3 w-auto">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                            <span className="text-xs font-medium text-foreground">Select Year Range</span>
                             <div className="flex gap-1">
                               <button
                                 onClick={selectAllYears}
-                                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                                className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                                 title="Select all available years"
                               >
                                 All
                               </button>
                               <button
                                 onClick={selectDataRange}
-                                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                                className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                                 title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
                               >
                                 Data
@@ -1230,10 +1230,10 @@ export function CumulativeFinancialOverview({
                                   className={`
                                     px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                     ${isStartOrEnd
-                                      ? 'bg-slate-200 text-slate-900'
+                                      ? 'bg-muted text-foreground'
                                       : inRange
                                         ? 'bg-primary/20 text-primary'
-                                        : 'text-slate-600 hover:bg-slate-100'
+                                        : 'text-muted-foreground hover:bg-muted'
                                     }
                                   `}
                                   title="Click to select start, then click another to select end"
@@ -1243,7 +1243,7 @@ export function CumulativeFinancialOverview({
                               )
                             })}
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-2 text-center">
+                          <p className="text-[10px] text-muted-foreground mt-2 text-center">
                             Click start year, then click end year
                           </p>
                         </DropdownMenuContent>
@@ -1251,7 +1251,7 @@ export function CumulativeFinancialOverview({
                     </div>
                     {/* Date Range Indicator */}
                     {effectiveDateRange?.from && effectiveDateRange?.to && (
-                      <span className="text-xs text-slate-500 text-center">
+                      <span className="text-xs text-muted-foreground text-center">
                         {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                       </span>
                     )}
@@ -1263,12 +1263,12 @@ export function CumulativeFinancialOverview({
             {/* Right Side Controls */}
             <div className="flex items-center gap-2 flex-wrap ml-auto">
               {/* Periodic/Cumulative Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setDataMode('periodic')}
-                  className={cn("h-8", dataMode === 'periodic' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", dataMode === 'periodic' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Periodic
                 </Button>
@@ -1276,7 +1276,7 @@ export function CumulativeFinancialOverview({
                   variant="ghost"
                   size="sm"
                   onClick={() => setDataMode('cumulative')}
-                  className={cn("h-8", dataMode === 'cumulative' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", dataMode === 'cumulative' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                 >
                   Cumulative
                 </Button>
@@ -1285,7 +1285,7 @@ export function CumulativeFinancialOverview({
               {/* Allocation Method Toggle */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white h-[34px]">
-                  <Label htmlFor="allocation-toggle" className="text-sm text-slate-700 cursor-pointer whitespace-nowrap">
+                  <Label htmlFor="allocation-toggle" className="text-sm text-foreground cursor-pointer whitespace-nowrap">
                     {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
                   </Label>
                   <Switch
@@ -1304,12 +1304,12 @@ export function CumulativeFinancialOverview({
               </div>
 
               {/* Chart Type Toggle */}
-              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('line')}
-                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Line"
                 >
                   <LineChartIcon className="h-4 w-4" />
@@ -1318,7 +1318,7 @@ export function CumulativeFinancialOverview({
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('bar')}
-                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -1327,7 +1327,7 @@ export function CumulativeFinancialOverview({
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('area')}
-                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Area"
                 >
                   <TrendingUpIcon className="h-4 w-4" />
@@ -1336,7 +1336,7 @@ export function CumulativeFinancialOverview({
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('table')}
-                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
@@ -1345,7 +1345,7 @@ export function CumulativeFinancialOverview({
                   variant="ghost"
                   size="sm"
                   onClick={() => setChartType('total')}
-                  className={cn("h-8", chartType === 'total' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
+                  className={cn("h-8", chartType === 'total' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
                   title="Total"
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -1446,7 +1446,7 @@ export function CumulativeFinancialOverview({
                     ))}
                     {/* Total Row */}
                     {displayData.length > 0 && (
-                      <TableRow className="bg-slate-50 font-semibold border-t-2 border-input sticky bottom-0">
+                      <TableRow className="bg-muted font-semibold border-t-2 border-input sticky bottom-0">
                         <TableCell className="font-semibold">Total</TableCell>
                         {activeSeries.has('Incoming Commitments') && (
                           <TableCell className="text-right">
@@ -1549,8 +1549,8 @@ export function CumulativeFinancialOverview({
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
-                            <p className="font-semibold text-slate-900 text-sm">{payload[0].payload.name}</p>
-                            <p className="font-bold text-slate-900 text-lg">{formatTooltipValue(payload[0].value as number)}</p>
+                            <p className="font-semibold text-foreground text-sm">{payload[0].payload.name}</p>
+                            <p className="font-bold text-foreground text-lg">{formatTooltipValue(payload[0].value as number)}</p>
                           </div>
                         )
                       }
@@ -1991,7 +1991,7 @@ export function CumulativeFinancialOverview({
             )}
           </>
         ) : (
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No cumulative overview data available</p>

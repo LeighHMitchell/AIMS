@@ -1430,7 +1430,7 @@ export default function CountriesRegionsTab({
                               className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                               title="Edit country"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </button>
                             <button
                               type="button"
@@ -1494,7 +1494,7 @@ export default function CountriesRegionsTab({
                               className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                               title="Edit region"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </button>
                             <button
                               type="button"
@@ -1566,7 +1566,7 @@ export default function CountriesRegionsTab({
                               className="p-1.5 rounded hover:bg-muted text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                               title="Edit custom geography"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </button>
                             <button
                               type="button"

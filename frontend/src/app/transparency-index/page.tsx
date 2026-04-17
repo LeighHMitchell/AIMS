@@ -149,7 +149,7 @@ export default function TransparencyIndexPage() {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))]"
     if (score >= 40) return "text-yellow-600 bg-yellow-50 border-yellow-200"
-    return "text-red-600 bg-red-50 border-red-200"
+    return "text-destructive bg-destructive/10 border-red-200"
   }
 
   const toggleExpand = (id: string) => {
@@ -291,7 +291,7 @@ export default function TransparencyIndexPage() {
                     <div className="lg:col-span-5 mb-2 flex items-center gap-2 text-sm">
                       <span className="font-medium text-foreground">Timeliness Multiplier:</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        project.breakdown.multiplier === 1.0 ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' : 'bg-red-100 text-red-700'
+                        project.breakdown.multiplier === 1.0 ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' : 'bg-red-100 text-destructive'
                       }`}>
                         x{project.breakdown.multiplier}
                       </span>
@@ -485,7 +485,7 @@ function ScoreCardSection({ title, data }: { title: string, data: ScoreCategory 
       <ul className="space-y-1.5">
         {data.details.map((detail, idx) => (
           <li key={idx} className="flex justify-between items-start text-xs">
-            <span className={`${detail.points > 0 ? 'text-muted-foreground' : 'text-red-500'}`}>
+            <span className={`${detail.points > 0 ? 'text-muted-foreground' : 'text-destructive'}`}>
               {detail.label}
             </span>
             <span className="font-medium text-muted-foreground">

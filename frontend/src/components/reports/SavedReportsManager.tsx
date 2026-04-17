@@ -579,7 +579,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 onEdit(report)
               }}
             >
-              <Pencil className="h-3 w-3 text-slate-500" />
+              <Pencil className="h-3 w-3 text-muted-foreground" />
             </Button>
           )}
           {onDelete && (
@@ -592,7 +592,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 onDelete(report.id)
               }}
             >
-              <Trash2 className="h-3 w-3 text-red-500" />
+              <Trash2 className="h-3 w-3 text-destructive" />
             </Button>
           )}
         </div>

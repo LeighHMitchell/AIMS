@@ -126,7 +126,7 @@ export function DebugPanel() {
       >
         <Bug className="w-6 h-6" />
         {logs.filter(l => l.type === 'error').length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-destructive/100 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {logs.filter(l => l.type === 'error').length}
           </span>
         )}
@@ -136,7 +136,7 @@ export function DebugPanel() {
 
   return (
     <div className="fixed bottom-0 right-0 w-96 h-96 bg-white border-l border-t border-input shadow-xl rounded-tl-lg z-50">
-      <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+      <div className="flex items-center justify-between p-3 border-b bg-muted">
         <h3 className="font-semibold text-sm">Debug Console</h3>
         <div className="flex gap-2">
           <Button
@@ -157,7 +157,7 @@ export function DebugPanel() {
           </Button>
           <button
             onClick={() => setIsOpen(false)}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </button>
@@ -166,25 +166,25 @@ export function DebugPanel() {
       
       <div className="overflow-y-auto h-[calc(100%-48px)] p-2 font-mono text-xs">
         {logs.length === 0 ? (
-          <p className="text-gray-500 text-center mt-8">No logs yet</p>
+          <p className="text-muted-foreground text-center mt-8">No logs yet</p>
         ) : (
           logs.map(log => (
             <div
               key={log.id}
               className={`mb-2 p-2 rounded ${
-                log.type === 'error' ? 'bg-red-50 text-red-900' :
+                log.type === 'error' ? 'bg-destructive/10 text-red-900' :
                 log.type === 'warn' ? 'bg-yellow-50 text-yellow-900' :
                 log.type === 'info' ? 'bg-blue-50 text-blue-900' :
-                'bg-gray-50 text-gray-900'
+                'bg-muted text-foreground'
               }`}
             >
               <div className="flex items-start gap-2">
-                <span className="text-gray-500">[{log.timestamp}]</span>
+                <span className="text-muted-foreground">[{log.timestamp}]</span>
                 <span className={`font-semibold ${
-                  log.type === 'error' ? 'text-red-600' :
+                  log.type === 'error' ? 'text-destructive' :
                   log.type === 'warn' ? 'text-yellow-600' :
                   log.type === 'info' ? 'text-blue-600' :
-                  'text-gray-600'
+                  'text-muted-foreground'
                 }`}>
                   {log.type.toUpperCase()}:
                 </span>

@@ -130,7 +130,7 @@ const EnhancedSelectItem = React.forwardRef<
     {label && description ? (
       <div className="flex flex-col gap-1 w-full min-w-0">
         <div className="font-medium leading-snug whitespace-normal">{label}</div>
-        <div className="text-xs leading-relaxed text-slate-500 group-data-[highlighted]:text-blue-700 whitespace-normal break-words">{description}</div>
+        <div className="text-xs leading-relaxed text-muted-foreground group-data-[highlighted]:text-blue-700 whitespace-normal break-words">{description}</div>
       </div>
     ) : (
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

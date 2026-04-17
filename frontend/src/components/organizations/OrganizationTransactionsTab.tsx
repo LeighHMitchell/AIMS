@@ -371,7 +371,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-500">{error}</p>
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }
@@ -519,7 +519,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'activity' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -533,7 +533,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'transaction_date' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -547,7 +547,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'transaction_type' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -561,7 +561,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'provider' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -575,7 +575,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'value' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -589,7 +589,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'value_date' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -603,7 +603,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                     {sortColumn === 'value_usd' ? (
                       sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                     ) : (
-                      <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+                      <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                     )}
                   </div>
                 </TableHead>
@@ -789,7 +789,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {Math.min(startIndex + 1, sortedTransactions.length)} to {Math.min(endIndex, sortedTransactions.length)} of {sortedTransactions.length} transactions
               </div>
 
@@ -832,7 +832,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -861,7 +861,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-sm text-muted-foreground">Items per page:</label>
                 <Select
                   value={itemsPerPage.toString()}
                   onValueChange={(value) => {

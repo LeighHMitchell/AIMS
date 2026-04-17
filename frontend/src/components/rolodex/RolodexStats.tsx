@@ -70,7 +70,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
       case 'organization_contact':
         return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -79,8 +79,8 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
       <Card className="border-border">
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
-            <span className="ml-2 text-sm text-slate-600">Loading stats...</span>
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading stats...</span>
           </div>
         </CardContent>
       </Card>
@@ -98,8 +98,8 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
       <CardContent className="pt-0">
         <div className="space-y-3">
           {/* Total count */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <span className="font-medium text-slate-700">Total Contacts</span>
+          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <span className="font-medium text-foreground">Total Contacts</span>
             <Badge variant="secondary" className="text-lg font-semibold">
               {totalCount.toLocaleString()}
             </Badge>
@@ -107,12 +107,12 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
 
           {/* Breakdown by type */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-slate-600 mb-2">By Contact Type</div>
+            <div className="text-sm font-medium text-muted-foreground mb-2">By Contact Type</div>
             {stats.map((stat) => (
-              <div key={stat.contact_type} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-md transition-colors">
+              <div key={stat.contact_type} className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors">
                 <div className="flex items-center gap-2">
                   {getIconForType(stat.contact_type)}
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-foreground">
                     {getLabelForType(stat.contact_type)}
                   </span>
                 </div>
@@ -135,7 +135,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
             key !== 'limit'
           ) && (
             <div className="pt-2 border-t border-border">
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 * Results filtered by active criteria
               </div>
             </div>

@@ -91,7 +91,7 @@ export function DimensionsManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
           <Tag className="h-4 w-4" />
           Disaggregation Dimensions {dimensionType && `(${dimensionType})`}
         </Label>
@@ -110,9 +110,9 @@ export function DimensionsManager({
 
       {/* Add Dimension Form */}
       {showAddForm && !readOnly && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded border space-y-3">
+        <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-900">Add Dimension</h4>
+            <h4 className="text-sm font-medium text-foreground">Add Dimension</h4>
             <Button
               type="button"
               variant="ghost"
@@ -125,7 +125,7 @@ export function DimensionsManager({
 
           {/* Template Selection */}
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Use Template</Label>
+            <Label className="text-xs text-foreground">Use Template</Label>
             <div className="flex flex-wrap gap-2">
               {Object.keys(DIMENSION_TEMPLATES).map((template) => (
                 <Button
@@ -134,7 +134,7 @@ export function DimensionsManager({
                   variant="outline"
                   size="sm"
                   onClick={() => handleTemplateSelect(template)}
-                  className={`text-xs ${formData.name === template ? 'bg-gray-200 border-gray-400' : ''}`}
+                  className={`text-xs ${formData.name === template ? 'bg-muted border-gray-400' : ''}`}
                 >
                   {template}
                 </Button>
@@ -143,7 +143,7 @@ export function DimensionsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Dimension Name <RequiredDot /></Label>
+            <Label className="text-xs text-foreground">Dimension Name <RequiredDot /></Label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value, useTemplate: false }))}
@@ -154,7 +154,7 @@ export function DimensionsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Value <RequiredDot /></Label>
+            <Label className="text-xs text-foreground">Value <RequiredDot /></Label>
             {formData.useTemplate && formData.name && DIMENSION_TEMPLATES[formData.name as keyof typeof DIMENSION_TEMPLATES] ? (
               <Select
                 value={formData.value}
@@ -187,7 +187,7 @@ export function DimensionsManager({
               type="submit"
               size="sm"
               disabled={loading || !formData.name || !formData.value}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+              className="bg-muted hover:bg-gray-300 text-foreground border border-gray-400"
             >
               Add Dimension
             </Button>
@@ -211,15 +211,15 @@ export function DimensionsManager({
               key={dim.id}
               className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border text-sm"
             >
-              <Tag className="h-3 w-3 text-gray-500" />
-              <span className="font-medium text-gray-700">{dim.name}:</span>
-              <span className="text-gray-900">{dim.value}</span>
+              <Tag className="h-3 w-3 text-muted-foreground" />
+              <span className="font-medium text-foreground">{dim.name}:</span>
+              <span className="text-foreground">{dim.value}</span>
               {!readOnly && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(dim.id)}
-                  className="text-red-600 hover:text-red-800 h-4 w-4 p-0 ml-1"
+                  className="text-destructive hover:text-red-800 h-4 w-4 p-0 ml-1"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -230,7 +230,7 @@ export function DimensionsManager({
       )}
 
       {filteredDimensions.length === 0 && !showAddForm && (
-        <p className="text-xs text-gray-500 italic">No disaggregation dimensions</p>
+        <p className="text-xs text-muted-foreground italic">No disaggregation dimensions</p>
       )}
       <ConfirmDialog />
     </div>

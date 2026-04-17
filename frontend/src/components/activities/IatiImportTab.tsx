@@ -1357,7 +1357,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                  <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                                  <span className="text-destructive text-xs cursor-help">⚠</span>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                   <p className="text-xs">Invalid IATI organization identifier format</p>
@@ -5132,14 +5132,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           // Create import value display
           const importValue = (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                 {country.code}
               </span>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-foreground">
                 {countryName}
               </span>
               {percentage !== undefined && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   ({percentage}%)
                 </span>
               )}
@@ -5208,18 +5208,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           // Create import value display
           const importValue = (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                 {region.code}
               </span>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-foreground">
                 {regionName}
               </span>
               {percentage !== undefined && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   ({percentage}%)
                 </span>
               )}
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 {vocabName}
               </span>
             </div>
@@ -5327,18 +5327,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const locationSummary = (
             <div className="flex flex-wrap items-center gap-2">
               {/* Location code badge - matches AF/AG/489/A1 style */}
-              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                 {locationCode}
               </span>
               
               {/* Location name - matches Afghanistan (25%) style */}
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-foreground">
                 {locationName}
               </span>
               
               {/* Coordinates as gray pill badge - matches AF/AG style */}
               {coordinates && (
-                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                   {coordinates}
                 </span>
               )}
@@ -12025,7 +12025,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       </td>
       <td className="px-4 py-3 w-32">
         <div>
-          <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
+          <p className="font-medium text-sm text-foreground">{field.fieldName}</p>
           {(field as any).needsRefinement && (
             <div className="mt-2">
               <Button
@@ -12054,7 +12054,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           )}
           {field.isTagField && (
             <div className="mt-1">
-              <p className="text-xs text-gray-500">{(field as any).tagData?.length || 0} tag(s) from XML</p>
+              <p className="text-xs text-muted-foreground">{(field as any).tagData?.length || 0} tag(s) from XML</p>
             </div>
           )}
         </div>
@@ -12067,14 +12067,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 <div key={index} className="flex flex-col gap-1">
                   <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
-                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                    <span className="text-sm font-medium text-foreground">{item.name}</span>
                     {item.percentage && (
-                      <span className="text-xs text-gray-500 font-normal">({Number(item.percentage).toFixed(2)}%)</span>
+                      <span className="text-xs text-muted-foreground font-normal">({Number(item.percentage).toFixed(2)}%)</span>
                     )}
                     {item.vocabulary && (
                       <>
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.vocabulary.split(' ')[0]}</span>
-                        <span className="text-xs text-gray-400 font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
+                        <span className="text-xs text-muted-foreground font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
                       </>
                     )}
                   </div>
@@ -12084,22 +12084,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
-                  <span className="text-sm font-medium text-gray-900">Policy Marker</span>
+                  <span className="text-sm font-medium text-foreground">Policy Marker</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Significance:</span>
+                  <span className="text-xs text-muted-foreground">Significance:</span>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.significance}</span>
                   {field.currentValue.vocabulary && (
                     <>
-                      <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
+                      <span className="text-xs text-muted-foreground ml-2">Vocabulary:</span>
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary}</span>
                     </>
                   )}
                 </div>
                 {field.currentValue.rationale && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Rationale:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.rationale}</span>
+                    <span className="text-xs text-muted-foreground">Rationale:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.rationale}</span>
                   </div>
                 )}
               </div>
@@ -12107,36 +12107,36 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.type}</span>
-                  <span className="text-sm font-medium text-gray-900">Contact</span>
+                  <span className="text-sm font-medium text-foreground">Contact</span>
                 </div>
                 {field.currentValue.personName && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Name:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.personName}</span>
+                    <span className="text-xs text-muted-foreground">Name:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.personName}</span>
                   </div>
                 )}
                 {field.currentValue.organization && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Organization:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.organization}</span>
+                    <span className="text-xs text-muted-foreground">Organization:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.organization}</span>
                   </div>
                 )}
                 {field.currentValue.jobTitle && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Position:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.jobTitle}</span>
+                    <span className="text-xs text-muted-foreground">Position:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.jobTitle}</span>
                   </div>
                 )}
                 {field.currentValue.email && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Email:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.email}</span>
+                    <span className="text-xs text-muted-foreground">Email:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.email}</span>
                   </div>
                 )}
                 {field.currentValue.telephone && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Phone:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.telephone}</span>
+                    <span className="text-xs text-muted-foreground">Phone:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.telephone}</span>
                   </div>
                 )}
               </div>
@@ -12144,20 +12144,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.role}</span>
-                  <span className="text-sm font-medium text-gray-900">Participating Org</span>
+                  <span className="text-sm font-medium text-foreground">Participating Org</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Name:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                  <span className="text-xs text-muted-foreground">Name:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Role:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.role}</span>
+                  <span className="text-xs text-muted-foreground">Role:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.role}</span>
                 </div>
                 {field.currentValue.ref && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Ref:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.ref}</span>
+                    <span className="text-xs text-muted-foreground">Ref:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.ref}</span>
                     {field.importValue?.wasCorrected && (
                       <TooltipProvider>
                         <Tooltip>
@@ -12177,8 +12177,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 )}
                 {field.currentValue.type && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Type:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.type}</span>
+                    <span className="text-xs text-muted-foreground">Type:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.type}</span>
                   </div>
                 )}
               </div>
@@ -12186,18 +12186,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                  <span className="text-sm font-medium text-gray-900">Organization</span>
+                  <span className="text-sm font-medium text-foreground">Organization</span>
                 </div>
                 {field.currentValue.name && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Name:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.name}</span>
+                    <span className="text-xs text-muted-foreground">Name:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.name}</span>
                   </div>
                 )}
                 {field.currentValue.acronym && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Acronym:</span>
-                    <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.acronym}</span>
+                    <span className="text-xs text-muted-foreground">Acronym:</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-32">{field.currentValue.acronym}</span>
                   </div>
                 )}
               </div>
@@ -12209,7 +12209,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
                         tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
                         tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
-                        'bg-gray-100 text-gray-700'
+                        'bg-muted text-foreground'
                       }`}>
                         {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
                       </span>
@@ -12217,40 +12217,40 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     {tag.code && (
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
                     )}
-                    <span className="text-sm font-medium text-gray-900">{tag.name || tag.narrative || 'Unnamed tag'}</span>
+                    <span className="text-sm font-medium text-foreground">{tag.name || tag.narrative || 'Unnamed tag'}</span>
                     {tag.vocabulary_uri && (
-                      <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabulary_uri}>
+                      <span className="text-xs text-muted-foreground italic truncate max-w-32" title={tag.vocabulary_uri}>
                         {tag.vocabulary_uri.substring(0, 30)}...
                       </span>
                     )}
                   </div>
                 ))}
                 {((field as any).existingTags || []).length > 3 && (
-                  <span className="text-xs text-gray-500 italic">
+                  <span className="text-xs text-muted-foreground italic">
                     +{((field as any).existingTags || []).length - 3} more tag(s)
                   </span>
                 )}
               </div>
             ) : field.isTagField ? (
-              <span className="text-sm text-gray-400 italic">No existing tags</span>
+              <span className="text-sm text-muted-foreground italic">No existing tags</span>
             ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>
-              <span className="text-sm font-medium text-gray-900">{field.currentValue.name}</span>
+              <span className="text-sm font-medium text-foreground">{field.currentValue.name}</span>
                 {field.currentValue.vocabulary && (
                   <>
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.vocabulary.split(' ')[0]}</span>
-                    <span className="text-xs text-gray-400 font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                    <span className="text-xs text-muted-foreground font-normal ml-1">{field.currentValue.vocabulary.split(' ').slice(1).join(' ')}</span>
                   </>
                 )}
             </div>
           ) : field.fieldName === 'IATI Identifier' ? (
             <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue}</span>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{field.currentValue}</span>
+            <span className="text-sm font-medium text-foreground">{field.currentValue}</span>
           )
         ) : (
-          <span className="text-sm text-gray-400 italic">Empty</span>
+          <span className="text-sm text-muted-foreground italic">Empty</span>
         )}
         </div>
       </td>
@@ -12263,29 +12263,29 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               </div>
               <div className="flex items-center gap-1 flex-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                <span className="text-sm text-gray-900 whitespace-nowrap">{field.importValue.name}</span>
+                <span className="text-sm text-foreground whitespace-nowrap">{field.importValue.name}</span>
               </div>
             </div>
           ) : field.isPolicyMarker ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-                <span className="text-sm font-medium text-gray-900">Policy Marker</span>
+                <span className="text-sm font-medium text-foreground">Policy Marker</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">Significance:</span>
+                <span className="text-xs text-muted-foreground">Significance:</span>
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.significance}</span>
                 {field.importValue.vocabulary && (
                   <>
-                    <span className="text-xs text-gray-500 ml-2">Vocabulary:</span>
+                    <span className="text-xs text-muted-foreground ml-2">Vocabulary:</span>
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary}</span>
                   </>
                 )}
               </div>
               {field.importValue.rationale && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Rationale:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.rationale}</span>
+                  <span className="text-xs text-muted-foreground">Rationale:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.rationale}</span>
                 </div>
               )}
             </div>
@@ -12297,7 +12297,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
                       tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
                       tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
-                      'bg-gray-100 text-gray-700'
+                      'bg-muted text-foreground'
                     }`}>
                       {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
                     </span>
@@ -12305,16 +12305,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   {tag.code && (
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
                   )}
-                  <span className="text-sm font-medium text-gray-900">{tag.narrative || 'Unnamed tag'}</span>
+                  <span className="text-sm font-medium text-foreground">{tag.narrative || 'Unnamed tag'}</span>
                   {tag.vocabularyUri && (
-                    <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabularyUri}>
+                    <span className="text-xs text-muted-foreground italic truncate max-w-32" title={tag.vocabularyUri}>
                       {tag.vocabularyUri.substring(0, 30)}...
                     </span>
                   )}
                 </div>
               ))}
               {((field as any).tagData || []).length > 3 && (
-                <span className="text-xs text-gray-500 italic">
+                <span className="text-xs text-muted-foreground italic">
                   +{((field as any).tagData || []).length - 3} more tag(s)
                 </span>
               )}
@@ -12323,51 +12323,51 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                <span className="text-sm font-medium text-gray-900">Contact</span>
+                <span className="text-sm font-medium text-foreground">Contact</span>
               </div>
               {field.importValue.personName && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Name:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.personName}</span>
+                  <span className="text-xs text-muted-foreground">Name:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.personName}</span>
                 </div>
               )}
               {field.importValue.jobTitle && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Position:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.jobTitle}</span>
+                  <span className="text-xs text-muted-foreground">Position:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.jobTitle}</span>
                 </div>
               )}
               {field.importValue.organization && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Organization:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.organization}</span>
+                  <span className="text-xs text-muted-foreground">Organization:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.organization}</span>
                 </div>
               )}
               {field.importValue.email && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Email:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.email}</span>
+                  <span className="text-xs text-muted-foreground">Email:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.email}</span>
                 </div>
               )}
               {field.importValue.telephone && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Phone:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.telephone}</span>
+                  <span className="text-xs text-muted-foreground">Phone:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.telephone}</span>
                 </div>
               )}
             </div>
           ) : field.tab === 'participating_orgs' && typeof field.importValue === 'object' ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
-                <span className="text-sm font-medium text-gray-900">Participating Org</span>
+                <span className="text-sm font-medium text-foreground">Participating Org</span>
               </div>
-              <div className="text-xs text-gray-900 truncate max-w-32">{field.importValue.name}</div>
+              <div className="text-xs text-foreground truncate max-w-32">{field.importValue.name}</div>
               {field.importValue.role && (() => {
                 const roleInfo = getOrganizationRoleLabel(field.importValue.role);
                 return roleInfo ? (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{roleInfo.code}</span>
-                    <span className="text-xs text-gray-600">{roleInfo.name}</span>
+                    <span className="text-xs text-muted-foreground">{roleInfo.name}</span>
                   </div>
                 ) : null;
               })()}
@@ -12396,7 +12396,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 return typeInfo ? (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{typeInfo.code}</span>
-                    <span className="text-xs text-gray-600">{typeInfo.name}</span>
+                    <span className="text-xs text-muted-foreground">{typeInfo.name}</span>
                   </div>
                 ) : null;
               })()}
@@ -12405,16 +12405,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Reporting</span>
-                <span className="text-sm font-medium text-gray-900">Organization</span>
+                <span className="text-sm font-medium text-foreground">Organization</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">Name:</span>
-                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name || field.importValue.narrative}</span>
+                <span className="text-xs text-muted-foreground">Name:</span>
+                <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.name || field.importValue.narrative}</span>
               </div>
               {field.importValue.ref && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Ref:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.ref}</span>
+                  <span className="text-xs text-muted-foreground">Ref:</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-32">{field.importValue.ref}</span>
                 </div>
               )}
             </div>
@@ -12423,17 +12423,17 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div key={index} className={`flex flex-col gap-1 ${item.locked ? 'opacity-50' : ''}`}>
                 <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.code}</span>
-                  <span className={`text-sm font-medium ${item.locked ? 'text-gray-500' : 'text-gray-900'}`}>{item.name}</span>
+                  <span className={`text-sm font-medium ${item.locked ? 'text-muted-foreground' : 'text-foreground'}`}>{item.name}</span>
                   {item.percentage && (
-                    <span className="text-xs text-gray-500 font-normal">({Number(item.percentage).toFixed(2)}%)</span>
+                    <span className="text-xs text-muted-foreground font-normal">({Number(item.percentage).toFixed(2)}%)</span>
                   )}
                   {item.locked && (
-                    <Lock className="h-3 w-3 text-gray-500" />
+                    <Lock className="h-3 w-3 text-muted-foreground" />
                   )}
                   {item.vocabulary && (
                     <>
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{item.vocabulary.split(' ')[0]}</span>
-                      <span className="text-xs text-gray-400 font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
+                      <span className="text-xs text-muted-foreground font-normal ml-1">{item.vocabulary.split(' ').slice(1).join(' ')}</span>
                     </>
                   )}
                 </div>
@@ -12446,26 +12446,26 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               </div>
               <div className="flex items-center gap-1 flex-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                <span className="text-sm text-gray-900 whitespace-nowrap">{field.importValue.name}</span>
+                <span className="text-sm text-foreground whitespace-nowrap">{field.importValue.name}</span>
               </div>
             </div>
           ) : typeof field.importValue === 'object' && field.importValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-                <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+                <span className="text-sm font-medium text-foreground">{field.importValue.name}</span>
                     {field.importValue.vocabulary && (
                 <>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.vocabulary.split(' ')[0]}</span>
-                  <span className="text-xs text-gray-400 font-normal ml-1">{field.importValue.vocabulary.split(' ').slice(1).join(' ')}</span>
+                  <span className="text-xs text-muted-foreground font-normal ml-1">{field.importValue.vocabulary.split(' ').slice(1).join(' ')}</span>
                 </>
               )}
             </div>
           ) : typeof field.importValue === 'object' ? (
-            <span className="text-sm text-gray-600 italic">Complex data</span>
+            <span className="text-sm text-muted-foreground italic">Complex data</span>
           ) : field.fieldName === 'IATI Identifier' ? (
             <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue}</span>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{field.importValue}</span>
+            <span className="text-sm font-medium text-foreground">{field.importValue}</span>
           )}
         </div>
       </td>
@@ -12499,7 +12499,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </Badge>
           )}
           {(field as any).hasNonDacSectors && !(field as any).refinedSectors && (
-            <Badge variant="outline" className="text-xs border-red-400 text-red-700">
+            <Badge variant="outline" className="text-xs border-red-400 text-destructive">
               <AlertCircle className="h-3 w-3 mr-1" />
               {(field as any).nonDacSectors?.length || 0} non-DAC sectors excluded
             </Badge>
@@ -12532,7 +12532,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <TabsTrigger key={key} value={key} className="text-sm">
                 {subTab.name}
                 {subTab.fields.length > 0 && (
-                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full">
                     {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
                   </span>
                 )}
@@ -12569,7 +12569,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <TabsTrigger key={key} value={key} className="text-sm">
                 {subTab.name}
                 {subTab.fields.length > 0 && (
-                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full">
                     {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
                   </span>
                 )}
@@ -12604,7 +12604,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <TabsTrigger key={key} value={key} className="text-sm">
                 {subTab.name}
                 {subTab.fields.length > 0 && (
-                  <span className="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full">
                     {subTab.fields.filter(f => f.selected).length}/{subTab.fields.length}
                   </span>
                 )}
@@ -12707,19 +12707,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center w-20">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider text-center w-20">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
                   Field
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-40">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-40">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-40">
                   Status
                 </th>
               </tr>
@@ -12775,7 +12775,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-medium">{tabName}</h3>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               {selectedCount} of {totalCount} policy markers selected
             </div>
           </div>
@@ -12804,19 +12804,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-12">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Policy Marker
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -12869,7 +12869,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     {importStatus.progress || 0}%
                   </span>
                   {(importStatus.stage === 'parsing' || importStatus.stage === 'uploading') && (
@@ -12883,7 +12883,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           description: 'Returned to XML Import tab.'
                         });
                       }}
-                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      className="text-destructive border-red-200 hover:bg-destructive/10"
                     >
                       Cancel Import
                     </Button>
@@ -12899,7 +12899,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           description: 'The import will stop after the current operation completes.'
                         });
                       }}
-                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      className="text-destructive border-red-200 hover:bg-destructive/10"
                     >
                       Cancel Import
                     </Button>
@@ -13024,9 +13024,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 className="border-2 border-dashed border-input rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
                 onClick={() => document.getElementById('xml-upload')?.click()}
               >
-                <FileCode className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">Drop your IATI XML file here, or click to browse</p>
-                <p className="text-sm text-gray-500 mb-4">Supports standard IATI Activity XML format</p>
+                <FileCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">Drop your IATI XML file here, or click to browse</p>
+                <p className="text-sm text-muted-foreground mb-4">Supports standard IATI Activity XML format</p>
                 <input
                   type="file"
                   accept=".xml,text/xml"
@@ -13045,9 +13045,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             {importMethod === 'url' && (
               <div className="space-y-4">
                 <div className="border-2 border-dashed border-input rounded-lg p-8 text-center">
-                  <Link className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">Enter the URL of an IATI XML file</p>
-                  <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
+                  <Link className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">Enter the URL of an IATI XML file</p>
+                  <p className="text-sm text-muted-foreground mb-4">Must be a publicly accessible XML document</p>
                   
                   <div className="max-w-md mx-auto space-y-3">
                     <div className="relative">
@@ -13087,7 +13087,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                         variant="ghost"
                         size="sm"
                         onClick={handlePasteUrl}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted"
                         title="Paste from clipboard"
                       >
                         <ClipboardPaste className="h-4 w-4" />
@@ -13138,7 +13138,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     onChange={(e) => setSnippetContent(e.target.value)}
                     className="font-mono text-sm min-h-[300px] mt-2"
                   />
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                     <span>{snippetContent.length} characters</span>
                     <Button
                       type="button"
@@ -13185,14 +13185,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <AlertDescription>
                     <p className="font-medium mb-2">Snippet Import supports:</p>
                     <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;location&gt;</code> - Location data</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
-                      <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;iati-activity&gt;</code> - Full or partial activities</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;transaction&gt;</code> - Financial transactions</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
+                      <li><code className="text-xs bg-muted px-1 rounded">&lt;iati-activity&gt;</code> - Full or partial activities</li>
                     </ul>
                     <p className="mt-2 text-sm">
                       The system will automatically wrap your snippet in proper IATI XML structure.
@@ -13329,7 +13329,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             <CardTitle className="text-sm">XML Content Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-64 text-xs">
+            <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-64 text-xs">
               <code>{xmlContent.substring(0, 2000)}...</code>
             </pre>
           </CardContent>
@@ -13413,7 +13413,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               
               {/* Summary Stats */}
               <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   <strong>{parsedFields.filter(f => f.selected).length}</strong> of <strong>{parsedFields.length}</strong> fields selected
                 </div>
                 {parsedFields.filter(f => f.selected && f.hasConflict).length > 0 && (
@@ -13460,7 +13460,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div className="text-center py-6">
                 <CheckCircle className="h-16 w-16 text-[hsl(var(--success-icon))] mx-auto mb-4" />
                 <h3 className="text-2xl font-semibold mb-2">Import Completed Successfully!</h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-muted-foreground mb-6">
                   {parsedFields.filter(f => f.selected).length} fields have been imported from the XML file.
                 </p>
                 
@@ -13573,18 +13573,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                         </Badge>
                       )}
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                    <h3 className="text-xl font-semibold text-foreground mb-1">
                       {parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref || 'Unknown Organization'}
                     </h3>
                     {parsedActivity.reportingOrg.ref && (
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-sm font-mono text-gray-600 bg-card px-2 py-1 rounded border border-border">
+                        <span className="text-sm font-mono text-muted-foreground bg-card px-2 py-1 rounded border border-border">
                           {parsedActivity.reportingOrg.ref}
                         </span>
-                        <span className="text-xs text-gray-500">IATI Org ID</span>
+                        <span className="text-xs text-muted-foreground">IATI Org ID</span>
                       </div>
                     )}
-                    <p className="text-sm text-gray-600 mt-3">
+                    <p className="text-sm text-muted-foreground mt-3">
                       This activity is reported by <strong>{parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref}</strong> as specified in the imported XML.
                     </p>
                   </div>
@@ -13834,9 +13834,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h4 className="font-medium text-gray-700 mb-2">Item Summary:</h4>
-                <div className="text-sm text-gray-600">
+              <div className="bg-muted p-3 rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">Item Summary:</h4>
+                <div className="text-sm text-muted-foreground">
                   {selectedItem.type === 'budget' && selectedItem.data && (
                     <div className="space-y-1">
                       {selectedItem.data.type && <div><strong>Type:</strong> {selectedItem.data.type}</div>}
@@ -13893,7 +13893,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
               {/* Enhanced Select All for Detail Fields */}
               <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium text-gray-900">Field Selection</h4>
+                <h4 className="font-medium text-foreground">Field Selection</h4>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -13931,9 +13931,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="text-left px-4 py-2 font-medium text-gray-700 w-12">Import</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-700">Field</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-700">Value</th>
+                      <th className="text-left px-4 py-2 font-medium text-foreground w-12">Import</th>
+                      <th className="text-left px-4 py-2 font-medium text-foreground">Field</th>
+                      <th className="text-left px-4 py-2 font-medium text-foreground">Value</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -13953,7 +13953,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-sm text-gray-900">{field.fieldName}</p>
+                          <p className="font-medium text-sm text-foreground">{field.fieldName}</p>
                         </td>
                         <td className="px-4 py-3">
                           <div className="space-y-1">
@@ -13961,7 +13961,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-sm font-medium text-gray-400 opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
+                                    <span className="text-sm font-medium text-muted-foreground opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className="text-xs">{field.inheritedFrom}</p>
@@ -13975,20 +13975,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                                 </div>
                                 <div className="flex items-center gap-1 flex-wrap">
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.type}</span>
-                                  <span className="text-sm text-gray-900">{field.importValue.name}</span>
+                                  <span className="text-sm text-foreground">{field.importValue.name}</span>
                                 </div>
                               </div>
                             ) : typeof field.importValue === 'object' && field.importValue?.code ? (
                               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue.code}</span>
-                                <span className="text-sm font-medium text-gray-900">{field.importValue.name}</span>
+                                <span className="text-sm font-medium text-foreground">{field.importValue.name}</span>
                               </div>
                             ) : typeof field.importValue === 'object' ? (
-                              <span className="text-sm text-gray-600 italic">Complex data</span>
+                              <span className="text-sm text-muted-foreground italic">Complex data</span>
                             ) : field.fieldName === 'IATI Identifier' ? (
                               <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || 'N/A'}</span>
                             ) : (
-                              <span className="text-sm font-medium text-gray-900">{field.importValue || 'N/A'}</span>
+                              <span className="text-sm font-medium text-foreground">{field.importValue || 'N/A'}</span>
                             )}
                           </div>
                         </td>
@@ -14060,7 +14060,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 variant="outline"
                 size="sm"
                 onClick={clearDebugLogs}
-                className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                className="flex items-center gap-2 text-destructive hover:text-destructive"
               >
                 <X className="h-4 w-4" />
                 Clear Logs
@@ -14069,7 +14069,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
               {debugLogs.length === 0 ? (
-                <div className="text-gray-500">No debug logs captured yet. Try importing an XML file to see logs here.</div>
+                <div className="text-muted-foreground">No debug logs captured yet. Try importing an XML file to see logs here.</div>
               ) : (
                 debugLogs.map((log, index) => (
                   <div key={index} className="whitespace-pre-wrap break-words">
@@ -14093,7 +14093,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-gray-600" />
+              <Building2 className="h-5 w-5 text-muted-foreground" />
               Select Reporting Organisation
             </DialogTitle>
             <DialogDescription>
@@ -14114,7 +14114,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 placeholder="Select reporting organisation..."
                 searchPlaceholder="Search organisations..."
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {selectedReportingOrgId 
                   ? 'Selected organisation will be used as the reporting organisation for this activity.'
                   : 'If no organisation is selected, the system will attempt to match the XML reporting organisation or create a new one.'}
@@ -14122,9 +14122,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </div>
 
             {/* Info Message */}
-            <Alert className="border-border bg-gray-50">
-              <Info className="h-4 w-4 text-gray-600" />
-              <AlertDescription className="text-gray-800">
+            <Alert className="border-border bg-muted">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <AlertDescription className="text-foreground">
                 <p className="text-sm">
                   The selected organisation will be assigned as the reporting organisation for this activity.
                   You can review and select which fields to import after confirming.
@@ -14319,7 +14319,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[50px]">
             {subsector.code}
           </span>
-          <span className="font-medium text-gray-900 flex-1 truncate">
+          <span className="font-medium text-foreground flex-1 truncate">
             {subsector.name}
           </span>
           {sector.code === subsector.code && (
@@ -14342,7 +14342,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
         <span className="truncate">
           <span className="flex items-center gap-2">
             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
-            <span className="font-medium text-gray-900">{sector.name}</span>
+            <span className="font-medium text-foreground">{sector.name}</span>
           </span>
         </span>
         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -14390,7 +14390,7 @@ const SubsectorDropdown = ({ value, options, onSelect }: SubsectorDropdownProps)
               <span className="truncate text-sm text-left">{selectedOption.name}</span>
             </span>
           ) : (
-            <span className="text-gray-400 text-left">Select subsector...</span>
+            <span className="text-muted-foreground text-left">Select subsector...</span>
           )}
           <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -14403,12 +14403,12 @@ const SubsectorDropdown = ({ value, options, onSelect }: SubsectorDropdownProps)
               placeholder="Search subsectors..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-gray-400"
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="h-4 w-4 rounded hover:bg-gray-200 flex items-center justify-center"
+                className="h-4 w-4 rounded hover:bg-muted flex items-center justify-center"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -14416,7 +14416,7 @@ const SubsectorDropdown = ({ value, options, onSelect }: SubsectorDropdownProps)
           </div>
           <CommandList className="max-h-[280px]">
             {filteredOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-gray-500">
+              <div className="py-6 text-center text-sm text-muted-foreground">
                 No subsectors found.
               </div>
             ) : (
@@ -14779,7 +14779,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
                       <div className="flex items-center gap-2">
                         <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">{originalCode}</code>
-                        <span className="text-sm font-medium text-gray-700">{items[0].originalName}</span>
+                        <span className="text-sm font-medium text-foreground">{items[0].originalName}</span>
                       </div>
                       <div className="flex items-center gap-2 ml-auto">
                         <Badge variant="secondary" className="text-xs">
@@ -14788,7 +14788,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                         {isExact ? (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] transition-colors duration-200" />
                         ) : isOverAllocated ? (
-                          <Badge variant="outline" className="text-xs text-red-600 border-red-600 transition-colors duration-200 flex items-center gap-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-red-600 transition-colors duration-200 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Over by: {Math.abs(remainingPercentage).toFixed(0)}%
                           </Badge>
@@ -14821,8 +14821,8 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                       <table className="w-full">
                         <thead className="bg-surface-muted">
                           <tr className="border-b border-border">
-                            <th className="text-left text-xs font-medium text-gray-500 pb-2 px-1">Subsector</th>
-                            <th className="text-center text-xs font-medium text-gray-500 pb-2 px-1 w-28">Percentage</th>
+                            <th className="text-left text-xs font-medium text-muted-foreground pb-2 px-1">Subsector</th>
+                            <th className="text-center text-xs font-medium text-muted-foreground pb-2 px-1 w-28">Percentage</th>
                             <th className="w-10"></th>
                           </tr>
                         </thead>
@@ -14848,7 +14848,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     className="w-20 text-center"
                                     placeholder="0"
                                   />
-                                  <span className="text-sm text-gray-500">%</span>
+                                  <span className="text-sm text-muted-foreground">%</span>
                                 </div>
                               </td>
                               <td className="py-2 px-1 align-middle">
@@ -14857,9 +14857,9 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleRemoveSplit(mapping.id)}
-                                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 transition-colors duration-200"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive transition-colors duration-200"
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
                                 )}
                               </td>
@@ -14871,7 +14871,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                       {/* Preset split buttons - show when sector has 2+ items */}
                       {items.length >= 2 && (
                         <div className="flex flex-wrap gap-2 pt-2 border-t border-border mt-2">
-                          <span className="text-xs text-gray-500 self-center mr-1">Quick splits:</span>
+                          <span className="text-xs text-muted-foreground self-center mr-1">Quick splits:</span>
                           <Button
                             variant="outline"
                             size="sm"
@@ -14935,10 +14935,10 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           </div>
 
           {/* Total percentage bar - at bottom */}
-          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-border">
+          <div className="flex items-center justify-between bg-muted p-3 rounded-lg border border-border">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Total:</span>
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="text-sm font-medium text-foreground">Total:</span>
+              <span className="text-sm font-semibold text-foreground">
                 {totalPercentage.toFixed(0)}%
               </span>
               {Math.abs(totalPercentage - 100) < 0.01 ? (

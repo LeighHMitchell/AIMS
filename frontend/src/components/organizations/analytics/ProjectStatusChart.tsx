@@ -73,7 +73,7 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-muted-foreground">
               {entry.value}: {entry.payload.value}
             </span>
           </div>
@@ -86,12 +86,12 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
     return (
       <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Project Status Distribution
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80 flex items-center justify-center text-slate-500">
+          <div className="h-80 flex items-center justify-center text-muted-foreground">
             <p>No project status data available</p>
           </div>
         </CardContent>
@@ -102,7 +102,7 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Project Status Distribution
         </CardTitle>
       </CardHeader>

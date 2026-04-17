@@ -104,7 +104,7 @@ export function GateDocumentUploadItem({
         onChange={handleFileChange}
         className="hidden"
       />
-      {error && <p className="text-xs text-red-600 mt-1 px-2">{error}</p>}
+      {error && <p className="text-xs text-destructive mt-1 px-2">{error}</p>}
     </div>
   )
 }

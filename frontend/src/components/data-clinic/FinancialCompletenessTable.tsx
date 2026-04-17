@@ -178,7 +178,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
       {/* Search and Column Controls */}
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search activities..."
             value={searchQuery}
@@ -269,7 +269,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
               <TableRow>
                 <TableCell
                   colSpan={visibleColumns.size + 2}
-                  className="h-24 text-center text-slate-500"
+                  className="h-24 text-center text-muted-foreground"
                 >
                   {searchQuery ? 'No activities match your search' : 'No activities to display'}
                 </TableCell>
@@ -300,7 +300,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
                       </TableCell>
                     )}
                     {visibleColumns.has('organization') && (
-                      <TableCell className="text-slate-600">
+                      <TableCell className="text-muted-foreground">
                         {item.reporting_org_name || '—'}
                       </TableCell>
                     )}
@@ -315,7 +315,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
                       </TableCell>
                     )}
                     {visibleColumns.has('overspend') && (
-                      <TableCell className="text-right font-semibold text-red-600">
+                      <TableCell className="text-right font-semibold text-destructive">
                         {formatCurrencyFull(item.overspend_usd)}
                       </TableCell>
                     )}
@@ -357,7 +357,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1} to {Math.min(currentPage * PAGE_SIZE, sortedData.length)} of {sortedData.length} results
           </p>
           <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-muted-foreground">
               Page {currentPage} of {totalPages}
             </span>
             <Button

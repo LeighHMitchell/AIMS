@@ -101,7 +101,7 @@ export function ReadinessDocumentUpload({
 
   return (
     <div className="space-y-3">
-      <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
         <FileText className="h-4 w-4" />
         Supporting Document
       </Label>

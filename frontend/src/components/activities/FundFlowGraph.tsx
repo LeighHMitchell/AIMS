@@ -408,7 +408,7 @@ export default function FundFlowGraph({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[600px]">
-        <div className="text-slate-500">Loading fund flow graph...</div>
+        <div className="text-muted-foreground">Loading fund flow graph...</div>
       </div>
     )
   }
@@ -425,7 +425,7 @@ export default function FundFlowGraph({
 
   if (!hasTransactions && !hasPlanned) {
     return (
-      <div className="flex items-center justify-center h-[600px] text-slate-400">
+      <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No fund flow data available</p>
           <p className="text-xs mt-2">Add transactions or planned disbursements with provider and receiver organizations to see the flow graph</p>
@@ -446,7 +446,7 @@ export default function FundFlowGraph({
           className={`h-7 px-3 text-xs ${
             viewMode === 'transactions' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-input hover:bg-slate-50'
+              : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
           Transactions
@@ -459,7 +459,7 @@ export default function FundFlowGraph({
           className={`h-7 px-3 text-xs ${
             viewMode === 'planned' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-input hover:bg-slate-50'
+              : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
           Planned Disbursements
@@ -472,7 +472,7 @@ export default function FundFlowGraph({
           className={`h-7 px-3 text-xs ${
             viewMode === 'both' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-input hover:bg-slate-50'
+              : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
           Both
@@ -522,7 +522,7 @@ export default function FundFlowGraph({
 
       {/* Legend */}
       <div className="space-y-3">
-        <div className="flex items-center gap-6 text-xs text-slate-600 flex-wrap">
+        <div className="flex items-center gap-6 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-blue-500"></div>
             <span>Provider</span>
@@ -539,7 +539,7 @@ export default function FundFlowGraph({
           </div>
           {viewMode === 'transactions' || viewMode === 'both' ? (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-1 bg-slate-500"></div>
+              <div className="w-8 h-1 bg-muted0"></div>
               <span>Transactions (size = USD value)</span>
             </div>
           ) : null}
@@ -551,7 +551,7 @@ export default function FundFlowGraph({
           ) : null}
         </div>
         {viewMode === 'transactions' || viewMode === 'both' ? (
-          <div className="text-xs text-slate-500 mt-2">
+          <div className="text-xs text-muted-foreground mt-2">
             <p className="mb-1"><strong>Transaction colors:</strong> Links are colored by Finance Type (if available) or Transaction Type</p>
             <p>Hover over links to see transaction details including type, finance type, and value</p>
           </div>

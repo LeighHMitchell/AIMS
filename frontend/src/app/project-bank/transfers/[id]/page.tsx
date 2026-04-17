@@ -452,7 +452,7 @@ export default function TransferDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                  className="w-full text-destructive border-red-200 hover:bg-destructive/10"
                   onClick={() => setShowDeleteDialog(true)}
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1.5" />

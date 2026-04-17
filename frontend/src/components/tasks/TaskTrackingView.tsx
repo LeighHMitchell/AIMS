@@ -392,7 +392,7 @@ export function TaskTrackingView({
                           </Badge>
                         )}
                         {declined > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 border-border bg-gray-50 text-gray-700">
+                          <Badge variant="outline" className="text-xs gap-1 border-border bg-muted text-foreground">
                             <XCircle className="h-3 w-3" />
                             {declined}
                           </Badge>
@@ -429,7 +429,7 @@ export function TaskTrackingView({
                             setEditingTask(task);
                           }}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500" />
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       )}
                       {/* Delete Button */}

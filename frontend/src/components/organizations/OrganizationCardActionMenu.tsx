@@ -33,7 +33,7 @@ interface OrganizationCardActionMenuProps {
 }
 
 const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer";
-const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20 cursor-pointer";
+const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-destructive dark:text-destructive hover:!bg-destructive/10 dark:hover:!bg-red-900/20 cursor-pointer";
 
 export function OrganizationCardActionMenu({
   organizationId,
@@ -125,7 +125,7 @@ export function OrganizationCardActionMenu({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem className={dangerItemClass} onSelect={onDelete}>
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
                 Delete
               </DropdownMenuItem>
             </>

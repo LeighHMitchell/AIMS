@@ -349,10 +349,10 @@ export default function PartnerSummaryPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortConfig.field !== field) return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+    if (sortConfig.field !== field) return <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />;
     return sortConfig.direction === 'asc' ? 
-      <ChevronUp className="h-4 w-4 text-gray-400" /> : 
-      <ChevronDown className="h-4 w-4 text-gray-400" />;
+      <ChevronUp className="h-4 w-4 text-muted-foreground" /> : 
+      <ChevronDown className="h-4 w-4 text-muted-foreground" />;
   };
 
   // Format currency with thousands separators

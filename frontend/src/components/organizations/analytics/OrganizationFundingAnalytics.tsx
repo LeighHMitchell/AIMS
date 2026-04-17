@@ -68,7 +68,7 @@ export function OrganizationFundingAnalytics({
     return (
       <Card>
         <CardContent className="py-12">
-          <div className="text-center text-red-600">
+          <div className="text-center text-destructive">
             <AlertCircle className="h-12 w-12 mx-auto mb-4" />
             <p>{error}</p>
           </div>

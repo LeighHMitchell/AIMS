@@ -147,7 +147,7 @@ export function SidebarNav({
       <nav className="px-4 py-6">
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className={`h-10 bg-gray-200 rounded-md animate-pulse ${isCollapsed ? 'w-12' : 'w-full'}`} />
+            <div key={i} className={`h-10 bg-muted rounded-md animate-pulse ${isCollapsed ? 'w-12' : 'w-full'}`} />
           ))}
         </div>
       </nav>
@@ -539,7 +539,7 @@ export function SidebarNav({
                       "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                       isActive
                         ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                        : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+                        : "text-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100"
                     )}
                   >
                     {item.isAnimated ? (
@@ -607,7 +607,7 @@ export function SidebarNav({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => toggleGroup(group.label)}
-                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50"
                         >
                           {group.isAnimated ? (
                             <GroupIcon size={20} className="flex-shrink-0" />
@@ -622,7 +622,7 @@ export function SidebarNav({
                     </Tooltip>
                   ) : (
                     <CollapsibleTrigger asChild>
-                      <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50">
                         <div className="flex items-center gap-3">
                           {group.isAnimated ? (
                             <GroupIcon size={20} className="flex-shrink-0" />
@@ -647,7 +647,7 @@ export function SidebarNav({
                       {/* Vertical Connector Line */}
                       {!isCollapsed && isOpen && (
                         <div
-                          className="absolute left-[18px] top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700"
+                          className="absolute left-[18px] top-0 bottom-0 w-px bg-muted dark:bg-gray-700"
                           style={{
                             height: '100%',
                           }}
@@ -689,7 +689,7 @@ export function SidebarNav({
                                 "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                                 isActive
                                   ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                                  : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100",
+                                  : "text-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100",
                                 // Add left padding for connector when not collapsed
                                 !isCollapsed && "ml-6 pl-6"
                               )}
@@ -710,7 +710,7 @@ export function SidebarNav({
                                 {item.name}
                               </span>
                               {!isCollapsed && itemCount != null && itemCount > 0 && (
-                                <span className="text-[11px] tabular-nums text-gray-400 dark:text-gray-500 font-normal ml-auto">
+                                <span className="text-[11px] tabular-nums text-muted-foreground dark:text-muted-foreground font-normal ml-auto">
                                   {itemCount.toLocaleString()}
                                 </span>
                               )}

@@ -106,7 +106,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
       case 'critical': return 'bg-red-100 text-red-800 border-red-300';
       case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'info': return 'bg-blue-100 text-blue-800 border-blue-300';
-      default: return 'bg-gray-100 text-gray-800 border-input';
+      default: return 'bg-muted text-foreground border-input';
     }
   };
 
@@ -202,7 +202,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   </span>
                 </div>
                 {autosaveContext?.lastError && (
-                  <div className="text-red-400 text-xs">
+                  <div className="text-destructive text-xs">
                     <strong>Error:</strong> {autosaveContext.lastError.message}
                   </div>
                 )}
@@ -277,7 +277,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   size="sm"
                   className="text-green-400 border-green-400 text-xs"
                 >
-                  <Trash2 className="h-3 w-3 mr-1 text-red-500" />
+                  <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                   Clear Logs
                 </Button>
               </div>

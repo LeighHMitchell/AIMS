@@ -383,7 +383,7 @@ export default function SDGAlignmentSectionSimplified({
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleGoal(goalId)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -484,7 +484,7 @@ export default function SDGAlignmentSectionSimplified({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeTargetMapping(goalId, mapping.sdgTarget)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                               >
                                 <X className="h-3 w-3" />
                               </Button>

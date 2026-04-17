@@ -235,7 +235,7 @@ export default function NewGroupPage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveTag(tag)}
-                          className="ml-1 hover:text-red-600"
+                          className="ml-1 hover:text-destructive"
                         >
                           <X className="h-3 w-3" />
                         </button>

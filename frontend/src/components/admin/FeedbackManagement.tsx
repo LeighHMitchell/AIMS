@@ -541,7 +541,7 @@ export function FeedbackManagement() {
                     onClick={batchDeleteFeedback}
                     disabled={isBatchDeleting}
                   >
-                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                    <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                     {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
                   </Button>
                   <Button
@@ -649,15 +649,15 @@ export function FeedbackManagement() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">View</label>
-              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(false)}
                   className={cn(
                     !showArchived
-                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-white shadow-sm text-foreground hover:bg-white"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Active
@@ -668,8 +668,8 @@ export function FeedbackManagement() {
                   onClick={() => setShowArchived(true)}
                   className={cn(
                     showArchived
-                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-white shadow-sm text-foreground hover:bg-white"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <Archive className="h-4 w-4 mr-1" />
@@ -691,7 +691,7 @@ export function FeedbackManagement() {
             </div>
           ) : filteredFeedback.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p>No feedback found</p>
               <p className="text-sm mt-2">
                 {showArchived ? 'No archived feedback' : 'Feedback submitted by users will appear here'}
@@ -795,7 +795,7 @@ export function FeedbackManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center">
-                          <CategoryIcon className="h-4 w-4 text-gray-600" />
+                          <CategoryIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </TableCell>
                       <TableCell>
@@ -811,7 +811,7 @@ export function FeedbackManagement() {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-border bg-white shadow-lg">
-                            <div className="text-sm text-gray-600 font-normal space-y-2">
+                            <div className="text-sm text-muted-foreground font-normal space-y-2">
                               <div>
                                 <span className="font-medium">Subject:</span> {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
                               </div>
@@ -901,28 +901,28 @@ export function FeedbackManagement() {
                                       }}
                                     />
                                   </button>
-                                  <Image className="h-4 w-4 text-gray-500" />
+                                  <Image className="h-4 w-4 text-muted-foreground" />
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <FileText className="h-8 w-8 text-gray-500" />
-                                  <span className="text-xs text-gray-500">{item.attachment_filename}</span>
+                                  <FileText className="h-8 w-8 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">{item.attachment_filename}</span>
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-muted-foreground">-</span>
                           );
                         })()}
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </div>
                       </TableCell>
                       {showArchived && (
                         <TableCell>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             {item.archived_at 
                               ? formatDistanceToNow(new Date(item.archived_at), { addSuffix: true })
                               : '-'}
@@ -968,9 +968,9 @@ export function FeedbackManagement() {
                               deleteFeedback(item.id);
                             }}
                             title="Delete"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-red-200 hover:border-red-300"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
@@ -988,7 +988,7 @@ export function FeedbackManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} feedback items
               </div>
               
@@ -1031,7 +1031,7 @@ export function FeedbackManagement() {
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-muted text-foreground" : ""}`}
                       >
                         {pageNum}
                       </Button>
@@ -1060,7 +1060,7 @@ export function FeedbackManagement() {
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Items per page:</label>
+                <label className="text-sm text-muted-foreground">Items per page:</label>
                 <Select value={pageSize.toString()} onValueChange={(value) => {
                   setPageSize(parseInt(value));
                   setCurrentPage(1);
@@ -1181,7 +1181,7 @@ function FeedbackDetailModal({
           {/* User Message */}
           <div>
             <h4 className="font-medium mb-2">User Message</h4>
-            <div className="bg-gray-50 border p-4 rounded-lg">
+            <div className="bg-muted border p-4 rounded-lg">
               <p className="whitespace-pre-wrap break-words">{feedback.message}</p>
             </div>
           </div>
@@ -1194,14 +1194,14 @@ function FeedbackDetailModal({
               <div className="border border-border rounded-lg p-4">
                 {feedback.attachment_type?.startsWith('image/') ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Image className="h-4 w-4" />
                       <span className="break-all">{feedback.attachment_filename}</span>
                       {feedback.attachment_size && (
-                        <span className="text-gray-400">({formatFileSize(feedback.attachment_size)})</span>
+                        <span className="text-muted-foreground">({formatFileSize(feedback.attachment_size)})</span>
                       )}
                     </div>
-                    <div className="border rounded-lg overflow-hidden bg-gray-100">
+                    <div className="border rounded-lg overflow-hidden bg-muted">
                       <button
                         onClick={() => {
                           // Open image in new tab for full size viewing
@@ -1222,7 +1222,7 @@ function FeedbackDetailModal({
                           }}
                         />
                       </button>
-                      <p className="text-xs text-gray-500 text-center mt-2">Click image to view full size</p>
+                      <p className="text-xs text-muted-foreground text-center mt-2">Click image to view full size</p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
                       <a href={feedback.attachment_url || '#'} target="_blank" rel="noopener noreferrer">
@@ -1236,12 +1236,12 @@ function FeedbackDetailModal({
                     <div className="flex items-center gap-2">
                       {(() => {
                         const AttachmentIcon = getAttachmentIcon(feedback.attachment_type);
-                        return <AttachmentIcon className="h-5 w-5 text-gray-500" />;
+                        return <AttachmentIcon className="h-5 w-5 text-muted-foreground" />;
                       })()}
                       <div>
                         <p className="text-sm font-medium break-all">{feedback.attachment_filename}</p>
                         {feedback.attachment_size && (
-                          <p className="text-xs text-gray-500">{formatFileSize(feedback.attachment_size)}</p>
+                          <p className="text-xs text-muted-foreground">{formatFileSize(feedback.attachment_size)}</p>
                         )}
                       </div>
                     </div>
@@ -1312,7 +1312,7 @@ function FeedbackDetailModal({
                             feature === 'none' ? 'opacity-100' : 'opacity-0'
                           }`}
                         />
-                        <span className="text-gray-500">No feature assigned</span>
+                        <span className="text-muted-foreground">No feature assigned</span>
                       </CommandItem>
                     </CommandGroup>
                     {filteredFeatures.map((group) => (
@@ -1335,7 +1335,7 @@ function FeedbackDetailModal({
                             />
                             <div className="flex flex-col">
                               <span className="font-medium">{feat.name}</span>
-                              <span className="text-xs text-gray-500">{feat.description}</span>
+                              <span className="text-xs text-muted-foreground">{feat.description}</span>
                             </div>
                           </CommandItem>
                         ))}

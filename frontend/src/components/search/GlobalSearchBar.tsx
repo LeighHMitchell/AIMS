@@ -531,14 +531,14 @@ export function GlobalSearchBar({
                           {/* Show suggestions if available */}
                           {suggestions.length > 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-border">
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border">
                                 Suggestions
                               </div>
                               {suggestions.map((suggestion) => (
                                 <CommandItem
                                   key={`suggestion-${suggestion.type}-${suggestion.id}`}
                                   onSelect={() => handleSuggestionClick(suggestion)}
-                                  className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                  className="cursor-pointer py-3 px-2 hover:bg-muted"
                                 >
                                   <SearchResultRow
                                     result={suggestion}
@@ -553,21 +553,21 @@ export function GlobalSearchBar({
                           {/* Show popular searches if available */}
                           {popularSearches.length > 0 && suggestions.length === 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-border">
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border">
                                 Popular Searches
                               </div>
                               {popularSearches.map((search, idx) => (
                                 <CommandItem
                                   key={`popular-${idx}`}
                                   onSelect={() => handlePopularSearchClick(search)}
-                                  className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                  className="cursor-pointer py-3 px-2 hover:bg-muted"
                                 >
                                   <div className="flex items-start gap-3 w-full">
                                     <div className="flex-shrink-0 mt-0.5">
-                                      <Search className="h-4 w-4 text-gray-400" />
+                                      <Search className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-sm truncate text-gray-900">
+                                      <div className="font-medium text-sm truncate text-foreground">
                                         {search}
                                       </div>
                                     </div>
@@ -588,14 +588,14 @@ export function GlobalSearchBar({
 
                             return (
                               <CommandGroup key={type}>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-border">
+                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border">
                                   {resultTypeLabels[type]}
                                 </div>
                                 {typeResults.map((result) => (
                                   <CommandItem
                                     key={`${result.type}-${result.id}`}
                                     onSelect={() => handleResultClick(result)}
-                                    className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                    className="cursor-pointer py-3 px-2 hover:bg-muted"
                                   >
                                     <SearchResultRow
                                       result={result}

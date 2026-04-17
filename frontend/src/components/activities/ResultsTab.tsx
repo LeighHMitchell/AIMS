@@ -606,11 +606,11 @@ export function ResultsTab({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Results & Indicators</h3>
+          <h3 className="text-lg font-semibold text-foreground">Results & Indicators</h3>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -636,13 +636,13 @@ export function ResultsTab({
       {/* Simple Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
             Results
                           <HelpTextTooltip>
                 Results define what your activity aims to achieve. They are organized into three levels: Outputs (immediate deliverables), Outcomes (medium-term changes), and Impacts (long-term effects).
               </HelpTextTooltip>
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             What changes will this activity achieve?
           </p>
         </div>
@@ -664,7 +664,7 @@ export function ResultsTab({
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="result-title" className="text-base font-medium text-gray-900">
+              <Label htmlFor="result-title" className="text-base font-medium text-foreground">
                 Result name *
               </Label>
               <Input
@@ -682,7 +682,7 @@ export function ResultsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="result-type" className="text-base font-medium text-gray-900">
+              <Label htmlFor="result-type" className="text-base font-medium text-foreground">
                 What kind of result is this?
               </Label>
               <div className="grid grid-cols-3 gap-2">
@@ -690,7 +690,7 @@ export function ResultsTab({
                   type="button"
                   variant={newResult.type === 'output' ? 'default' : 'outline'}
                   onClick={() => setNewResult(prev => ({ ...prev, type: 'output' }))}
-                  className={newResult.type === 'output' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-input'}
+                  className={newResult.type === 'output' ? 'bg-muted text-foreground border-2 border-gray-400' : 'border border-input'}
                 >
                   Output
                   <HelpTextTooltip>Things you deliver (e.g., schools built)</HelpTextTooltip>
@@ -699,7 +699,7 @@ export function ResultsTab({
                   type="button"
                   variant={newResult.type === 'outcome' ? 'default' : 'outline'}
                   onClick={() => setNewResult(prev => ({ ...prev, type: 'outcome' }))}
-                  className={newResult.type === 'outcome' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-input'}
+                  className={newResult.type === 'outcome' ? 'bg-muted text-foreground border-2 border-gray-400' : 'border border-input'}
                 >
                   Outcome
                   <HelpTextTooltip>Changes that happen (e.g., literacy improved)</HelpTextTooltip>
@@ -708,7 +708,7 @@ export function ResultsTab({
                   type="button"
                   variant={newResult.type === 'impact' ? 'default' : 'outline'}
                   onClick={() => setNewResult(prev => ({ ...prev, type: 'impact' }))}
-                  className={newResult.type === 'impact' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-input'}
+                  className={newResult.type === 'impact' ? 'bg-muted text-foreground border-2 border-gray-400' : 'border border-input'}
                 >
                   Impact
                   <HelpTextTooltip>Long-term effects (e.g., poverty reduced)</HelpTextTooltip>
@@ -717,7 +717,7 @@ export function ResultsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="result-description" className="text-base font-medium text-gray-900">
+              <Label htmlFor="result-description" className="text-base font-medium text-foreground">
                 Add more details
               </Label>
               <Textarea
@@ -783,20 +783,20 @@ export function ResultsTab({
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl font-bold text-gray-900">{index + 1}.</span>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <span className="text-2xl font-bold text-foreground">{index + 1}.</span>
+                    <h3 className="text-xl font-semibold text-foreground">
                       {(result.title as any)[defaultLanguage] || Object.values(result.title)[0]}
                     </h3>
                     <Badge variant="outline" className={`${
-                      result.type === 'output' ? 'bg-gray-200 text-gray-700 border-gray-400' :
-                      result.type === 'outcome' ? 'bg-gray-100 text-gray-800 border-gray-400' :
-                      'bg-gray-50 text-gray-900 border-gray-500'
+                      result.type === 'output' ? 'bg-muted text-foreground border-gray-400' :
+                      result.type === 'outcome' ? 'bg-muted text-foreground border-gray-400' :
+                      'bg-muted text-foreground border-gray-500'
                     }`}>
                                   {RESULT_TYPE_LABELS[result.type]}
                                 </Badge>
                               </div>
                               {result.description && (
-                    <p className="text-gray-600 ml-10">
+                    <p className="text-muted-foreground ml-10">
                       {(result.description as any)[defaultLanguage] || Object.values(result.description)[0]}
                                 </p>
                               )}
@@ -808,17 +808,17 @@ export function ResultsTab({
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => setEditingResult(editingResult === result.id ? null : result.id)}
-                      className="text-gray-600"
+                      className="text-muted-foreground"
                               >
-                      <Pencil className="h-4 w-4 text-slate-500" />
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleDeleteResult(result.id)}
-                      className="text-gray-600"
+                      className="text-muted-foreground"
                               >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
                           )}
@@ -845,7 +845,7 @@ export function ResultsTab({
                   <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)]">
                     <div className="space-y-4 pr-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Result Name</Label>
+                        <Label className="text-sm font-medium text-foreground">Result Name</Label>
                         <Input
                           value={
                             editingResultData[result.id]?.title?.[defaultLanguage] ??
@@ -862,7 +862,7 @@ export function ResultsTab({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Description</Label>
+                        <Label className="text-sm font-medium text-foreground">Description</Label>
                         <Textarea
                           value={
                             editingResultData[result.id]?.description?.[defaultLanguage] ??
@@ -882,7 +882,7 @@ export function ResultsTab({
 
                       {/* Aggregation Status Toggle */}
                       <div className="flex items-center gap-3 py-2">
-                        <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                           Aggregation Status
                           <HelpTextTooltip>
                             Enable if this result can be aggregated across multiple activities
@@ -945,7 +945,7 @@ export function ResultsTab({
               {/* Indicators Section - Simplified */}
               <div className="ml-10 mt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-lg font-medium text-gray-900">How will we measure this?</h4>
+                  <h4 className="text-lg font-medium text-foreground">How will we measure this?</h4>
                             {!readOnly && (
                               <Button
                                 size="sm"
@@ -992,7 +992,7 @@ export function ResultsTab({
                               <div className="space-y-4 pr-4">
                                 {/* Title Editing */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-gray-700">Indicator Name</Label>
+                                  <Label className="text-sm font-medium text-foreground">Indicator Name</Label>
                                   <Input
                                     value={editingIndicatorValues.title || ''}
                                     onChange={(e) => {
@@ -1008,7 +1008,7 @@ export function ResultsTab({
 
                                 {/* Indicator Description */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-gray-700">Description</Label>
+                                  <Label className="text-sm font-medium text-foreground">Description</Label>
                                   <Textarea
                                     value={editingIndicatorValues.description || ''}
                                     onChange={(e) => {
@@ -1025,7 +1025,7 @@ export function ResultsTab({
 
                                 {/* Measure Type */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                                     Measure Type
                                     <HelpTextTooltip>
                                       How this indicator is measured (unit, percentage, nominal, ordinal, or qualitative)
@@ -1046,7 +1046,7 @@ export function ResultsTab({
 
                                 {/* Ascending Toggle */}
                                 <div className="flex items-center justify-between py-2">
-                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                                     Ascending Values
                                     <HelpTextTooltip>
                                       Enable if higher values indicate better performance (e.g., literacy rate). Disable for negative indicators (e.g., mortality rate).
@@ -1065,7 +1065,7 @@ export function ResultsTab({
 
                                 {/* Aggregation Status Toggle */}
                                 <div className="flex items-center gap-3 py-2">
-                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                                     Aggregation Status
                                     <HelpTextTooltip>
                                       Enable if this indicator can be aggregated or compared across activities
@@ -1108,12 +1108,12 @@ export function ResultsTab({
                                 <Separator />
 
                                 {/* Baseline Section */}
-                                <div className="space-y-4 p-4 bg-gray-100 rounded-lg">
-                                  <h6 className="text-sm font-semibold text-gray-900">Baseline Information</h6>
+                                <div className="space-y-4 p-4 bg-muted rounded-lg">
+                                  <h6 className="text-sm font-semibold text-foreground">Baseline Information</h6>
 
                                   <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                      <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                                         Baseline Value
                                         <HelpTextTooltip>
                                           The starting value before your activity began
@@ -1135,7 +1135,7 @@ export function ResultsTab({
                                     </div>
 
                                     <div className="space-y-2">
-                                      <Label className="text-sm font-medium text-gray-700">Baseline Year</Label>
+                                      <Label className="text-sm font-medium text-foreground">Baseline Year</Label>
                                       <Input
                                         type="number"
                                         min="1900"
@@ -1154,7 +1154,7 @@ export function ResultsTab({
                                   </div>
 
                                   <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-700">Baseline Date</Label>
+                                    <Label className="text-sm font-medium text-foreground">Baseline Date</Label>
                                     <Input
                                       type="date"
                                       value={editingIndicatorValues.baseline_iso_date || ''}
@@ -1169,7 +1169,7 @@ export function ResultsTab({
                                   </div>
 
                                   <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-700">Baseline Comment</Label>
+                                    <Label className="text-sm font-medium text-foreground">Baseline Comment</Label>
                                     <Textarea
                                       value={editingIndicatorValues.baseline_comment || ''}
                                       onChange={(e) => {
@@ -1226,7 +1226,7 @@ export function ResultsTab({
                                 {/* Period Management */}
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                    <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                                       <Clock className="h-4 w-4" />
                                       Progress Tracking Periods
                                       <HelpTextTooltip>
@@ -1271,14 +1271,14 @@ export function ResultsTab({
                                                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                                   </Button>
                                                   <div className="text-sm">
-                                                    <div className="font-medium text-gray-900">
+                                                    <div className="font-medium text-foreground">
                                                       {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
                                                     </div>
-                                                    <div className="text-xs text-gray-600">
+                                                    <div className="text-xs text-muted-foreground">
                                                       Target: {period.target_value?.toLocaleString() || 'Not set'} |
                                                       Actual: {period.actual_value?.toLocaleString() || 'Not set'}
                                                       {period.target_value && period.actual_value && (
-                                                        <span className="ml-2 font-medium text-gray-900">
+                                                        <span className="ml-2 font-medium text-foreground">
                                                           ({Math.round((period.actual_value / period.target_value) * 100)}%)
                                                         </span>
                                                       )}
@@ -1310,9 +1310,9 @@ export function ResultsTab({
                                                       }
                                                     }
                                                   }}
-                                                  className="text-red-600 hover:text-red-800"
+                                                  className="text-destructive hover:text-red-800"
                                                 >
-                                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                                  <Trash2 className="h-3 w-3 text-destructive" />
                                                 </Button>
                                               )}
                                             </div>
@@ -1325,8 +1325,8 @@ export function ResultsTab({
                                                   <div className="space-y-2 text-xs">
                                                     {period.target_comment && (
                                                       <div>
-                                                        <span className="font-medium text-gray-700">Target: </span>
-                                                        <span className="text-gray-600">
+                                                        <span className="font-medium text-foreground">Target: </span>
+                                                        <span className="text-muted-foreground">
                                                           {typeof period.target_comment === 'string'
                                                             ? period.target_comment
                                                             : period.target_comment[defaultLanguage] || Object.values(period.target_comment)[0]}
@@ -1335,8 +1335,8 @@ export function ResultsTab({
                                                     )}
                                                     {period.actual_comment && (
                                                       <div>
-                                                        <span className="font-medium text-gray-700">Actual: </span>
-                                                        <span className="text-gray-600">
+                                                        <span className="font-medium text-foreground">Actual: </span>
+                                                        <span className="text-muted-foreground">
                                                           {typeof period.actual_comment === 'string'
                                                             ? period.actual_comment
                                                             : period.actual_comment[defaultLanguage] || Object.values(period.actual_comment)[0]}
@@ -1581,7 +1581,7 @@ export function ResultsTab({
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <h5 className="font-medium text-gray-900">
+                                  <h5 className="font-medium text-foreground">
                                     {idx + 1}. {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
                                   </h5>
                                   
@@ -1615,7 +1615,7 @@ export function ResultsTab({
                                 
                                 {/* Indicator Description */}
                                 {indicator.description && (
-                                  <p className="text-sm text-gray-600 mb-2">
+                                  <p className="text-sm text-muted-foreground mb-2">
                                     {(indicator.description as any)[defaultLanguage] || Object.values(indicator.description)[0]}
                                   </p>
                                 )}
@@ -1648,14 +1648,14 @@ export function ResultsTab({
                                   }
                                 }}
                               >
-                                <Pencil className="h-3 w-3 text-slate-500" />
+                                <Pencil className="h-3 w-3 text-muted-foreground" />
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleDeleteIndicator(indicator.id)}
                               >
-                                <Trash2 className="h-3 w-3 text-red-500" />
+                                <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
                             </div>
                           )}
@@ -1664,7 +1664,7 @@ export function ResultsTab({
                         {/* Progress Chart - Separate Sub-Card */}
                         {(indicator.baseline?.value || (indicator.periods && indicator.periods.length > 0)) && (
                           <div className="mt-4 bg-white border border-border rounded-lg p-4">
-                            <h6 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <h6 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                               <BarChart3 className="h-4 w-4" />
                               Progress Visualization
                             </h6>
@@ -1672,33 +1672,33 @@ export function ResultsTab({
                               {/* Left side - Progress values stacked */}
                               <div className="flex flex-col gap-4 justify-center min-w-[120px]">
                                 <div>
-                                  <span className="text-gray-600 text-sm flex items-center gap-1">
+                                  <span className="text-muted-foreground text-sm flex items-center gap-1">
                                     Start:
                                     <HelpTextTooltip>
                                       Baseline value - the starting point before the activity began
                                     </HelpTextTooltip>
                                   </span>
-                                  <p className="font-semibold text-lg text-gray-900">{indicator.baseline?.value || 'Not set'}</p>
+                                  <p className="font-semibold text-lg text-foreground">{indicator.baseline?.value || 'Not set'}</p>
                                 </div>
                                 <div>
-                                  <span className="text-gray-600 text-sm flex items-center gap-1">
+                                  <span className="text-muted-foreground text-sm flex items-center gap-1">
                                     Target:
                                     <HelpTextTooltip>
                                       Target value to achieve by the end of the period
                                     </HelpTextTooltip>
                                   </span>
-                                  <p className="font-semibold text-lg text-gray-900">
+                                  <p className="font-semibold text-lg text-foreground">
                                     {indicator.periods?.[indicator.periods.length - 1]?.target_value || 'Not set'}
                                   </p>
                                 </div>
                                 <div>
-                                  <span className="text-gray-600 text-sm flex items-center gap-1">
+                                  <span className="text-muted-foreground text-sm flex items-center gap-1">
                                     Current:
                                     <HelpTextTooltip>
                                       Current/actual value achieved so far
                                     </HelpTextTooltip>
                                   </span>
-                                  <p className="font-semibold text-lg text-gray-900">
+                                  <p className="font-semibold text-lg text-foreground">
                                     {indicator.periods?.[indicator.periods.length - 1]?.actual_value || 'Not set'}
                                   </p>
                                 </div>
@@ -1740,8 +1740,8 @@ export function ResultsTab({
                                           const data = payload[0].payload;
                                           return (
                                             <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
-                                              <p className="font-semibold text-gray-900 mb-1">{data.name}</p>
-                                              <p className="text-lg font-bold text-gray-900">{Number(data.value || 0).toLocaleString()}</p>
+                                              <p className="font-semibold text-foreground mb-1">{data.name}</p>
+                                              <p className="text-lg font-bold text-foreground">{Number(data.value || 0).toLocaleString()}</p>
                                             </div>
                                           );
                                         }
@@ -1760,7 +1760,7 @@ export function ResultsTab({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">No measures added yet</p>
+                  <p className="text-muted-foreground text-sm">No measures added yet</p>
                 )}
               </div>
             </div>
@@ -1824,7 +1824,7 @@ export function ResultsTab({
 
                     {/* Individual Indicator Progress Charts */}
                     <div className="space-y-4">
-                      <h5 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <h5 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <BarChart3 className="h-5 w-5" />
                         Individual Indicator Progress
                         <HelpTextTooltip>
@@ -1880,16 +1880,16 @@ export function ResultsTab({
                             <div key={indicator.id} className="bg-white p-4 rounded-lg border">
                               <div className="flex items-center justify-between mb-3">
                                 <div>
-                                  <h6 className="font-medium text-gray-900">
+                                  <h6 className="font-medium text-foreground">
                                     {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
                                   </h6>
-                                  <p className="text-sm text-gray-600">
+                                  <p className="text-sm text-muted-foreground">
                                     Result: {(result.title as any)[defaultLanguage] || Object.values(result.title)[0]}
                                   </p>
         </div>
                                 <div className="text-right">
-                                  <div className="text-lg font-semibold text-gray-900">{achievementRate}%</div>
-                                  <div className="text-sm text-gray-500">Achievement</div>
+                                  <div className="text-lg font-semibold text-foreground">{achievementRate}%</div>
+                                  <div className="text-sm text-muted-foreground">Achievement</div>
                                 </div>
                               </div>
                               
@@ -2125,7 +2125,7 @@ export function ResultsTab({
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Period Start</Label>
+                <Label className="text-sm font-medium text-foreground">Period Start</Label>
                 <Input
                   type="date"
                   value={newPeriod.period_start}
@@ -2133,7 +2133,7 @@ export function ResultsTab({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Period End</Label>
+                <Label className="text-sm font-medium text-foreground">Period End</Label>
                 <Input
                   type="date"
                   value={newPeriod.period_end}
@@ -2144,7 +2144,7 @@ export function ResultsTab({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Target Value</Label>
+                <Label className="text-sm font-medium text-foreground">Target Value</Label>
                 <Input
                   type="number"
                   step="any"
@@ -2154,7 +2154,7 @@ export function ResultsTab({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Actual Value</Label>
+                <Label className="text-sm font-medium text-foreground">Actual Value</Label>
                 <Input
                   type="number"
                   step="any"
@@ -2166,7 +2166,7 @@ export function ResultsTab({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Target Comment</Label>
+              <Label className="text-sm font-medium text-foreground">Target Comment</Label>
               <Textarea
                 value={newPeriod.target_comment}
                 onChange={(e) => setNewPeriod(prev => ({ ...prev, target_comment: e.target.value }))}
@@ -2176,7 +2176,7 @@ export function ResultsTab({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Actual Comment</Label>
+              <Label className="text-sm font-medium text-foreground">Actual Comment</Label>
               <Textarea
                 value={newPeriod.actual_comment}
                 onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_comment: e.target.value }))}

@@ -50,7 +50,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
           {/* Overall Progress */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Overall Progress</h3>
+              <h3 className="text-lg font-semibold text-foreground">Overall Progress</h3>
               <Badge 
                 variant={isComplete ? "default" : "secondary"}
                 className={cn(
@@ -73,25 +73,25 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   <span className="font-medium">{progress.completed}</span> Completed
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   <span className="font-medium">{progress.in_progress}</span> In Progress
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-600">
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
                   <span className="font-medium">{progress.not_completed}</span> Not Started
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <MinusCircle className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-600">
+                <MinusCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
                   <span className="font-medium">{progress.not_required}</span> Not Required
                 </span>
               </div>
@@ -101,7 +101,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
           {/* Stage Sign-off Status */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Stage Sign-offs</h3>
+              <h3 className="text-lg font-semibold text-foreground">Stage Sign-offs</h3>
               <Badge 
                 variant={allStagesSigned ? "default" : "secondary"}
                 className={cn(
@@ -123,7 +123,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                       ? "bg-green-100" 
                       : stage.progress.percentage === 100 
                       ? "bg-blue-100"
-                      : "bg-gray-100"
+                      : "bg-muted"
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -134,11 +134,11 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                     ) : stage.progress.percentage > 0 ? (
                       <Clock className="h-4 w-4 text-yellow-600" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
                     <span className={cn(
                       "font-medium",
-                      stage.signoff ? "text-green-800" : "text-gray-700"
+                      stage.signoff ? "text-green-800" : "text-foreground"
                     )}>
                       {stage.name}
                     </span>
@@ -146,7 +146,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "text-xs",
-                      stage.signoff ? "text-green-700" : "text-gray-500"
+                      stage.signoff ? "text-green-700" : "text-muted-foreground"
                     )}>
                       {stage.signoff 
                         ? 'Signed Off'

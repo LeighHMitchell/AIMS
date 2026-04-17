@@ -543,7 +543,7 @@ export function CountrySectorVocabularyManagement() {
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-md">
+          <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
             <AlertCircle className="h-4 w-4" />
             {error}
           </div>
@@ -598,19 +598,19 @@ export function CountrySectorVocabularyManagement() {
                   size="sm"
                   onClick={() => openEditVocabularyDialog(selectedVocabulary)}
                 >
-                  <Pencil className="h-4 w-4 mr-1 text-slate-500" />
+                  <Pencil className="h-4 w-4 mr-1 text-muted-foreground" />
                   Edit
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700"
+                  className="text-destructive hover:text-destructive"
                   onClick={() => {
                     setDeletingItem({ type: "vocabulary", item: selectedVocabulary });
                     setDeleteDialogOpen(true);
                   }}
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </>
             )}
@@ -733,19 +733,19 @@ export function CountrySectorVocabularyManagement() {
                               onClick={() => openEditSectorDialog(sector)}
                               title="Edit sector"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                               onClick={() => {
                                 setDeletingItem({ type: "sector", item: sector });
                                 setDeleteDialogOpen(true);
                               }}
                               title="Delete sector"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </td>
@@ -1000,7 +1000,7 @@ export function CountrySectorVocabularyManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 text-red-600"
+                          className="h-8 w-8 p-0 text-destructive"
                           onClick={() => removeDacMapping(s.code)}
                         >
                           <X className="h-4 w-4" />
@@ -1013,7 +1013,7 @@ export function CountrySectorVocabularyManagement() {
                         Math.abs(
                           selectedDacSectors.reduce((sum, s) => sum + s.percentage, 0) - 100
                         ) > 0.01 && (
-                          <span className="text-red-600 ml-2">(must equal 100%)</span>
+                          <span className="text-destructive ml-2">(must equal 100%)</span>
                         )}
                     </div>
                   </div>

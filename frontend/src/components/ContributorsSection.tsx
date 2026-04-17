@@ -295,7 +295,7 @@ export default function ContributorsSection({
         {permissions.canNominateContributors && (
           <div className="space-y-2">
             <label className="text-sm font-medium">Nominate a Contributor</label>
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50" style={{ minHeight: '68px' }}>
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-muted" style={{ minHeight: '68px' }}>
               <div className="flex items-center gap-3 flex-1">
                 <div className="flex-1">
                   <OrganizationSearchableSelect

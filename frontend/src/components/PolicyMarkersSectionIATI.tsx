@@ -255,12 +255,12 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               </div>
               
               {/* Vocabulary Badge - moved to the right */}
-              <Badge variant="outline" className="text-xs border-gray-400 text-gray-600">
+              <Badge variant="outline" className="text-xs border-gray-400 text-muted-foreground">
                 {VOCABULARY_LABELS[marker.vocabulary as keyof typeof VOCABULARY_LABELS] || `Vocab ${marker.vocabulary}`}
               </Badge>
             </div>
             
-            <p className="text-xs text-gray-600 mb-3">{marker.description}</p>
+            <p className="text-xs text-muted-foreground mb-3">{marker.description}</p>
             
             {/* Significance Selection */}
             <div className="mb-3">
@@ -277,7 +277,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               <div className="mb-3">
                 <button
                   onClick={() => toggleCardExpansion(marker.id)}
-                  className="flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-gray-900 mb-2"
+                  className="flex items-center gap-1 text-xs font-medium text-foreground hover:text-foreground mb-2"
                 >
                   {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                   Rationale
@@ -316,7 +316,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
         </div>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-gray-200 rounded-lg" />
+            <div key={i} className="h-24 bg-muted rounded-lg" />
           ))}
         </div>
       </div>
@@ -334,7 +334,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
           <h3 className="text-lg font-semibold">IATI Policy Markers</h3>
           <HelpText content={HELP_CONTENT} />
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-muted-foreground">
           {selectedCount} of {totalMarkers} markers selected
         </div>
       </div>
@@ -379,7 +379,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               </div>
               
               {getMarkersByType(type).length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <p>No {MARKER_TYPE_LABELS[type as keyof typeof MARKER_TYPE_LABELS].toLowerCase()} markers available</p>
                 </div>
               )}

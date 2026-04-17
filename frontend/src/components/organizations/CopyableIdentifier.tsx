@@ -34,16 +34,16 @@ export function CopyableIdentifier({ value, label }: CopyableIdentifierProps) {
         variant="ghost"
         size="sm"
         onClick={handleCopy}
-        className={`h-6 w-6 p-0 hover:bg-slate-100 transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+        className={`h-6 w-6 p-0 hover:bg-muted transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
       >
         {copied ? (
           <Check className="h-3 w-3 text-[hsl(var(--success-icon))]" />
         ) : (
-          <Copy className="h-3 w-3 text-slate-600" />
+          <Copy className="h-3 w-3 text-muted-foreground" />
         )}
       </Button>
       {label && (
-        <span className="text-xs text-slate-500">{label}</span>
+        <span className="text-xs text-muted-foreground">{label}</span>
       )}
     </div>
   )

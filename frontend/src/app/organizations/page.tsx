@@ -820,14 +820,14 @@ const DeleteConfirmationModal: React.FC<{
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
             <span>Delete Organization</span>
           </DialogTitle>
           <DialogDescription>This action is permanent and cannot be undone.</DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="bg-destructive/10 border border-red-200 rounded-md p-3">
             <p className="text-sm text-red-800">
               <strong>Warning:</strong> This action cannot be undone. This will permanently delete the organization 
               <strong> {organization.displayName}</strong> and remove all associated data.
@@ -846,7 +846,7 @@ const DeleteConfirmationModal: React.FC<{
               className={confirmationText && !isConfirmationValid ? 'border-red-500' : ''}
             />
             {confirmationText && !isConfirmationValid && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 Text does not match. Please type exactly: <strong>{requiredText}</strong>
               </p>
             )}
@@ -937,7 +937,7 @@ const OrganizationCard: React.FC<{
               className="cursor-pointer"
               onClick={(e) => { e.stopPropagation(); onEdit(organization); }}
             >
-              <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-4 w-4 mr-2 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -956,10 +956,10 @@ const OrganizationCard: React.FC<{
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-muted" />
             <DropdownMenuItem
-              className="cursor-pointer text-red-600 hover:bg-red-50"
+              className="cursor-pointer text-destructive hover:bg-destructive/10"
               onClick={(e) => { e.stopPropagation(); onDelete(organization); }}
             >
-              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+              <Trash2 className="h-4 w-4 mr-2 text-destructive" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -1150,7 +1150,7 @@ const OrganizationListView: React.FC<{
                 }}
                 className="text-muted-foreground hover:text-blue-600"
               >
-                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
               </Button>
               <Button
                 variant="ghost"
@@ -1159,9 +1159,9 @@ const OrganizationListView: React.FC<{
                   e.stopPropagation()
                   onDelete(org)
                 }}
-                className="text-muted-foreground hover:text-red-600"
+                className="text-muted-foreground hover:text-destructive"
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
           </div>
@@ -1741,7 +1741,7 @@ function OrganizationsPageContent() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`rounded-r-none ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                 onClick={() => {
                   setViewMode('table')
                   localStorage.setItem('organizationViewMode', 'table')
@@ -1752,7 +1752,7 @@ function OrganizationsPageContent() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`rounded-l-none ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                className={`rounded-l-none ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                 onClick={() => {
                   setViewMode('card')
                   localStorage.setItem('organizationViewMode', 'card')
@@ -1825,7 +1825,7 @@ function OrganizationsPageContent() {
         <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
             {IATI_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="text-xs data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+              <TabsTrigger key={tab.value} value={tab.value} className="text-xs data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -1972,12 +1972,12 @@ function OrganizationsPageContent() {
                                       setEditGroupModalOpen(true)
                                     }}
                                   >
-                                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                    <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="text-red-600 hover:text-red-700"
+                                    className="text-destructive hover:text-destructive"
                                     onClick={async () => {
                                       if (!(await confirm({ title: 'Delete this group?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return
                                       try {
@@ -1996,7 +1996,7 @@ function OrganizationsPageContent() {
                                       }
                                     }}
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </div>
                               </TableCell>
@@ -2101,7 +2101,7 @@ function OrganizationsPageContent() {
                               variant="outline"
                               size="sm"
                               onClick={() => setCurrentPage(pageNum)}
-                              className={currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}
+                              className={currentPage === pageNum ? "bg-muted text-foreground" : ""}
                             >
                               {pageNum}
                             </Button>
@@ -2123,7 +2123,7 @@ function OrganizationsPageContent() {
                 <div className="text-center py-12">
                   {fetchError ? (
                     <div className="space-y-4">
-                      <Building2 className="mx-auto h-12 w-12 text-red-500" />
+                      <Building2 className="mx-auto h-12 w-12 text-destructive" />
                       <div>
                         <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Organizations</h3>
                         <p className="text-muted-foreground mb-4">{fetchError}</p>

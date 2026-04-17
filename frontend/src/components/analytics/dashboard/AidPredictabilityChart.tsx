@@ -401,11 +401,11 @@ export function AidPredictabilityChart() {
           <div className="flex flex-wrap items-center gap-4 mt-4 mb-2">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: CHART_COLORS.planned }} />
-              <span className="text-sm text-gray-600">Planned Disbursements</span>
+              <span className="text-sm text-muted-foreground">Planned Disbursements</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: CHART_COLORS.actual }} />
-              <span className="text-sm text-gray-600">Actual Disbursements</span>
+              <span className="text-sm text-muted-foreground">Actual Disbursements</span>
             </div>
           </div>
 

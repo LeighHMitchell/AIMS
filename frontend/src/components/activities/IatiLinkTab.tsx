@@ -137,7 +137,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
     const statusColors = {
       match: 'text-[hsl(var(--success-icon))]',
       conflict: 'text-orange-600',
-      missing: 'text-gray-400'
+      missing: 'text-muted-foreground'
     };
 
     const statusIcons = {
@@ -149,17 +149,17 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
     const Icon = statusIcons[field.status as keyof typeof statusIcons];
 
     return (
-      <div className="flex items-center justify-between p-3 rounded-lg border bg-gray-50">
+      <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
         <div className="flex items-center gap-3">
           <Icon className={`h-4 w-4 ${statusColors[field.status as keyof typeof statusColors]}`} />
           <div>
             <p className="font-medium text-sm">{field.field}</p>
             <div className="flex gap-4 mt-1">
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-muted-foreground">
                 Local: <code className="bg-white px-1 rounded">{field.localValue || 'null'}</code>
               </span>
               {field.status !== 'match' && (
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-muted-foreground">
                   IATI: <code className="bg-white px-1 rounded">{field.iatiValue || 'null'}</code>
                 </span>
               )}
@@ -211,7 +211,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 )}
               </div>
               {!iatiIdentifier && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   No IATI identifier set. Enter one to enable IATI linking.
                 </p>
               )}
@@ -306,7 +306,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 </AlertDescription>
               </Alert>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                   <div>
                     <p className="text-sm font-medium">Local Field</p>
                     <code className="text-xs">title_narrative</code>
@@ -316,7 +316,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                     <code className="text-xs">iati-activity/title/narrative</code>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                   <div>
                     <p className="text-sm font-medium">Local Field</p>
                     <code className="text-xs">description_narrative</code>

@@ -601,7 +601,7 @@ export default function TransactionForm({
   const renderFieldIcon = (field: string) => {
     if (fieldStatus[field] === "saving") return <Loader2 className="inline h-4 w-4 text-orange-500 animate-spin ml-2" />;
     if (fieldStatus[field] === "saved") return <CheckCircle className="inline h-4 w-4 text-[hsl(var(--success-icon))] ml-2" />;
-    if (fieldStatus[field] === "error") return <AlertTriangle className="inline h-4 w-4 text-red-500 ml-2" />;
+    if (fieldStatus[field] === "error") return <AlertTriangle className="inline h-4 w-4 text-destructive ml-2" />;
     return null;
   };
 
@@ -712,7 +712,7 @@ export default function TransactionForm({
                           <span>{selected.label}</span>
                         </span>
                       ) : (
-                        <span className="text-gray-400">Select transaction type...</span>
+                        <span className="text-muted-foreground">Select transaction type...</span>
                       );
                     })()}
                   </Button>
@@ -773,7 +773,7 @@ export default function TransactionForm({
                 Transaction Date <RequiredDot />
               </Label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="transaction_date"
                   type="date"
@@ -797,7 +797,7 @@ export default function TransactionForm({
                 Value <RequiredDot />
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="value"
                   type="number"
@@ -851,7 +851,7 @@ export default function TransactionForm({
               <Label htmlFor="status">
                 Transaction Status <RequiredDot />
               </Label>
-              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-gray-100">
+              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-muted">
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     {formData.status === 'actual' ? '1' : '2'}
@@ -950,7 +950,7 @@ export default function TransactionForm({
                           setExchangeRateUsed(isNaN(value) ? null : value);
                         }}
                         disabled={!exchangeRateManual || isLoadingRate}
-                        className={!exchangeRateManual ? 'bg-gray-100' : ''}
+                        className={!exchangeRateManual ? 'bg-muted' : ''}
                         placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
                       />
                       {isLoadingRate && (
@@ -963,14 +963,14 @@ export default function TransactionForm({
                       </p>
                     )}
                     {rateError && (
-                      <p className="text-xs text-red-500">{rateError}</p>
+                      <p className="text-xs text-destructive">{rateError}</p>
                     )}
                   </div>
 
                   {/* Calculated USD Value */}
                   <div className="space-y-2">
                     <Label>USD Value</Label>
-                    <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
                       {calculatedUsdValue !== null ? (
                         <>$ {calculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                       ) : (
@@ -996,7 +996,7 @@ export default function TransactionForm({
             </h3>
             
             {/* Provider Organization */}
-            <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-gray-50'}`}>
+            <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-muted'}`}>
               <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-sm flex items-center gap-2">
                   Provider Organization
@@ -1027,7 +1027,7 @@ export default function TransactionForm({
             </Card>
 
             {/* Receiver Organization */}
-            <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-gray-50'}`}>
+            <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-muted'}`}>
               <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-sm flex items-center gap-2">
                   Receiver Organization
@@ -1099,7 +1099,7 @@ export default function TransactionForm({
                   fallbackIatiId={formData.provider_org_activity_id}
                 />
                 {formData.provider_org_activity_id && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     IATI ID: {formData.provider_org_activity_id}
                   </p>
                 )}
@@ -1146,7 +1146,7 @@ export default function TransactionForm({
                   fallbackIatiId={formData.receiver_org_activity_id}
                 />
                 {formData.receiver_org_activity_id && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     IATI ID: {formData.receiver_org_activity_id}
                   </p>
                 )}
@@ -1424,9 +1424,9 @@ export default function TransactionForm({
       </Card>
 
       {/* System Information - at bottom */}
-      <Card className="bg-gray-50">
+      <Card className="bg-muted">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-gray-600">System Information</CardTitle>
+          <CardTitle className="text-sm text-muted-foreground">System Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1455,7 +1455,7 @@ export default function TransactionForm({
           <div className="space-y-2">
             <Label htmlFor="transaction_reference_bottom">
               Transaction Reference
-              <span className="text-gray-500 text-xs ml-2">(optional internal reference)</span>
+              <span className="text-muted-foreground text-xs ml-2">(optional internal reference)</span>
             </Label>
             <Input
               id="transaction_reference_bottom"

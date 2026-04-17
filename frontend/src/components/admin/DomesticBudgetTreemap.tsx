@@ -167,15 +167,15 @@ const CustomTooltip = ({ active, payload }: any) => {
       </div>
       <div className="space-y-1 text-sm">
         <div className="flex justify-between gap-4">
-          <span className="text-gray-600">Budget:</span>
+          <span className="text-muted-foreground">Budget:</span>
           <span className="font-medium">{formatCurrency(data.budgetAmount, data.currency)}</span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-gray-600">Expenditure:</span>
+          <span className="text-muted-foreground">Expenditure:</span>
           <span className="font-medium">{formatCurrency(data.expenditureAmount, data.currency)}</span>
         </div>
         <div className="flex justify-between gap-4 pt-1 border-t" style={{ borderColor: "#cfd0d5" }}>
-          <span className="text-gray-600">Execution Rate:</span>
+          <span className="text-muted-foreground">Execution Rate:</span>
           <span
             className="font-medium"
             style={{ color: data.executionRate > 100 ? "#dc2625" : "#4c5568" }}

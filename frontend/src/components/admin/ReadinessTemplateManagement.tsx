@@ -216,7 +216,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-2 text-red-600">
+          <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <span>{error}</span>
           </div>
@@ -247,8 +247,8 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
         </CardHeader>
         <CardContent>
           {templates.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <ClipboardList className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p>No templates created yet.</p>
               <Button variant="link" onClick={openCreateDialog}>
                 Create your first template
@@ -271,7 +271,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
                   <TableRow key={template.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
                         {template.stage_order}
                       </div>
                     </TableCell>
@@ -304,15 +304,15 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
                           size="sm"
                           onClick={() => openEditDialog(template)}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500" />
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(template)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>

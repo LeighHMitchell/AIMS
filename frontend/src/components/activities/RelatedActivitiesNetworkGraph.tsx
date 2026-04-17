@@ -355,14 +355,14 @@ export default function RelatedActivitiesNetworkGraph({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[600px]">
-        <div className="text-slate-500">Loading network graph...</div>
+        <div className="text-muted-foreground">Loading network graph...</div>
       </div>
     )
   }
 
   if (!data || !data.nodes || data.nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[600px] text-slate-400">
+      <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No network data available</p>
           <p className="text-xs mt-2">Add related activities to see the network graph</p>

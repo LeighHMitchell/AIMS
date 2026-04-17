@@ -1220,7 +1220,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="relative h-[480px] bg-gray-100 rounded-lg overflow-hidden">
+                <div className="relative h-[480px] bg-muted rounded-lg overflow-hidden">
                   <LocationMap
                     mapCenter={mapCenter}
                     mapZoom={mapZoom}
@@ -1236,7 +1236,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     displayLongitude={watchedLongitude}
                   />
 
-                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-xs text-gray-600">
+                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-xs text-muted-foreground">
                     Click on the map to set coordinates
                   </div>
                 </div>
@@ -1251,7 +1251,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   
                   {/* Search Input */}
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       placeholder="Search for a location"
                       value={searchQuery}
@@ -1263,7 +1263,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     {searchResults.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-96 overflow-auto z-50">
                         {/* Result count header */}
-                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-xs text-gray-600 font-medium">
+                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-xs text-muted-foreground font-medium">
                           Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
                         </div>
                         
@@ -1274,10 +1274,10 @@ const autoPopulateIatiFields = useCallback((params: {
                             onClick={() => handleSelectSearchResult(result)}
                             className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-border last:border-b-0 transition-colors"
                           >
-                            <div className="font-medium text-gray-900 truncate">
+                            <div className="font-medium text-foreground truncate">
                               {result.name || result.display_name}
                             </div>
-                            <div className="text-sm text-gray-500 mt-1 line-clamp-2">
+                            <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
                               {result.display_name}
                             </div>
                           </button>
@@ -1287,14 +1287,14 @@ const autoPopulateIatiFields = useCallback((params: {
                   </div>
 
                   {isSearching && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Searching...
                     </div>
                   )}
                   
                   {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-border">
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded border border-border">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <div>
@@ -1451,7 +1451,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     </div>
                   </div>
                   {validationErrors.coordinates && (
-                    <p className="text-sm text-red-600">{validationErrors.coordinates}</p>
+                    <p className="text-sm text-destructive">{validationErrors.coordinates}</p>
                   )}
 
                   {/* Coverage Scope (Coverage only) */}
@@ -1812,7 +1812,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 onClick={handleDelete}
                 className="flex items-center gap-2"
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-destructive" />
                 Delete
               </Button>
             )}

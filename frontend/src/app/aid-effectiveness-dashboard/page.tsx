@@ -1033,7 +1033,7 @@ export default function AidEffectivenessDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {Object.entries(SECTION_FIELDS).map(([key, section]) => (
-                        <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div key={key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <span className="font-medium text-foreground">{section.label}</span>
                           <div className="flex items-center gap-3">
                             <Progress value={metrics.sectionScores[key]} className="w-32 bg-muted" style={{ '--progress-foreground': '#F37021' } as React.CSSProperties} />
@@ -1190,7 +1190,7 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
       <CardContent>
         <div className="space-y-3">
           {data.map(item => (
-            <div key={item.reason} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <div key={item.reason} className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <span className="text-sm text-foreground">{item.reason}</span>
               <Badge variant="secondary" className="bg-muted text-foreground">{item.count}</Badge>
             </div>

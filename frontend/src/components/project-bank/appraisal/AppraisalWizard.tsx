@@ -245,9 +245,9 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       return {
         icon: XCircle,
         text: lockMessage || 'This project has been rejected.',
-        bgClass: 'bg-red-50 border-red-200',
+        bgClass: 'bg-destructive/10 border-red-200',
         textClass: 'text-red-800',
-        iconClass: 'text-red-600',
+        iconClass: 'text-destructive',
       };
     }
     if (projectStage === 'intake_approved') {

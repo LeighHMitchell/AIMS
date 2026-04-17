@@ -376,7 +376,7 @@ export default function GovernmentEndorsementTab({
                   size="sm"
                   variant="destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                   Delete
                 </Button>
               )}
@@ -402,7 +402,7 @@ export default function GovernmentEndorsementTab({
                   <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                 )}
                 {formData.validation_status === 'rejected' && (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <AlertCircle className="h-5 w-5 text-destructive" />
                 )}
                 {formData.validation_status === 'more_info_requested' && (
                   <Clock className="h-5 w-5 text-amber-600" />
@@ -417,13 +417,13 @@ export default function GovernmentEndorsementTab({
                 </Badge>
               </div>
               {formData.validating_authority && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Building className="h-4 w-4" />
                   {formData.validating_authority}
                 </div>
               )}
               {formData.validation_date && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   {format(new Date(formData.validation_date), 'MMM dd, yyyy')}
                 </div>
@@ -461,7 +461,7 @@ export default function GovernmentEndorsementTab({
                   <SelectItem key={option.value} value={option.value}>
                     <div>
                       <div className="font-medium">{option.label}</div>
-                      <div className="text-xs text-gray-500">{option.description}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
                     </div>
                   </SelectItem>
                 ))}
@@ -592,7 +592,7 @@ export default function GovernmentEndorsementTab({
                     <SelectItem key={category.value} value={category.value}>
                       <div>
                         <div className="font-medium">{category.value} - {category.label}</div>
-                        <div className="text-xs text-gray-500">{category.description}</div>
+                        <div className="text-xs text-muted-foreground">{category.description}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -744,14 +744,14 @@ export default function GovernmentEndorsementTab({
                               size="sm"
                               onClick={() => openRefDialog(ref)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRef(ref.id)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </>
                         )}
@@ -792,7 +792,7 @@ export default function GovernmentEndorsementTab({
                     <SelectItem key={type} value={type}>
                       <div>
                         <div className="font-medium">{REFERENCE_TYPE_LABELS[type]}</div>
-                        <div className="text-xs text-gray-500">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
+                        <div className="text-xs text-muted-foreground">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
                       </div>
                     </SelectItem>
                   ))}

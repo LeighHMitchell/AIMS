@@ -145,7 +145,7 @@ export function ReadinessChecklistItem({
     <TooltipProvider>
       <div className={cn(
         "border rounded-lg transition-all",
-        currentStatus === 'not_required' && "border-border bg-gray-50/50 opacity-75",
+        currentStatus === 'not_required' && "border-border bg-muted/50 opacity-75",
       )}>
         {/* Main Row - Always Visible */}
         <div
@@ -155,21 +155,21 @@ export function ReadinessChecklistItem({
           {/* Expand/Collapse chevron */}
           <div className="flex-shrink-0 mt-0.5">
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
 
           {/* Item Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h4 className="text-sm font-medium text-gray-900">{item.title}</h4>
+              <h4 className="text-sm font-medium text-foreground">{item.title}</h4>
               {/* Guidance tooltip - inline with title */}
               {item.guidance_text && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help flex-shrink-0" />
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p className="text-sm">{item.guidance_text}</p>
@@ -181,7 +181,7 @@ export function ReadinessChecklistItem({
               <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
             )}
             {item.responsible_agency_type && (
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {item.responsible_agency_type}
               </p>
             )}
@@ -219,15 +219,15 @@ export function ReadinessChecklistItem({
             <div className="mt-4 space-y-4 pl-9">
               {/* Guidance */}
               {item.guidance_text && (
-                <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg flex gap-2">
-                  <HelpCircle className="h-4 w-4 flex-shrink-0 mt-0.5 text-gray-400" />
+                <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg flex gap-2">
+                  <HelpCircle className="h-4 w-4 flex-shrink-0 mt-0.5 text-muted-foreground" />
                   <span>{item.guidance_text}</span>
                 </div>
               )}
 
               {/* Status Selection */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Status</Label>
+                <Label className="text-sm font-medium text-foreground">Status</Label>
                 <RadioGroup
                   value={currentStatus}
                   onValueChange={handleStatusChange}
@@ -264,10 +264,10 @@ export function ReadinessChecklistItem({
 
               {/* Remarks */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
+                <Label className="text-sm font-medium text-foreground">
                   Remarks
                   {currentStatus === 'not_required' && (
-                    <span className="text-xs text-gray-500 ml-2">(Explain why not required)</span>
+                    <span className="text-xs text-muted-foreground ml-2">(Explain why not required)</span>
                   )}
                 </Label>
                 <Textarea
@@ -282,7 +282,7 @@ export function ReadinessChecklistItem({
 
               {/* Completion Info */}
               {response?.completed_by && response?.completed_at && (
-                <div className="text-xs text-gray-500 pt-2 border-t">
+                <div className="text-xs text-muted-foreground pt-2 border-t">
                   Completed by {response.completed_by_user?.name || 'Unknown'} on{' '}
                   {format(new Date(response.completed_at), 'MMMM d, yyyy')}
                 </div>

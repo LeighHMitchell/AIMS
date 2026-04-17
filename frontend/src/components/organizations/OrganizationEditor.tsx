@@ -214,7 +214,7 @@ export function OrganizationEditor({
     if (needsOrg && !currentOrgId && !organizationCreated) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500">Please create the organization first by entering a name in the General section</p>
+          <p className="text-muted-foreground">Please create the organization first by entering a name in the General section</p>
         </div>
       )
     }
@@ -237,7 +237,7 @@ export function OrganizationEditor({
     if (!currentOrgId) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500">Please create the organization first</p>
+          <p className="text-muted-foreground">Please create the organization first</p>
         </div>
       )
     }
@@ -294,7 +294,7 @@ export function OrganizationEditor({
       default:
         return (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">Section not found</p>
+            <p className="text-muted-foreground">Section not found</p>
           </div>
         )
     }

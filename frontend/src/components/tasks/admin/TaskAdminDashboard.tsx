@@ -92,7 +92,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center text-red-600">
+          <div className="flex items-center justify-center text-destructive">
             <AlertTriangle className="mr-2 h-5 w-5" />
             <span>Error loading analytics: {error}</span>
           </div>
@@ -163,7 +163,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           value={`${summary?.completion_rate ?? 0}%`}
           description={`${summary?.completed_assignments ?? 0} of ${summary?.total_assignments ?? 0} assignments`}
           icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-          valueClassName="text-slate-900"
+          valueClassName="text-foreground"
           isLoading={isLoading}
         />
         <SummaryCard
@@ -171,7 +171,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           value={summary?.overdue_assignments ?? 0}
           description={`${overdueTasks.length} tasks with overdue assignments`}
           icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
-          valueClassName="text-slate-900"
+          valueClassName="text-foreground"
           isLoading={isLoading}
         />
         <SummaryCard

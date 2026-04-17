@@ -241,9 +241,9 @@ export default function IATIImportPage() {
             )}
 
             {parseResult.errors.length > 0 && (
-              <div className="mb-4 p-4 bg-red-50 rounded">
+              <div className="mb-4 p-4 bg-destructive/10 rounded">
                 <h3 className="font-medium text-red-800 mb-2">Errors:</h3>
-                <ul className="text-sm text-red-600 space-y-1">
+                <ul className="text-sm text-destructive space-y-1">
                   {parseResult.errors.map((error, idx) => (
                     <li key={idx}>{error}</li>
                   ))}
@@ -328,14 +328,14 @@ export default function IATIImportPage() {
                 )}
               </div>
             ) : (
-              <div className="text-red-600">Import failed. Please check the errors above.</div>
+              <div className="text-destructive">Import failed. Please check the errors above.</div>
             )}
           </div>
         )}
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-destructive/10 border border-red-200 rounded-lg p-4">
             <p className="text-red-800">{error}</p>
           </div>
         )}

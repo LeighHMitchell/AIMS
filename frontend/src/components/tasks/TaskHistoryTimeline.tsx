@@ -56,13 +56,13 @@ export function TaskHistoryTimeline({ history, className }: TaskHistoryTimelineP
         return 'bg-purple-100 text-purple-600';
       case 'status_changed':
         if (newStatus === 'completed') return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
-        if (newStatus === 'declined') return 'bg-gray-100 text-gray-600';
+        if (newStatus === 'declined') return 'bg-muted text-muted-foreground';
         if (newStatus === 'in_progress') return 'bg-amber-100 text-amber-600';
-        return 'bg-slate-100 text-slate-600';
+        return 'bg-muted text-muted-foreground';
       case 'note_added':
-        return 'bg-slate-100 text-slate-600';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-slate-100 text-slate-600';
+        return 'bg-muted text-muted-foreground';
     }
   };
 

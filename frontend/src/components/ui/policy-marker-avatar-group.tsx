@@ -195,10 +195,10 @@ export function PolicyMarkerAvatarGroup({
                       className="block"
                     >
                       <div
-                        className={`${sizeClass} rounded-full border border-input bg-slate-100 flex items-center justify-center shadow-sm hover:bg-slate-200 transition-colors`}
+                        className={`${sizeClass} rounded-full border border-input bg-muted flex items-center justify-center shadow-sm hover:bg-muted transition-colors`}
                         title={marker.name || marker.code}
                       >
-                        <IconComponent className={`${iconSize} text-slate-600`} />
+                        <IconComponent className={`${iconSize} text-muted-foreground`} />
                       </div>
                     </Link>
                   </motion.li>
@@ -234,8 +234,8 @@ export function PolicyMarkerAvatarGroup({
 
               return (
                 <div key={marker.policy_marker_id || marker.code || index} className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-slate-100 border border-border flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="h-3 w-3 text-slate-600" />
+                  <div className="h-6 w-6 rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                    <IconComponent className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">

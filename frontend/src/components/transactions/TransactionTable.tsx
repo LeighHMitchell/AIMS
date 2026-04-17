@@ -617,7 +617,7 @@ export function TransactionTable({
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading transactions: {error}</p>
+        <p className="text-destructive">Error loading transactions: {error}</p>
       </div>
     );
   }
@@ -625,7 +625,7 @@ export function TransactionTable({
   if (transactions.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="text-gray-600">No transactions found</p>
+        <p className="text-muted-foreground">No transactions found</p>
       </div>
     );
   }
@@ -984,7 +984,7 @@ export function TransactionTable({
                         ) : transaction.acceptance_status === 'accepted' ? (
                           <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Accepted Transaction</p></TooltipContent></Tooltip>
                         ) : transaction.acceptance_status === 'rejected' ? (
-                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-red-50 border-red-200 text-red-700 px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-destructive/10 border-red-200 text-destructive px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -992,9 +992,9 @@ export function TransactionTable({
                       <td key="organizations" className="py-3 px-4">
                         <div className="text-sm">
                           <div className="flex items-start gap-2">
-                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-sm cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-sm hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-sm cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
                             <span className="text-muted-foreground mt-1">→</span>
-                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-sm cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-sm hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-sm cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div></div>
                           </div>
                         </div>
                       </td>
@@ -1096,7 +1096,7 @@ export function TransactionTable({
                       return (
                         <td key="financeType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-xs">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-xs">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
                           ) : <span className="text-sm font-normal text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1107,7 +1107,7 @@ export function TransactionTable({
                       return (
                         <td key="aidType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.aid_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1118,7 +1118,7 @@ export function TransactionTable({
                       return (
                         <td key="flowType" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.flow_type_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.flow_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1129,7 +1129,7 @@ export function TransactionTable({
                       return (
                         <td key="tiedStatus" className="py-3 px-4 whitespace-nowrap">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.tied_status_inherited ? 'text-gray-400' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-sm cursor-help inline-flex items-center gap-1.5 ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{code}</span>{label && <span className={transaction.tied_status_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1137,7 +1137,7 @@ export function TransactionTable({
                     humanitarian: (
                       <td key="humanitarian" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.is_humanitarian ? (
-                          <Tooltip><TooltipTrigger asChild><Heart className="h-4 w-4 text-red-500 fill-red-500 inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Humanitarian</p></TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Heart className="h-4 w-4 text-destructive fill-red-500 inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Humanitarian</p></TooltipContent></Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -1196,7 +1196,7 @@ export function TransactionTable({
             
             {/* Expanded Row Content - Data-Rich Card Dashboard */}
             {isExpanded && (
-              <TableRow className="bg-slate-50/50">
+              <TableRow className="bg-muted/50">
                 <td colSpan={100} className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* LEFT COLUMN */}
@@ -1206,7 +1206,7 @@ export function TransactionTable({
                       <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-slate-600" />
+                            <Calendar className="h-5 w-5 text-muted-foreground" />
                             <span className="text-lg font-semibold text-foreground">
                               {TRANSACTION_TYPE_LABELS[transaction.transaction_type]}
                             </span>
@@ -1347,11 +1347,11 @@ export function TransactionTable({
                             <h3 className="text-xs uppercase tracking-wide text-muted-foreground">Description</h3>
                             {onEdit && (
                               <button className="text-muted-foreground hover:text-foreground transition-colors">
-                                <Pencil className="h-3 w-3 text-slate-500" />
+                                <Pencil className="h-3 w-3 text-muted-foreground" />
                               </button>
                             )}
                         </div>
-                          <p className="text-sm text-slate-700 leading-relaxed">{transaction.description}</p>
+                          <p className="text-sm text-foreground leading-relaxed">{transaction.description}</p>
                         </div>
                       )}
                       
@@ -1483,9 +1483,9 @@ export function TransactionTable({
                                   <div className="flex items-center gap-2">
                                     <Handshake className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Aid Type</span>
-                                    {transaction.aid_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    {transaction.aid_type_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.aid_type_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.aid_type_inherited ? 'text-muted-foreground' : ''}`}>
                                     {AID_TYPE_LABELS[transaction.effective_aid_type || transaction.aid_type]?.short || transaction.effective_aid_type || transaction.aid_type}
                                   </span>
                                 </div>
@@ -1504,9 +1504,9 @@ export function TransactionTable({
                                   <div className="flex items-center gap-2">
                                     <Shuffle className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Flow Type</span>
-                                    {transaction.flow_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    {transaction.flow_type_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.flow_type_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.flow_type_inherited ? 'text-muted-foreground' : ''}`}>
                                     {FLOW_TYPE_LABELS[transaction.effective_flow_type || transaction.flow_type] || transaction.effective_flow_type || transaction.flow_type}
                                   </span>
                                 </div>
@@ -1525,9 +1525,9 @@ export function TransactionTable({
                                   <div className="flex items-center gap-2">
                                     <Coins className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Finance Type</span>
-                                    {transaction.finance_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    {transaction.finance_type_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.finance_type_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.finance_type_inherited ? 'text-muted-foreground' : ''}`}>
                                     {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}
                                   </span>
                                 </div>
@@ -1546,9 +1546,9 @@ export function TransactionTable({
                                   <div className="flex items-center gap-2">
                                     <Link2 className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Tied Status</span>
-                                    {transaction.tied_status_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
+                                    {transaction.tied_status_inherited && <span className="text-[10px] text-muted-foreground italic">(inherited)</span>}
                                   </div>
-                                  <span className={`text-sm font-medium ${transaction.tied_status_inherited ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${transaction.tied_status_inherited ? 'text-muted-foreground' : ''}`}>
                                     {TIED_STATUS_LABELS[(transaction.effective_tied_status || transaction.tied_status) as keyof typeof TIED_STATUS_LABELS] || transaction.effective_tied_status || transaction.tied_status}
                                   </span>
                                 </div>
@@ -1741,9 +1741,9 @@ export function TransactionTable({
                           {/* Rejected By */}
                           {transaction.rejected_by && (
                             <div className="flex items-center gap-2">
-                              <UserX className="h-3 w-3 text-red-600" />
+                              <UserX className="h-3 w-3 text-destructive" />
                               <span className="text-xs text-muted-foreground">Rejected by:</span>
-                              <span className="text-xs font-medium text-red-700">{transaction.rejected_by}</span>
+                              <span className="text-xs font-medium text-destructive">{transaction.rejected_by}</span>
                               {transaction.rejected_at && (
                                 <span className="text-xs text-muted-foreground">
                                   on {format(new Date(transaction.rejected_at), 'dd MMM yyyy, HH:mm')}

@@ -125,7 +125,7 @@ export function DataClinicFinancialDates() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -146,7 +146,7 @@ export function DataClinicFinancialDates() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No transaction data available</p>
@@ -304,7 +304,7 @@ export function DataClinicFinancialDates() {
         </div>
 
         {/* Legend */}
-        <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
+        <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-12 h-6 bg-blue-500 rounded opacity-80"></div>
             <span>Transaction period range</span>

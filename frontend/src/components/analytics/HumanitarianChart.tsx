@@ -489,7 +489,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-medium text-foreground">Period</th>
             <th className="text-right py-3 px-4 font-medium text-foreground">Development</th>
-            <th className="text-right py-3 px-4 font-medium text-red-700">Humanitarian</th>
+            <th className="text-right py-3 px-4 font-medium text-destructive">Humanitarian</th>
             <th className="text-right py-3 px-4 font-medium text-foreground">Total</th>
           </tr>
         </thead>
@@ -498,7 +498,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
             <tr key={idx} className="border-b border-border hover:bg-muted/50">
               <td className="py-3 px-4 text-foreground">{row.period}</td>
               <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrencyFull(row.development)}</td>
-              <td className="text-right py-3 px-4 text-red-600">{formatCurrencyFull(row.humanitarian)}</td>
+              <td className="text-right py-3 px-4 text-destructive">{formatCurrencyFull(row.humanitarian)}</td>
               <td className="text-right py-3 px-4 text-foreground font-medium">{formatCurrencyFull(row.development + row.humanitarian)}</td>
             </tr>
           ))}
@@ -509,7 +509,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
             <td className="text-right py-3 px-4 font-semibold text-foreground">
               {formatCurrencyFull(data.reduce((sum, row) => sum + row.development, 0))}
             </td>
-            <td className="text-right py-3 px-4 font-semibold text-red-700">
+            <td className="text-right py-3 px-4 font-semibold text-destructive">
               {formatCurrencyFull(data.reduce((sum, row) => sum + row.humanitarian, 0))}
             </td>
             <td className="text-right py-3 px-4 font-semibold text-foreground">

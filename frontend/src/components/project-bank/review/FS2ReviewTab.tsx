@@ -435,7 +435,7 @@ export function FS2ReviewTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("kanban")}
-            className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-r-none h-9 ${viewMode === "kanban" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <KanbanSquare className="h-4 w-4" />
           </Button>
@@ -443,7 +443,7 @@ export function FS2ReviewTab() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("table")}
-            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
+            className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
           >
             <Table2 className="h-4 w-4" />
           </Button>

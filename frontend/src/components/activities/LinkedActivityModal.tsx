@@ -42,26 +42,26 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
           <h3 className="text-lg font-semibold">Link Activity</h3>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-muted-foreground transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         
         <div className="mb-6">
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-muted-foreground mb-2">
             You are linking to:
           </p>
-          <div className="p-3 bg-gray-50 rounded border">
+          <div className="p-3 bg-muted rounded border">
             <h4 className="font-medium text-sm">{activity.title}</h4>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               IATI ID: {activity.iati_id || 'N/A'}
             </p>
           </div>
         </div>
         
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-foreground mb-3">
             Select Relationship Type <RequiredDot />
           </label>
           <div className="space-y-2">
@@ -84,7 +84,7 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
                 />
                 <div>
                   <div className="font-medium text-sm">{type.label}</div>
-                  <div className="text-xs text-gray-600 mt-1">{type.description}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{type.description}</div>
                 </div>
               </label>
             ))}
@@ -98,14 +98,14 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
             className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
               selectedType
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-300 text-muted-foreground cursor-not-allowed'
             }`}
           >
             Create Link
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2 rounded border border-input text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2 rounded border border-input text-foreground hover:bg-muted transition-colors"
           >
             Cancel
           </button>

@@ -227,7 +227,7 @@ export function OrphanTransactionFixModal({
 
         <div className="space-y-4">
           {/* Transaction Details */}
-          <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+          <div className="p-4 bg-muted rounded-lg space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium flex items-center">
                 <Link2 className="h-4 w-4 mr-2" />
@@ -240,11 +240,11 @@ export function OrphanTransactionFixModal({
             
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
+                <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span>{new Date(transaction.transaction_date).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-gray-500" />
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <span>{formatCurrency(transaction.value, transaction.currency)}</span>
               </div>
               <div className="col-span-2">
@@ -253,7 +253,7 @@ export function OrphanTransactionFixModal({
                 </Badge>
               </div>
               {transaction.description && (
-                <div className="col-span-2 text-gray-600">
+                <div className="col-span-2 text-muted-foreground">
                   {transaction.description}
                 </div>
               )}

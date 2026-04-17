@@ -98,9 +98,9 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
         return <Clock className="h-4 w-4 text-yellow-600" />;
       case 'cancelled':
       case 'suspended':
-        return <Pause className="h-4 w-4 text-red-600" />;
+        return <Pause className="h-4 w-4 text-destructive" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-600" />;
+        return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -131,7 +131,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
       case 'extending':
         return 'bg-orange-100 text-orange-800 border-orange-300';
       default:
-        return 'bg-gray-100 text-gray-800 border-input';
+        return 'bg-muted text-foreground border-input';
     }
   };
 
@@ -166,7 +166,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No activities with valid dates found</p>
           </div>
@@ -190,7 +190,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
         <div className="space-y-4">
           {/* Timeline Header */}
           <div className="relative">
-            <div className="flex text-xs text-gray-600 mb-2">
+            <div className="flex text-xs text-muted-foreground mb-2">
               {timelineData.months.map((month, index) => (
                 <div 
                   key={index} 
@@ -226,7 +226,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
                           >
                             {activity.role}
                           </Badge>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {format(activity.startDate, 'MMM yyyy')} - {format(activity.endDate, 'MMM yyyy')}
                           </span>
                         </div>
@@ -234,7 +234,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
                     </div>
 
                     {/* Timeline Bar */}
-                    <div className="relative h-6 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="relative h-6 bg-muted rounded-full overflow-hidden">
                       <div
                         className={`absolute top-0 h-full rounded-full ${getStatusColor(activity.activity_status)} opacity-80`}
                         style={{
@@ -244,7 +244,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
                       />
                       {/* Current date indicator */}
                       <div 
-                        className="absolute top-0 w-px h-full bg-red-500 z-10"
+                        className="absolute top-0 w-px h-full bg-destructive/100 z-10"
                         style={{
                           left: `${(new Date().getTime() - timelineData.months[0].getTime()) / 
                             (timelineData.months[timelineData.months.length - 1].getTime() - timelineData.months[0].getTime()) * 100}%`
@@ -272,7 +272,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
               <span>Pipeline/Planning</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-px h-3 bg-red-500"></div>
+              <div className="w-px h-3 bg-destructive/100"></div>
               <span>Current Date</span>
             </div>
           </div>

@@ -423,12 +423,12 @@ export default function LibraryPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="all" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="all" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <LibraryIcon className="h-4 w-4" />
               All Documents
             </TabsTrigger>
             {hasOrganization && (
-              <TabsTrigger value="reading_room" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+              <TabsTrigger value="reading_room" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <BookOpen className="h-4 w-4" />
                 Reading Room
                 {readingRoomBookmarks.length > 0 && (
@@ -438,7 +438,7 @@ export default function LibraryPage() {
                 )}
               </TabsTrigger>
             )}
-            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
+            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Bookmark className="h-4 w-4" />
               My Library
               {personalBookmarks.length > 0 && (
@@ -489,7 +489,7 @@ export default function LibraryPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`rounded-r-none ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                      className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                       onClick={() => setViewMode('table')}
                     >
                       <TableIcon className="h-4 w-4" />
@@ -497,7 +497,7 @@ export default function LibraryPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`rounded-l-none ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
+                      className={`rounded-l-none ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                       onClick={() => setViewMode('card')}
                     >
                       <LayoutGrid className="h-4 w-4" />
@@ -637,7 +637,7 @@ export default function LibraryPage() {
               {pagination.total > 0 && (
                 <div className="bg-white rounded-lg border border-border shadow-sm p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} documents
                     </div>
 
@@ -680,7 +680,7 @@ export default function LibraryPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                              className={`w-8 h-8 p-0 ${pagination.page === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
+                              className={`w-8 h-8 p-0 ${pagination.page === pageNum ? "bg-muted text-foreground" : ""}`}
                               disabled={loading}
                             >
                               {pageNum}
@@ -710,7 +710,7 @@ export default function LibraryPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <label className="text-sm text-gray-600">Items per page:</label>
+                      <label className="text-sm text-muted-foreground">Items per page:</label>
                       <Select
                         value={pagination.limit.toString()}
                         onValueChange={(value) => {

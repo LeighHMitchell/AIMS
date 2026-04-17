@@ -77,7 +77,7 @@ export default function SkeletonDemoPage() {
               </Button>
             ))}
           </div>
-          <div className="border rounded-lg p-6 bg-gray-50">
+          <div className="border rounded-lg p-6 bg-muted">
             {tabSkeletons[currentTab as keyof typeof tabSkeletons]}
           </div>
         </section>

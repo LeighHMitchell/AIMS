@@ -176,7 +176,7 @@ export function CurrencySelector({
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
                   <span className="font-medium">{selectedOption.name}</span>
                   {selectedOption.withdrawn && (
-                    <span className="ml-2 text-xs text-red-500">Withdrawn</span>
+                    <span className="ml-2 text-xs text-destructive">Withdrawn</span>
                   )}
                 </span>
               )
@@ -269,7 +269,7 @@ export function CurrencySelector({
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                           <span className="text-foreground">{option.name}</span>
                           {option.withdrawn && (
-                            <span className="ml-2 text-xs text-red-500">Withdrawn</span>
+                            <span className="ml-2 text-xs text-destructive">Withdrawn</span>
                           )}
                         </div>
                         {option.description && (
@@ -312,7 +312,7 @@ export function CurrencySelector({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                             <span className="font-medium text-foreground">{option.name}</span>
                             {option.withdrawn && (
-                              <span className="ml-2 text-xs text-red-500">Withdrawn</span>
+                              <span className="ml-2 text-xs text-destructive">Withdrawn</span>
                             )}
                           </div>
                           {option.description && (
@@ -354,7 +354,7 @@ export function CurrencySelector({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                             <span className="font-medium text-foreground">{option.name}</span>
                             {option.withdrawn && (
-                              <span className="ml-2 text-xs text-red-500">Withdrawn</span>
+                              <span className="ml-2 text-xs text-destructive">Withdrawn</span>
                             )}
                           </div>
                           {option.description && (

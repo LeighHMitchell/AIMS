@@ -306,7 +306,7 @@ function CommentItem({
                     onClick={handleDelete}
                     className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                    <Trash2 className="h-4 w-4 mr-2 text-destructive" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -328,7 +328,7 @@ function CommentItem({
               className={cn(
                 "flex items-center gap-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded disabled:opacity-50",
                 isLiked
-                  ? "text-red-500"
+                  ? "text-destructive"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

@@ -177,7 +177,7 @@ export function AssignFocalPointModal({
                   {selectedUser.avatarUrl && (
                     <AvatarImage src={selectedUser.avatarUrl} alt={selectedUser.name} />
                   )}
-                  <AvatarFallback className="bg-slate-100 text-xs">
+                  <AvatarFallback className="bg-muted text-xs">
                     {getInitials(selectedUser.firstName, selectedUser.lastName)}
                   </AvatarFallback>
                 </Avatar>
@@ -202,7 +202,7 @@ export function AssignFocalPointModal({
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search by name or email..."
@@ -212,7 +212,7 @@ export function AssignFocalPointModal({
                   className="pl-10"
                 />
                 {isSearching && (
-                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
                 )}
               </div>
             )}
@@ -221,7 +221,7 @@ export function AssignFocalPointModal({
             {showResults && filteredResults.length > 0 && !selectedUser && (
               <div className="mt-2 bg-white border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                 <div className="p-2">
-                  <p className="text-xs text-gray-500 px-2 py-1">
+                  <p className="text-xs text-muted-foreground px-2 py-1">
                     {query
                       ? `Found ${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''}`
                       : `${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
@@ -238,21 +238,21 @@ export function AssignFocalPointModal({
                           {user.avatarUrl && (
                             <AvatarImage src={user.avatarUrl} alt={user.name} />
                           )}
-                          <AvatarFallback className="bg-slate-100">
-                            <span className="text-sm font-medium text-slate-600">
+                          <AvatarFallback className="bg-muted">
+                            <span className="text-sm font-medium text-muted-foreground">
                               {getInitials(user.firstName, user.lastName)}
                             </span>
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">{user.name}</p>
+                          <p className="font-semibold text-foreground truncate">{user.name}</p>
                           {(user.jobTitle || user.department) && (
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {[user.jobTitle, user.department].filter(Boolean).join(' · ')}
                             </p>
                           )}
                           {user.organization && (
-                            <p className="text-xs text-gray-500 truncate">{user.organization}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.organization}</p>
                           )}
                         </div>
                       </div>
@@ -264,7 +264,7 @@ export function AssignFocalPointModal({
 
             {showResults && filteredResults.length === 0 && !isSearching && !selectedUser && (
               <div className="mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
-                <p className="text-sm text-gray-600 text-center">No users found matching &quot;{query}&quot;</p>
+                <p className="text-sm text-muted-foreground text-center">No users found matching &quot;{query}&quot;</p>
               </div>
             )}
           </div>

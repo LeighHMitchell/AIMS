@@ -205,7 +205,7 @@ export function PhoneFields({
       {/* Phone Number Field */}
       <div className="flex flex-col flex-1">
         {phoneLabel && (
-          <label className="text-sm font-medium text-gray-700 mb-2">
+          <label className="text-sm font-medium text-foreground mb-2">
             {phoneLabel}
           </label>
         )}

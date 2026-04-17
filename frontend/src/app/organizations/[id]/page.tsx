@@ -1128,7 +1128,7 @@ export default function OrganizationProfilePage() {
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">Organization Not Found</h3>
                   <p className="text-muted-foreground mb-4">
                     {error || 'The organization you are looking for could not be found.'}
@@ -2968,9 +2968,9 @@ export default function OrganizationProfilePage() {
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem 
                                         onClick={() => setDeleteActivityId(activity.id)}
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                       >
-                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                        <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                                         Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>

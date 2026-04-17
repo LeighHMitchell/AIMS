@@ -175,7 +175,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
     }
     if (error || !currentData || currentData.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
+        <div className="h-full flex items-center justify-center text-muted-foreground">
           <p className="text-sm">{error || 'No data available'}</p>
         </div>
       );
@@ -214,7 +214,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-6 w-6" />
           <span>{error}</span>
         </div>
@@ -304,7 +304,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
               {getActivitiesGroupedByStatus.map(([status, activities], groupIndex) => (
                 <React.Fragment key={status}>
                   {activities.map((activity, index) => (
-                    <TableRow key={activity.id} className="hover:bg-slate-50">
+                    <TableRow key={activity.id} className="hover:bg-muted">
                       {index === 0 && (
                         <TableCell 
                           rowSpan={activities.length} 

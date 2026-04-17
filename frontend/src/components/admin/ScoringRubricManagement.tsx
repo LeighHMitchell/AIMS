@@ -262,7 +262,7 @@ export function ScoringRubricManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 text-xs text-red-600 hover:text-red-700"
+                            className="h-7 text-xs text-destructive hover:text-destructive"
                             onClick={() => handleDelete(v.id)}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -338,7 +338,7 @@ export function ScoringRubricManagement() {
                         const total = getStageWeightTotal(s)
                         const isValid = Math.abs(total - 100) < 0.01
                         return (
-                          <span className={`ml-1.5 text-[10px] ${isValid ? 'text-[hsl(var(--success-icon))]' : 'text-red-600'}`}>
+                          <span className={`ml-1.5 text-[10px] ${isValid ? 'text-[hsl(var(--success-icon))]' : 'text-destructive'}`}>
                             ({total.toFixed(0)}%)
                           </span>
                         )
@@ -410,7 +410,7 @@ export function ScoringRubricManagement() {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-6 w-6 p-0 text-red-500"
+                                          className="h-6 w-6 p-0 text-destructive"
                                           onClick={() => deleteSubCriterion(stage, dim, subIdx)}
                                         >
                                           <Trash2 className="h-3 w-3" />

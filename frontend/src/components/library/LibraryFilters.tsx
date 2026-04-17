@@ -113,8 +113,8 @@ export function LibraryFiltersPanel({
     icon: org.logo ? (
       <img src={org.logo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
     ) : (
-      <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+      <div className="h-5 w-5 rounded-sm bg-muted dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] font-medium text-muted-foreground dark:text-muted-foreground">
           {(org.acronym || org.name || '?')[0].toUpperCase()}
         </span>
       </div>

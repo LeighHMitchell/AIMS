@@ -268,9 +268,9 @@ export function BudgetMappingModal({
 
             {/* Validation Messages */}
             {!validation.isValid && budgetItems.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <div className="bg-destructive/10 border border-red-200 rounded-md p-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
                   <div className="text-sm text-red-800">{validation.error}</div>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export function BudgetMappingModal({
                               size="sm"
                               onClick={() => deleteBudgetItem(index)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>
@@ -325,7 +325,7 @@ export function BudgetMappingModal({
                     <TableRow className="bg-muted font-medium">
                       <TableCell>Total</TableCell>
                       <TableCell>
-                        <span className={!validation.isValid ? 'text-red-600' : ''}>
+                        <span className={!validation.isValid ? 'text-destructive' : ''}>
                           {percentageSum.toFixed(2)}%
                         </span>
                       </TableCell>

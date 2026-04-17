@@ -170,7 +170,7 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Transaction Activity Calendar
           </CardTitle>
@@ -189,7 +189,7 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Transaction Activity Calendar
           </CardTitle>
@@ -198,7 +198,7 @@ export function TransactionActivityCalendar({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-slate-400">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -212,7 +212,7 @@ export function TransactionActivityCalendar({
   return (
     <Card className="bg-white border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+        <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Calendar className="h-5 w-5" />
           Transaction Activity Calendar
         </CardTitle>
