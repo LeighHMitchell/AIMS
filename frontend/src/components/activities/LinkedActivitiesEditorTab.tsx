@@ -373,7 +373,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   // Handle delete with pooled fund warning
   const handleDelete = async (linkedActivityId: string) => {
     const link = linkedActivities.find(l => l.id === linkedActivityId);
-    let confirmMessage = 'Are you sure you want to remove this link?';
+    let confirmMessage = 'Unlinking this activity removes it from tracking. This cannot be undone.';
 
     // Check if this is a parent/child relationship involving a pooled fund
     if (link && (link.relationshipType === '1' || link.relationshipType === '2')) {

@@ -705,7 +705,7 @@ export function DocumentsAndImagesTabInline({
                     size="lg"
                   >
                     <Upload className="w-5 h-5" />
-                    Choose Files
+                    Choose Files to Upload
                   </Button>
                   <p className="text-sm text-gray-500 mt-4">
                     Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
@@ -804,7 +804,7 @@ export function DocumentsAndImagesTabInline({
                 <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
                   <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-lg font-medium mb-2">No matching documents</h3>
-                  <p>Try adjusting your search or filters</p>
+                  <p>Try clearing your filters, using part of a title, or browsing all documents by clearing the search.</p>
                 </div>
               ) : (
                 <>
@@ -1017,9 +1017,9 @@ export function DocumentsAndImagesTabInline({
                   <ExternalLink className="w-8 h-8 text-gray-400" />
                 </div>
               </div>
-              <h3 className="text-xl font-medium mb-2 text-gray-900">No documents yet</h3>
+              <h3 className="text-xl font-medium mb-2 text-gray-900">No documents added yet</h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Get started by uploading files from your computer or linking to documents hosted elsewhere
+                Upload files (PDFs, images, Word docs) or paste links to documents hosted online to build your activity&rsquo;s library.
               </p>
             </div>
           )}

@@ -220,7 +220,7 @@ export function NationalPrioritiesSection({
 
   const handleAddAllocation = async () => {
     if (!selectedPriorityId) {
-      toast.error("Please select a priority");
+      toast.error("Select a priority from the list before adding an alignment.");
       return;
     }
 

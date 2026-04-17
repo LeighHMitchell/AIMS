@@ -233,8 +233,8 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           <CardContent className="py-8">
             <div className="text-center text-gray-500">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium mb-2">No participating organizations</p>
-              <p className="text-sm">Add organizations to track their roles in this activity.</p>
+              <p className="text-lg font-medium mb-2">No organizations added yet</p>
+              <p className="text-sm">Select an organization above and choose its role (funder, implementer, etc.) to get started.</p>
             </div>
           </CardContent>
         </Card>

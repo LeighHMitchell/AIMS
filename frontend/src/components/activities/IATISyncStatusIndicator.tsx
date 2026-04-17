@@ -65,7 +65,7 @@ export function IATISyncStatusIndicator({
           color: 'text-red-600',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
-          description: 'Sync failed - check IATI identifier'
+          description: 'Sync failed \u2014 verify the IATI identifier is correct and the activity exists in the IATI Registry'
         };
       case 'never':
       default:

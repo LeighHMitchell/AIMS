@@ -871,11 +871,11 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       if (response.ok) {
         setLastSaved(new Date().toLocaleTimeString());
       } else {
-        toast.error("Failed to save changes");
+        toast.error("Couldn\u2019t save your responses. Please try again.");
       }
     } catch (error) {
       console.error('Autosave error:', error);
-      toast.error("Error saving changes");
+      toast.error("Couldn\u2019t save your responses. Check your connection and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -900,7 +900,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   // Per-field evidence document upload
   const handleFieldDocumentUpload = async (fieldName: string, file: File) => {
     if (!general.id) {
-      toast.error("Please save the activity first");
+      toast.error("Save the activity first so evidence documents can be attached to it.");
       return;
     }
 
@@ -1067,7 +1067,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   // Handle document upload to Supabase
   const handleDocumentUpload = async (file: File) => {
     if (!general.id) {
-      toast.error("Please save the activity first");
+      toast.error("Save the activity first so evidence documents can be attached to it.");
       return;
     }
 

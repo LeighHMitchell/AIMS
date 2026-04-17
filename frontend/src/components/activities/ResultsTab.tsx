@@ -425,7 +425,7 @@ export function ResultsTab({
 
   // Handle deleting a result
   const handleDeleteResult = async (resultId: string) => {
-    if (await confirm({ title: 'Delete this result?', description: 'This will also delete all its indicators and data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this result?', description: 'All indicators, targets, and progress data for this result will be permanently lost.', confirmLabel: 'Delete result', cancelLabel: 'Keep result' })) {
       const success = await deleteResult(resultId);
       if (success) {
         onResultsChange?.(results);
@@ -435,7 +435,7 @@ export function ResultsTab({
 
   // Handle deleting an indicator
   const handleDeleteIndicator = async (indicatorId: string) => {
-    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this indicator?', description: 'All periods, baseline values, and achievement data for this indicator will be permanently lost.', confirmLabel: 'Delete indicator', cancelLabel: 'Keep indicator' })) {
       try {
         // Use direct Supabase call for now since we need a more flexible approach
         const { error } = await supabase
@@ -758,9 +758,9 @@ export function ResultsTab({
       {displayResults.length === 0 && !showDummyData ? (
         <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
           <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">No results</h3>
+          <h3 className="text-lg font-medium mb-2">No results added yet</h3>
           <p className="text-muted-foreground">
-            Use the button above to add your first result.
+            Track what this activity achieves. Add your first result (output, outcome, or impact) to get started.
           </p>
         </div>
       ) : (

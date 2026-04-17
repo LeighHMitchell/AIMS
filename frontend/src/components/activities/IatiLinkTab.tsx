@@ -75,7 +75,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
     } catch (error) {
       setLinkStatus({
         status: 'error',
-        message: 'Failed to check link status'
+        message: 'Couldn\u2019t check link status. Verify the IATI identifier and try again.'
       });
     } finally {
       setIsLoading(false);
@@ -244,7 +244,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 variant="outline"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Pull from IATI
+                Import from IATI
               </Button>
               <Button
                 onClick={() => performLink('push')}
@@ -252,7 +252,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 variant="outline"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Push to IATI
+                Publish to IATI
               </Button>
             </div>
           </div>
@@ -289,9 +289,9 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 </div>
               ) : (
                 <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-                  <img src="/images/empty-swan.webp" alt="No link data available" className="h-32 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">No link data available</h3>
-                  <p className="text-muted-foreground">Check status to compare fields.</p>
+                  <img src="/images/empty-swan.webp" alt="No comparison yet" className="h-32 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No comparison yet</h3>
+                  <p className="text-muted-foreground">Click &ldquo;Compare with IATI&rdquo; above to see which fields match, differ, or are missing.</p>
                 </div>
               )}
             </TabsContent>
@@ -332,9 +332,9 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
             {/* History Tab */}
             <TabsContent value="history" className="space-y-4">
               <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
-                <img src="/images/empty-grandfather-clock.webp" alt="No link history" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No link history</h3>
-                <p className="text-muted-foreground">Link operations will be logged here.</p>
+                <img src="/images/empty-grandfather-clock.webp" alt="No sync history" className="h-32 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">No sync history yet</h3>
+                <p className="text-muted-foreground">Your import and publish history will appear here once you sync data with IATI.</p>
               </div>
             </TabsContent>
 

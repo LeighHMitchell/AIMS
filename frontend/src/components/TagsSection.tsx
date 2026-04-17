@@ -132,12 +132,12 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     setInputValue('');
 
     if (!normalizedName) {
-      toast.error('Tag name cannot be empty');
+      toast.error('Enter a tag name (e.g., water-infrastructure, climate-adaptation).');
       return;
     }
 
     if (tags.some(t => t.name.toLowerCase() === normalizedName)) {
-      toast.warning('Tag already exists');
+      toast.warning('This tag is already added to the activity.');
       return;
     }
 

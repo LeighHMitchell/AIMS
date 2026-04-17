@@ -241,10 +241,10 @@ export function ContactDropdown({
               {!loading && contacts.length === 0 && !searchQuery && hasInitiallyLoaded && (
                 <div className="py-6 text-center">
                   <div className="text-sm text-muted-foreground">
-                    No contacts in the system yet
+                    No contacts yet
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Click "Create New Contact" to add your first contact
+                    Type a name to search, or click &ldquo;Create New Contact&rdquo; to add someone
                   </div>
                 </div>
               )}

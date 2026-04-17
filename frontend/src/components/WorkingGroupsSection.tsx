@@ -64,13 +64,13 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
       const addedCode = codes.find(code => !selectedCodes.includes(code));
       const addedGroup = WORKING_GROUPS.find(wg => wg.code === addedCode);
       if (addedGroup) {
-        toast.success(`Added to ${addedGroup.label}`);
+        toast.success(`Activity added to ${addedGroup.label}`);
       }
     } else if (codes.length < selectedCodes.length) {
       const removedCode = selectedCodes.find(code => !codes.includes(code));
       const removedGroup = WORKING_GROUPS.find(wg => wg.code === removedCode);
       if (removedGroup) {
-        toast.success(`Removed from ${removedGroup.label}`);
+        toast.success(`Activity removed from ${removedGroup.label}`);
       }
     }
   };
@@ -87,7 +87,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
       <div className="space-y-4">
-        <Label htmlFor="working-groups">Select Working Groups</Label>
+        <Label htmlFor="working-groups">Add this activity to relevant working groups</Label>
         <WorkingGroupsSearchableSelect
           value={selectedCodes}
           onValueChange={handleWorkingGroupsChange}

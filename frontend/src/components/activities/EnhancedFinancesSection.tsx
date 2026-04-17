@@ -338,7 +338,7 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Aid Type
-                        <HelpTextTooltip content="The type of aid for this activity" />
+                        <HelpTextTooltip content="How aid is delivered (e.g., grant, loan, scholarship). Applied to new transactions unless overridden." />
                         {fieldCompletion.aidType && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
@@ -360,7 +360,7 @@ export function EnhancedFinancesSection({
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         Default Currency
-                        <HelpTextTooltip content="The default currency for financial transactions" />
+                        <HelpTextTooltip content="Used for all transactions and budgets in this activity (e.g., USD, EUR, GBP)" />
                         {fieldCompletion.currency && (
                           <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
@@ -492,8 +492,8 @@ export function EnhancedFinancesSection({
                         disabled={disabled}
                       />
                       <Label htmlFor="override-auto-modality" className="flex items-center gap-2">
-                        Override Auto Modality
-                        <HelpTextTooltip content="When enabled, manually set modality instead of automatic detection" />
+                        Manually Set Modality
+                        <HelpTextTooltip content="Modality describes how aid is delivered. Enable this to choose manually instead of auto-detecting from aid type and finance type." />
                       </Label>
                     </div>
                   </div>

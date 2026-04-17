@@ -475,7 +475,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
     } catch (error) {
       console.error('Failed to save reporting organization:', error);
-      toast.error('Failed to update reporting organization');
+      toast.error('Couldn\u2019t save the reporting organization. Check your selection and try again.');
     } finally {
       setIsSavingReportingOrg(false);
     }
@@ -705,7 +705,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       toast.success(`${fieldName} copied to clipboard`, { position: 'top-center' });
     } catch (err) {
       console.error('Failed to copy text: ', err);
-      toast.error('Failed to copy to clipboard', { position: 'top-center' });
+      toast.error('Couldn\u2019t copy to clipboard. Try selecting the text and copying manually.', { position: 'top-center' });
     }
   };
 
@@ -757,7 +757,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       toast.success('Activity created');
     } catch (e: any) {
       console.error('[Manual Create] Failed:', e);
-      toast.error('Failed to create activity');
+      toast.error('Couldn\u2019t create the activity. Please try again.');
     } finally {
       setIsCreatingActivity(false);
     }
@@ -827,7 +827,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       console.error('[DEBUG] Failed to create activity:', error);
       // Dismiss the loading toast on error
       toast.dismiss(loadingToastId);
-      toast.error(`Failed to create activity: ${error.message}`);
+      toast.error('Couldn\u2019t create the activity. Please try again or contact support if the problem persists.');
     } finally {
       setIsSaving(false);
     }
@@ -1196,7 +1196,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   // the entered value, so the user already has feedback.
                 }
               }}
-              placeholder="Enter your organization's activity ID"
+              placeholder="e.g., ACT-001, PJ-2024-567"
               className={''}
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 3 : -1}
@@ -1227,7 +1227,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <div className="flex items-center gap-2">
               IATI Identifier
               <HelpTextTooltip>
-                This field is used to link activities reported in the application with those in the IATI Registry. It allows users to match locally reported activities with existing entries and, if desired, to keep them synchronised with the IATI Registry.
+                Links this activity to the global IATI Registry. Match locally reported activities with existing IATI entries and, if desired, keep them synchronised.
               </HelpTextTooltip>
               {fieldLockStatus.isLocked && (
                 <TooltipProvider>
@@ -5214,7 +5214,7 @@ function NewActivityPageContent() {
   const handleTabChange = async (value: string) => {
     // Prevent tab change while saving
     if (isAnyAutosaveInProgress) {
-      toast.warning('Please wait while saving before switching tabs');
+      toast.warning('Still saving\u2014wait for it to finish before switching tabs.');
       return;
     }
     
@@ -5799,7 +5799,7 @@ function NewActivityPageContent() {
                          if (checked) {
                            // Check if we have the required fields for publishing
                            if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
-                             toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
+                             toast.error('To publish, complete all required fields: Title, Description, Status, Start Date, and End Date.');
                              return;
                            }
 
@@ -6098,7 +6098,7 @@ function NewActivityPageContent() {
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => previousSection && handleTabChange(previousSection.id)}
                   disabled={!previousSection || tabLoading || isAnyAutosaveInProgress}
-                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
+                  title={isAnyAutosaveInProgress ? "Still saving\u2014wait for it to finish" : undefined}
                 >
                   {tabLoading ? (
                     <>
@@ -6119,7 +6119,7 @@ function NewActivityPageContent() {
                   className="px-6 py-3 text-base font-semibold"
                   onClick={() => nextSection && handleTabChange(nextSection.id)}
                   disabled={!nextSection || isLastSection || tabLoading || isAnyAutosaveInProgress}
-                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
+                  title={isAnyAutosaveInProgress ? "Still saving\u2014wait for it to finish" : undefined}
                 >
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
