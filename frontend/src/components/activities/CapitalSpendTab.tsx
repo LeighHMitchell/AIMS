@@ -35,7 +35,7 @@ function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: numb
     return (
       <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
         <img src="/images/empty-anvil.webp" alt="No capital spend entered" className="h-32 mx-auto mb-4 opacity-50" />
-        <h3 className="text-lg font-semibold mb-2">No capital spend entered</h3>
+        <h3 className="text-base font-semibold mb-2">No capital spend entered</h3>
         <p className="text-muted-foreground">Enter a capital spend percentage to view the breakdown.</p>
       </div>
     );

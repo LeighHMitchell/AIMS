@@ -1907,7 +1907,7 @@ export default function ActivityBudgetsTab({
           {paginatedBudgets.length === 0 ? (
             <div className="text-center py-12">
               <img src="/images/empty-squirrel.webp" alt="No budgets" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No budgets</h3>
+              <h3 className="text-base font-medium mb-2">No budgets</h3>
               <p className="text-muted-foreground mb-4">
                 Use the button above to add your first budget period.
               </p>

@@ -290,7 +290,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
               ) : (
                 <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                   <img src="/images/empty-swan.webp" alt="No link data available" className="h-32 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">No link data available</h3>
+                  <h3 className="text-base font-semibold mb-2">No link data available</h3>
                   <p className="text-muted-foreground">Check status to compare fields.</p>
                 </div>
               )}
@@ -333,7 +333,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
             <TabsContent value="history" className="space-y-4">
               <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-grandfather-clock.webp" alt="No link history" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No link history</h3>
+                <h3 className="text-base font-semibold mb-2">No link history</h3>
                 <p className="text-muted-foreground">Link operations will be logged here.</p>
               </div>
             </TabsContent>

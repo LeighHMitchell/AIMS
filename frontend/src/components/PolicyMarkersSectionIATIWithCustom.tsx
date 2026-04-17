@@ -520,7 +520,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       {activeMarkerCount === 0 ? (
         <div className="text-center py-12">
           <img src="/images/empty-flag.webp" alt="No policy markers" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No policy markers</h3>
+          <h3 className="text-base font-medium mb-2">No policy markers</h3>
           <p className="text-muted-foreground mb-4">
             Use the button above to add policy markers to this activity.
           </p>

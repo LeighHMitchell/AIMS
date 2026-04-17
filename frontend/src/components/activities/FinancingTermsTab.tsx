@@ -679,7 +679,7 @@ export function FinancingTermsTab({
           ) : (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
               <img src="/images/empty-galley.webp" alt="No loan status entries" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No loan status entries</h3>
+              <h3 className="text-base font-semibold mb-2">No loan status entries</h3>
               <p className="text-muted-foreground">
                 Use the button above to add your first yearly loan status.
               </p>

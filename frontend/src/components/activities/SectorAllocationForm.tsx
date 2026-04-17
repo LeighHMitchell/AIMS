@@ -269,7 +269,7 @@ export default function SectorAllocationForm({
             {localAllocations.length === 0 ? (
               <div className="text-center py-12">
                 <img src="/images/empty-beaker.webp" alt="No sectors" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No sectors</h3>
+                <h3 className="text-base font-medium mb-2">No sectors</h3>
                 <p className="text-muted-foreground">
                   Use the button above to add your first sector allocation.
                 </p>

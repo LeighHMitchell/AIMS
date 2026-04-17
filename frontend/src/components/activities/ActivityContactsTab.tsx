@@ -220,7 +220,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
       <Card>
         <CardContent className="p-12 text-center">
           <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No contacts</h3>
+          <h3 className="text-base font-medium mb-2">No contacts</h3>
           <p className="text-muted-foreground">
             Use the button above to add your first contact.
           </p>

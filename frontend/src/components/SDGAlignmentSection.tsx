@@ -746,7 +746,7 @@ export default function SDGAlignmentSection({
       {selectedGoalIds.length === 0 && (
         <div className="text-center py-12">
           <img src="/images/empty-sparrow.webp" alt="No SDGs" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No SDGs selected</h3>
+          <h3 className="text-base font-medium mb-2">No SDGs selected</h3>
           <p className="text-muted-foreground mb-4">
             Click on the SDG icons above to get started.
           </p>

@@ -1299,7 +1299,7 @@ export function EnhancedSubnationalBreakdown({
             ) : (
               <div className="text-center py-12 border rounded-lg">
                 <img src="/images/empty-fish.webp" alt="No administrative units" className="h-32 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No administrative units</h3>
+                <h3 className="text-base font-medium mb-2">No administrative units</h3>
                 <p className="text-muted-foreground">
                   Use the dropdown above or click on the map to add regions.
                 </p>

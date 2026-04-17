@@ -401,7 +401,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
           ) : (
             <div className="text-center py-12">
               <img src="/images/empty-filmreel.webp" alt="No tags" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No tags</h3>
+              <h3 className="text-base font-medium mb-2">No tags</h3>
               <p className="text-muted-foreground mb-4">
                 Use the input above to search or add your first tag.
               </p>

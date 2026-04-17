@@ -220,7 +220,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
       ) : (
         <div className="text-center py-12">
           <img src="/images/empty-roundtable-chairs.webp" alt="No working groups" className="h-32 mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No working groups</h3>
+          <h3 className="text-base font-medium mb-2">No working groups</h3>
           <p className="text-muted-foreground mb-4">
             Use the select above to add your first working group.
           </p>

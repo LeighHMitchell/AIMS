@@ -1369,7 +1369,7 @@ export default function CountriesRegionsTab({
               {countries.length === 0 && regions.length === 0 && customGeographies.length === 0 ? (
                 <div className="text-center py-12">
                   <img src="/images/empty-globe.webp" alt="No countries or regions" className="h-32 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No countries or regions</h3>
+                  <h3 className="text-base font-medium mb-2">No countries or regions</h3>
                   <p className="text-muted-foreground">
                     Use the form above to add your first country or region allocation.
                   </p>

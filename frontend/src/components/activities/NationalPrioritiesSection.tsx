@@ -327,7 +327,7 @@ export function NationalPrioritiesSection({
         {allocations.length === 0 ? (
           <div className="text-center py-12">
             <img src="/images/empty-tuning-fork.webp" alt="No plan alignments" className="h-32 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No plan alignments</h3>
+            <h3 className="text-base font-medium mb-2">No plan alignments</h3>
             <p className="text-muted-foreground">
               Use the Add Alignment button to align this activity to a national plan or strategy.
             </p>
