@@ -151,14 +151,21 @@ export function AdvancedGroup({
         requestAnimationFrame(() => {
           const el = document.getElementById(initialSection)
           if (!el) return
-          el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-          const initialTop = el.getBoundingClientRect().top
-          setTimeout(() => {
-            const currentTop = el.getBoundingClientRect().top
-            if (Math.abs(currentTop - initialTop) > 5) {
-              el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
-            }
-          }, 600)
+          const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+          scroll()
+          // Re-scroll several times as upstream lazy-loaded sections render in
+          // above us. Keeps checking for drift over the first ~2.5s and
+          // re-anchors if the target has moved.
+          let lastTop = el.getBoundingClientRect().top
+          ;[150, 400, 800, 1500, 2500].forEach(delay => {
+            setTimeout(() => {
+              const currentTop = el.getBoundingClientRect().top
+              if (Math.abs(currentTop - lastTop) > 5) {
+                scroll()
+                lastTop = el.getBoundingClientRect().top
+              }
+            }, delay)
+          })
         })
       }
       prevInitialSection.current = initialSection
@@ -412,12 +419,20 @@ export function AdvancedGroup({
             style={{ minHeight: getSectionMinHeight('conditions') }}
           >
             {isSectionActive('conditions') || activeSections.has('conditions') ? (
-              <ConditionsTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                defaultLanguage="en"
-                onConditionsChange={onConditionsChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
+                <SectionHeader
+                  id="conditions"
+                  title={getSectionLabel('conditions')}
+                  helpText={getSectionHelpText('conditions')}
+                  showDivider={false}
+                />
+                <ConditionsTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  defaultLanguage="en"
+                  onConditionsChange={onConditionsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="conditions" />
             )}

@@ -5343,6 +5343,14 @@ function NewActivityPageContent() {
     
     console.log('[AIMS Performance] Switching to tab:', value);
 
+    // Non-group tabs (Metadata, Government Inputs, Readiness Checklist, IATI
+    // tools, XML/Excel Import) fully replace the content area. Scroll the
+    // main container back to the top so the heading lands at viewport top
+    // instead of inheriting the scroll position from the previously-active
+    // group tab.
+    const mainEl = document.querySelector('main.flex-1.overflow-y-auto');
+    if (mainEl) (mainEl as HTMLElement).scrollTop = 0;
+
     setActiveSection(value);
 
     // OPTIMIZATION: Mark tab as loaded for lazy loading
