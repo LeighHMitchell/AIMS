@@ -400,7 +400,7 @@ export default function FocalPointsTab({
                   {isLoading && actionLoading?.startsWith('handoff') ? (
                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                   ) : (
-                    <HandPlatter className="h-4 w-4 mr-1" />
+                    <ArrowRightLeft className="h-4 w-4 mr-1" />
                   )}
                   Handoff
                 </Button>
@@ -409,7 +409,7 @@ export default function FocalPointsTab({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 backdrop-blur-sm bg-white/50 rounded-full"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => handleRemove(focalPoint)}
                   disabled={isLoading}
                   title="Remove focal point"

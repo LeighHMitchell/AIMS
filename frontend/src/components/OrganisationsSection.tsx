@@ -61,7 +61,6 @@ export default function OrganisationsSection({
     const currentCount = participatingOrganizations.length;
 
     if (prevCountRef.current !== currentCount) {
-      console.log('[OrganisationsSection] Notifying parent of organization count change:', prevCountRef.current, '->', currentCount);
       prevCountRef.current = currentCount;
       onParticipatingOrganizationsChange(currentCount);
     }
@@ -73,7 +72,6 @@ export default function OrganisationsSection({
   };
 
   const handleEdit = (org: any) => {
-    console.log('[OrganisationsSection] Editing org data:', org);
     setEditingOrg({
       id: org.id,
       organization_id: org.organization_id,
@@ -146,19 +144,12 @@ export default function OrganisationsSection({
       return;
     }
 
-    console.log('[Delete] Deleting participating organization:', {
-      activityId,
-      participatingOrgId: org.id,
-      organizationName: org.organization?.name || org.narrative
-    });
-
     try {
       // Delete using the participating org ID
       const response = await apiFetch(`/api/activities/${activityId}/participating-organizations?id=${org.id}`,
         { method: 'DELETE' }
       );
 
-      console.log('[Delete] Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));

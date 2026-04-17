@@ -82,12 +82,10 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   // Fetch contacts from database
   const fetchContacts = useCallback(async (force = false) => {
     if (!activityId) {
-      console.log('[ContactsTab] No activityId, skipping fetch');
       return null;
     }
 
     try {
-      console.log('[ContactsTab] Fetching contacts for activity:', activityId, force ? '(forced refresh)' : '');
       if (force || isLoading) {
         setIsLoading(true);
       }
@@ -108,7 +106,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       }
       
       const data = await response.json();
-      console.log('[ContactsTab] Fetched contacts:', data?.length || 0, 'contacts');
       setContacts(data || []);
       return data || [];
     } catch (error) {
@@ -129,25 +126,14 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   useEffect(() => {
     // Filter out contacts without IDs - only count actual saved contacts
     const actualContacts = contacts.filter(c => c.id);
-    
-    console.log('[ContactsTab] useEffect - Checking notification conditions:', {
-      hasCallback: !!onContactsChange,
-      isLoading,
-      contactsCount: contacts.length,
-      actualContactsCount: actualContacts.length,
-      lastNotifiedCount: lastNotifiedCountRef.current
-    });
-    
+
     // Only notify if:
     // 1. We have a callback
     // 2. We're not loading
     // 3. The actual contacts count has changed since last notification
     if (onContactsChange && !isLoading && lastNotifiedCountRef.current !== actualContacts.length) {
-      console.log('[ContactsTab] Notifying parent with contacts:', actualContacts.length);
       lastNotifiedCountRef.current = actualContacts.length;
       onContactsChange(actualContacts);
-    } else {
-      console.log('[ContactsTab] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contacts, isLoading]); // Intentionally exclude onContactsChange to prevent infinite loops
@@ -166,7 +152,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     }
 
     try {
-      console.log('[ContactsTab] Saving', newContacts.length, 'contacts to database');
       saveInProgressRef.current = true;
       setIsSaving(true);
       
@@ -186,8 +171,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         throw new Error('Failed to save contacts');
       }
 
-      console.log('[ContactsTab] Save successful, refreshing contacts list');
-      console.log('[ContactsTab] Expected contacts count after save:', newContacts.length);
       
       // Delay to ensure database transaction commits and propagates
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -226,12 +209,9 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
 
     // Add contact directly without showing form
     try {
-      console.log('[ContactsTab] Adding contact from search:', normalized);
       const updatedContacts = [...contacts, normalized];
-      console.log('[ContactsTab] New contacts array length:', updatedContacts.length);
       
       await saveContacts(updatedContacts);
-      console.log('[ContactsTab] Contact added successfully');
     } catch (error) {
       console.error('[ContactsTab] Error adding contact from search:', error);
       // Error handled by saveContacts
@@ -247,18 +227,15 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   // Handle form save
   const handleSave = async (contact: Contact) => {
     try {
-      console.log('[ContactsTab] Saving contact:', contact);
       let updatedContacts: Contact[];
 
       if (editingContact?.id) {
         // Update existing contact
-        console.log('[ContactsTab] Updating existing contact:', editingContact.id);
         updatedContacts = contacts.map(c => 
           c.id === editingContact.id ? { ...contact, id: c.id } : c
         );
       } else {
         // Add new contact
-        console.log('[ContactsTab] Adding new contact to', contacts.length, 'existing contacts');
         
         // Check for duplicates before adding
         const isDuplicate = contacts.some(c => areContactsDuplicate(c, contact));
@@ -270,11 +247,9 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         }
 
         updatedContacts = [...contacts, contact];
-        console.log('[ContactsTab] New contacts array length:', updatedContacts.length);
       }
 
       await saveContacts(updatedContacts);
-      console.log('[ContactsTab] Save complete, closing form');
       setShowForm(false);
       setEditingContact(null);
     } catch (error) {
@@ -296,10 +271,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     }
 
     try {
-      console.log('[ContactsTab] Deleting contact:', contactId);
-      console.log('[ContactsTab] Current contacts count:', contacts.length);
       const updatedContacts = contacts.filter(c => c.id !== contactId);
-      console.log('[ContactsTab] After filter contacts count:', updatedContacts.length);
       await saveContacts(updatedContacts);
       toast.success('Contact deleted successfully');
     } catch (error) {
