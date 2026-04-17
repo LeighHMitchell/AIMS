@@ -159,9 +159,9 @@ export default function FocalPointsTab({
   const handleRemove = async (focalPoint: FocalPoint) => {
     if (!user) return;
     
-    const confirmMessage = focalPoint.email === user.email 
-      ? 'Are you sure you want to remove yourself as focal point?'
-      : `Are you sure you want to remove ${focalPoint.name} as focal point?`;
+    const confirmMessage = focalPoint.email === user.email
+      ? 'Remove yourself as focal point? You can reassign this role to someone else afterward.'
+      : `Remove ${focalPoint.name} as focal point? The role can be reassigned afterward.`;
     
     if (!(await confirm({ title: 'Remove focal point?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
 

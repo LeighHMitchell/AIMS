@@ -2209,14 +2209,14 @@ export default function PlannedDisbursementsTab({
                     <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-0" align="start">
-                  <div className="max-h-[200px] overflow-y-auto">
+                <PopoverContent className="w-80 p-0" align="start">
+                  <div className="max-h-[240px] overflow-y-auto">
                     {BUDGET_TYPES.map(type => (
                       <button
                         key={type.code}
                         type="button"
                         className={cn(
-                          "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                          "flex w-full items-start gap-2 px-3 py-2 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                           modalDisbursement?.type === type.code && "bg-accent text-accent-foreground"
                         )}
                         onClick={() => {
@@ -2224,8 +2224,11 @@ export default function PlannedDisbursementsTab({
                           setTypePopoverOpen(false);
                         }}
                       >
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
-                        <span className="font-medium">{type.name}</span>
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{type.code}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium">{type.name}</span>
+                          <span className="text-xs text-muted-foreground leading-snug">{type.description}</span>
+                        </div>
                       </button>
                     ))}
                   </div>

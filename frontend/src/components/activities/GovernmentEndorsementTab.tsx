@@ -208,7 +208,7 @@ export default function GovernmentEndorsementTab({
 
   const handleSaveRef = async () => {
     if (!refFormData.code.trim()) {
-      toast.error('Code is required');
+      toast.error('Reference code is required.');
       return;
     }
 
@@ -232,10 +232,10 @@ export default function GovernmentEndorsementTab({
         fetchProjectReferences();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to save reference');
+        toast.error(error.error || 'Couldn\u2019t save the reference. Check your input and try again.');
       }
     } catch (error) {
-      toast.error('Failed to save reference');
+      toast.error('Couldn\u2019t save the reference. Check your connection and try again.');
     } finally {
       setSavingRef(false);
     }

@@ -14,12 +14,12 @@ export const BUDGET_STATUSES: BudgetStatus[] = [
   {
     code: '1',
     name: 'Indicative',
-    description: 'A non-binding estimate for the described budget period'
+    description: 'A planned estimate \u2014 not yet binding.'
   },
   {
     code: '2',
     name: 'Committed',
-    description: 'A binding commitment for the described budget period'
+    description: 'Formally approved and binding for this period.'
   }
 ];
 

@@ -267,7 +267,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
         });
       }
 
-      toast.success('Reporting organization updated successfully');
+      toast.success('Reporting organization updated');
       
       // Refresh metadata to ensure UI is synchronized
       await fetchMetadata();
@@ -282,7 +282,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }));
     } catch (error) {
       console.error('[AIMS] Error updating reporting organization:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update reporting organization');
+      toast.error('Couldn\u2019t update the reporting organization. Check your connection and try again.');
     } finally {
       setSavingReportingOrg(false);
     }
@@ -321,7 +321,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       setLanguage(result.metadata?.language || 'en');
     } catch (err) {
       console.error('[AIMS] Error fetching activity metadata:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load metadata');
+      setError('Couldn\u2019t load activity metadata. Try refreshing the page.');
     } finally {
       setLoading(false);
     }
@@ -397,7 +397,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>No metadata available for this activity.</AlertDescription>
+        <AlertDescription>No activity information is available yet.</AlertDescription>
       </Alert>
     );
   }

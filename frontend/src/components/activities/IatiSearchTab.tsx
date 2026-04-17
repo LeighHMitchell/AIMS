@@ -244,7 +244,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       }
     } catch (error) {
       prodError("[IATI Search Frontend] Search error:", error)
-      const message = error instanceof Error ? error.message : "Failed to search IATI Datastore"
+      const message = error instanceof Error ? error.message : "Couldn\u2019t search the IATI Datastore. Check your connection and try again."
       setSearchError(message)
       toast.error(message)
     } finally {
@@ -284,7 +284,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       }
       
       if (!data.xml) {
-        throw new Error("No XML data received from IATI Datastore")
+        throw new Error("The IATI record was found but returned no data. It may be incomplete\u2014try a different activity.")
       }
       
       devLog("[IATI Search] Fetched XML for:", activity.iatiIdentifier)

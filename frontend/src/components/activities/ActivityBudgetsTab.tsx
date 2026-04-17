@@ -2302,7 +2302,7 @@ export default function ActivityBudgetsTab({
                 {/* Type */}
                 <div className="space-y-2">
                   <LabelWithInfoAndSave
-                    helpText="Whether this is an original or revised budget"
+                    helpText="Original = the first version of the budget. Revised = an updated budget that replaces an earlier version."
                     isSaving={false}
                     isSaved={false}
                     hasValue={!!modalBudget?.type}
@@ -2352,14 +2352,14 @@ export default function ActivityBudgetsTab({
                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
       </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
-                      <div className="max-h-[200px] overflow-y-auto">
+                    <PopoverContent className="w-80 p-0" align="start">
+                      <div className="max-h-[240px] overflow-y-auto">
                         {BUDGET_TYPES.map(type => (
                           <button
                             key={type.code}
                             type="button"
                             className={cn(
-                              "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                              "flex w-full items-start gap-2 px-3 py-2 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                               modalBudget?.type === Number(type.code) && "bg-accent text-accent-foreground"
                             )}
                             onClick={() => {
@@ -2367,8 +2367,11 @@ export default function ActivityBudgetsTab({
                               setTypePopoverOpen(false);
                             }}
                           >
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type.code}</span>
-                            <span className="font-medium">{type.name}</span>
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{type.code}</span>
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-medium">{type.name}</span>
+                              <span className="text-xs text-muted-foreground leading-snug">{type.description}</span>
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -2382,7 +2385,7 @@ export default function ActivityBudgetsTab({
                 {/* Status */}
                 <div className="space-y-2">
                   <LabelWithInfoAndSave
-                    helpText="Whether this budget is indicative or has been formally committed"
+                    helpText="Indicative = a planned estimate that isn\u2019t yet binding. Committed = formally approved and binding."
                     isSaving={false}
                     isSaved={false}
                     hasValue={!!modalBudget?.status}
@@ -2430,14 +2433,14 @@ export default function ActivityBudgetsTab({
                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                       </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
-                      <div className="max-h-[200px] overflow-y-auto">
+                    <PopoverContent className="w-80 p-0" align="start">
+                      <div className="max-h-[240px] overflow-y-auto">
                         {BUDGET_STATUSES.map(status => (
                         <button
                           key={status.code}
                           type="button"
                           className={cn(
-                            "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                            "flex w-full items-start gap-2 px-3 py-2 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                             modalBudget?.status === Number(status.code) && "bg-accent text-accent-foreground"
                           )}
                           onClick={() => {
@@ -2445,8 +2448,11 @@ export default function ActivityBudgetsTab({
                             setStatusPopoverOpen(false);
                           }}
                         >
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{status.code}</span>
-                          <span className="font-medium">{status.name}</span>
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{status.code}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium">{status.name}</span>
+                            <span className="text-xs text-muted-foreground leading-snug">{status.description}</span>
+                          </div>
                         </button>
                       ))}
                     </div>

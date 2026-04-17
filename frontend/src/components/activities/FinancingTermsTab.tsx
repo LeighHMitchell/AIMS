@@ -291,8 +291,8 @@ export function FinancingTermsTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rate-1" className="flex items-center gap-2">
-                Interest Rate 1
-                <HelpTextTooltip content="Primary interest rate for the loan (percentage)" />
+                Primary Interest Rate
+                <HelpTextTooltip content="The main interest rate for the loan (percentage)" />
               </Label>
               <div className="relative">
                 <Input
@@ -312,8 +312,8 @@ export function FinancingTermsTab({
 
             <div className="space-y-2">
               <Label htmlFor="rate-2" className="flex items-center gap-2">
-                Interest Rate 2
-                <HelpTextTooltip content="Secondary interest rate if applicable (percentage)" />
+                Secondary Interest Rate
+                <HelpTextTooltip content="A second interest rate, if applicable (percentage)" />
               </Label>
               <div className="relative">
                 <Input
@@ -459,13 +459,13 @@ export function FinancingTermsTab({
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Interest Rate 1</div>
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Primary Interest Rate</div>
                         <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '-'}
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Interest Rate 2</div>
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Secondary Interest Rate</div>
                         <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '-'}
                         </div>
@@ -679,9 +679,9 @@ export function FinancingTermsTab({
           ) : (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
               <img src="/images/empty-galley.webp" alt="No loan status entries" className="h-32 mx-auto mb-4 opacity-50" />
-              <h3 className="text-base font-semibold mb-2">No loan status entries</h3>
+              <h3 className="text-base font-semibold mb-2">No yearly loan status recorded</h3>
               <p className="text-muted-foreground">
-                Use the button above to add your first yearly loan status.
+                Add annual reporting data for principal outstanding, arrears, and interest received.
               </p>
             </div>
           )}

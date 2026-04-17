@@ -443,7 +443,7 @@ export function IndicatorCard({
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No baseline set</p>
+                <p className="text-sm text-muted-foreground italic">No baseline data yet — add a starting value to track progress</p>
               )}
 
               {/* Baseline Form */}
@@ -647,10 +647,10 @@ export function IndicatorCard({
               ) : (
                 <div className="text-center py-6 border-2 border-dashed border-border rounded-lg">
                   <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No periods defined</p>
+                  <p className="text-sm text-muted-foreground">No periods added yet</p>
                   {!readOnly && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Add periods to track progress over time
+                      Define time periods to set targets and record progress
                     </p>
                   )}
                 </div>

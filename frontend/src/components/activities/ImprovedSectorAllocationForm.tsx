@@ -647,11 +647,11 @@ function ImprovedSectorAllocationFormInner({
     const totalPercentage = allocs.reduce((sum, a) => sum + (a.percentage || 0), 0);
 
     if (allocs.length > 0 && totalPercentage === 0) {
-      errors.push('At least one sector must have a percentage greater than 0');
+      errors.push('Add a percentage greater than 0 to at least one sector.');
     }
 
     if (totalPercentage > 100) {
-      errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) exceeds 100%`);
+      errors.push(`Sectors total ${totalPercentage.toFixed(1)}%. Reduce allocations so they add up to exactly 100%.`);
     }
 
     return {
