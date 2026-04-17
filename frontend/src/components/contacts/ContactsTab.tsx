@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
 import { normalizeContact, deduplicateContacts, areContactsDuplicate } from '@/lib/contact-utils';
 import { apiFetch } from '@/lib/api-fetch';
@@ -404,7 +405,10 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       {/* Search and Add Section */}
       {!readOnly && (
         <div className="bg-card p-6 rounded-lg border border-border">
-          <h2 className="text-xl font-semibold mb-4">Add Contact to Activity</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-xl font-semibold">Add Contact to Activity</h2>
+            <HelpTextTooltip content="Search for an existing contact across the system to link them to this activity. If they're new, click 'Create New' to add them. Contacts are general points-of-contact; the Focal Points tab manages officially-designated roles." />
+          </div>
           <ContactSearchBar
             onSelect={handleSearchSelect}
             onCreateNew={handleCreateNew}
@@ -425,10 +429,13 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       {/* Current Contacts List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            Current Activity Contacts
-            {isSaving && <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">
+              Current Activity Contacts
+              {isSaving && <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
+            </h2>
+            <HelpTextTooltip content="People linked to this specific activity for questions, documentation, or coordination. Duplicate detection prevents adding the same person twice." />
+          </div>
           {contacts.length > 0 && (
             <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
               <button
