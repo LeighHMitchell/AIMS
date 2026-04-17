@@ -139,7 +139,7 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
   const displayPercentage = showWeightedScore ? evaluation.weightedPercentage : evaluation.simplePercentage;
 
   return (
-    <Card className="w-full shadow-sm border-slate-200">
+    <Card className="w-full shadow-sm border-border">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-slate-800">

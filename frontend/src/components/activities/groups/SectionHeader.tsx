@@ -37,7 +37,7 @@ export function SectionHeader({
       data-section-header={id}
     >
       {showDivider && (
-        <div className="border-t border-gray-200 my-8" />
+        <div className="border-t border-border my-8" />
       )}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">

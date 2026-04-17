@@ -395,7 +395,7 @@ export function SidebarNav({
 
           {/* Module CTA Button */}
           {currentModule === 'aims' && canCreateActivities && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700" data-tour="activities-create">
+            <div className="pb-4 border-b border-border dark:border-gray-700" data-tour="activities-create">
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -496,7 +496,7 @@ export function SidebarNav({
           )}
 
           {currentModule === 'project-bank' && canCreateProjects && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="pb-4 border-b border-border dark:border-gray-700">
               <GlassButton
                 asChild
                 className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
@@ -510,7 +510,7 @@ export function SidebarNav({
           )}
 
           {currentModule === 'land-bank' && canCreateParcels && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="pb-4 border-b border-border dark:border-gray-700">
               <GlassButton
                 asChild
                 className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"

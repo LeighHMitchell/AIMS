@@ -188,7 +188,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           </div>
 
           {/* Add Organization Form */}
-          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="border border-border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-medium text-gray-900 mb-3">Add Organization</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
@@ -204,7 +204,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm"
                 >
                   {Object.entries(ROLE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>

@@ -134,7 +134,7 @@ export function Dashboard() {
         {/* Bar Charts Tab */}
         <TabsContent value="bar-charts" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Top Donor Agencies
@@ -149,7 +149,7 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Top Donor Groups
@@ -164,7 +164,7 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Top Sectors
@@ -181,7 +181,7 @@ export function Dashboard() {
 
             <TopLocationsChart />
 
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Implementing Agencies
@@ -196,7 +196,7 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Executing Agencies
@@ -217,7 +217,7 @@ export function Dashboard() {
             <FundingByModalityChart />
 
             {/* Aid Predictability Chart */}
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-border">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Aid Predictability

@@ -120,7 +120,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
   const hasDetails = hasTargetDetails || hasActualDetails;
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-slate-700">
@@ -181,7 +181,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
 
             {/* Expanded details */}
             {expanded && (
-              <div className="space-y-4 pt-2 border-t border-slate-100">
+              <div className="space-y-4 pt-2 border-t border-border">
                 {/* Target details */}
                 {hasTargetDetails && (
                   <div className="space-y-2">
@@ -318,7 +318,7 @@ export function PeriodsDetailPanel({ periods = [], measure, className }: Periods
   return (
     <div className={cn("space-y-6", className)}>
       {/* Timeline visualization */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-slate-700">
             Progress Timeline

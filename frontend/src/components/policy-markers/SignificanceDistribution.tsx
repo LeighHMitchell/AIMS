@@ -109,7 +109,7 @@ export function SignificanceDistribution({ distribution, themeColor, compact = f
                 const pctValue = totalValue > 0 ? ((d.totalValue / totalValue) * 100).toFixed(1) : '0'
 
                 return (
-                  <div key={d.significance} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg">
+                  <div key={d.significance} className="flex items-center gap-3 p-3 border border-border rounded-lg">
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                       style={{ backgroundColor: getColorForSignificance(d.significance) }}

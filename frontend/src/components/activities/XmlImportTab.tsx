@@ -9319,7 +9319,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-border transition-colors cursor-pointer"
+                className="border-2 border-dashed border-input rounded-lg p-8 text-center hover:border-border transition-colors cursor-pointer"
                 onClick={() => document.getElementById('xml-upload')?.click()}
               >
                 <FileCode className="h-12 w-12 text-gray-500 mx-auto mb-4" />
@@ -9342,7 +9342,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             {/* URL Input Section */}
             {importMethod === 'url' && (
               <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <div className="border-2 border-dashed border-input rounded-lg p-8 text-center">
                   <Link className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Enter the URL of an IATI XML file</p>
                   <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
@@ -10372,7 +10372,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
   const dropdownContent = isOpen && buttonRect && (
     <div 
       ref={dropdownRef}
-      className="fixed bg-card border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
+      className="fixed bg-card border border-border rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
       style={{
         top: buttonRect.bottom + 4,
         left: buttonRect.left,
@@ -10383,7 +10383,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
         <div
           key={subsector.code}
           onClick={() => onSelect(subsector.code)}
-          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-gray-100 last:border-b-0 whitespace-nowrap"
+          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-border last:border-b-0 whitespace-nowrap"
         >
           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[50px]">
             {subsector.code}
@@ -11010,7 +11010,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     variant="outline"
                     size="sm"
                     onClick={handleEqualDistribution}
-                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-input hover:bg-gray-200"
                   >
                     Distribute Equally
                   </Button>
@@ -11219,7 +11219,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200">
+          <Button variant="outline" onClick={onClose} className="bg-gray-100 text-gray-700 border-input hover:bg-gray-200">
             Cancel
           </Button>
           <Button

@@ -86,7 +86,7 @@ export function AutosaveStatus({
       icon: <Save className="h-3 w-3" />,
       text: '',
       variant: 'outline' as const,
-      className: 'text-gray-600 border-gray-300 bg-gray-50'
+      className: 'text-gray-600 border-input bg-gray-50'
     };
   };
 

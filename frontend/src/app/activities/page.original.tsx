@@ -828,7 +828,7 @@ function ActivitiesPageContent() {
         {loading || userLoading ? (
           <ActivityListSkeleton />
         ) : totalActivities === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
             {fetchError ? (
               <div className="space-y-4">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
@@ -853,7 +853,7 @@ function ActivitiesPageContent() {
             )}
           </div>
         ) : viewMode === 'table' ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
+          <div className="bg-white rounded-md shadow-sm border border-border overflow-hidden fade-in">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse min-w-[1300px]">
                 <thead className="bg-surface-muted border-b">
@@ -890,7 +890,7 @@ function ActivitiesPageContent() {
                         Commitments
                         <span className="ml-1 relative group cursor-pointer">
                           <Info className="inline h-4 w-4 text-muted-foreground" />
-                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-gray-200 p-2 rounded-md shadow-md w-64 right-0 mt-1">
+                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-border p-2 rounded-md shadow-md w-64 right-0 mt-1">
                             Outgoing funds formally obligated but not yet disbursed.
                           </span>
                         </span>
@@ -905,7 +905,7 @@ function ActivitiesPageContent() {
                         Outflows
                         <span className="ml-1 relative group cursor-pointer">
                           <Info className="inline h-4 w-4 text-muted-foreground" />
-                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-gray-200 p-2 rounded-md shadow-md w-64 right-0 mt-1">
+                          <span className="absolute z-10 hidden group-hover:block bg-white text-xs text-muted-foreground border border-border p-2 rounded-md shadow-md w-64 right-0 mt-1">
                             Funds disbursed or spent — includes disbursements and expenditures.
                           </span>
                         </span>

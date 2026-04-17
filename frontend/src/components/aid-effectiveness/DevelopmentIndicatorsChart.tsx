@@ -97,7 +97,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900">{data.indicatorName}</p>
           <p className="text-sm text-slate-800">
             Yes: {data.yes_count} ({data.yes_percentage}%)
@@ -118,7 +118,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900">{data.range} Indicators</p>
           <p className="text-sm text-slate-600">
             {data.count} activities ({data.percentage}%)
@@ -146,7 +146,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -159,7 +159,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -172,7 +172,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -189,7 +189,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Development Effectiveness Indicators */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-slate-500" />
@@ -233,7 +233,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
         </Card>
 
         {/* Outcome Indicators Distribution */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
               <Target className="h-5 w-5 text-slate-500" />
@@ -271,7 +271,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       </div>
 
       {/* Detailed Indicator Breakdown */}
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-slate-700">Detailed Indicator Analysis</CardTitle>
         </CardHeader>

@@ -361,7 +361,7 @@ function CashFlowTooltip({ active, payload, label }: any) {
   if (nonZero.length === 0) return null;
 
   return (
-    <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+    <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
       <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
       <div className="border-t pt-2 space-y-1">
         {nonZero.map((entry: any, index: number) => (

@@ -25,7 +25,7 @@ export default function TabContentWrapper({
     <div className="flex flex-col h-full">
       {/* Navigation buttons at the top */}
       {showNavigation && (onBack || onNext) && (
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
           <div>
             {onBack && (
               <Button

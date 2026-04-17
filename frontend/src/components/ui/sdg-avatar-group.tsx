@@ -217,7 +217,7 @@ export function SDGAvatarGroup({
 
               return (
                 <div key={goalNumber} className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                  <div className="h-6 w-6 rounded-full overflow-hidden border border-border flex-shrink-0">
                     <img
                       src={getSDGImageURL(goalNumber)}
                       alt={`SDG ${goalNumber}`}

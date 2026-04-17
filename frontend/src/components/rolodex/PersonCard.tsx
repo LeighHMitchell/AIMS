@@ -203,7 +203,7 @@ export function PersonCard({
 
   if (compact) {
     return (
-      <div className="flex items-start justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+      <div className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-slate-50 transition-colors">
         <div className="flex items-start space-x-3 min-w-0 flex-1">
           <UserAvatar
             src={person.profile_photo}

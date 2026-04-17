@@ -279,7 +279,7 @@ export function SimpleSectorSelect({
                             key={sector.code}
                             onSelect={() => canSelect && handleSectorToggle(sector.code)}
                             className={cn(
-                              "cursor-pointer px-4 py-3 border-b border-gray-100 hover:bg-blue-50 focus:bg-blue-50",
+                              "cursor-pointer px-4 py-3 border-b border-border hover:bg-blue-50 focus:bg-blue-50",
                               "flex items-start gap-3",
                               !canSelect && "opacity-50 cursor-not-allowed",
                               isSelected && "bg-blue-50 border-blue-200"

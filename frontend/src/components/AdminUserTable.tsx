@@ -1039,7 +1039,7 @@ export function AdminUserTable() {
 
         {/* Pagination */}
         {filteredUsers.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+          <div className="bg-white rounded-lg border border-border shadow-sm p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 Showing {startIndex + 1} to {endIndex} of {filteredUsers.length} users

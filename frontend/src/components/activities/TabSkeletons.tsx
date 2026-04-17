@@ -10,7 +10,7 @@ export function SectorAllocationSkeleton() {
         <Skeleton className="h-4 w-96 bg-gray-100" />
       </div>
       
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4">
         {/* Add Sector Button */}
         <div className="flex justify-end">
           <Skeleton className="h-10 w-32 bg-gray-100 rounded" />
@@ -41,7 +41,7 @@ export function OrganisationsSkeleton() {
       {/* Extending Partners */}
       <div>
         <Skeleton className="h-5 w-40 bg-gray-200 mb-4" />
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-border p-4">
           <div className="flex justify-between items-center mb-4">
             <Skeleton className="h-4 w-48 bg-gray-100" />
             <Skeleton className="h-9 w-32 bg-gray-100 rounded" />
@@ -66,7 +66,7 @@ export function OrganisationsSkeleton() {
       {/* Implementing Partners */}
       <div>
         <Skeleton className="h-5 w-44 bg-gray-200 mb-4" />
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-border p-4">
           <Skeleton className="h-40 w-full bg-gray-50" />
         </div>
       </div>
@@ -86,7 +86,7 @@ export function FinancesSkeleton() {
       </div>
       
       {/* Transactions Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border border-border">
         <div className="p-4 border-b flex justify-between items-center">
           <Skeleton className="h-6 w-48 bg-gray-200" />
           <Skeleton className="h-9 w-40 bg-gray-100 rounded" />
@@ -123,7 +123,7 @@ export function LocationsSkeleton() {
       </div>
       
       {/* Map Container */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="h-96 bg-gray-100 relative">
           <div className="absolute inset-0 flex items-center justify-center">
             <Skeleton className="h-12 w-48 bg-gray-200" />
@@ -175,7 +175,7 @@ export function LinkedActivitiesSkeleton() {
             <Skeleton className="h-5 w-32 bg-gray-200" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(2)].map((_, j) => (
-                <div key={j} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-3">
+                <div key={j} className="bg-white rounded-lg shadow-sm border border-border p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="space-y-2 flex-1">
                       <Skeleton className="h-5 w-3/4 bg-gray-200" />
@@ -201,7 +201,7 @@ export function LinkedActivitiesSkeleton() {
 // Generic Content Skeleton for other tabs
 export function GenericTabSkeleton() {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="space-y-2">
@@ -219,7 +219,7 @@ export function TransactionsSkeleton() {
   return (
     <div className="space-y-4">
       {/* Card wrapper matching actual UI */}
-      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-lg border border-border bg-white shadow-sm">
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -348,7 +348,7 @@ export function BudgetsSkeleton() {
   return (
     <div className="space-y-4">
       {/* Card wrapper matching actual UI */}
-      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-lg border border-border bg-white shadow-sm">
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -461,7 +461,7 @@ export function PlannedDisbursementsSkeleton() {
   return (
     <div className="space-y-4">
       {/* Card wrapper matching actual UI */}
-      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-lg border border-border bg-white shadow-sm">
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -584,8 +584,8 @@ export function FinancialAnalyticsSkeleton() {
   return (
     <div className="space-y-6">
       {/* First Card - Financial Overview */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-        <div className="p-6 border-b border-slate-200">
+      <div className="bg-white rounded-lg border border-border shadow-sm">
+        <div className="p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-2">
               <Skeleton className="h-6 w-64 bg-gray-200" />
@@ -616,8 +616,8 @@ export function FinancialAnalyticsSkeleton() {
       </div>
 
       {/* Second Card - Budget vs Actual */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-        <div className="p-6 border-b border-slate-200">
+      <div className="bg-white rounded-lg border border-border shadow-sm">
+        <div className="p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-2">
               <Skeleton className="h-6 w-72 bg-gray-200" />
@@ -647,8 +647,8 @@ export function FinancialAnalyticsSkeleton() {
       </div>
 
       {/* Third Card - Funding Source Breakdown */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-        <div className="p-6 border-b border-slate-200">
+      <div className="bg-white rounded-lg border border-border shadow-sm">
+        <div className="p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-2">
               <Skeleton className="h-6 w-56 bg-gray-200" />

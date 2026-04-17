@@ -58,7 +58,7 @@ export function ActivityProfileSkeleton() {
                 </div>
 
                 {/* Contributors pills */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="mt-6 pt-4 border-t border-border">
                   <Skeleton variant="text" width="150px" height="0.875rem" className="mb-3" />
                   <div className="flex flex-wrap gap-2">
                     <Skeleton variant="rounded" width="80px" height="24px" />

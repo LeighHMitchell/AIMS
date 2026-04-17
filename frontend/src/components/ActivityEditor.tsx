@@ -146,7 +146,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
     <div className="max-w-4xl mx-auto p-6 bg-white">
       <div className="space-y-8">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-4">
+        <div className="border-b border-border pb-4">
           <h1 className="text-2xl font-bold text-gray-900">Activity Editor</h1>
           <p className="text-sm text-gray-600 mt-1">
             All changes are saved automatically
@@ -166,7 +166,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             onBlur={(e) => handleFieldBlur('title', e.target.value)}
             disabled={saving.title}
             placeholder="Enter activity title..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {saving.title && (
             <p className="text-xs text-blue-600">Saving...</p>
@@ -186,7 +186,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             onBlur={(e) => handleFieldBlur('description', e.target.value)}
             disabled={saving.description}
             placeholder="Describe the activity objectives, scope, and expected outcomes..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
           />
           {saving.description && (
             <p className="text-xs text-blue-600">Saving...</p>
@@ -206,7 +206,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               handleFieldBlur('activity_status', e.target.value);
             }}
             disabled={saving.activity_status}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             <option value="">Select status...</option>
             {ACTIVITY_STATUSES.map((status) => (
@@ -233,7 +233,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               handleFieldBlur('collaboration_type', e.target.value);
             }}
             disabled={saving.collaboration_type}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             <option value="">Select collaboration type...</option>
             {COLLABORATION_TYPES.map((type) => (
@@ -367,13 +367,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">
               Changes are automatically saved when you finish editing each field.
             </p>
             <CommentsDrawer activityId={activityId}>
-              <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-input rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 💬 Comments
               </button>
             </CommentsDrawer>

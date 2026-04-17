@@ -104,7 +104,7 @@ export function RecipientGovBodiesChart({
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-gray-900 mb-1">{item.name}</p>
           <div className="border-t mt-2 pt-2 space-y-1">
             <p className="text-sm font-medium text-gray-900">

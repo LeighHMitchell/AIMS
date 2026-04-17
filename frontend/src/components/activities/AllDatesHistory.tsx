@@ -349,7 +349,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                             {history.map((change, index) => (
                               <div 
                                 key={change.id} 
-                                className="p-2 bg-white rounded border border-slate-100"
+                                className="p-2 bg-white rounded border border-border"
                               >
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <span className="text-xs font-medium text-slate-500">
@@ -428,7 +428,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                             {customDates.map((customDate, index) => (
                               <div 
                                 key={index}
-                                className="flex items-center justify-between text-xs p-1.5 bg-white rounded border border-slate-100"
+                                className="flex items-center justify-between text-xs p-1.5 bg-white rounded border border-border"
                               >
                                 <span className="text-slate-700 font-medium">{customDate.label}</span>
                                 <div className="flex items-center gap-2">
@@ -457,7 +457,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                           {customDatesHistory.map((change, changeIndex) => (
                             <div 
                               key={change.id} 
-                              className="p-2 bg-white rounded border border-slate-100"
+                              className="p-2 bg-white rounded border border-border"
                             >
                               <div className="flex items-center gap-2 mb-1.5">
                                 <span className="text-xs font-medium text-slate-500">

@@ -88,7 +88,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900">{data.systemName}</p>
           <p className="text-sm text-slate-600">
             Usage: {data.usage_count} of {data.total_activities} activities ({data.usage_percentage}%)
@@ -125,7 +125,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -138,7 +138,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -151,7 +151,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -167,7 +167,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       )}
 
       {/* Main Chart */}
-      <div className="bg-white p-6 rounded-lg border border-slate-200">
+      <div className="bg-white p-6 rounded-lg border border-border">
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-slate-900 mb-2">Government Systems Usage</h3>
           <p className="text-sm text-slate-600">
@@ -211,7 +211,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       {/* Detailed Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {data.map((system) => (
-          <Card key={system.system} className="bg-white border-slate-200">
+          <Card key={system.system} className="bg-white border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
                 <Building2 className="h-4 w-4" style={{ color: SYSTEM_COLORS[system.system as keyof typeof SYSTEM_COLORS] }} />
@@ -248,7 +248,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       </div>
 
       {/* Key Insights */}
-      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-slate-900 flex items-center gap-2">
             <Building2 className="h-5 w-5" />

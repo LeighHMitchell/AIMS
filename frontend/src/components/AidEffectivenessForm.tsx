@@ -400,7 +400,7 @@ const RadioButtonField: React.FC<{
   onDocUpload?: (fieldName: string, file: File) => void;
   onDocRemove?: (fieldName: string) => void;
 }> = ({ id, value, onValueChange, label, tooltip, description, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => (
-  <div className="py-3 border-b border-slate-100 last:border-b-0">
+  <div className="py-3 border-b border-border last:border-b-0">
     <div className="flex items-center gap-3">
       <RadioGroup
         value={value || ""}
@@ -451,7 +451,7 @@ const DropdownField: React.FC<{
   tooltip?: string;
   options: { label: string; description?: string }[];
 }> = ({ id, value, onValueChange, label, tooltip, options }) => (
-  <div className="py-3 border-b border-slate-100 last:border-b-0">
+  <div className="py-3 border-b border-border last:border-b-0">
     <div className="space-y-2">
       <div className="space-y-0.5">
         <Label className="text-sm font-medium leading-tight text-slate-800">
@@ -521,7 +521,7 @@ const CountryDropdownField: React.FC<{
   const selectedOption = options.find(o => o.value === value);
 
   return (
-    <div className="py-3 border-b border-slate-100 last:border-b-0">
+    <div className="py-3 border-b border-border last:border-b-0">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-0.5">
@@ -619,7 +619,7 @@ const ContactCard: React.FC<{
   const initials = `${contact.firstName?.[0] || ''}${contact.lastName?.[0] || ''}`.toUpperCase();
 
   return (
-    <div className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all duration-200 bg-white">
+    <div className="border border-border rounded-xl p-4 hover:shadow-md transition-all duration-200 bg-white">
       <div className="flex items-start gap-3">
         <Avatar className="h-12 w-12 flex-shrink-0">
           {contact.avatar_url || contact.profilePhoto ? (
@@ -1718,7 +1718,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Upload Supporting Document</Label>
-              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
+              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-input transition-colors">
                 {formData.uploadedDocument ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2 text-[hsl(var(--success-icon))]">

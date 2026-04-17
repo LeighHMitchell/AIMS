@@ -92,7 +92,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
 
   if (loading) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Project Locations Map
@@ -107,7 +107,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
 
   if (error) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Project Locations Map
@@ -125,7 +125,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
 
   if (locations.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Project Locations Map
@@ -145,7 +145,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-slate-900">
@@ -157,7 +157,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg overflow-hidden border border-slate-200">
+        <div className="rounded-lg overflow-hidden border border-border">
           <EmbeddedAtlasMap locations={mapLocations} height="500px" />
         </div>
       </CardContent>

@@ -105,7 +105,7 @@ export default function WorkingGroupEditorNavigation({
       <nav className="w-64 bg-white border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Working Group Header */}
         {workingGroup && workingGroup.label && (
-          <div className="pb-4 border-b border-gray-200">
+          <div className="pb-4 border-b border-border">
             <h2 className="text-lg font-bold text-slate-900 group leading-tight">
               <button
                 onClick={() => router.push(`/working-groups/${workingGroup.id}`)}

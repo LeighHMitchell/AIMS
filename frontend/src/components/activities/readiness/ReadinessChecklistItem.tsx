@@ -145,7 +145,7 @@ export function ReadinessChecklistItem({
     <TooltipProvider>
       <div className={cn(
         "border rounded-lg transition-all",
-        currentStatus === 'not_required' && "border-gray-200 bg-gray-50/50 opacity-75",
+        currentStatus === 'not_required' && "border-border bg-gray-50/50 opacity-75",
       )}>
         {/* Main Row - Always Visible */}
         <div
@@ -215,7 +215,7 @@ export function ReadinessChecklistItem({
 
         {/* Expanded Content */}
         {isExpanded && (
-          <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+          <div className="px-4 pb-4 pt-0 border-t border-border">
             <div className="mt-4 space-y-4 pl-9">
               {/* Guidance */}
               {item.guidance_text && (

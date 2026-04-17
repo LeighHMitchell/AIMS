@@ -2732,7 +2732,7 @@ const router = useRouter();
                                   if (org?.logo) {
                                     return (
                                       <div className="flex-shrink-0">
-                                        <div className="w-5 h-5 rounded-sm overflow-hidden border border-gray-200 bg-white">
+                                        <div className="w-5 h-5 rounded-sm overflow-hidden border border-border bg-white">
                                           <img 
                                             src={org.logo} 
                                             alt={`${org.name} logo`} 
@@ -2760,7 +2760,7 @@ const router = useRouter();
                               </div>
                             </TooltipTrigger>
                             <TooltipContent 
-                              className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+                              className="max-w-sm p-4 bg-white border border-border shadow-lg"
                               sideOffset={8}
                             >
                               <div className="text-sm">
@@ -2794,7 +2794,7 @@ const router = useRouter();
                             <TooltipTrigger asChild>
                               <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
                                 Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
@@ -2810,7 +2810,7 @@ const router = useRouter();
                             <TooltipTrigger asChild>
                               <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left whitespace-normal">
+                            <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left whitespace-normal">
                               <p className="text-sm text-gray-600 font-normal">
                                 Total value of all planned disbursements for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
@@ -3274,7 +3274,7 @@ const router = useRouter();
                                   }
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600">
                                   Percentage of activity budget allocated to capital investment (infrastructure, equipment, fixed assets).
                                 </p>
@@ -3295,7 +3295,7 @@ const router = useRouter();
                                   }
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600">
                                   Capital spend portion of Total Budget (Total Budget × Capital Spend %).
                                 </p>
@@ -3316,7 +3316,7 @@ const router = useRouter();
                                   }
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600">
                                   Capital spend portion of Planned Disbursements (Planned Disbursements × Capital Spend %).
                                 </p>
@@ -3337,7 +3337,7 @@ const router = useRouter();
                                   }
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600">
                                   Capital spend portion of Commitments (Commitments × Capital Spend %).
                                 </p>
@@ -3358,7 +3358,7 @@ const router = useRouter();
                                   }
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600">
                                   Capital spend portion of Disbursements (Disbursements × Capital Spend %).
                                 </p>
@@ -3627,7 +3627,7 @@ const router = useRouter();
                                   ))}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600 font-normal">
                                   Activity budget: USD {formatCurrency((activity as any).totalBudget || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalBudget || 0)}
@@ -3649,7 +3649,7 @@ const router = useRouter();
                                   ))}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600 font-normal">
                                   Activity planned disbursements: USD {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalPlannedDisbursements || 0)}
@@ -3671,7 +3671,7 @@ const router = useRouter();
                                   ))}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600 font-normal">
                                   Activity commitments: USD {formatCurrency(activity.commitments || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalCommitments || 0)}
@@ -3693,7 +3693,7 @@ const router = useRouter();
                                   ))}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-sm text-gray-600 font-normal">
                                   Activity disbursements: USD {formatCurrency(activity.disbursements || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalDisbursements || 0)}

@@ -216,7 +216,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedId === activity.id
                       ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      : 'border-border hover:border-input hover:bg-gray-50'
                   }`}
                   onClick={() => handleActivitySelect(activity)}
                   role="button"

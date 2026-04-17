@@ -155,7 +155,7 @@ export function TopLocationsChart() {
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
@@ -409,7 +409,7 @@ export function TopLocationsChart() {
 
   return (
     <>
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
             Subnational Allocations

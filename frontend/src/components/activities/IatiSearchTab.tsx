@@ -1025,7 +1025,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                     
                     {/* Expanded View - All data in 3 columns */}
                     {expanded && (
-                      <div className="border-t border-slate-200 bg-white p-4">
+                      <div className="border-t border-border bg-white p-4">
                         <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
                           {/* Description spans across all 3 columns with truncation */}
                           {activity.description && (() => {
@@ -1463,7 +1463,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
               ]
 
               return allGroups.map((group) => (
-                <div key={group.roleCode} className="p-4 border border-gray-200 rounded-lg">
+                <div key={group.roleCode} className="p-4 border border-border rounded-lg">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
                       <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm font-medium">
@@ -1495,7 +1495,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
 
             {/* IATI Classification Details */}
             {selectedActivityForModal && (selectedActivityForModal.collaborationType || selectedActivityForModal.aidType || selectedActivityForModal.financeType || selectedActivityForModal.flowType || selectedActivityForModal.tiedStatus || selectedActivityForModal.hierarchy) && (
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-border rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-3">IATI Classification</h4>
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   {selectedActivityForModal.collaborationType && (

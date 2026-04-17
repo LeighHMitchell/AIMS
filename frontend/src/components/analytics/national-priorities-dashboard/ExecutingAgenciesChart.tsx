@@ -160,7 +160,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
     if (active && payload && payload.length) {
       const item = payload[0].payload as AgencyData;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-gray-900 mb-1">{item.name}</p>
           {item.acronym !== item.name && (
             <p className="text-xs text-gray-500 mb-1">{item.acronym}</p>
@@ -423,7 +423,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

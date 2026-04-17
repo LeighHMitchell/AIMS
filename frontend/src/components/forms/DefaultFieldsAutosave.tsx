@@ -185,7 +185,7 @@ export function DefaultFieldsAutosave({
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="border-b border-gray-200 pb-4">
+      <div className="border-b border-border pb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-medium text-gray-900">Default Values</h3>
           <HelpTextTooltip content="These defaults will be automatically applied to new transactions in this activity." />

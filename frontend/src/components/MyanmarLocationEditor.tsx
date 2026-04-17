@@ -281,7 +281,7 @@ export default function MyanmarLocationEditor({
         case 6: // Single state/region
           const selectedStates = locations.stateRegions || [];
           return (
-            <div className="h-96 bg-gray-50 rounded-lg border border-gray-200 p-4">
+            <div className="h-96 bg-gray-50 rounded-lg border border-border p-4">
               <div className="h-full flex flex-col">
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">
@@ -321,7 +321,7 @@ export default function MyanmarLocationEditor({
           const selectedTownship = locations.township ? 
             myanmarData.states.flatMap(s => s.townships).find(t => t.id === locations.township) : null;
           return (
-            <div className="h-96 bg-gray-50 rounded-lg border border-gray-200 p-4">
+            <div className="h-96 bg-gray-50 rounded-lg border border-border p-4">
               <div className="h-full flex flex-col">
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Township</h4>
@@ -349,7 +349,7 @@ export default function MyanmarLocationEditor({
         case 8: // Single location
           const hasCoordinates = locations.latitude && locations.longitude;
           return (
-            <div className="h-96 bg-gray-50 rounded-lg border border-gray-200 p-4">
+            <div className="h-96 bg-gray-50 rounded-lg border border-border p-4">
               <div className="h-full flex flex-col">
                 <div className="mb-4 flex justify-between items-start">
                   <div>

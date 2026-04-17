@@ -1211,7 +1211,7 @@ export function SectorDisbursementOverTime({
                           >
                             <div className={`
                               w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
-                              ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                              ${isSelected ? 'bg-primary border-primary' : 'border-input'}
                             `}>
                               {isSelected && <Check className="h-3 w-3 text-white" />}
                             </div>

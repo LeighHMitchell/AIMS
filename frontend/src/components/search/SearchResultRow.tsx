@@ -96,7 +96,7 @@ function ResultAvatar({
   // Activity with custom icon
   if (result.type === 'activity' && result.metadata.activity_icon_url) {
     return (
-      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-gray-200 flex-shrink-0')}>
+      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-border flex-shrink-0')}>
         <img
           src={result.metadata.activity_icon_url}
           alt=""
@@ -113,7 +113,7 @@ function ResultAvatar({
   // User with profile picture
   if (result.type === 'user' && result.metadata.profile_picture_url) {
     return (
-      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-gray-200 flex-shrink-0')}>
+      <div className={cn(sizeClasses, 'rounded-full overflow-hidden border border-border flex-shrink-0')}>
         <img
           src={result.metadata.profile_picture_url}
           alt=""
@@ -130,7 +130,7 @@ function ResultAvatar({
   // Organisation with logo
   if (result.type === 'organisation' && result.metadata.logo_url) {
     return (
-      <div className={cn(sizeClasses, 'rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0')}>
+      <div className={cn(sizeClasses, 'rounded-lg overflow-hidden border border-border bg-white flex-shrink-0')}>
         <img
           src={result.metadata.logo_url}
           alt=""

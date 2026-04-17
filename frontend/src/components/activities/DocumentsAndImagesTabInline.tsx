@@ -673,7 +673,7 @@ export function DocumentsAndImagesTabInline({
               <div 
                 className={cn(
                   "bg-gray-50 rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
+                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-gray-100",
                   !activityId && "opacity-50 cursor-not-allowed"
                 )}
                 onDragOver={handleDragOver}
@@ -985,7 +985,7 @@ export function DocumentsAndImagesTabInline({
                               {linkedDocs.map((doc, index) => (
                                 <div
                                   key={doc.url}
-                                  className="bg-white border border-gray-200 rounded-lg p-1"
+                                  className="bg-white border border-border rounded-lg p-1"
                                 >
                                   <DocumentCardInlineFixed
                                     document={doc}

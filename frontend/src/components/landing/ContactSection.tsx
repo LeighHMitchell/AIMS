@@ -51,7 +51,7 @@ export function ContactSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Card className="border-gray-200 bg-white p-6 md:p-8">
+            <Card className="border-border bg-white p-6 md:p-8">
               <div className="space-y-6">
                 <div>
                   <h3 className="mb-2 text-xl font-semibold text-gray-900">
@@ -103,7 +103,7 @@ export function ContactSection() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
               >
-                <Card className="group border-gray-200 bg-white p-5 transition-all duration-300 hover:border-gray-300 hover:shadow-md">
+                <Card className="group border-border bg-white p-5 transition-all duration-300 hover:border-input hover:shadow-md">
                   <div className="flex items-start gap-4">
                     <motion.div
                       whileHover={{ scale: 1.05 }}

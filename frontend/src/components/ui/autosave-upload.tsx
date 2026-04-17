@@ -523,7 +523,7 @@ export function AutosaveUpload({
             className={`
               ${getContainerClass()}
               border-2 border-dashed rounded-lg
-              ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+              ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-input'}
               ${disabled || isProcessing || autosaveState.isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
               flex flex-col items-center justify-center
               transition-colors

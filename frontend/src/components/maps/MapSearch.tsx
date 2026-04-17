@@ -173,7 +173,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                   setOpen(true)
                 }
               }}
-              className="pl-9 pr-9 bg-white shadow-md border-gray-300 h-9 text-xs"
+              className="pl-9 pr-9 bg-white shadow-md border-input h-9 text-xs"
             />
             {loading && (
               <Loader2 className="absolute right-2.5 h-3.5 w-3.5 text-gray-500 animate-spin pointer-events-none" />

@@ -67,7 +67,7 @@ const UserRow = memo(function UserRow({
     >
       <div className={cn(
         'w-4 h-4 border rounded flex items-center justify-center',
-        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+        isSelected ? 'bg-primary border-primary' : 'border-input'
       )}>
         {isSelected && <Check className="h-3 w-3 text-white" />}
       </div>
@@ -113,7 +113,7 @@ const OrgRow = memo(function OrgRow({
     >
       <div className={cn(
         'w-4 h-4 border rounded flex items-center justify-center',
-        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+        isSelected ? 'bg-primary border-primary' : 'border-input'
       )}>
         {isSelected && <Check className="h-3 w-3 text-white" />}
       </div>
@@ -157,7 +157,7 @@ const RoleRow = memo(function RoleRow({
     >
       <div className={cn(
         'w-4 h-4 border rounded flex items-center justify-center',
-        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+        isSelected ? 'bg-primary border-primary' : 'border-input'
       )}>
         {isSelected && <Check className="h-3 w-3 text-white" />}
       </div>

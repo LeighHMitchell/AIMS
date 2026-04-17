@@ -140,7 +140,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
               <img
                 src={previewUrl}
                 alt="Profile"
-                className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 group-hover:opacity-75 transition-opacity"
+                className="w-24 h-24 rounded-full object-cover border-2 border-border group-hover:opacity-75 transition-opacity"
               />
               {!isUploading && (
                 <button

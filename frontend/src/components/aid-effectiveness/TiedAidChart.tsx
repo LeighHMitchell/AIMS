@@ -96,7 +96,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900">{data.category}</p>
           <div className="space-y-1 text-sm">
             <p className="text-slate-900">Untied: {data.untied_count} ({data.untied_percentage}%)</p>
@@ -160,7 +160,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -173,7 +173,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -186,7 +186,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -203,7 +203,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overall Distribution */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700">Overall Distribution</CardTitle>
           </CardHeader>
@@ -240,7 +240,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
 
         {/* Breakdown by Category */}
         {groupBy !== 'overall' && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-border">
             <CardHeader>
               <CardTitle className="text-lg font-medium text-slate-700">
                 Breakdown by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
@@ -278,7 +278,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
       {/* Performance Insights */}
       {summary && summary.best_performer && summary.needs_improvement && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-slate-500" />
@@ -296,7 +296,7 @@ export function TiedAidChart({ dateRange, filters, refreshKey }: TiedAidChartPro
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-slate-500" />

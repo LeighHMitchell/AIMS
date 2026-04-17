@@ -147,7 +147,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
           : 'bg-gray-50 text-gray-500'
 
         return (
-          <Card key={suggestion.activityId} className="border border-gray-200">
+          <Card key={suggestion.activityId} className="border border-border">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">

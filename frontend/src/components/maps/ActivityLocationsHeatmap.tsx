@@ -489,7 +489,7 @@ export default function ActivityLocationsHeatmap({
         </div>
 
         {/* Map container */}
-        <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-gray-200">
+        <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-border">
           <Map
             styles={{
               light: MAP_STYLES[mapStyle].light as string | object,

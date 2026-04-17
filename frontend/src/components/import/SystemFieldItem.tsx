@@ -58,7 +58,7 @@ export function SystemFieldItem({
       <Card
         className={cn(
           "p-3 transition-all",
-          isMapped ? "bg-green-50 border-green-300" : field.required ? "border-red-200" : "border-gray-200",
+          isMapped ? "bg-green-50 border-green-300" : field.required ? "border-red-200" : "border-border",
           droppable.isOver && "ring-2 ring-primary shadow-lg"
         )}
       >

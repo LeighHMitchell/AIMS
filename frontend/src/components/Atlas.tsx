@@ -1071,7 +1071,7 @@ export default function Atlas() {
                                   }
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-input'}`}>
                                   {showHealthFacilities && <Check className="h-3 w-3 text-white" />}
                                 </div>
                                 <Cross className="h-4 w-4 text-red-500" />
@@ -1130,7 +1130,7 @@ export default function Atlas() {
                                         className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
                                           healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)
                                             ? 'border-blue-500'
-                                            : 'border-gray-300'
+                                            : 'border-input'
                                         }`}
                                         style={{
                                           backgroundColor: healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)
@@ -1170,7 +1170,7 @@ export default function Atlas() {
                                   }
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showPowerGrid ? 'bg-amber-500 border-amber-500' : 'border-gray-300'}`}>
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showPowerGrid ? 'bg-amber-500 border-amber-500' : 'border-input'}`}>
                                   {showPowerGrid && <Check className="h-3 w-3 text-white" />}
                                 </div>
                                 <Zap className="h-4 w-4 text-amber-600" />
@@ -1219,7 +1219,7 @@ export default function Atlas() {
                                     >
                                       <div
                                         className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
-                                          powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? 'border-amber-500' : 'border-gray-300'
+                                          powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? 'border-amber-500' : 'border-input'
                                         }`}
                                         style={{
                                           backgroundColor: powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? type.color : 'transparent'
@@ -1255,7 +1255,7 @@ export default function Atlas() {
                                   }
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showFloodRisk ? 'bg-cyan-500 border-cyan-500' : 'border-gray-300'}`}>
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showFloodRisk ? 'bg-cyan-500 border-cyan-500' : 'border-input'}`}>
                                   {showFloodRisk && <Check className="h-3 w-3 text-white" />}
                                 </div>
                                 <Waves className="h-4 w-4 text-cyan-600" />
@@ -1304,7 +1304,7 @@ export default function Atlas() {
                                     >
                                       <div
                                         className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
-                                          floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? 'border-cyan-500' : 'border-gray-300'
+                                          floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? 'border-cyan-500' : 'border-input'
                                         }`}
                                         style={{
                                           backgroundColor: floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? level.color : 'transparent'
@@ -1366,7 +1366,7 @@ export default function Atlas() {
               </div>
 
               {/* Map Container */}
-              <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+              <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-border">
                 {/* MapLibre Map */}
                 <Map
                   key="atlas-map"
@@ -1438,7 +1438,7 @@ export default function Atlas() {
                           {selectedFacility.facility.name}
                         </h3>
 
-                        <hr className="border-slate-200 mb-2" />
+                        <hr className="border-border mb-2" />
 
                         {/* Details Grid */}
                         <div className="space-y-1.5 text-xs">
@@ -1495,7 +1495,7 @@ export default function Atlas() {
                         </div>
 
                         {/* Source Attribution */}
-                        <div className="mt-3 pt-2 border-t border-slate-100">
+                        <div className="mt-3 pt-2 border-t border-border">
                           <p className="text-[10px] text-slate-400">
                             Data from OpenStreetMap
                           </p>

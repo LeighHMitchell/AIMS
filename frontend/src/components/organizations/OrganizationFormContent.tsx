@@ -1918,7 +1918,7 @@ export function OrganizationFormContent({
               </div>
             )}
 
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm text-gray-600">
+            <div className="bg-gray-50 border border-border rounded-md p-3 text-sm text-gray-600">
               <p className="font-medium text-gray-700 mb-1">Note:</p>
               <p>
                 Merging is permanent and cannot be undone. The source organization will be deleted 

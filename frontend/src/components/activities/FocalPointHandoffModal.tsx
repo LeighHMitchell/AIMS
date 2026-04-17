@@ -152,7 +152,7 @@ export function FocalPointHandoffModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <Alert variant="default" className="bg-slate-50 border-slate-200">
+          <Alert variant="default" className="bg-slate-50 border-border">
             <AlertCircle className="h-4 w-4 text-slate-600" />
             <AlertDescription className="text-slate-700">
               You are currently the <strong>{typeLabel}</strong> for this activity.
@@ -215,7 +215,7 @@ export function FocalPointHandoffModal({
             )}
 
             {showResults && filteredResults.length > 0 && !selectedUser && (
-              <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+              <div className="mt-2 bg-white border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                 <div className="p-2">
                   <p className="text-xs text-gray-500 px-2 py-1">
                     {query
@@ -257,7 +257,7 @@ export function FocalPointHandoffModal({
             )}
 
             {showResults && filteredResults.length === 0 && !isSearching && !selectedUser && (
-              <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+              <div className="mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
                 <p className="text-sm text-gray-600 text-center">No users found{query ? ` matching "${query}"` : ''}</p>
               </div>
             )}

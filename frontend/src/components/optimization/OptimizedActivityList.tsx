@@ -48,7 +48,7 @@ const ActivityItem = memo(({ activity, style, onClick }: {
   return (
     <div style={style} onClick={handleClick}>
       {/* Activity item content */}
-      <div className="p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+      <div className="p-4 border-b border-border hover:bg-gray-50 cursor-pointer">
         <h3 className="font-medium text-gray-900 line-clamp-2">
           {activity.title}
         </h3>

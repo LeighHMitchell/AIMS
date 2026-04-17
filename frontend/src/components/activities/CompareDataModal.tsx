@@ -91,7 +91,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
     const hasLocalData = yourValue !== null && yourValue !== undefined && yourValue !== '';
 
     return (
-      <div key={field} className={`border rounded-lg p-4 ${isActuallyDifferent ? 'border-orange-200 bg-orange-50' : 'border-gray-200'} hover:shadow-sm transition-shadow`}>
+      <div key={field} className={`border rounded-lg p-4 ${isActuallyDifferent ? 'border-orange-200 bg-orange-50' : 'border-border'} hover:shadow-sm transition-shadow`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -106,7 +106,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
                     setSelectedFields(selectedFields.filter(f => f !== field));
                   }
                 }}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-input text-blue-600 focus:ring-blue-500"
                 disabled={!hasIatiData}
               />
               <label htmlFor={field} className="flex items-center gap-2 cursor-pointer">
@@ -157,7 +157,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
     const isDiff = yourArray.length !== iatiArray.length || iatiArray.length > 0;
 
     return (
-      <div key={field} className={`border rounded-lg p-4 ${isDiff && iatiArray.length > 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-200'}`}>
+      <div key={field} className={`border rounded-lg p-4 ${isDiff && iatiArray.length > 0 ? 'border-blue-200 bg-blue-50' : 'border-border'}`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -172,7 +172,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
                     setSelectedFields(selectedFields.filter(f => f !== field));
                   }
                 }}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-input text-blue-600 focus:ring-blue-500"
                 disabled={iatiArray.length === 0}
               />
               <label htmlFor={field} className="flex items-center gap-2 cursor-pointer">

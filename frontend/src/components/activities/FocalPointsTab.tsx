@@ -343,7 +343,7 @@ export default function FocalPointsTab({
       : focalPoint.organization?.name || focalPoint.organisation || '';
 
     return (
-      <div key={focalPoint.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+      <div key={focalPoint.id} className="border border-border rounded-lg p-4 hover:bg-slate-50 transition-colors">
         {/* Top: Avatar + Name + Status */}
         <div className="flex items-start gap-3">
           <UserAvatar
@@ -373,7 +373,7 @@ export default function FocalPointsTab({
         </div>
 
         {/* Bottom: Assigned info + Actions */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
           <div className="text-xs text-slate-400">
             {focalPoint.assigned_by_name && (
               <span>Assigned by {focalPoint.assigned_by_name}</span>
@@ -549,7 +549,7 @@ export default function FocalPointsTab({
           </CardHeader>
           <CardContent>
             {governmentFocalPoints.length === 0 ? (
-              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
+              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-key-ornate.webp" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">No government focal points</p>
                 <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>
@@ -588,7 +588,7 @@ export default function FocalPointsTab({
           </CardHeader>
           <CardContent>
             {developmentPartnerFocalPoints.length === 0 ? (
-              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
+              <div className="text-sm text-slate-500 py-8 text-center border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-key-modern.webp" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">No development partner focal points</p>
                 <p className="text-xs text-slate-400 mt-1">Use the Assign button to add your first focal point.</p>

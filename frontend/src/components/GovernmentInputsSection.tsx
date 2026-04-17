@@ -228,7 +228,7 @@ export default function GovernmentInputsSection({
         </div>
 
         <Tabs defaultValue="budget-classification" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-100 border border-gray-200">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-100 border border-border">
             <TabsTrigger value="budget-classification" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-gray-900">
               Budget Classification
             </TabsTrigger>
@@ -248,7 +248,7 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* 1. On-Budget Classification */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-gray-900">
                   On-Budget Classification (per CABRI/SPA model)
@@ -263,17 +263,17 @@ export default function GovernmentInputsSection({
                 </CardTitle>
                 {/* Dimensions Status Badge */}
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="border-gray-300 text-gray-700">
+                  <Badge variant="outline" className="border-input text-gray-700">
                     {dimensionsMet.met} of {dimensionsMet.total} dimensions met
                   </Badge>
                   {dimensionsMet.partial > 0 && (
-                    <Badge variant="outline" className="border-gray-300 text-gray-600">{dimensionsMet.partial} partial</Badge>
+                    <Badge variant="outline" className="border-input text-gray-600">{dimensionsMet.partial} partial</Badge>
                   )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* On Plan */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                     <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
@@ -309,7 +309,7 @@ export default function GovernmentInputsSection({
             </div>
 
                 {/* On Budget */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                     <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
@@ -345,7 +345,7 @@ export default function GovernmentInputsSection({
             </div>
 
                 {/* On Treasury */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                     <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
@@ -381,7 +381,7 @@ export default function GovernmentInputsSection({
             </div>
 
                 {/* On Parliament */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                     <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
@@ -417,7 +417,7 @@ export default function GovernmentInputsSection({
             </div>
 
                 {/* On Procurement */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                     <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
@@ -453,7 +453,7 @@ export default function GovernmentInputsSection({
             </div>
 
                 {/* On Accounting/Audit */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                     <label className="text-sm font-medium flex items-center gap-2 text-gray-900">
@@ -489,7 +489,7 @@ export default function GovernmentInputsSection({
             </div>
 
                 {/* Supporting Documents Section */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-border">
                   <h4 className="text-sm font-medium mb-2 text-gray-900">Supporting Documents</h4>
                   <p className="text-xs text-gray-600 mb-3">Upload or link documents that support "Yes" classifications</p>
                   <div className="space-y-2">
@@ -524,7 +524,7 @@ export default function GovernmentInputsSection({
                           }
                         }
                       }}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      className="border-input text-gray-700 hover:bg-gray-50"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Document Reference
@@ -535,7 +535,7 @@ export default function GovernmentInputsSection({
             </Card>
 
             {/* 2. Government Financial Contribution */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-gray-900">Government Financial Contribution</CardTitle>
               </CardHeader>
@@ -563,7 +563,7 @@ export default function GovernmentInputsSection({
                       <label className="text-sm font-medium text-gray-900">Annual breakdown</label>
                       <div className="space-y-2">
                         {(governmentInputs.rgcContribution?.annual || []).map((item) => (
-                          <div key={item.year} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                          <div key={item.year} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-border">
                             <span className="font-medium text-gray-900">{item.year}:</span>
                             <span className="text-gray-700">{item.amountLocal.toLocaleString()} KHR</span>
                             <span className="text-gray-500">|</span>
@@ -589,7 +589,7 @@ export default function GovernmentInputsSection({
                             ...annualContribution,
                             year: parseInt(e.target.value) || new Date().getFullYear()
                           })}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                         <Input
                           type="number"
@@ -599,7 +599,7 @@ export default function GovernmentInputsSection({
                             ...annualContribution,
                             amountLocal: parseFloat(e.target.value) || 0
                           })}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                         <Input
                           type="number"
@@ -609,7 +609,7 @@ export default function GovernmentInputsSection({
                             ...annualContribution,
                             amountUSD: parseFloat(e.target.value) || 0
                           })}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                         <Button onClick={addAnnualContribution} className="bg-gray-800 text-white hover:bg-gray-700">
                           <Plus className="h-4 w-4 mr-1" />
@@ -626,7 +626,7 @@ export default function GovernmentInputsSection({
                         value={governmentInputs.rgcContribution?.inKindContributions || ""}
                         onChange={(e) => updateField('rgcContribution.inKindContributions', e.target.value)}
                         rows={3}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
 
@@ -637,7 +637,7 @@ export default function GovernmentInputsSection({
                         placeholder="e.g., Treasury, subnational, external loan repayment"
                         value={governmentInputs.rgcContribution?.sourceOfFunding || ""}
                         onChange={(e) => updateField('rgcContribution.sourceOfFunding', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                   </>
@@ -652,7 +652,7 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* National Planning Alignment */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-gray-900">National Planning Alignment</CardTitle>
               </CardHeader>
@@ -682,7 +682,7 @@ export default function GovernmentInputsSection({
                         value={governmentInputs.nationalPlanAlignment?.planName || ""}
                         onValueChange={(value) => updateField('nationalPlanAlignment.planName', value)}
                       >
-                        <SelectTrigger className="border-gray-300">
+                        <SelectTrigger className="border-input">
                           <SelectValue placeholder="Select a national plan" />
                         </SelectTrigger>
                         <SelectContent>
@@ -702,7 +702,7 @@ export default function GovernmentInputsSection({
                         value={governmentInputs.nationalPlanAlignment?.subGoal || ""}
                         onChange={(e) => updateField('nationalPlanAlignment.subGoal', e.target.value)}
                         placeholder="e.g., Goal 2.1 - Improve primary education access"
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
 
@@ -713,7 +713,7 @@ export default function GovernmentInputsSection({
                         value={governmentInputs.nationalPlanAlignment?.nationalIndicatorCode || ""}
                         onChange={(e) => updateField('nationalPlanAlignment.nationalIndicatorCode', e.target.value)}
                         placeholder="e.g., NSP-EDU-12"
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                   </>
@@ -722,7 +722,7 @@ export default function GovernmentInputsSection({
             </Card>
 
             {/* Technical Coordination */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-gray-900">Technical Coordination</CardTitle>
               </CardHeader>
@@ -738,7 +738,7 @@ export default function GovernmentInputsSection({
                       }
                     }}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select TWGs" />
                     </SelectTrigger>
                     <SelectContent>
@@ -752,7 +752,7 @@ export default function GovernmentInputsSection({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(governmentInputs.technicalCoordination?.workingGroups || []).map((twg) => (
-                      <div key={twg} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-300">
+                      <div key={twg} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-input">
                         {twg}
                         <Button
                           variant="ghost"
@@ -776,7 +776,7 @@ export default function GovernmentInputsSection({
                     value={governmentInputs.technicalCoordination?.accountableMinistry || ""}
                     onValueChange={(value) => updateField('technicalCoordination.accountableMinistry', value)}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select ministry/department" />
                     </SelectTrigger>
                     <SelectContent>
@@ -800,7 +800,7 @@ export default function GovernmentInputsSection({
                       }
                     }}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select provinces" />
                     </SelectTrigger>
                     <SelectContent>
@@ -814,7 +814,7 @@ export default function GovernmentInputsSection({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(governmentInputs.technicalCoordination?.regions || []).map((region) => (
-                      <div key={region} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-300">
+                      <div key={region} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-input">
                         {region}
                         <Button
                           variant="ghost"
@@ -832,7 +832,7 @@ export default function GovernmentInputsSection({
                   </div>
                 </div>
 
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-border">
                   <h4 className="font-medium text-gray-900">Government Focal Point</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -841,7 +841,7 @@ export default function GovernmentInputsSection({
                         id="focal-name"
                         value={governmentInputs.technicalCoordination?.focalPoint?.name || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.name', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                     <div className="space-y-2">
@@ -850,7 +850,7 @@ export default function GovernmentInputsSection({
                         id="focal-title"
                         value={governmentInputs.technicalCoordination?.focalPoint?.title || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.title', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                     <div className="space-y-2">
@@ -860,7 +860,7 @@ export default function GovernmentInputsSection({
                         type="email"
                         value={governmentInputs.technicalCoordination?.focalPoint?.email || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.email', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                     <div className="space-y-2">
@@ -869,7 +869,7 @@ export default function GovernmentInputsSection({
                         id="focal-phone"
                         value={governmentInputs.technicalCoordination?.focalPoint?.phone || ""}
                         onChange={(e) => updateField('technicalCoordination.focalPoint.phone', e.target.value)}
-                        className="border-gray-300"
+                        className="border-input"
                       />
                     </div>
                   </div>
@@ -884,7 +884,7 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* Oversight & Agreement Status */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-gray-900">Oversight & Agreement Status</CardTitle>
               </CardHeader>
@@ -928,7 +928,7 @@ export default function GovernmentInputsSection({
                         <Button
                           variant="outline"
                           onClick={() => document.getElementById('agreement-upload')?.click()}
-                          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          className="border-input text-gray-700 hover:bg-gray-50"
                         >
                           <Upload className="h-4 w-4 mr-2" />
                           Upload Document
@@ -948,7 +948,7 @@ export default function GovernmentInputsSection({
                         value={governmentInputs.oversightAgreement?.signingAgency || ""}
                         onValueChange={(value) => updateField('oversightAgreement.signingAgency', value)}
                       >
-                        <SelectTrigger className="border-gray-300">
+                        <SelectTrigger className="border-input">
                           <SelectValue placeholder="Select agency/department" />
                         </SelectTrigger>
                         <SelectContent>
@@ -970,14 +970,14 @@ export default function GovernmentInputsSection({
                     value={governmentInputs.oversightAgreement?.oversightMinistry || ""}
                     onChange={(e) => updateField('oversightAgreement.oversightMinistry', e.target.value)}
                     placeholder="Enter ministry or department name"
-                    className="border-gray-300"
+                    className="border-input"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Geographic and Risk Context */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-gray-900">Geographic and Risk Context</CardTitle>
               </CardHeader>
@@ -993,7 +993,7 @@ export default function GovernmentInputsSection({
                       }
                     }}
                   >
-                    <SelectTrigger className="border-gray-300">
+                    <SelectTrigger className="border-input">
                       <SelectValue placeholder="Select provinces/districts" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1007,7 +1007,7 @@ export default function GovernmentInputsSection({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(governmentInputs.geographicContext?.locations || []).map((location) => (
-                      <div key={location} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-gray-300">
+                      <div key={location} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-input">
                         {location}
                         <Button
                           variant="ghost"
@@ -1053,13 +1053,13 @@ export default function GovernmentInputsSection({
                       placeholder="Please specify..."
                       value={governmentInputs.geographicContext?.otherRiskSpecification || ""}
                       onChange={(e) => updateField('geographicContext.otherRiskSpecification', e.target.value)}
-                      className="border-gray-300"
+                      className="border-input"
                     />
                   )}
                 </div>
 
                 {/* Strategic and Funding Considerations */}
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-border">
                   <h4 className="font-medium text-gray-900">Strategic Considerations</h4>
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-gray-900">Is the project politically sensitive or visibility-restricted?</label>
@@ -1107,7 +1107,7 @@ export default function GovernmentInputsSection({
                           id="pooled-fund-name"
                           value={governmentInputs.strategicConsiderations?.pooledFundName || ""}
                           onChange={(e) => updateField('strategicConsiderations.pooledFundName', e.target.value)}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1116,7 +1116,7 @@ export default function GovernmentInputsSection({
                           id="fund-manager"
                           value={governmentInputs.strategicConsiderations?.fundManager || ""}
                           onChange={(e) => updateField('strategicConsiderations.fundManager', e.target.value)}
-                          className="border-gray-300"
+                          className="border-input"
                         />
                       </div>
                     </>
@@ -1132,7 +1132,7 @@ export default function GovernmentInputsSection({
             <div className="space-y-6">
 
             {/* Evaluation and Results */}
-            <Card className="border-gray-200">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-gray-900">Evaluation and Results</CardTitle>
               </CardHeader>
@@ -1171,7 +1171,7 @@ export default function GovernmentInputsSection({
                       <Button
                         variant="outline"
                         onClick={() => document.getElementById('evaluation-upload')?.click()}
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        className="border-input text-gray-700 hover:bg-gray-50"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         Upload Document
@@ -1181,7 +1181,7 @@ export default function GovernmentInputsSection({
                         placeholder="Paste document link"
                         value={governmentInputs.evaluationResults?.evaluationDocument || ""}
                         onChange={(e) => updateField('evaluationResults.evaluationDocument', e.target.value)}
-                        className="flex-1 border-gray-300"
+                        className="flex-1 border-input"
                       />
                     </div>
                   </div>
@@ -1212,7 +1212,7 @@ export default function GovernmentInputsSection({
                       value={governmentInputs.evaluationResults?.nationalIndicatorRef || ""}
                       onChange={(e) => updateField('evaluationResults.nationalIndicatorRef', e.target.value)}
                       placeholder="e.g., NSP-GEN-01"
-                      className="border-gray-300"
+                      className="border-input"
                     />
                   </div>
                 )}

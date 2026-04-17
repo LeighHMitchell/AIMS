@@ -36,14 +36,14 @@ function MapThumbnail({
   // Only site locations have coordinates
   if (location.location_type !== 'site' || !location.latitude || !location.longitude) {
     return (
-      <div className={`${className} bg-gray-100 rounded flex items-center justify-center border border-gray-200`}>
+      <div className={`${className} bg-gray-100 rounded flex items-center justify-center border border-border`}>
         <MapPin className="h-5 w-5 text-gray-400" />
       </div>
     );
   }
 
   return (
-    <div className={`${className} bg-gray-100 rounded overflow-hidden relative border border-gray-200 [&_.maplibregl-ctrl-attrib]:hidden [&_.mapboxgl-ctrl-attrib]:hidden`}>
+    <div className={`${className} bg-gray-100 rounded overflow-hidden relative border border-border [&_.maplibregl-ctrl-attrib]:hidden [&_.mapboxgl-ctrl-attrib]:hidden`}>
       <Map
         center={[location.longitude, location.latitude]}
         zoom={13}
@@ -165,7 +165,7 @@ export default function LocationCard({
 
   return (
     <Card
-      className={`transition-all duration-200 hover:shadow-md w-full border border-slate-200 ${
+      className={`transition-all duration-200 hover:shadow-md w-full border border-border ${
         isDragging ? 'opacity-50 rotate-2 shadow-lg' : ''
       }`}
       onMouseEnter={() => setIsHovered(true)}

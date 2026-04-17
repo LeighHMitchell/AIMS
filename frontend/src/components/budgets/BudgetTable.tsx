@@ -518,7 +518,7 @@ export function BudgetTable({
                           {/* LEFT COLUMN */}
                           <div className="space-y-4">
                             {/* Budget Summary Header */}
-                            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                            <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-5 w-5 text-slate-600" />
@@ -552,7 +552,7 @@ export function BudgetTable({
 
                             {/* Activity Info */}
                             {budget.activity && (
-                              <div className="bg-white rounded-lg border border-slate-200 p-4">
+                              <div className="bg-white rounded-lg border border-border p-4">
                                 <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Activity</h3>
                                 <div className="space-y-1">
                                   <p className="font-medium text-sm">{activityTitle}</p>
@@ -569,7 +569,7 @@ export function BudgetTable({
                           {/* RIGHT COLUMN */}
                           <div className="space-y-4">
                             {/* Budget Metadata */}
-                            <div className="bg-white rounded-lg border border-slate-200 p-4">
+                            <div className="bg-white rounded-lg border border-border p-4">
                               <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Budget Details</h3>
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">

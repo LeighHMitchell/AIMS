@@ -170,14 +170,14 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
     if (active && payload && payload.length) {
       const item = payload[0].payload as AgencyData;
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100 last:border-b-0">
+                <tr className="border-b border-border last:border-b-0">
                   <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
                   <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
                 </tr>
@@ -457,7 +457,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-2 pt-3 px-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>

@@ -213,7 +213,7 @@ export function ShareTaskModal({
                     >
                       <div className={cn(
                         'w-4 h-4 border rounded-full flex items-center justify-center',
-                        isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+                        isSelected ? 'bg-primary border-primary' : 'border-input'
                       )}>
                         {isSelected && <Check className="h-3 w-3 text-white" />}
                       </div>

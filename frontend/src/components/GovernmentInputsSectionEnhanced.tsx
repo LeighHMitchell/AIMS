@@ -536,7 +536,7 @@ export function GovernmentInputsSectionEnhanced({
                 {governmentInputs.rgcContribution?.isProvided && (
                   <>
                     {/* Currency + Value Date */}
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-4">
+                    <div className="p-4 bg-gray-50 border border-border rounded-lg space-y-4">
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="h-5 w-5 text-gray-600" />
                         <h4 className="font-semibold text-gray-900">Contribution Details</h4>
@@ -899,7 +899,7 @@ export function GovernmentInputsSectionEnhanced({
                             {level.label}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs text-gray-400 border-gray-200">
+                          <Badge variant="outline" className="text-xs text-gray-400 border-border">
                             --
                           </Badge>
                         )}

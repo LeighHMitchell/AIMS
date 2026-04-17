@@ -180,7 +180,7 @@ export function FundingByModalityChart() {
       const yearTotal = nonZeroPayload.reduce((sum: number, entry: any) => sum + entry.value, 0);
       
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
           <div className="border-t pt-2 space-y-1">
             {nonZeroPayload.map((entry: any, index: number) => (
@@ -570,7 +570,7 @@ export function FundingByModalityChart() {
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

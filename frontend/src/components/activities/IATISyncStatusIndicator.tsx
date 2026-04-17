@@ -74,7 +74,7 @@ export function IATISyncStatusIndicator({
           label: 'Not synced',
           color: 'text-gray-500',
           bgColor: 'bg-gray-50',
-          borderColor: 'border-gray-200',
+          borderColor: 'border-border',
           description: 'Never synced with IATI'
         };
     }

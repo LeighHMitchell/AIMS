@@ -446,7 +446,7 @@ export default function FundFlowGraph({
           className={`h-7 px-3 text-xs ${
             viewMode === 'transactions' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-white text-slate-600 border-input hover:bg-slate-50'
           }`}
         >
           Transactions
@@ -459,7 +459,7 @@ export default function FundFlowGraph({
           className={`h-7 px-3 text-xs ${
             viewMode === 'planned' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-white text-slate-600 border-input hover:bg-slate-50'
           }`}
         >
           Planned Disbursements
@@ -472,7 +472,7 @@ export default function FundFlowGraph({
           className={`h-7 px-3 text-xs ${
             viewMode === 'both' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-white text-slate-600 border-input hover:bg-slate-50'
           }`}
         >
           Both

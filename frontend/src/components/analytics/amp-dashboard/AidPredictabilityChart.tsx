@@ -126,7 +126,7 @@ export function AidPredictabilityChart() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
           {payload.map((entry: any, index: number) => (
             <p
@@ -465,7 +465,7 @@ export function AidPredictabilityChart() {
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
             Aid Predictability

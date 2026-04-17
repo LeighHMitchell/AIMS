@@ -285,8 +285,8 @@ export function ActivityFreshnessChart() {
       : '0';
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-slate-100 px-3 py-2 border-b border-border">
           <p className="font-semibold text-slate-900 text-sm">
             Last updated: {data.label}
           </p>
@@ -294,7 +294,7 @@ export function ActivityFreshnessChart() {
         <div className="p-2">
           <table className="w-full text-sm">
             <tbody>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-slate-700 font-medium">Activities</td>
                 <td className="py-1.5 text-right font-semibold text-slate-900">
                   {data.count}
@@ -316,7 +316,7 @@ export function ActivityFreshnessChart() {
   // Loading state
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <Clock className="h-5 w-5" />
@@ -336,7 +336,7 @@ export function ActivityFreshnessChart() {
   // Error state
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <Clock className="h-5 w-5" />
@@ -357,7 +357,7 @@ export function ActivityFreshnessChart() {
   }
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -478,7 +478,7 @@ export function ActivityFreshnessChart() {
           </div>
         ) : viewMode === 'chart' ? (
           /* Chart View */
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={350}>
               <BarChart
                 data={chartData}

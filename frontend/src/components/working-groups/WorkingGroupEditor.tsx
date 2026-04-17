@@ -299,7 +299,7 @@ export function WorkingGroupEditor({
         onDelete={() => setShowDeleteDialog(true)}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden border-l border-gray-200">
+      <div className="flex-1 flex flex-col overflow-hidden border-l border-border">
         <div className="flex-1 overflow-hidden">
           {renderSectionContent()}
         </div>

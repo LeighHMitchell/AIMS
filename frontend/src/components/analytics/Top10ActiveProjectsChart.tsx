@@ -41,8 +41,8 @@ const CustomTooltip = ({ active, payload }: any) => {
     const data = payload[0].payload
     const orgDisplay = data.acronym ? `${data.name} (${data.acronym})` : data.name
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-surface-muted px-3 py-2 border-b border-border">
           <p className="font-semibold text-slate-900 text-sm">{orgDisplay}</p>
         </div>
         <div className="p-2">
@@ -241,7 +241,7 @@ export function Top10ActiveProjectsChart({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-surface-muted">
-              <tr className="border-b border-slate-200">
+              <tr className="border-b border-border">
                 <th className="text-left py-3 px-4 font-medium text-slate-600">Organization</th>
                 <th className="text-right py-3 px-4 font-medium text-slate-600">Active Projects</th>
               </tr>

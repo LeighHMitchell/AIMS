@@ -145,7 +145,7 @@ function getTaskOverallStatus(task: Task): { label: string; color: string } {
     return { label: 'All Completed', color: 'text-[#5f7f7a] bg-[#5f7f7a]/10 border-[#5f7f7a]/30' };
   }
   if (declined === assignments.length) {
-    return { label: 'All Declined', color: 'text-gray-600 bg-gray-50 border-gray-200' };
+    return { label: 'All Declined', color: 'text-gray-600 bg-gray-50 border-border' };
   }
   if (inProgress > 0) {
     return { label: 'In Progress', color: 'text-blue-600 bg-blue-50 border-blue-200' };
@@ -153,7 +153,7 @@ function getTaskOverallStatus(task: Task): { label: string; color: string } {
   if (completed > 0) {
     return { label: 'Partial', color: 'text-amber-600 bg-amber-50 border-amber-200' };
   }
-  return { label: 'Pending', color: 'text-slate-600 bg-slate-50 border-slate-200' };
+  return { label: 'Pending', color: 'text-slate-600 bg-slate-50 border-border' };
 }
 
 // Get progress percentage for a task

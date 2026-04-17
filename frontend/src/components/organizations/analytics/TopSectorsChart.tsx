@@ -88,7 +88,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
 
   if (data.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Sector Analysis
@@ -104,7 +104,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-slate-900">
           Sector Analysis

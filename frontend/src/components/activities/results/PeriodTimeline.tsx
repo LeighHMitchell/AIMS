@@ -99,7 +99,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
     high: { bg: 'bg-[#6b9080]', border: 'border-[#6b9080]', text: 'text-[#4a6a5a]' },
     medium: { bg: 'bg-[#c4a35a]', border: 'border-[#c4a35a]', text: 'text-[#806830]' },
     low: { bg: 'bg-[#b87070]', border: 'border-[#b87070]', text: 'text-[#904848]' },
-    none: { bg: 'bg-slate-300', border: 'border-slate-300', text: 'text-slate-500' }
+    none: { bg: 'bg-slate-300', border: 'border-input', text: 'text-slate-500' }
   };
 
   return (

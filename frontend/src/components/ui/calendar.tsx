@@ -62,7 +62,7 @@ function YearGridDropdown({ value, onChange, options, className, ...props }: any
       {showGrid && (
         <div
           ref={gridRef}
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 max-h-[200px] overflow-y-auto overscroll-contain"
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white border border-border rounded-lg shadow-lg p-2 max-h-[200px] overflow-y-auto overscroll-contain"
           style={{ width: '270px' }}
         >
           <div className="grid grid-cols-5 gap-1">
@@ -122,9 +122,9 @@ function Calendar({
         ),
         // Dropdown styles for month/year navigation
         dropdowns: "flex gap-2 items-center justify-center",
-        dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-        months_dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-        years_dropdown: "appearance-none bg-white border border-gray-200 rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        months_dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        years_dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
         // Table and day styles
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex",

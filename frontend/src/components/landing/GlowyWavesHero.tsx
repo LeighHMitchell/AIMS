@@ -283,7 +283,7 @@ export function GlowyWavesHero() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-gray-300 bg-white/60 px-8 text-base text-gray-700 backdrop-blur transition-all hover:border-gray-400 hover:bg-white/80"
+                className="border-input bg-white/60 px-8 text-base text-gray-700 backdrop-blur transition-all hover:border-gray-400 hover:bg-white/80"
                 onClick={scrollToContact}
               >
                 Contact
@@ -309,19 +309,19 @@ export function GlowyWavesHero() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-gray-50 px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Government validation
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-gray-50 px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Donor reporting
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-gray-50 px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Public transparency
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-gray-50 px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               IATI Standard v2.03
             </div>

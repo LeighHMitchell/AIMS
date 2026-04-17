@@ -2551,13 +2551,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                               <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{country.code}</code>
                                               </td>
                                             </tr>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
                                               <td className="py-1.5 text-foreground">{country.name}</td>
                                             </tr>
@@ -2577,13 +2577,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
                                                 </td>
                                               </tr>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
                                                 <td className="py-1.5 text-foreground">{field.currentValue.name || '—'}</td>
                                               </tr>
@@ -2633,17 +2633,17 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                               <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{region.code}</code>
                                               </td>
                                             </tr>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Region:</td>
                                               <td className="py-1.5 text-foreground">{region.name}</td>
                                             </tr>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                               <td className="py-1.5 text-foreground">{vocabName}</td>
                                             </tr>
@@ -2663,17 +2663,17 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
                                                 </td>
                                               </tr>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Region:</td>
                                                 <td className="py-1.5 text-foreground">{field.currentValue.name || '—'}</td>
                                               </tr>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                 <td className="py-1.5 text-foreground">{field.currentValue.vocabularyName || field.currentValue.vocabulary || '—'}</td>
                                               </tr>
@@ -2746,7 +2746,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               {importData.map((item: any, idx: number) => (
                                                 <React.Fragment key={idx}>
                                                   {item.code && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -2756,13 +2756,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     </tr>
                                                   )}
                                                   {item.name && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
                                                       <td className="py-1.5 text-foreground">{item.name}</td>
                                                     </tr>
                                                   )}
                                                   {item.vocabulary && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                       <td className="py-1.5 text-foreground">{item.vocabulary}</td>
                                                     </tr>
@@ -2791,7 +2791,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               {currentData.map((item: any, idx: number) => (
                                                 <React.Fragment key={idx}>
                                                   {item.code && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -2801,13 +2801,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     </tr>
                                                   )}
                                                   {item.name && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
                                                       <td className="py-1.5 text-foreground">{item.name}</td>
                                                     </tr>
                                                   )}
                                                   {item.vocabulary && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                       <td className="py-1.5 text-foreground">{item.vocabulary}</td>
                                                     </tr>
@@ -2885,7 +2885,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               <table className="w-full text-xs">
                                                 <tbody>
                                                   {fssData.extractionDate && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Extraction Date</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -2895,7 +2895,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     </tr>
                                                   )}
                                                   {fssData.priority && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Priority</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -2925,7 +2925,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <div className="text-xs font-semibold text-gray-700 mb-2">Forecast</div>
                                                 <table className="w-full text-xs">
                                                   <tbody>
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Year</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -2934,7 +2934,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       </td>
                                                     </tr>
                                                     {f.valueDate && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date</td>
                                                         <td className="py-1.5 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -2973,7 +2973,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               <table className="w-full text-xs">
                                                 <tbody>
                                                   {currentFss.extractionDate && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Extraction Date</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -2983,7 +2983,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     </tr>
                                                   )}
                                                   {currentFss.priority && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Priority</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -3013,7 +3013,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <div className="text-xs font-semibold text-gray-700 mb-2">Forecast</div>
                                                 <table className="w-full text-xs">
                                                   <tbody>
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Year</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3022,7 +3022,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       </td>
                                                     </tr>
                                                     {f.valueDate && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date</td>
                                                         <td className="py-1.5 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3095,15 +3095,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   return (
                                     <table className="w-full text-xs">
                                       <tbody>
-                                        <tr className="border-b border-gray-100 align-top">
+                                        <tr className="border-b border-border align-top">
                                           <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                           <td className="py-1.5 text-foreground">{getTypeLabel(scope.type)}</td>
                                         </tr>
-                                        <tr className="border-b border-gray-100 align-top">
+                                        <tr className="border-b border-border align-top">
                                           <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                           <td className="py-1.5 text-foreground">{getVocabLabel(scope.vocabulary)}</td>
                                         </tr>
-                                        <tr className="border-b border-gray-100 align-top">
+                                        <tr className="border-b border-border align-top">
                                           <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                           <td className="py-1.5 text-foreground">
                                             <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3188,13 +3188,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {orgData.name && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
                                                   <td className="py-1.5 text-foreground">{orgData.name}</td>
                                                 </tr>
                                               )}
                                               {orgData.ref && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3204,7 +3204,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {orgData.validated_ref && orgData.validated_ref !== orgData.ref && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Validated Ref:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3214,7 +3214,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {orgData.role && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Role:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3225,7 +3225,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {orgData.type && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3235,7 +3235,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {orgData.activityId && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Activity ID:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3245,7 +3245,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {orgData.crsChannelCode && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">DAC CRS Reporting:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3271,13 +3271,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {field.currentValue.name && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.name}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.ref && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3287,7 +3287,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   </tr>
                                                 )}
                                                 {field.currentValue.role && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Role:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3298,7 +3298,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   </tr>
                                                 )}
                                                 {field.currentValue.type && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3352,7 +3352,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {relatedActivityData.ref && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3385,7 +3385,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {field.currentValue.ref && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3471,7 +3471,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {contactData.type && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3481,43 +3481,43 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {contactData.organization && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organization:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.organization}</td>
                                                 </tr>
                                               )}
                                               {contactData.personName && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Person Name:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.personName}</td>
                                                 </tr>
                                               )}
                                               {contactData.jobTitle && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Job Title:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.jobTitle}</td>
                                                 </tr>
                                               )}
                                               {contactData.department && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Department:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.department}</td>
                                                 </tr>
                                               )}
                                               {contactData.email && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Email:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.email}</td>
                                                 </tr>
                                               )}
                                               {contactData.telephone && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Telephone:</td>
                                                   <td className="py-1.5 text-foreground">{contactData.telephone}</td>
                                                 </tr>
                                               )}
                                               {contactData.website && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Website:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <a href={contactData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
@@ -3543,7 +3543,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {field.currentValue.type && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3553,43 +3553,43 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   </tr>
                                                 )}
                                                 {field.currentValue.organization && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organization:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.organization}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.personName && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Person Name:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.personName}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.jobTitle && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Job Title:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.jobTitle}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.email && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Email:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.email}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.telephone && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Telephone:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.telephone}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.department && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Department:</td>
                                                     <td className="py-1.5 text-foreground">{field.currentValue.department}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.website && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Website:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <a href={field.currentValue.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
@@ -3688,7 +3688,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <div className="space-y-3">
                                           {field.documentData.map((doc: any, docIndex: number) => (
-                                            <div key={docIndex} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                            <div key={docIndex} className="border-b border-border pb-2 last:border-b-0">
                                               <table className="w-full text-xs">
                                                 <tbody>
                                                   <tr className="align-top">
@@ -3742,7 +3742,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                           <div className="space-y-3">
                                             {/* Handle both array (Document Links plural) and object (Document Link 1, 2, etc.) */}
                                             {(Array.isArray(field.currentValue) ? field.currentValue : [field.currentValue]).map((doc: any, docIndex: number) => (
-                                              <div key={docIndex} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                              <div key={docIndex} className="border-b border-border pb-2 last:border-b-0">
                                                 <table className="w-full text-xs">
                                                   <tbody>
                                                     <tr className="align-top">
@@ -3884,7 +3884,7 @@ ${importTags.map((tag: any) => {
                                                 {importTags.map((tag: any, idx: number) => (
                                                   <React.Fragment key={idx}>
                                                     {tag.vocabulary && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                         <td className="py-1.5 text-muted-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3895,13 +3895,13 @@ ${importTags.map((tag: any) => {
                                                       </tr>
                                                     )}
                                                     {tag.vocabularyUri && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary URI:</td>
                                                         <td className="py-1.5 text-foreground break-all">{tag.vocabularyUri}</td>
                                                       </tr>
                                                     )}
                                                     {tag.code && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                         <td className="py-1.5 text-muted-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3943,7 +3943,7 @@ ${importTags.map((tag: any) => {
                                               <table className="w-full text-xs">
                                                 <tbody>
                                                   {matchingTag.vocabulary && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                       <td className="py-1.5 text-muted-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -3954,13 +3954,13 @@ ${importTags.map((tag: any) => {
                                                     </tr>
                                                   )}
                                                   {matchingTag.vocabulary_uri && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary URI:</td>
                                                       <td className="py-1.5 text-foreground break-all">{matchingTag.vocabulary_uri}</td>
                                                     </tr>
                                                   )}
                                                   {matchingTag.code && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                       <td className="py-1.5 text-muted-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4025,13 +4025,13 @@ ${importTags.map((tag: any) => {
                                         <table className="w-full text-xs">
                                           <tbody>
                                             {loc.name && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
                                                 <td className="py-1.5 text-foreground">{loc.name}</td>
                                               </tr>
                                             )}
                                             {loc.latitude && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Latitude:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4041,7 +4041,7 @@ ${importTags.map((tag: any) => {
                                               </tr>
                                             )}
                                             {loc.longitude && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Longitude:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4051,7 +4051,7 @@ ${importTags.map((tag: any) => {
                                               </tr>
                                             )}
                                             {loc.country_code && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4061,7 +4061,7 @@ ${importTags.map((tag: any) => {
                                               </tr>
                                             )}
                                             {loc.location_type_code && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4087,13 +4087,13 @@ ${importTags.map((tag: any) => {
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentValue.name && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
                                                   <td className="py-1.5 text-foreground">{field.currentValue.name}</td>
                                                 </tr>
                                               )}
                                               {field.currentValue.latitude && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Latitude:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4103,7 +4103,7 @@ ${importTags.map((tag: any) => {
                                                 </tr>
                                               )}
                                               {field.currentValue.longitude && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Longitude:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4208,7 +4208,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               {item.budget_items && item.budget_items.map((bi: any, biIdx: number) => (
                                                 <React.Fragment key={biIdx}>
                                                   {item.vocabulary && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4224,7 +4224,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                       </td>
                                                     </tr>
                                                   )}
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Item Code:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4233,7 +4233,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     </td>
                                                   </tr>
                                                   {bi.percentage !== undefined && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">% of Activity Budget:</td>
                                                       <td className="py-1.5 text-foreground">{bi.percentage}%</td>
                                                     </tr>
@@ -4252,7 +4252,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {item.value !== undefined && item.currency && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4263,7 +4263,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {(item.transaction_date || item.date) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4273,7 +4273,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {(item.value_date || item.valueDate) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4283,7 +4283,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {(item.transaction_type || item.type) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4296,7 +4296,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {(item.providerOrg?.ref || item.providerOrg?.name) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       {item.providerOrg?.ref ? (
@@ -4330,7 +4330,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           <table className="w-full text-xs">
                                           <tbody>
                                             {item.value !== undefined && item.currency && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4341,7 +4341,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {(item.period?.start || item.start) && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Start:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4351,7 +4351,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {(item.period?.end || item.end) && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">End:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4361,7 +4361,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {(item.transaction_date || item.date) && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4371,7 +4371,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {(item.value_date || item.valueDate) && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4381,7 +4381,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {item.status && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Status:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4394,7 +4394,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {item.type && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4407,7 +4407,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {item.transaction_type && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Type:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4420,7 +4420,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {(item.providerOrg?.ref || item.providerOrg?.name) && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   {item.providerOrg?.ref ? (
@@ -4464,7 +4464,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 {field.currentValue.budget_items && field.currentValue.budget_items.map((bi: any, biIdx: number) => (
                                                   <React.Fragment key={biIdx}>
                                                     {field.currentValue.vocabulary && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                         <td className="py-1.5 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4481,7 +4481,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                         </td>
                                                       </tr>
                                                     )}
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Item Code:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4490,7 +4490,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                       </td>
                                                     </tr>
                                                     {bi.percentage !== undefined && (
-                                                      <tr className="border-b border-gray-100 align-top">
+                                                      <tr className="border-b border-border align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-muted-foreground">% of Activity Budget:</td>
                                                         <td className="py-1.5 text-foreground">{bi.percentage}%</td>
                                                       </tr>
@@ -4509,7 +4509,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {(field.currentValue.value !== undefined || field.currentValue.currency) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       {field.currentValue.currency && (
@@ -4529,7 +4529,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {field.currentValue.transaction_date && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4539,7 +4539,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {field.currentValue.value_date && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4549,7 +4549,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {(field.currentValue.transaction_type || field.currentValue.type) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4562,7 +4562,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                 )}
                                                 {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       {field.currentValue.provider_org_ref ? (
@@ -4596,7 +4596,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentValue.value !== undefined && field.currentValue.currency && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4607,7 +4607,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {(field.currentValue.period?.start || field.currentValue.start) && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Start:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4617,7 +4617,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {(field.currentValue.period?.end || field.currentValue.end) && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">End:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4627,7 +4627,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {field.currentValue.transaction_date && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4637,7 +4637,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {field.currentValue.value_date && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4647,7 +4647,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {field.currentValue.status !== undefined && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Status:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4660,7 +4660,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {field.currentValue.transaction_type !== undefined && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Type:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4673,7 +4673,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {(field.currentValue.type || field.currentValue.typeName) && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4686,7 +4686,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     {field.currentValue.provider_org_ref ? (
@@ -4700,7 +4700,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Receiver organisation:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     {field.currentValue.receiver_org_ref ? (
@@ -4794,7 +4794,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                               <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -4804,7 +4804,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </td>
                                             </tr>
                                             {pm.code && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -4836,7 +4836,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentValue.vocabulary && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -4847,7 +4847,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </tr>
                                               )}
                                               {field.currentValue.code && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
@@ -4934,7 +4934,7 @@ ${narrativeLines}
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Conditions:</td>
                                               <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -4949,7 +4949,7 @@ ${narrativeLines}
                                               const narrativeEntries = Object.entries(narratives);
 
                                               return (
-                                                <tr key={idx} className={idx < conditionCount - 1 ? "border-b border-gray-100 align-top" : "align-top"}>
+                                                <tr key={idx} className={idx < conditionCount - 1 ? "border-b border-border align-top" : "align-top"}>
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">
                                                     Condition Type:
                                                   </td>
@@ -4974,7 +4974,7 @@ ${narrativeLines}
                                                 const isLastNarrative = idx === conditionCount - 1 && nIdx === narrativeEntries.length - 1;
 
                                                 return (
-                                                  <tr key={`narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-gray-100 align-top"}>
+                                                  <tr key={`narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-border align-top"}>
                                                     <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                                                       {isNonEnglish ? `Narrative (${lang.toUpperCase()}):` : 'Narrative:'}
                                                     </td>
@@ -5004,7 +5004,7 @@ ${narrativeLines}
                                         {field.currentConditionsData ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Conditions:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5014,7 +5014,7 @@ ${narrativeLines}
                                                 </td>
                                               </tr>
                                               {field.currentConditionsData.conditions.map((condition: any, idx: number) => (
-                                                <tr key={idx} className={idx < field.currentConditionsData.conditions.length - 1 ? "border-b border-gray-100 align-top" : "align-top"}>
+                                                <tr key={idx} className={idx < field.currentConditionsData.conditions.length - 1 ? "border-b border-border align-top" : "align-top"}>
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">
                                                     Condition Type:
                                                   </td>
@@ -5037,7 +5037,7 @@ ${narrativeLines}
                                                   const isLastNarrative = idx === field.currentConditionsData.conditions.length - 1 && nIdx === narrativeEntries.length - 1;
 
                                                   return (
-                                                    <tr key={`current-narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-gray-100 align-top"}>
+                                                    <tr key={`current-narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-border align-top"}>
                                                       <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                                                         {isNonEnglish ? `Narrative (${lang.toUpperCase()}):` : 'Narrative:'}
                                                       </td>
@@ -5088,7 +5088,7 @@ ${narrativeLines}
                                         <table className="w-full text-xs">
                                           <tbody>
                                             {crsData.channel_code && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Channel Code:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5100,19 +5100,19 @@ ${narrativeLines}
                                             {crsData.loanTerms && (
                                               <React.Fragment>
                                                 {crsData.loanTerms.rate_1 !== undefined && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 1:</td>
                                                     <td className="py-1.5 text-foreground">{crsData.loanTerms.rate_1}%</td>
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.rate_2 !== undefined && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 2:</td>
                                                     <td className="py-1.5 text-foreground">{crsData.loanTerms.rate_2}%</td>
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.repayment_type_code && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Type:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5122,7 +5122,7 @@ ${narrativeLines}
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.repayment_plan_code && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Plan:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5132,7 +5132,7 @@ ${narrativeLines}
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.commitment_date && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Commitment Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5142,7 +5142,7 @@ ${narrativeLines}
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.repayment_first_date && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment First Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5152,7 +5152,7 @@ ${narrativeLines}
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.repayment_final_date && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Final Date:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5164,7 +5164,7 @@ ${narrativeLines}
                                               </React.Fragment>
                                             )}
                                             {crsData.loanStatuses && crsData.loanStatuses.length > 0 && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Loan Statuses:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   {crsData.loanStatuses.length} year(s) of loan status data
@@ -5173,7 +5173,7 @@ ${narrativeLines}
                                             )}
                                             {crsData.other_flags && crsData.other_flags.length > 0 && crsData.other_flags.map((flag: any, idx: number) => (
                                               <React.Fragment key={idx}>
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Other Flags Code:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5181,7 +5181,7 @@ ${narrativeLines}
                                                     </code>
                                                   </td>
                                                 </tr>
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Significance:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5202,7 +5202,7 @@ ${narrativeLines}
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentCrsData.channel_code && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Channel Code:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5214,19 +5214,19 @@ ${narrativeLines}
                                               {field.currentCrsData.loanTerms && (
                                                 <React.Fragment>
                                                   {field.currentCrsData.loanTerms.rate_1 !== null && field.currentCrsData.loanTerms.rate_1 !== undefined && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 1:</td>
                                                       <td className="py-1.5 text-foreground">{field.currentCrsData.loanTerms.rate_1}%</td>
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.rate_2 !== null && field.currentCrsData.loanTerms.rate_2 !== undefined && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 2:</td>
                                                       <td className="py-1.5 text-foreground">{field.currentCrsData.loanTerms.rate_2}%</td>
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_type_code && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Type:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5236,7 +5236,7 @@ ${narrativeLines}
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_plan_code && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Plan:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5246,7 +5246,7 @@ ${narrativeLines}
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.commitment_date && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Commitment Date:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5256,7 +5256,7 @@ ${narrativeLines}
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_first_date && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment First Date:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5266,7 +5266,7 @@ ${narrativeLines}
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_final_date && (
-                                                    <tr className="border-b border-gray-100 align-top">
+                                                    <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Final Date:</td>
                                                       <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5278,7 +5278,7 @@ ${narrativeLines}
                                                 </React.Fragment>
                                               )}
                                               {field.currentCrsData.loanStatuses && field.currentCrsData.loanStatuses.length > 0 && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground">Loan Statuses:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     {field.currentCrsData.loanStatuses.length} year(s) of loan status data
@@ -5287,7 +5287,7 @@ ${narrativeLines}
                                               )}
                                               {field.currentCrsData.otherFlags && field.currentCrsData.otherFlags.length > 0 && field.currentCrsData.otherFlags.map((flag: any, idx: number) => (
                                                 <React.Fragment key={idx}>
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Other Flags Code:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5295,7 +5295,7 @@ ${narrativeLines}
                                                       </code>
                                                     </td>
                                                   </tr>
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground">Significance:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5345,7 +5345,7 @@ ${narrativeLines}
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Code:</td>
                                               <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5353,7 +5353,7 @@ ${narrativeLines}
                                                 </code>
                                               </td>
                                             </tr>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Type:</td>
                                               <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5364,7 +5364,7 @@ ${narrativeLines}
                                                 )}
                                               </td>
                                             </tr>
-                                            <tr className="border-b border-gray-100 align-top">
+                                            <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Owner Org Name:</td>
                                               <td className="py-1.5 text-foreground">{identifier.ownerOrg?.narrative || '—'}</td>
                                             </tr>
@@ -5390,7 +5390,7 @@ ${narrativeLines}
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Code:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5398,7 +5398,7 @@ ${narrativeLines}
                                                   </code>
                                                 </td>
                                               </tr>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Type:</td>
                                                 <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5409,7 +5409,7 @@ ${narrativeLines}
                                                   )}
                                                 </td>
                                               </tr>
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Owner Org Name:</td>
                                                 <td className="py-1.5 text-foreground">{field.currentValue.ownerOrg?.narrative || '—'}</td>
                                               </tr>
@@ -5754,7 +5754,7 @@ ${narrativeLines}
                                             <tbody>
                                               {/* Show date type (grayed out - redundant with field name) */}
                                               {dateType && (
-                                                <tr className="border-b border-gray-100 align-top" style={{ opacity: 0.4 }}>
+                                                <tr className="border-b border-border align-top" style={{ opacity: 0.4 }}>
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">Date Type:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5768,7 +5768,7 @@ ${narrativeLines}
                                               )}
                                               {/* Show iso-date */}
                                               {isoDate && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">ISO Date:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -5781,7 +5781,7 @@ ${narrativeLines}
                                               {allXmlNarratives.map((narrative, idx) => (
                                                 <tr
                                                   key={idx}
-                                                  className="border-b border-gray-100 align-top last:border-b-0"
+                                                  className="border-b border-border align-top last:border-b-0"
                                                   style={{ opacity: idx === 0 ? 1 : 0.4 }}
                                                 >
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
@@ -5988,7 +5988,7 @@ ${narrativeLines}
                                               <tbody>
                                                 {/* Show description type for description fields */}
                                                 {isDescription && descriptionType && (
-                                                  <tr className="border-b border-gray-100 align-top">
+                                                  <tr className="border-b border-border align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">Description Type:</td>
                                                     <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -6002,7 +6002,7 @@ ${narrativeLines}
                                                 )}
                                                 {/* Show narratives */}
                                                 {displayNarratives.map((narrative, idx) => (
-                                                  <tr key={idx} className={`border-b border-gray-100 align-top last:border-b-0 ${!narrative.isImported ? 'opacity-50' : ''}`}>
+                                                  <tr key={idx} className={`border-b border-border align-top last:border-b-0 ${!narrative.isImported ? 'opacity-50' : ''}`}>
                                                     <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                       {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                     </td>
@@ -6030,7 +6030,7 @@ ${narrativeLines}
                                             <tbody>
                                               {/* Show description type for description fields */}
                                               {isDescription && currentDescriptionType && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="border-b border-border align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">Description Type:</td>
                                                   <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
@@ -6044,7 +6044,7 @@ ${narrativeLines}
                                               )}
                                               {/* Show narratives */}
                                               {currentNarratives.map((narrative, idx) => (
-                                                <tr key={idx} className="border-b border-gray-100 align-top last:border-b-0">
+                                                <tr key={idx} className="border-b border-border align-top last:border-b-0">
                                                   <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                     {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                   </td>
@@ -6171,7 +6171,7 @@ ${narrativeLines}
                                   <table className="w-full text-xs">
                                     <tbody>
                                       {rows.map((row, idx) => (
-                                        <tr key={idx} className={`align-top ${idx < rows.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                        <tr key={idx} className={`align-top ${idx < rows.length - 1 ? 'border-b border-border' : ''}`}>
                                           <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                             {row.label}:
                                           </td>
@@ -6263,7 +6263,7 @@ ${narrativeLines}
                                             return val.map((narrative: any, nIdx: number) => (
                                               <tr 
                                                 key={`${idx}-narrative-${nIdx}`} 
-                                                className={`align-top ${nIdx < val.length - 1 || idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                                className={`align-top ${nIdx < val.length - 1 || idx < entries.length - 1 ? 'border-b border-border' : ''}`}
                                               >
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                   {narrative.language ? `Narrative (${narrative.language.toUpperCase()}):` : 'Narrative:'}
@@ -6285,7 +6285,7 @@ ${narrativeLines}
                                             }).join(', ');
 
                                             return (
-                                              <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                              <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-border' : ''}`}>
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground capitalize whitespace-nowrap">
                                                   {key.replace(/_/g, ' ')}:
                                                 </td>
@@ -6298,7 +6298,7 @@ ${narrativeLines}
 
                                           // Default handling for non-array values
                                           return (
-                                            <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                            <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-border' : ''}`}>
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground capitalize whitespace-nowrap">
                                                 {key.replace(/_/g, ' ')}:
                                               </td>

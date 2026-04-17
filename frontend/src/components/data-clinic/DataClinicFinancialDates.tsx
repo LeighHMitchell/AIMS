@@ -186,7 +186,7 @@ export function DataClinicFinancialDates() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <svg width={chartWidth} height={chartHeight} className="border border-slate-200 rounded-lg bg-white">
+          <svg width={chartWidth} height={chartHeight} className="border border-border rounded-lg bg-white">
             {/* Year axis labels at top */}
             <g>
               {Array.from({ length: yearRange }, (_, i) => {

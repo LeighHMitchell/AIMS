@@ -224,7 +224,7 @@ export function ProgressTimeline({
           {segments.map((segment, index) => (
             <div 
               key={segment.period.id}
-              className="flex items-center justify-between p-2 bg-white border border-gray-100 rounded text-xs"
+              className="flex items-center justify-between p-2 bg-white border border-border rounded text-xs"
             >
               <div className="flex items-center gap-2">
                 {getStatusIcon(segment.status)}

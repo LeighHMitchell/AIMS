@@ -335,8 +335,8 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
       if (nonZeroPayload.length === 0) return null
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md">
-          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md">
+          <div className="bg-surface-muted px-4 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">
               <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-xs mr-1.5">
                 {dataPoint.code}
@@ -348,7 +348,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
             <table className="w-full text-sm">
               <tbody>
                 {nonZeroPayload.map((entry: any, index: number) => (
-                  <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                  <tr key={index} className="border-b border-border last:border-b-0">
                     <td className="py-2 px-4">
                       <div className="flex items-center gap-2">
                         <div
@@ -504,7 +504,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
 
   if (!data || data.length === 0) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -526,7 +526,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div>

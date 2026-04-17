@@ -287,7 +287,7 @@ export function HeroCard<T = any>({
             
             {/* Render secondary values */}
             {(secondaryValues && secondaryValues.length > 0) && (
-              <div className="mt-2 pt-2 space-y-2 border-t border-gray-200">
+              <div className="mt-2 pt-2 space-y-2 border-t border-border">
                 {secondaryValues.map((item, index) => (
                   <div key={index}>
                     <p className="text-xs text-gray-500">{item.label}</p>
@@ -301,7 +301,7 @@ export function HeroCard<T = any>({
             
             {/* Legacy: Single secondary value support */}
             {!secondaryValues && secondaryValue !== undefined && secondaryLabel && (
-              <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="mt-2 pt-2 border-t border-border">
                 <p className="text-xs text-gray-500">{secondaryLabel}</p>
                 <p className={cn("text-lg font-semibold transition-all duration-500", valueClass)}>
                   {formatValue(secondaryValue)}
@@ -333,7 +333,7 @@ export function HeroCard<T = any>({
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
+                            <div className="bg-white p-2 border border-border rounded shadow-lg">
                               <p className="text-sm font-semibold">{payload[0].payload.year}</p>
                               <p className="text-sm text-gray-600">{formatChartCurrency(payload[0].value as number)}</p>
                             </div>

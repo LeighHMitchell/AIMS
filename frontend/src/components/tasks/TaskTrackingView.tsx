@@ -392,7 +392,7 @@ export function TaskTrackingView({
                           </Badge>
                         )}
                         {declined > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 border-gray-200 bg-gray-50 text-gray-700">
+                          <Badge variant="outline" className="text-xs gap-1 border-border bg-gray-50 text-gray-700">
                             <XCircle className="h-3 w-3" />
                             {declined}
                           </Badge>

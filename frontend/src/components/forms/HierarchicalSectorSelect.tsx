@@ -256,7 +256,7 @@ export function HierarchicalSectorSelect({
                   <div key={category.code} className="mb-2">
                     {/* Category Header - Non-selectable */}
                     <div 
-                      className="px-3 py-2 text-sm font-semibold text-gray-900 bg-muted border-t border-gray-200 first:border-t-0"
+                      className="px-3 py-2 text-sm font-semibold text-gray-900 bg-muted border-t border-border first:border-t-0"
                       role="heading"
                       aria-level={3}
                     >

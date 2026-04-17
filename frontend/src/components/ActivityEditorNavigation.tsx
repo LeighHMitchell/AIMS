@@ -133,7 +133,7 @@ export default function ActivityEditorNavigation({
 
   return (
     <TooltipProvider>
-      <nav className="w-64 bg-white border-r border-gray-200 border-b-0 p-4 space-y-6 h-full flex flex-col">
+      <nav className="w-64 bg-white border-r border-border border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Navigation Groups */}
         {navigationGroups.map((group, groupIndex) => (
           <div 
@@ -173,7 +173,7 @@ export default function ActivityEditorNavigation({
                 (group.title === "Activity Overview" || group.title === "Locations" ||
                  group.title === "Stakeholders" ||
                  group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
-                 group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-gray-100 pl-1"
+                 group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-border pl-1"
               )}>
                 {group.sections.map((section) => {
                   const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"

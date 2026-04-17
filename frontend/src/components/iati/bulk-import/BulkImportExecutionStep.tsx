@@ -180,7 +180,7 @@ export default function BulkImportExecutionStep({
   return (
     <div className="space-y-6">
       {/* Progress - Monochrome */}
-      <Card className="border-gray-200">
+      <Card className="border-border">
         <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -221,7 +221,7 @@ export default function BulkImportExecutionStep({
       </Card>
 
       {importing && (
-        <Alert className="bg-gray-50 border-gray-200">
+        <Alert className="bg-gray-50 border-border">
           <Info className="h-4 w-4 text-gray-600" />
           <AlertDescription className="text-gray-700">
             You can leave this page. The import will continue in the background.
@@ -230,7 +230,7 @@ export default function BulkImportExecutionStep({
       )}
 
       {/* Per-activity status table - Monochrome */}
-      <Card className="border-gray-200">
+      <Card className="border-border">
         <CardContent className="p-0">
           <ScrollArea className="h-80">
             <Table>

@@ -266,7 +266,7 @@ export function EnhancedImageUpload({
         <div className="space-y-3">
           <div
             ref={containerRef}
-            className={`relative ${getContainerClass()} rounded-lg overflow-hidden group border-2 border-dashed border-gray-300 ${
+            className={`relative ${getContainerClass()} rounded-lg overflow-hidden group border-2 border-dashed border-input ${
               isRepositioning || isZooming ? "cursor-grab" : ""
             } ${isDragging ? "cursor-grabbing" : ""}`}
             onMouseDown={handleMouseDown}
@@ -424,7 +424,7 @@ export function EnhancedImageUpload({
           className={`
             ${getContainerClass()}
             border-2 border-dashed rounded-lg
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
+            ${isDragActive ? 'border-primary bg-primary/5' : 'border-input hover:border-gray-400'}
             ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             flex flex-col items-center justify-center
             transition-colors

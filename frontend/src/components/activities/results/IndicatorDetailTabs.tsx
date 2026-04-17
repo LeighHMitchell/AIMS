@@ -159,7 +159,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             {indicator.references!.map((ref: ResultReference) => (
               <div 
                 key={ref.id}
-                className="flex items-start justify-between p-3 rounded-md bg-slate-50 border border-slate-100"
+                className="flex items-start justify-between p-3 rounded-md bg-slate-50 border border-border"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export function IndicatorDetailTabs({ indicator, className }: IndicatorDetailTab
             {indicator.document_links!.map((doc: DocumentLink) => (
               <div 
                 key={doc.id}
-                className="flex items-center justify-between p-3 rounded-md bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors"
+                className="flex items-center justify-between p-3 rounded-md bg-slate-50 border border-border hover:bg-slate-100 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <FileText className="h-5 w-5 text-slate-400" />

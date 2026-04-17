@@ -211,8 +211,8 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
     if (active && payload && payload.length) {
       const item = payload[0].payload as SectorData & { fill: string; sectorCode: string; sectorName: string };
     return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">
               {item.sectorCode && <span className="font-mono bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-xs mr-1.5">{item.sectorCode}</span>}
               {item.sectorName}
@@ -221,7 +221,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100 last:border-b-0">
+                <tr className="border-b border-border last:border-b-0">
                   <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
                   <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
                 </tr>
@@ -539,7 +539,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

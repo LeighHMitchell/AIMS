@@ -71,7 +71,7 @@ function RadioOption({
       className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
         checked
           ? 'border-2 border-gray-900 bg-gray-50'
-          : 'border border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+          : 'border border-border hover:border-gray-400 hover:bg-gray-50'
       }`}
     >
       <input
@@ -132,7 +132,7 @@ export default function BulkImportRulesStep({
       {/* Three hero cards in a row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Activity Matching */}
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-gray-100 rounded-lg">
@@ -182,7 +182,7 @@ export default function BulkImportRulesStep({
         </Card>
 
         {/* Transaction Handling */}
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-gray-100 rounded-lg">
@@ -232,7 +232,7 @@ export default function BulkImportRulesStep({
         </Card>
 
         {/* Organization Resolution */}
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-gray-100 rounded-lg">
@@ -250,7 +250,7 @@ export default function BulkImportRulesStep({
               className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
                 rules.autoMatchOrganizations
                   ? 'border-2 border-gray-900 bg-gray-50'
-                  : 'border border-gray-200 hover:border-gray-400'
+                  : 'border border-border hover:border-gray-400'
               }`}
               onClick={() => onRulesChange({ ...rules, autoMatchOrganizations: !rules.autoMatchOrganizations })}
             >
@@ -279,13 +279,13 @@ export default function BulkImportRulesStep({
 
       {/* Auto-Sync Option - only for Datastore imports */}
       {sourceMode === 'datastore' && (
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="p-5">
             <div
               className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
                 rules.enableAutoSync
                   ? 'border-2 border-gray-900 bg-gray-50'
-                  : 'border border-gray-200 hover:border-gray-400'
+                  : 'border border-border hover:border-gray-400'
               }`}
               onClick={() => onRulesChange({ ...rules, enableAutoSync: !rules.enableAutoSync })}
             >
@@ -316,29 +316,29 @@ export default function BulkImportRulesStep({
       )}
 
       {/* Impact Preview - monochrome */}
-      <Card className="border-gray-300 bg-gray-50">
+      <Card className="border-input bg-gray-50">
         <CardContent className="p-5">
           <div className="flex items-center gap-1.5 mb-4">
             <h3 className="font-semibold text-gray-900">Import Impact Preview</h3>
             <HelpTip text="A summary of what will happen when you start the import, based on your selected activities and the rules above. These numbers update as you change settings." />
           </div>
           <div className="grid grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+            <div className="text-center p-3 bg-white rounded-lg border border-border">
               <Plus className="h-5 w-5 mx-auto mb-1 text-gray-700" />
               <p className="text-2xl font-bold text-gray-900">{impact.toCreate}</p>
               <p className="text-xs text-gray-500">Will be created</p>
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+            <div className="text-center p-3 bg-white rounded-lg border border-border">
               <RefreshCw className="h-5 w-5 mx-auto mb-1 text-gray-700" />
               <p className="text-2xl font-bold text-gray-900">{impact.toUpdate}</p>
               <p className="text-xs text-gray-500">Will be updated</p>
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+            <div className="text-center p-3 bg-white rounded-lg border border-border">
               <SkipForward className="h-5 w-5 mx-auto mb-1 text-gray-700" />
               <p className="text-2xl font-bold text-gray-900">{impact.toSkip}</p>
               <p className="text-xs text-gray-500">Will be skipped</p>
             </div>
-            <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+            <div className="text-center p-3 bg-white rounded-lg border border-border">
               <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-gray-700" />
               <p className="text-2xl font-bold text-gray-900">{impact.totalTransactions}</p>
               <p className="text-xs text-gray-500">Transactions</p>

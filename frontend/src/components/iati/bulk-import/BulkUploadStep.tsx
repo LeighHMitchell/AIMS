@@ -227,7 +227,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
             border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
             transition-colors duration-200
             ${processing ? 'opacity-50 cursor-wait' : ''}
-            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-input hover:border-gray-400'}
           `}
         >
           <input {...getInputProps()} />

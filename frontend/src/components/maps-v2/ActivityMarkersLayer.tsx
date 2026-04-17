@@ -403,7 +403,7 @@ function ActivityLocationMarker({
           </div>
         )}
         
-        <hr className="border-slate-200 mb-3" />
+        <hr className="border-border mb-3" />
         
         {/* Reporting Organisation */}
         <div className="mb-2">
@@ -495,7 +495,7 @@ function ActivityLocationMarker({
         {activity && (activity.totalBudget || activity.totalPlannedDisbursement || activity.totalCommitments || activity.totalDisbursed) && (
           <div className="mb-3">
             <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">Financial Summary</div>
-            <div className="rounded border border-slate-200 overflow-hidden">
+            <div className="rounded border border-border overflow-hidden">
               <div className="flex justify-between px-2.5 py-1.5 bg-white">
                 <span className="text-xs text-slate-500">Total Budgeted</span>
                 <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalBudget)}</span>

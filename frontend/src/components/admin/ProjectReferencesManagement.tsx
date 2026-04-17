@@ -352,7 +352,7 @@ export function ProjectReferencesManagement() {
       case "donor":
         return "border-blue-300 text-blue-700 bg-blue-50";
       case "internal":
-        return "border-gray-300 text-gray-700 bg-gray-50";
+        return "border-input text-gray-700 bg-gray-50";
       default:
         return "";
     }

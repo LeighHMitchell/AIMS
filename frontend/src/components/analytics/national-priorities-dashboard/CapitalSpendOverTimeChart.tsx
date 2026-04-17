@@ -238,14 +238,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       const nonCapitalColor = chartType === "bar" ? CAPITAL_COLORS.nonCapital : CAPITAL_COLORS.accent1;
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{label}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1 pr-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: CAPITAL_COLORS.capital }} />
@@ -255,7 +255,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
                   <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(capitalValue)}</td>
                   <td className="py-1 text-right text-xs text-slate-500 pl-2">{capitalPct}%</td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1 pr-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: nonCapitalColor }} />
@@ -678,7 +678,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

@@ -1203,7 +1203,7 @@ export function TransactionTable({
                   <div className="space-y-4">
                       
                       {/* Transaction Summary Header */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                      <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-5 w-5 text-slate-600" />
@@ -1295,10 +1295,10 @@ export function TransactionTable({
                       </div>
                       
                       {/* Parties Involved Flowcard */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
+                      <div className="bg-white rounded-lg border border-border p-4">
                         <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Parties Involved</h3>
                         <div className="flex items-center gap-3">
-                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-slate-200">
+                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-border">
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <div className="flex-1 min-w-0">
@@ -1319,7 +1319,7 @@ export function TransactionTable({
                           
                           <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           
-                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-slate-200">
+                          <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-border">
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <div className="flex-1 min-w-0">
@@ -1342,7 +1342,7 @@ export function TransactionTable({
                       
                       {/* Description Section */}
                     {transaction.description && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xs uppercase tracking-wide text-muted-foreground">Description</h3>
                             {onEdit && (
@@ -1356,14 +1356,14 @@ export function TransactionTable({
                       )}
                       
                       {!transaction.description && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Description</h3>
                           <p className="text-sm text-muted-foreground italic">No additional details provided.</p>
                       </div>
                     )}
                     
                       {/* Humanitarian & Validation Status */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
+                      <div className="bg-white rounded-lg border border-border p-4">
                         <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Status Indicators</h3>
                         <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
@@ -1394,11 +1394,11 @@ export function TransactionTable({
                       
                       {/* Linked Activities */}
                       {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Linked Activities</h3>
                           <div className="space-y-3">
                             {transaction.provider_org_activity_id && (
-                              <div className="p-3 bg-muted/30 rounded-lg border border-slate-200">
+                              <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Provider Activity</span>
                                   <button
@@ -1434,7 +1434,7 @@ export function TransactionTable({
                     )}
                     
                             {transaction.receiver_org_activity_id && (
-                              <div className="p-3 bg-muted/30 rounded-lg border border-slate-200">
+                              <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Receiver Activity</span>
                                   <button
@@ -1473,13 +1473,13 @@ export function TransactionTable({
                       )}
                       
                       {/* Classifications Grid */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
+                      <div className="bg-white rounded-lg border border-border p-4">
                         <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">IATI Classifications</h3>
                         <div className="grid grid-cols-1 gap-2">
                           {(transaction.aid_type || transaction.effective_aid_type) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.aid_type_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Handshake className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Aid Type</span>
@@ -1500,7 +1500,7 @@ export function TransactionTable({
                           {(transaction.flow_type || transaction.effective_flow_type) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.flow_type_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Shuffle className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Flow Type</span>
@@ -1521,7 +1521,7 @@ export function TransactionTable({
                           {(transaction.finance_type || transaction.effective_finance_type) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Coins className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Finance Type</span>
@@ -1542,7 +1542,7 @@ export function TransactionTable({
                           {(transaction.tied_status || transaction.effective_tied_status) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200 cursor-help ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}>
+                                <div className={`flex items-center justify-between p-2 bg-muted/30 rounded border border-border cursor-help ${transaction.tied_status_inherited ? 'opacity-70' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Link2 className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Tied Status</span>
@@ -1561,7 +1561,7 @@ export function TransactionTable({
                             </Tooltip>
                           )}
                           {transaction.disbursement_channel && (
-                            <div className="flex items-center justify-between p-2 bg-muted/30 rounded border border-slate-200">
+                            <div className="flex items-center justify-between p-2 bg-muted/30 rounded border border-border">
                               <div className="flex items-center gap-2">
                                 <Building2 className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-xs font-medium text-muted-foreground">Channel</span>
@@ -1574,7 +1574,7 @@ export function TransactionTable({
                       
                       {/* Geographic & Sector Targeting */}
                       {(transaction.sector_code || transaction.sectors?.length || transaction.recipient_country_code || transaction.recipient_countries?.length || transaction.recipient_region_code || transaction.recipient_regions?.length) && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Geographic & Sector Targeting</h3>
                           <div className="space-y-2">
                           {transaction.sector_code && (
@@ -1647,7 +1647,7 @@ export function TransactionTable({
                       
                       {/* Aid Types (Multiple) */}
                         {transaction.aid_types && transaction.aid_types.length > 0 && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Aid Types</h3>
                           <div className="flex flex-wrap gap-2">
                             {transaction.aid_types.map((aidType, idx) => (
@@ -1662,7 +1662,7 @@ export function TransactionTable({
                         
                       {/* System Identifiers */}
                       {transaction.transaction_reference && (
-                        <div className="bg-white rounded-lg border border-slate-200 p-4">
+                        <div className="bg-white rounded-lg border border-border p-4">
                           <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">System Identifiers</h3>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -1685,7 +1685,7 @@ export function TransactionTable({
                         )}
                         
                       {/* Transaction Metadata */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-4">
+                      <div className="bg-white rounded-lg border border-border p-4">
                         <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Transaction Metadata</h3>
                         <div className="space-y-3">
                           {/* Created By */}

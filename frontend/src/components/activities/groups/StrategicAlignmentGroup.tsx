@@ -282,7 +282,7 @@ export function StrategicAlignmentGroup({
             style={{ minHeight: getSectionMinHeight('national_plans') }}
           >
             {isSectionActive('national_plans') || activeSections.has('national_plans') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="national_plans"
                   title={getSectionLabel('national_plans')}
@@ -307,7 +307,7 @@ export function StrategicAlignmentGroup({
             style={{ minHeight: getSectionMinHeight('sdg') }}
           >
             {isSectionActive('sdg') || activeSections.has('sdg') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="sdg"
                   title={getSectionLabel('sdg')}
@@ -333,7 +333,7 @@ export function StrategicAlignmentGroup({
             style={{ minHeight: getSectionMinHeight('tags') }}
           >
             {isSectionActive('tags') || activeSections.has('tags') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="tags"
                   title={getSectionLabel('tags')}
@@ -359,7 +359,7 @@ export function StrategicAlignmentGroup({
             style={{ minHeight: getSectionMinHeight('working_groups') }}
           >
             {isSectionActive('working_groups') || activeSections.has('working_groups') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="working_groups"
                   title={getSectionLabel('working_groups')}
@@ -386,7 +386,7 @@ export function StrategicAlignmentGroup({
             style={{ minHeight: getSectionMinHeight('policy_markers') }}
           >
             {isSectionActive('policy_markers') || activeSections.has('policy_markers') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="policy_markers"
                   title={getSectionLabel('policy_markers')}

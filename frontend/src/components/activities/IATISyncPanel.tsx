@@ -378,7 +378,7 @@ export function IATISyncPanel({
   const getSyncBannerConfig = () => {
     if (!autoSync || !currentLastSyncTime) {
       return {
-        bg: 'bg-gray-50 border-gray-200',
+        bg: 'bg-gray-50 border-border',
         text: 'text-gray-600',
         icon: <Clock className="h-4 w-4 text-gray-400" />,
         label: autoSync ? 'Never synced with IATI Datastore' : 'Auto-sync is disabled',
@@ -409,7 +409,7 @@ export function IATISyncPanel({
       };
     } else {
       return {
-        bg: 'bg-gray-50 border-gray-200',
+        bg: 'bg-gray-50 border-border',
         text: 'text-gray-600',
         icon: <AlertCircle className="h-4 w-4 text-gray-400" />,
         label: `Last synced ${relative}`,

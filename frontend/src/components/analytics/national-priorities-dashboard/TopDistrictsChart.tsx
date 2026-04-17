@@ -108,7 +108,7 @@ export function TopDistrictsChart({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">

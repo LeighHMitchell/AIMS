@@ -1043,7 +1043,7 @@ const OrganizationCard: React.FC<{
           )}
 
           {/* Statistics Section - Compact horizontal layout */}
-          <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-3 mt-auto">
+          <div className="flex items-center justify-between text-sm border-t border-border pt-3 mt-auto">
             <div className="flex items-center gap-1">
               <Activity className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground font-medium">{organization.activeProjects || 0}</span>

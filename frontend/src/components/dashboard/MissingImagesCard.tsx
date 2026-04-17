@@ -295,7 +295,7 @@ export function MissingImagesCard({
           <img
             src={hasImage}
             alt={type === 'icon' ? 'Logo' : 'Banner'}
-            className={`${sizeClass} ${type === 'icon' ? 'object-contain' : 'object-cover'} rounded border border-slate-200`}
+            className={`${sizeClass} ${type === 'icon' ? 'object-contain' : 'object-cover'} rounded border border-border`}
           />
         </div>
       );
@@ -307,7 +307,7 @@ export function MissingImagesCard({
           className={`${sizeClass} rounded border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${
             isDraggedOver
               ? 'border-blue-500 bg-blue-50'
-              : 'border-slate-300 bg-slate-50 hover:border-slate-400 hover:bg-slate-100'
+              : 'border-input bg-slate-50 hover:border-slate-400 hover:bg-slate-100'
           }`}
           onClick={(e) => handleUploadClick(e, activity.id, type)}
           onDrop={(e) => handleDrop(e, activity.id, type)}

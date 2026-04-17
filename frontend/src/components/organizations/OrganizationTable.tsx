@@ -187,7 +187,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
 
   if (organizations.length === 0) {
     return (
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-md shadow-sm border border-border p-8 text-center">
         <div className="text-slate-500">No organizations found</div>
       </div>
     );
@@ -302,7 +302,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-md shadow-sm border border-gray-200">
+    <div className="bg-white rounded-md shadow-sm border border-border">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

@@ -159,7 +159,7 @@ export function PeriodRowEnhanced({
   // Edit mode
   if (isEditing && !readOnly) {
     return (
-      <div className="grid grid-cols-6 gap-2 items-center px-3 py-2 bg-gray-100 rounded-lg border border-gray-300">
+      <div className="grid grid-cols-6 gap-2 items-center px-3 py-2 bg-gray-100 rounded-lg border border-input">
         {/* Facet */}
         <div className="text-xs font-medium">
           {period.facet}
@@ -258,10 +258,10 @@ export function PeriodRowEnhanced({
     <>
     <div className={cn(
       "grid grid-cols-6 gap-2 items-center px-3 py-3 rounded-lg hover:bg-gray-50 transition-all group",
-      status.color === 'gray-900' && "bg-gray-100 border border-gray-300 hover:bg-gray-200",
-      status.color === 'gray-600' && "bg-gray-50 border border-gray-200 hover:bg-gray-100", 
-      status.color === 'gray-500' && "bg-gray-50 border border-gray-200 hover:bg-gray-100",
-      status.color === 'gray' && "bg-gray-50 border border-gray-200"
+      status.color === 'gray-900' && "bg-gray-100 border border-input hover:bg-gray-200",
+      status.color === 'gray-600' && "bg-gray-50 border border-border hover:bg-gray-100", 
+      status.color === 'gray-500' && "bg-gray-50 border border-border hover:bg-gray-100",
+      status.color === 'gray' && "bg-gray-50 border border-border"
     )}>
       {/* Facet */}
       <div className="text-xs font-medium">

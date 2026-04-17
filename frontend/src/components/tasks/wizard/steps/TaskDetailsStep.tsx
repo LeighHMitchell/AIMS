@@ -59,7 +59,7 @@ const TASK_TYPES: { value: TaskType; label: string; description: string; icon: R
 const PRIORITIES: { value: TaskPriority; label: string; color: string }[] = [
   { value: 'high', label: 'High', color: 'text-red-600 bg-red-50 border-red-200' },
   { value: 'medium', label: 'Medium', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  { value: 'low', label: 'Low', color: 'text-slate-600 bg-slate-50 border-slate-200' },
+  { value: 'low', label: 'Low', color: 'text-slate-600 bg-slate-50 border-border' },
 ];
 
 export function TaskDetailsStep({

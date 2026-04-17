@@ -107,7 +107,7 @@ export function SectorFragmentationChart({
       )}
 
       {/* Controls Row - Below Chart */}
-      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100">
+      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
         {/* Measure Dropdown */}
         <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
           <SelectTrigger className="w-[140px] h-9 text-sm bg-white">

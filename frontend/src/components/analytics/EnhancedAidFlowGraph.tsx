@@ -761,7 +761,7 @@ export default function EnhancedAidFlowGraph({
           
           return (
             <div 
-              className="absolute z-20 bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-slate-200 min-w-[280px] max-w-[320px]"
+              className="absolute z-20 bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-border min-w-[280px] max-w-[320px]"
               style={{
                 left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 340),
                 top: selectedNodePosition.y + 15
@@ -786,7 +786,7 @@ export default function EnhancedAidFlowGraph({
                   <img 
                     src={selectedNode.logo} 
                     alt={`${selectedNode.name} logo`}
-                    className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-slate-200"
+                    className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-border"
                     onError={(e) => {
                       // Fallback to initials if image fails to load
                       const target = e.target as HTMLImageElement
@@ -842,7 +842,7 @@ export default function EnhancedAidFlowGraph({
                   )}
                   {inflow > 0 && outflow > 0 && (
                     <>
-                      <div className="border-t border-slate-200 pt-2 mt-2">
+                      <div className="border-t border-border pt-2 mt-2">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium text-slate-700">Net Flow</span>
                           <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -915,8 +915,8 @@ export default function EnhancedAidFlowGraph({
               
               {/* Nested Popup for Partners/Transactions */}
               {nestedPopup && (
-                <div className="mt-3 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  <div className="sticky top-0 bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between">
+                <div className="mt-3 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="sticky top-0 bg-white border-b border-border px-3 py-2 flex items-center justify-between">
                     <span className="text-sm font-medium text-slate-700 capitalize">
                       {nestedPopup.type === 'partners' ? 'Partners' : 
                        nestedPopup.type === 'incoming' ? 'Incoming Transactions' :
@@ -941,7 +941,7 @@ export default function EnhancedAidFlowGraph({
                             <img 
                               src={partner.logo} 
                               alt={partner.name}
-                              className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                              className="w-6 h-6 rounded-full object-cover border border-border"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
@@ -977,7 +977,7 @@ export default function EnhancedAidFlowGraph({
                               <img 
                                 src={tx.partnerLogo} 
                                 alt={tx.partnerName}
-                                className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                                className="w-6 h-6 rounded-full object-cover border border-border"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement
                                   target.style.display = 'none'

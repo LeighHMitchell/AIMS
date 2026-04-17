@@ -176,7 +176,7 @@ export function OptimizedOrganizationList({
     <Link
       key={organization.id}
       href={`/organizations/${organization.id}`}
-      className="block border rounded-lg p-4 hover:border-gray-300 hover:shadow-md transition-all duration-200 bg-white"
+      className="block border rounded-lg p-4 hover:border-input hover:shadow-md transition-all duration-200 bg-white"
     >
       <div className="space-y-3">
         {/* Header */}

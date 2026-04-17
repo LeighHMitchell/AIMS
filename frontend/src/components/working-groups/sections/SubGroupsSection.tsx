@@ -187,7 +187,7 @@ export default function SubGroupsSection({
           ))}
         </div>
       ) : subGroups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-gray-200 rounded-lg">
+        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-lg">
           <GitBranch className="h-12 w-12 text-muted-foreground mb-3" />
           <p className="text-sm font-medium text-foreground">No sub-working groups yet</p>
           <p className="text-xs text-muted-foreground mt-1 max-w-sm">

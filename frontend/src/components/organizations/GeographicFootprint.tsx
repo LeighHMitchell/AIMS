@@ -107,11 +107,11 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
   }, [organization]);
 
   const getRoleColor = () => {
-    return 'bg-slate-100 text-slate-700 border-slate-200';
+    return 'bg-slate-100 text-slate-700 border-border';
   };
 
   const getStatusColor = () => {
-    return 'bg-slate-100 text-slate-700 border-slate-200';
+    return 'bg-slate-100 text-slate-700 border-border';
   };
 
   return (
@@ -129,17 +129,17 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
         <div className="space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
               <Globe className="h-6 w-6 mx-auto mb-2 text-slate-500" />
               <p className="text-2xl font-bold text-slate-900">{geographicData.totalCountries}</p>
               <p className="text-sm text-slate-600">Countries</p>
             </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
               <Activity className="h-6 w-6 mx-auto mb-2 text-slate-500" />
               <p className="text-2xl font-bold text-slate-900">{geographicData.totalActivities}</p>
               <p className="text-sm text-slate-600">Total Activities</p>
             </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
               <Building2 className="h-6 w-6 mx-auto mb-2 text-slate-500" />
               <div className="flex items-center justify-center gap-2">
                 {getCountryCode(geographicData.primaryCountry) && (
@@ -160,7 +160,7 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
               <h4 className="font-semibold text-gray-900">Countries of Operation</h4>
               <div className="space-y-3">
                 {geographicData.countries.map((countryData, index) => (
-                  <div key={countryData.country} className="border border-gray-200 rounded-lg p-4">
+                  <div key={countryData.country} className="border border-border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         {getCountryCode(countryData.country) && (

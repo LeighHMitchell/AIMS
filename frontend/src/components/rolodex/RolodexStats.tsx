@@ -76,7 +76,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
 
   if (loading) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
@@ -88,7 +88,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Users className="h-5 w-5" />
@@ -134,7 +134,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
             key !== 'page' && 
             key !== 'limit'
           ) && (
-            <div className="pt-2 border-t border-slate-200">
+            <div className="pt-2 border-t border-border">
               <div className="text-xs text-slate-500">
                 * Results filtered by active criteria
               </div>

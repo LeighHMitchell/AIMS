@@ -193,7 +193,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
       {/* Aggregation Mode Selector */}
       <div className="flex items-center justify-between">
         <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+          <SelectTrigger className="w-48 h-9 bg-white border-border">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

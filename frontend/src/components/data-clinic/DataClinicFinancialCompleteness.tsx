@@ -115,7 +115,7 @@ export function DataClinicFinancialCompleteness() {
   // Error State
   if (error) {
     return (
-      <Card className="border-slate-200 bg-slate-50">
+      <Card className="border-border bg-slate-50">
         <CardContent className="flex items-center gap-3 py-6">
           <AlertCircle className="h-8 w-8 text-slate-400" />
           <div>

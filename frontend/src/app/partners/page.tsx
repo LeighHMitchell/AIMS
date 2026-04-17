@@ -1633,7 +1633,7 @@ export default function PartnersPage() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 pt-3 border-t border-slate-200">
+                <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-slate-700">Total:</span>
                     <span className="font-mono font-bold text-lg">
@@ -1644,7 +1644,7 @@ export default function PartnersPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-between pt-4 border-t border-slate-200">
+              <div className="flex justify-between pt-4 border-t border-border">
                 <div className="flex gap-2">
                   {selectedOrg.website && (
                     <Button 

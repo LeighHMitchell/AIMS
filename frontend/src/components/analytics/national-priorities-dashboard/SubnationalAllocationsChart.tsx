@@ -189,7 +189,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
       const item = payload[0].payload;
       const percentage = grandTotal > 0 ? ((item.value / grandTotal) * 100).toFixed(1) : "0";
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">{item.name}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
@@ -513,7 +513,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
   return (
     <div className="flex flex-col h-[700px] gap-4">
       {/* Chart Card - takes remaining space */}
-      <Card className="bg-white border-slate-200 flex-1 flex flex-col min-h-0">
+      <Card className="bg-white border-border flex-1 flex flex-col min-h-0">
         <CardHeader className="pb-1 pt-4 px-4 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -546,7 +546,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
 
       {/* Table Card Below - fixed height */}
       {!loading && data && data.length > 0 && (
-        <Card className="bg-white border-slate-200 h-[240px] flex-shrink-0 flex flex-col">
+        <Card className="bg-white border-border h-[240px] flex-shrink-0 flex flex-col">
           <CardHeader className="pb-2 flex-shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">

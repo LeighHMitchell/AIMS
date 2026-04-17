@@ -253,7 +253,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2 mt-4">
-          <div className="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
+          <div className="inline-flex rounded-lg border border-border p-1 bg-slate-50">
             <button
               onClick={() => setViewMode('transaction')}
               className={cn(

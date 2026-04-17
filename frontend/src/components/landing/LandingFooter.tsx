@@ -41,7 +41,7 @@ export function LandingFooter() {
   return (
     <footer
       aria-labelledby="footer-heading"
-      className="relative w-full overflow-hidden border-t border-gray-200 bg-gray-50"
+      className="relative w-full overflow-hidden border-t border-border bg-gray-50"
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <motion.div
@@ -174,7 +174,7 @@ export function LandingFooter() {
             <Button
               size="icon"
               variant="outline"
-              className="h-9 w-9 rounded-full border-gray-300"
+              className="h-9 w-9 rounded-full border-input"
               onClick={scrollToTop}
               aria-label="Scroll to top"
             >

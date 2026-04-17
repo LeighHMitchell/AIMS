@@ -282,8 +282,8 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
               <div
                 className={cn(
                   "relative w-24 h-24 rounded-full border-2 border-dashed transition-all cursor-pointer",
-                  isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
-                  formData.profilePhoto && "border-solid border-gray-200"
+                  isDragging ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400",
+                  formData.profilePhoto && "border-solid border-border"
                 )}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -585,7 +585,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           onChange={(e) => handleChange('mailingAddress', e.target.value)}
           placeholder="Street address, city, postal code"
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 

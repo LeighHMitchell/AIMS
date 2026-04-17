@@ -108,7 +108,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                   <Link
                     key={s.code}
                     href={`/sectors/${s.code}`}
-                    className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     <code
                       className="text-xs font-mono font-bold px-2 py-1 rounded text-white flex-shrink-0"

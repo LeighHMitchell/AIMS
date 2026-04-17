@@ -155,7 +155,7 @@ export function OrganizationAnalytics({
             <OrgProjectMap organizationId={organizationId} />
           </TabsContent>
           <TabsContent value="data" className="mt-4">
-            <div className="text-sm text-slate-600 p-4 border border-slate-200 rounded-lg bg-slate-50">
+            <div className="text-sm text-slate-600 p-4 border border-border rounded-lg bg-slate-50">
               Location data summary: {data.allProjects.length} projects across multiple locations.
               Switch to Map View to see geographic distribution.
             </div>

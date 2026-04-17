@@ -1637,7 +1637,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                       {/* Darker separator line */}
                       <tr>
                         <td colSpan={3} className="px-0 py-0">
-                          <div className="border-t-2 border-slate-300"></div>
+                          <div className="border-t-2 border-input"></div>
                         </td>
                       </tr>
                       {/* Display all transaction types found in XML */}
@@ -13021,7 +13021,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                className="border-2 border-dashed border-input rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
                 onClick={() => document.getElementById('xml-upload')?.click()}
               >
                 <FileCode className="h-12 w-12 text-gray-500 mx-auto mb-4" />
@@ -13044,7 +13044,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             {/* URL Input Section */}
             {importMethod === 'url' && (
               <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <div className="border-2 border-dashed border-input rounded-lg p-8 text-center">
                   <Link className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Enter the URL of an IATI XML file</p>
                   <p className="text-sm text-gray-500 mb-4">Must be a publicly accessible XML document</p>
@@ -13578,7 +13578,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     </h3>
                     {parsedActivity.reportingOrg.ref && (
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-sm font-mono text-gray-600 bg-card px-2 py-1 rounded border border-gray-200">
+                        <span className="text-sm font-mono text-gray-600 bg-card px-2 py-1 rounded border border-border">
                           {parsedActivity.reportingOrg.ref}
                         </span>
                         <span className="text-xs text-gray-500">IATI Org ID</span>
@@ -14122,7 +14122,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </div>
 
             {/* Info Message */}
-            <Alert className="border-gray-200 bg-gray-50">
+            <Alert className="border-border bg-gray-50">
               <Info className="h-4 w-4 text-gray-600" />
               <AlertDescription className="text-gray-800">
                 <p className="text-sm">
@@ -14303,7 +14303,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
   const dropdownContent = isOpen && buttonRect && (
     <div 
       ref={dropdownRef}
-      className="fixed bg-card border border-gray-200 rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
+      className="fixed bg-card border border-border rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
       style={{
         top: buttonRect.bottom + 4,
         left: buttonRect.left,
@@ -14314,7 +14314,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
         <div
           key={subsector.code}
           onClick={() => onSelect(subsector.code)}
-          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-gray-100 last:border-b-0 whitespace-nowrap"
+          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-border last:border-b-0 whitespace-nowrap"
         >
           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[50px]">
             {subsector.code}
@@ -14772,11 +14772,11 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     className={`border rounded-lg p-5 bg-card transition-all duration-200 ${
                       hasValidationIssue 
                         ? 'border-amber-300 bg-amber-50/30' 
-                        : 'border-gray-200'
+                        : 'border-border'
                     }`}
                   >
                     {/* Original sector header */}
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
                       <div className="flex items-center gap-2">
                         <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">{originalCode}</code>
                         <span className="text-sm font-medium text-gray-700">{items[0].originalName}</span>
@@ -14820,7 +14820,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     <div className="space-y-2">
                       <table className="w-full">
                         <thead className="bg-surface-muted">
-                          <tr className="border-b border-gray-200">
+                          <tr className="border-b border-border">
                             <th className="text-left text-xs font-medium text-gray-500 pb-2 px-1">Subsector</th>
                             <th className="text-center text-xs font-medium text-gray-500 pb-2 px-1 w-28">Percentage</th>
                             <th className="w-10"></th>
@@ -14828,7 +14828,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                         </thead>
                         <tbody>
                           {items.map((mapping, idx) => (
-                            <tr key={mapping.id} className="border-b border-gray-100 last:border-b-0 animate-in fade-in slide-in-from-top-2">
+                            <tr key={mapping.id} className="border-b border-border last:border-b-0 animate-in fade-in slide-in-from-top-2">
                               <td className="py-2 px-1 align-middle">
                                 <SubsectorDropdown
                                   value={mapping.selectedCode}
@@ -14870,7 +14870,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
 
                       {/* Preset split buttons - show when sector has 2+ items */}
                       {items.length >= 2 && (
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 mt-2">
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-border mt-2">
                           <span className="text-xs text-gray-500 self-center mr-1">Quick splits:</span>
                           <Button
                             variant="outline"
@@ -14935,7 +14935,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           </div>
 
           {/* Total percentage bar - at bottom */}
-          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-border">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Total:</span>
               <span className="text-sm font-semibold text-gray-900">

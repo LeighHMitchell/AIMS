@@ -252,7 +252,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-            <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+            <SelectTrigger className="w-48 h-9 bg-white border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

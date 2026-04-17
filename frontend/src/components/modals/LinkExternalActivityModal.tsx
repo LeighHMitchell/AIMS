@@ -117,7 +117,7 @@ export function LinkExternalActivityModal({
               placeholder="e.g., GB-GOV-1-12345"
               value={externalIatiId}
               onChange={(e) => setExternalIatiId(e.target.value)}
-              className="border-gray-300 focus:border-gray-500"
+              className="border-input focus:border-gray-500"
             />
             <p className="text-xs text-gray-500">
               The unique IATI identifier of the related activity
@@ -132,7 +132,7 @@ export function LinkExternalActivityModal({
               placeholder="Enter activity title for reference"
               value={externalTitle}
               onChange={(e) => setExternalTitle(e.target.value)}
-              className="border-gray-300 focus:border-gray-500"
+              className="border-input focus:border-gray-500"
             />
             <p className="text-xs text-gray-500">
               Optional title to help identify this activity
@@ -170,7 +170,7 @@ export function LinkExternalActivityModal({
               placeholder="Add additional context about this relationship..."
               value={narrative}
               onChange={(e) => setNarrative(e.target.value)}
-              className="resize-none border-gray-300 focus:border-gray-500"
+              className="resize-none border-input focus:border-gray-500"
               rows={3}
             />
           </div>
@@ -181,7 +181,7 @@ export function LinkExternalActivityModal({
             variant="outline"
             onClick={handleClose}
             disabled={saving}
-            className="border-gray-300 text-gray-700 hover:bg-muted"
+            className="border-input text-gray-700 hover:bg-muted"
           >
             Cancel
           </Button>

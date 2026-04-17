@@ -600,7 +600,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
           <select
             value={depth}
             onChange={(e) => onDepthChange(e.target.value as DepthOption)}
-            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 shadow-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+            className="px-3 py-2 bg-white border border-input rounded-lg text-sm font-medium text-gray-700 shadow-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
             disabled={loading}
           >
             <option value="1">Direct links</option>
@@ -616,7 +616,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
               svg.transition().duration(300).call(zoomRef.current.scaleBy, 1.3);
             }
           }}
-          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-muted transition-colors text-sm font-bold text-gray-700 shadow-lg"
+          className="px-2.5 py-2 bg-white border border-input rounded-lg hover:bg-muted transition-colors text-sm font-bold text-gray-700 shadow-lg"
           title="Zoom in"
         >
           +
@@ -628,7 +628,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
               svg.transition().duration(300).call(zoomRef.current.scaleBy, 0.7);
             }
           }}
-          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-muted transition-colors text-sm font-bold text-gray-700 shadow-lg"
+          className="px-2.5 py-2 bg-white border border-input rounded-lg hover:bg-muted transition-colors text-sm font-bold text-gray-700 shadow-lg"
           title="Zoom out"
         >
           −

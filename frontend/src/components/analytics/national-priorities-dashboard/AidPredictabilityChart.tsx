@@ -151,7 +151,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       // Get the yearLabel from the payload's data point
       const yearLabel = payload[0]?.payload?.yearLabel || label;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">{yearLabel}</p>
           {payload.map((entry: any, index: number) => (
             <p
@@ -492,7 +492,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

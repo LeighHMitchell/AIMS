@@ -84,7 +84,7 @@ export function BulkActionToolbar({
           }
         }
       `}</style>
-      <div className="bg-white shadow-lg rounded-lg border border-gray-200 px-6 py-3 flex items-center gap-4">
+      <div className="bg-white shadow-lg rounded-lg border border-border px-6 py-3 flex items-center gap-4">
         <div className="text-sm font-medium text-gray-700">
           <div>
             {selectedCount} {getItemLabel(itemType, selectedCount)} selected

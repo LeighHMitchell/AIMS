@@ -72,7 +72,7 @@ export function FAQSection() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.4 }}
               >
-                <Card className="overflow-hidden border-gray-200 bg-white transition-all hover:border-blue-200 hover:shadow-md">
+                <Card className="overflow-hidden border-border bg-white transition-all hover:border-blue-200 hover:shadow-md">
                   <motion.button
                     onClick={() => setOpenIndex(isOpen ? null : index)}
                     className="flex w-full items-center justify-between p-4 text-left md:p-6"
@@ -101,7 +101,7 @@ export function FAQSection() {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-gray-100 p-4 md:p-6">
+                        <div className="border-t border-border p-4 md:p-6">
                           <motion.p
                             initial={{ y: -10 }}
                             animate={{ y: 0 }}

@@ -206,7 +206,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
   const status = getCompletionStatus();
   
   return (
-    <div className="bg-slate-50 rounded-lg border border-slate-200">
+    <div className="bg-slate-50 rounded-lg border border-border">
       {/* Compact Header */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
@@ -247,7 +247,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
       
       {/* Expandable Content */}
       {isExpanded && (
-        <div className="border-t border-slate-200 p-4 bg-white">
+        <div className="border-t border-border p-4 bg-white">
           <div className="space-y-4">
             {/* Completion Summary */}
             <div className="bg-slate-50 rounded-md p-3">
@@ -300,7 +300,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
 
             {/* Perfect Score */}
             {completionPercentage === 100 && (
-              <div className="bg-slate-50 border border-slate-300 rounded-md p-3">
+              <div className="bg-slate-50 border border-input rounded-md p-3">
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">Perfect Score!</span>
@@ -313,7 +313,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
 
             {/* Tips */}
             {completionPercentage < 100 && (
-              <div className="bg-slate-50 border border-slate-300 rounded-md p-3">
+              <div className="bg-slate-50 border border-input rounded-md p-3">
                 <div className="flex items-center gap-2 text-slate-700 mb-1">
                   <Clock className="w-4 h-4" />
                   <span className="text-sm font-medium">Quick Tips</span>

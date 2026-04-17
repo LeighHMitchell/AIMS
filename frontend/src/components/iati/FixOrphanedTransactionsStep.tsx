@@ -136,8 +136,8 @@ export function FixOrphanedTransactionsStep({
                   className={`flex items-center justify-between p-2 rounded-lg border ${
                     isCurrent ? 'border-primary bg-primary/5' : 
                     isResolved ? 'border-green-200 bg-green-50' : 
-                    isSkipped ? 'border-gray-200 bg-gray-50' : 
-                    'border-gray-200'
+                    isSkipped ? 'border-border bg-gray-50' : 
+                    'border-border'
                   }`}
                 >
                   <div className="flex items-center space-x-3">

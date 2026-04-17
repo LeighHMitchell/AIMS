@@ -190,7 +190,7 @@ export function CalendarEventHeatmap({ events, year, onDayClick, onYearChange }:
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none')
+        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none')
         .style('opacity', 0)
         .style('min-width', '280px')
         .style('max-width', '350px')

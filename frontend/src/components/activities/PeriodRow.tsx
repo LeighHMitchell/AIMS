@@ -218,7 +218,7 @@ export function PeriodRow({
       status.color === 'green' && "bg-green-50 border border-green-200",
       status.color === 'yellow' && "bg-yellow-50 border border-yellow-200", 
       status.color === 'red' && "bg-red-50 border border-red-200",
-      status.color === 'gray' && "bg-gray-50 border border-gray-200"
+      status.color === 'gray' && "bg-gray-50 border border-border"
     )}>
       {/* Facet */}
       <div className="text-xs font-medium">

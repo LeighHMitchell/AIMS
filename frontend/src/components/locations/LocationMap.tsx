@@ -164,7 +164,7 @@ function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; 
           type="button"
           onClick={handle2DView}
           title="2D View"
-          className="flex items-center gap-1.5 bg-white shadow-md border border-gray-300 rounded-md h-8 px-2.5 text-xs text-gray-700 hover:bg-gray-50"
+          className="flex items-center gap-1.5 bg-white shadow-md border border-input rounded-md h-8 px-2.5 text-xs text-gray-700 hover:bg-gray-50"
         >
           <Mountain className="h-3.5 w-3.5" />
           2D
@@ -174,7 +174,7 @@ function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; 
           type="button"
           onClick={handle3DView}
           title="3D View"
-          className="flex items-center gap-1.5 bg-white shadow-md border border-gray-300 rounded-md h-8 px-2.5 text-xs text-gray-700 hover:bg-gray-50"
+          className="flex items-center gap-1.5 bg-white shadow-md border border-input rounded-md h-8 px-2.5 text-xs text-gray-700 hover:bg-gray-50"
         >
           <Mountain className="h-3.5 w-3.5" />
           3D
@@ -184,7 +184,7 @@ function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; 
         type="button"
         onClick={handleReset}
         title="Reset view"
-        className="flex items-center justify-center bg-white shadow-md border border-gray-300 rounded-md h-8 w-8 text-gray-700 hover:bg-gray-50"
+        className="flex items-center justify-center bg-white shadow-md border border-input rounded-md h-8 w-8 text-gray-700 hover:bg-gray-50"
       >
         <RotateCcw className="h-3.5 w-3.5" />
       </button>

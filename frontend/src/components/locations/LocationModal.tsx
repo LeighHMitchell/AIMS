@@ -1261,7 +1261,7 @@ const autoPopulateIatiFields = useCallback((params: {
 
                     {/* Search Results Dropdown */}
                     {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-auto z-50">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-96 overflow-auto z-50">
                         {/* Result count header */}
                         <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-xs text-gray-600 font-medium">
                           Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
@@ -1272,7 +1272,7 @@ const autoPopulateIatiFields = useCallback((params: {
                             type="button"
                             key={index}
                             onClick={() => handleSelectSearchResult(result)}
-                            className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                            className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-border last:border-b-0 transition-colors"
                           >
                             <div className="font-medium text-gray-900 truncate">
                               {result.name || result.display_name}
@@ -1294,7 +1294,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   )}
                   
                   {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
+                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded border border-border">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <div>

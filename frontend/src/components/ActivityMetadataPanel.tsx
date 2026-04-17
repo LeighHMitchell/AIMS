@@ -45,13 +45,13 @@ export function ActivityMetadataPanel({
   }
 
   return (
-    <div className={`bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3 ${className}`}>
+    <div className={`bg-gray-50 border border-border rounded-lg p-4 space-y-3 ${className}`}>
       <h3 className="text-sm font-medium text-gray-900 mb-3">Activity Identifiers</h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* System UUID */}
         {systemUUID && (
-          <div className="bg-white rounded-md p-3 border border-gray-100 group hover:border-gray-200 transition-colors">
+          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium text-gray-700 mb-1">System UUID</div>
@@ -86,7 +86,7 @@ export function ActivityMetadataPanel({
 
         {/* Activity Partner ID */}
         {activityPartnerID && (
-          <div className="bg-white rounded-md p-3 border border-gray-100 group hover:border-gray-200 transition-colors">
+          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium text-gray-700 mb-1">Activity Partner ID</div>
@@ -121,7 +121,7 @@ export function ActivityMetadataPanel({
 
         {/* IATI Identifier */}
         {iatiIdentifier && (
-          <div className="bg-white rounded-md p-3 border border-gray-100 group hover:border-gray-200 transition-colors">
+          <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium text-gray-700 mb-1">IATI Identifier</div>

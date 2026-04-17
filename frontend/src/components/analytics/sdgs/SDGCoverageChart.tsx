@@ -123,7 +123,7 @@ export function SDGCoverageChart({
       const goal = SDG_GOALS.find(g => g.id === data.sdgGoal)
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+        <div className="bg-white border border-border rounded-lg shadow-lg p-3">
           <p className="font-semibold text-slate-900 mb-2">
             <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</span>
             <span className="ml-2">{goal?.name || data.sdgName}</span>
@@ -141,7 +141,7 @@ export function SDGCoverageChart({
               <span className="text-slate-600">Planned Disbursements:</span>
               <span className="font-medium">{formatCurrency(data.totalPlannedDisbursements)}</span>
             </div>
-            <div className="pt-2 mt-2 border-t border-slate-200 text-xs text-slate-500 italic">
+            <div className="pt-2 mt-2 border-t border-border text-xs text-slate-500 italic">
               Values are equally split when activities map to multiple SDGs
             </div>
           </div>

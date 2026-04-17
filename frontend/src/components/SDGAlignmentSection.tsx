@@ -326,7 +326,7 @@ export default function SDGAlignmentSection({
                           "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-visible",
                           isSelected
                             ? "border-primary ring-2 ring-primary/20 shadow-lg"
-                            : "border-gray-200 hover:border-gray-300",
+                            : "border-border hover:border-input",
                           !canEdit && "opacity-50 cursor-not-allowed"
                         )}
                       >

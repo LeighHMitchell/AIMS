@@ -219,7 +219,7 @@ export function AssignFocalPointModal({
 
             {/* Search Results Dropdown */}
             {showResults && filteredResults.length > 0 && !selectedUser && (
-              <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+              <div className="mt-2 bg-white border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                 <div className="p-2">
                   <p className="text-xs text-gray-500 px-2 py-1">
                     {query
@@ -263,7 +263,7 @@ export function AssignFocalPointModal({
             )}
 
             {showResults && filteredResults.length === 0 && !isSearching && !selectedUser && (
-              <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+              <div className="mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
                 <p className="text-sm text-gray-600 text-center">No users found matching &quot;{query}&quot;</p>
               </div>
             )}

@@ -2243,7 +2243,7 @@ export default function TransactionList({
 
                               {/* Description */}
                               {transaction.description && (
-                                <div className="pt-4 border-t border-gray-200">
+                                <div className="pt-4 border-t border-border">
                                   <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Description</h4>
                                   <p className="ml-4 text-gray-700 text-xs leading-relaxed">{transaction.description}</p>
                                 </div>
@@ -2350,7 +2350,7 @@ export default function TransactionList({
                                 </div>
                               </div>
 
-                              <div className="pt-4 border-t border-gray-200">
+                              <div className="pt-4 border-t border-border">
                                 <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
                                 <div className="space-y-3 ml-4">
                                 <div className="flex items-center gap-1">
@@ -2562,7 +2562,7 @@ export default function TransactionList({
                                 </div>
                               </div>
 
-                              <div className="pt-4 border-t border-gray-200">
+                              <div className="pt-4 border-t border-border">
                                 <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Metadata & History</h4>
                                 <div className="space-y-3 ml-4">
                                 {transaction.created_at && (
@@ -2621,7 +2621,7 @@ export default function TransactionList({
                               {/* Documents */}
                               {transactionDocuments[transaction.uuid || transaction.id] && 
                                transactionDocuments[transaction.uuid || transaction.id].length > 0 && (
-                                <div className="pt-4 border-t border-gray-200">
+                                <div className="pt-4 border-t border-border">
                                   <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Documents</h4>
                                   <div className="space-y-2 ml-4">
                                     {transactionDocuments[transaction.uuid || transaction.id].map((doc: any) => (

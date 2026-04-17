@@ -161,7 +161,7 @@ export function AppraisalProgressRail({
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     intakeComplete && 'bg-gray-800 border-gray-800 text-white',
                     intakeActive && !intakeComplete && 'border-gray-600 bg-gray-100 text-gray-800',
-                    !intakeComplete && !intakeActive && 'border-gray-300 bg-background text-gray-400',
+                    !intakeComplete && !intakeActive && 'border-input bg-background text-gray-400',
                     (intakeActive || intakeComplete) && 'cursor-pointer hover:scale-110',
                   )}
                 >
@@ -189,7 +189,7 @@ export function AppraisalProgressRail({
 
             {/* Intake sub-items */}
             {intakeActive && (
-              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', intakeComplete ? 'border-gray-600' : 'border-gray-300')}>
+              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', intakeComplete ? 'border-gray-600' : 'border-input')}>
                 {INTAKE_SUB_ITEMS.map((sub) => (
                   <button
                     key={sub.anchor}
@@ -221,7 +221,7 @@ export function AppraisalProgressRail({
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     fs1Complete && 'bg-gray-800 border-gray-800 text-white',
                     fs1Active && !fs1Complete && 'border-gray-600 bg-gray-100 text-gray-800',
-                    !fs1Complete && !fs1Active && 'border-gray-300 bg-background text-gray-400',
+                    !fs1Complete && !fs1Active && 'border-input bg-background text-gray-400',
                     !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
                     (fs1Active || fs1Complete) && 'cursor-pointer hover:scale-110',
                   )}
@@ -263,7 +263,7 @@ export function AppraisalProgressRail({
 
             {/* FS-1 internal tabs */}
             {fs1Active && (
-              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', 'border-gray-300')}>
+              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', 'border-input')}>
                 {FS1_TABS.map((tab) => (
                   <button
                     key={tab.key}
@@ -302,7 +302,7 @@ export function AppraisalProgressRail({
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     fs2Complete && 'bg-gray-800 border-gray-800 text-white',
                     fs2Active && !fs2Complete && 'border-gray-600 bg-gray-100 text-gray-800',
-                    !fs2Complete && !fs2Active && 'border-gray-300 bg-background text-gray-400',
+                    !fs2Complete && !fs2Active && 'border-input bg-background text-gray-400',
                     (fs2Active || fs2Complete) && 'cursor-pointer hover:scale-110',
                   )}
                 >
@@ -344,7 +344,7 @@ export function AppraisalProgressRail({
 
             {/* FS-2 internal tabs */}
             {fs2Active && (
-              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', 'border-gray-300')}>
+              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', 'border-input')}>
                 {FS2_TABS.map((tab) => (
                   <button
                     key={tab.key}
@@ -374,7 +374,7 @@ export function AppraisalProgressRail({
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     fs3Active && 'border-gray-600 bg-gray-100 text-gray-800 cursor-pointer hover:scale-110',
-                    !fs3Active && 'border-gray-300 bg-background text-gray-400',
+                    !fs3Active && 'border-input bg-background text-gray-400',
                   )}
                 >
                   {!fs3Accessible && !fs3Active ? <Lock className="h-3 w-3 text-gray-300" /> :

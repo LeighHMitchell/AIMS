@@ -125,8 +125,8 @@ export function TopDonorGroupsChart({
             if (active && payload && payload.length) {
               const item = payload[0].payload;
               return (
-                <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                  <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+                <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                  <div className="bg-surface-muted px-3 py-2 border-b border-border">
                     <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
                   </div>
                   <div className="p-2">

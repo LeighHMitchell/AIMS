@@ -606,7 +606,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                 </div>
               </div>
             ) : (
-              <div className="h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+              <div className="h-[700px] w-full relative rounded-lg overflow-hidden border border-border">
                 {/* MapLibre Map */}
                 <Map
                   key={`org-map-${organizationId}-${mapStyle}`}

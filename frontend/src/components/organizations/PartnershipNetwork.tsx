@@ -102,11 +102,11 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
   }, [organizationId, activities, allOrganizations]);
 
   const getRelationshipColor = () => {
-    return 'bg-slate-100 text-slate-700 border-slate-200';
+    return 'bg-slate-100 text-slate-700 border-border';
   };
 
   const getOrgTypeColor = () => {
-    return 'bg-slate-50 border-slate-200';
+    return 'bg-slate-50 border-border';
   };
 
   const getStatusColor = () => {
@@ -128,17 +128,17 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
         <div className="space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
               <Users className="h-6 w-6 mx-auto mb-2 text-slate-500" />
               <p className="text-2xl font-bold text-slate-900">{partnershipData.totalPartners}</p>
               <p className="text-sm text-slate-600">Partner Organizations</p>
             </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
               <Activity className="h-6 w-6 mx-auto mb-2 text-slate-500" />
               <p className="text-2xl font-bold text-slate-900">{partnershipData.totalCollaborations}</p>
               <p className="text-sm text-slate-600">Total Collaborations</p>
             </div>
-            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-border">
               <Building2 className="h-6 w-6 mx-auto mb-2 text-slate-500" />
               <p className="text-2xl font-bold text-slate-900">
                 {partnershipData.partnerships.length > 0

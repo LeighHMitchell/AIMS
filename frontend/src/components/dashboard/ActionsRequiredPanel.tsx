@@ -243,7 +243,7 @@ export function ActionsRequiredPanel({
             return (
               <div
                 key={action.id}
-                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${config.bgColor} hover:border-slate-300`}
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${config.bgColor} hover:border-input`}
                 onClick={() => handleActionClick(action.activityId, action.type, action.metadata)}
               >
                 <div className={`p-2 rounded-full bg-white ${config.color}`}>

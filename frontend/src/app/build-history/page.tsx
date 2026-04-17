@@ -136,7 +136,7 @@ export default function BuildHistoryPage() {
                       className={`absolute left-0 top-6 w-10 h-10 rounded-full flex items-center justify-center ${
                         isLatest 
                           ? 'bg-primary text-primary-foreground' 
-                          : 'bg-gray-100 text-gray-500 border-2 border-gray-200'
+                          : 'bg-gray-100 text-gray-500 border-2 border-border'
                       }`}
                     >
                       {isLatest ? (
@@ -204,7 +204,7 @@ export default function BuildHistoryPage() {
             {/* End of timeline marker (only show on last page) */}
             {currentPage === totalPages && (
               <div className="relative pl-12 pt-6">
-                <div className="absolute left-0 top-6 w-10 h-10 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                <div className="absolute left-0 top-6 w-10 h-10 rounded-full bg-gray-50 border-2 border-dashed border-input flex items-center justify-center">
                   <span className="text-gray-400 text-xs font-medium">...</span>
                 </div>
                 <p className="text-sm text-muted-foreground pt-2 pl-2">

@@ -690,7 +690,7 @@ export function ResultsTab({
                   type="button"
                   variant={newResult.type === 'output' ? 'default' : 'outline'}
                   onClick={() => setNewResult(prev => ({ ...prev, type: 'output' }))}
-                  className={newResult.type === 'output' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-gray-300'}
+                  className={newResult.type === 'output' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-input'}
                 >
                   Output
                   <HelpTextTooltip>Things you deliver (e.g., schools built)</HelpTextTooltip>
@@ -699,7 +699,7 @@ export function ResultsTab({
                   type="button"
                   variant={newResult.type === 'outcome' ? 'default' : 'outline'}
                   onClick={() => setNewResult(prev => ({ ...prev, type: 'outcome' }))}
-                  className={newResult.type === 'outcome' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-gray-300'}
+                  className={newResult.type === 'outcome' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-input'}
                 >
                   Outcome
                   <HelpTextTooltip>Changes that happen (e.g., literacy improved)</HelpTextTooltip>
@@ -708,7 +708,7 @@ export function ResultsTab({
                   type="button"
                   variant={newResult.type === 'impact' ? 'default' : 'outline'}
                   onClick={() => setNewResult(prev => ({ ...prev, type: 'impact' }))}
-                  className={newResult.type === 'impact' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-gray-300'}
+                  className={newResult.type === 'impact' ? 'bg-gray-200 text-gray-800 border-2 border-gray-400' : 'border border-input'}
                 >
                   Impact
                   <HelpTextTooltip>Long-term effects (e.g., poverty reduced)</HelpTextTooltip>
@@ -778,7 +778,7 @@ export function ResultsTab({
             <TabsContent value="overview" className="space-y-6">
           {/* Simple Results List */}
               {filteredResults.map((result: ActivityResult, index: number) => (
-            <div key={result.id} className="bg-white rounded-lg border-2 border-gray-200 p-6">
+            <div key={result.id} className="bg-white rounded-lg border-2 border-border p-6">
               {/* Result Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -973,7 +973,7 @@ export function ResultsTab({
                           {result.indicators && result.indicators.length > 0 ? (
                   <div className="space-y-3">
                     {result.indicators.map((indicator, idx) => (
-                      <div key={indicator.id} className="bg-white border border-gray-200 p-4 rounded-lg">
+                      <div key={indicator.id} className="bg-white border border-border p-4 rounded-lg">
                         {/* Edit Indicator Modal */}
                         <Dialog
                           open={editingIndicator === indicator.id && !readOnly}
@@ -1663,7 +1663,7 @@ export function ResultsTab({
                         
                         {/* Progress Chart - Separate Sub-Card */}
                         {(indicator.baseline?.value || (indicator.periods && indicator.periods.length > 0)) && (
-                          <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
+                          <div className="mt-4 bg-white border border-border rounded-lg p-4">
                             <h6 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                               <BarChart3 className="h-4 w-4" />
                               Progress Visualization
@@ -1739,7 +1739,7 @@ export function ResultsTab({
                                         if (active && payload && payload.length) {
                                           const data = payload[0].payload;
                                           return (
-                                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                                            <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
                                               <p className="font-semibold text-gray-900 mb-1">{data.name}</p>
                                               <p className="text-lg font-bold text-gray-900">{Number(data.value || 0).toLocaleString()}</p>
                                             </div>
@@ -1952,7 +1952,7 @@ export function ResultsTab({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                  <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                     <img src="/images/empty-staff-paper.webp" alt="No time series data" className="h-32 mx-auto mb-4 opacity-50" />
                     <h3 className="text-lg font-semibold mb-2">No time series data yet</h3>
                     <p className="text-muted-foreground">Add indicator periods with dates to see progress over time.</p>
@@ -1990,7 +1990,7 @@ export function ResultsTab({
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                    <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                       <img src="/images/empty-sundial.webp" alt="No indicators to analyze" className="h-32 mx-auto mb-4 opacity-50" />
                       <h3 className="text-lg font-semibold mb-2">No indicators to analyze</h3>
                       <p className="text-muted-foreground">Add indicators to see status distribution.</p>
@@ -2015,7 +2015,7 @@ export function ResultsTab({
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                    <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                       <img src="/images/empty-kite-spool.webp" alt="No results to categorize" className="h-32 mx-auto mb-4 opacity-50" />
                       <h3 className="text-lg font-semibold mb-2">No results to categorize</h3>
                       <p className="text-muted-foreground">Add results to see them grouped by type.</p>

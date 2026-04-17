@@ -368,7 +368,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                     <TooltipContent>
                       <div className="text-xs">
                         {isIatiImportedTag(tag) && (
-                          <div className="mb-2 pb-2 border-b border-gray-200">
+                          <div className="mb-2 pb-2 border-b border-border">
                             <p className="font-semibold text-blue-600 flex items-center gap-1">
                               <FileCode className="w-3 h-3" />
                               Imported from IATI XML

@@ -29,7 +29,7 @@ export function HelpText({ title, content, className, iconClassName }: HelpTextP
           </button>
         </TooltipTrigger>
         <TooltipContent 
-          className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
+          className="max-w-sm p-4 bg-white border border-border shadow-lg"
           sideOffset={8}
         >
           <div className="space-y-2">

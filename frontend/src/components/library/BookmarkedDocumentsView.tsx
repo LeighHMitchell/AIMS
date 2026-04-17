@@ -269,7 +269,7 @@ export function BookmarkedDocumentsView({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+        <div className="bg-white rounded-lg border border-border shadow-sm p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
               Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}

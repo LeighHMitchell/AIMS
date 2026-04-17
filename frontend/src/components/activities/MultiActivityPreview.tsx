@@ -368,7 +368,7 @@ export function MultiActivityPreview({
                                 <p className="font-medium mb-1">Description:</p>
                                 <p className="whitespace-pre-wrap">{activity.description}</p>
                                 {isExisting && existingInfo && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <div className="mt-2 pt-2 border-t border-border">
                                     <p className="font-medium mb-1">Existing Activity Info:</p>
                                     <p>Title: {existingInfo.title}</p>
                                     <p>Last Updated: {new Date(existingInfo.lastUpdated).toLocaleDateString()}</p>

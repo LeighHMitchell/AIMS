@@ -435,7 +435,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                 ) : (
                   <div 
                     {...logoDropzone.getRootProps()} 
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
+                    className="border-2 border-dashed border-input rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
                   >
                     <input {...logoDropzone.getInputProps()} />
                     <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
@@ -472,7 +472,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                 ) : (
                   <div 
                     {...bannerDropzone.getRootProps()} 
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
+                    className="border-2 border-dashed border-input rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-32 flex flex-col justify-center"
                   >
                     <input {...bannerDropzone.getInputProps()} />
                     <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />

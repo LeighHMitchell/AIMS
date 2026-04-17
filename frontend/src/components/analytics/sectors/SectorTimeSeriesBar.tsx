@@ -30,8 +30,8 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
       if (filteredPayload.length === 0) return null;
       
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg text-sm max-h-[400px] overflow-hidden">
-          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg text-sm max-h-[400px] overflow-hidden">
+          <div className="bg-surface-muted px-4 py-2 border-b border-border">
             <p className="font-semibold text-slate-900">Year: {label}</p>
             <p className="text-slate-600">
               Total {dataType === 'planned' ? 'Planned' : 'Actual'}: <span className="font-bold text-slate-900">{formatTooltipCurrency(yearTotal)}</span>
@@ -43,7 +43,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
                 {filteredPayload.map((entry: any, index: number) => {
                   const code = sectorCodes[entry.name] || '';
                   return (
-                    <tr key={`item-${index}`} className="border-b border-slate-100 last:border-b-0">
+                    <tr key={`item-${index}`} className="border-b border-border last:border-b-0">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: entry.color }} />

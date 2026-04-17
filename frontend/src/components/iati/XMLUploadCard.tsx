@@ -128,7 +128,7 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
             className={`
               border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
               transition-colors duration-200 ease-in-out
-              ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
+              ${isDragActive ? 'border-primary bg-primary/5' : 'border-input hover:border-gray-400'}
               ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >

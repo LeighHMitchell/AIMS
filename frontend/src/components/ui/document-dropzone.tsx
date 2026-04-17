@@ -184,7 +184,7 @@ export function DocumentDropzone({
           "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
           isDragActive
             ? "border-primary bg-primary/5"
-            : "border-slate-300 hover:border-slate-400",
+            : "border-input hover:border-slate-400",
           (disabled || uploading) && "opacity-50 cursor-not-allowed"
         )}
       >

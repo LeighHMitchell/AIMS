@@ -212,8 +212,8 @@ export function DataClinicTimeliness() {
     if (!active || !payload || payload.length === 0) return null
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-slate-100 px-3 py-2 border-b border-border">
           <p className="font-semibold text-slate-900 text-sm">
             {label}
           </p>
@@ -222,7 +222,7 @@ export function DataClinicTimeliness() {
           <table className="w-full text-sm">
             <tbody>
               {payload.map((entry: any, index: number) => (
-                <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                <tr key={index} className="border-b border-border last:border-b-0">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -403,8 +403,8 @@ export function DataClinicTimeliness() {
                     if (!active || !payload || payload.length === 0) return null
                     const data = payload[0].payload
                     return (
-                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="bg-slate-100 px-3 py-2 border-b border-border">
                           <p className="font-semibold text-slate-900 text-sm">
                             Year {data.year}
                           </p>
@@ -412,7 +412,7 @@ export function DataClinicTimeliness() {
                         <div className="p-2">
                           <table className="w-full text-sm">
                             <tbody>
-                              <tr className="border-b border-slate-100">
+                              <tr className="border-b border-border">
                                 <td className="py-1.5 pr-4">
                                   <span className="text-slate-700 font-medium">Activities</span>
                                 </td>
@@ -493,8 +493,8 @@ export function DataClinicTimeliness() {
                     if (!active || !payload || payload.length === 0) return null
                     const data = payload[0].payload
                     return (
-                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="bg-slate-100 px-3 py-2 border-b border-border">
                           <p className="font-semibold text-slate-900 text-sm">
                             Year {data.year}
                           </p>
@@ -572,8 +572,8 @@ export function DataClinicTimeliness() {
                     if (!active || !payload || payload.length === 0) return null
                     const data = payload[0].payload
                     return (
-                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="bg-slate-100 px-3 py-2 border-b border-border">
                           <p className="font-semibold text-slate-900 text-sm">
                             Year {data.year}
                           </p>

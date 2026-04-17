@@ -628,7 +628,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-slate-800 border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format('.1f');
@@ -726,7 +726,7 @@ export default function SectorSankeyVisualization({
             });
           }
           if (details.length > 0) {
-            financialHtml = `<div class="mt-2 pt-2 border-t border-slate-200 text-xs space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
+            financialHtml = `<div class="mt-2 pt-2 border-t border-border text-xs space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
           }
         }
         
@@ -1002,7 +1002,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-slate-800 border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = metricMode === 'percentage' ? d3.format('.1f') : d3.format(',.0f');
@@ -1114,7 +1114,7 @@ export default function SectorSankeyVisualization({
 
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-slate-800 border border-border px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format(',.0f');

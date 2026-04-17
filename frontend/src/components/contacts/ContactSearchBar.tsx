@@ -174,7 +174,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
       {/* Search Results Dropdown */}
       {showResults && filteredResults.length > 0 && (
         <div className="relative">
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto">
           <div className="p-2">
             <p className="text-xs text-gray-500 px-2 py-1">
               {query
@@ -241,7 +241,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
 
       {/* No Results */}
       {showResults && filteredResults.length === 0 && !isSearching && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+        <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
           <p className="text-sm text-gray-600 text-center">
             {query
               ? <>No contacts found matching &quot;{query}&quot;</>

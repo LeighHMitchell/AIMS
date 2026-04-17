@@ -182,7 +182,7 @@ export function Dashboard() {
         <TabsContent value="fragmentation" className="mt-6">
           <TooltipProvider>
             <div className="space-y-8">
-              <Card className="border-slate-200">
+              <Card className="border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
                     Program Fragmentation
@@ -201,7 +201,7 @@ export function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-slate-200">
+              <Card className="border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
                     Sector Fragmentation
@@ -220,7 +220,7 @@ export function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-slate-200">
+              <Card className="border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
                     Location Fragmentation

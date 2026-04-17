@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, grandTotal }: any) => {
     const percentage = grandTotal > 0 ? ((data.value / grandTotal) * 100).toFixed(1) : "0";
     
     return (
-      <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+      <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
         <p className="font-semibold text-gray-900 mb-1">{data.name}</p>
         {data.code && (
           <p className="text-xs text-gray-500 mb-1">Code: {data.code}</p>

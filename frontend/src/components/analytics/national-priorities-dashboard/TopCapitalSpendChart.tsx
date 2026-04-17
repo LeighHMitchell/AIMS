@@ -209,8 +209,8 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
     if (active && payload && payload.length) {
       const item = payload[0].payload as ActivityCapitalSpend;
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-xs">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-xs">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm break-words">{item.title}</p>
             {item.iatiIdentifier && (
               <p className="text-xs text-muted-foreground mt-0.5 font-mono bg-slate-200 px-1.5 py-0.5 rounded inline-block">{item.iatiIdentifier}</p>
@@ -219,11 +219,11 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1 pr-4 text-slate-700 font-medium">Capital Spend %</td>
                   <td className="py-1 text-right font-semibold text-slate-900">{item.capitalSpendPercentage.toFixed(1)}%</td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1 pr-4 text-slate-700 font-medium">Base Value</td>
                   <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.baseValue)}</td>
                 </tr>
@@ -480,7 +480,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
   return (
     <>
       {/* Compact Card View */}
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
+      <Card className="bg-white border-border h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

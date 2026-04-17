@@ -121,7 +121,7 @@ export function CompactChartCard({
   return (
     <>
       {/* Compact Card View */}
-      <Card className={cn("bg-white border-slate-200 flex flex-col", className)}>
+      <Card className={cn("bg-white border-border flex flex-col", className)}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ export function CompactChartCard({
           
           {/* Filters section - only shown when expanded */}
           {renderFilters && (
-            <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-border">
               {renderFilters()}
             </div>
           )}

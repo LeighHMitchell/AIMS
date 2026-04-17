@@ -97,7 +97,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
+        <div className="bg-white p-4 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-gray-900 mb-2">{data.sectorName}</p>
           <p className="text-xs text-gray-600 mb-2">Code: {data.sectorCode}</p>
           <p className="text-sm text-slate-600">Activities: {data.activityCount}</p>

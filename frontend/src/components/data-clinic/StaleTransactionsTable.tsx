@@ -252,7 +252,7 @@ export function StaleTransactionsTable() {
   // Loading state
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <Clock className="h-5 w-5" />
@@ -272,7 +272,7 @@ export function StaleTransactionsTable() {
   // Error state
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
             <Clock className="h-5 w-5" />
@@ -293,7 +293,7 @@ export function StaleTransactionsTable() {
   }
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

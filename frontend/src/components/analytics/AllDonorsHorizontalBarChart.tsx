@@ -646,8 +646,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         : data.fullName
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm max-w-[280px] break-words">{orgDisplay}</p>
             {data.type && (
               <div className="flex items-center gap-1.5 mt-1">
@@ -668,7 +668,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </span>
             </div>
             {showPercentage && (
-              <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-slate-100">
+              <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-border">
                 <span className="text-slate-500 text-xs">% of Total</span>
                 <span className="text-sm font-medium text-slate-700">
                   {formatPercentage(data.value)}
@@ -1217,7 +1217,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                         >
                           <div className={`
                             w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
-                            ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                            ${isSelected ? 'bg-primary border-primary' : 'border-input'}
                           `}>
                             {isSelected && <Check className="h-3 w-3 text-white" />}
                           </div>
@@ -1385,7 +1385,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </Table>
           </div>
         ) : chartViewMode === 'stacked' ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, stackedData.rows.length * 60)}>
               <BarChart
                 data={stackedData.rows}
@@ -1426,8 +1426,8 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                         : null
 
                       return (
-                        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md">
-                          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+                        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md">
+                          <div className="bg-surface-muted px-3 py-2 border-b border-border">
                             <div className="flex items-center gap-2">
                               <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">
                                 {dataPoint?.typeCode}
@@ -1470,7 +1470,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={Math.max(400, chartData.length * 35)}>
               <BarChart
                 data={chartData}

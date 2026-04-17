@@ -297,7 +297,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         {...getRootProps()}
         className={`
           h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
+          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-input hover:border-gray-400"}
           ${uploading ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >

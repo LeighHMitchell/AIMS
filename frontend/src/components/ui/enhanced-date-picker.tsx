@@ -259,7 +259,7 @@ export function EnhancedDatePicker({
           disabled={disabled}
           placeholder={placeholder}
           className={cn(
-            "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md",
+            "w-full pl-10 pr-4 py-2 border border-input rounded-md",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
             "disabled:bg-gray-100 disabled:cursor-not-allowed",
             "text-sm font-normal",
@@ -271,7 +271,7 @@ export function EnhancedDatePicker({
       {isOpen && !disabled && portalContainer && createPortal(
         <div 
           ref={dropdownRef}
-          className="fixed z-[10001] p-4 bg-white border border-gray-300 rounded-lg shadow-lg"
+          className="fixed z-[10001] p-4 bg-white border border-input rounded-lg shadow-lg"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -347,7 +347,7 @@ export function EnhancedDatePicker({
             ))}
           </div>
           
-          <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="mt-3 pt-3 border-t border-border">
             <button
               onClick={() => {
                 const today = new Date()

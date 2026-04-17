@@ -132,7 +132,7 @@ export function OrganizationDropdownWithLogo({
         aria-expanded={open}
         disabled={disabled}
         className={cn(
-          "w-full justify-between font-normal min-w-[320px] px-4 py-2 h-auto border border-gray-300 rounded-md bg-white hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 flex items-center",
+          "w-full justify-between font-normal min-w-[320px] px-4 py-2 h-auto border border-input rounded-md bg-white hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 flex items-center",
           disabled && "opacity-50 cursor-not-allowed",
           className
         )}

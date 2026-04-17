@@ -906,7 +906,7 @@ export default function BulkImportSourceStep({
   return (
     <div className="space-y-6">
       {/* Organisation Identity Banner */}
-      <Card className="bg-gray-50 border-gray-200">
+      <Card className="bg-gray-50 border-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-3">
             <div className="flex-1">
@@ -914,7 +914,7 @@ export default function BulkImportSourceStep({
                 // Super user: show organization selector
                 <div className="space-y-2">
                   {loadingOrgs ? (
-                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500 border border-gray-200 rounded-md bg-gray-50">
+                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500 border border-border rounded-md bg-gray-50">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading organizations...
                     </div>
@@ -1389,7 +1389,7 @@ export default function BulkImportSourceStep({
                   )}
 
                   {/* Info message */}
-                  <div className="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-700 max-w-md text-center">
+                  <div className="mt-6 p-4 bg-gray-100 border border-border rounded-lg text-sm text-gray-700 max-w-md text-center">
                     <p className="font-medium">You can navigate away from this screen</p>
                     <p className="text-gray-500 mt-1">
                       Just don&apos;t close this browser tab. Come back when you&apos;re ready — the fetch will continue in the background.
@@ -1412,7 +1412,7 @@ export default function BulkImportSourceStep({
 
           {fetchStatus === 'success' && (
             <>
-              <Card className="border-gray-200">
+              <Card className="border-border">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-gray-100 rounded-lg">

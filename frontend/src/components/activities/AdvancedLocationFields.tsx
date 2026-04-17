@@ -244,7 +244,7 @@ export default function AdvancedLocationFields({
             ) : (
               <div className="space-y-4">
                 {localLocations.map((location, index) => (
-                  <Card key={location.id} className="border border-gray-200">
+                  <Card key={location.id} className="border border-border">
                     <CardContent className="p-6 space-y-4">
                       {/* Location Header */}
                       <div className="flex items-center justify-between">

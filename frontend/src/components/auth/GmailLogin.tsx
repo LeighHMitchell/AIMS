@@ -89,7 +89,7 @@ export function GmailLogin({ redirectTo = '/', className = '' }: GmailLoginProps
       variant="outline"
       onClick={handleGmailLogin}
       disabled={isLoading}
-      className={`w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 border-gray-300 ${className}`}
+      className={`w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 border-input ${className}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />

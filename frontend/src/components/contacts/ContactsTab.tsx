@@ -342,7 +342,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     return (
       <div className="space-y-6">
         {/* Skeleton for search/add bar */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-white p-6 rounded-lg border border-border">
           <div className="space-y-4">
             <div className="h-10 bg-slate-200 rounded animate-pulse"></div>
             <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
@@ -350,14 +350,14 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
         </div>
 
         {/* Skeleton for contacts list */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-white p-6 rounded-lg border border-border">
           <div className="mb-4">
             <div className="h-7 bg-slate-200 rounded w-64 animate-pulse"></div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+              <div key={i} className="bg-white border border-border rounded-lg p-6 shadow-sm">
                 {/* Header with avatar and actions */}
                 <div className="flex items-start gap-4">
                   {/* Avatar skeleton */}
@@ -403,7 +403,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     <div className="space-y-6">
       {/* Search and Add Section */}
       {!readOnly && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-white p-6 rounded-lg border border-border">
           <h2 className="text-lg font-semibold mb-4">Add Contact to Activity</h2>
           <ContactSearchBar
             onSelect={handleSearchSelect}

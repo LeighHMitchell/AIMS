@@ -68,15 +68,15 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
             <table className="w-full border-collapse text-sm">
               <thead className="bg-surface-muted">
                 <tr className="bg-slate-50">
-                  <th className="text-left p-2 border-b border-slate-200 font-medium">
+                  <th className="text-left p-2 border-b border-border font-medium">
                     {swapAxes ? 'Category' : 'Donor'}
                   </th>
                   {columns.map((col: any) => (
-                    <th key={col.id} className="text-right p-2 border-b border-slate-200 font-medium whitespace-nowrap">
+                    <th key={col.id} className="text-right p-2 border-b border-border font-medium whitespace-nowrap">
                       {col.code ? `${col.code}` : (col.acronym || col.name.slice(0, 15))}
                     </th>
                   ))}
-                  <th className="text-right p-2 border-b border-slate-200 font-medium">Total</th>
+                  <th className="text-right p-2 border-b border-border font-medium">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -84,7 +84,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   const isOthers = row.id === 'others';
                   return (
                     <tr key={row.id} className="hover:bg-slate-50/50">
-                      <td className={`p-2 border-b border-slate-100 font-medium ${isOthers ? 'text-red-600' : ''}`}>
+                      <td className={`p-2 border-b border-border font-medium ${isOthers ? 'text-red-600' : ''}`}>
                         {isOthers ? 'OTHERS' : (row.acronym || row.code || row.name)}
                       </td>
                       {columns.map((col: any) => {
@@ -92,25 +92,25 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                           ? cellMap.get(`${col.id}-${row.id}`)
                           : cellMap.get(`${row.id}-${col.id}`);
                         return (
-                          <td key={col.id} className="text-right p-2 border-b border-slate-100 tabular-nums">
+                          <td key={col.id} className="text-right p-2 border-b border-border tabular-nums">
                             {cell && cell.value > 0 ? formatCurrency(cell.value) : '-'}
                           </td>
                         );
                       })}
-                      <td className="text-right p-2 border-b border-slate-100 font-medium tabular-nums">
+                      <td className="text-right p-2 border-b border-border font-medium tabular-nums">
                         {formatCurrency(row.total)}
                       </td>
                     </tr>
                   );
                 })}
                 <tr className="bg-slate-50 font-bold">
-                  <td className="p-2 border-t border-slate-200">Total</td>
+                  <td className="p-2 border-t border-border">Total</td>
                   {columns.map((col: any) => (
-                    <td key={col.id} className="text-right p-2 border-t border-slate-200 tabular-nums">
+                    <td key={col.id} className="text-right p-2 border-t border-border tabular-nums">
                       {formatCurrency(col.total)}
                     </td>
                   ))}
-                  <td className="text-right p-2 border-t border-slate-200 tabular-nums">
+                  <td className="text-right p-2 border-t border-border tabular-nums">
                     {formatCurrency(data.grandTotal)}
                   </td>
                 </tr>
@@ -154,14 +154,14 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
               <tr>
                 {/* Empty corner cell - fixed width for row labels */}
                 <th 
-                  className="sticky left-0 bg-white z-20 border-b border-slate-200 align-bottom"
+                  className="sticky left-0 bg-white z-20 border-b border-border align-bottom"
                   style={{ width: 100 }}
                 />
                 {/* Column headers - horizontal with text wrap, equal widths */}
                 {columns.map((col: any) => (
                   <th
                     key={col.id}
-                    className="border-b border-slate-200 px-1 py-3 align-bottom text-center"
+                    className="border-b border-border px-1 py-3 align-bottom text-center"
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -187,7 +187,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 ))}
                 {/* Totals header - same width as data columns */}
                 <th 
-                  className="border-b border-slate-200 p-1 align-bottom text-center"
+                  className="border-b border-border p-1 align-bottom text-center"
                 >
                   <span className="text-xs font-bold text-slate-700">
                     Totals
@@ -207,7 +207,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   <tr key={row.id} className="hover:bg-slate-50/50">
                     {/* Row name cell */}
                     <td 
-                      className={`sticky left-0 bg-white z-10 px-2 py-1 text-xs font-medium border-b border-slate-100 ${
+                      className={`sticky left-0 bg-white z-10 px-2 py-1 text-xs font-medium border-b border-border ${
                         isOthers ? 'text-red-600' : 'text-slate-700'
                       }`}
                       style={{ width: 100 }}
@@ -250,7 +250,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                       return (
                         <td
                           key={col.id}
-                          className="p-0.5 text-center border-b border-slate-100"
+                          className="p-0.5 text-center border-b border-border"
                         >
                           {cell && percentage > 0 ? (
                             <Tooltip>
@@ -288,7 +288,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                     })}
                     {/* Totals column - row's share of grand total */}
                     <td
-                      className="p-0.5 text-center border-b border-slate-100"
+                      className="p-0.5 text-center border-b border-border"
                     >
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -319,7 +319,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
               {/* Totals row */}
               <tr className="bg-slate-50 font-medium">
                 <td 
-                  className="sticky left-0 bg-slate-50 z-10 px-2 py-1 text-xs font-bold text-slate-700 border-t border-slate-200"
+                  className="sticky left-0 bg-slate-50 z-10 px-2 py-1 text-xs font-bold text-slate-700 border-t border-border"
                   style={{ width: 100 }}
                 >
                   Totals
@@ -327,7 +327,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 {columns.map((col: any) => (
                   <td
                     key={col.id}
-                    className="p-0.5 text-center border-t border-slate-200"
+                    className="p-0.5 text-center border-t border-border"
                   >
                     <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
                       100%
@@ -335,7 +335,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   </td>
                 ))}
                 <td
-                  className="p-0.5 text-center border-t border-slate-200"
+                  className="p-0.5 text-center border-t border-border"
                 >
                   <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
                     100%

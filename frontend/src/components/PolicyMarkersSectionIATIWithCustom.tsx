@@ -467,7 +467,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   // Loading state
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+      <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-9 w-40" />
@@ -485,7 +485,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   const groupTypes = ['environmental', 'social_governance', 'other', 'custom'] as const;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-end gap-2">
         {activeMarkerCount > 0 && (

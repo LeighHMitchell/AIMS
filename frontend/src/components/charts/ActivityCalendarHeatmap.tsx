@@ -308,7 +308,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50')
+        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50')
         .style('opacity', 0)
         .style('pointer-events', 'none')
         .style('min-width', '280px')

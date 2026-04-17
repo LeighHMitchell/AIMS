@@ -449,7 +449,7 @@ export default function SectorAllocationPieChart({
     console.log('Rendering loading skeleton');
     return (
       <div className="h-full flex flex-col">
-        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex items-center justify-center">
+        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex items-center justify-center">
           <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </div>
       </div>
@@ -460,7 +460,7 @@ export default function SectorAllocationPieChart({
     console.log('Rendering no data message');
     return (
       <div className="h-full flex flex-col">
-        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex items-center justify-center">
+        <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex items-center justify-center">
           <div className="text-center">
             <div className="text-sm font-medium mb-1 text-gray-500">No Sector Data</div>
             <div className="text-xs text-gray-400">Add sectors with percentages to see the visualization</div>
@@ -474,7 +474,7 @@ export default function SectorAllocationPieChart({
   return (
     <div className="h-full flex flex-col">
       {/* Chart Container - removed padding for better space utilization */}
-      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
         <svg 
           ref={svgRef} 
           className="w-full h-full"

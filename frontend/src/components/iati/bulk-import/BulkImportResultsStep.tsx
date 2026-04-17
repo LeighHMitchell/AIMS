@@ -93,7 +93,7 @@ export default function BulkImportResultsStep({
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
               <Plus className="h-6 w-6 mx-auto mb-1 text-gray-700" />
@@ -102,7 +102,7 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
               <RefreshCw className="h-6 w-6 mx-auto mb-1 text-gray-700" />
@@ -111,7 +111,7 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
               <SkipForward className="h-6 w-6 mx-auto mb-1 text-gray-500" />
@@ -120,7 +120,7 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="pt-6">
             <div className="text-center">
               <XCircle className="h-6 w-6 mx-auto mb-1 text-gray-700" />
@@ -133,7 +133,7 @@ export default function BulkImportResultsStep({
 
       {/* Status Alert */}
       {batchStatus.status === 'completed' && batchStatus.failedCount === 0 && (
-        <Alert className="bg-gray-50 border-gray-300">
+        <Alert className="bg-gray-50 border-input">
           <CheckCircle2 className="h-4 w-4 text-gray-700" />
           <AlertDescription className="text-gray-800">
             All activities were imported successfully!
@@ -141,7 +141,7 @@ export default function BulkImportResultsStep({
         </Alert>
       )}
       {batchStatus.failedCount > 0 && (
-        <Alert className="bg-gray-50 border-gray-300">
+        <Alert className="bg-gray-50 border-input">
           <AlertTriangle className="h-4 w-4 text-gray-700" />
           <AlertDescription className="text-gray-800">
             {batchStatus.failedCount} activit{batchStatus.failedCount === 1 ? 'y' : 'ies'} failed to import. See details below.
@@ -151,7 +151,7 @@ export default function BulkImportResultsStep({
 
       {/* Failed Items Detail */}
       {failedItems.length > 0 && (
-        <Card className="border-gray-300">
+        <Card className="border-input">
           <CardHeader>
             <CardTitle className="text-base text-gray-900">Failed Activities</CardTitle>
           </CardHeader>

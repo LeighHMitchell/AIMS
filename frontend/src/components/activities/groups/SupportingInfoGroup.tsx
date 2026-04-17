@@ -244,7 +244,7 @@ export function SupportingInfoGroup({
             style={{ minHeight: getSectionMinHeight('documents') }}
           >
             {isSectionActive('documents') || activeSections.has('documents') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="documents"
                   title={getSectionLabel('documents')}
@@ -274,7 +274,7 @@ export function SupportingInfoGroup({
             style={{ minHeight: getSectionMinHeight('aid_effectiveness') }}
           >
             {isSectionActive('aid_effectiveness') || activeSections.has('aid_effectiveness') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="aid_effectiveness"
                   title={getSectionLabel('aid_effectiveness')}

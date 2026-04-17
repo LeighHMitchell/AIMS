@@ -3099,7 +3099,7 @@ export default function TransactionModal({
                             Sectors tab
                           </button>.
                         </p>
-                        <div className="p-3 bg-white rounded-md border border-gray-200">
+                        <div className="p-3 bg-white rounded-md border border-border">
                           <table className="w-full text-xs">
                             <thead className="bg-surface-muted">
                               <tr className="text-muted-foreground border-b">
@@ -3233,7 +3233,7 @@ export default function TransactionModal({
                 {/* Activity ID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Activity ID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
                     <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
                       {activityPartnerId || 'Not reported'}
                     </span>
@@ -3260,7 +3260,7 @@ export default function TransactionModal({
                 {/* Activity UUID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Activity UUID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
                     <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
                       {activityId || 'Not available'}
                     </span>
@@ -3287,7 +3287,7 @@ export default function TransactionModal({
                 {/* Transaction ID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Transaction ID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
                     <input
                       value={formData.transaction_reference || ''}
                       onChange={e => handleFieldChange('transaction_reference', e.target.value)}
@@ -3317,7 +3317,7 @@ export default function TransactionModal({
                 {/* Transaction UUID */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Transaction UUID</label>
-                  <div className="flex items-center justify-between bg-muted/50 border border-gray-200 rounded-md px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
                     <span className="flex-1 text-gray-600 font-mono truncate min-w-0">
                       {transaction?.uuid || 'Generated after save'}
                     </span>

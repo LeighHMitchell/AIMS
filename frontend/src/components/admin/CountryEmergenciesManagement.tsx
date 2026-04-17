@@ -395,7 +395,7 @@ export function CountryEmergenciesManagement() {
                             className={
                               emergency.isActive
                                 ? "bg-green-800"
-                                : "border-gray-300 text-gray-500 bg-gray-50"
+                                : "border-input text-gray-500 bg-gray-50"
                             }
                           >
                             {emergency.isActive ? "Active" : "Inactive"}

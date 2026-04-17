@@ -347,7 +347,7 @@ export function LocationsGroup({
             style={{ minHeight: getSectionMinHeight('country-region') }}
           >
             {isSectionActive('country-region') || activeSections.has('country-region') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="country-region"
                   title={getSectionLabel('country-region')}
@@ -378,7 +378,7 @@ export function LocationsGroup({
             style={{ minHeight: getSectionMinHeight('locations') }}
           >
             {isSectionActive('locations') || activeSections.has('locations') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="locations"
                   title={getSectionLabel('locations')}
@@ -406,7 +406,7 @@ export function LocationsGroup({
             style={{ minHeight: getSectionMinHeight('subnational-allocation') || 400 }}
           >
             {isSectionActive('subnational-allocation') || activeSections.has('subnational-allocation') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <EnhancedSubnationalBreakdown
                   activityId={activityId}
                   canEdit={permissions?.canEditActivity ?? true}

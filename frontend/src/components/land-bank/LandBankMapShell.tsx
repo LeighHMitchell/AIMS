@@ -198,7 +198,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="2D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="bg-white shadow-md border-input h-9 px-2.5"
         >
           <MapIcon className="h-4 w-4 mr-1.5" />
           <span className="text-xs">2D</span>
@@ -209,7 +209,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="3D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="bg-white shadow-md border-input h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
           <span className="text-xs">3D</span>
@@ -221,12 +221,12 @@ function Map3DController({
         variant="outline"
         size="sm"
         title="Reset view"
-        className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+        className="bg-white shadow-md border-input h-9 w-9 p-0"
       >
         <RotateCcw className="h-4 w-4" />
       </Button>
 
-      <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-gray-300 shadow-md flex items-center gap-3 whitespace-nowrap">
+      <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-input shadow-md flex items-center gap-3 whitespace-nowrap">
         <span className="text-gray-600">Zoom: {zoom}</span>
         {is3D && (
           <>

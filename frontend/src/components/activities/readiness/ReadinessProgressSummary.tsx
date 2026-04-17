@@ -43,7 +43,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
         ? "border-green-200 bg-green-50"
         : isComplete
         ? "border-blue-200 bg-blue-50"
-        : "border-gray-200"
+        : "border-border"
     )}>
       <CardContent className="pt-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -196,7 +196,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-lg shadow-sm border border-border p-8">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 rounded w-1/4"></div>
           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -211,7 +211,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -253,7 +253,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                   <div
                     key={marker.id}
                     className={`border rounded-lg transition-all ${
-                      score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
+                      score > 0 ? 'border-input bg-gray-50' : 'border-border bg-white'
                     }`}
                   >
                     {/* Card Header - Clickable to expand/collapse */}
@@ -288,7 +288,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+                      <div className="px-4 pb-4 space-y-4 border-t border-border">
                         {/* Score Selection Dropdown */}
                         <div className="space-y-2 pt-4">
                           <Label className="text-sm font-medium text-gray-700">
@@ -303,7 +303,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
                         {/* Rationale Field - Only show when score > 0 */}
                         {score > 0 && (
-                          <div className="space-y-2 pt-2 border-t border-gray-100">
+                          <div className="space-y-2 pt-2 border-t border-border">
                             <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
                               Rationale for Scoring
                             </Label>
@@ -337,7 +337,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                   <div
                     key={marker.id}
                     className={`border rounded-lg transition-all ${
-                      score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
+                      score > 0 ? 'border-input bg-gray-50' : 'border-border bg-white'
                     }`}
                   >
                     {/* Card Header - Clickable to expand/collapse */}
@@ -372,7 +372,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+                      <div className="px-4 pb-4 space-y-4 border-t border-border">
                         {/* Score Selection Dropdown */}
                         <div className="space-y-2 pt-4">
                           <Label className="text-sm font-medium text-gray-700">
@@ -387,7 +387,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
                         {/* Rationale Field - Only show when score > 0 */}
                         {score > 0 && (
-                          <div className="space-y-2 pt-2 border-t border-gray-100">
+                          <div className="space-y-2 pt-2 border-t border-border">
                             <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
                               Rationale for Scoring
                             </Label>
@@ -421,7 +421,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                   <div
                     key={marker.id}
                     className={`border rounded-lg transition-all ${
-                      score > 0 ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white'
+                      score > 0 ? 'border-input bg-gray-50' : 'border-border bg-white'
                     }`}
                   >
                     {/* Card Header - Clickable to expand/collapse */}
@@ -456,7 +456,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+                      <div className="px-4 pb-4 space-y-4 border-t border-border">
                         {/* Score Selection Dropdown */}
                         <div className="space-y-2 pt-4">
                           <Label className="text-sm font-medium text-gray-700">
@@ -471,7 +471,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
 
                         {/* Rationale Field - Only show when score > 0 */}
                         {score > 0 && (
-                          <div className="space-y-2 pt-2 border-t border-gray-100">
+                          <div className="space-y-2 pt-2 border-t border-border">
                             <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
                               Rationale for Scoring
                             </Label>

@@ -559,7 +559,7 @@ export function AidEcosystemSolarSystem({
         {/* Tooltip */}
         {hoveredOrg && (
           <div
-            className="absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg p-2 pointer-events-none"
+            className="absolute z-50 bg-white border border-border rounded-lg shadow-lg p-2 pointer-events-none"
             style={{
               left: tooltipPos.x + 10,
               top: tooltipPos.y - 10,
@@ -707,7 +707,7 @@ export function AidEcosystemSolarSystem({
                       >
                         <div className={`
                           w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
-                          ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                          ${isSelected ? 'bg-primary border-primary' : 'border-input'}
                         `}>
                           {isSelected && <Check className="h-3 w-3 text-white" />}
                         </div>
@@ -856,7 +856,7 @@ export function AidEcosystemSolarSystem({
         {/* Tooltip */}
         {hoveredOrg && (
           <div
-            className="absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg p-3 pointer-events-none max-w-xs"
+            className="absolute z-50 bg-white border border-border rounded-lg shadow-lg p-3 pointer-events-none max-w-xs"
             style={{
               left: Math.min(tooltipPos.x + 15, width - 200),
               top: Math.max(tooltipPos.y - 15, 10)
@@ -890,7 +890,7 @@ export function AidEcosystemSolarSystem({
                 <span className="font-medium text-slate-900 capitalize">{hoveredOrg.ringTier}</span>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
+            <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-border">
               Click to view organization profile
             </p>
           </div>

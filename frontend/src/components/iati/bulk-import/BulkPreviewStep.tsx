@@ -940,7 +940,7 @@ export default function BulkPreviewStep({
                                         'B9': 'Other',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{oi.type}</span>
                                             {oiTypeNames[oi.type] || ''}
@@ -968,7 +968,7 @@ export default function BulkPreviewStep({
                                 <table className="mt-1 w-full text-xs">
                                   <tbody>
                                     {activity.collaborationType && (
-                                      <tr className="border-t border-gray-100">
+                                      <tr className="border-t border-border">
                                         <td className="py-1 text-gray-500">Collaboration Type</td>
                                         <td className="py-1 text-gray-600">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.collaborationType}</span>
@@ -981,7 +981,7 @@ export default function BulkPreviewStep({
                                       </tr>
                                     )}
                                     {activity.defaultAidType && (
-                                      <tr className="border-t border-gray-100">
+                                      <tr className="border-t border-border">
                                         <td className="py-1 text-gray-500">Aid Type</td>
                                         <td className="py-1 text-gray-600">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultAidType}</span>
@@ -994,7 +994,7 @@ export default function BulkPreviewStep({
                                       </tr>
                                     )}
                                     {activity.defaultFinanceType && (
-                                      <tr className="border-t border-gray-100">
+                                      <tr className="border-t border-border">
                                         <td className="py-1 text-gray-500">Finance Type</td>
                                         <td className="py-1 text-gray-600">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultFinanceType}</span>
@@ -1007,7 +1007,7 @@ export default function BulkPreviewStep({
                                       </tr>
                                     )}
                                     {activity.defaultFlowType && (
-                                      <tr className="border-t border-gray-100">
+                                      <tr className="border-t border-border">
                                         <td className="py-1 text-gray-500">Flow Type</td>
                                         <td className="py-1 text-gray-600">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultFlowType}</span>
@@ -1020,7 +1020,7 @@ export default function BulkPreviewStep({
                                       </tr>
                                     )}
                                     {activity.defaultTiedStatus && (
-                                      <tr className="border-t border-gray-100">
+                                      <tr className="border-t border-border">
                                         <td className="py-1 text-gray-500">Tied Status</td>
                                         <td className="py-1 text-gray-600">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultTiedStatus}</span>
@@ -1087,7 +1087,7 @@ export default function BulkPreviewStep({
                                         const countryName = IATI_COUNTRIES.find(ic => ic.code === c.code)?.name || c.code
                                         const isHomeCountry = c.code === homeCountry
                                         return (
-                                          <tr key={i} className={`border-t border-gray-100 ${isHomeCountry ? 'font-semibold' : ''}`}>
+                                          <tr key={i} className={`border-t border-border ${isHomeCountry ? 'font-semibold' : ''}`}>
                                             <td className={`py-1 ${isHomeCountry ? 'text-gray-900' : 'text-gray-600'}`}>
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{c.code}</span>
                                               {countryName}
@@ -1135,7 +1135,7 @@ export default function BulkPreviewStep({
                                         '998': 'Developing countries, unspecified',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             {r.vocabulary && r.vocabulary !== '1' && (
                                               <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono text-[10px] mr-1">V{r.vocabulary}</span>
@@ -1204,7 +1204,7 @@ export default function BulkPreviewStep({
                                         '90': 'Other',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{org.role}</span>
                                             {roleNames[org.role] || org.role}
@@ -1251,7 +1251,7 @@ export default function BulkPreviewStep({
                                       }
                                       const vocabLabel = s.vocabulary ? vocabNames[s.vocabulary] || `V${s.vocabulary}` : ''
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             {vocabLabel && (
                                               <>
@@ -1294,7 +1294,7 @@ export default function BulkPreviewStep({
                                         '5': 'Third Party',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{ra.type}</span>
                                             {raTypeNames[ra.type] || ''}
@@ -1334,7 +1334,7 @@ export default function BulkPreviewStep({
                                           '3': 'Fiduciary',
                                         }
                                         return (
-                                          <tr key={i} className="border-t border-gray-100">
+                                          <tr key={i} className="border-t border-border">
                                             <td className="py-1 text-gray-600">
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{c.type}</span>
                                               {condTypeNames[c.type] || ''}
@@ -1382,7 +1382,7 @@ export default function BulkPreviewStep({
                                         '13': 'Incoming Pledge',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{tx.type}</span>
                                             {txTypeNames[tx.type] || tx.type}
@@ -1419,7 +1419,7 @@ export default function BulkPreviewStep({
                                   </thead>
                                   <tbody>
                                     {activity.budgets.slice(0, 5).map((b, i) => (
-                                      <tr key={i} className="border-t border-gray-100">
+                                      <tr key={i} className="border-t border-border">
                                         <td className="py-1 text-gray-600">
                                           {b.periodStart && new Date(b.periodStart).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                                           {b.periodStart && b.periodEnd && ' - '}
@@ -1453,7 +1453,7 @@ export default function BulkPreviewStep({
                                         '2': 'Revised',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">
                                             {pd.type && (
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5" title={pdTypeNames[pd.type] || pd.type}>
@@ -1492,7 +1492,7 @@ export default function BulkPreviewStep({
                                   </thead>
                                   <tbody>
                                     {activity.countryBudgetItems.items.map((item, i) => (
-                                      <tr key={i} className="border-t border-gray-100">
+                                      <tr key={i} className="border-t border-border">
                                         <td className="py-1 text-gray-600">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{item.code}</span>
                                           {item.description && <span className="ml-1.5">{item.description}</span>}
@@ -1525,9 +1525,9 @@ export default function BulkPreviewStep({
                                       '4': 'Communications',
                                     }
                                     return (
-                                      <table key={i} className="w-full text-xs border border-gray-100 rounded">
+                                      <table key={i} className="w-full text-xs border border-border rounded">
                                         <tbody>
-                                          <tr className="border-b border-gray-100">
+                                          <tr className="border-b border-border">
                                             <td className="py-1.5 px-2 text-gray-500 w-20 bg-gray-50">Type</td>
                                             <td className="py-1.5 px-2 text-gray-600">
                                               {contact.type ? (
@@ -1541,7 +1541,7 @@ export default function BulkPreviewStep({
                                               )}
                                             </td>
                                           </tr>
-                                          <tr className="border-b border-gray-100">
+                                          <tr className="border-b border-border">
                                             <td className="py-1.5 px-2 text-gray-500 bg-gray-50">Org</td>
                                             <td className="py-1.5 px-2 text-gray-600">
                                               {contact.organisationName || contact.departmentName ? (
@@ -1626,7 +1626,7 @@ export default function BulkPreviewStep({
                                         'B03': 'Country Strategy Paper',
                                       }
                                       return (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1.5 text-gray-600 align-top">
                                             {doc.categoryCode ? (
                                               <>
@@ -1739,7 +1739,7 @@ export default function BulkPreviewStep({
                                           0: 'Not targeted', 1: 'Significant', 2: 'Principal', 3: 'Explicit primary',
                                         }
                                         return (
-                                          <tr key={i} className="border-t border-gray-100">
+                                          <tr key={i} className="border-t border-border">
                                             <td className="py-1 text-gray-600">
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{pm.code}</span>
                                               {pm.narrative || markerNames[pm.code] || ''}
@@ -1832,7 +1832,7 @@ export default function BulkPreviewStep({
                                     </thead>
                                     <tbody>
                                       {activity.fss.forecasts.map((f, i) => (
-                                        <tr key={i} className="border-t border-gray-100">
+                                        <tr key={i} className="border-t border-border">
                                           <td className="py-1 text-gray-600">{f.year}</td>
                                           <td className="py-1 text-right font-medium">{f.currency || 'USD'} {f.value?.toLocaleString()}</td>
                                         </tr>
@@ -1879,19 +1879,19 @@ export default function BulkPreviewStep({
                                     <table className="mt-0.5 w-full text-xs">
                                       <tbody>
                                         {activity.crsAdd.loanTerms.rate1 != null && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500 w-28">Rate 1</td>
                                             <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.rate1}%</td>
                                           </tr>
                                         )}
                                         {activity.crsAdd.loanTerms.rate2 != null && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500">Rate 2</td>
                                             <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.rate2}%</td>
                                           </tr>
                                         )}
                                         {activity.crsAdd.loanTerms.repaymentType && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500">Repayment Type</td>
                                             <td className="py-1 text-gray-600">
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.crsAdd.loanTerms.repaymentType}</span>
@@ -1899,7 +1899,7 @@ export default function BulkPreviewStep({
                                           </tr>
                                         )}
                                         {activity.crsAdd.loanTerms.repaymentPlan && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500">Repayment Plan</td>
                                             <td className="py-1 text-gray-600">
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.crsAdd.loanTerms.repaymentPlan}</span>
@@ -1907,19 +1907,19 @@ export default function BulkPreviewStep({
                                           </tr>
                                         )}
                                         {activity.crsAdd.loanTerms.commitmentDate && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500">Commitment Date</td>
                                             <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.commitmentDate}</td>
                                           </tr>
                                         )}
                                         {activity.crsAdd.loanTerms.repaymentFirstDate && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500">First Repayment</td>
                                             <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.repaymentFirstDate}</td>
                                           </tr>
                                         )}
                                         {activity.crsAdd.loanTerms.repaymentFinalDate && (
-                                          <tr className="border-t border-gray-100">
+                                          <tr className="border-t border-border">
                                             <td className="py-1 text-gray-500">Final Repayment</td>
                                             <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.repaymentFinalDate}</td>
                                           </tr>
@@ -1942,7 +1942,7 @@ export default function BulkPreviewStep({
                                       </thead>
                                       <tbody>
                                         {activity.crsAdd.loanStatus.map((ls, i) => (
-                                          <tr key={i} className="border-t border-gray-100">
+                                          <tr key={i} className="border-t border-border">
                                             <td className="py-1 text-gray-600">{ls.year}</td>
                                             <td className="py-1 text-right text-gray-600">
                                               {ls.principalOutstanding != null ? `${ls.currency || 'USD'} ${ls.principalOutstanding.toLocaleString()}` : '-'}

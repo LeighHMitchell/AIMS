@@ -71,7 +71,7 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
                 className={`block p-3 border rounded-lg cursor-pointer transition-colors ${
                   selectedType === type.value
                     ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400'
+                    : 'border-input hover:border-gray-400'
                 }`}
               >
                 <input
@@ -105,7 +105,7 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2 rounded border border-input text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>

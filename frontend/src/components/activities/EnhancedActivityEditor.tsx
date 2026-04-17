@@ -550,7 +550,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     <div className="max-w-6xl mx-auto p-6 bg-white">
       <div className="space-y-6">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-4">
+        <div className="border-b border-border pb-4">
           <LinkedActivityTitle
             title="Enhanced Activity Editor"
             activityId={activityId}
@@ -563,7 +563,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         </div>
 
         {/* Activity Information Header */}
-        <Card className="border-gray-200 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -620,7 +620,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   )}
                   
                   {formData.collaboration_type && (
-                    <Badge variant="outline" className="border-gray-300 text-gray-700">
+                    <Badge variant="outline" className="border-input text-gray-700">
                       {COLLABORATION_TYPES.find(t => t.value === formData.collaboration_type)?.label}
                     </Badge>
                   )}
@@ -636,7 +636,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 )}
 
                 {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-200 pt-4">
+                <div className="grid grid-cols-2 gap-4 text-sm border-t border-border pt-4">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500 shrink-0">Reported by:</span>
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1018,7 +1018,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 </div>
 
                 {/* Other Identifiers Section (IATI-compliant) */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="mt-8 pt-6 border-t border-border">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900">Other Identifiers</h4>
@@ -1043,7 +1043,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   ) : (
                     <div className="space-y-4">
                       {otherIdentifiers.map((identifier, index) => (
-                        <Card key={index} className="border-gray-200">
+                        <Card key={index} className="border-border">
                           <CardContent className="pt-6">
                             <div className="space-y-4">
                               <div className="flex items-center justify-between mb-2">
@@ -1151,7 +1151,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               <CardContent>
                 <div className="space-y-4">
                   <FieldWrapper section="finances" label="Budget & Transactions" showCommentButton={true}>
-                    <div className="text-sm text-gray-600 p-4 border border-gray-200 rounded">
+                    <div className="text-sm text-gray-600 p-4 border border-border rounded">
                       <p>Financial information section will include:</p>
                       <ul className="list-disc list-inside mt-2 space-y-1">
                         <li>Default finance types and aid types</li>
@@ -1186,7 +1186,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardHeader>
               <CardContent>
                 <FieldWrapper section="locations" label="Activity Locations">
-                  <div className="text-sm text-gray-600 p-4 border border-gray-200 rounded">
+                  <div className="text-sm text-gray-600 p-4 border border-border rounded">
                     <p>Location management will include:</p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Country and region selection</li>
@@ -1211,7 +1211,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardHeader>
               <CardContent>
                 <FieldWrapper section="results" label="Results Framework">
-                  <div className="text-sm text-gray-600 p-4 border border-gray-200 rounded">
+                  <div className="text-sm text-gray-600 p-4 border border-border rounded">
                     <p>Results section will include:</p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Result hierarchies (Impact, Outcome, Output)</li>
@@ -1285,7 +1285,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         </Tabs>
 
         {/* Administrative Section */}
-        <div className="border-t border-gray-200 pt-6 mt-8">
+        <div className="border-t border-border pt-6 mt-8">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Administrative & Government Information</h2>
             <p className="text-sm text-gray-600">
@@ -1338,7 +1338,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   <FieldWrapper section="administration" field="mou_documents" label="MOU & Agreement Documents">
                     <div className="space-y-4">
                       {/* File Upload Area */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <div className="border-2 border-dashed border-input rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                         <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600 mb-2">Upload MOU, agreements, and other administrative documents</p>
                         <p className="text-sm text-gray-500 mb-4">
@@ -1424,7 +1424,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 </CardHeader>
                 <CardContent>
                   <FieldWrapper section="government_inputs" label="Government Coordination & Inputs">
-                    <div className="text-sm text-gray-600 p-4 border border-gray-200 rounded">
+                    <div className="text-sm text-gray-600 p-4 border border-border rounded">
                       <p>Government inputs section will include:</p>
                       <ul className="list-disc list-inside mt-2 space-y-1">
                         <li>Budget classification and alignment</li>
@@ -1454,7 +1454,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">
               Changes are automatically saved when you finish editing each field.

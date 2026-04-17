@@ -997,7 +997,7 @@ export default function TransactionForm({
             
             {/* Provider Organization */}
             <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-gray-50'}`}>
-              <CardHeader className="pb-3 border-b border-gray-200">
+              <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-sm flex items-center gap-2">
                   Provider Organization
                   {!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId && (
@@ -1028,7 +1028,7 @@ export default function TransactionForm({
 
             {/* Receiver Organization */}
             <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-gray-50'}`}>
-              <CardHeader className="pb-3 border-b border-gray-200">
+              <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-sm flex items-center gap-2">
                   Receiver Organization
                   {typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId && (
@@ -1232,7 +1232,7 @@ export default function TransactionForm({
                         await saveField("is_humanitarian", formData.is_humanitarian);
                       }
                     }}
-                    className="rounded border-gray-300"
+                    className="rounded border-input"
                   />
                   <Label htmlFor="is_humanitarian" className="font-normal cursor-pointer">
                     This is a humanitarian transaction
@@ -1435,7 +1435,7 @@ export default function TransactionForm({
               label="Activity ID"
               value={activityId}
               placeholder="System generated"
-              fieldClassName="bg-white border-gray-200"
+              fieldClassName="bg-white border-border"
               toastMessage="Activity ID copied!"
             />
             
@@ -1445,7 +1445,7 @@ export default function TransactionForm({
                 label="Transaction ID"
                 value={transaction.uuid}
                 placeholder="System generated"
-                fieldClassName="bg-white border-gray-200"
+                fieldClassName="bg-white border-border"
                 toastMessage="Transaction ID copied!"
               />
             )}
@@ -1467,7 +1467,7 @@ export default function TransactionForm({
                 }
               }}
               placeholder="Internal reference number"
-              className="bg-white border-gray-200 h-10"
+              className="bg-white border-border h-10"
             />
             {renderFieldIcon("transaction_reference")}
           </div>

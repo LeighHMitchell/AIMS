@@ -302,7 +302,7 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
                 ) : (
                   <div
                     {...bannerDropzone.getRootProps()}
-                    className="h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400"
+                    className="h-48 border-2 border-dashed border-input rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400"
                   >
                     <input {...bannerDropzone.getInputProps()} />
                     <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
@@ -342,7 +342,7 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
                 ) : (
                   <div
                     {...iconDropzone.getRootProps()}
-                    className="h-48 w-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400"
+                    className="h-48 w-48 border-2 border-dashed border-input rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400"
                   >
                     <input {...iconDropzone.getInputProps()} />
                     <ImageIcon className="h-8 w-8 text-gray-400 mb-2" />

@@ -445,7 +445,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     <div className="h-[calc(100vh-16rem)] overflow-y-auto">
       <div className="space-y-6">
         {/* Search & Link Activities - Full Width */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-lg p-6 border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Search & Link Activities</h3>
             <div className="flex gap-3">
@@ -457,7 +457,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   onFocus={handleSearchFocus}
-                  className="pl-10 pr-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                  className="pl-10 pr-10 border-input focus:border-gray-500 focus:ring-gray-500"
                   disabled={!canEdit}
                 />
                 {searchQuery && (
@@ -512,7 +512,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     key={activity.id}
                     className={cn(
                       "cursor-pointer transition-all hover:shadow-md hover:border-gray-400",
-                      "border-gray-200"
+                      "border-border"
                     )}
                     onClick={() => canEdit && handleActivitySelect(activity)}
                   >
@@ -566,7 +566,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         </div>
 
         {/* Linked Activities - Full Width */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-lg p-6 border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               Established Links
@@ -586,7 +586,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           )}
 
           {!canEdit && !tableMissing && (
-            <Alert className="mb-4 border-gray-300">
+            <Alert className="mb-4 border-input">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 You don't have permission to edit linked activities.
@@ -615,7 +615,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 {linkedActivities.map((link) => (
                   <div
                     key={link.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+                    className="border border-border rounded-lg p-4 hover:border-input transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -703,7 +703,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
-              <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden" style={{ height: '600px' }}>
+              <div className="border border-border rounded-lg bg-gray-50 overflow-hidden" style={{ height: '600px' }}>
                 <LinkedActivitiesGraph
                   currentActivity={currentActivity}
                   linkedActivities={linkedActivities}
@@ -734,7 +734,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           <div className="space-y-4 py-4">
             {/* Selected Activity Info */}
             {(selectedActivity || editingActivity) && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div className="bg-gray-50 border border-border rounded-lg p-3">
                 <div className="flex-1 min-w-0">
                   {/* First line: Title (Acronym) · ID */}
                   <div className="flex items-center gap-1.5">
@@ -801,7 +801,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 value={narrative}
                 onChange={(e) => setNarrative(e.target.value)}
                 placeholder="Add additional context about this relationship..."
-                className="resize-none border-gray-300 focus:border-gray-500"
+                className="resize-none border-input focus:border-gray-500"
                 rows={3}
               />
             </div>
@@ -811,7 +811,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           <Button
               variant="outline"
               onClick={() => setShowModal(false)}
-              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+              className="border-input text-gray-700 hover:bg-gray-100"
             >
               Cancel
           </Button>

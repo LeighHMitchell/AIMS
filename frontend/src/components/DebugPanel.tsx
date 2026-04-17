@@ -135,7 +135,7 @@ export function DebugPanel() {
   }
 
   return (
-    <div className="fixed bottom-0 right-0 w-96 h-96 bg-white border-l border-t border-gray-300 shadow-xl rounded-tl-lg z-50">
+    <div className="fixed bottom-0 right-0 w-96 h-96 bg-white border-l border-t border-input shadow-xl rounded-tl-lg z-50">
       <div className="flex items-center justify-between p-3 border-b bg-gray-50">
         <h3 className="font-semibold text-sm">Debug Console</h3>
         <div className="flex gap-2">

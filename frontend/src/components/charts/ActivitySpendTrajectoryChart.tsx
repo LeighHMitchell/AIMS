@@ -274,14 +274,14 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       const variance = cumulative - perfectSpend
       
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -293,7 +293,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
                     {formatTooltipCurrency(perfectSpend)}
                   </td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -305,7 +305,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
                     {formatTooltipCurrency(cumulative)}
                   </td>
                 </tr>
-                <tr className="border-b border-slate-100 last:border-b-0">
+                <tr className="border-b border-border last:border-b-0">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <span className="text-slate-700 font-medium">
@@ -330,7 +330,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
 
   if (noBudget) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Spend Trajectory
@@ -353,7 +353,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Spend Trajectory
@@ -371,7 +371,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Spend Trajectory
@@ -395,7 +395,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
   const yAxisMax = Math.max(data?.totalBudget || 0, maxDisbursement) * 1.1
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>

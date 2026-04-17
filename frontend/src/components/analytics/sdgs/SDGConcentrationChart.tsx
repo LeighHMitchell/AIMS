@@ -281,7 +281,7 @@ export function SDGConcentrationChart({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+        <div className="bg-white border border-border rounded-lg shadow-lg p-3">
           <p className="font-semibold text-slate-900 mb-2">Year: {getYearLabel(label)}</p>
           <div className="space-y-1 text-sm">
             {payload.map((entry: any, index: number) => (
@@ -395,7 +395,7 @@ export function SDGConcentrationChart({
       <CardContent>
         {/* Calendar & Year Selectors */}
         {customYears.length > 0 && (
-          <div className="flex items-start gap-2 mb-4 pb-3 border-b border-slate-100">
+          <div className="flex items-start gap-2 mb-4 pb-3 border-b border-border">
             {/* Calendar Type Selector */}
             <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
               <DropdownMenu>

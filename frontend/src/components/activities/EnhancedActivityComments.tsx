@@ -630,7 +630,7 @@ export function EnhancedActivityComments({
             
             {notifications.length > 0 && (
               <Popover>
-                <PopoverTrigger className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">
+                <PopoverTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && <Badge variant="destructive" className="ml-1">{unreadCount}</Badge>}
                 </PopoverTrigger>
@@ -1163,7 +1163,7 @@ function CommentCard({
           
           {/* Archive Info */}
           {comment.isArchived && comment.archiveReason && (
-            <div className="bg-gray-50 border border-gray-200 rounded p-3">
+            <div className="bg-gray-50 border border-border rounded p-3">
               <div className="flex items-center gap-2 text-gray-800 font-medium text-sm">
                 <Archive className="h-4 w-4" />
                 Archived by {comment.archivedBy?.name}

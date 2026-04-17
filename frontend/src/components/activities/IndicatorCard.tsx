@@ -198,7 +198,7 @@ export function IndicatorCard({
 
   return (
     <>
-    <Card className="border border-gray-200 bg-white">
+    <Card className="border border-border bg-white">
       <Collapsible open={true}>
           <CardHeader className="hover:bg-gray-50 transition-colors">
             <div className="flex items-center justify-between">
@@ -645,7 +645,7 @@ export function IndicatorCard({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
+                <div className="text-center py-6 border-2 border-dashed border-border rounded-lg">
                   <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-600">No periods defined</p>
                   {!readOnly && (

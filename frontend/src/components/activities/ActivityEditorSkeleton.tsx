@@ -8,7 +8,7 @@ export function ActivityEditorSkeleton() {
       {/* Activity Editor Navigation Panel Skeleton */}
       <aside className="w-80 flex-shrink-0 bg-white overflow-y-auto animate-pulse">
         {/* Activity Metadata Summary Skeleton */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="bg-white border-b border-border p-4">
           <div className="space-y-2">
             <Skeleton className="h-6 w-3/4 bg-gray-200" />
             <Skeleton className="h-5 w-24 bg-gray-100" />
@@ -93,7 +93,7 @@ export function ActivityEditorSkeleton() {
           <Skeleton className="h-7 w-64 bg-gray-200 mb-6" />
           
           {/* Content Area - General Information Tab Example */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+          <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
             {/* Banner and Icon Upload */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               <div className="lg:col-span-3">
@@ -161,7 +161,7 @@ export function ActivityEditorSkeleton() {
         </div>
         
         {/* Sticky Footer Skeleton */}
-        <footer className="sticky bottom-0 bg-white border-t border-gray-200 py-4 mt-12 flex justify-between gap-4 z-10 px-6 md:px-8">
+        <footer className="sticky bottom-0 bg-white border-t border-border py-4 mt-12 flex justify-between gap-4 z-10 px-6 md:px-8">
           <div className="flex gap-2">
             {/* Validation buttons placeholder */}
           </div>
@@ -181,7 +181,7 @@ export function ActivityEditorSkeleton() {
 export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 'table' | 'cards' }) {
   if (variant === 'table') {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="p-4 border-b">
           <Skeleton className="h-8 w-48 bg-gray-100" />
         </div>
@@ -205,7 +205,7 @@ export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 't
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+          <div key={i} className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2 flex-1">
                 <Skeleton className="h-5 w-3/4 bg-gray-200" />
@@ -226,7 +226,7 @@ export function TabContentSkeleton({ variant = 'form' }: { variant?: 'form' | 't
 
   // Default form variant
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-6">
       {[...Array(4)].map((_, i) => (
         <div key={i} className="space-y-2">
           <Skeleton className="h-4 w-32 bg-gray-100" />
@@ -242,7 +242,7 @@ export function TabTransitionSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <Skeleton className="h-8 w-48 bg-gray-200" />
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-4">
+      <div className="bg-white rounded-lg shadow-sm border border-border p-8 space-y-4">
         <Skeleton className="h-4 w-full bg-gray-100" />
         <Skeleton className="h-4 w-3/4 bg-gray-100" />
         <Skeleton className="h-4 w-1/2 bg-gray-100" />

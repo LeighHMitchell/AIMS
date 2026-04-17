@@ -209,7 +209,7 @@ export function OptimizedTransactionList({
   const renderTransactionRow = useCallback((transaction: Transaction) => (
     <div
       key={transaction.id}
-      className="border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors"
+      className="border-b border-border p-4 hover:bg-gray-50 transition-colors"
     >
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">

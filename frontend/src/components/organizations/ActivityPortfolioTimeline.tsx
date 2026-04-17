@@ -131,7 +131,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
       case 'extending':
         return 'bg-orange-100 text-orange-800 border-orange-300';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-gray-100 text-gray-800 border-input';
     }
   };
 
@@ -194,7 +194,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
               {timelineData.months.map((month, index) => (
                 <div 
                   key={index} 
-                  className="flex-1 text-center border-l border-gray-200 first:border-l-0"
+                  className="flex-1 text-center border-l border-border first:border-l-0"
                   style={{ minWidth: '60px' }}
                 >
                   {format(month, 'MMM yy')}
@@ -258,7 +258,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
           </ScrollArea>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-200 text-xs">
+          <div className="flex flex-wrap gap-4 pt-4 border-t border-border text-xs">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded"></div>
               <span>Active/Implementation</span>

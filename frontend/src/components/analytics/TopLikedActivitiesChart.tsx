@@ -115,8 +115,8 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           ? `${item.reportingOrgName} (${item.reportingOrgAcronym})`
           : item.reportingOrgName
         return (
-          <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-sm">
-            <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+          <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
+            <div className="bg-surface-muted px-3 py-2 border-b border-border">
               <p className="font-semibold text-slate-900 text-sm">
                 {item.title}{item.acronym ? ` (${item.acronym})` : ''}
               </p>
@@ -137,7 +137,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
                       -{item.downvoteCount}
                     </td>
                   </tr>
-                  <tr className="border-t border-slate-100">
+                  <tr className="border-t border-border">
                     <td className="py-0.5 pt-1 text-slate-600 font-medium">Net Score</td>
                     <td className="py-0.5 pt-1 text-right font-semibold" style={{ color: item.voteScore >= 0 ? COLORS.coolSteel : COLORS.primaryScarlet }}>
                       {item.voteScore > 0 ? '+' : ''}{item.voteScore}

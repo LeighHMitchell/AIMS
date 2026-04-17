@@ -368,13 +368,13 @@ export function FAQManagement() {
               </div>
               <div className="flex gap-3">
                 {/* Pending Card */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                <div className="bg-gray-50 border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-xs font-medium text-gray-600">Pending</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.pending}</p>
-                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
                     <span className="text-[10px] text-gray-500">+{stats.pendingThisWeek} this week</span>
                     <span className="text-[10px] text-gray-500">Avg {stats.pendingAvgWaitDays.toFixed(1)}d wait</span>
                     <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
@@ -389,26 +389,26 @@ export function FAQManagement() {
                 </div>
 
                 {/* In Progress Card */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                <div className="bg-gray-50 border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <Pencil className="h-4 w-4 text-slate-500" />
                     <span className="text-xs font-medium text-gray-600">In Progress</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.in_progress}</p>
-                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
                     <span className="text-[10px] text-gray-500">Avg {stats.inProgressAvgDays.toFixed(1)}d to answer</span>
                     <span className="text-[10px] text-gray-500">Oldest: {stats.inProgressOldestDays}d</span>
                   </div>
                 </div>
 
                 {/* Published Card */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                <div className="bg-gray-50 border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-gray-500" />
                     <span className="text-xs font-medium text-gray-600">Published</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.published}</p>
-                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
                     <span className="text-[10px] text-gray-500">+{stats.publishedThisMonth} this month</span>
                     <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
                       {stats.publishedChangePercent >= 0 ? (
@@ -422,13 +422,13 @@ export function FAQManagement() {
                 </div>
 
                 {/* Response Rate & Resolution Time Card */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                <div className="bg-gray-50 border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <Percent className="h-4 w-4 text-gray-500" />
                     <span className="text-xs font-medium text-gray-600">Performance</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.responseRate}%</p>
-                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
                     <span className="text-[10px] text-gray-500">Response rate</span>
                     <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
                       <Timer className="h-3 w-3" />

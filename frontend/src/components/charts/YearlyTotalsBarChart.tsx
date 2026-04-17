@@ -235,8 +235,8 @@ export function YearlyTotalsBarChart({
       }
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
           </div>
           <div className="p-2">
@@ -245,7 +245,7 @@ export function YearlyTotalsBarChart({
                 {nonZeroPayload.map((entry: any, index: number) => {
                   const typeConfig = TRANSACTION_TYPE_CONFIG[entry.dataKey]
                   return (
-                    <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                    <tr key={index} className="border-b border-border last:border-b-0">
                       <td className="py-1.5 pr-4 flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -279,7 +279,7 @@ export function YearlyTotalsBarChart({
   const SimpleTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length && payload[0].value > 0) {
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
+        <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
           <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
           <p className="font-bold text-slate-900 text-lg">{formatTooltipValue(payload[0].value)}</p>
         </div>
@@ -329,7 +329,7 @@ export function YearlyTotalsBarChart({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-surface-muted">
-              <tr className="border-b border-slate-200">
+              <tr className="border-b border-border">
                 <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
                 {activeTransactionTypes.map(type => (
                   <th key={type} className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">
@@ -366,7 +366,7 @@ export function YearlyTotalsBarChart({
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-slate-300 bg-slate-100">
+              <tr className="border-t-2 border-input bg-slate-100">
                 <td className="py-3 px-4 font-bold text-slate-900">Total</td>
                 {activeTransactionTypes.map(type => (
                   <td key={type} className="text-right py-3 px-4 font-bold text-slate-900 font-mono text-xs">
@@ -390,7 +390,7 @@ export function YearlyTotalsBarChart({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-surface-muted">
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-medium text-slate-700 bg-slate-50">Year</th>
               <th className="text-right py-3 px-4 font-medium text-slate-700 bg-slate-50">{singleSeriesLabel}</th>
             </tr>
@@ -406,7 +406,7 @@ export function YearlyTotalsBarChart({
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-slate-300 bg-slate-100">
+            <tr className="border-t-2 border-input bg-slate-100">
               <td className="py-3 px-4 font-bold text-slate-900">Total</td>
               <td className="text-right py-3 px-4 font-bold text-slate-900 font-mono text-xs">
                 {formatTooltipValue(grandTotal)}
@@ -728,7 +728,7 @@ export function YearlyTotalsBarChart({
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <Button
@@ -772,7 +772,7 @@ export function YearlyTotalsBarChart({
 
   return (
     <>
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <Button

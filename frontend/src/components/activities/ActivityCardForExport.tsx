@@ -140,7 +140,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
       <div 
         ref={ref}
         className={`
-          bg-white rounded-2xl shadow-lg border border-gray-100 
+          bg-white rounded-2xl shadow-lg border border-border 
           overflow-hidden relative max-w-4xl mx-auto
           ${className}
         `}

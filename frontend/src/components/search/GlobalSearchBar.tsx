@@ -531,7 +531,7 @@ export function GlobalSearchBar({
                           {/* Show suggestions if available */}
                           {suggestions.length > 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-border">
                                 Suggestions
                               </div>
                               {suggestions.map((suggestion) => (
@@ -553,7 +553,7 @@ export function GlobalSearchBar({
                           {/* Show popular searches if available */}
                           {popularSearches.length > 0 && suggestions.length === 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-border">
                                 Popular Searches
                               </div>
                               {popularSearches.map((search, idx) => (
@@ -588,7 +588,7 @@ export function GlobalSearchBar({
 
                             return (
                               <CommandGroup key={type}>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-border">
                                   {resultTypeLabels[type]}
                                 </div>
                                 {typeResults.map((result) => (
@@ -618,7 +618,7 @@ export function GlobalSearchBar({
                     </CommandList>
                     {/* Add "View All Results" option at bottom if there are results */}
                     {!loading && !error && query.trim() && results.length > 0 && (
-                      <div className="border-t border-gray-100 p-2">
+                      <div className="border-t border-border p-2">
                         <Button
                           variant="ghost"
                           size="sm"

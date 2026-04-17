@@ -1137,7 +1137,7 @@ export function ExternalPublisherModal({
           <RadioGroup value={selectedOption || ''} onValueChange={handleOptionChange}>
             
             {/* Option 1: Merge */}
-            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">
+            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-input transition-colors relative">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem value="merge" id="merge" className="mt-1" />
                 <div className="flex-1 space-y-2">
@@ -1173,7 +1173,7 @@ export function ExternalPublisherModal({
             {/* Option 2: Import as Reporting Org (Super/Government only) */}
             {(userRole === USER_ROLES.SUPER_USER || userRole === 'admin' || 
               userRole === USER_ROLES.GOV_PARTNER_TIER_1 || userRole === USER_ROLES.GOV_PARTNER_TIER_2) && (
-              <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">
+              <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-input transition-colors relative">
                 <div className="flex items-start space-x-3">
                   <RadioGroupItem value="import_as_reporting_org" id="import_as_reporting_org" className="mt-1" />
                   <div className="flex-1 space-y-2">

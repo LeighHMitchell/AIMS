@@ -167,7 +167,7 @@ function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
             variant="outline"
             size="sm"
             onClick={() => startDrawing("polygon")}
-            className="gap-1 bg-white shadow-md border-gray-300"
+            className="gap-1 bg-white shadow-md border-input"
           >
             <MousePointerClick className="h-3.5 w-3.5" />
             Polygon
@@ -177,7 +177,7 @@ function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
             variant="outline"
             size="sm"
             onClick={() => startDrawing("polyline")}
-            className="gap-1 bg-white shadow-md border-gray-300"
+            className="gap-1 bg-white shadow-md border-input"
           >
             <Minus className="h-3.5 w-3.5" />
             Polyline

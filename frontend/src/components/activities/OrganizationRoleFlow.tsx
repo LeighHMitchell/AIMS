@@ -150,7 +150,7 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">{data.role}</p>
           <p className="text-sm text-slate-600">
             <span className="font-medium">Organizations: </span>

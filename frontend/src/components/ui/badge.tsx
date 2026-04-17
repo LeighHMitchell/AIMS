@@ -15,7 +15,7 @@ const badgeVariants = cva(
         warning: "bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] hover:bg-[hsl(var(--warning-bg))]/80",
         
         // High contrast variants with darker text
-        gray: "bg-slate-200 text-slate-900 border border-slate-300 hover:bg-slate-300",
+        gray: "bg-slate-200 text-slate-900 border border-input hover:bg-slate-300",
         blue: "bg-blue-200 text-slate-900 border border-blue-300 hover:bg-blue-300",
         purple: "bg-purple-200 text-slate-900 border border-purple-300 hover:bg-purple-300",
         green: "bg-green-200 text-slate-900 border border-green-300 hover:bg-green-300",

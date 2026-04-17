@@ -251,8 +251,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
     <div 
       ref={cardRef}
       className={`
-      bg-white rounded-xl border border-gray-100 
-      hover:border-gray-200 hover:shadow-lg 
+      bg-white rounded-xl border border-border 
+      hover:border-border hover:shadow-lg 
       transition-all duration-300 ease-in-out
       relative group shadow-sm
       ${className}
@@ -520,7 +520,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             {/* Activity Details - Always displayed */}
             <div className="space-y-2">
               {(activity.created_by_org_acronym || activity.created_by_org_name) && (
-                <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-gray-200">
+                <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-b border-border">
                   <span className="text-sm font-medium text-gray-700">Reported by</span>
                   <span className="text-sm text-gray-900 text-right">
                     {activity.created_by_org_name}
@@ -539,7 +539,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     <div className="text-sm font-medium text-gray-700">Total Budgeted</div>
                     <div className="text-sm text-gray-900">{formatCurrency(activity.totalBudget || 0)}</div>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <div className="flex justify-between items-center pb-2 border-b border-border">
                     <div className="text-sm font-medium text-gray-700">Total Disbursed</div>
                     <div className="text-sm text-gray-900">{formatCurrency(activity.totalDisbursed || 0)}</div>
                   </div>

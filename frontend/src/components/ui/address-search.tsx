@@ -176,13 +176,13 @@ export function AddressSearch({
 
           {/* Search Results Dropdown */}
           {showDropdown && searchResults.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-60 overflow-auto">
               {searchResults.map((result) => (
                 <button
                   key={result.place_id}
                   type="button"
                   onClick={() => handleAddressSelect(result)}
-                  className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-start gap-2 border-b border-gray-100 last:border-b-0"
+                  className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-start gap-2 border-b border-border last:border-b-0"
                   disabled={disabled}
                 >
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />

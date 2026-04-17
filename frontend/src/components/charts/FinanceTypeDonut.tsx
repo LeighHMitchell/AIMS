@@ -154,14 +154,14 @@ export default function FinanceTypeDonut({
         <div className="h-24 overflow-auto">
           <table className="w-full text-xs">
             <thead className="bg-surface-muted">
-              <tr className="border-b border-slate-200">
+              <tr className="border-b border-border">
                 <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
                 <th className="text-right py-1 text-slate-600 font-medium">Amount</th>
               </tr>
             </thead>
             <tbody>
               {top5Data.map((item, idx) => (
-                <tr key={idx} className="border-b border-slate-100">
+                <tr key={idx} className="border-b border-border">
                   <td className="py-1 text-slate-900">
                     <div className="flex items-center gap-2">
                       <div
@@ -176,7 +176,7 @@ export default function FinanceTypeDonut({
                   </td>
                 </tr>
               ))}
-              <tr className="border-t-2 border-slate-300 bg-slate-50">
+              <tr className="border-t-2 border-input bg-slate-50">
                 <td className="py-1 text-slate-900 font-semibold">Total</td>
                 <td className="text-right py-1 text-slate-900 font-semibold">
                   {formatCurrencyShort(top5Data.reduce((sum, item) => sum + item.value, 0))}
@@ -213,8 +213,8 @@ export default function FinanceTypeDonut({
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg min-w-[180px]">
-                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                      <div className="bg-white p-3 border border-border rounded-lg shadow-lg min-w-[180px]">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
                           <div 
                             className="w-3 h-3 rounded-full flex-shrink-0" 
                             style={{ backgroundColor: data.color }}
@@ -225,11 +225,11 @@ export default function FinanceTypeDonut({
                         </div>
                         <table className="w-full text-xs">
                           <tbody>
-                            <tr className="border-b border-slate-100">
+                            <tr className="border-b border-border">
                               <td className="px-1 py-1.5 text-slate-600">Code</td>
                               <td className="text-right px-1 py-1.5 font-mono font-medium text-slate-900">{data.code}</td>
                             </tr>
-                            <tr className="border-b border-slate-100">
+                            <tr className="border-b border-border">
                               <td className="px-1 py-1.5 text-slate-600">Amount</td>
                               <td className="text-right px-1 py-1.5 font-medium text-slate-900">{formatCurrencyShort(data.value)}</td>
                             </tr>

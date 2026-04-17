@@ -85,7 +85,7 @@ export function CopyField({
           </label>
         )}
         <div className={cn(
-          "flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm flex-1 min-w-0",
+          "flex items-center justify-between bg-gray-50 border border-border rounded-md px-3 py-2 text-sm flex-1 min-w-0",
           "focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500",
           fieldClassName
         )}>
@@ -129,7 +129,7 @@ export function CopyField({
         </label>
       )}
       <div className={cn(
-        "flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm",
+        "flex items-center justify-between bg-gray-50 border border-border rounded-md px-3 py-2 text-sm",
         "focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500",
         fieldClassName
       )}>
@@ -181,7 +181,7 @@ export function CopyFieldGroup({
   return (
     <div className={cn("space-y-4", className)}>
       {title && (
-        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-border pb-2">
           {title}
         </h3>
       )}

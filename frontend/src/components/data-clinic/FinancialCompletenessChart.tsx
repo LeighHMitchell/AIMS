@@ -208,8 +208,8 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
     const item = payload[0].payload as FinancialCompletenessActivity & { fullName: string };
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-sm">
-        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
+        <div className="bg-slate-100 px-3 py-2 border-b border-border">
           <p className="font-semibold text-slate-900 text-sm">{item.fullName}</p>
           {item.reporting_org_name && (
             <p className="text-xs text-slate-600 mt-0.5">{item.reporting_org_name}</p>
@@ -218,25 +218,25 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
         <div className="p-2">
           <table className="w-full text-sm">
             <tbody>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-slate-700 font-medium">Budgeted</td>
                 <td className="py-1.5 text-right font-semibold text-slate-900">
                   {formatCurrencyFull(item.total_budgeted_usd)}
                 </td>
               </tr>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-slate-700 font-medium">Disbursed</td>
                 <td className="py-1.5 text-right font-semibold text-slate-900">
                   {formatCurrencyFull(item.total_disbursed_usd)}
                 </td>
               </tr>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-slate-700 font-medium">Overspend</td>
                 <td className="py-1.5 text-right font-semibold text-red-600">
                   {formatCurrencyFull(item.overspend_usd)}
                 </td>
               </tr>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-slate-700 font-medium">% Spent</td>
                 <td className="py-1.5 text-right font-semibold text-slate-900">
                   {formatPercentage(item.percentage_spent)}
@@ -257,7 +257,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Overspend by Activity
@@ -275,7 +275,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
 
   if (!chartData || chartData.length === 0) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Overspend by Activity
@@ -301,7 +301,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
   const chartHeight = Math.max(400, chartData.length * 70);
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -353,7 +353,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
       </CardHeader>
       <CardContent>
         {viewMode === 'chart' ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-border p-4">
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
                 data={chartData}

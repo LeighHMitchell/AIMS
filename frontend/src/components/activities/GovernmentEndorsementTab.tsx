@@ -681,7 +681,7 @@ export default function GovernmentEndorsementTab({
               <Skeleton className="h-10 w-full" />
             </div>
           ) : projectReferences.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
               <img src="/images/empty-bee.webp" alt="No project references" className="h-32 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">No project references</h3>
               <p className="text-muted-foreground mb-2">Add government project reference codes for this activity.</p>

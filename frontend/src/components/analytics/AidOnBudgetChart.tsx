@@ -447,7 +447,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle>Aid on Budget</CardTitle>
           <CardDescription>Aid distribution by budget classification</CardDescription>
@@ -461,7 +461,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle>Aid on Budget</CardTitle>
           <CardDescription>Aid distribution by budget classification</CardDescription>
@@ -482,7 +482,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
   }
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <CardTitle>Aid on Budget</CardTitle>
         <CardDescription>Aid distribution by budget classification</CardDescription>

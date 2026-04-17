@@ -479,18 +479,18 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       case 'partial':
         return { name: 'Partial', color: '#eab308', badgeClass: 'bg-yellow-50 text-yellow-700 border-yellow-300' };
       case 'unknown':
-        return { name: 'Unknown', color: '#6b7280', badgeClass: 'bg-gray-50 text-gray-700 border-gray-300' };
+        return { name: 'Unknown', color: '#6b7280', badgeClass: 'bg-gray-50 text-gray-700 border-input' };
       case 'budget_support':
-        return { name: 'Budget Support', color: '#cfd0d5', badgeClass: 'bg-gray-100 text-gray-700 border-gray-300' };
+        return { name: 'Budget Support', color: '#cfd0d5', badgeClass: 'bg-gray-100 text-gray-700 border-input' };
       default:
-        return { name: status, color: '#6b7280', badgeClass: 'bg-gray-50 text-gray-700 border-gray-300' };
+        return { name: status, color: '#6b7280', badgeClass: 'bg-gray-50 text-gray-700 border-input' };
     }
   };
 
   // Get badge variant for budget status
   const getBudgetStatusBadge = (status: BudgetStatusType, isBudgetSupport: boolean) => {
     if (isBudgetSupport) {
-      return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">Budget Support</Badge>;
+      return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-input">Budget Support</Badge>;
     }
     switch (status) {
       case "on_budget":
@@ -500,7 +500,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       case "partial":
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Partial</Badge>;
       default:
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">Unknown</Badge>;
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-input">Unknown</Badge>;
     }
   };
 
@@ -1148,7 +1148,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         {/* Summary Cards - Monochrome with white background */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-4 border border-slate-200">
+            <div className="bg-white rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#4c5568' }} />
                 Domestic Spending
@@ -1166,7 +1166,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-slate-200">
+            <div className="bg-white rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#7b95a7' }} />
                 Aid on Budget
@@ -1184,7 +1184,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-slate-200">
+            <div className="bg-white rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#dc2625' }} />
                 Aid off Budget
@@ -1202,7 +1202,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-slate-200">
+            <div className="bg-white rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#cfd0d5' }} />
                 Budget Support

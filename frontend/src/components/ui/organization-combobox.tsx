@@ -227,7 +227,7 @@ export function OrganizationCombobox({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-gray-300 hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-input hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
               className
             )}
           >

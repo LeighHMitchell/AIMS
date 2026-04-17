@@ -216,7 +216,7 @@ export default function LocationEditor({
 
       {/* Add Location Button (when empty) */}
       {localLocations.length === 0 && (
-        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+        <div className="text-center py-8 border-2 border-dashed border-input rounded-lg">
           <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-600 mb-4">No locations added yet</p>
           <Button onClick={addLocation} disabled={!canEdit}>
@@ -228,7 +228,7 @@ export default function LocationEditor({
 
       {/* Location Cards */}
       {localLocations.map((location, index) => (
-        <Card key={location.id} className="border border-gray-200">
+        <Card key={location.id} className="border border-border">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">

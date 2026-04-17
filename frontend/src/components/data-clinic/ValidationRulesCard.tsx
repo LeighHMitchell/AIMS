@@ -77,8 +77,8 @@ function RuleTable<T extends { id: string }>({
   }
 
   return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+    <div className="border border-border rounded-lg overflow-hidden shadow-sm">
+      <div className="bg-slate-50 px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-medium text-slate-900 flex items-center gap-2">

@@ -270,7 +270,7 @@ export function DocumentCardInline({
           {/* Thumbnail/Icon */}
           <div className="flex-shrink-0 flex items-start">
             {isImage ? (
-              <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+              <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-border">
                 <img
                   src={formData.url}
                   alt={primaryTitle?.text || 'Document'}
@@ -288,7 +288,7 @@ export function DocumentCardInline({
                 />
               </div>
             ) : (
-              <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-lg bg-gray-100 border border-border flex items-center justify-center">
                 <FileIcon className="w-10 h-10 text-gray-500" />
               </div>
             )}

@@ -150,7 +150,7 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
           </h3>
         )}
         
-        <hr className="border-slate-200 mb-2" />
+        <hr className="border-border mb-2" />
         
         <div className="grid grid-cols-2 gap-2 text-xs mb-2">
           <div>

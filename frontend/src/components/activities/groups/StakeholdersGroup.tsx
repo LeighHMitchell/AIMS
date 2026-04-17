@@ -277,7 +277,7 @@ export function StakeholdersGroup({
             style={{ minHeight: getSectionMinHeight('contacts') }}
           >
             {isSectionActive('contacts') || activeSections.has('contacts') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="contacts"
                   title={getSectionLabel('contacts')}
@@ -303,7 +303,7 @@ export function StakeholdersGroup({
             style={{ minHeight: getSectionMinHeight('focal_points') }}
           >
             {isSectionActive('focal_points') || activeSections.has('focal_points') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-white rounded-lg shadow-sm border border-border p-8">
                 <SectionHeader
                   id="focal_points"
                   title={getSectionLabel('focal_points')}

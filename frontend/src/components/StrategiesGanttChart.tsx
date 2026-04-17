@@ -173,7 +173,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                 </span>
               ))}
             </div>
-            <div className="border-t border-gray-200"></div>
+            <div className="border-t border-border"></div>
           </div>
 
           {/* Strategy bars */}
@@ -202,7 +202,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                     
                     <div className="flex-1 relative h-8">
                       {/* Timeline background */}
-                      <div className="absolute inset-0 border-t border-gray-200"></div>
+                      <div className="absolute inset-0 border-t border-border"></div>
                       
                       {/* Strategy bar */}
                       <div
@@ -260,7 +260,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
           </div>
 
           {/* Legend */}
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">

@@ -259,8 +259,8 @@ export function FundingOverTimeAnalytics() {
       const yearLabel = typeof label === 'number' ? label : parseInt(label)
 
       return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
-          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-slate-200 text-slate-900">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
+          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-border text-slate-900">
             {label}
           </div>
           <table className="min-w-full text-sm border-collapse">

@@ -287,7 +287,7 @@ export function ParticipatingOrgModal({
           </div>
 
           {showAdvanced && (
-            <div className="space-y-6 pt-4 border-t border-gray-200">
+            <div className="space-y-6 pt-4 border-t border-border">
 
               {/* Activity ID */}
               <div className="space-y-2">

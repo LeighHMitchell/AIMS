@@ -233,7 +233,7 @@ function ResetViewButton({ locations }: { locations: Location[] }) {
       variant="outline"
       size="sm"
       title="Reset view"
-      className="bg-white shadow-md border-gray-300 h-8 w-8 p-0"
+      className="bg-white shadow-md border-input h-8 w-8 p-0"
     >
       <RotateCcw className="h-3.5 w-3.5" />
     </Button>
@@ -360,7 +360,7 @@ export default function ActivityLocationsMapViewV2({
             variant="outline"
             size="sm"
             title={showOtherOrgs ? "Hide other organizations' activities" : "Show other organizations' activities nearby"}
-            className={`bg-white shadow-md border-gray-300 h-8 w-8 p-0 ${showOtherOrgs ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}`}
+            className={`bg-white shadow-md border-input h-8 w-8 p-0 ${showOtherOrgs ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}`}
             disabled={loadingOtherOrgs}
           >
             <Building2 className={`h-3.5 w-3.5 ${loadingOtherOrgs ? 'animate-pulse' : ''}`} />

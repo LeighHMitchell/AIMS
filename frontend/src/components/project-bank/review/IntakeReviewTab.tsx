@@ -532,7 +532,7 @@ export function IntakeReviewTab() {
                 {/* Rip line */}
                 <div className="relative flex items-center justify-center my-3">
                   <div className="absolute -left-4 h-8 w-8 rounded-full bg-white" />
-                  <div className="w-full border-t-2 border-dashed border-gray-200" />
+                  <div className="w-full border-t-2 border-dashed border-border" />
                   <div className="absolute -right-4 h-8 w-8 rounded-full bg-white" />
                 </div>
 

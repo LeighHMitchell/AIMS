@@ -97,7 +97,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900">{data.category}</p>
           <p className="text-sm text-slate-600 mb-2">Transparency Score: {data.transparency_score}%</p>
           <div className="space-y-1 text-xs">
@@ -184,7 +184,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -197,7 +197,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -209,7 +209,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -221,7 +221,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -237,7 +237,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overall Distribution */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700">Budget Sharing Distribution</CardTitle>
           </CardHeader>
@@ -274,7 +274,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
 
         {/* Transparency Scores by Category */}
         {groupBy !== 'overall' && data.length > 0 && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-border">
             <CardHeader>
               <CardTitle className="text-lg font-medium text-slate-700">
                 Transparency Scores by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
@@ -313,7 +313,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
 
       {/* Detailed Breakdown */}
       {groupBy !== 'overall' && data.length > 0 && (
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700">Detailed Breakdown</CardTitle>
           </CardHeader>
@@ -357,7 +357,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       {/* Performance Insights */}
       {summary && summary.best_performer && summary.needs_improvement && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-slate-500" />
@@ -379,7 +379,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-slate-500" />
@@ -402,7 +402,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       )}
 
       {/* Key Recommendations */}
-      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-slate-900 flex items-center gap-2">
             <FileText className="h-5 w-5 text-slate-500" />

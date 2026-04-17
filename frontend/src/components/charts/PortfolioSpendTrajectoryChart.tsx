@@ -673,14 +673,14 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       const variance = comparisonValue - perfectSpend
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -692,7 +692,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     {formatTooltipCurrency(perfectSpend)}
                   </td>
                 </tr>
-                <tr className="border-b border-slate-100">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -704,7 +704,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     {formatTooltipCurrency(comparisonValue)}
                   </td>
                 </tr>
-                <tr className="border-t border-slate-200">
+                <tr className="border-t border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <span className="text-slate-700 font-medium">Gap to baseline</span>

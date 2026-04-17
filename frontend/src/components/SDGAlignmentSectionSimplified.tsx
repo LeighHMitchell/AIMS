@@ -284,7 +284,7 @@ export default function SDGAlignmentSectionSimplified({
                         "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden bg-white",
                         selectedGoals.includes(goal.id)
                           ? "border-primary ring-2 ring-primary/20 shadow-lg"
-                          : "border-gray-200 hover:border-gray-300 hover:shadow-md",
+                          : "border-border hover:border-input hover:shadow-md",
                         !canEdit && "opacity-50 cursor-not-allowed"
                       )}
                     >

@@ -24,7 +24,7 @@ export function NewsletterSection() {
       />
 
       <div className="relative mx-auto max-w-4xl">
-        <Card className="overflow-hidden border-gray-200 bg-white/80 shadow-lg backdrop-blur-sm">
+        <Card className="overflow-hidden border-border bg-white/80 shadow-lg backdrop-blur-sm">
           <div className="grid gap-8 p-8 md:grid-cols-2 md:p-12">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -50,7 +50,7 @@ export function NewsletterSection() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: 0.2 + index * 0.1 }}
-                      className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-700"
+                      className="inline-flex items-center gap-1 rounded-md border border-input bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-700"
                     >
                       <Check className="h-3 w-3 text-gray-700" />
                       {feature}

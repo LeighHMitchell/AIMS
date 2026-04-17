@@ -97,7 +97,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg max-w-sm">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg max-w-sm">
           <p className="font-semibold text-slate-900">{data.partner_name}</p>
           <p className="text-xs text-slate-600 mb-2">{data.partner_type}</p>
           <div className="space-y-1 text-sm">
@@ -202,7 +202,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -214,7 +214,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -226,7 +226,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -238,7 +238,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -255,7 +255,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Main Performance Chart */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700">
               {sortBy === 'activity_count' ? 'Activity Count' :
@@ -305,7 +305,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
         </Card>
 
         {/* Compliance vs Gov Systems Scatter */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700">
               GPEDC Compliance vs Government Systems Usage
@@ -339,7 +339,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                     if (active && payload && payload.length) {
                       const data = payload[0].payload
                       return (
-                        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+                        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
                           <p className="font-semibold text-slate-900">{data.partner_name}</p>
                           <p className="text-xs text-slate-600 mb-1">{data.partner_type}</p>
                           <p className="text-sm text-slate-700">Gov Systems: {data.x}%</p>
@@ -370,7 +370,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       {/* Partner Type Distribution */}
       {summary && summary.partner_types && (
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700">Partner Types</CardTitle>
           </CardHeader>
@@ -395,7 +395,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       )}
 
       {/* Detailed Partner Performance */}
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-slate-700">Partner Performance Details</CardTitle>
         </CardHeader>
@@ -469,7 +469,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       {/* Top Performers */}
       {summary && summary.best_performer && (
-        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-800 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-slate-500" />

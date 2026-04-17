@@ -168,7 +168,7 @@ export function TransactionActivityCalendar({
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -187,7 +187,7 @@ export function TransactionActivityCalendar({
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -210,7 +210,7 @@ export function TransactionActivityCalendar({
   }
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-white border-border">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
           <Calendar className="h-5 w-5" />

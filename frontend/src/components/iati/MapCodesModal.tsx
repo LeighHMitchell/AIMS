@@ -246,7 +246,7 @@ export function MapCodesModal({
                         const systemCodes = SYSTEM_CODES[codeType as keyof typeof SYSTEM_CODES] || [];
 
                         return (
-                          <div key={code} className={`flex items-center gap-4 p-3 rounded-lg border ${isMapped ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                          <div key={code} className={`flex items-center gap-4 p-3 rounded-lg border ${isMapped ? 'border-green-200 bg-green-50' : 'border-border'}`}>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <code className="font-mono text-sm bg-muted px-2 py-1 rounded">

@@ -236,7 +236,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
 
     return (
       <div key={marker.id} className={`border rounded-lg p-4 transition-all ${
-        isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'
+        isSelected ? 'border-blue-300 bg-blue-50' : 'border-border bg-white'
       }`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">

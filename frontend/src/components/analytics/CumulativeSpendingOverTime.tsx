@@ -198,7 +198,7 @@ export function CumulativeSpendingOverTime({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900 mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p
@@ -236,7 +236,7 @@ export function CumulativeSpendingOverTime({
             className={`h-7 px-3 text-xs ${
               timePeriod === period.value
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                : 'bg-white text-slate-600 border-input hover:bg-slate-50'
             }`}
           >
             {period.label}
@@ -248,7 +248,7 @@ export function CumulativeSpendingOverTime({
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Cumulative Spending Over Time
@@ -266,7 +266,7 @@ export function CumulativeSpendingOverTime({
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900">
             Cumulative Spending Over Time
@@ -288,7 +288,7 @@ export function CumulativeSpendingOverTime({
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>

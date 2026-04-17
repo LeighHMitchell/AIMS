@@ -57,7 +57,7 @@ export function SimpleDatePicker({
           disabled={disabled}
           placeholder={placeholder}
           className={cn(
-            "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md",
+            "w-full pl-10 pr-4 py-2 border border-input rounded-md",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
             "disabled:bg-gray-100 disabled:cursor-not-allowed",
             "text-sm font-normal",

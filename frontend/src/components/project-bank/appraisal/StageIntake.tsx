@@ -258,7 +258,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 e.target.value = '';
               }}
             />
-            <div className="h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
+            <div className="h-48 border-2 border-dashed border-input rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
               <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
               <p className="text-sm font-medium text-gray-700 mb-1">Click or drag image to upload</p>
               <p className="text-xs text-gray-500">Max size: 5 MB</p>

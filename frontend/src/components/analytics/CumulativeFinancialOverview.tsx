@@ -901,7 +901,7 @@ export function CumulativeFinancialOverview({
       }
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{fullDate}</p>
             {customYears.find(cy => cy.id === calendarType)?.name && (
@@ -920,7 +920,7 @@ export function CumulativeFinancialOverview({
             )}
             {plannedBudgets.length > 0 && (
               <>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-slate-100">Planned Disbursements & Budgets</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
                 <table className="w-full text-sm">
                   <tbody>
                     {plannedBudgets.map(renderRow)}
@@ -1446,7 +1446,7 @@ export function CumulativeFinancialOverview({
                     ))}
                     {/* Total Row */}
                     {displayData.length > 0 && (
-                      <TableRow className="bg-slate-50 font-semibold border-t-2 border-slate-300 sticky bottom-0">
+                      <TableRow className="bg-slate-50 font-semibold border-t-2 border-input sticky bottom-0">
                         <TableCell className="font-semibold">Total</TableCell>
                         {activeSeries.has('Incoming Commitments') && (
                           <TableCell className="text-right">
@@ -1548,7 +1548,7 @@ export function CumulativeFinancialOverview({
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
+                          <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
                             <p className="font-semibold text-slate-900 text-sm">{payload[0].payload.name}</p>
                             <p className="font-bold text-slate-900 text-lg">{formatTooltipValue(payload[0].value as number)}</p>
                           </div>

@@ -409,7 +409,7 @@ export default function SimpleSectorAllocationForm({
             
             {/* Distribute Equally Button at bottom of sector list */}
             {allocations.length > 1 && (
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-border">
                 <Button 
                   variant="outline" 
                   size="sm" 

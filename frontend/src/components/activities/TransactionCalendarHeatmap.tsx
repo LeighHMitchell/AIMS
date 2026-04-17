@@ -165,7 +165,7 @@ function TimelineView({
     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
       {groupedByMonth.map(([monthKey, days]) => (
         <div key={monthKey}>
-          <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-slate-700 py-2 px-3 border-b border-slate-200 rounded-t-lg">
+          <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-slate-700 py-2 px-3 border-b border-border rounded-t-lg">
             {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
             <span className="ml-2 text-sm font-normal text-slate-500">
               {days.length} day{days.length !== 1 ? 's' : ''} · {days.reduce((sum, d) => sum + d.count, 0)} transaction{days.reduce((sum, d) => sum + d.count, 0) !== 1 ? 's' : ''}
@@ -681,7 +681,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none')
+        .attr('class', 'fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none')
         .style('opacity', 0)
         .style('min-width', '280px')
         .style('max-width', '350px')
@@ -1023,7 +1023,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
       {/* Detailed Tooltip (for Timeline and Monthly views only) */}
       {viewMode !== 'heatmap' && hoveredDay && tooltipPosition && (
         <div
-          className="fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none"
+          className="fixed bg-white border border-border rounded-lg shadow-xl p-4 z-50 pointer-events-none"
           style={{
             left: `${tooltipPosition.x}px`,
             top: `${tooltipPosition.y}px`,
@@ -1050,7 +1050,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
           </div>
 
           {/* Type Breakdown */}
-          <div className="border-t border-slate-200 pt-3">
+          <div className="border-t border-border pt-3">
             <p className="text-xs font-medium text-slate-700 mb-2">By Transaction Type</p>
             <div className="space-y-1.5">
               {Object.entries(hoveredDay.typeBreakdown)
