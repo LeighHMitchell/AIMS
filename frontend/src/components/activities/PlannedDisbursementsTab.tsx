@@ -1597,7 +1597,7 @@ export default function PlannedDisbursementsTab({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>
@@ -1637,7 +1637,7 @@ export default function PlannedDisbursementsTab({
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1670,7 +1670,7 @@ export default function PlannedDisbursementsTab({
                   </SelectContent>
                 </Select>
               </div>
-              <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+              <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                 <Download className="h-4 w-4" />
               </Button>
             </div>

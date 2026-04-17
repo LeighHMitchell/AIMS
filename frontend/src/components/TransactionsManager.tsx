@@ -1062,7 +1062,7 @@ export default function TransactionsManager({
               </Button>
               {transactions.length > 0 && (
                 <>
-                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export">
+                  <Button variant="outline" size="icon" onClick={handleExport} data-export title="Export" aria-label="Export">
                     <Download className="h-4 w-4" />
                   </Button>
                 </>

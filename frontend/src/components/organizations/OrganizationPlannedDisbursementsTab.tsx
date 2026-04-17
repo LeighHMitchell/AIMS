@@ -316,7 +316,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
             icon={<DollarSign className="h-5 w-5" />}
           />
         </div>
-        <Button variant="outline" size="icon" onClick={handleExport} title="Export CSV">
+        <Button variant="outline" size="icon" onClick={handleExport} title="Export CSV" aria-label="Export CSV">
           <Download className="h-4 w-4" />
         </Button>
       </div>

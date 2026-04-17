@@ -284,7 +284,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Pipeline but Past Expected Start</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities still in &quot;Pipeline&quot; status whose expected start date has already passed. These may need to be updated to &quot;Active&quot; or have their dates revised." />
               </div>
-              <button onClick={() => setModalCard('pipeline')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+              <button onClick={() => setModalCard('pipeline')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand" aria-label="Expand">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
@@ -327,7 +327,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Inactive for 90+ Days</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities that haven't been updated in over 90 days. Consider reviewing these to ensure they're still current." />
               </div>
-              <button onClick={() => setModalCard('inactive')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+              <button onClick={() => setModalCard('inactive')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand" aria-label="Expand">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
@@ -370,7 +370,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
                 <CardTitle className="text-base">Missing Required Data</CardTitle>
                 <HelpTextTooltip size="sm" content="Activities that are missing key fields needed for complete IATI reporting. Click a row to go directly to the relevant section in the activity editor." />
               </div>
-              <button onClick={() => setModalCard('missing')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand">
+              <button onClick={() => setModalCard('missing')} className="text-muted-foreground hover:text-foreground transition-colors" title="Expand" aria-label="Expand">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
