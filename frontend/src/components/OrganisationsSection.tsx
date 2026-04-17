@@ -428,7 +428,7 @@ export default function OrganisationsSection({
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(participatingOrg)}
-                              className="hover:bg-blue-50 hover:text-blue-600"
+                              className="hover:bg-accent hover:text-foreground"
                             >
                               <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -436,9 +436,9 @@ export default function OrganisationsSection({
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(participatingOrg)}
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>

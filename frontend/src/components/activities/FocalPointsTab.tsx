@@ -345,7 +345,7 @@ export default function FocalPointsTab({
       : focalPoint.organization?.name || focalPoint.organisation || '';
 
     return (
-      <div key={focalPoint.id} className="border border-border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+      <div key={focalPoint.id} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
         {/* Top: Avatar + Name + Status */}
         <div className="flex items-start gap-3">
           <UserAvatar
@@ -357,26 +357,26 @@ export default function FocalPointsTab({
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-slate-900">{displayName}</span>
+              <span className="text-sm font-medium text-foreground">{displayName}</span>
               {isCurrentUserFocalPoint(focalPoint) && (
-                <Badge variant="secondary" className="text-xs bg-slate-100">You</Badge>
+                <Badge variant="secondary" className="text-xs bg-muted">You</Badge>
               )}
               {getStatusBadge(focalPoint.status)}
             </div>
             {(focalPoint.job_title || focalPoint.department) && (
-              <div className="text-xs text-slate-500 mt-0.5">
+              <div className="text-xs text-muted-foreground mt-0.5">
                 {[focalPoint.job_title, focalPoint.department].filter(Boolean).join(' · ')}
               </div>
             )}
             {orgDisplay && (
-              <div className="text-xs text-slate-500">{orgDisplay}</div>
+              <div className="text-xs text-muted-foreground">{orgDisplay}</div>
             )}
           </div>
         </div>
 
         {/* Bottom: Assigned info + Actions */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-muted-foreground">
             {focalPoint.assigned_by_name && (
               <span>Assigned by {focalPoint.assigned_by_name}</span>
             )}
@@ -409,7 +409,7 @@ export default function FocalPointsTab({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 backdrop-blur-sm bg-white/50 rounded-full"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 backdrop-blur-sm bg-white/50 rounded-full"
                   onClick={() => handleRemove(focalPoint)}
                   disabled={isLoading}
                   title="Remove focal point"
@@ -417,7 +417,7 @@ export default function FocalPointsTab({
                   {isLoading && actionLoading?.startsWith('remove') ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   )}
                 </Button>
               )}
@@ -490,8 +490,8 @@ export default function FocalPointsTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-        <span className="ml-2 text-slate-500">Loading focal points...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading focal points...</span>
       </div>
     );
   }
