@@ -11,7 +11,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createHumanitarianProjects() {
-  console.log('Creating 5 humanitarian and development-focused projects...');
 
   try {
     // Get organization IDs
@@ -154,7 +153,6 @@ async function createHumanitarianProjects() {
       return;
     }
 
-    console.log('Activities created successfully');
 
     // Create sectors for all projects
     const sectors = [
@@ -309,7 +307,6 @@ async function createHumanitarianProjects() {
 
     await supabase.from('activity_contacts').insert(contacts);
 
-    console.log('5 humanitarian and development-focused projects created successfully!');
     
   } catch (error) {
     console.error('Error creating humanitarian projects:', error);

@@ -10,7 +10,6 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
-  console.log('[Task Assignment API] PUT handler entered');
 
   try {
     const { response: authResponse } = await requireAuth();
@@ -19,17 +18,14 @@ export async function PUT(
   const supabase = getSupabaseAdmin();
 
     // Handle both sync and async params (Next.js 14/15 compatibility)
-    console.log('[Task Assignment API] Resolving params...');
     const resolvedParams = await Promise.resolve(params);
     const id = resolvedParams?.id;
-    console.log('[Task Assignment API] Params resolved, id:', id);
 
     if (!id) {
       console.error('[Task Assignment API] Missing assignment ID in params');
       return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
     }
 
-    console.log('[Task Assignment API] Getting supabase admin...');
 
     const body = await request.json();
     const {
@@ -46,7 +42,6 @@ export async function PUT(
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Task Assignment API] PUT assignment:', id, 'by user:', userId);
 
     // Fetch the current assignment
     const { data: assignment, error: fetchError } = await supabase
@@ -58,7 +53,6 @@ export async function PUT(
       .eq('id', id)
       .single();
 
-    console.log('[Task Assignment API] Fetch result:', { assignment, fetchError });
 
     if (fetchError || !assignment) {
       console.error('[Task Assignment API] Assignment not found:', fetchError);

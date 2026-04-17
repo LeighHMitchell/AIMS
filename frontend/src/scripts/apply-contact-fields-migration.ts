@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 
 async function applyContactFieldsMigration() {
-  console.log('🔄 Applying contact fields migration...');
   
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -18,8 +17,6 @@ async function applyContactFieldsMigration() {
       'utf8'
     );
     
-    console.log('📄 Migration SQL loaded');
-    console.log('🔄 Executing migration...');
     
     // Execute each SQL statement separately to handle errors better
     const statements = migrationSQL
@@ -29,7 +26,6 @@ async function applyContactFieldsMigration() {
     
     for (const statement of statements) {
       if (statement.trim()) {
-        console.log(`Executing: ${statement.substring(0, 100)}...`);
         
         const { error } = await supabase.rpc('exec_sql', {
           sql: statement + ';'
@@ -39,15 +35,12 @@ async function applyContactFieldsMigration() {
           console.warn(`⚠️  Warning for statement: ${error.message}`);
           // Continue with other statements even if some fail (they might already exist)
         } else {
-          console.log('✅ Statement executed successfully');
         }
       }
     }
     
-    console.log('🎉 Contact fields migration completed!');
     
     // Verify the new columns exist
-    console.log('🔍 Verifying new columns...');
     const { data: columns, error: columnsError } = await supabase
       .from('information_schema.columns')
       .select('column_name')
@@ -58,7 +51,6 @@ async function applyContactFieldsMigration() {
     if (columnsError) {
       console.error('❌ Error checking columns:', columnsError);
     } else {
-      console.log('✅ Verified columns:', columns?.map((c: any) => c.column_name) || []);
     }
     
   } catch (error) {

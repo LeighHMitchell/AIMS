@@ -174,7 +174,6 @@ export async function GET(request: Request) {
       }
 
       matchingActivityIds = matchingActivities?.map(a => a.id) || [];
-      console.log(`[AIMS] Search term: "${search}", found ${matchingActivityIds.length} matching activities:`, matchingActivityIds);
     }
     
     // Build the query
@@ -322,9 +321,7 @@ export async function GET(request: Request) {
       );
     }
     
-    console.log(`[AIMS] Query returned ${ownTransactions?.length || 0} own transactions (total count: ${totalOwnCount})`);
     if (search && ownTransactions?.length === 0) {
-      console.log(`[AIMS] No results found for search: "${search}". Activity IDs searched: ${matchingActivityIds.length > 0 ? matchingActivityIds.join(', ') : 'none'}`);
     }
 
     // Transform own transactions with source classification and computed inherited fields
@@ -621,11 +618,9 @@ async function performCurrencyConversion(
   isManual?: boolean
 ) {
   try {
-    console.log('[Transactions API] Starting currency conversion for transaction:', transactionId);
     
     // For USD transactions, still populate USD Value field
     if (currency === 'USD') {
-      console.log('[Transactions API] Transaction is already in USD, updating USD fields...');
       
       // Update USD fields for USD transactions to ensure USD Value field is populated
       const { error: updateError } = await supabase
@@ -642,14 +637,12 @@ async function performCurrencyConversion(
       if (updateError) {
         console.error('[Transactions API] Error updating USD transaction fields:', updateError);
       } else {
-        console.log('[Transactions API] Successfully updated USD transaction fields');
       }
       return;
     }
 
     // If manual rate is provided, use it directly
     if (isManual && manualRate && manualValueUsd != null) {
-      console.log('[Transactions API] Using manual exchange rate:', manualRate);
       
       const { error: updateError } = await supabase
         .from('transactions')
@@ -681,7 +674,6 @@ async function performCurrencyConversion(
     const result = await fixedCurrencyConverter.convertToUSD(value, currency, conversionDate);
 
     if (!result.success) {
-      console.log('[Transactions API] Currency conversion failed, marking as unconvertible:', result.error);
       
       // Mark as unconvertible
       const { error: updateError } = await supabase
@@ -700,7 +692,6 @@ async function performCurrencyConversion(
     }
 
     // Update transaction with USD values
-    console.log('[Transactions API] Currency conversion successful, updating transaction with USD values...');
     const { error: updateError } = await supabase
       .from('transactions')
       .update({
@@ -731,7 +722,6 @@ async function performCurrencyConversion(
 // Helper function to infer and apply budget lines for a transaction
 async function performBudgetLineInference(transactionId: string) {
   try {
-    console.log('[Transactions API] Starting budget line inference for transaction:', transactionId);
     // Fetch transaction with its data
     const { data: transaction, error: txnError } = await supabase
       .from('transactions')
@@ -796,7 +786,6 @@ export async function POST(request: NextRequest) {
     if (authResponse) return authResponse;
 
     const body = await request.json();
-    console.log('[Transactions API] POST request received:', body);
 
     // Validate required fields
     if (!body.activity_id) {
@@ -847,15 +836,12 @@ export async function POST(request: NextRequest) {
       const activitySuffix = body.activity_id ? body.activity_id.slice(-8) : 'unknown';
       
       transactionReference = `TXN-${timestamp}-${random}-${activitySuffix}`;
-      console.log('[Transactions API] Generated transaction reference:', transactionReference);
     } else {
-      console.log('[Transactions API] Using provided transaction reference:', transactionReference);
     }
 
     // tied_status mapping - database hasn't been migrated yet, so map to current enum values
     // Frontend sends IATI standard: '1'=Tied, '2'=Partially tied, '3'=Untied, '4'=Not reported
     // Database currently expects: '3'=Untied, '4'=Tied, '5'=Partially tied
-    console.log('[Transactions API] tied_status value:', body.tied_status);
     
     let mappedTiedStatus = null;
     if (body.tied_status) {
@@ -867,7 +853,6 @@ export async function POST(request: NextRequest) {
       };
       
       mappedTiedStatus = tiedStatusMapping[body.tied_status] || '3'; // Default to Untied
-      console.log('[Transactions API] Mapped tied_status from', body.tied_status, 'to', mappedTiedStatus);
     }
     
     const transactionData: any = {
@@ -924,7 +909,6 @@ export async function POST(request: NextRequest) {
       use_activity_sectors: body.use_activity_sectors ?? true
     };
 
-    console.log('[Transactions API] Inserting transaction:', transactionData);
 
     const { data, error } = await supabase
       .from('transactions')
@@ -956,7 +940,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Transactions API] Successfully saved transaction:', data.uuid);
 
     // Ensure we return the transaction with both uuid and id (for compatibility)
     const responseData = {
@@ -997,7 +980,6 @@ export async function POST(request: NextRequest) {
         if (sectorError) {
           console.error('[Transactions API] Error inserting sector lines:', sectorError);
         } else {
-          console.log('[Transactions API] Successfully inserted sector lines:', sectorLinesToInsert.length);
         }
       } catch (sectorErr) {
         console.error('[Transactions API] Error saving sectors:', sectorErr);
@@ -1028,7 +1010,6 @@ export async function POST(request: NextRequest) {
           console.error('[Transactions API] Error inserting aid_type lines:', aidTypeError);
           // Don't fail the request - aid_types table might not exist yet
         } else {
-          console.log('[Transactions API] Successfully inserted aid_type lines:', aidTypeLinesToInsert.length);
         }
       } catch (aidTypeErr) {
         console.error('[Transactions API] Error saving aid_types:', aidTypeErr);
@@ -1058,7 +1039,6 @@ export async function POST(request: NextRequest) {
       const { linked } = await autoLinkFundChildren(supabase, body.activity_id);
       autoLinked = linked;
       if (linked.length > 0) {
-        console.log(`[AIMS] Auto-linked ${linked.length} child activities for pooled fund ${body.activity_id}`);
       }
     } catch (err) {
       // Non-blocking — log but don't fail the transaction save
@@ -1084,7 +1064,6 @@ export async function PUT(request: NextRequest) {
     if (authResponse) return authResponse;
 
     const body = await request.json();
-    console.log('[Transactions API] PUT request received:', body);
 
     // Check for either id or uuid (for compatibility)
     const transactionId = body.id || body.uuid;
@@ -1244,7 +1223,6 @@ export async function PUT(request: NextRequest) {
       delete cleanedData.organization_id;
     }
 
-    console.log('[Transactions API] Updating transaction:', transactionId, cleanedData);
 
     const { data, error } = await supabase
       .from('transactions')
@@ -1273,7 +1251,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[Transactions API] Successfully updated transaction:', data.uuid);
 
     // Ensure we return the transaction with both uuid and id (for compatibility)
     const responseData = {
@@ -1322,7 +1299,6 @@ export async function PUT(request: NextRequest) {
           if (sectorError) {
             console.error('[Transactions API] Error updating sector lines:', sectorError);
           } else {
-            console.log('[Transactions API] Successfully updated sector lines:', sectorLinesToInsert.length);
           }
         }
       } catch (sectorErr) {
@@ -1362,7 +1338,6 @@ export async function PUT(request: NextRequest) {
             console.error('[Transactions API] Error updating aid_type lines:', aidTypeError);
             // Don't fail the request - aid_types table might not exist yet
           } else {
-            console.log('[Transactions API] Successfully updated aid_type lines:', aidTypeLinesToInsert.length);
           }
         }
       } catch (aidTypeErr) {
@@ -1432,7 +1407,6 @@ export async function DELETE(request: NextRequest) {
         );
       }
       
-      console.log(`[Transactions API] Bulk deleting ${uuids.length} transactions:`, uuids);
       
       // Validate all UUIDs
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -1460,7 +1434,6 @@ export async function DELETE(request: NextRequest) {
         );
       }
       
-      console.log(`[Transactions API] Successfully bulk deleted ${count || uuids.length} transactions`);
       return NextResponse.json({ 
         success: true, 
         deletedCount: count || uuids.length,
@@ -1477,7 +1450,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('[Transactions API] DELETE request for transaction:', id);
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -1502,7 +1474,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('[Transactions API] Successfully deleted transaction:', id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[Transactions API] Unexpected error:', error);

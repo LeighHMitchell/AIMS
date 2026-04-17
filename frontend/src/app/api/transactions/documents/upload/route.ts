@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
     const { supabase, user, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[Upload API] Starting document upload...');
     if (!supabase || !user) {
       console.error('[Upload API] Database connection or auth failed');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -84,7 +83,6 @@ export async function POST(request: NextRequest) {
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const storagePath = `transaction-documents/${transactionId}/${timestamp}_${sanitizedFileName}`;
 
-    console.log('[Upload API] Uploading to storage path:', storagePath);
     
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -102,14 +100,12 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[Upload API] Storage upload successful:', uploadData);
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
       .from('transaction-documents')
       .getPublicUrl(storagePath);
 
-    console.log('[Upload API] Saving document record to database...');
     
     // Save document record to database
     const { data: document, error: dbError } = await supabase
@@ -142,7 +138,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[Upload API] Document saved successfully:', document);
 
     return NextResponse.json({
       id: document.id,

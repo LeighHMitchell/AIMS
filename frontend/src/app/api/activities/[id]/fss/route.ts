@@ -12,7 +12,6 @@ export async function GET(
   try {
     const { id: activityId } = await params;
 
-    console.log('[FSS API] GET request for activityId:', activityId);
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
@@ -31,7 +30,6 @@ export async function GET(
     }
 
     if (!fss) {
-      console.log('[FSS API] No FSS found for activity');
       return NextResponse.json(null);
     }
 
@@ -47,7 +45,6 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch forecasts' }, { status: 500 });
     }
 
-    console.log('[FSS API] Returning FSS with', forecasts?.length || 0, 'forecasts');
     return NextResponse.json({ ...fss, forecasts: forecasts || [] });
   } catch (error) {
     console.error('[FSS API] Unexpected error:', error);
@@ -67,7 +64,6 @@ export async function PUT(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log('[FSS API] PUT request for activityId:', activityId, 'body:', body);
 
     // Validate required fields
     if (!body.extraction_date) {
@@ -109,7 +105,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to save FSS', details: fssError.message }, { status: 500 });
     }
 
-    console.log('[FSS API] Successfully saved FSS:', fss.id);
     return NextResponse.json(fss);
   } catch (error) {
     console.error('[FSS API] Unexpected error:', error);
@@ -128,7 +123,6 @@ export async function DELETE(
   try {
     const { id: activityId } = await params;
 
-    console.log('[FSS API] DELETE request for activityId:', activityId);
 
     const { error } = await supabase
       .from('forward_spending_survey')
@@ -140,7 +134,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete FSS' }, { status: 500 });
     }
 
-    console.log('[FSS API] Successfully deleted FSS');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[FSS API] Unexpected error:', error);

@@ -16,16 +16,6 @@ export async function GET(
     const resolvedParams = await Promise.resolve(params)
     const activityId = resolvedParams.id
     
-    console.log('\n')
-    console.log('========================================')
-    console.log('[Fund Flow] ===== ENDPOINT CALLED =====')
-    console.log('[Fund Flow] Request URL:', request.url)
-    console.log('[Fund Flow] Activity ID:', activityId)
-    console.log('[Fund Flow] Activity ID type:', typeof activityId)
-    console.log('[Fund Flow] Activity ID length:', activityId?.length)
-    console.log('[Fund Flow] Params resolved:', JSON.stringify(resolvedParams))
-    console.log('========================================')
-    console.log('\n')
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },
@@ -50,7 +40,6 @@ export async function GET(
         .select('*', { count: 'exact', head: true })
         .eq('activity_id', activityId)
       simpleCount = countResult.count
-      console.log(`[Fund Flow] Simple count (no joins): ${simpleCount} transactions`)
     } catch (countError) {
       console.error('[Fund Flow] Error getting simple count:', countError)
       // Continue anyway - the main query will handle errors
@@ -86,10 +75,6 @@ export async function GET(
     
     // Ensure we have an array, even if error occurred
     const safeTransactions = transactions || []
-    console.log(`[Fund Flow] ===== TRANSACTION QUERY RESULTS =====`)
-    console.log(`[Fund Flow] Activity ID: ${activityId}`)
-    console.log(`[Fund Flow] Transactions fetched: ${safeTransactions.length}`)
-    console.log(`[Fund Flow] Query error:`, transactionsError ? JSON.stringify(transactionsError, null, 2) : 'None')
     
     if (transactionsError) {
       console.error('[Fund Flow] Transaction query error details:', JSON.stringify(transactionsError, null, 2))
@@ -97,25 +82,20 @@ export async function GET(
     
     // If no transactions found, try a simple query without JOINs to verify transactions exist
     if (safeTransactions.length === 0 && !transactionsError) {
-      console.log('[Fund Flow] No transactions found with JOINs, checking simple query...')
       const { data: simpleTransactions, error: simpleError } = await supabase
         .from('transactions')
         .select('uuid, activity_id, provider_org_id, receiver_org_id')
         .eq('activity_id', activityId)
         .limit(5)
       
-      console.log(`[Fund Flow] Simple query result: ${simpleTransactions?.length || 0} transactions`)
       if (simpleError) {
         console.error('[Fund Flow] Simple query error:', JSON.stringify(simpleError, null, 2))
       } else if (simpleTransactions && simpleTransactions.length > 0) {
-        console.log('[Fund Flow] Sample simple transaction:', JSON.stringify(simpleTransactions[0], null, 2))
-        console.log('[Fund Flow] ⚠️ Transactions exist but JOIN query returned 0 - likely JOIN issue')
       }
     }
     
     // Log sample transaction structure for debugging
     if (safeTransactions.length > 0) {
-      console.log('[Fund Flow] Sample transaction structure:', JSON.stringify(safeTransactions[0], null, 2))
     } else {
       console.warn(`[Fund Flow] No transactions found for activity_id: ${activityId}`)
       // Try a direct query to see if transactions exist at all
@@ -123,7 +103,6 @@ export async function GET(
         .from('transactions')
         .select('*', { count: 'exact', head: true })
         .eq('activity_id', activityId)
-      console.log(`[Fund Flow] Direct count query result: ${count} transactions exist for this activity_id`)
     }
 
     // Fetch planned disbursements with provider/receiver organizations
@@ -149,16 +128,13 @@ export async function GET(
     
     // Ensure we have an array, even if error occurred
     const safePlannedDisbursements = plannedDisbursements || []
-    console.log(`[Fund Flow] Fetched ${safePlannedDisbursements.length} planned disbursements`)
     
     // Log sample planned disbursement structure for debugging
     if (safePlannedDisbursements.length > 0) {
-      console.log('[Fund Flow] Sample planned disbursement structure:', JSON.stringify(safePlannedDisbursements[0], null, 2))
     }
 
     // Helper function to build graph data from transactions
     async function buildGraphData(items: any[], type: 'transaction' | 'planned_disbursement') {
-      console.log(`[Fund Flow] buildGraphData called with ${items.length} ${type} items`)
       const nodes: any[] = []
       const links: any[] = []
       const nodeMap = new Map<string, any>()
@@ -261,7 +237,6 @@ export async function GET(
                 
                 if (result && result.success && result.usd_amount) {
                   amount = result.usd_amount
-                  console.log(`[Fund Flow] Converted transaction ${item.value} ${item.currency} → $${result.usd_amount} USD`)
                 } else if (item.currency === 'USD') {
                   // If conversion fails but currency is USD, use original value
                   amount = item.value
@@ -326,7 +301,6 @@ export async function GET(
                 
                 if (result && result.success && result.usd_amount) {
                   amount = result.usd_amount
-                  console.log(`[Fund Flow] Converted planned disbursement ${item.amount} ${item.currency} → $${result.usd_amount} USD`)
                 } else if (item.currency === 'USD') {
                   amount = item.amount
                 } else {
@@ -352,12 +326,10 @@ export async function GET(
         // Skip only if amount is exactly 0, null, undefined, or NaN
         // Negative amounts are valid (e.g., refunds, reversals) and should be included
         if (amount == null || amount === 0 || (typeof amount === 'number' && isNaN(amount))) {
-          console.log(`[Fund Flow] Skipping ${type} - amount is ${amount} (zero, null, undefined, or NaN)`)
           skippedNoAmount++
           continue
         }
         
-        console.log(`[Fund Flow] Processing ${type}: amount=${amount} USD, provider=${finalProviderName}, receiver=${finalReceiverName}`)
         
         processed++
 
@@ -419,8 +391,6 @@ export async function GET(
         }
       }
       
-      console.log(`[Fund Flow] ${type}: Processed ${processed}, skipped (no org): ${skippedNoOrg}, skipped (no amount): ${skippedNoAmount}, partial data: ${partialData}, total items: ${items.length}`)
-      console.log(`[Fund Flow] ${type}: Created ${nodes.length} nodes and ${links.length} links`)
 
       return { 
         nodes, 
@@ -453,10 +423,6 @@ export async function GET(
       plannedDisbursementsData = { nodes: [], links: [], dataQuality: { total: safePlannedDisbursements.length, processed: 0, skippedNoAmount: 0, skippedNoOrgs: 0, partialData: 0 } }
     }
     
-    console.log(`[Fund Flow] Final result - Transactions: ${transactionsData.nodes.length} nodes, ${transactionsData.links.length} links`)
-    console.log(`[Fund Flow] Final result - Planned Disbursements: ${plannedDisbursementsData.nodes.length} nodes, ${plannedDisbursementsData.links.length} links`)
-    console.log(`[Fund Flow] Transactions dataQuality:`, JSON.stringify(transactionsData.dataQuality, null, 2))
-    console.log(`[Fund Flow] Planned disbursements dataQuality:`, JSON.stringify(plannedDisbursementsData.dataQuality, null, 2))
 
     return NextResponse.json({
       transactions: {

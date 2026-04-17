@@ -246,7 +246,6 @@ export default function SectorSunburstChart({
       }
     });
     
-    console.log('[SunburstChart] Expanded allocations:', expanded);
     return expanded;
   }, [allocations]);
 
@@ -270,13 +269,8 @@ export default function SectorSunburstChart({
   const hierarchyMap = buildMultiLevelHierarchy(validAllocations);
   
   // Debug logging
-  console.log('[SunburstChart] Valid allocations:', validAllocations);
-  console.log('[SunburstChart] Hierarchy map size:', hierarchyMap.size);
-  console.log('[SunburstChart] Groups:', Array.from(hierarchyMap.keys()));
   hierarchyMap.forEach((group, groupCode) => {
-    console.log(`[SunburstChart] Group ${groupCode} (${group.name}):`);
     group.categories.forEach((cat, catCode) => {
-      console.log(`  Category ${catCode} (${cat.name}): ${cat.subsectors.length} subsectors`);
     });
   });
   

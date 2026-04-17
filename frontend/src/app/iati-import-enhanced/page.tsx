@@ -573,7 +573,6 @@ export default function IATIImportEnhancedPage() {
                   invalidTransactions: parseResult.transactions.filter(tx => tx._hasIssues).length
                 }}
                 onViewDetails={(issueType) => {
-                  console.log('View details for:', issueType);
                   // Open appropriate modal based on issue type
                   if (issueType === 'missing_activity') {
                     setShowAssignmentModal(true);

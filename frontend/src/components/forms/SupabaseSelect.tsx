@@ -56,7 +56,6 @@ export function SupabaseSelect({
   const { updateField, state } = useSupabaseFieldUpdate(activityId, {
     tableName,
     onSuccess: (field, value) => {
-      console.log(`[SupabaseSelect] Successfully updated ${field}:`, value);
       setIsOptimistic(false);
       onUpdateSuccess?.(field, value);
     },
@@ -83,7 +82,6 @@ export function SupabaseSelect({
   const handleValueChange = useCallback(async (newValue: string) => {
     const finalValue = newValue === '' ? null : newValue;
     
-    console.log(`[SupabaseSelect] ${fieldName} changing from "${localValue}" to "${finalValue}"`);
 
     // Call the original onValueChange if provided
     onValueChange?.(finalValue);
@@ -219,7 +217,6 @@ export function withSupabaseIntegration<P extends Record<string, any>>(
     useEffect(() => {
       if (isUpdating) {
         const timeout = setTimeout(() => {
-          console.log(`[withSupabaseIntegration] Force sync after timeout for ${fieldName}`);
           setIsUpdating(false);
           setLocalValue(propValue);
         }, 3000); // 3 second timeout
@@ -232,7 +229,6 @@ export function withSupabaseIntegration<P extends Record<string, any>>(
     const { updateField, state } = useSupabaseFieldUpdate(activityId, {
       tableName,
       onSuccess: (field, value) => {
-        console.log(`[withSupabaseIntegration] Successfully saved ${field}:`, value);
         // Ensure local value matches the saved value
         setLocalValue(value);
         setIsUpdating(false);
@@ -250,7 +246,6 @@ export function withSupabaseIntegration<P extends Record<string, any>>(
     });
 
     const handleValueChange = useCallback(async (value: string | null) => {
-      console.log(`[withSupabaseIntegration] ${fieldName} changing to:`, value);
       
       // Optimistic update - immediately show the new value
       setLocalValue(value);

@@ -24,10 +24,6 @@ export interface SectorPayload {
 export async function upsertActivitySectors(activityId: string, sectors: SectorPayload[]) {
   const supabase = getSupabaseAdmin();
   
-  console.log('[AIMS] === UPSERT ACTIVITY SECTORS DEBUG ===');
-  console.log('[AIMS] Activity ID:', activityId);
-  console.log('[AIMS] Number of sectors to save:', sectors?.length || 0);
-  console.log('[AIMS] Sectors to save:', JSON.stringify(sectors, null, 2));
   
   // Validate input
   if (!activityId) {
@@ -51,7 +47,6 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
       throw deleteError;
     }
     
-    console.log('[AIMS] Successfully deleted existing sectors');
 
     // Insert new sector allocations
     if (sectors && sectors.length > 0) {
@@ -63,8 +58,6 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
         // Clean the sector name (remove code prefix if present)
         const cleanSectorName = getCleanSectorName(sector.name);
         
-        console.log(`[AIMS] Processing sector: ${sector.code} (${sector.name}) - Level: ${sector.level || 'unknown'}`);
-        console.log(`[AIMS] Category mapping: ${categoryCode} -> ${categoryName}`);
         
         // Determine hierarchy level based on code length or provided level
         // Map frontend levels to database levels
@@ -105,11 +98,9 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
           user_id: null // Will be set by the API if user info is available
         };
         
-        console.log(`[AIMS] Mapped sector object:`, mappedSector);
         return mappedSector;
       });
 
-      console.log('[AIMS] Inserting formatted sectors:', JSON.stringify(formatted, null, 2));
 
       // Check for duplicate sector codes in the input
       const sectorCodes = formatted.map(s => s.sector_code);
@@ -145,7 +136,6 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
         
         // If batch insert failed, try inserting one by one to identify the problematic sector
         if (insertError.code === '23505') {
-          console.log('[AIMS] Unique constraint violation - attempting individual inserts to identify issue');
           const successfulInserts = [];
           const failedInserts = [];
           
@@ -160,12 +150,10 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
               console.error(`[AIMS] Failed to insert sector ${sector.sector_code}:`, singleError.message);
               failedInserts.push({ sector: sector.sector_code, error: singleError.message });
             } else {
-              console.log(`[AIMS] Successfully inserted sector ${sector.sector_code}`);
               successfulInserts.push(singleData);
             }
           }
           
-          console.log(`[AIMS] Individual insert results: ${successfulInserts.length} succeeded, ${failedInserts.length} failed`);
           if (failedInserts.length > 0) {
             console.error('[AIMS] Failed sectors:', failedInserts);
           }
@@ -177,7 +165,6 @@ export async function upsertActivitySectors(activityId: string, sectors: SectorP
         throw new Error(`Failed to insert sectors: ${insertError.message} (Code: ${insertError.code})`);
       }
       
-      console.log('[AIMS] Successfully inserted', insertedData?.length || 0, 'sectors');
       return insertedData;
     }
     

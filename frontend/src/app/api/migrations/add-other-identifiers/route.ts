@@ -6,7 +6,6 @@ export async function POST() {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[Migration] Adding otherIdentifiers column to activities table...');
     // Check if column already exists by trying to select it
     const { error: checkError } = await supabase
       .from('activities')
@@ -14,7 +13,6 @@ export async function POST() {
       .limit(1);
 
     if (!checkError) {
-      console.log('[Migration] otherIdentifiers column already exists');
       return NextResponse.json({ 
         success: true, 
         message: 'otherIdentifiers column already exists' 
@@ -30,7 +28,6 @@ export async function POST() {
     }
 
     // Try to create the column using a simple approach
-    console.log('[Migration] Attempting to create otherIdentifiers column...');
     
     // Try to update a non-existent record to trigger column creation
     const { error: createError } = await supabase
@@ -39,7 +36,6 @@ export async function POST() {
       .eq('id', '00000000-0000-0000-0000-000000000000'); // Non-existent ID
     
     if (createError) {
-      console.log('[Migration] Column creation failed, trying alternative approach:', createError.message);
       
       // Try to insert a new record with the column
       const { error: insertError } = await supabase
@@ -62,7 +58,6 @@ export async function POST() {
     const { error: verifyError } = await supabase.from('activities').select('otherIdentifiers').limit(1);
     
     if (!verifyError || !verifyError.message.includes('column')) {
-      console.log('[Migration] otherIdentifiers column created successfully');
       return NextResponse.json({ 
         success: true, 
         message: 'otherIdentifiers column created successfully' 

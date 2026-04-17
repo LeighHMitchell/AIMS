@@ -437,28 +437,24 @@ export async function POST(request: NextRequest) {
           if (!financeType && activityData?.default_finance_type) {
             effectiveFinanceType = activityData.default_finance_type;
             financeTypeInherited = true;
-            console.log(`[IATI Import Enhanced] Finance type inherited from activity default: ${effectiveFinanceType}`);
           }
 
           // Inherit flow type if missing
           if (!flowType && activityData?.default_flow_type) {
             effectiveFlowType = activityData.default_flow_type;
             flowTypeInherited = true;
-            console.log(`[IATI Import Enhanced] Flow type inherited from activity default: ${effectiveFlowType}`);
           }
 
           // Inherit aid type if missing
           if (!aidType && activityData?.default_aid_type) {
             effectiveAidType = activityData.default_aid_type;
             aidTypeInherited = true;
-            console.log(`[IATI Import Enhanced] Aid type inherited from activity default: ${effectiveAidType}`);
           }
 
           // Inherit tied status if missing
           if (!tiedStatus && activityData?.default_tied_status) {
             effectiveTiedStatus = activityData.default_tied_status;
             tiedStatusInherited = true;
-            console.log(`[IATI Import Enhanced] Tied status inherited from activity default: ${effectiveTiedStatus}`);
           }
         }
 
@@ -496,7 +492,6 @@ export async function POST(request: NextRequest) {
         };
 
         // Convert to USD following the same pattern as budgets and planned disbursements
-        console.log(`[IATI Import Enhanced] Converting transaction to USD: ${transactionData.value} ${transactionData.currency}`);
         const usdResult = await convertTransactionToUSD(
           transactionData.value,
           transactionData.currency,
@@ -504,7 +499,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (usdResult.success) {
-          console.log(`[IATI Import Enhanced] USD conversion successful: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
         } else {
           console.warn(`[IATI Import Enhanced] USD conversion failed: ${usdResult.error}`);
         }

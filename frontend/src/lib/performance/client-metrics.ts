@@ -226,7 +226,6 @@ export function trackInteraction(type: string, target: string): () => void {
 
     // Console log for debugging
     if (duration > 100) {
-      console.log(`[Perf] Slow interaction: ${type} on ${target} took ${duration.toFixed(0)}ms`);
     }
   };
 }
@@ -311,16 +310,12 @@ export function dumpPerformanceEntries(): void {
 
   console.group('📊 Performance Entries');
 
-  console.log('Navigation:');
   console.table(window.performance.getEntriesByType('navigation'));
 
-  console.log('Marks:');
   console.table(window.performance.getEntriesByType('mark'));
 
-  console.log('Measures:');
   console.table(window.performance.getEntriesByType('measure'));
 
-  console.log('Resources (top 20 by duration):');
   const resources = window.performance.getEntriesByType('resource') as PerformanceResourceTiming[];
   const sortedResources = resources
     .sort((a, b) => b.duration - a.duration)

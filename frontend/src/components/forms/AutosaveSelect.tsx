@@ -15,7 +15,6 @@ interface AutosaveSelectProps {
 export const AutosaveSelect = forwardRef<HTMLButtonElement, AutosaveSelectProps>(
   ({ id, value, onValueChange, placeholder, children, className, disabled, 'aria-label': ariaLabel }, ref) => {
     const handleValueChange = (newValue: string) => {
-      console.log(`[AutosaveSelect] ${id} changed from "${value}" to "${newValue}"`);
       
       // Always call onValueChange, even if value is the same
       // This ensures autosave is triggered consistently
@@ -52,7 +51,6 @@ export function withAutosave<P extends Record<string, any>>(
 ) {
   return forwardRef<any, P>((props: any, ref) => {
     const handleValueChange = (value: string) => {
-      console.log(`[withAutosave] Value changed to: ${value}`);
       if (props.onValueChange) {
         props.onValueChange(value);
       }

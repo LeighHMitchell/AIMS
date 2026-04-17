@@ -101,7 +101,6 @@ export function CreateTaskModal({
         assignees,
       };
 
-      console.log('[CreateTaskModal] Submitting task with assignees:', JSON.stringify(assignees, null, 2));
 
       // Add entity link if provided
       if (defaultActivityId) {

@@ -169,7 +169,6 @@ export default function TransactionDemoPage() {
   }, [sortField, sortOrder]);
 
   const handleRowClick = (transactionId: string) => {
-    console.log("Transaction clicked:", transactionId);
   };
 
   return (

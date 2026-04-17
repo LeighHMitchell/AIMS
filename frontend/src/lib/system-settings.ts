@@ -14,13 +14,11 @@ export async function getSystemHomeCountry(supabase: any): Promise<string> {
       .single();
 
     if (error) {
-      console.log('Error fetching system settings, using default:', error.message);
       return DEFAULT_HOME_COUNTRY;
     }
 
     return settings?.home_country || DEFAULT_HOME_COUNTRY;
   } catch (error) {
-    console.log('System settings not found, using default');
     return DEFAULT_HOME_COUNTRY;
   }
 }

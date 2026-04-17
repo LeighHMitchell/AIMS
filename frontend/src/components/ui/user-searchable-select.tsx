@@ -60,14 +60,12 @@ export function UserSearchableSelect({
   const searchUsers = React.useCallback(async (searchQuery: string) => {
     setLoading(true);
     try {
-      console.log('[User Search] Searching for:', searchQuery);
       const url = searchQuery.length >= 2
         ? `/api/users/search?q=${encodeURIComponent(searchQuery)}`
         : `/api/users/search?limit=50`;
       const response = await apiFetch(url);
       if (response.ok) {
         const data = await response.json();
-        console.log('[User Search] Found users:', data.length);
         setUsers(data);
       } else {
         console.error('[User Search] Search failed:', response.statusText);
@@ -147,7 +145,6 @@ export function UserSearchableSelect({
                 <CommandItem
                   key={user.value}
                   onSelect={() => {
-                    console.log('[User Search] Selected user:', user);
                     onValueChange(user.value, user);
                     setOpen(false);
                   }}

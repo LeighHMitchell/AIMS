@@ -105,7 +105,6 @@ export default function SectorSunburstVisualization({
 
   // Build hierarchy: Categories -> Sectors -> Subsectors
   const hierarchyData = useMemo(() => {
-    console.log('Processing allocations:', allocations);
     
     const categoryMap = new Map<string, {
       code: string;
@@ -133,7 +132,6 @@ export default function SectorSunburstVisualization({
       const sectorCode = sectorData['codeforiati:category-code']; // e.g., "111"
       const sectorName = sectorData['codeforiati:category-name']; // e.g., "Education, Level Unspecified"
 
-      console.log(`Processing ${allocation.code}: ${categoryCode}/${sectorCode}`);
 
       // Initialize category if not exists
       if (!categoryMap.has(categoryCode)) {
@@ -165,7 +163,6 @@ export default function SectorSunburstVisualization({
       category.percentage += allocation.percentage;
     });
 
-    console.log('Built hierarchy:', categoryMap);
     return categoryMap;
   }, [allocations]);
 
@@ -197,13 +194,11 @@ export default function SectorSunburstVisualization({
   useEffect(() => {
     if (!svgRef.current || allocations.length === 0) return;
 
-    console.log('Rendering sunburst with data:', hierarchyData);
 
     // Clear previous chart
     d3.select(svgRef.current).selectAll('*').remove();
 
     if (hierarchyData.size === 0) {
-      console.log('No data to render');
       return;
     }
 

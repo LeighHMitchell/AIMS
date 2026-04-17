@@ -77,7 +77,6 @@ export async function GET(request: NextRequest) {
         results.activities = []; // Ensure we return empty array on error
         results.totalUnvalidatedActivities = 0;
       } else {
-        console.log('[Pending Validations] Filtered activities count:', activities?.length, 'Total unvalidated:', totalUnvalidatedActivities);
         results.totalUnvalidatedActivities = totalUnvalidatedActivities;
         // Map activities - all returned are pending validation
         // Use the government endorsement validation_status if available, otherwise use submission_status

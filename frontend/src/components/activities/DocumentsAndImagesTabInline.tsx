@@ -267,11 +267,9 @@ export function DocumentsAndImagesTabInline({
       if (!activityId) return;
       
       try {
-        console.log('[DocumentsTab] Loading documents for activity:', activityId);
         const response = await apiFetch(`/api/activities/${activityId}/documents`);
         if (response.ok) {
           const data = await response.json();
-          console.log('[DocumentsTab] Loaded documents:', data);
           // Always update with backend data (it's the source of truth)
           onChange(data.documents || []);
         } else {
@@ -353,8 +351,6 @@ export function DocumentsAndImagesTabInline({
   
   const handleSaveUploadedDocument = async (document: IatiDocumentLink) => {
     try {
-      console.log('[DocumentsTab] Saving document (skipping database update - already saved during upload)');
-      console.log('[DocumentsTab] Document:', document);
       
       // The document is already in the parent state, just update it with new metadata
       const updatedDocuments = documents.map(doc => 
@@ -478,7 +474,6 @@ export function DocumentsAndImagesTabInline({
 
   // Real file upload function
   const uploadFile = async (file: File, uploadId: string) => {
-    console.log('[DocumentsTab] Starting upload for file:', file.name, 'to activity:', activityId);
     
     const formData = new FormData();
     formData.append('file', file);
@@ -492,7 +487,6 @@ export function DocumentsAndImagesTabInline({
         f.id === uploadId ? { ...f, progress: 10 } : f
       ));
       
-      console.log('[DocumentsTab] Making upload request to:', `/api/activities/${activityId}/documents/upload`);
       const response = await apiFetch(`/api/activities/${activityId}/documents/upload`, {
         method: 'POST',
         body: formData,
@@ -505,8 +499,6 @@ export function DocumentsAndImagesTabInline({
       }
       
       const data = await response.json();
-      console.log('[DocumentsTab] Upload API response:', data);
-      console.log('[DocumentsTab] Document from response:', data.document);
       
       // Update to processing
       setUploadingFiles(prev => prev.map(f => 

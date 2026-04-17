@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
 
     // Handle missing table gracefully
     if (dismissalsError && dismissalsError.code === '42P01') {
-      console.log('[Data Clinic Duplicates Stats] Tables not created yet. Run the SQL migration.');
       return NextResponse.json({
         total: 0,
         activities: {
@@ -64,7 +63,6 @@ export async function GET(request: NextRequest) {
     if (error) {
       // Handle missing table gracefully
       if (error.code === '42P01') {
-        console.log('[Data Clinic Duplicates Stats] detected_duplicates table not created yet.');
         return NextResponse.json({
           total: 0,
           activities: {

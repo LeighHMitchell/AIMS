@@ -514,7 +514,6 @@ export default function OrganizationProfilePage() {
             // Calculate finance type composition by value
             const financeTypeMapByValue = new Map<string, number>()
 
-            console.log('[OrgProfile] Processing activities for finance types:', activitiesWithBudgets.length)
 
             for (const activity of activitiesWithBudgets) {
               const financeType = activity.defaultFinanceType
@@ -818,7 +817,6 @@ export default function OrganizationProfilePage() {
             // Fetch and aggregate sector allocations for all published activities
             const sectorMap = new Map<string, { code: string; name: string; totalPercentage: number; activityCount: number }>()
             
-            console.log(`[OrgProfile] Processing sectors for ${activitiesWithBudgets.length} activities`)
             
             for (const activity of activitiesWithBudgets) {
               // Include all activities (not just published) for now to see if we have any sector data
@@ -834,7 +832,6 @@ export default function OrganizationProfilePage() {
                   const data = await sectorsResponse.json()
                   const sectors = data.sectors || data // Handle both wrapped and unwrapped responses
                   
-                  console.log(`[OrgProfile] Fetched ${sectors.length} sectors for activity ${activity.id}`)
                   
                   for (const sector of sectors) {
                     // sector_code is the field name from the API
@@ -860,7 +857,6 @@ export default function OrganizationProfilePage() {
                 }
               } catch (sectorErr) {
                 if (sectorErr instanceof Error && sectorErr.name === 'AbortError') {
-                  console.log('[OrgProfile] Sectors request aborted')
                   return
                 }
                 console.warn(`Failed to fetch sectors for activity ${activity.id}:`, sectorErr)
@@ -876,7 +872,6 @@ export default function OrganizationProfilePage() {
               }))
               .sort((a, b) => b.percentage - a.percentage) // Sort by percentage descending
             
-            console.log(`[OrgProfile] Aggregated ${aggregatedSectors.length} unique sectors from ${sectorMap.size} entries`)
             setSectorAllocations(aggregatedSectors)
 
             // Wait for org-level financial fetches to complete
@@ -909,7 +904,6 @@ export default function OrganizationProfilePage() {
           }
         } catch (activitiesErr) {
           if (activitiesErr instanceof Error && activitiesErr.name === 'AbortError') {
-            console.log('[OrgProfile] Activities request aborted')
             return
           }
           console.warn('Failed to fetch activities:', activitiesErr)
@@ -930,7 +924,6 @@ export default function OrganizationProfilePage() {
 
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
-          console.log('[OrgProfile] Main request aborted')
           return
         }
         setError(err instanceof Error ? err.message : 'Failed to fetch organization data')

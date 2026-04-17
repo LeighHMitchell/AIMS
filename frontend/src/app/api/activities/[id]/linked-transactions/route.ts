@@ -72,8 +72,6 @@ export async function GET(
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
     
-    console.log('[AIMS] GET /api/activities/[id]/linked-transactions - Fetching for:', activityId);
-    console.log(`[AIMS] Pagination: page ${page}, limit ${limit}, offset ${offset}`);
     
     // First, get all linked activities (both directions)
     const { data: relatedActivities, error: relatedError } = await supabase
@@ -218,7 +216,6 @@ export async function GET(
       totalsByCurrency[currency] += value;
     });
     
-    console.log(`[AIMS] Found ${formattedTransactions.length} linked transactions from ${linkedActivityIds.size} activities`);
     
     return NextResponse.json({
       transactions: formattedTransactions,

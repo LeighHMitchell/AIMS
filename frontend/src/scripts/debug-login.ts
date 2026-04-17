@@ -65,7 +65,6 @@ function getSupabaseClient() {
 }
 
 async function debugLogin(email: string, password: string) {
-  console.log(`🔍 Debugging login for: ${email}\n`);
 
   const supabaseAdmin = getSupabaseAdmin();
   const supabaseClient = getSupabaseClient();
@@ -77,7 +76,6 @@ async function debugLogin(email: string, password: string) {
 
   try {
     // 1. Check user profile
-    console.log('📋 Checking user profile...');
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('users')
       .select('id, email, first_name, last_name, role')
@@ -89,12 +87,8 @@ async function debugLogin(email: string, password: string) {
       return;
     }
 
-    console.log(`✅ Profile found: ${userProfile.first_name} ${userProfile.last_name}`);
-    console.log(`   Profile ID: ${userProfile.id}`);
-    console.log(`   Role: ${userProfile.role}`);
 
     // 2. Check auth users
-    console.log('\n🔍 Checking auth accounts...');
     const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
@@ -103,28 +97,17 @@ async function debugLogin(email: string, password: string) {
     }
 
     const matchingAuthUsers = authUsers.users.filter(user => user.email === email);
-    console.log(`📊 Found ${matchingAuthUsers.length} auth account(s) with this email:`);
     
     matchingAuthUsers.forEach((user, index) => {
-      console.log(`   ${index + 1}. ID: ${user.id}`);
-      console.log(`      Email: ${user.email}`);
-      console.log(`      Created: ${user.created_at}`);
-      console.log(`      Email confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`);
-      console.log(`      Last sign in: ${user.last_sign_in_at || 'Never'}`);
     });
 
     // 3. Check if profile ID matches any auth ID
     const matchingAuth = matchingAuthUsers.find(auth => auth.id === userProfile.id);
     if (matchingAuth) {
-      console.log(`\n✅ Profile ID matches auth ID: ${matchingAuth.id}`);
     } else {
-      console.log(`\n⚠️  Profile ID doesn't match any auth ID`);
-      console.log(`   Profile ID: ${userProfile.id}`);
-      console.log(`   Auth IDs: ${matchingAuthUsers.map(u => u.id).join(', ')}`);
     }
 
     // 4. Test login with provided credentials
-    console.log('\n🔐 Testing login with provided credentials...');
     const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
       email: email,
       password: password
@@ -135,21 +118,12 @@ async function debugLogin(email: string, password: string) {
       
       // Try to get more details about the error
       if (loginError.message.includes('Invalid login credentials')) {
-        console.log('\n💡 Possible issues:');
-        console.log('   - Password is incorrect');
-        console.log('   - Email is not confirmed');
-        console.log('   - Account is disabled');
-        console.log('   - Multiple auth accounts causing conflicts');
       }
     } else if (loginData.user) {
-      console.log('✅ Login successful!');
-      console.log(`   Logged in as: ${loginData.user.email}`);
-      console.log(`   User ID: ${loginData.user.id}`);
     }
 
     // 5. If login failed but we have auth accounts, try resetting password
     if (loginError && matchingAuthUsers.length > 0) {
-      console.log('\n🔄 Attempting password reset...');
       
       // Use the first auth account (or the one matching profile if available)
       const targetAuth = matchingAuth || matchingAuthUsers[0];
@@ -163,11 +137,8 @@ async function debugLogin(email: string, password: string) {
       if (resetError) {
         console.error('❌ Password reset failed:', resetError.message);
       } else {
-        console.log('✅ Password reset successful!');
-        console.log(`🔑 New password: ${newPassword}`);
         
         // Test login with new password
-        console.log('\n🔐 Testing login with new password...');
         const { data: newLoginData, error: newLoginError } = await supabaseClient.auth.signInWithPassword({
           email: email,
           password: newPassword
@@ -176,8 +147,6 @@ async function debugLogin(email: string, password: string) {
         if (newLoginError) {
           console.error('❌ Login still failed:', newLoginError.message);
         } else {
-          console.log('✅ Login successful with new password!');
-          console.log(`   User ID: ${newLoginData.user?.id}`);
         }
       }
     }

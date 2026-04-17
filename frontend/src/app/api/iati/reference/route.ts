@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       submission_status: 'not_applicable'
     }
 
-    console.log('[IATI Reference] Creating reference activity:', activityData);
 
     const { data: activity, error: createError } = await supabase
       .from('activities')
@@ -87,7 +86,6 @@ export async function POST(request: NextRequest) {
     iatiAnalytics.optionSelected('reference', meta.iatiId, meta.reportingOrgRef);
     iatiAnalytics.importCompleted('reference', activity.id);
 
-    console.log('[IATI Reference] Successfully created reference activity:', activity.id);
 
     return NextResponse.json({
       ok: true,

@@ -959,7 +959,6 @@ export default function TransactionModal({
   const debouncedCreateTransaction = useDebouncedCallback(async (data: Partial<Transaction>) => {
     // Prevent concurrent requests
     if (isCreatingRef.current) {
-      console.log('[TransactionModal] Skipping concurrent autosave request');
       return;
     }
     

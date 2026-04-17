@@ -27,7 +27,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    console.log(`[Budgets API] Bulk deleting ${ids.length} budgets:`, ids);
     
     // Validate all IDs are UUIDs
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -55,7 +54,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    console.log(`[Budgets API] Successfully bulk deleted ${count || ids.length} budgets`);
     return NextResponse.json({ 
       success: true,
       deletedCount: count || ids.length,

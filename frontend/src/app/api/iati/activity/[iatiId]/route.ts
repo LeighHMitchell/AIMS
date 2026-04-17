@@ -27,7 +27,6 @@ export async function GET(
       )
     }
 
-    console.log("[IATI Activity Fetch] Fetching activity:", iatiId)
 
     // Build the correct IATI Datastore API URL for fetching XML
     // The IATI Datastore tokenizes identifiers on hyphens, so we use wildcard on last segment
@@ -35,7 +34,6 @@ export async function GET(
     const query = `iati_identifier:*${lastSegment}* OR iati_identifier_exact:"${iatiId}"`
     const fetchUrl = `https://api.iatistandard.org/datastore/activity/iati?q=${encodeURIComponent(query)}`
 
-    console.log("[IATI Activity Fetch] API URL:", fetchUrl)
 
     try {
       const headers: HeadersInit = {
@@ -76,7 +74,6 @@ export async function GET(
           const xml = await response.text()
 
           if (xml && xml.trim().length > 0 && xml.includes('<iati-activity')) {
-            console.log(`[IATI Activity Fetch] Successfully fetched XML from IATI API (${xml.length} bytes)`)
             return NextResponse.json({
               xml,
               iatiIdentifier: iatiId,
@@ -85,7 +82,6 @@ export async function GET(
             })
           }
 
-          console.log("[IATI Activity Fetch] No valid XML returned from IATI API")
           return NextResponse.json({
             error: "No valid XML returned from IATI API",
             iatiIdentifier: iatiId

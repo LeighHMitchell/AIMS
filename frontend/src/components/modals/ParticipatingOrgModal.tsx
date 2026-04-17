@@ -69,17 +69,12 @@ export function ParticipatingOrgModal({
   // Load editing data
   useEffect(() => {
     if (editingOrg) {
-      console.log('[ParticipatingOrgModal] Loading editingOrg:', editingOrg);
       
       // Ensure narratives is always an array
       const narrativesArray = Array.isArray(editingOrg.narratives) 
         ? editingOrg.narratives 
         : (editingOrg.narratives ? [] : []);
       
-      console.log('[ParticipatingOrgModal] Narratives array:', narrativesArray);
-      console.log('[ParticipatingOrgModal] Role code:', editingOrg.iati_role_code);
-      console.log('[ParticipatingOrgModal] Activity ID ref:', editingOrg.activity_id_ref);
-      console.log('[ParticipatingOrgModal] Org Activity ID:', editingOrg.org_activity_id);
       
       setFormData({
         ...editingOrg,
@@ -157,7 +152,6 @@ export function ParticipatingOrgModal({
     
     const roleType = codeToRoleType[code] || 'implementing';
     
-    console.log('[ParticipatingOrgModal] Role changed:', { roleCode, code, roleType });
     
     setFormData(prev => ({
       ...prev,

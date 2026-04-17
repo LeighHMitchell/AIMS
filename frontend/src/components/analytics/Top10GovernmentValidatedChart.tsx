@@ -82,14 +82,12 @@ export function Top10GovernmentValidatedChart({
       }
 
       const result = await response.json()
-      console.log('[Top10GovernmentValidatedChart] API response:', result)
       
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
-      console.log('[Top10GovernmentValidatedChart] Processed partners:', partners.length)
       setData(partners)
       onDataChange?.(partners)
     } catch (error) {

@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
 
   try {
 
-    console.log('[Backfill Budgets USD] Starting backfill process');
 
     // Get all budgets without USD values
     const { data: budgets, error: fetchError } = await supabase
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!budgets || budgets.length === 0) {
-      console.log('[Backfill Budgets USD] No budgets need backfilling');
       return NextResponse.json({
         message: 'No budgets need backfilling',
         processed: 0,
@@ -38,7 +36,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Backfill Budgets USD] Found ${budgets.length} budgets without USD values`);
 
     const results = {
       processed: 0,
@@ -71,7 +68,6 @@ export async function POST(request: NextRequest) {
           if (result.success && result.usd_amount !== null) {
             usdValue = result.usd_amount;
             results.converted++;
-            console.log(`[Backfill Budgets USD] Converted budget ${budget.id}: ${budget.value} ${budget.currency} → $${usdValue} USD`);
           } else {
             results.failed++;
             results.errors.push({
@@ -108,7 +104,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[Backfill Budgets USD] Backfill complete:', results);
 
     return NextResponse.json({
       message: 'Backfill complete',

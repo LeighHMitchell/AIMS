@@ -90,10 +90,8 @@ export function useAutosave<T extends Record<string, any>>(
 
       onSuccess?.(responseData);
       
-      console.log('[Autosave] Save successful:', responseData);
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[Autosave] Request aborted');
         return;
       }
 
@@ -131,7 +129,6 @@ export function useAutosave<T extends Record<string, any>>(
     const updatedData = { ...dataRef.current, [field]: value };
     dataRef.current = updatedData;
     
-    console.log(`[Autosave] Field updated: ${String(field)} =`, value);
     
     // Trigger save with the updated data
     save(updatedData);

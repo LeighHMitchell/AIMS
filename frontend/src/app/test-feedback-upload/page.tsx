@@ -36,7 +36,6 @@ export default function TestFeedbackUploadPage() {
     setUploadResult(null);
 
     try {
-      console.log('[Test Upload] Starting upload test for:', selectedFile.name);
       
       const uploadFormData = new FormData();
       uploadFormData.append('file', selectedFile);
@@ -47,11 +46,9 @@ export default function TestFeedbackUploadPage() {
         body: uploadFormData,
       });
 
-      console.log('[Test Upload] Upload response status:', uploadResponse.status);
 
       if (uploadResponse.ok) {
         const result = await uploadResponse.json();
-        console.log('[Test Upload] Upload successful:', result);
         setUploadResult(result);
         toast.success("File uploaded successfully!");
       } else {

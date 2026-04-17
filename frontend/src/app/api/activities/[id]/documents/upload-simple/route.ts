@@ -14,7 +14,6 @@ export async function POST(
 
   try {
     const { id } = await params;
-    console.log('[Simple Upload API] Starting upload for activity:', id);
     if (!supabase) {
       console.error('[Simple Upload API] Failed to get Supabase admin client');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -47,7 +46,6 @@ export async function POST(
     const fileExtension = file.name.split('.').pop();
     const storagePath = `${activityId}/${uniqueId}.${fileExtension}`;
 
-    console.log('[Simple Upload API] Uploading to storage path:', storagePath);
     
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -65,7 +63,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[Simple Upload API] File uploaded successfully');
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
@@ -90,7 +87,6 @@ export async function POST(
       _createdAt: new Date().toISOString(),
     };
 
-    console.log('[Simple Upload API] Created document object:', newDocument);
 
     // Get existing activity documents
     const { data: activity, error: activityError } = await supabase
@@ -104,20 +100,17 @@ export async function POST(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
-    console.log('[Simple Upload API] Activity found, existing documents:', activity.documents);
 
     // Add new document to existing documents array
     let existingDocuments = [];
     try {
       existingDocuments = activity.documents ? JSON.parse(activity.documents) : [];
     } catch (e) {
-      console.log('[Simple Upload API] No existing documents or parse error, starting fresh');
       existingDocuments = [];
     }
     
     const updatedDocuments = [...existingDocuments, newDocument];
 
-    console.log('[Simple Upload API] Updating activity with documents count:', updatedDocuments.length);
 
     // Update activity with new documents array
     const { error: updateError } = await supabase
@@ -139,7 +132,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[Simple Upload API] Document saved successfully');
 
     // Return the created document
     return NextResponse.json({

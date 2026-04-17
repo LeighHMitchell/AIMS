@@ -100,7 +100,6 @@ export async function PUT(request: NextRequest) {
     }
 
     if (markAllRead) {
-      console.log('[User Notifications] Marking all as read for userId:', userId);
       
       // First, check how many unread notifications exist
       const { count: unreadBefore } = await supabase
@@ -109,7 +108,6 @@ export async function PUT(request: NextRequest) {
         .eq('user_id', userId)
         .eq('is_read', false);
       
-      console.log('[User Notifications] Unread notifications before update:', unreadBefore);
       
       // Mark all notifications as read for this user
       const { data, error } = await supabase
@@ -127,7 +125,6 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log('[User Notifications] Rows updated:', data?.length || 0);
 
       // Verify the update worked
       const { count: unreadAfter } = await supabase
@@ -136,7 +133,6 @@ export async function PUT(request: NextRequest) {
         .eq('user_id', userId)
         .eq('is_read', false);
       
-      console.log('[User Notifications] Unread notifications after update:', unreadAfter);
 
       return NextResponse.json({
         success: true,
@@ -199,7 +195,6 @@ export async function PATCH(request: NextRequest) {
 
     if (action === 'archive' || action === 'unarchive') {
       const archivedValue = action === 'archive' ? new Date().toISOString() : null;
-      console.log(`[User Notifications] ${action} notification:`, { notificationId, userId });
 
       const { data, error } = await supabase
         .from('user_notifications')
@@ -220,7 +215,6 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log(`[User Notifications] ${action} result, rows updated:`, data?.length || 0);
       return NextResponse.json({ success: true, message: `Notification ${action}d` });
     }
 

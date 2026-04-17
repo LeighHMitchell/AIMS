@@ -17,7 +17,6 @@ export async function POST(
 
   try {
     const { id: activityId, itemId: checklistItemId } = await params;
-    console.log('[Readiness Upload API] Starting upload for activity:', activityId, 'item:', checklistItemId);
 
     if (!activityId || !checklistItemId) {
       return NextResponse.json(
@@ -128,7 +127,6 @@ export async function POST(
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const storagePath = `readiness/${activityId}/${checklistItemId}/${uniqueId}.${fileExtension}`;
 
-    console.log('[Readiness Upload API] Uploading to storage path:', storagePath);
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -146,7 +144,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[Readiness Upload API] File uploaded successfully:', uploadData);
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage

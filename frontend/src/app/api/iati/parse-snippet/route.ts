@@ -90,7 +90,6 @@ export async function POST(request: NextRequest) {
 
     // Detect snippet type
     const snippetType = detectSnippetType(xmlContent);
-    console.log('[Snippet Parser] Detected snippet type:', snippetType);
 
     if (snippetType === 'unknown') {
       return NextResponse.json(
@@ -105,7 +104,6 @@ export async function POST(request: NextRequest) {
 
     // Wrap snippet in proper structure
     const wrappedContent = wrapSnippet(xmlContent, snippetType);
-    console.log('[Snippet Parser] Wrapped content length:', wrappedContent.length);
 
     // Initialize Supabase client
     // Parse XML
@@ -225,7 +223,6 @@ export async function POST(request: NextRequest) {
         
         // Extract all narratives with language codes
         const narrativesArray = ensureArray(xmlOrg.narrative);
-        console.log('[Snippet Parser] Raw narratives for org:', xmlOrg['@_ref'], narrativesArray);
         
         const narratives: Array<{ lang: string; text: string }> = [];
         let primaryNarrative = '';
@@ -234,7 +231,6 @@ export async function POST(request: NextRequest) {
         for (const narrative of narrativesArray) {
           if (!narrative) continue;
           
-          console.log('[Snippet Parser] Processing narrative:', narrative, 'Type:', typeof narrative);
           
           const text = typeof narrative === 'string' 
             ? narrative 
@@ -243,18 +239,15 @@ export async function POST(request: NextRequest) {
             ? (narrative['@_xml:lang'] || narrative['@_lang'] || '') 
             : '';
           
-          console.log('[Snippet Parser] Extracted - text:', text, 'lang:', lang);
           
           if (text) {
             if (lang && lang !== 'en') {
               // Add to multilingual narratives array
               narratives.push({ lang, text });
-              console.log('[Snippet Parser] Added to multilingual:', { lang, text });
             } else if (!primaryNarrative) {
               // First narrative without lang or with 'en' becomes primary
               primaryNarrative = text;
               narrativeLang = lang || 'en';
-              console.log('[Snippet Parser] Set as primary:', text);
             }
           }
         }
@@ -265,8 +258,6 @@ export async function POST(request: NextRequest) {
           primaryNarrative = typeof first === 'string' ? first : (first['#text'] || '');
         }
         
-        console.log('[Snippet Parser] Final narratives array:', narratives);
-        console.log('[Snippet Parser] Primary narrative:', primaryNarrative);
         
         result.organizations.push({
           ref: xmlOrg['@_ref'] || '',

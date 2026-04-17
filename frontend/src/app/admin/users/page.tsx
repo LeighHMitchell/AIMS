@@ -194,12 +194,10 @@ export default function UserManagement() {
     
     if (currentUser?.id === user.id) {
       // Redirect to profile page for self-editing
-      console.log('[Admin] Redirecting to profile for self-edit');
       toast.info("Use 'My Profile' to edit your own details");
       router.push("/profile");
     } else {
       // Allow editing other users
-      console.log('[Admin] Opening edit modal for other user');
       setEditingUser(user);
     }
   };
@@ -342,7 +340,6 @@ export default function UserManagement() {
 
   const handleUserUpdate = async (updatedUser: User) => {
     try {
-      console.log('[AIMS Frontend] Updating user with organizationId:', updatedUser.organizationId);
       
       // Split name into first_name and last_name for database
       const nameParts = updatedUser.name?.split(' ') || [];
@@ -376,8 +373,6 @@ export default function UserManagement() {
         organization_id: updatedUser.organizationId || null,
       };
       
-      console.log('[AIMS Frontend] Request body organization_id:', requestBody.organization_id);
-      console.log('[AIMS Frontend] Full request body:', requestBody);
 
       const response = await apiFetch('/api/users', {
         method: 'PUT',
@@ -385,12 +380,9 @@ export default function UserManagement() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('[AIMS Frontend] Response status:', response.status);
-      console.log('[AIMS Frontend] Response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('[AIMS Frontend] Response data:', data);
         // Transform and update the user in state
         const transformedUser = {
           ...updatedUser,
@@ -490,7 +482,6 @@ export default function UserManagement() {
 
   const handleUserCreate = async (newUser: User) => {
     try {
-      console.log('[AIMS Frontend] Creating user with organizationId:', newUser.organizationId);
       
       // Split name into first_name and last_name for database
       const nameParts = newUser.name?.split(' ') || [];

@@ -10,7 +10,6 @@ function isValidUUID(uuid: string): boolean {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/users/export-data - Starting request');
 
   const { supabase, user: authUser, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -255,7 +254,6 @@ export async function GET(request: NextRequest) {
       })) || [],
     };
 
-    console.log('[AIMS] Successfully compiled export data for user:', targetUserId, 'requested by:', authUser.id);
 
     // Return as downloadable JSON file
     const jsonString = JSON.stringify(exportData, null, 2);

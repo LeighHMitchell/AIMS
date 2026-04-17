@@ -117,7 +117,6 @@ export async function POST(
     const { id: activityId } = await params;
     const body: CompareRequest = await request.json();
     
-    console.log('[IATI Compare] Starting comparison for activity:', activityId);
     
     // Fetch activity from database
     const { data: activity, error: activityError } = await supabase
@@ -167,7 +166,6 @@ export async function POST(
       );
     }
     
-    console.log('[IATI Compare] Using IATI identifier:', iatiIdentifier);
     
     // Prepare local data in normalized format
     const localData: any = {
@@ -237,7 +235,6 @@ export async function POST(
     try {
       // The IATI datastore API requires searching for activities using query parameters
       const iatiUrl = `${IATI_API_BASE_URL}/activities?iati_identifier=${encodeURIComponent(iatiIdentifier)}&format=json`;
-      console.log('[IATI Compare] Fetching from IATI:', iatiUrl);
       
       const headers: HeadersInit = {
         'Accept': 'application/json',

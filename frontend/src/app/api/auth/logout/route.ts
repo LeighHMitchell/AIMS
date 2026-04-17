@@ -5,7 +5,6 @@ import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/auth/logout - Starting Supabase logout');
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -44,7 +43,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Logout error:', error);
     }
 
-    console.log('[AIMS] User logged out successfully');
 
     // Create response and set/clear cookies on it
     const response = NextResponse.json({ success: true });
@@ -60,7 +58,6 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    console.log('[AIMS] Cleared', cookiesToSet.length, 'cookies');
 
     return response;
 

@@ -416,7 +416,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const fetchData = async () => {
     try {
       setLoading(true)
-      console.log('[AllDonorsChart] Starting data fetch')
 
       const queryParams = new URLSearchParams({
         dateFrom: effectiveDateRange.from.toISOString(),
@@ -437,7 +436,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         throw new Error(result.error || 'Failed to fetch donor data')
       }
 
-      console.log('[AllDonorsChart] Fetched donors:', result.count)
       setAllData(result.data || [])
       onDataChange?.(result.data || [])
     } catch (error) {

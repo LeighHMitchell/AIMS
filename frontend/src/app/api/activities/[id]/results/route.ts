@@ -19,7 +19,6 @@ export async function GET(
     }
 
     const { id: activityId } = await params;
-    console.log(`[Results API] Fetching results for activity: ${activityId}`);
 
     // Fetch results with all IATI-compliant relations
     const { data: results, error } = await supabase
@@ -54,7 +53,6 @@ export async function GET(
       
       // Check if it's a table doesn't exist error
       if (error.message.includes('relation') && error.message.includes('does not exist')) {
-        console.log('[Results API] Tables do not exist yet - returning empty results');
         return NextResponse.json({ 
           results: [],
           message: 'Results tables not yet created. Please run the database migration.'
@@ -103,7 +101,6 @@ export async function GET(
       }))
     }));
 
-    console.log(`[Results API] Found ${results?.length || 0} results`);
     return NextResponse.json({ results: processedResults || [] });
 
   } catch (error) {
@@ -133,8 +130,6 @@ export async function POST(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log(`[Results API] Creating result for activity: ${activityId}`);
-    console.log('[Results API] Request body:', JSON.stringify(body, null, 2));
 
     // Validate required fields
     if (!activityId) {
@@ -188,7 +183,6 @@ export async function POST(
       description: descriptionObj
     };
 
-    console.log('[Results API] Insert data:', JSON.stringify(insertData, null, 2));
 
     const { data: result, error } = await supabase
       .from('activity_results')
@@ -227,7 +221,6 @@ export async function POST(
       }, { status: 400 });
     }
 
-    console.log('[Results API] Result created successfully:', result.id);
     return NextResponse.json({ result });
 
   } catch (error) {

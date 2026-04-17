@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] POST /api/transactions/bulk-accept - Accepting transactions:', transactionIds);
 
     const results = [];
     const errors = [];

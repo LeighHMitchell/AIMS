@@ -351,12 +351,10 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     alt={`Icon for ${activity.title}`}
                     className="w-full h-full object-contain"
                     onError={(e) => {
-                      console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                     }}
                     onLoad={() => {
-                      console.log("Icon loaded successfully for:", activity.title);
                     }}
                   />
                 </div>
@@ -374,12 +372,10 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   alt={`Icon for ${activity.title}`}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
-                    console.log("Icon loaded successfully for:", activity.title);
                   }}
                 />
               </div>

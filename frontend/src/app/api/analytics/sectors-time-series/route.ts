@@ -71,7 +71,6 @@ export async function GET(request: NextRequest) {
       } as SectorTimeSeriesResponse)
     }
 
-    console.log('[SectorTimeSeries] Found activities:', activityIds.length)
 
     // Aggregation map: year -> sector -> { value, activityIds, partnerIds }
     const aggregationMap = new Map<string, Map<string, {

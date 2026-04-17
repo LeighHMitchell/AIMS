@@ -863,7 +863,6 @@ export default function TransactionModal({
   const generateTransactionReference = async () => {
     setIsGeneratingReference(true);
     try {
-      console.log('[TransactionModal] Generating transaction reference for activity:', activityId);
       
       // Generate a highly unique reference using multiple factors
       const timestamp = Date.now();
@@ -873,7 +872,6 @@ export default function TransactionModal({
       
       const reference = `${activityPartnerId || 'TXN'}-TRANS-${timestamp}-${microseconds}-${random}-${userSuffix}`;
       
-      console.log('[TransactionModal] Generated reference:', reference);
       return reference;
     } catch (error) {
       console.error('[TransactionModal] Error generating transaction reference:', error);
@@ -1071,7 +1069,6 @@ export default function TransactionModal({
   const handleSubmit = async (statusOverride?: string) => {
     // Prevent concurrent submissions using ref to avoid race conditions
     if (isSubmittingRef.current || isSubmitting || isInternallySubmitting) {
-      console.log('[TransactionModal] Submission already in progress, ignoring duplicate call');
       return;
     }
 
@@ -1083,7 +1080,6 @@ export default function TransactionModal({
 
     // Wait for any in-progress autosave creation to complete
     if (isCreatingRef.current) {
-      console.log('[TransactionModal] Waiting for autosave to complete...');
       // Wait a bit for the autosave to finish
       await new Promise(resolve => setTimeout(resolve, 600));
     }
@@ -1158,14 +1154,12 @@ export default function TransactionModal({
       
       // If we have an autosaved transaction, update it instead of creating a new one
       if (createdTransactionId) {
-        console.log('[TransactionModal] Updating autosaved transaction:', createdTransactionId);
         response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: createdTransactionId })
         });
       } else if (isEditing && (transaction?.uuid || transaction?.id)) {
-        console.log('[TransactionModal] Updating existing transaction:', transaction.uuid || transaction.id);
         // Update existing transaction (edit mode)
         response = await apiFetch('/api/transactions', {
           method: 'PUT',
@@ -1173,7 +1167,6 @@ export default function TransactionModal({
           body: JSON.stringify({ ...submissionData, id: transaction.uuid || transaction.id })
         });
       } else {
-        console.log('[TransactionModal] Creating new transaction');
         // Create new transaction
         response = await apiFetch('/api/transactions', {
           method: 'POST',
@@ -1489,7 +1482,6 @@ export default function TransactionModal({
     createTransactionTimeoutRef.current = setTimeout(async () => {
       // Prevent concurrent requests
       if (isCreatingRef.current) {
-        console.log('[TransactionModal] Skipping concurrent autosave request');
         return;
       }
       

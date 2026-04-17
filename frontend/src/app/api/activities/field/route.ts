@@ -43,9 +43,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[Field API] ============ POST REQUEST RECEIVED ============');
-  console.log('[Field API] Request URL:', request.url);
-  console.log('[Field API] Request method:', request.method);
 
   const startTime = Date.now();
 
@@ -85,12 +82,6 @@ export async function POST(request: Request) {
       body.user = { id: authUser.id };
     }
 
-    console.log('[Field API] ============ POST /api/activities/field ============');
-    console.log('[Field API] Timestamp:', new Date().toISOString());
-    console.log('[Field API] Activity ID:', body.activityId);
-    console.log('[Field API] Field:', body.field);
-    console.log('[Field API] Value:', JSON.stringify(body.value));
-    console.log('[Field API] User ID:', body.user?.id || 'not provided');
 
     // Validate required fields
     if (!body.activityId) {
@@ -250,18 +241,12 @@ export async function POST(request: Request) {
         oldValue = existingActivity.sectors; // Keep for logging purposes
         newValue = body.value;
         
-        console.log('[Field API] Processing sectors update');
-        console.log('[Field API] Sectors received:', JSON.stringify(body.value, null, 2));
-        console.log('[Field API] Is array:', Array.isArray(body.value));
-        console.log('[Field API] Sectors count:', Array.isArray(body.value) ? body.value.length : 'Not an array');
         
         try {
           // Use the upsertActivitySectors helper function
           const sectorsToSave = Array.isArray(body.value) ? body.value : [];
-          console.log('[Field API] Calling upsertActivitySectors with:', sectorsToSave.length, 'sectors');
           
           await upsertActivitySectors(body.activityId, sectorsToSave);
-          console.log('[Field API] Sectors updated successfully using activity_sectors table');
           
           // Don't add sectors to updateData since we're handling it separately
           // The sectors field will be handled in the response by fetching from activity_sectors table
@@ -280,8 +265,6 @@ export async function POST(request: Request) {
         newValue = body.value;
         
         try {
-          console.log('[Field API] Updating locations for activity:', body.activityId);
-          console.log('[Field API] Locations data:', JSON.stringify(body.value, null, 2));
           
           // Delete existing locations for this activity
           const { error: deleteError } = await supabase
@@ -368,7 +351,6 @@ export async function POST(request: Request) {
           
           // Insert new locations
           if (locationsToInsert.length > 0) {
-            console.log('[Field API] Inserting', locationsToInsert.length, 'locations');
             const { error: insertError } = await supabase
               .from('activity_locations')
               .insert(locationsToInsert);
@@ -392,9 +374,7 @@ export async function POST(request: Request) {
               );
             }
             
-            console.log('[Field API] Successfully saved', locationsToInsert.length, 'locations to activity_locations table');
           } else {
-            console.log('[Field API] No locations to save');
           }
           
           // Don't add to updateData since we're handling locations separately
@@ -430,7 +410,6 @@ export async function POST(request: Request) {
         newValue = body.value;
         // Store as JSONB array
         updateData.other_identifiers = Array.isArray(body.value) ? body.value : [];
-        console.log('[Field API] Saving other identifiers:', JSON.stringify(updateData.other_identifiers));
         break;
 
       case 'customDates':
@@ -438,15 +417,11 @@ export async function POST(request: Request) {
         newValue = body.value;
         // Store as JSONB array
         updateData.custom_dates = Array.isArray(body.value) ? body.value : [];
-        console.log('[Field API] Saving custom dates:', JSON.stringify(updateData.custom_dates));
         break;
 
       case 'contacts':
         // Handle contacts using the activity_contacts table instead of a direct column
-        console.log('[Field API] 📧 Processing contacts update for activity:', body.activityId);
-        console.log('[Field API] Number of contacts received:', body.value?.length || 0);
         if (body.value && body.value.length > 0) {
-          console.log('[Field API] First contact data:', JSON.stringify(body.value[0], null, 2));
         }
         
         oldValue = existingActivity.contacts; // Keep for logging purposes
@@ -454,21 +429,17 @@ export async function POST(request: Request) {
         
         try {
           // FIRST: Check what contacts exist BEFORE delete
-          console.log('[Field API] 🔍 BEFORE DELETE: Checking existing contacts...');
           const { data: beforeData, error: beforeError } = await supabase
             .from('activity_contacts')
             .select('id, first_name, last_name')
             .eq('activity_id', body.activityId);
           
           if (!beforeError) {
-            console.log('[Field API] 🔍 BEFORE DELETE: Found', beforeData?.length || 0, 'contact(s)');
             if (beforeData && beforeData.length > 0) {
-              console.log('[Field API] 🔍 BEFORE DELETE IDs:', beforeData.map((c: any) => c.id));
             }
           }
           
           // Delete existing contacts for this activity
-          console.log('[Field API] 🗑️ DELETING all contacts for activity:', body.activityId);
           const { data: deletedData, error: deleteError, count: deleteCount } = await supabase
             .from('activity_contacts')
             .delete({ count: 'exact' })
@@ -486,11 +457,7 @@ export async function POST(request: Request) {
             throw deleteError;
           }
           
-          console.log('[Field API] ✅ DELETE COMPLETED: Deleted', deletedData?.length || 0, 'contact(s)');
-          console.log('[Field API] Delete count:', deleteCount);
           if (deletedData && deletedData.length > 0) {
-            console.log('[Field API] Deleted contact IDs:', deletedData.map((c: any) => c.id));
-            console.log('[Field API] Deleted contact names:', deletedData.map((c: any) => `${c.first_name} ${c.last_name}`));
           }
 
           // Insert new contacts if any
@@ -596,10 +563,6 @@ export async function POST(request: Request) {
               contactsData.push(contactData);
             });
 
-            console.log('[Field API] 📝 About to insert contacts data:', JSON.stringify(contactsData, null, 2));
-            console.log('[Field API] Number of contacts to insert:', contactsData.length);
-            console.log('[Field API] Activity ID:', body.activityId);
-            console.log('[Field API] First contact sample:', contactsData[0]);
             
             const { data: insertedData, error: insertError } = await supabase
               .from('activity_contacts')
@@ -623,12 +586,8 @@ export async function POST(request: Request) {
               console.error('[Field API] ⚠️ WARNING: Insert succeeded but no data returned!');
               console.error('[Field API] This might indicate a database constraint issue or RLS policy blocking the insert');
             } else {
-              console.log('[Field API] ✅ Successfully inserted', insertedData.length, 'contact(s)');
-              console.log('[Field API] Inserted contact IDs:', insertedData.map((c: any) => c.id));
-              console.log('[Field API] Inserted contact names:', insertedData.map((c: any) => `${c.first_name} ${c.last_name}`));
             }
             
-            console.log('[Field API] Successfully processed', contactsData.length, 'contact(s)');
             
             // Verify the database state immediately after insert
             const { data: verifyData, error: verifyError } = await supabase
@@ -637,9 +596,7 @@ export async function POST(request: Request) {
               .eq('activity_id', body.activityId);
             
             if (!verifyError) {
-              console.log('[Field API] 🔍 VERIFICATION: Database now contains', verifyData?.length || 0, 'contact(s) for this activity');
               if (verifyData && verifyData.length > 0) {
-                console.log('[Field API] 🔍 Contact IDs in DB:', verifyData.map((c: any) => c.id));
               }
             } else {
               console.error('[Field API] ⚠️ Failed to verify database state:', verifyError);
@@ -767,10 +724,6 @@ export async function POST(request: Request) {
         oldValue = existingActivity.policy_markers; // Keep for logging purposes
         newValue = body.value;
         
-        console.log('[Field API] Processing policy markers update');
-        console.log('[Field API] Policy markers received:', JSON.stringify(body.value, null, 2));
-        console.log('[Field API] Is array:', Array.isArray(body.value));
-        console.log('[Field API] Policy markers count:', Array.isArray(body.value) ? body.value.length : 'Not an array');
         
         try {
           // Delete existing policy markers for this activity
@@ -797,7 +750,6 @@ export async function POST(request: Request) {
               rationale: marker.rationale || null
             }));
 
-            console.log('[Field API] Inserting policy markers:', JSON.stringify(policyMarkersData, null, 2));
 
             const { error: insertError } = await supabase
               .from('activity_policy_markers')
@@ -811,9 +763,7 @@ export async function POST(request: Request) {
               );
             }
 
-            console.log('[Field API] Successfully saved', policyMarkersData.length, 'policy markers');
           } else {
-            console.log('[Field API] No policy markers to save - all cleared');
           }
           
           // Don't add policy markers to updateData since we're handling them separately
@@ -831,8 +781,6 @@ export async function POST(request: Request) {
         oldValue = existingActivity.working_groups; // Keep for logging purposes
         newValue = body.value;
         
-        console.log('[Field API] Processing working groups update');
-        console.log('[Field API] Working groups received:', JSON.stringify(body.value, null, 2));
         
         try {
           // Delete existing working groups for this activity
@@ -854,7 +802,6 @@ export async function POST(request: Request) {
           if (workingGroupsToSave.length > 0) {
             // Fetch working group IDs from database
             const codes = workingGroupsToSave.map((wg: any) => wg.code);
-            console.log('[Field API] Looking up working groups with codes:', codes);
             
             const { data: dbWorkingGroups, error: wgFetchError } = await supabase
               .from('working_groups')
@@ -869,14 +816,12 @@ export async function POST(request: Request) {
               );
             }
 
-            console.log('[Field API] Found', dbWorkingGroups?.length || 0, 'working groups in database');
 
             // Check if any working groups weren't found in the database and create them
             const foundCodes = dbWorkingGroups?.map((wg: any) => wg.code) || [];
             const missingCodes = codes.filter(code => !foundCodes.includes(code));
             
             if (missingCodes.length > 0) {
-              console.log('[Field API] Creating missing working groups:', missingCodes);
               
               // Create missing working groups from the provided data
               // Note: vocabulary is stored in activity_working_groups, not in working_groups table
@@ -901,7 +846,6 @@ export async function POST(request: Request) {
                 );
               }
 
-              console.log('[Field API] Successfully created', newWorkingGroups?.length || 0, 'working groups');
               
               // Merge newly created working groups with found ones
               if (newWorkingGroups) {
@@ -916,7 +860,6 @@ export async function POST(request: Request) {
                 vocabulary: '99' // IATI custom vocabulary
               }));
 
-              console.log('[Field API] Inserting', workingGroupsData.length, 'working group associations');
 
               const { error: insertError } = await supabase
                 .from('activity_working_groups')
@@ -930,12 +873,10 @@ export async function POST(request: Request) {
                 );
               }
 
-              console.log('[Field API] Successfully saved', workingGroupsData.length, 'working groups');
             } else {
               console.warn('[Field API] No working groups found or created - this should not happen');
             }
           } else {
-            console.log('[Field API] No working groups to save - all cleared');
           }
           
         } catch (workingGroupError) {
@@ -960,30 +901,18 @@ export async function POST(request: Request) {
         break;
 
       case 'bannerPosition':
-        console.log('[Field API] === BANNER POSITION UPDATE ===');
-        console.log('[Field API] Existing banner_position:', existingActivity.banner_position);
-        console.log('[Field API] New value from body:', body.value, 'type:', typeof body.value);
         oldValue = existingActivity.banner_position;
         newValue = body.value;
         updateData.banner_position = typeof body.value === 'number' ? Math.round(body.value) : 50;
-        console.log('[Field API] Will update to:', updateData.banner_position);
         break;
 
       case 'iconScale':
-        console.log('[Field API] === ICON SCALE UPDATE ===');
-        console.log('[Field API] Existing icon_scale:', existingActivity.icon_scale);
-        console.log('[Field API] New value from body:', body.value, 'type:', typeof body.value);
         oldValue = existingActivity.icon_scale;
         newValue = body.value;
         updateData.icon_scale = typeof body.value === 'number' ? Math.round(body.value) : 100;
-        console.log('[Field API] Will update to:', updateData.icon_scale);
         break;
 
       case 'budgetStatus':
-        console.log('[Field API] === BUDGET STATUS UPDATE ===');
-        console.log('[Field API] Existing budget_status:', existingActivity.budget_status);
-        console.log('[Field API] New value from body:', body.value);
-        console.log('[Field API] Activity ID:', body.activityId);
         oldValue = existingActivity.budget_status;
         newValue = body.value;
         // Validate budget status value
@@ -996,7 +925,6 @@ export async function POST(request: Request) {
           );
         }
         updateData.budget_status = body.value || 'unknown';
-        console.log('[Field API] Setting budget_status to:', updateData.budget_status);
         // Clear on_budget_percentage if not partial
         if (body.value !== 'partial') {
           updateData.on_budget_percentage = null;
@@ -1007,7 +935,6 @@ export async function POST(request: Request) {
         if (body.user?.id || body.userId) {
           updateData.budget_status_updated_by = body.user?.id || body.userId;
         }
-        console.log('[Field API] Final updateData for budgetStatus:', JSON.stringify(updateData, null, 2));
         break;
 
       case 'onBudgetPercentage':
@@ -1077,7 +1004,6 @@ export async function POST(request: Request) {
     let updatedActivity;
     let updateError;
     if (body.field !== 'sectors' && body.field !== 'locations' && body.field !== 'policyMarkers' && body.field !== 'workingGroups' && body.field !== 'contacts') {
-      console.log('[Field API] Updating field with data:', updateData);
       const updateResult = await supabase
         .from('activities')
         .update(updateData)
@@ -1089,8 +1015,6 @@ export async function POST(request: Request) {
       
       // CRITICAL: Ensure the update is fully committed before proceeding
       if (!updateError && updatedActivity) {
-        console.log('[Field API] Update successful, verifying data consistency...');
-        console.log('[Field API] Updated activity data:', JSON.stringify(updatedActivity, null, 2));
         // Add a small delay to ensure database consistency
         await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -1106,12 +1030,6 @@ export async function POST(request: Request) {
           console.error('[Field API] Verification failed:', verifyError);
           console.error('[Field API] Verification error details:', JSON.stringify(verifyError, null, 2));
         } else {
-          console.log('[Field API] Verification successful:');
-          console.log('[Field API]   - acronym:', verifyData?.acronym);
-          console.log('[Field API]   - title:', verifyData?.title_narrative);
-          console.log('[Field API]   - budget_status:', verifyData?.budget_status);
-          console.log('[Field API]   - on_budget_percentage:', verifyData?.on_budget_percentage);
-          console.log('[Field API]   - budget_status_notes:', verifyData?.budget_status_notes);
         }
       }
 
@@ -1187,7 +1105,6 @@ export async function POST(request: Request) {
             new_value: newValue || null,
             user_id: body.user.id
           });
-        console.log(`[Field API] Date change logged to change_log: ${dbFieldName} changed from ${oldValue} to ${newValue}`);
       } catch (changeLogError) {
         console.error('[Field API] Error logging date change to change_log:', changeLogError);
         // Don't fail the request if change logging fails
@@ -1442,7 +1359,6 @@ export async function POST(request: Request) {
       budgetStatusUpdatedBy: updatedActivity.budget_status_updated_by
     };
 
-    console.log('[Field API] Field update successful');
     clearTimeout(timeoutId);
     return NextResponse.json(responseData);
 

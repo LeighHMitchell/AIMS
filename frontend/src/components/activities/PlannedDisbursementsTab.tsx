@@ -500,7 +500,6 @@ export default function PlannedDisbursementsTab({
       if (result.success && result.exchange_rate) {
         setModalExchangeRate(result.exchange_rate);
         setModalRateError(null);
-        console.log(`[PlannedDisbursementsTab] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
       } else {
         setModalRateError(result.error || 'Failed to fetch exchange rate');
         setModalExchangeRate(null);
@@ -715,7 +714,6 @@ export default function PlannedDisbursementsTab({
         }
 
         const data = await response.json();
-        console.log('[PlannedDisbursementsTab] Fetched planned disbursements:', data?.length || 0);
 
         // If no disbursements exist, show empty state (users can create custom periods)
         if (!data || data.length === 0) {
@@ -800,10 +798,8 @@ export default function PlannedDisbursementsTab({
     if (onDisbursementsChange && !loading) {
       // Filter out generated empty disbursements - only count actual saved disbursements with IDs
       const actualDisbursements = disbursements.filter(d => d.id);
-      console.log('[PlannedDisbursementsTab] Notifying parent with disbursements:', actualDisbursements.length);
       onDisbursementsChange(actualDisbursements);
     } else {
-      console.log('[PlannedDisbursementsTab] NOT notifying parent - loading:', loading);
     }
   }, [disbursements, onDisbursementsChange, loading]);
 
@@ -2528,16 +2524,13 @@ export default function PlannedDisbursementsTab({
               <ActivityCombobox
                 value={modalDisbursement?.provider_activity_uuid || ''}
                 onValueChange={async (activityId) => {
-                  console.log('[PlannedDisbursement] Provider activity selected:', activityId);
                   updateFormField('provider_activity_uuid', activityId);
-                  console.log('[PlannedDisbursement] Updated provider_activity_uuid to:', activityId);
 
                   if (activityId) {
                     try {
                       const response = await apiFetch(`/api/activities/${activityId}`);
                       if (response.ok) {
                         const activity = await response.json();
-                        console.log('[PlannedDisbursement] Fetched activity IATI ID:', activity.iati_identifier);
                         updateFormField('provider_activity_id', activity.iati_identifier || '');
                       }
                     } catch (error) {

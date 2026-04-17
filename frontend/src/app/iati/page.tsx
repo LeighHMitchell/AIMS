@@ -166,7 +166,6 @@ export default function IATIImportPage() {
                         body: formData,
                       });
                       const result = await response.json();
-                      console.log('Debug result:', result);
                       toast.info(`Debug: ${result.recommendation}\n\nCheck console for details.`);
                     } catch (err) {
                       console.error('Debug error:', err);

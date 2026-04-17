@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
 
   try {
 
-    console.log('[Backfill Transactions USD] Starting backfill process');
 
     // Get all transactions without USD values
     const { data: transactions, error: fetchError } = await supabase
@@ -28,7 +27,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!transactions || transactions.length === 0) {
-      console.log('[Backfill Transactions USD] No transactions need backfilling');
       return NextResponse.json({
         message: 'No transactions need backfilling',
         processed: 0,
@@ -37,7 +35,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Backfill Transactions USD] Found ${transactions.length} transactions without USD values`);
 
     const results = {
       processed: 0,
@@ -70,7 +67,6 @@ export async function POST(request: NextRequest) {
           if (result.success && result.usd_amount !== null) {
             usdValue = result.usd_amount;
             results.converted++;
-            console.log(`[Backfill Transactions USD] Converted transaction ${transaction.uuid}: ${transaction.value} ${transaction.currency} → $${usdValue} USD`);
           } else {
             results.failed++;
             results.errors.push({
@@ -107,7 +103,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[Backfill Transactions USD] Backfill complete:', results);
 
     return NextResponse.json({
       message: 'Backfill complete',

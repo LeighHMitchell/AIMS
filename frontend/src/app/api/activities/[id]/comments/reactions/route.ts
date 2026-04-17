@@ -27,7 +27,6 @@ export async function POST(
     const body = await request.json();
     const { user, commentId, replyId, reactionType } = body;
     
-    console.log('[AIMS Reactions API] Toggle reaction request:', { commentId, replyId, reactionType, user: user?.name });
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
@@ -62,7 +61,6 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to toggle reaction' }, { status: 500 });
     }
 
-    console.log('[AIMS Reactions API] Reaction toggled successfully:', data);
 
     // Get updated reaction counts
     let reactionCounts;
@@ -112,7 +110,6 @@ export async function GET(
     const commentId = url.searchParams.get('commentId');
     const replyId = url.searchParams.get('replyId');
     
-    console.log('[AIMS Reactions API] Get reactions request:', { commentId, replyId });
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }

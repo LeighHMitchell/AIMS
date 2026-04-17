@@ -46,7 +46,6 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     {
       tableName: 'activities',
       onSuccess: (field, value) => {
-        console.log(`[ActivityDefaults] Successfully updated ${field} to:`, value);
         onFieldUpdate?.(field as keyof ActivityDefaults, value);
       },
       onError: (field, error) => {
@@ -69,7 +68,6 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     field: keyof ActivityDefaults, 
     value: string | null
   ) => {
-    console.log(`[ActivityDefaults] Updating ${field} from "${localValues[field]}" to "${value}"`);
 
     // Optimistic update
     setLocalValues(prev => ({
@@ -81,7 +79,6 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     const success = await updateField(field, value);
     
     if (success) {
-      console.log(`[ActivityDefaults] Database update successful for ${field}`);
     }
 
     return success;
@@ -120,7 +117,6 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
 
   // Batch update multiple fields
   const updateMultipleDefaults = useCallback(async (updates: Partial<ActivityDefaults>) => {
-    console.log('[ActivityDefaults] Updating multiple defaults:', updates);
 
     // Optimistic update
     setLocalValues(prev => ({
@@ -132,7 +128,6 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     const success = await updateMultipleFields(updates);
     
     if (success) {
-      console.log('[ActivityDefaults] Batch database update successful');
     }
 
     return success;

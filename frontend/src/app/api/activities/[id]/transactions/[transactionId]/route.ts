@@ -59,7 +59,6 @@ export async function PUT(
     if (body.value !== undefined && body.currency) {
       const resolvedValueDate = value_date || body.transaction_date || new Date().toISOString();
       
-      console.log(`[AIMS] Converting transaction to USD: ${body.value} ${body.currency}`);
       const usdResult = await convertTransactionToUSD(
         parseFloat(body.value) || 0,
         body.currency,
@@ -67,7 +66,6 @@ export async function PUT(
       );
 
       if (usdResult.success) {
-        console.log(`[AIMS] USD conversion successful: ${body.value} ${body.currency} = $${usdResult.value_usd} USD`);
       } else {
         console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
       }

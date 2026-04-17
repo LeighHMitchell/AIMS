@@ -136,7 +136,6 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
-      console.log('[Bulk Import] Super user importing for org:', orgScope.organizationName, orgScope.allRefs);
     } else if (organizationId && !isSuperUser) {
       return NextResponse.json(
         { error: 'You do not have permission to import for other organisations.' },
@@ -278,7 +277,6 @@ export async function POST(request: NextRequest) {
       if (meta.sourceMode === 'datastore' && IATI_API_KEY) {
         const iatiIds = selectedActivities.map((a: any) => a.iatiIdentifier || a.iati_id);
         prefetchedResults = await fetchAndParseAllResults(iatiIds, IATI_API_KEY, 5);
-        console.log(`[Bulk Import] Pre-fetched results for ${prefetchedResults.size}/${iatiIds.length} activities`);
       }
 
       // Pre-fetch all organization references across all activities
@@ -324,9 +322,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log(`[Bulk Import] Pre-fetching ${allOrgParams.length} org references...`);
         orgCache = await prefetchOrganizations(supabaseAdmin || supabase, allOrgParams);
-        console.log(`[Bulk Import] Org cache ready: ${orgCache.size} entries`);
       }
 
       // Pre-fetch all contact references across all activities
@@ -364,9 +360,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (allContactParams.length > 0) {
-          console.log(`[Bulk Import] Pre-fetching ${allContactParams.length} contact references...`);
           contactCache = await prefetchContacts(supabaseAdmin || supabase, allContactParams);
-          console.log(`[Bulk Import] Contact cache ready: ${contactCache.size} entries`);
         }
       }
 
@@ -381,7 +375,6 @@ export async function POST(request: NextRequest) {
             if (m.iati_code) policyMarkerCache.set(String(m.iati_code), m.id);
           }
         }
-        console.log(`[Bulk Import] Policy marker cache ready: ${policyMarkerCache.size} entries`);
       }
 
       // Pre-fetch all tags into a Map keyed by "code|vocabulary"
@@ -395,7 +388,6 @@ export async function POST(request: NextRequest) {
             if (t.code) tagCache.set(`${t.code}|${t.vocabulary || '99'}`, t.id);
           }
         }
-        console.log(`[Bulk Import] Tag cache ready: ${tagCache.size} entries`);
       }
 
       // Process each activity atomically
@@ -416,7 +408,6 @@ export async function POST(request: NextRequest) {
           .eq('id', batchId)
           .single();
         if (batchCheck?.status === 'cancelled') {
-          console.log(`[Bulk Import] Batch ${batchId} was cancelled by user at activity ${activityIndex}/${selectedActivities.length}`);
           break;
         }
       }
@@ -1004,7 +995,6 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log(`[Bulk Import] ${iatiId}: ${transactionsImported} txns, ${budgetsImported} budgets, ${participatingOrgsImported} orgs, ${sectorsImported} sectors, ${locationsImported} locations, ${contactsImported} contacts, ${documentsImported} documents, ${policyMarkersImported} policy markers, ${humanitarianScopesImported} humanitarian scopes, ${tagsImported} tags, ${resultsImported} results, ${indicatorsImported} indicators, ${periodsImported} periods`);
 
         // Update batch item to completed with detailed import counts
         await supabase
@@ -1086,7 +1076,6 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', batchId);
 
-      console.log(`[Bulk Import] Batch ${batchId} completed: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped, ${failedCount} failed`);
 
       // Send completion notification (Rec #10)
       await notifyImportComplete(user.id, batchId, meta.reportingOrgName, createdCount, updatedCount, failedCount);

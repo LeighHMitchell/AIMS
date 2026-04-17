@@ -54,7 +54,6 @@ export function GmailLogin({ redirectTo = '/', className = '' }: GmailLoginProps
       setIsLoading(true);
       
       const redirectOrigin = getRedirectOrigin();
-      console.log('[Google Login] Redirect URL:', `${redirectOrigin}${redirectTo}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

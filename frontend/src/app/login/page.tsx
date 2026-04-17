@@ -31,15 +31,12 @@ export default function LoginPage() {
     setError("");
 
     try {
-      console.log("[Login] Attempting login for:", email);
       
       // IMPORTANT: Sign out of any existing Supabase OAuth session first
       // This prevents OAuth sessions from hijacking email/password logins
       try {
         await supabase.auth.signOut();
-        console.log("[Login] Cleared any existing Supabase session");
       } catch (signOutError) {
-        console.log("[Login] No existing session to clear");
       }
       
       const response = await apiFetch("/api/auth/login", {
@@ -56,7 +53,6 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed");
       }
 
-      console.log("[Login] Login successful:", data.user);
       
       // Mark this as an email/password login (prevents OAuth session from overriding)
       localStorage.setItem('aims_auth_source', 'email_password');
@@ -68,7 +64,6 @@ export default function LoginPage() {
       
       // Redirect to dashboard if user has an organization, otherwise to activities
       const homeRoute = getHomeRouteFromApiData(data.user);
-      console.log("[Login] Redirecting to:", homeRoute, "organizationId:", data.user?.organizationId);
       router.push(homeRoute);
     } catch (err) {
       console.error("[Login] Login error:", err);

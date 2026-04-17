@@ -100,10 +100,8 @@ export default function TransparencyIndexPage() {
         const response = await fetch('/api/transparency-scores/donors')
         const result = await response.json()
         
-        console.log('[Transparency Index] Donor rankings response:', result)
         
         if (result.data) {
-          console.log('[Transparency Index] Donors loaded:', result.data.length)
           setDonors(result.data)
           setDonorError(null)
         } else if (result.error) {

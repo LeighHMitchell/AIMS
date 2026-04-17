@@ -69,7 +69,6 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log('[AIMS] Created new activity log:', newLog);
     
     // Transform to match expected format
     const transformedLog = {

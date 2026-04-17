@@ -116,8 +116,6 @@ export async function PATCH(
     const locationId = id;
     const body = await request.json();
 
-    console.log('[Location API] 🔄 PATCH request received for location:', locationId);
-    console.log('[Location API] 📦 Request body:', body);
 
     if (!locationId) {
       return NextResponse.json(
@@ -143,7 +141,6 @@ export async function PATCH(
     }
 
     const locationData = validationResult.data;
-    console.log('[Location API] ✅ Validation passed, location data:', locationData);
 
     // Check if location exists
     const { data: existingLocation } = await supabase
@@ -219,7 +216,6 @@ export async function PATCH(
 
 
     // Update location
-    console.log('[Location API] 🔄 Updating location with data:', updateData);
     const { data: updatedLocation, error } = await supabase
       .from('activity_locations')
       .update(updateData)
@@ -235,7 +231,6 @@ export async function PATCH(
       );
     }
 
-    console.log('[Location API] ✅ Location updated successfully:', updatedLocation);
     return NextResponse.json({
       success: true,
       location: updatedLocation

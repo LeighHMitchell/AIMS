@@ -85,10 +85,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('[SDGAnalytics] Fetched activities:', activities?.length || 0)
 
     if (!activities || activities.length === 0) {
-      console.log('[SDGAnalytics] No activities found')
       return NextResponse.json({
         success: true,
         coverage: [],
@@ -118,7 +116,6 @@ export async function GET(request: NextRequest) {
         return activityStart <= dateToObj && activityEnd >= dateFromObj
       })
       
-      console.log('[SDGAnalytics] After date filtering:', filteredActivities.length, 'activities')
     }
 
     // Get activity IDs for fetching related data
@@ -208,10 +205,8 @@ export async function GET(request: NextRequest) {
       activity.activity_sdg_mappings && activity.activity_sdg_mappings.length > 0
     )
 
-    console.log('[SDGAnalytics] Activities with SDG mappings:', activitiesWithSDGs.length)
 
     if (activitiesWithSDGs.length === 0) {
-      console.log('[SDGAnalytics] No activities with SDG mappings found')
       return NextResponse.json({
         success: true,
         coverage: [],

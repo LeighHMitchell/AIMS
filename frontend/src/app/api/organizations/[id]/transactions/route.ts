@@ -133,7 +133,6 @@ export async function GET(
           });
 
           if (linkedActivityIds.size > 0) {
-            console.log(`[AIMS] Fetching transactions from ${linkedActivityIds.size} linked activities`);
             
             // Fetch transactions from linked activities with organization JOINs
             const { data: linkedTransactions, error: linkedError } = await supabase
@@ -184,7 +183,6 @@ export async function GET(
             if (linkedError) {
               console.error('[AIMS] Error fetching linked transactions:', linkedError);
             } else if (linkedTransactions) {
-              console.log(`[AIMS] Found ${linkedTransactions.length} linked transactions`);
               
               // Mark linked transactions with source
               const formattedLinkedTransactions = linkedTransactions.map((t: any) => ({
@@ -245,7 +243,6 @@ export async function GET(
       return dateB - dateA; // Descending order
     });
 
-    console.log(`[AIMS] Returning ${enrichedTransactions.length} total transactions (${allTransactions.filter(t => t.transaction_source === 'own').length} own, ${allTransactions.filter(t => t.transaction_source === 'linked').length} linked)`);
 
     return NextResponse.json(enrichedTransactions);
   } catch (error) {

@@ -524,7 +524,6 @@ function ZoomDependentTownshipLayer({
       // Only change URL when crossing detail level thresholds
       const newUrl = getTownshipUrlForZoom(zoom);
       if (newUrl !== townshipUrl) {
-        console.log(`[Townships] Switching to ${newUrl} at zoom ${zoom.toFixed(1)}`);
         setTownshipUrl(newUrl);
       }
     };

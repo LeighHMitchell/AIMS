@@ -197,7 +197,6 @@ export default function SectorSankeyVisualization({
 
   // Build hierarchy data for Sankey
   const sankeyData = useMemo(() => {
-    console.log('Processing allocations for Sankey:', allocations);
 
     // First, build a lookup map for unique sector names from the data
     const sectorNameMap = new Map<string, string>();
@@ -375,7 +374,6 @@ export default function SectorSankeyVisualization({
       });
     });
 
-    console.log('Generated Sankey data:', { nodes, links });
     return { nodes, links };
   }, [allocations]);
 

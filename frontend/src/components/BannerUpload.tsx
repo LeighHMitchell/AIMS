@@ -65,7 +65,6 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);
-        console.log(`Banner compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
 
         // Create preview from compressed file
         const reader = new FileReader();

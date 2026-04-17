@@ -50,7 +50,6 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 function getCachedData(country: string): GeoJSON.FeatureCollection | null {
   const memCache = powerGridCache[country];
   if (memCache && Date.now() - memCache.timestamp < CACHE_DURATION) {
-    console.log(`[PowerGridLayer] Using in-memory cache for ${country}`);
     return memCache.data;
   }
 
@@ -59,7 +58,6 @@ function getCachedData(country: string): GeoJSON.FeatureCollection | null {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Date.now() - parsed.timestamp < CACHE_DURATION) {
-        console.log(`[PowerGridLayer] Using sessionStorage cache for ${country}`);
         powerGridCache[country] = parsed;
         return parsed.data;
       }
@@ -144,7 +142,6 @@ export default function PowerGridLayer({
       setError(null);
 
       try {
-        console.log(`[PowerGridLayer] Fetching from API for ${country}...`);
         const response = await fetch(`/api/layers/power-grid?country=${country}`);
 
         if (!response.ok) {
@@ -158,7 +155,6 @@ export default function PowerGridLayer({
           cacheData(country, geoJson);
           setData(geoJson);
           loadedCountryRef.current = country;
-          console.log(`[PowerGridLayer] Loaded ${geoJson.features.length} features for ${country}`);
         }
       } catch (err) {
         console.error('[PowerGridLayer] Error:', err);

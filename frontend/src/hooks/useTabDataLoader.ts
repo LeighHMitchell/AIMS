@@ -173,17 +173,14 @@ export function useTabDataLoader({ activityId, onDataLoaded }: UseTabDataLoaderO
 
     // Already loaded
     if (loadedGroups.has(group)) {
-      console.log(`[TabDataLoader] Group ${group} already loaded`);
       return null;
     }
 
     // Already loading - return the existing promise
     if (loadingPromises.current.has(group)) {
-      console.log(`[TabDataLoader] Group ${group} already loading, returning existing promise`);
       return loadingPromises.current.get(group)!;
     }
 
-    console.log(`[TabDataLoader] Loading data for group: ${group}`);
 
     // Mark as loading
     setLoadingGroups(prev => new Set(Array.from(prev).concat([group])));
@@ -211,7 +208,6 @@ export function useTabDataLoader({ activityId, onDataLoaded }: UseTabDataLoaderO
             return { url: endpoint.url, data: null };
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
-              console.log(`[TabDataLoader] Request aborted: ${endpoint.url}`);
             }
             return { url: endpoint.url, data: null };
           }
@@ -327,7 +323,6 @@ export function useTabDataLoader({ activityId, onDataLoaded }: UseTabDataLoaderO
           }
         }
 
-        console.log(`[TabDataLoader] Loaded data for group ${group}:`, Object.keys(data));
 
         // Mark as loaded
         setLoadedGroups(prev => new Set(Array.from(prev).concat([group])));

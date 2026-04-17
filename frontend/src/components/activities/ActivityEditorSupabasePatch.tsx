@@ -41,7 +41,6 @@ export function PatchedFinancesSection({
   
   // OPTION A: Quick replacement with enhanced components
   const handleFieldUpdate = (field: string, value: string | null) => {
-    console.log(`[Supabase] Successfully updated ${field} to:`, value);
     onDefaultsChange(field, value);
     // Note: No need to call triggerAutoSave - Supabase handles persistence
   };
@@ -180,7 +179,6 @@ export function ActivityEditorIntegrationExample() {
 
   // Your existing handlers...
   const onDefaultsChange = (field: string, value: string | null) => {
-    console.log(`[ActivityEditor] ${field} changed to:`, value);
     setGeneral(prev => ({ ...prev, [field]: value }));
   };
 

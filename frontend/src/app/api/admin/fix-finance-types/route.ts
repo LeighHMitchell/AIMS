@@ -7,7 +7,6 @@ import { requireAuth } from '@/lib/auth';
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('[FINANCE-FIX] Starting comprehensive finance type fix...');
 
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Get current statistics
-    console.log('[FINANCE-FIX] Step 1: Scanning all activities...');
     const { count: totalCount } = await supabase
       .from('activities')
       .select('*', { count: 'exact', head: true });
@@ -35,14 +33,8 @@ export async function POST(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .is('default_finance_type', null);
 
-    console.log('[FINANCE-FIX] Statistics:');
-    console.log(`  - Total activities: ${totalCount}`);
-    console.log(`  - Empty strings: ${emptyCount || 0}`);
-    console.log(`  - NULL values: ${nullCount || 0}`);
-    console.log(`  - Valid values: ${totalCount - (emptyCount || 0) - (nullCount || 0)}`);
 
     // Step 2: Find affected activities
-    console.log('[FINANCE-FIX] Step 2: Finding affected activities...');
     const { data: affected, error: affectedError } = await supabase
       .from('activities')
       .select('id, title_narrative, default_finance_type')
@@ -57,11 +49,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[FINANCE-FIX] Found ${affected?.length || 0} activities with empty string finance types`);
 
     // Step 3: Convert empty strings to NULL
     if (affected && affected.length > 0) {
-      console.log('[FINANCE-FIX] Step 3: Cleaning empty strings...');
       
       const { error: updateError, count: updateCount } = await supabase
         .from('activities')
@@ -77,13 +67,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[FINANCE-FIX] Updated ${updateCount || 0} activities`);
     } else {
-      console.log('[FINANCE-FIX] No activities need updating');
     }
 
     // Step 4: Verify fix
-    console.log('[FINANCE-FIX] Step 4: Final verification...');
     const { count: remainingEmpty } = await supabase
       .from('activities')
       .select('*', { count: 'exact', head: true })
@@ -92,9 +79,7 @@ export async function POST(request: NextRequest) {
     const success = remainingEmpty === 0;
     
     if (success) {
-      console.log('[FINANCE-FIX] ✓ SUCCESS! No empty strings found - all activities are clean!');
     } else {
-      console.log(`[FINANCE-FIX] ⚠ WARNING: ${remainingEmpty} activities still have empty strings`);
     }
 
     return NextResponse.json({

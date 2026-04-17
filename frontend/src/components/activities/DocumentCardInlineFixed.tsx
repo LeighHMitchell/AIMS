@@ -109,9 +109,7 @@ export function DocumentCardInlineFixed({
     try {
       const result = validateIatiDocument(formData);
       if (!result.ok) {
-        console.log('[DocumentCardInlineFixed] Validation issues for document:', formData.url);
         result.issues.forEach((issue, index) => {
-          console.log(`[DocumentCardInlineFixed] Issue ${index + 1}: ${issue.path} - ${issue.message}`);
         });
         console.log('[DocumentCardInlineFixed] Document data:', {
           url: formData.url,

@@ -264,15 +264,11 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('[Aid on Budget Enhanced] Activity classification mappings:', activityClassificationMap.size);
-    console.log('[Aid on Budget Enhanced] Budget items found:', budgetItemsRaw.length);
-    console.log('[Aid on Budget Enhanced] Classifications available:', (classifications || []).map(c => c.code).join(', '));
 
     // Log the first few mappings for debugging
     let debugCount = 0;
     activityClassificationMap.forEach((mappings, activityId) => {
       if (debugCount < 5) {
-        console.log(`[Aid on Budget Enhanced] Activity ${activityId} mapped to:`, mappings);
         debugCount++;
       }
     });

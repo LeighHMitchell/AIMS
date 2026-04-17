@@ -12,7 +12,6 @@ import { inferAndApplyBudgetLines } from '@/lib/transaction-budget-inference';
 // Helper function to trigger budget line inference after sector changes
 async function triggerBudgetLineInference(transactionId: string, supabase: any) {
   try {
-    console.log('[Sectors API] Triggering budget line inference for transaction:', transactionId);
     // Fetch transaction with its data
     const { data: transaction, error: txnError } = await supabase
       .from('transactions')

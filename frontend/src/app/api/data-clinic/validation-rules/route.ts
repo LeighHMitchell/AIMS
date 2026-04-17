@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[Validation Rules] Fetching validation failures for org:', organizationId);
 
     // Get current date for comparisons
     const today = new Date().toISOString().split('T')[0];
@@ -421,7 +420,6 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    console.log('[Validation Rules] Counts:', response.counts);
 
     return NextResponse.json(response);
 

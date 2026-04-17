@@ -26,7 +26,6 @@ export async function POST(
       );
     }
 
-    console.log('[AIMS] POST /api/transactions/[id]/reject - Rejecting transaction:', transactionId);
 
     // Get the original linked transaction to verify it exists
     const { data: originalTransaction, error: fetchError } = await supabase
@@ -80,7 +79,6 @@ export async function POST(
       );
     }
 
-    console.log('[AIMS] Successfully rejected transaction:', transactionId);
 
     return NextResponse.json({
       success: true,

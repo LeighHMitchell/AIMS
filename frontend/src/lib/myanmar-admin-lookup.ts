@@ -116,19 +116,16 @@ const stateRegionBounds: { [key: string]: { bounds: number[][], name: string } }
  */
 export function lookupAdminByCoordinates(latitude: number, longitude: number): MyanmarAdminData | null {
   try {
-    console.log(`[Admin Lookup] Looking up coordinates: ${latitude}, ${longitude}`);
     
     // Check against enhanced state/region boundaries
     for (const [key, region] of Object.entries(stateRegionBounds)) {
       if (isPointInBounds(latitude, longitude, region.bounds)) {
-        console.log(`[Admin Lookup] Found state/region: ${region.name}`);
         
         const adminData: MyanmarAdminData = {
           stateRegionCode: key.toUpperCase(),
           stateRegionName: region.name
         };
         
-        console.log(`[Admin Lookup] Returning admin data:`, adminData);
         return adminData;
       }
     }
@@ -137,7 +134,6 @@ export function lookupAdminByCoordinates(latitude: number, longitude: number): M
     for (const state of myanmarData.states) {
       const bounds = stateRegionBounds[state.code];
       if (bounds && isPointInBounds(latitude, longitude, bounds.bounds || bounds)) {
-        console.log(`[Admin Lookup] Found state/region (fallback): ${state.name} (${state.code})`);
         
         const adminData: MyanmarAdminData = {
           stateRegionCode: state.code,
@@ -162,12 +158,10 @@ export function lookupAdminByCoordinates(latitude: number, longitude: number): M
 export function lookupAdminByName(placeName: string): MyanmarAdminData | null {
   try {
     const searchTerm = placeName.toLowerCase().trim();
-    console.log(`[Admin Lookup] Looking up place name: ${searchTerm}`);
     
     // Search states/regions first
     for (const state of myanmarData.states) {
       if (state.name.toLowerCase().includes(searchTerm)) {
-        console.log(`[Admin Lookup] Found state/region by name: ${state.name}`);
         return {
           stateRegionCode: state.code,
           stateRegionName: state.name
@@ -177,7 +171,6 @@ export function lookupAdminByName(placeName: string): MyanmarAdminData | null {
       // Search townships within this state
       for (const township of state.townships) {
         if (township.name.toLowerCase().includes(searchTerm)) {
-          console.log(`[Admin Lookup] Found township by name: ${township.name} in ${state.name}`);
           return {
             stateRegionCode: state.code,
             stateRegionName: state.name,

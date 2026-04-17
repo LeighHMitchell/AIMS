@@ -223,7 +223,6 @@ export async function fetchAndParseAllResults(
 
     completed++;
     if (completed % 50 === 0 || completed === total) {
-      console.log(`[Bulk Import] Pre-fetched results XML: ${completed}/${total} complete`);
     }
   });
 

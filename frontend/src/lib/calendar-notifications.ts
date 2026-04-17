@@ -50,7 +50,6 @@ async function createNotification(payload: CalendarNotificationPayload): Promise
     return false;
   }
 
-  console.log('[Calendar Notifications] Notification created successfully:', data?.[0]?.id);
   return true;
 }
 
@@ -71,11 +70,9 @@ export async function notifyAdminsOfNewEvent(
   const managerIds = await getManagerUserIds();
 
   if (managerIds.length === 0) {
-    console.log('[Calendar Notifications] No admins to notify - check if any users have super_user, manager, global_admin, or admin role');
     return;
   }
 
-  console.log(`[Calendar Notifications] Notifying ${managerIds.length} admin(s) about event ${eventId}`);
 
   const truncatedTitle = eventTitle.length > 100
     ? eventTitle.substring(0, 100) + '...'
@@ -95,7 +92,6 @@ export async function notifyAdminsOfNewEvent(
   );
 
   const successCount = results.filter(Boolean).length;
-  console.log(`[Calendar Notifications] Notified ${successCount}/${managerIds.length} admins`);
 }
 
 

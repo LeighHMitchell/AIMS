@@ -81,7 +81,6 @@ class EnhancedCurrencyConverter {
       // Check cache first
       const cachedRate = await this.getCachedRate(from, to, dateStr);
       if (cachedRate) {
-        console.log(`[CurrencyConverter] Using cached rate for ${from}→${to} on ${dateStr}: ${cachedRate.exchange_rate}`);
         return { rate: cachedRate.exchange_rate, source: 'cache' };
       }
 
@@ -91,7 +90,6 @@ class EnhancedCurrencyConverter {
       if (rate !== null) {
         // Cache the successful result
         await this.cacheRate(from, to, dateStr, rate, 'exchangerate.host');
-        console.log(`[CurrencyConverter] Fetched and cached rate for ${from}→${to} on ${dateStr}: ${rate}`);
         return { rate, source: 'api' };
       }
 
@@ -252,7 +250,6 @@ class EnhancedCurrencyConverter {
         return { success: false, error: updateError.message };
       }
 
-      console.log(`[CurrencyConverter] Successfully converted transaction ${transactionId}: ${transaction.value} ${transaction.currency} → $${result.usd_amount} USD`);
       return { success: true };
 
     } catch (error) {
@@ -366,7 +363,6 @@ class EnhancedCurrencyConverter {
       errors: [] as Array<{ id: string; error: string }>
     };
 
-    console.log(`[CurrencyConverter] Starting bulk conversion of ${transactionIds.length} transactions`);
 
     for (const id of transactionIds) {
       try {
@@ -386,7 +382,6 @@ class EnhancedCurrencyConverter {
       }
     }
 
-    console.log(`[CurrencyConverter] Bulk conversion completed: ${results.success} success, ${results.failed} failed`);
     return results;
   }
 
@@ -526,7 +521,6 @@ class EnhancedCurrencyConverter {
 
       // Use ExchangeRate.host historical endpoint
       const url = `${this.API_BASE_URL}/${date}?base=${from}&symbols=${to}`;
-      console.log(`[CurrencyConverter] Fetching rate from: ${url}`);
       
       const response = await fetch(url, {
         headers: {

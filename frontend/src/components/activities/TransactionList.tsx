@@ -478,7 +478,6 @@ export default function TransactionList({
   const [visibleColumns, setVisibleColumns] = useState<ActivityTransactionColumnId[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY);
-      console.log('[TransactionList] localStorage key:', ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY, 'saved:', saved);
       if (saved) {
         try {
           return JSON.parse(saved);
@@ -486,7 +485,6 @@ export default function TransactionList({
           return DEFAULT_VISIBLE_ACTIVITY_COLUMNS;
         }
       }
-      console.log('[TransactionList] Using defaults:', DEFAULT_VISIBLE_ACTIVITY_COLUMNS);
     }
     return DEFAULT_VISIBLE_ACTIVITY_COLUMNS;
   });
@@ -905,13 +903,11 @@ export default function TransactionList({
   };
 
   const handleEdit = (transaction: Transaction) => {
-    console.log('[TransactionList] handleEdit called for transaction:', transaction.uuid || transaction.id);
     setEditingTransaction(transaction);
     setShowForm(true);
   };
 
   const handleDelete = async (uuid: string) => {
-    console.log('[TransactionList] handleDelete called with UUID:', uuid, 'Type:', typeof uuid);
     
     // Additional validation to prevent undefined UUIDs
     if (!uuid || uuid === 'undefined' || uuid === undefined) {

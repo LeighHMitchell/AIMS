@@ -244,7 +244,6 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         reported_by_org_id: form.reportedByOrgId || null
       }
 
-      console.log('[CreateUserModal] Creating user:', userData.email)
 
       const response = await fetch('/api/users', {
         method: 'POST',
@@ -260,7 +259,6 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         throw new Error(result.error || 'Failed to create user')
       }
 
-      console.log('[CreateUserModal] User created successfully:', result.email)
 
       // Transform the result to match our User interface
       const fullName = [result.first_name, result.middle_name, result.last_name]

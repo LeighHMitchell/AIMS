@@ -262,7 +262,6 @@ export default function ProfilePage() {
   
   // Function to enter edit mode and refresh data
   const handleEditClick = async () => {
-    console.log('[Profile] Entering edit mode, refreshing data...');
     setIsEditing(true);
     
     // Refresh form data when entering edit mode
@@ -271,7 +270,6 @@ export default function ProfilePage() {
         const response = await apiFetch(`/api/users?email=${encodeURIComponent(user.email)}`);
         if (response.ok) {
           const freshData = await response.json();
-          console.log('[Profile] Fresh data for edit mode:', freshData);
           
           setFormData(prev => ({
             ...prev,
@@ -301,11 +299,9 @@ export default function ProfilePage() {
           // Preserve profile photo when entering edit mode
           if (freshData.avatar_url && freshData.avatar_url !== profilePhoto) {
             setProfilePhoto(freshData.avatar_url);
-            console.log('[Profile] Updated profile photo for edit mode:', freshData.avatar_url);
           }
         }
       } catch (error) {
-        console.log('[Profile] Could not refresh data for edit mode:', error);
       }
     }
   };
@@ -405,7 +401,6 @@ export default function ProfilePage() {
   // Refresh form data when user prop changes
   useEffect(() => {
     if (user) {
-      console.log('[Profile] User data changed, updating form data');
       setFormData(prev => ({
         ...prev,
         title: user.title || "",
@@ -639,7 +634,6 @@ export default function ProfilePage() {
     if (!user) return;
 
     try {
-      console.log('[Profile] Saving profile changes...');
       
       // Prepare data for API
       const apiData = {
@@ -669,7 +663,6 @@ export default function ProfilePage() {
         (apiData as any).organization_id = selectedOrgId;
       }
 
-      console.log('[Profile] Sending API data:', apiData);
 
       const response = await apiFetch('/api/users', {
         method: 'PUT',
@@ -681,7 +674,6 @@ export default function ProfilePage() {
 
       if (response.ok) {
         const updatedData = await response.json();
-        console.log('[Profile] Profile updated successfully:', updatedData);
         
         // If organization was changed, fetch the new organization data
         let organizationData = user.organization

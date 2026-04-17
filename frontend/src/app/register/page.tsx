@@ -61,7 +61,6 @@ export default function RegisterPage() {
     }
 
     try {
-      console.log("[Register] Attempting registration for:", email);
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -82,7 +81,6 @@ export default function RegisterPage() {
         throw new Error(data.error || "Registration failed");
       }
 
-      console.log("[Register] Registration successful");
 
       // Show success state with email verification instructions
       setRegistrationState('success');

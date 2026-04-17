@@ -27,7 +27,6 @@ export async function GET(
       }, { status: 400 });
     }
 
-    console.log(`[Policy Markers API] Fetching policy markers for activity: ${id}`);
 
     // Get policy markers for the activity - using manual approach due to schema cache issue
     const { data: activityMarkers, error: markersError } = await supabase
@@ -81,7 +80,6 @@ export async function GET(
       }, { status: 500 });
     }
 
-    console.log(`[Policy Markers API] Found ${policyMarkers?.length || 0} policy markers`);
 
     // Transform the response for frontend compatibility
     const transformedMarkers = (policyMarkers || []).map(marker => ({
@@ -134,9 +132,6 @@ export async function POST(
       }, { status: 400 });
     }
 
-    console.log(`[Policy Markers API] ${replace ? 'Replacing' : 'Adding'} policy markers for activity: ${id}`);
-    console.log(`[Policy Markers API] Policy markers count: ${policyMarkers.length}`);
-    console.log('[Policy Markers API] Received markers:', JSON.stringify(policyMarkers, null, 2));
 
     // First, fetch policy marker details to enable IATI-specific validation
     const markerIds = policyMarkers.map(m => m.policy_marker_id);
@@ -209,7 +204,6 @@ export async function POST(
 
     // If replace is true, delete existing policy markers
     if (replace) {
-      console.log('[Policy Markers API] Deleting existing policy markers');
       const { error: deleteError } = await supabase
         .from('activity_policy_markers')
         .delete()
@@ -234,7 +228,6 @@ export async function POST(
         visibility: marker.visibility || null // NULL means inherit from policy_markers.default_visibility
       }));
 
-      console.log('[Policy Markers API] Inserting policy markers:', JSON.stringify(policyMarkersData, null, 2));
 
       const { error: insertError } = await supabase
         .from('activity_policy_markers')
@@ -248,7 +241,6 @@ export async function POST(
         }, { status: 500 });
       }
 
-      console.log(`[Policy Markers API] Successfully ${replace ? 'replaced' : 'added'} ${policyMarkers.length} policy markers`);
     }
 
     // Return the updated policy markers - using manual approach due to schema cache issue
@@ -321,7 +313,6 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    console.log(`[Policy Markers API] Deleting all policy markers for activity: ${id}`);
 
     const { error } = await supabase
       .from('activity_policy_markers')
@@ -336,7 +327,6 @@ export async function DELETE(
       }, { status: 500 });
     }
 
-    console.log('[Policy Markers API] Successfully deleted all policy markers');
 
     return NextResponse.json({
       success: true,

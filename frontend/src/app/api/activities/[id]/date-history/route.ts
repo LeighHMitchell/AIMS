@@ -27,7 +27,6 @@ export async function GET(
       );
     }
     
-    console.log('[Date History API] Fetching date revision history for activity:', id);
     if (!supabase) {
       console.error('[Date History API] Supabase client is null');
       return NextResponse.json(

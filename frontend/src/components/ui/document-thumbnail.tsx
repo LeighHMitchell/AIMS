@@ -156,7 +156,6 @@ export function DocumentThumbnail({
 
     const renderPDF = async () => {
       if (!canvasRef.current) {
-        console.log('[PDF Preview] No canvas ref, skipping')
         return
       }
 
@@ -167,38 +166,29 @@ export function DocumentThumbnail({
         // Get container dimensions or use defaults (portrait 3:4 ratio for documents)
         const containerWidth = containerRef.current?.clientWidth || width || 210
         const containerHeight = containerRef.current?.clientHeight || height || 280
-        console.log('[PDF Preview] Container dimensions:', containerWidth, 'x', containerHeight)
 
         // Dynamically import pdf.js
-        console.log('[PDF Preview] Starting to load PDF:', url)
         
         const pdfjs = await import('pdfjs-dist')
-        console.log('[PDF Preview] pdf.js loaded, version:', pdfjs.version)
         
         // Set worker URL - use unpkg CDN
         const workerUrl = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
-        console.log('[PDF Preview] Setting worker URL:', workerUrl)
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
         // Don't proxy Supabase URLs - they should be accessible directly
         const pdfUrl = url
-        console.log('[PDF Preview] Loading document from:', pdfUrl)
 
         const loadingTask = pdfjs.getDocument({
           url: pdfUrl,
           withCredentials: false,
         })
 
-        console.log('[PDF Preview] Waiting for PDF to load...')
         const pdf = await loadingTask.promise
-        console.log('[PDF Preview] PDF loaded, pages:', pdf.numPages)
         
         const page = await pdf.getPage(1)
-        console.log('[PDF Preview] Got page 1')
 
         const canvas = canvasRef.current
         if (!canvas) {
-          console.log('[PDF Preview] No canvas ref!')
           setError(true)
           setLoading(false)
           return
@@ -206,7 +196,6 @@ export function DocumentThumbnail({
 
         const context = canvas.getContext('2d')
         if (!context) {
-          console.log('[PDF Preview] No canvas context!')
           setError(true)
           setLoading(false)
           return
@@ -217,20 +206,17 @@ export function DocumentThumbnail({
         const scaleX = containerWidth / viewport.width
         const scaleY = containerHeight / viewport.height
         const scale = Math.min(scaleX, scaleY) * 0.95
-        console.log('[PDF Preview] Rendering at scale:', scale)
 
         const scaledViewport = page.getViewport({ scale })
 
         canvas.width = scaledViewport.width
         canvas.height = scaledViewport.height
 
-        console.log('[PDF Preview] Starting render...')
         await page.render({
           canvasContext: context,
           viewport: scaledViewport,
         }).promise
 
-        console.log('[PDF Preview] Render complete!')
         setPdfRendered(true)
         setLoading(false)
       } catch (err: any) {

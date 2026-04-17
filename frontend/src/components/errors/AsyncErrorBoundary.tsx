@@ -115,7 +115,6 @@ export class AsyncErrorBoundary extends Component<Props, State> {
   }
 
   private handleRetry = () => {
-    console.log(`Retrying after error (attempt ${this.state.retryCount + 1})`)
     
     this.setState(prevState => ({
       hasError: false,

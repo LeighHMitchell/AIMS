@@ -100,7 +100,6 @@ export default function ForwardSpendingSurveyTab({
   const fetchFssData = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[FSS Tab] Fetching FSS for activity:', activityId);
 
       const response = await apiFetch(`/api/activities/${activityId}/fss`);
       if (!response.ok) {
@@ -112,7 +111,6 @@ export default function ForwardSpendingSurveyTab({
       if (data) {
         setFss(data);
         setForecasts(data.forecasts || []);
-        console.log('[FSS Tab] Loaded FSS with', data.forecasts?.length || 0, 'forecasts');
       } else {
         setFss(null);
         setForecasts([]);
@@ -140,7 +138,6 @@ export default function ForwardSpendingSurveyTab({
   useEffect(() => {
     if (onFssChangeRef.current && !loading) {
       const count = forecasts.length > 0 ? 1 : 0;
-      console.log('[FSS Tab] Notifying parent with forecast count:', count);
       onFssChangeRef.current(count);
     }
   }, [forecasts, loading]);
@@ -165,7 +162,6 @@ export default function ForwardSpendingSurveyTab({
   const saveFss = async (updatedFss: Partial<ForwardSpendingSurvey>) => {
     try {
       setSavingFss(true);
-      console.log('[FSS Tab] Saving FSS:', updatedFss);
 
       const response = await apiFetch(`/api/activities/${activityId}/fss`, {
         method: 'PUT',

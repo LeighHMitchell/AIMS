@@ -101,13 +101,6 @@ export default function ContributorsSection({
     }
 
     try {
-      console.log('[Contributors] User object:', user);
-      console.log('[Contributors] User name:', user.name);
-      console.log('[Contributors] User firstName:', user.firstName);
-      console.log('[Contributors] User lastName:', user.lastName);
-      console.log('[Contributors] User email:', user.email);
-      console.log('[Contributors] Full user object keys:', Object.keys(user));
-      console.log('[Contributors] User object JSON:', JSON.stringify(user, null, 2));
       
       // Build the user's display name with comprehensive fallbacks
       let nominatedByName = 'Unknown User';
@@ -144,7 +137,6 @@ export default function ContributorsSection({
         }
       }
       
-      console.log('[Contributors] Final nominatedByName:', nominatedByName);
       
       await addContributor({
         organizationId: selectedOrganizationId,
@@ -239,10 +231,8 @@ export default function ContributorsSection({
     if (!user?.id) return;
     
     try {
-      console.log('[Debug] Checking user data for ID:', user.id);
       const response = await apiFetch(`/api/debug-current-user?userId=${user.id}`);
       const data = await response.json();
-      console.log('[Debug] User data from API:', data);
       toast.info(`User data check complete. Check console for details.\n\nComputed Name: ${data.computedName}`);
     } catch (error) {
       console.error('[Debug] Error checking user data:', error);
@@ -345,7 +335,6 @@ export default function ContributorsSection({
                   <div className="flex items-center gap-3">
                     {(() => {
                       const organization = organizations.find(o => o.id === contributor.organization_id);
-                      console.log('[ContributorsSection] Organization:', organization?.name, 'Logo:', organization?.logo);
                       return organization?.logo ? (
                         <div className="h-8 w-8 rounded image-outline flex-shrink-0">
                         <img

@@ -52,7 +52,6 @@ function getCachedFacilities(country: string): GeoJSON.FeatureCollection | null 
   // Check in-memory cache first (fastest)
   const memCache = facilitiesCache[country];
   if (memCache && Date.now() - memCache.timestamp < CACHE_DURATION) {
-    console.log(`[HealthFacilitiesLayer] Using in-memory cache for ${country}`);
     return memCache.data;
   }
 
@@ -62,7 +61,6 @@ function getCachedFacilities(country: string): GeoJSON.FeatureCollection | null 
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Date.now() - parsed.timestamp < CACHE_DURATION) {
-        console.log(`[HealthFacilitiesLayer] Using sessionStorage cache for ${country}`);
         // Also populate in-memory cache
         facilitiesCache[country] = parsed;
         return parsed.data;
@@ -122,11 +120,9 @@ async function loadFromStaticFile(country: string): Promise<GeoJSON.FeatureColle
   }
 
   try {
-    console.log(`[HealthFacilitiesLayer] Loading from static file for ${country}...`);
     const response = await fetch(`/data/health-facilities/${country.toLowerCase()}.json`);
     if (response.ok) {
       const data = await response.json();
-      console.log(`[HealthFacilitiesLayer] Loaded ${data.features?.length || 0} facilities from static file`);
       return data;
     }
   } catch (e) {
@@ -145,12 +141,10 @@ async function backgroundRefreshFromAPI(
 
   // Only refresh if it's been more than REFRESH_INTERVAL since last refresh
   if (lastRefresh > 0 && timeSinceRefresh < REFRESH_INTERVAL) {
-    console.log(`[HealthFacilitiesLayer] Skipping background refresh - last refreshed ${Math.round(timeSinceRefresh / 1000 / 60 / 60)} hours ago`);
     return;
   }
 
   try {
-    console.log(`[HealthFacilitiesLayer] Background refresh from API for ${country}...`);
     const response = await fetch(`/api/layers/health-facilities?country=${country}`);
 
     if (!response.ok) {
@@ -167,7 +161,6 @@ async function backgroundRefreshFromAPI(
 
       // Notify component of new data
       onUpdate(data);
-      console.log(`[HealthFacilitiesLayer] Background refresh complete: ${data.features.length} facilities`);
     }
   } catch (err) {
     console.warn(`[HealthFacilitiesLayer] Background refresh error:`, err);
@@ -265,7 +258,6 @@ export default function HealthFacilitiesLayer({
             if (freshData.features.length !== staticData.features.length) {
               setFacilities(freshData);
               onFacilityCountChange?.(freshData.features.length);
-              console.log(`[HealthFacilitiesLayer] Updated with fresh data: ${freshData.features.length} facilities (was ${staticData.features.length})`);
             }
           });
 
@@ -273,7 +265,6 @@ export default function HealthFacilitiesLayer({
         }
 
         // Fall back to API (no static file available)
-        console.log(`[HealthFacilitiesLayer] Fetching from API for ${country}...`);
         const response = await fetch(`/api/layers/health-facilities?country=${country}`);
 
         if (!response.ok) {
@@ -289,9 +280,7 @@ export default function HealthFacilitiesLayer({
           setFacilities(data);
           loadedCountryRef.current = country;
           onFacilityCountChange?.(data.features.length);
-          console.log(`[HealthFacilitiesLayer] Loaded ${data.features.length} facilities for ${country}`);
         } else {
-          console.log(`[HealthFacilitiesLayer] No facilities found for ${country}`);
           const emptyData = { type: 'FeatureCollection' as const, features: [] };
           cacheFacilities(country, emptyData);
           setFacilities(emptyData);

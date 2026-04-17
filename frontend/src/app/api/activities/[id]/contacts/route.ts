@@ -18,15 +18,10 @@ export async function GET(
       );
     }
 
-    console.log('[Contacts API] 🔍 Fetching contacts for activity:', activityId);
-    console.log('[Contacts API] Request timestamp:', new Date().toISOString());
-    console.log('[Contacts API] Cache-busting params:', request.nextUrl.searchParams.toString());
 
     // Get a fresh Supabase admin client to avoid stale connections
-    console.log('[Contacts API] Using Supabase admin client');
 
     // Fetch contacts via junction table with contacts join
-    console.log('[Contacts API] Querying activity_contacts with contacts join...');
 
     const queryBuilder = supabase
       .from('activity_contacts')
@@ -75,7 +70,6 @@ export async function GET(
     const filteredQuery = queryBuilder.eq('activity_id', activityId);
     const orderedQuery = filteredQuery.order('created_at', { ascending: true });
 
-    console.log('[Contacts API] Executing query...');
     const { data: contacts, error, count } = await orderedQuery;
 
     if (error) {
@@ -86,7 +80,6 @@ export async function GET(
       );
     }
 
-    console.log('[Contacts API] Found contacts:', contacts?.length || 0);
 
     // Look up users by email so we can surface their job_title even when user_id
     // isn't set on the activity_contacts row (legacy records).
@@ -179,10 +172,7 @@ export async function GET(
       };
     });
 
-    console.log('[Contacts API] 📤 Returning', transformedContacts.length, 'transformed contact(s)');
     if (transformedContacts.length > 0) {
-      console.log('[Contacts API] Sample transformed contact:', JSON.stringify(transformedContacts[0], null, 2));
-      console.log('[Contacts API] All contact IDs being returned:', transformedContacts.map((c: any) => c.id));
     }
 
     return NextResponse.json(transformedContacts, {

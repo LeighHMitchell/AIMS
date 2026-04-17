@@ -741,8 +741,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         description: general.description || '',
         user: user ? { id: user.id } : undefined
       };
-      console.log('[Manual Create] Payload:', payload);
-      console.log('[Manual Create] Acronym value:', payload.acronym);
       
       const res = await apiFetch('/api/activities', {
         method: 'POST',
@@ -1034,15 +1032,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               error: bannerAutosave.state.error || bannerPositionAutosave.state.error
             }}
             triggerSave={async (banner, position) => {
-              console.log('[BANNER SAVE] triggerSave called:', { banner: banner ? 'has banner' : 'no banner', position });
               // Only save banner if it's actually provided (not null/undefined)
               if (banner) {
-                console.log('[BANNER SAVE] Saving banner image...');
                 bannerAutosave.triggerFieldSave(banner);
               }
               // Save position if provided - use direct API call for reliability
               if (position !== undefined && general.id) {
-                console.log('[BANNER SAVE] Saving position:', position, 'activityId:', general.id);
                 try {
                   const response = await apiFetch('/api/activities/field', {
                     method: 'POST',
@@ -1055,7 +1050,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     })
                   });
                   const result = await response.json();
-                  console.log('[BANNER SAVE] Position save result:', result);
                   if (!response.ok) {
                     console.error('[BANNER SAVE] Position save failed:', result);
                   }
@@ -1111,15 +1105,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 error: iconAutosave.state.error || iconScaleAutosave.state.error
               }}
               triggerSave={async (icon, scale) => {
-                console.log('[ICON SAVE] triggerSave called:', { icon: icon ? 'has icon' : 'no icon', scale });
                 // Only save icon if it's actually provided (not null/undefined)
                 if (icon) {
-                  console.log('[ICON SAVE] Saving icon image...');
                   iconAutosave.triggerFieldSave(icon);
                 }
                 // Save scale if provided - use direct API call for reliability
                 if (scale !== undefined && general.id) {
-                  console.log('[ICON SAVE] Saving scale:', scale, 'activityId:', general.id);
                   const response = await apiFetch('/api/activities/field', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1131,7 +1122,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     })
                   });
                   const result = await response.json();
-                  console.log('[ICON SAVE] Scale save result:', result);
                   if (!response.ok) {
                     console.error('[ICON SAVE] Scale save failed:', result);
                     throw new Error(result.error || 'Failed to save zoom level');
@@ -2117,7 +2107,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   }
                 }}
                 onActivityCreated={(activityData) => {
-                  console.log('[AIMS] New activity created:', activityData);
                   setGeneral((g: any) => ({ ...g, id: activityData.id, uuid: activityData.uuid }));
                   // Clear saved form data since activity is now saved to database
                   clearSavedFormData();
@@ -3163,7 +3152,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         </div>
       );
     case "xml-import":
-      console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
@@ -3326,7 +3314,6 @@ function NewActivityPageContent() {
   useEffect(() => {
     const tabParam = searchParams?.get("tab");
     if (tabParam) {
-      console.log('[ActivityEditor] Setting initial tab from query param:', tabParam);
       setActiveSection(tabParam);
       // Mark this tab as loaded
       setLoadedTabs(prev => new Set(Array.from(prev).concat([tabParam])));
@@ -3445,7 +3432,6 @@ function NewActivityPageContent() {
     isInProgress: boolean;
     isSaved: boolean;
   }) => {
-    console.log('[MainPage] setSectorsCompletionStatus called with:', newStatus);
     setSectorsCompletionStatus(newStatus);
   }, []);
   
@@ -3523,7 +3509,6 @@ function NewActivityPageContent() {
 
   // LAZY LOADING: Callback to handle tab data loaded from useTabDataLoader
   const handleTabDataLoaded = useCallback((group: string, data: TabGroupData) => {
-    console.log('[AIMS] Tab group data loaded:', group, Object.keys(data));
 
     // Update state based on which group was loaded
     if (group === 'stakeholders') {
@@ -3630,7 +3615,6 @@ function NewActivityPageContent() {
 
   // Memoized callbacks to prevent infinite re-render loop
   const handlePlannedDisbursementsChange = useCallback((disb: any[]) => {
-    console.log('[ActivityEditor] setPlannedDisbursements called with:', disb?.length || 0, 'disbursements');
     // Always update - the tab component already filters to only send data with IDs
     setPlannedDisbursements(disb);
   }, []);
@@ -3650,12 +3634,10 @@ function NewActivityPageContent() {
 
     // Only save to database if we have an activity ID
     if (!currentActivityId || currentActivityId === 'NEW') {
-      console.log('[ActivityEditor] Skipping geography level save - no activity ID yet');
       return;
     }
 
     try {
-      console.log('[ActivityEditor] Saving geography level:', level, 'for activity:', currentActivityId);
       const response = await apiFetch(`/api/activities/${currentActivityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -3668,7 +3650,6 @@ function NewActivityPageContent() {
         throw new Error('Failed to update geography level');
       }
 
-      console.log('[ActivityEditor] Geography level saved:', level);
       toast.success('Geography level saved');
     } catch (error) {
       console.error('[ActivityEditor] Error saving geography level:', error);
@@ -3689,12 +3670,10 @@ function NewActivityPageContent() {
 
     // Only save to database if we have an activity ID
     if (!currentActivityId || currentActivityId === 'NEW') {
-      console.log('[ActivityEditor] Skipping sector export level save - no activity ID yet');
       return;
     }
 
     try {
-      console.log('[ActivityEditor] Saving sector export level:', level, 'for activity:', currentActivityId);
       const response = await apiFetch(`/api/activities/${currentActivityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -3707,7 +3686,6 @@ function NewActivityPageContent() {
         throw new Error('Failed to update sector export level');
       }
 
-      console.log('[ActivityEditor] Sector export level saved:', level);
       toast.success('Sector export level saved');
     } catch (error) {
       console.error('[ActivityEditor] Error saving sector export level:', error);
@@ -3924,7 +3902,6 @@ function NewActivityPageContent() {
     if (!activityId) return;
     
     try {
-      console.log('[AIMS] Refreshing transactions for activity:', activityId);
       const response = await apiFetch(`/api/activities/${activityId}`, {
         cache: 'no-store'
       });
@@ -3932,7 +3909,6 @@ function NewActivityPageContent() {
         const data = await response.json();
         setTransactions(data.transactions || []);
         setTransactionsLoaded(true);
-        console.log('[AIMS] Refreshed transactions:', data.transactions?.length || 0);
       }
     } catch (error) {
       console.error('[AIMS] Error refreshing transactions:', error);
@@ -3944,7 +3920,6 @@ function NewActivityPageContent() {
     const handleReportingOrgUpdate = (event: CustomEvent) => {
       const { activityId: updatedActivityId, organizationData } = event.detail;
       if (updatedActivityId === general.id && organizationData) {
-        console.log('[ActivityEditor] Reporting org updated, refreshing data...');
         // Update the general data with new org information
         setGeneral((prev: any) => ({
           ...prev,
@@ -3991,7 +3966,6 @@ function NewActivityPageContent() {
     const shouldClearFormData = !currentActivityId && (previousActivityId !== null || previousActivityId === null);
     
     if (shouldClearFormData && previousActivityId !== currentActivityId) {
-      console.log('[AIMS] Switching to new activity creation - clearing form data');
       clearSavedFormData();
     }
     
@@ -4013,7 +3987,6 @@ function NewActivityPageContent() {
     );
     
     if (shouldResetForm) {
-      console.log('[AIMS] Resetting form state for new activity creation');
       setGeneral({
         id: "",
         partnerId: "",
@@ -4102,7 +4075,6 @@ function NewActivityPageContent() {
     
     // Only reset when user changes AND we're in new activity mode (no ID)
     if (!currentActivityId && user) {
-      console.log('[AIMS] User changed during new activity creation - updating org info');
       setGeneral(prev => ({
         ...prev,
         created_by_org_name: user?.organisation || user?.organization?.name || "",
@@ -4121,7 +4093,6 @@ function NewActivityPageContent() {
       setGeneral(prev => {
         // Only update if reportingOrgId is not already set
         if (!prev.reportingOrgId) {
-          console.log('[AIMS] Setting default reporting org to user organization:', user.organizationId);
           return {
             ...prev,
             reportingOrgId: user.organizationId
@@ -4222,7 +4193,6 @@ function NewActivityPageContent() {
   useEffect(() => {
     if (general.id && !searchParams?.get("id")) {
       // Activity was just created, update URL to include the ID
-      console.log('[AIMS] Activity created, updating URL with ID:', general.id);
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('id', general.id);
       window.history.replaceState({}, '', newUrl.toString());
@@ -4276,7 +4246,6 @@ function NewActivityPageContent() {
   const documentsAutosave = {
     saveNow: () => {
       // No-op: documents are saved directly to activity_documents table via upload API
-      console.log('[DocumentsAutosave] Skipping autosave - using dedicated API');
     }
   };
 
@@ -4284,12 +4253,10 @@ function NewActivityPageContent() {
   const governmentInputsAutosave = React.useMemo(() => ({
     saveNow: async (data: any) => {
       if (!general.id || !user?.id) {
-        console.log('[GovernmentInputsAutosave] Skipping save - missing activity ID or user ID');
         return;
       }
       
       try {
-        console.log('[GovernmentInputsAutosave] Saving government inputs...');
         const response = await apiFetch(`/api/activities/${general.id}/government-inputs`, {
           method: 'POST',
           headers: {
@@ -4308,7 +4275,6 @@ function NewActivityPageContent() {
         }
         
         const result = await response.json();
-        console.log('[GovernmentInputsAutosave] Government inputs saved successfully');
         return result;
       } catch (error) {
         console.error('[GovernmentInputsAutosave] Failed to save government inputs:', error);
@@ -4378,17 +4344,14 @@ function NewActivityPageContent() {
           // skip the API fetch to avoid overwriting user's local edits
           // This happens when an activity is just created and the URL changes to include the ID
           if (currentActivityIdRef.current === activityId) {
-            console.log('[AIMS] Activity already loaded in state, skipping API fetch to preserve local edits');
             setLoading(false);
             return;
           }
 
           // OPTIMIZATION: Use cached activity data if available
-          console.log('[AIMS] Loading activity with cache:', activityId);
           
           // RACE CONDITION FIX: Wait for all pending autosave operations to complete
           // This ensures we get the most up-to-date data when loading after activity creation
-          console.log('[AIMS] Waiting for pending autosave operations to complete...');
           
           // Wait for all pending saves to complete (with shorter delay)
           await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms for all pending saves
@@ -4398,7 +4361,6 @@ function NewActivityPageContent() {
           
           // Bypass cache completely and fetch fresh data directly from API
           const apiUrl = `/api/activities/${activityId}/basic`;
-          console.log('[AIMS] Fetching fresh data from API (bypassing cache):', apiUrl);
           const response = await fetch(apiUrl);
           
           if (!response.ok) {
@@ -4406,7 +4368,6 @@ function NewActivityPageContent() {
           }
           
           const data = await response.json();
-          console.log('[AIMS] Activity loaded:', data.title);
           // Update all state with loaded data
           setGeneral({
             id: data.id || activityId,
@@ -4520,9 +4481,7 @@ function NewActivityPageContent() {
           }
 
           // Set capital spend percentage for tab completion
-          console.log('[AIMS] Capital spend percentage from API:', data.capital_spend_percentage);
           setCapitalSpendPercentage(data.capital_spend_percentage ?? null);
-          console.log('[AIMS] Capital spend state set to:', data.capital_spend_percentage ?? null);
           
           // Convert database sectors to ImprovedSectorAllocationForm format
           const convertedSectors = (data.sectors || []).map((sector: any) => ({
@@ -4535,10 +4494,6 @@ function NewActivityPageContent() {
             categoryName: sector.categoryName,
             level: sector.level || (sector.code?.length === 3 ? 'group' : sector.code?.length === 5 ? 'subsector' : 'sector')
           }));
-          console.log('🔄 [AIMS] === LOADING SECTORS FROM DATABASE ===');
-          console.log('📊 [AIMS] Raw sectors from API:', JSON.stringify(data.sectors, null, 2));
-          console.log('🔧 [AIMS] Converted sectors for form:', JSON.stringify(convertedSectors, null, 2));
-          console.log('📈 [AIMS] Sector count - Raw:', data.sectors?.length || 0, 'Converted:', convertedSectors.length);
           setSectors(convertedSectors);
           // Only update transactions if explicitly provided (don't reset to empty during reload)
           if (data.transactions !== undefined) {
@@ -4553,7 +4508,6 @@ function NewActivityPageContent() {
             setContacts(data.contacts);
           }
           setGovernmentInputs(data.governmentInputs || {});
-          console.log('[AIMS] Loaded SDG mappings:', data.sdgMappings?.length || 0, data.sdgMappings);
           setSdgMappings(data.sdgMappings || []);
           setTags(data.tags || []);
           setWorkingGroups(data.workingGroups || []);
@@ -4570,23 +4524,17 @@ function NewActivityPageContent() {
           }
 
           if (data.locations) {
-            console.log('[Activity New] Locations data received:', data.locations);
-            console.log('[Activity New] Specific locations:', data.locations.specificLocations);
-            console.log('[Activity New] Coverage areas:', data.locations.coverageAreas);
             setSpecificLocations(data.locations.specificLocations || []);
             setCoverageAreas(data.locations.coverageAreas || []);
           } else {
-            console.log('[Activity New] No locations data in response');
           }
           
           // Set countries and regions data for tab completion
           if (data.recipient_countries) {
-            console.log('[Activity New] Countries data received:', data.recipient_countries);
             setCountries(data.recipient_countries || []);
           }
           
           if (data.recipient_regions) {
-            console.log('[Activity New] Regions data received:', data.recipient_regions);
             setRegions(data.recipient_regions || []);
           }
           
@@ -4595,7 +4543,6 @@ function NewActivityPageContent() {
           // LAZY LOADING: Tab data is now loaded on-demand when user navigates to each tab
           // This prevents 16+ simultaneous API calls that overwhelm the server
           // and cause field save requests to timeout
-          console.log('[AIMS] Basic activity data loaded - other tab data will load on-demand');
 
           // Mark only activity-overview group as loaded (basic data contains sectors, etc.)
           setDataLoadedGroups(new Set(['activity-overview']));
@@ -4624,10 +4571,8 @@ function NewActivityPageContent() {
             ]));
           }
 
-          console.log('[AIMS] Activity data loaded successfully - tab data will lazy load')
         } else {
           // New activity - just set some defaults
-          console.log('[AIMS] Creating new activity - user:', user);
           setGeneral((prev: any) => ({
             ...prev,
             created_by_org_name: user?.organisation || user?.organization?.name || "",
@@ -4683,7 +4628,6 @@ function NewActivityPageContent() {
       if (!cancelled) {
         // Mark all groups as visited so preloading works when switching
         setVisitedGroups(new Set(['activity-overview', ...groupsToPreload]));
-        console.log('[AIMS] Background preloading complete - all group data loaded');
       }
     };
 
@@ -4811,7 +4755,6 @@ function NewActivityPageContent() {
   // 🚀 FIELD-LEVEL AUTOSAVE SYSTEM - saves individual fields immediately
   // Simplified updateActivityNestedField for backward compatibility
   const updateActivityNestedField = (field: string, value: any) => {
-    console.log(`Field-level autosave: ${field} updated to`, value);
     // Individual fields now handle their own autosave via field-level hooks
   };
   
@@ -5237,7 +5180,6 @@ function NewActivityPageContent() {
                                         isAdvancedSection(activeSection);
 
     if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
-      console.log('[AIMS Performance] Switching to section:', value, 'from:', activeSection);
 
       // Determine if switching within the same group or between groups
       const sameGroup = (isActivityOverviewSection(value) && isActivityOverviewSection(activeSection)) ||
@@ -5341,7 +5283,6 @@ function NewActivityPageContent() {
       }
     }
     
-    console.log('[AIMS Performance] Switching to tab:', value);
 
     // Non-group tabs (Metadata, Government Inputs, Readiness Checklist, IATI
     // tools, XML/Excel Import) fully replace the content area. Scroll the
@@ -5367,7 +5308,6 @@ function NewActivityPageContent() {
     if (tabGroup) {
       setVisitedGroups(prev => {
         if (prev.has(tabGroup)) return prev;
-        console.log('[AIMS Performance] Marking group as visited:', tabGroup);
         const newSet = new Set(prev);
         newSet.add(tabGroup);
         return newSet;
@@ -5375,7 +5315,6 @@ function NewActivityPageContent() {
     }
 
     if (general.id && general.id !== 'NEW' && tabGroup && !tabDataLoader.isGroupLoaded(value)) {
-      console.log('[AIMS Performance] Lazy loading data for tab group:', tabGroup);
       // Load data in parallel with UI transition
       tabDataLoader.loadTabData(value).catch(err => {
         console.error('[AIMS Performance] Failed to load tab data:', err);
@@ -5811,7 +5750,6 @@ function NewActivityPageContent() {
                              return;
                            }
 
-                           console.log('[AIMS] Attempting to publish activity');
                            const originalStatus = general.publicationStatus;
 
                            // Optimistically update the UI
@@ -5819,7 +5757,6 @@ function NewActivityPageContent() {
 
                            try {
                              await saveActivity({ publish: true, suppressErrorToast: true });
-                             console.log('[AIMS] Publish successful');
                            } catch (error) {
                              console.error('[AIMS] Publish failed, reverting state:', error);
                              // Revert the optimistic update on failure
@@ -5828,7 +5765,6 @@ function NewActivityPageContent() {
                            }
                          } else {
                            // Unpublish the activity
-                           console.log('[AIMS] Attempting to unpublish activity');
                            const originalStatus = general.publicationStatus;
 
                            // Optimistically update the UI
@@ -5836,7 +5772,6 @@ function NewActivityPageContent() {
 
                            try {
                              await saveActivity({ publish: false, suppressErrorToast: true });
-                             console.log('[AIMS] Unpublish successful');
                            } catch (error) {
                              console.error('[AIMS] Unpublish failed, reverting state:', error);
                              // Revert the optimistic update on failure
@@ -6077,7 +6012,6 @@ function NewActivityPageContent() {
                     variant="outline"
                     className="px-4 py-3 text-base font-semibold"
                     onClick={() => {
-                      console.log('[Comments] Opening drawer for activity:', general.id);
                       setIsCommentsDrawerOpen(true);
                     }}
                   >

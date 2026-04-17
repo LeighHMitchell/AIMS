@@ -1358,14 +1358,12 @@ function OrganizationsPageContent() {
       if (response.ok) {
         const types = await response.json()
         setAvailableTypes(types)
-        console.log('[OrganizationsPage] Loaded organization types:', types.length)
       } else {
         console.warn('[OrganizationsPage] Failed to fetch organization types, using defaults')
         setAvailableTypes(DEFAULT_ORGANIZATION_TYPES)
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[OrganizationsPage] Types request aborted')
         return
       }
       console.error('[OrganizationsPage] Error fetching organization types:', error)
@@ -1390,7 +1388,6 @@ function OrganizationsPageContent() {
       if (response.ok) {
         const groups = await response.json()
         setCustomGroups(groups)
-        console.log('[OrganizationsPage] Loaded custom groups:', groups.length)
       } else {
         console.error('[OrganizationsPage] Failed to fetch custom groups')
         setCustomGroups([])
@@ -1399,7 +1396,6 @@ function OrganizationsPageContent() {
       setLoadingCustomGroups(false)
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[OrganizationsPage] Groups request aborted')
         return
       }
       console.error('[OrganizationsPage] Error fetching custom groups:', error)
@@ -1520,7 +1516,6 @@ function OrganizationsPageContent() {
       setLoading(false)
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[OrganizationsPage] Main request aborted')
         return
       }
       

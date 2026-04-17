@@ -67,7 +67,6 @@ export function Top10TotalFinancialValueChart({
         params.append('sector', filters.sector)
       }
 
-      console.log('[Top10TotalFinancialValue] Fetching from:', `/api/analytics/top-10/total-financial-value?${params}`)
       const response = await apiFetch(`/api/analytics/top-10/total-financial-value?${params}`)
       if (!response.ok) {
         const errorText = await response.text()
@@ -76,14 +75,12 @@ export function Top10TotalFinancialValueChart({
       }
 
       const result = await response.json()
-      console.log('[Top10TotalFinancialValue] API response full:', JSON.stringify(result, null, 2))
       
       const donors = (result.donors || []).map((d: any) => ({
         ...d,
         shortName: d.acronym || d.name.split(' ').slice(0, 2).join(' ')
       }))
 
-      console.log('[Top10TotalFinancialValue] Final data count:', donors.length, 'items:', donors)
       setData(donors)
       onDataChange?.(donors)
     } catch (error) {

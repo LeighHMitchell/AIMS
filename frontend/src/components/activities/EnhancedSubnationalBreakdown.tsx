@@ -340,21 +340,17 @@ export function EnhancedSubnationalBreakdown({
 
   // Load existing data
   const loadData = useCallback(async () => {
-    console.log('[EnhancedSubnationalBreakdown] loadData called with activityId:', activityId)
 
     if (!activityId || activityId === 'undefined' || activityId === 'null') {
-      console.log('[EnhancedSubnationalBreakdown] No valid activityId, setting loading to false')
       setLoading(false)
       return
     }
 
     try {
-      console.log('[EnhancedSubnationalBreakdown] Fetching data from API...')
       const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`)
 
       if (response.ok) {
         const data = await response.json()
-        console.log('[EnhancedSubnationalBreakdown] Received data:', data)
 
         // Convert backend data to entries format
         const loadedEntries: BreakdownEntry[] = []
@@ -437,9 +433,7 @@ export function EnhancedSubnationalBreakdown({
         setSelectedUnits(loadedSelectedUnits)
         setExpandedRegions(regionsToExpand)
 
-        console.log('[EnhancedSubnationalBreakdown] Data loaded successfully')
       } else {
-        console.log('[EnhancedSubnationalBreakdown] No existing data found, response status:', response.status)
       }
     } catch (error) {
       console.error('[EnhancedSubnationalBreakdown] Error loading data:', error)
@@ -447,7 +441,6 @@ export function EnhancedSubnationalBreakdown({
         toast.error('Failed to load subnational breakdown data')
       }
     } finally {
-      console.log('[EnhancedSubnationalBreakdown] Setting loading to false')
       setLoading(false)
       setTimeout(() => {
         isInitialLoadRef.current = false
@@ -461,11 +454,9 @@ export function EnhancedSubnationalBreakdown({
     if (hasLoadedRef.current) return
     hasLoadedRef.current = true
 
-    console.log('[EnhancedSubnationalBreakdown] Loading data for activityId:', activityId)
     loadData()
 
     const timeout = setTimeout(() => {
-      console.log('[EnhancedSubnationalBreakdown] Timeout reached, forcing loading to false')
       setLoading(false)
     }, 10000)
 
@@ -961,7 +952,6 @@ export function EnhancedSubnationalBreakdown({
   }, [entries, selectedUnits, loading, activityId, autoSave])
 
   if (loading) {
-    console.log('[EnhancedSubnationalBreakdown] Still loading, activityId:', activityId)
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

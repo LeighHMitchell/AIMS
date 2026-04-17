@@ -51,7 +51,6 @@ export function DefaultFieldsSection({
     activityId,
     initialValues,
     onFieldUpdate: (field, value) => {
-      console.log(`[DefaultFieldsSection] Field updated: ${field} = ${value}`);
       onFieldUpdate?.(field, value);
     },
     onError: (field, error) => {
@@ -72,27 +71,22 @@ export function DefaultFieldsSection({
   );
 
   const handleAidTypeChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Aid Type changing to:', value);
     await updateDefaultAidType(value);
   };
 
   const handleFinanceTypeChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Finance Type changing to:', value);
     await updateDefaultFinanceType(value);
   };
 
   const handleFlowTypeChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Flow Type changing to:', value);
     await updateDefaultFlowType(value);
   };
 
   const handleCurrencyChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Currency changing to:', value);
     await updateDefaultCurrency(value);
   };
 
   const handleTiedStatusChange = async (value: string | null) => {
-    console.log('[DefaultFieldsSection] Tied Status changing to:', value);
     await updateDefaultTiedStatus(value);
   };
 

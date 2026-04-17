@@ -38,7 +38,6 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       metadata: params.metadata,
     };
     
-    console.log('[ActivityLogger] Logging activity:', newLog);
 
     // For server-side calls, directly insert into database instead of HTTP fetch
     if (typeof window === 'undefined') {
@@ -66,15 +65,12 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
           console.error('[ActivityLogger] Database insert failed:', error);
           const { MemoryActivityLogger } = await import('./activity-logger-memory');
           await MemoryActivityLogger.logActivity(params);
-          console.log('[ActivityLogger] Logged to memory as fallback');
         } else {
-          console.log('[ActivityLogger] Activity logged successfully to database');
         }
       } catch (error) {
         console.error('[ActivityLogger] Error logging activity:', error);
         const { MemoryActivityLogger } = await import('./activity-logger-memory');
         await MemoryActivityLogger.logActivity(params);
-        console.log('[ActivityLogger] Logged to memory as fallback');
       }
     } else {
       // Client-side: use API endpoint
@@ -91,9 +87,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
         console.error('[ActivityLogger] Failed to log activity:', errorText);
         const { MemoryActivityLogger } = await import('./activity-logger-memory');
         await MemoryActivityLogger.logActivity(params);
-        console.log('[ActivityLogger] Logged to memory as fallback');
       } else {
-        console.log('[ActivityLogger] Activity logged successfully');
       }
     }
   } catch (error) {
@@ -102,7 +96,6 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
     try {
       const { MemoryActivityLogger } = await import('./activity-logger-memory');
       await MemoryActivityLogger.logActivity(params);
-      console.log('[ActivityLogger] Logged to memory as fallback');
     } catch (memError) {
       console.error('[ActivityLogger] Memory logging also failed:', memError);
     }

@@ -36,7 +36,6 @@ interface TestUser {
 }
 
 async function checkExistingSupabaseUsers(): Promise<Set<string>> {
-  console.log('🔍 Checking existing Supabase users...');
   
   try {
     const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
@@ -52,7 +51,6 @@ async function checkExistingSupabaseUsers(): Promise<Set<string>> {
       ...profileUsers.map(u => u.email)
     ]);
     
-    console.log(`✅ Found ${existingEmails.size} existing users in Supabase`);
     return existingEmails;
   } catch (error) {
     console.error('❌ Error checking existing users:', error);
@@ -61,7 +59,6 @@ async function checkExistingSupabaseUsers(): Promise<Set<string>> {
 }
 
 async function createTestUser(testUser: TestUser): Promise<void> {
-  console.log(`👤 Creating test user: ${testUser.email}`);
   
   try {
     // Create auth user
@@ -103,14 +100,12 @@ async function createTestUser(testUser: TestUser): Promise<void> {
       return;
     }
     
-    console.log(`✅ Successfully created test user: ${testUser.email} (Password: ${tempPassword})`);
   } catch (error) {
     console.error(`❌ Error creating user ${testUser.email}:`, error);
   }
 }
 
 async function main() {
-  console.log('🚀 Creating test users in Supabase...\n');
   
   const testUsers: TestUser[] = [
     {
@@ -144,20 +139,15 @@ async function main() {
     const newUsers = testUsers.filter(user => !existingEmails.has(user.email));
     
     if (newUsers.length === 0) {
-      console.log('✅ All test users already exist in Supabase');
       return;
     }
     
-    console.log(`\n📋 Creating ${newUsers.length} new test users...\n`);
     
     // Create users in Supabase
     for (const user of newUsers) {
       await createTestUser(user);
     }
     
-    console.log('\n🎉 Test users created successfully!');
-    console.log('\n📝 You can now test login with these users');
-    console.log('Default password for all test users: TestPassword123!');
     
   } catch (error) {
     console.error('❌ Failed to create test users:', error);

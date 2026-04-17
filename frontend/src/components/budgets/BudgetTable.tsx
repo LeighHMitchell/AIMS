@@ -330,7 +330,6 @@ export function BudgetTable({
                       checked={selectedIds.size === budgets.length && budgets.length > 0}
                       indeterminate={selectedIds.size > 0 && selectedIds.size < budgets.length}
                       onCheckedChange={(checked) => {
-                        console.log('[BudgetTable] Select all clicked:', checked, 'budgets.length:', budgets.length);
                         onSelectAll(!!checked);
                       }}
                       aria-label="Select all budgets"

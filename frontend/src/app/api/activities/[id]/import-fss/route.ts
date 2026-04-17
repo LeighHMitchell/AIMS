@@ -13,7 +13,6 @@ export async function POST(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log('[FSS Import API] POST request for activityId:', activityId);
 
     if (!body.fssData) {
       return NextResponse.json({ error: 'FSS data is required' }, { status: 400 });
@@ -47,7 +46,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('[FSS Import API] FSS created/updated:', fss.id);
 
     // Process forecasts
     let importedForecasts = 0;

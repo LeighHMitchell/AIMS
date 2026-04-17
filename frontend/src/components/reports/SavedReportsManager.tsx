@@ -231,7 +231,6 @@ export function SavedReportsManager({
         is_template: isTemplate,
       }
       
-      console.log('[SavedReportsManager] Saving report:', { url, method, payload })
       
       const response = await fetch(url, {
         method,
@@ -240,7 +239,6 @@ export function SavedReportsManager({
       })
 
       const responseData = await response.json()
-      console.log('[SavedReportsManager] Save response:', { status: response.status, data: responseData })
 
       if (response.ok) {
         toast.success(editingReportId ? 'Report updated' : 'Report saved successfully')

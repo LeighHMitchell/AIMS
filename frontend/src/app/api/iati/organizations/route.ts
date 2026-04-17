@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ organizations: [] })
   }
   
-  console.log("[IATI Org Search] Searching for:", query)
   
   try {
     // Query IATI Datastore for organizations matching the search term
@@ -44,9 +43,6 @@ export async function GET(request: NextRequest) {
       headers["Ocp-Apim-Subscription-Key"] = IATI_API_KEY
     }
     
-    console.log("[IATI Org Search] Search term:", searchTerm)
-    console.log("[IATI Org Search] Search query:", searchQuery)
-    console.log("[IATI Org Search] API URL:", searchUrl)
     
     // Create abort controller for timeout (more compatible than AbortSignal.timeout)
     const abortController = new AbortController()
@@ -76,15 +72,12 @@ export async function GET(request: NextRequest) {
       if (response.ok) {
         const data = await response.json()
         
-        console.log("[IATI Org Search] Raw response:", JSON.stringify(data, null, 2))
         
         // Parse facets to get organization list
         // Facets come as alternating array: [ref1, count1, ref2, count2, ...]
         const facets = data.facet_counts?.facet_fields?.reporting_org_ref || []
         const organizations: OrganizationResult[] = []
         
-        console.log("[IATI Org Search] Facets array:", facets)
-        console.log("[IATI Org Search] Facets length:", facets.length)
         
         for (let i = 0; i < facets.length; i += 2) {
           const ref = facets[i]
@@ -94,7 +87,6 @@ export async function GET(request: NextRequest) {
           }
         }
         
-        console.log("[IATI Org Search] Found", organizations.length, "organizations")
         
         return NextResponse.json({ organizations })
       } else {

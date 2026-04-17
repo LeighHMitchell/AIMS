@@ -47,7 +47,6 @@ export async function GET(
     const supabaseAdmin = supabase;
     const homeCountry = await getSystemHomeCountry(supabaseAdmin);
 
-    console.log('[AIMS] GET /api/partners/[id] - Fetching:', id);
 
     if (!id) {
       return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
@@ -55,7 +54,6 @@ export async function GET(
 
     // Try Supabase first if available
     try {
-      console.log('[AIMS] Attempting Supabase fetch...');
       
       const { data, error } = await supabaseAdmin
         .from('organizations')
@@ -68,7 +66,6 @@ export async function GET(
         throw new Error(`Supabase error: ${error.message}`);
       }
 
-      console.log('[AIMS] Fetched organization from Supabase:', data);
       
       // Transform to partner format
       const isDevelopmentPartner = data.is_development_partner || false;
@@ -100,7 +97,6 @@ export async function GET(
       return response;
       
     } catch (supabaseError) {
-      console.log('[AIMS] Supabase failed, falling back to file storage:', supabaseError);
       
       // Fallback to file-based storage
       const fs = await import('fs/promises');
@@ -118,7 +114,6 @@ export async function GET(
             partners = [];
           }
         } catch (fileError) {
-          console.log('[AIMS] Partners file not found');
           return NextResponse.json(
             { error: 'Partner not found' },
             { status: 404 }
@@ -136,7 +131,6 @@ export async function GET(
           );
         }
 
-        console.log('[AIMS] Successfully fetched partner from file storage');
         
         const response = NextResponse.json(partner);
         response.headers.set('Access-Control-Allow-Origin', '*');
@@ -175,8 +169,6 @@ export async function PUT(
     const body = await request.json();
     const { user, ...updates } = body;  // Extract user separately so it's not included in updates
 
-    console.log('[AIMS] PUT /api/partners/[id] - Updating:', id);
-    console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
 
     if (!id) {
       return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
@@ -184,7 +176,6 @@ export async function PUT(
 
     // Try Supabase first if available
     try {
-      console.log('[AIMS] Attempting Supabase update...');
       
       // Create Supabase client
       const supabaseAdmin = supabase;
@@ -215,7 +206,6 @@ export async function PUT(
       delete organizationUpdates.created_at;
       delete organizationUpdates.updated_at;
 
-      console.log('[AIMS] Organization updates to apply:', JSON.stringify(organizationUpdates, null, 2));
 
       const { data, error } = await supabaseAdmin
         .from('organizations')
@@ -229,7 +219,6 @@ export async function PUT(
         throw new Error(`Supabase error: ${error.message}`);
       }
 
-      console.log('[AIMS] Updated organization in Supabase:', data);
       
       // Log the activity if user information is provided
       if (user) {
@@ -270,7 +259,6 @@ export async function PUT(
       return response;
       
     } catch (supabaseError) {
-      console.log('[AIMS] Supabase failed, falling back to file storage:', supabaseError);
       
       // Fallback to file-based storage
       const fs = await import('fs/promises');
@@ -288,7 +276,6 @@ export async function PUT(
             partners = [];
           }
         } catch (fileError) {
-          console.log('[AIMS] Partners file not found, creating empty array');
           partners = [];
         }
 
@@ -325,7 +312,6 @@ export async function PUT(
         // Save back to file
         await fs.writeFile(partnersFilePath, JSON.stringify(partners, null, 2));
         
-        console.log('[AIMS] Successfully updated partner in file storage');
         
         const response = NextResponse.json(updatedPartner);
         response.headers.set('Access-Control-Allow-Origin', '*');
@@ -360,7 +346,6 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    console.log('[AIMS] DELETE /api/partners/[id] - Deleting organization:', id);
 
     if (!id) {
       return NextResponse.json({ error: 'Partner ID is required' }, { status: 400 });
@@ -393,7 +378,6 @@ export async function DELETE(
     }
 
     if (users && users.length > 0) {
-      console.log('[AIMS] Cannot delete organization with users:', users.length);
       return NextResponse.json(
         { 
           error: 'Cannot delete organization with assigned users',
@@ -417,7 +401,6 @@ export async function DELETE(
     }
 
     if (activities && activities.length > 0) {
-      console.log('[AIMS] Warning: Organization has activities associated:', activities.length);
       return NextResponse.json(
         { 
           error: 'Cannot delete organization with associated activities',
@@ -439,7 +422,6 @@ export async function DELETE(
       return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Successfully deleted organization:', organization.name);
     
     const response = NextResponse.json({ 
       success: true, 

@@ -149,7 +149,6 @@ export async function POST(
       : null;
 
     // Convert to USD
-    console.log(`[Funding Envelopes API] Converting to USD: ${body.amount} ${body.currency}`);
     const usdConversion = await convertEnvelopeToUSD(
       body.amount,
       body.currency,
@@ -158,7 +157,6 @@ export async function POST(
     );
 
     if (usdConversion.amount_usd !== null) {
-      console.log(`[Funding Envelopes API] USD conversion successful: ${body.amount} ${body.currency} = $${usdConversion.amount_usd} USD`);
     } else {
       console.warn(`[Funding Envelopes API] USD conversion failed for ${body.currency}`);
     }
@@ -240,7 +238,6 @@ export async function PUT(
       : null;
 
     // Convert to USD (re-convert on update in case amount, currency, or value_date changed)
-    console.log(`[Funding Envelopes API] Converting to USD (update): ${body.amount} ${body.currency}`);
     const usdConversion = await convertEnvelopeToUSD(
       body.amount,
       body.currency,
@@ -249,7 +246,6 @@ export async function PUT(
     );
 
     if (usdConversion.amount_usd !== null) {
-      console.log(`[Funding Envelopes API] USD conversion successful: ${body.amount} ${body.currency} = $${usdConversion.amount_usd} USD`);
     } else {
       console.warn(`[Funding Envelopes API] USD conversion failed for ${body.currency}`);
     }

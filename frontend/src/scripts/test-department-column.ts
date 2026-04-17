@@ -8,14 +8,12 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function testDepartmentColumn() {
   try {
-    console.log('Testing department column...');
     
     // First, check if the column exists by trying to select it
     const { data: columns, error: columnError } = await supabase
       .rpc('get_table_columns', { table_name: 'users' });
     
     if (columnError) {
-      console.log('Could not check columns via RPC, trying direct query...');
       
       // Try a simple select with department column
       const { data: testData, error: testError } = await supabase
@@ -27,17 +25,13 @@ async function testDepartmentColumn() {
         console.error('Department column does not exist or cannot be accessed:', testError);
         return false;
       } else {
-        console.log('Department column exists and can be queried:', testData);
         return true;
       }
     } else {
-      console.log('Table columns:', columns);
       const departmentColumn = columns?.find((col: any) => col.column_name === 'department');
       if (departmentColumn) {
-        console.log('Department column found:', departmentColumn);
         return true;
       } else {
-        console.log('Department column not found in table schema');
         return false;
       }
     }
@@ -49,6 +43,5 @@ async function testDepartmentColumn() {
 
 // Run the test
 testDepartmentColumn().then(result => {
-  console.log('Department column test result:', result);
   process.exit(result ? 0 : 1);
 });

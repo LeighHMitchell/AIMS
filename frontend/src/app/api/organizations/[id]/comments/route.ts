@@ -65,7 +65,6 @@ export async function GET(
 
   try {
     const { id } = await params;
-    console.log('[Org Comments API] GET request for organization:', id);
     if (!supabase) {
       console.error('[Org Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -79,7 +78,6 @@ export async function GET(
     const status = url.searchParams.get('status');
     const includeArchived = url.searchParams.get('includeArchived') === 'true';
 
-    console.log('[Org Comments API] Search params:', { searchTerm, contextSection, type, status, includeArchived });
     
     // First check if organization exists
     const { data: organization, error: orgError } = await supabase
@@ -124,7 +122,6 @@ export async function GET(
         
         // If table doesn't exist, return empty array with helpful message
         if (commentsError.code === '42P01') { // Table doesn't exist
-          console.log('[Org Comments API] Comments table not found - database setup required');
           return NextResponse.json([], { 
             headers: { 
               'X-Comments-Status': 'Database setup required. Organization comments table not found.' 
@@ -135,7 +132,6 @@ export async function GET(
         throw commentsError;
       }
       
-      console.log(`[Org Comments API] Found ${comments?.length || 0} comments`);
       return NextResponse.json(comments || []);
       
     } catch (tableError) {
@@ -171,7 +167,6 @@ export async function POST(
     const body = await request.json();
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
-    console.log('[Org Comments API] POST request for organization:', id);
     if (!supabase) {
       console.error('[Org Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

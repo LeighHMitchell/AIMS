@@ -244,7 +244,6 @@ export async function getDatastoreCount(orgRefs: string[], filters: DatastoreFil
   const { refQuery, fqString } = buildSolrQueryParts(orgRefs, filters)
   const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=0&wt=json`
 
-  console.log('[Datastore Helpers] Count query:', url.substring(0, 250) + (url.length > 250 ? '...' : ''))
 
   const response = await fetch(url, {
     method: 'GET',
@@ -278,7 +277,6 @@ export async function fetchDatastorePage(
 
   const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=${DATASTORE_PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(DATASTORE_FIELDS)}`
 
-  console.log(`[Datastore Helpers] Fetching page ${page}:`, url.substring(0, 300) + '...')
 
   const abortController = new AbortController()
   const timeoutId = setTimeout(() => abortController.abort(), 55000) // 55s timeout (leave buffer for maxDuration)

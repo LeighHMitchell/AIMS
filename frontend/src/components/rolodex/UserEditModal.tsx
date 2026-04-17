@@ -128,7 +128,6 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
         avatar_url: formData.profile_photo,
       };
 
-      console.log('Updating user with data:', updateData);
 
       const response = await apiFetch('/api/users/update', {
         method: 'PUT',

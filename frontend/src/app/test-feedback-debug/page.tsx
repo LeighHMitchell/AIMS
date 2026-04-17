@@ -22,7 +22,6 @@ export default function TestFeedbackDebugPage() {
       if (response.ok) {
         const data = await response.json();
         setDebugData(data);
-        console.log('[Debug] Data received:', data);
       } else {
         const error = await response.json();
         toast.error(`Debug check failed: ${error.error}`);
@@ -65,7 +64,6 @@ export default function TestFeedbackDebugPage() {
       }
 
       const uploadData = await uploadResponse.json();
-      console.log('[Test] File uploaded:', uploadData);
 
       // Then submit feedback with attachment
       const feedbackResponse = await apiFetch('/api/feedback', {

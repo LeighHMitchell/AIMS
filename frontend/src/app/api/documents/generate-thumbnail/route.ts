@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Generate Thumbnail] User ${user?.id} generating thumbnail for: ${url}`);
 
     // Create Supabase client with service role for file operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

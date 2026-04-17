@@ -50,14 +50,12 @@ export function usePreCachedData<T = any>(
       try {
         data = await preCacheManager.preCacheAPI(url, { force: forceRefresh })
         isFromCache = !forceRefresh
-        console.log(`[PreCachedData] ${isFromCache ? 'Cache hit' : 'Fresh fetch'} for: ${url}`)
       } catch (cacheError) {
         if (!fallbackToFetch) {
           throw cacheError
         }
 
         // Fallback to regular fetch
-        console.log(`[PreCachedData] Cache failed, falling back to fetch: ${url}`)
         const response = await fetch(url)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)

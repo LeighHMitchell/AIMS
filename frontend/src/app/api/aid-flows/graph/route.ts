@@ -70,7 +70,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('[Aid Flow API] Fetching data for date range:', { start: startDate, end: endDate, status: statusFilter, transactionType: transactionTypeFilter });
     
     // Diagnostic: Count all transactions with both provider and receiver (no date filter)
     const { count: totalWithBothOrgs } = await supabase
@@ -138,7 +137,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('[Aid Flow API] Fetched transactions:', transactions?.length || 0);
     
     // Log transactions with specific org names for debugging
     const relevantTransactions = (transactions || []).filter((t: any) => {
@@ -147,7 +145,6 @@ export async function GET(request: NextRequest) {
       return providerName.includes('afd') || providerName.includes('edge') || providerName.includes('noa') ||
              receiverName.includes('afd') || receiverName.includes('edge') || receiverName.includes('noa');
     });
-    console.log('[Aid Flow API] Transactions involving AFD/Edge/NOA:', relevantTransactions.length);
     if (relevantTransactions.length > 0) {
       console.log('[Aid Flow API] Sample relevant transactions:', relevantTransactions.slice(0, 3).map((t: any) => ({
         provider: t.provider_org_name || t.provider_org_id,
@@ -166,8 +163,6 @@ export async function GET(request: NextRequest) {
       if (t.receiver_org_id) orgIds.add(t.receiver_org_id);
     });
     
-    console.log('[Aid Flow API] Unique org IDs found:', orgIds.size);
-    console.log('[Aid Flow API] Sample org IDs:', Array.from(orgIds).slice(0, 5));
     
     // Check a sample transaction
     if (transactions && transactions.length > 0) {
@@ -195,13 +190,11 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    console.log('[Aid Flow API] Fetched organizations:', organizations.length);
     
     // Log transaction details for debugging
     const transactionsWithBothOrgs = (transactions || []).filter((t: any) => 
       (t.provider_org_id || t.provider_org_name) && (t.receiver_org_id || t.receiver_org_name)
     );
-    console.log('[Aid Flow API] Transactions with both provider AND receiver:', transactionsWithBothOrgs.length);
     
     if (transactionsWithBothOrgs.length > 0) {
       console.log('[Aid Flow API] Sample transaction with both orgs:', {

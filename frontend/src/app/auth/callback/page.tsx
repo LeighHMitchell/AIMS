@@ -40,10 +40,6 @@ export default function AuthCallbackPage() {
         const detectedAuthType = getAuthType(searchParams, window.location.hash);
         setAuthType(detectedAuthType);
 
-        console.log('[Auth Callback] Starting auth callback processing...');
-        console.log('[Auth Callback] Detected auth type:', detectedAuthType);
-        console.log('[Auth Callback] Current URL hash:', window.location.hash ? 'Present (tokens in hash)' : 'Empty');
-        console.log('[Auth Callback] Search params:', Object.fromEntries(searchParams.entries()));
         
         // Small delay to ensure Supabase client processes the hash tokens
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -54,18 +50,15 @@ export default function AuthCallbackPage() {
         
         // Retry logic for getting session (Supabase may need time to process tokens)
         for (let attempt = 1; attempt <= 3; attempt++) {
-          console.log(`[Auth Callback] Attempt ${attempt} to get session...`);
           const result = await supabase.auth.getSession();
           session = result.data?.session;
           sessionError = result.error;
           
           if (session) {
-            console.log('[Auth Callback] Session found on attempt', attempt);
             break;
           }
           
           if (attempt < 3) {
-            console.log('[Auth Callback] No session yet, waiting before retry...');
             await new Promise(resolve => setTimeout(resolve, 500 * attempt));
           }
         }
@@ -81,7 +74,6 @@ export default function AuthCallbackPage() {
         if (!session) {
           const code = searchParams.get('code');
           if (code) {
-            console.log('[Auth Callback] No session from getSession, trying code exchange...');
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
             if (error) {
               console.error('[Auth Callback] Code exchange error:', error);
@@ -90,7 +82,6 @@ export default function AuthCallbackPage() {
               return;
             }
             session = data.session;
-            console.log('[Auth Callback] Session obtained via code exchange');
           }
         }
         
@@ -115,12 +106,6 @@ export default function AuthCallbackPage() {
 
     const handleSession = async (session: any) => {
       const user = session.user;
-      console.log('[Auth Callback] ========================================');
-      console.log('[Auth Callback] User authenticated successfully');
-      console.log('[Auth Callback] User ID:', user.id);
-      console.log('[Auth Callback] User email:', user.email);
-      console.log('[Auth Callback] User metadata:', JSON.stringify(user.user_metadata, null, 2));
-      console.log('[Auth Callback] ========================================');
 
       // Always call create-oauth-user for OAuth logins
       // This endpoint handles both creating new users AND updating last_login for existing users
@@ -137,8 +122,6 @@ export default function AuthCallbackPage() {
         avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
       };
       
-      console.log('[Auth Callback] Calling create-oauth-user to create/update user and last_login...');
-      console.log('[Auth Callback] Payload:', JSON.stringify(payload, null, 2));
       
       try {
         const response = await apiFetch('/api/auth/create-oauth-user', {
@@ -148,13 +131,10 @@ export default function AuthCallbackPage() {
         });
 
         const responseText = await response.text();
-        console.log('[Auth Callback] Response status:', response.status);
 
         if (response.ok) {
           try {
             userProfile = JSON.parse(responseText);
-            console.log('[Auth Callback] User profile retrieved/created:', userProfile.email);
-            console.log('[Auth Callback] Last login updated:', userProfile.lastLogin || userProfile.last_login);
           } catch (parseError) {
             console.error('[Auth Callback] Failed to parse response:', parseError);
           }
@@ -167,7 +147,6 @@ export default function AuthCallbackPage() {
 
       // Set user in context (use profile data if available, otherwise create minimal user)
       if (userProfile && userProfile.email) {
-        console.log('[Auth Callback] Setting user from profile data');
         setUser(userProfile);
       } else {
         console.warn('[Auth Callback] Using minimal user data (profile creation may have failed)');
@@ -195,7 +174,6 @@ export default function AuthCallbackPage() {
       const defaultRoute = getHomeRouteFromApiData(userProfile);
       const isValidRedirect = next && next.startsWith('/') && !next.startsWith('//') && !next.includes('://');
       const redirectTo = isValidRedirect ? next : defaultRoute;
-      console.log('[Auth Callback] Redirecting to:', redirectTo, 'organizationId:', userProfile?.organizationId);
       
       // Small delay before redirect to ensure state is saved
       await new Promise(resolve => setTimeout(resolve, 100));

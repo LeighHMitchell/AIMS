@@ -154,7 +154,6 @@ export function FinancingTermsTab({
       return;
     }
 
-    console.log('[FinancingTerms] Saving loan terms...');
     setSavingLoanTerms(true);
     setLoanTermsSaved(false);
 
@@ -177,9 +176,7 @@ export function FinancingTermsTab({
         other_flags: otherFlags
       };
 
-      console.log('[FinancingTerms] Data to save:', data);
       const success = await saveLoanTerms(data);
-      console.log('[FinancingTerms] Save result:', success);
 
       if (success) {
         setLoanTermsSaved(true);

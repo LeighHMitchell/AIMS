@@ -19,7 +19,6 @@ export async function GET(
     }
 
     const { resultId } = await params;
-    console.log(`[Indicators API] Fetching indicators for result: ${resultId}`);
 
     const { data: indicators, error } = await supabase
       .from('result_indicators')
@@ -48,7 +47,6 @@ export async function GET(
       }, { status: 500 });
     }
 
-    console.log(`[Indicators API] Found ${indicators?.length || 0} indicators`);
     return NextResponse.json({ indicators: indicators || [] });
 
   } catch (error) {
@@ -78,8 +76,6 @@ export async function POST(
     const { resultId } = await params;
     const body = await request.json();
 
-    console.log(`[Indicators API] Creating indicator for result: ${resultId}`);
-    console.log('[Indicators API] Request body:', JSON.stringify(body, null, 2));
 
     // Validate required fields
     if (!resultId) {
@@ -137,7 +133,6 @@ export async function POST(
       reference_uri: body.reference_uri || null
     };
 
-    console.log('[Indicators API] Insert data:', JSON.stringify(insertData, null, 2));
 
     const { data: indicator, error } = await supabase
       .from('result_indicators')
@@ -180,7 +175,6 @@ export async function POST(
       }, { status: 400 });
     }
 
-    console.log('[Indicators API] Indicator created successfully:', indicator.id);
     return NextResponse.json({ indicator });
 
   } catch (error) {

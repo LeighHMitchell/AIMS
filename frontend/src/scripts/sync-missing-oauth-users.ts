@@ -48,10 +48,8 @@ interface PublicUser {
 }
 
 async function syncMissingUsers() {
-  console.log('🔄 Starting OAuth user sync...\n');
 
   // Get all auth users
-  console.log('📥 Fetching auth.users...');
   const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
 
   if (authError) {
@@ -60,10 +58,8 @@ async function syncMissingUsers() {
   }
 
   const authUsers = authResponse.users;
-  console.log(`   Found ${authUsers.length} auth users\n`);
 
   // Get all public users
-  console.log('📥 Fetching public.users...');
   const { data: publicUsers, error: publicError } = await supabase
     .from('users')
     .select('id, email');
@@ -73,7 +69,6 @@ async function syncMissingUsers() {
     process.exit(1);
   }
 
-  console.log(`   Found ${publicUsers?.length || 0} public users\n`);
 
   // Find missing users
   const publicUserIds = new Set((publicUsers || []).map((u: PublicUser) => u.id));
@@ -85,10 +80,8 @@ async function syncMissingUsers() {
     return idMissing && emailMissing;
   });
 
-  console.log(`🔍 Found ${missingUsers.length} users in auth.users missing from public.users\n`);
 
   if (missingUsers.length === 0) {
-    console.log('✅ All auth users have corresponding public.users records!');
     return;
   }
 
@@ -116,9 +109,6 @@ async function syncMissingUsers() {
       updated_at: new Date().toISOString(),
     };
 
-    console.log(`📝 Creating user: ${authUser.email}`);
-    console.log(`   ID: ${authUser.id}`);
-    console.log(`   Name: ${newUser.first_name} ${newUser.last_name}`);
 
     const { error: insertError } = await supabase
       .from('users')
@@ -128,18 +118,10 @@ async function syncMissingUsers() {
       console.error(`   ❌ Error: ${insertError.message}`);
       errors++;
     } else {
-      console.log(`   ✅ Created successfully`);
       created++;
     }
-    console.log('');
   }
 
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`📊 Summary:`);
-  console.log(`   Total missing users: ${missingUsers.length}`);
-  console.log(`   Successfully created: ${created}`);
-  console.log(`   Errors: ${errors}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 
 syncMissingUsers().catch(console.error);

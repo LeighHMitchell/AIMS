@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
 
     // Debug: Check if it's a screenshot
     if (file.name.toLowerCase().includes('screenshot') || file.name.toLowerCase().includes('screen shot')) {
-      console.log('[Feedback Upload] Screenshot detected:', file.name);
     }
 
     // Validate file type - allow images and common document types
@@ -98,7 +97,6 @@ export async function POST(request: NextRequest) {
     const uniqueFilename = `${timestamp}_${uuidv4()}.${fileExtension}`;
     const storagePath = `feedback-attachments/${userId}/${uniqueFilename}`;
 
-    console.log('[Feedback Upload] Uploading to path:', storagePath);
 
     // Convert File to ArrayBuffer for Supabase
     const fileBuffer = await file.arrayBuffer();
@@ -119,7 +117,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[Feedback Upload] File uploaded successfully:', uploadData);
 
     // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage
@@ -128,7 +125,6 @@ export async function POST(request: NextRequest) {
 
     const publicUrl = urlData.publicUrl;
 
-    console.log('[Feedback Upload] Public URL generated:', publicUrl);
 
     return NextResponse.json({
       success: true,

@@ -230,7 +230,6 @@ export async function fetchActivitiesFromDatastore(
     const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:"${encodeURIComponent(orgRef)}"&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(DATASTORE_FIELDS)}`
 
     if (start === 0) {
-      console.log(`[IATI Sync] Fetching activities for org: ${orgRef}`)
     }
 
     const abortController = new AbortController()
@@ -255,7 +254,6 @@ export async function fetchActivitiesFromDatastore(
             throw new Error('IATI Datastore rate limit exceeded after multiple retries')
           }
           const waitTime = Math.min(2000 * retryCount, 15000)
-          console.log(`[IATI Sync] Rate limited, retry ${retryCount}/${MAX_RETRIES}, waiting ${waitTime / 1000}s...`)
           await new Promise(resolve => setTimeout(resolve, waitTime))
           continue
         }
@@ -267,7 +265,6 @@ export async function fetchActivitiesFromDatastore(
       const docs = data.response?.docs || []
       total = data.response?.numFound || 0
 
-      console.log(`[IATI Sync] Page ${start / PAGE_SIZE + 1}: ${docs.length} docs (total: ${total})`)
 
       for (const doc of docs) {
         activities.push(mapDatastoreDocToParsedActivity(doc))
@@ -277,7 +274,6 @@ export async function fetchActivitiesFromDatastore(
 
       // 13s delay between pages to respect rate limits (5 calls/min)
       if (start < total) {
-        console.log(`[IATI Sync] Fetched ${Math.min(start, total)}/${total}, waiting 13s for rate limit...`)
         await new Promise(resolve => setTimeout(resolve, 13000))
       }
     } catch (error) {
@@ -406,7 +402,6 @@ export async function syncSingleActivity(
       return { action: 'unchanged', fieldsChanged: [] }
     }
 
-    console.log(`[IATI Sync] Activity ${localActivity.iati_identifier}: changes in [${changedFields.join(', ')}]`)
 
     // Build the basic activity update
     const updateData = buildActivityUpdateData(iatiActivity)

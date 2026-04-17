@@ -68,7 +68,6 @@ export async function notifyManagersOfNewQuestion(
   const managerIds = await getManagerUserIds();
 
   if (managerIds.length === 0) {
-    console.log('[FAQ Notifications] No managers to notify');
     return;
   }
 
@@ -90,7 +89,6 @@ export async function notifyManagersOfNewQuestion(
   );
 
   const successCount = results.filter(Boolean).length;
-  console.log(`[FAQ Notifications] Notified ${successCount}/${managerIds.length} managers`);
 }
 
 /**
@@ -123,7 +121,6 @@ export async function notifyUserOfAnswer(
   });
 
   if (success) {
-    console.log('[FAQ Notifications] User notified successfully');
   }
 }
 
@@ -149,7 +146,6 @@ export async function getManagerUserIds(): Promise<string[]> {
   }
 
   const managerIds = (data || []).map((u) => u.id);
-  console.log(`[FAQ Notifications] Found ${managerIds.length} managers/admins:`, data?.map(u => ({ id: u.id, role: u.role })));
   
   return managerIds;
 }

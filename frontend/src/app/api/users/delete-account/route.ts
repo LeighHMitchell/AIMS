@@ -10,7 +10,6 @@ function isValidUUID(uuid: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/users/delete-account - Starting request');
 
   const { supabase, user: authUser, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -93,7 +92,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Starting account deletion for user:', userData.email);
 
     // Use authUser.id consistently for all operations
     const targetUserId = authUser.id;
@@ -110,7 +108,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error anonymizing organization comments:', anonymizeCommentsError);
       // Continue with deletion - this is not critical
     } else {
-      console.log('[AIMS] Anonymized organization comments');
     }
 
     // Step 2: Clear focal point assignments (set linked_user_id to null)
@@ -125,7 +122,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error clearing focal point assignments:', clearFocalPointsError);
       // Continue with deletion - this is not critical
     } else {
-      console.log('[AIMS] Cleared focal point assignments');
     }
 
     // Step 3: Clean up activity_logs to avoid FK constraint violation
@@ -138,7 +134,6 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error cleaning up activity_logs:', activityLogsError);
       // Continue with deletion - this is not critical
     } else {
-      console.log('[AIMS] Cleaned up activity_logs');
     }
 
     // Step 4: Delete from public.users table
@@ -155,7 +150,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Deleted user from public.users');
 
     // Step 5: Delete from auth.users
     const { error: authDeleteError } = await supabase.auth.admin.deleteUser(targetUserId);
@@ -164,10 +158,8 @@ export async function POST(request: NextRequest) {
       console.error('[AIMS] Error deleting auth user:', authDeleteError);
       // Profile already deleted, log the error but return success
     } else {
-      console.log('[AIMS] Deleted user from auth.users');
     }
 
-    console.log('[AIMS] Successfully deleted account for:', userData.email);
 
     return NextResponse.json({
       success: true,

@@ -36,7 +36,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 async function syncAuthUsers() {
-  console.log('🔄 Starting auth user synchronization...\n');
 
   try {
     // Get all auth users
@@ -48,7 +47,6 @@ async function syncAuthUsers() {
     }
 
     const authUsers = authData?.users || [];
-    console.log(`📊 Found ${authUsers.length} auth users\n`);
 
     // Get all existing users from the users table
     const { data: existingUsers, error: usersError } = await supabase
@@ -66,15 +64,12 @@ async function syncAuthUsers() {
     const missingUsers = authUsers.filter(authUser => !existingUserIds.has(authUser.id));
     
     if (missingUsers.length === 0) {
-      console.log('✅ All auth users already have records in the users table');
       return;
     }
 
-    console.log(`⚠️  Found ${missingUsers.length} auth users without records in users table\n`);
 
     // Create user records for missing auth users
     for (const authUser of missingUsers) {
-      console.log(`Creating user record for: ${authUser.email || authUser.id}`);
       
       const userData = {
         id: authUser.id,
@@ -94,7 +89,6 @@ async function syncAuthUsers() {
         
         // If organization_id is required and causing issues, try without it
         if (insertError.message.includes('organization_id')) {
-          console.log('   🔄 Retrying without organization_id...');
           
           const { error: retryError } = await supabase
             .from('users')
@@ -106,24 +100,18 @@ async function syncAuthUsers() {
           if (retryError) {
             console.error(`   ❌ Retry failed: ${retryError.message}`);
           } else {
-            console.log('   ✅ User created successfully (without organization)');
           }
         }
       } else {
-        console.log('   ✅ User created successfully');
       }
     }
 
-    console.log('\n✅ User synchronization complete');
 
     // Show summary
     const { count } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true });
       
-    console.log(`\n📊 Summary:`);
-    console.log(`   Total auth users: ${authUsers.length}`);
-    console.log(`   Total users in table: ${count || 0}`);
     
   } catch (error) {
     console.error('❌ Unexpected error:', error);

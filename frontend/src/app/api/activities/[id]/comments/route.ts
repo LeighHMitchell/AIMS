@@ -62,7 +62,6 @@ async function createCommentNotifications(
     }
 
     if (recipientUserIds.size === 0) {
-      console.log('[AIMS Comments API] No recipients for notification (author is the only stakeholder)');
       return;
     }
 
@@ -99,13 +98,10 @@ async function createCommentNotifications(
 
     if (notificationError) {
       // Log but don't throw - table might not exist in all environments
-      console.log('[AIMS Comments API] Notification insert skipped or failed:', notificationError.message);
     } else {
-      console.log(`[AIMS Comments API] Created ${notifications.length} notifications for comment`);
     }
   } catch (error) {
     // Don't fail the comment creation if notifications fail - silently log
-    console.log('[AIMS Comments API] Notification creation skipped:', error instanceof Error ? error.message : 'unknown error');
   }
 }
 
@@ -156,7 +152,6 @@ export async function GET(
 
   try {
     const { id } = await params;
-    console.log('[AIMS Comments API] GET request for activity:', id);
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -170,7 +165,6 @@ export async function GET(
     const status = url.searchParams.get('status');
     const includeArchived = url.searchParams.get('includeArchived') === 'true';
 
-    console.log('[AIMS Comments API] Search params:', { searchTerm, contextSection, type, status, includeArchived });
     
     // First check if activity exists
     const { data: activity, error: activityError } = await supabase
@@ -184,7 +178,6 @@ export async function GET(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    console.log('[AIMS Comments API] Activity found, fetching comments...');
     
     // Check if comments table exists by trying to query it
     try {
@@ -217,7 +210,6 @@ export async function GET(
         
         // If table doesn't exist, return empty array with helpful message
         if (commentsError.code === '42P01') { // Table doesn't exist
-          console.log('[AIMS Comments API] Comments table not found - database setup required');
           return NextResponse.json([], { 
             headers: { 
               'X-Comments-Status': 'Database setup required. Run activate-advanced-comments.sql in Supabase.' 
@@ -228,7 +220,6 @@ export async function GET(
         throw commentsError;
       }
       
-      console.log(`[AIMS Comments API] Found ${comments?.length || 0} comments`);
       return NextResponse.json(comments || []);
       
     } catch (tableError) {
@@ -264,9 +255,6 @@ export async function POST(
     const body = await request.json();
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
-    console.log('[AIMS Comments API] POST request for activity:', id);
-    console.log('[AIMS Comments API] User:', user);
-    console.log('[AIMS Comments API] Content:', content);
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -284,13 +272,11 @@ export async function POST(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    console.log('[AIMS Comments API] Activity found, preparing to insert comment...');
     
     // Map mock user ID to real database user ID if needed
     let userId = user.id;
     if (!isValidUUID(userId)) {
       userId = USER_ID_MAP[userId] || userId;
-      console.log(`[AIMS Comments API] Mapped mock user ID ${user.id} to database ID ${userId}`);
     }
     
     // Validate that we have a valid UUID now
@@ -298,12 +284,10 @@ export async function POST(
       console.error('[AIMS Comments API] Invalid user ID after mapping:', userId);
       // Use the first available user as fallback for testing
       userId = "85a65398-5d71-4633-a50b-2f167a0b6f7a"; // John Doe
-      console.log('[AIMS Comments API] Using fallback user ID:', userId);
     }
     
     // Parse mentions from the content
     const mentions = parseMentions(content);
-    console.log('[AIMS Comments API] Parsed mentions:', mentions);
 
     // Check if this is a reply to an existing comment
     if (parentCommentId) {
@@ -321,7 +305,6 @@ export async function POST(
           is_read: JSON.stringify({}),
         };
         
-        console.log('[AIMS Comments API] Inserting reply with data:', replyData);
         
         const { data: newReply, error: replyError } = await supabase
           .from('activity_comment_replies')
@@ -345,7 +328,6 @@ export async function POST(
           );
         }
 
-        console.log(`[AIMS Comments API] Reply added successfully:`, newReply);
 
         // Create notifications for activity stakeholders (async, don't await)
         createCommentNotifications(
@@ -383,7 +365,6 @@ export async function POST(
           is_archived: false, // Explicitly set to false so it appears in default queries
         };
         
-        console.log('[AIMS Comments API] Inserting comment with data:', commentData);
         
         const { data: newComment, error: commentError } = await supabase
           .from('activity_comments')
@@ -413,7 +394,6 @@ export async function POST(
           );
         }
 
-        console.log(`[AIMS Comments API] Comment added successfully:`, newComment);
 
         // Create notifications for activity stakeholders (async, don't await)
         createCommentNotifications(
@@ -457,7 +437,6 @@ export async function PATCH(
     const body = await request.json();
     const { user, commentId, action, resolutionNote } = body;
     
-    console.log(`[AIMS Comments API] Comment ${commentId} action: ${action} by ${user.name}`);
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -540,7 +519,6 @@ export async function PATCH(
       );
     }
     
-    console.log(`[AIMS Comments API] Comment updated successfully:`, updatedComment);
     
     return NextResponse.json({ success: true, comment: updatedComment });
   } catch (error) {
@@ -565,7 +543,6 @@ export async function DELETE(
     const body = await request.json();
     const { commentId, user } = body;
     
-    console.log('[AIMS Comments API] DELETE request for comment:', commentId, 'by user:', user);
     
     if (!commentId) {
       return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
@@ -623,7 +600,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 });
     }
     
-    console.log('[AIMS Comments API] Comment deleted successfully:', commentId);
     
     return NextResponse.json(
       { message: 'Comment deleted successfully' },

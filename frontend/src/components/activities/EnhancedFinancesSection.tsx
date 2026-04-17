@@ -131,7 +131,6 @@ export function EnhancedFinancesSection({
   onDefaultsChangeRef.current = onDefaultsChange;
 
   const handleFieldUpdate = useCallback((field: string, value: string | null) => {
-    console.log(`[EnhancedFinancesSection] Field updated: ${field} = ${value}`);
 
     // Update stats
     setUpdateStats(prev => ({
@@ -208,7 +207,6 @@ export function EnhancedFinancesSection({
   }, [general.defaultAidType, general.defaultFinanceType, modalityOverride, general.defaultModality]);
 
   const handleModalityOverrideChange = async (checked: boolean) => {
-    console.log(`[EnhancedFinancesSection] Modality override changed: ${checked}`);
     setModalityOverride(checked);
     
     // Save to Supabase (gracefully handle missing columns)
@@ -227,7 +225,6 @@ export function EnhancedFinancesSection({
         general.defaultAidType,
         general.defaultFinanceType
       );
-      console.log('[EnhancedFinancesSection] Recalculating modality after disabling override:', calculatedModality);
       try {
         await updateSupabaseField('defaultModality', calculatedModality);
       } catch (error) {

@@ -287,9 +287,6 @@ export function ActivityOverviewGroup({
                 <ImprovedSectorAllocationForm
                   allocations={sectors}
                   onChange={(newSectors) => {
-                    console.log('🎯 [AIMS] === SECTORS CHANGED IN FORM ===')
-                    console.log('📊 [AIMS] New sectors:', JSON.stringify(newSectors, null, 2))
-                    console.log('📈 [AIMS] Sector count:', newSectors.length)
                     setSectors(newSectors)
                   }}
                   onValidationChange={setSectorValidation}

@@ -75,42 +75,35 @@ export function DefaultFieldsAutosave({
   // Handle field changes with autosave
   const handleAidTypeChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Aid type changed to:', stringValue);
     onDefaultsChange?.('defaultAidType', stringValue);
     aidTypeAutosave.triggerFieldSave(stringValue);
   };
 
   const handleFinanceTypeChange = (value: string) => {
-    console.log('[DefaultFields] Finance type changed to:', value);
     onDefaultsChange?.('defaultFinanceType', value);
     financeTypeAutosave.triggerFieldSave(value);
   };
 
   const handleCurrencyChange = (value: string | null) => {
     const stringValue = value || 'USD';
-    console.log('[DefaultFields] Currency changed to:', stringValue);
     onDefaultsChange?.('defaultCurrency', stringValue);
     currencyAutosave.triggerFieldSave(stringValue);
   };
 
   const handleTiedStatusChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Tied status changed to:', stringValue);
     onDefaultsChange?.('defaultTiedStatus', stringValue);
     tiedStatusAutosave.triggerFieldSave(stringValue);
   };
 
   const handleFlowTypeChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Flow type changed to:', stringValue);
     onDefaultsChange?.('defaultFlowType', stringValue);
     flowTypeAutosave.triggerFieldSave(stringValue);
   };
 
   const handleDisbursementChannelChange = (value: string | null) => {
     const stringValue = value || '';
-    console.log('[DefaultFields] Disbursement channel changed to:', stringValue);
-    console.log('[DefaultFields] Disbursement channel autosave state:', disbursementChannelAutosave.state);
     onDefaultsChange?.('defaultDisbursementChannel', stringValue);
     disbursementChannelAutosave.triggerFieldSave(stringValue);
   };

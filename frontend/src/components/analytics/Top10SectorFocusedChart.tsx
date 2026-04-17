@@ -69,14 +69,12 @@ export function Top10SectorFocusedChart({
       }
 
       const result = await response.json()
-      console.log('[Top10SectorFocusedChart] API response:', result)
 
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
-      console.log('[Top10SectorFocusedChart] Processed partners:', partners.length)
       setData(partners)
       onDataChange?.(partners)
       setSectorName(result.sectorName || 'All Sectors')

@@ -160,7 +160,6 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       // Upload file first if one is selected
       if (selectedFile) {
         setIsUploading(true);
-        console.log('[FeedbackModal] Uploading attachment...');
         
         const uploadFormData = new FormData();
         uploadFormData.append('file', selectedFile);
@@ -173,7 +172,6 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
         if (uploadResponse.ok) {
           attachmentData = await uploadResponse.json();
-          console.log('[FeedbackModal] File uploaded successfully:', attachmentData);
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown upload error' }));
           console.error('[FeedbackModal] Upload failed:', errorData);

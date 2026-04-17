@@ -249,7 +249,6 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
     setErrors(newErrors)
     const isValid = Object.keys(newErrors).length === 0
     if (!isValid) {
-      console.log('[EventCreateModal] Validation errors:', newErrors)
       // Show first error as toast
       const firstError = Object.values(newErrors)[0]
       if (firstError) {
@@ -413,10 +412,8 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('[EventCreateModal] Form submitted', { formData, user })
     
     if (!validateForm()) {
-      console.log('[EventCreateModal] Validation failed', errors)
       return
     }
 
@@ -426,7 +423,6 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
     }
 
     setLoading(true)
-    console.log('[EventCreateModal] Creating event...')
 
     try {
       const response = await apiFetch('/api/calendar-events', {

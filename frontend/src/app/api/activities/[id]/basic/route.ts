@@ -28,7 +28,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS API] GET /api/activities/[id]/basic - Fetching basic activity:', id);
     
     // Add a small delay to ensure database consistency after writes
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -41,7 +40,6 @@ export async function GET(
     }
     
     // First, verify the activity exists with a simple query
-    console.log('[AIMS API] Step 1: Checking if activity exists...');
     const { data: existsCheck, error: existsError } = await supabase
       .from('activities')
       .select('id, title_narrative')
@@ -56,7 +54,6 @@ export async function GET(
       );
     }
 
-    console.log('[AIMS API] Activity found:', existsCheck.title_narrative);
     
     // Fetch activity with related data using * to avoid column mismatch issues
     let activity;
@@ -149,16 +146,10 @@ export async function GET(
       }
     }
 
-    console.log('[AIMS API] Basic activity data fetched successfully');
-    console.log('[AIMS API] Raw activity data - title:', activity.title_narrative, 'acronym:', activity.acronym);
-    console.log('[AIMS API] Acronym type:', typeof activity.acronym, 'Value:', activity.acronym);
-    console.log('[AIMS API] Full raw activity object:', JSON.stringify(activity, null, 2));
     
     // Check if acronym is null or undefined
     if (activity.acronym === null || activity.acronym === undefined) {
-      console.log('[AIMS API] WARNING: Acronym is null/undefined in database query result');
     } else {
-      console.log('[AIMS API] Acronym found in database:', activity.acronym);
     }
     
     // Fetch lightweight counts for tab completion indicators (all in parallel)
@@ -372,10 +363,6 @@ export async function GET(
       }
     };
     
-    console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);
-    console.log('[AIMS API] Final response acronym:', transformedActivity.acronym);
-    console.log('[AIMS API] Capital spend percentage:', transformedActivity.capital_spend_percentage);
-    console.log('[AIMS API] Full transformed activity object:', JSON.stringify(transformedActivity, null, 2));
     
     return NextResponse.json(transformedActivity, {
       headers: {

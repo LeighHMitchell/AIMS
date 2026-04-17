@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
 
     // Allow merge operations for all authenticated users
     // Note: This could be restricted further based on organization membership or other business rules
-    console.log('[IATI Merge] Allowing merge operation for user:', userId, 'on activity created by:', targetActivity.created_by);
 
     // Create a link between the external source and the existing activity
     // Using the external_iati_activity_links table
@@ -65,7 +64,6 @@ export async function POST(request: NextRequest) {
     if (linkError) {
       // Handle duplicate constraint - link already exists, that's okay
       if (linkError.code === '23505') {
-        console.log('[IATI Merge] Link already exists for', meta.iatiId);
       } else {
         console.error('[IATI Merge] Failed to create link:', linkError);
         return NextResponse.json(
@@ -75,7 +73,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[IATI Merge] Linking external source to activity:', targetActivityId);
 
     // Update the existing activity to track last editor
     const { data: updatedActivity, error: updateError } = await supabase
@@ -135,7 +132,6 @@ export async function POST(request: NextRequest) {
           : null
       });
 
-    console.log('[IATI Merge] Successfully linked external activity to:', targetActivityId);
 
     return NextResponse.json({
       ok: true,

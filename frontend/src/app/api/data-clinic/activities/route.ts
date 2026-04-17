@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
   const missingFields = searchParams.get('missing_fields') === 'true';
 
   try {
-    console.log('[Data Clinic API] Fetching activities...');
     
     // First, try to get basic activity data that should always exist
     let query = supabase
@@ -61,7 +60,6 @@ export async function GET(request: NextRequest) {
       throw basicError;
     }
 
-    console.log('[Data Clinic API] Found basic activities:', basicActivities?.length || 0);
 
     if (!basicActivities || basicActivities.length === 0) {
       return NextResponse.json({ 
@@ -104,10 +102,8 @@ export async function GET(request: NextRequest) {
       if (!fullError && fullActivities) {
         activities = fullActivities;
         hasIatiFields = true;
-        console.log('[Data Clinic API] Successfully loaded IATI fields');
       }
     } catch (e) {
-      console.log('[Data Clinic API] IATI fields not available yet - migration may be needed');
     }
 
     // For debugging - return all activities if missing_fields is false
@@ -241,8 +237,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('[Data Clinic API] Activities with gaps:', activitiesWithGaps.length);
-    console.log('[Data Clinic API] Data gaps summary:', dataGaps);
 
     return NextResponse.json({
       activities: activitiesWithGaps,

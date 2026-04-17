@@ -264,7 +264,6 @@ export default function ActivityBudgetsTab({
   
   // Log only on mount or when key props change (not on every render)
   useEffect(() => {
-    console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
   }, [activityId, startDate, endDate, defaultCurrency]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -427,7 +426,6 @@ export default function ActivityBudgetsTab({
         setLoading(true);
         onLoadingChange?.(true);
         setError(null);
-        console.log('[ActivityBudgetsTab] Fetching budgets for activity:', activityId);
 
         // Use API endpoint instead of direct Supabase query to avoid RLS issues
         const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
@@ -439,7 +437,6 @@ export default function ActivityBudgetsTab({
         }
 
         const budgetsData = await response.json();
-        console.log('[ActivityBudgetsTab] Fetched budgets:', budgetsData?.length || 0);
 
         // Filter out budgets with invalid dates
         const validBudgets = (budgetsData || []).filter((budget: ActivityBudget) => {
@@ -818,9 +815,7 @@ export default function ActivityBudgetsTab({
     
         // Show success feedback
         if (!nextPeriod) {
-          console.log(`Budget duplicated with same period (overlapping) ${finalPeriod.period_start} to ${finalPeriod.period_end}`);
         } else {
-          console.log(`Budget duplicated with period ${finalPeriod.period_start} to ${finalPeriod.period_end}`);
         }
       } catch (error) {
         console.error('Error duplicating budget:', error);
@@ -896,7 +891,6 @@ export default function ActivityBudgetsTab({
         toast.success('Budget copied successfully');
     
     // Show success feedback
-    console.log(`Budget duplicated with period ${copyPeriodStart} to ${copyPeriodEnd}`);
 
     // Close dialog
     setShowCopyDialog(false);
@@ -983,10 +977,8 @@ export default function ActivityBudgetsTab({
 
   // Duplicate Forward - creates next period based on current period length
   const duplicateForward = useCallback((index: number) => {
-    console.log('[DuplicateForward] Starting duplicate forward for index:', index);
 
     const budget = budgets[index];
-    console.log('[DuplicateForward] Source budget:', budget);
 
     const currentStart = safeParseDateOrNull(budget.period_start);
     const currentEnd = safeParseDateOrNull(budget.period_end);
@@ -1000,14 +992,12 @@ export default function ActivityBudgetsTab({
     });
 
     if (!currentStart || !currentEnd || !isValid(currentStart) || !isValid(currentEnd)) {
-      console.log('[DuplicateForward] ERROR: Invalid dates in source budget');
       toast.error('Cannot duplicate - source budget has invalid dates');
       return;
     }
 
     // Calculate period length in months from the current budget
     const periodLengthMonths = differenceInMonths(currentEnd, currentStart);
-    console.log('[DuplicateForward] Detected period length:', periodLengthMonths, 'months');
 
     // Calculate next period start (day after current period end)
     const dayAfterEnd = new Date(currentEnd);
@@ -1015,7 +1005,6 @@ export default function ActivityBudgetsTab({
     const nextPeriodStart = safeParseDateOrNull(format(dayAfterEnd, 'yyyy-MM-dd'));
 
     if (!nextPeriodStart) {
-      console.log('[DuplicateForward] ERROR: Failed to calculate next period start');
       toast.error('Cannot duplicate - failed to calculate next period');
       return;
     }
@@ -1032,20 +1021,17 @@ export default function ActivityBudgetsTab({
     // Ensure period doesn't exceed project end date
     const projectEnd = safeParseDateOrNull(endDate);
     if (!projectEnd) {
-      console.log('[DuplicateForward] ERROR: Invalid project end date');
       toast.error('Cannot duplicate - invalid project end date');
       return;
     }
     let adjustedEnd = nextPeriodEnd;
     
     if (isAfter(adjustedEnd, projectEnd)) {
-      console.log('[DuplicateForward] Period end exceeds project end, adjusting...');
       adjustedEnd = projectEnd;
     }
     
     // Check if period is still valid
     if (!isBefore(nextPeriodStart, projectEnd)) {
-      console.log('[DuplicateForward] ERROR: Next period start is after project end, cannot create');
       showValidationError('Cannot create budget period beyond project end date');
       return;
     }
@@ -1084,7 +1070,6 @@ export default function ActivityBudgetsTab({
     });
     
     if (hasOverlap) {
-      console.log('[DuplicateForward] Note: Period overlaps with existing budget - this is allowed and a warning will be shown');
     }
     
     // Create new budget with next period - explicitly set fields to avoid copying unwanted metadata
@@ -1100,7 +1085,6 @@ export default function ActivityBudgetsTab({
       budget_lines: budget.budget_lines || []
     };
     
-    console.log('[DuplicateForward] Creating new budget:', newBudget);
     
     // Insert after current row
     // Save the new budget via API
@@ -1124,7 +1108,6 @@ export default function ActivityBudgetsTab({
           new Date(a.period_start).getTime() - new Date(b.period_start).getTime()
         ));
         toast.success('Budget duplicated successfully');
-    console.log('[DuplicateForward] SUCCESS: Budget duplicated forward');
       } catch (error) {
         console.error('[DuplicateForward] Full Error:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to duplicate budget');
@@ -1363,7 +1346,6 @@ export default function ActivityBudgetsTab({
       if (result.success && result.exchange_rate) {
         setModalExchangeRate(result.exchange_rate);
         setModalRateError(null);
-        console.log(`[ActivityBudgetsTab] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
       } else {
         setModalRateError(result.error || 'Failed to fetch exchange rate');
         setModalExchangeRate(null);
@@ -1501,15 +1483,12 @@ export default function ActivityBudgetsTab({
   // Add helper for bulk insert
   const bulkInsertBudgets = async (budgets: ActivityBudget[]) => {
     if (!budgets.length) {
-      console.log('No budgets to insert');
       return;
     }
     
-    console.log('[BulkInsert] Starting bulk insert of', budgets.length, 'budgets:', budgets);
     
     try {
       // API will handle USD conversion, just prepare the budget data
-      console.log('[BulkInsert] Preparing', budgets.length, 'budgets for insert:', budgets);
       
       const budgetData = budgets.map(b => ({
         activity_id: b.activity_id,
@@ -1523,7 +1502,6 @@ export default function ActivityBudgetsTab({
         // usd_value will be calculated by the API
       }));
       
-      console.log('[BulkInsert] Inserting', budgetData.length, 'budgets:', budgetData);
       
       const { data, error} = await supabase
         .from('activity_budgets')
@@ -1535,19 +1513,15 @@ export default function ActivityBudgetsTab({
         throw error;
       }
       
-      console.log('[BulkInsert] Supabase insert successful. Returned data:', data);
-      console.log('[BulkInsert] Successfully inserted', data?.length || 0, 'budgets');
       
       // Update local state with the inserted budgets (which now have IDs)
       if (data) {
-        console.log('[BulkInsert] Updating local state with inserted budgets');
         setBudgets(data);
       } else {
         console.warn('[BulkInsert] No data returned from insert');
       }
       
       // Trigger refresh of financial summary cards
-      console.log('[BulkInsert] Triggering financial summary refresh');
       window.dispatchEvent(new CustomEvent('refreshFinancialSummaryCards'));
       
     } catch (e) {

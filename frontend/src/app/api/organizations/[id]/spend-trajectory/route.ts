@@ -220,7 +220,6 @@ export async function GET(
       console.error('[OrgSpendTrajectory] Error fetching commitments:', commitError)
     }
 
-    console.log(`[OrgSpendTrajectory] Org: ${organizationId}, Total budget: ${totalBudget}, Activities included: ${activitiesIncluded}, Monthly data points: ${monthlyDisbursements.length}`)
 
     return NextResponse.json({
       totalBudget,

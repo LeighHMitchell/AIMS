@@ -67,20 +67,7 @@ export async function POST(request: Request) {
     const transactionWarnings: string[] = [];
     
     // Enhanced debugging
-    console.log('[AIMS API] ============ POST /api/activities ============');
-    console.log('[AIMS API] Timestamp:', new Date().toISOString());
-    console.log('[AIMS API] Request body keys:', Object.keys(body));
-    console.log('[AIMS API] Activity title:', body.title);
-    console.log('[AIMS API] Activity acronym:', body.acronym);
-    console.log('[AIMS API] Activity ID:', body.id || 'NEW');
-    console.log('[AIMS API] Publication Status:', body.publicationStatus);
-    console.log('[AIMS API] Transactions count:', body.transactions?.length || 0);
     
-    console.log('[AIMS API] Received body.contacts:', body.contacts);
-    console.log('[AIMS API] Contacts count:', body.contacts?.length || 0);
-    console.log('[AIMS API] Received Partner ID:', body.partnerId);
-    console.log('[AIMS API] Partner ID type:', typeof body.partnerId);
-    console.log('[AIMS API] Is partial save:', !!body._isPartialSave);
     
     // Validate required fields (allow empty title for IATI imports - data will come from import)
     if (!body.title?.trim() && body.created_via !== 'import') {
@@ -92,9 +79,6 @@ export async function POST(request: Request) {
 
     // If we have an ID, this is an update
     if (body.id) {
-      console.log('[AIMS API] ============ ACTIVITY UPDATE ============');
-      console.log('[AIMS API] Updating activity ID:', body.id);
-      console.log('[AIMS API] New publication status:', body.publicationStatus);
       
       // Fetch existing activity
       const { data: existingActivity, error: fetchError } = await supabase
@@ -110,10 +94,7 @@ export async function POST(request: Request) {
         );
       }
       
-      console.log('[AIMS API] Existing publication status:', existingActivity.publication_status);
-      console.log('[AIMS API] New publication status:', body.publicationStatus);
       const isUnpublishing = existingActivity.publication_status === 'published' && body.publicationStatus === 'draft';
-      console.log('[AIMS API] Is unpublishing operation:', isUnpublishing);
       
       // Track changes for activity logging
       const changes: any[] = [];
@@ -171,7 +152,6 @@ export async function POST(request: Request) {
       }
 
       // Update activity
-      console.log('[AIMS API] Attempting to update activity with data:', JSON.stringify(updateData, null, 2));
       const { data: updatedActivity, error: updateError } = await supabase
         .from('activities')
         .update(updateData)
@@ -211,7 +191,6 @@ export async function POST(request: Request) {
 
       // Skip complex operations for partial saves (autosave with large payload)
       if (body._isPartialSave) {
-        console.log('[AIMS API] Partial save detected - skipping complex operations');
         
         // Return minimal response for partial saves
         const responseData = {
@@ -251,7 +230,6 @@ export async function POST(request: Request) {
 
       // Handle sectors
       if (body.sectors) {
-        console.log('[AIMS API] Handling sectors update for activity:', body.id);
         
         // Validate sector allocation if publishing
         if (body.publicationStatus === 'published') {
@@ -265,8 +243,6 @@ export async function POST(request: Request) {
         }
         
         try {
-          console.log('[AIMS API] About to save sectors - body.sectors:', JSON.stringify(body.sectors, null, 2));
-          console.log('[AIMS API] Number of sectors to save:', body.sectors?.length || 0);
           await upsertActivitySectors(body.id, body.sectors);
         } catch (error: any) {
           console.error('[AIMS API] Error handling sectors:', error);
@@ -276,13 +252,11 @@ export async function POST(request: Request) {
           );
         }
       } else {
-        console.log('[AIMS API] No sectors in request body - preserving existing sectors');
       }
 
       // Handle transactions - ONLY if explicitly provided
       // This prevents accidental deletion when transactions aren't loaded
       if (body.transactions !== undefined && Array.isArray(body.transactions)) {
-        console.log(`[AIMS] Processing ${body.transactions.length} transactions for activity ${body.id}`);
         
         // Get existing transactions
         const { data: existingTransactions } = await supabase
@@ -302,7 +276,6 @@ export async function POST(request: Request) {
             .from('transactions')
             .delete()
             .in('uuid', toDelete);
-          console.log(`[AIMS] Deleted ${toDelete.length} transactions`);
         }
 
         // Upsert transactions (update existing, insert new)
@@ -408,7 +381,6 @@ export async function POST(request: Request) {
             );
             
             if (usdResult.success) {
-              console.log(`[AIMS] USD conversion: ${transaction.value} ${transaction.currency} = $${usdResult.value_usd} USD`);
             } else {
               console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
             }
@@ -451,15 +423,12 @@ export async function POST(request: Request) {
                 );
               }
             } else {
-              console.log(`[AIMS] Successfully upserted ${validTransactions.length} transactions`);
               if (upsertedData) {
-                console.log('[AIMS] Upserted transaction IDs:', upsertedData.map((t: any) => t.uuid));
               }
             }
           }
         }
       } else {
-        console.log('[AIMS] Transactions not included in request - preserving existing transactions');
       }
 
       // Handle SDG mappings
@@ -488,7 +457,6 @@ export async function POST(request: Request) {
 
       // Handle tags
       if (body.tags !== undefined) {
-        console.log('[AIMS API] Updating tags for activity:', body.id);
         
         // Delete existing activity tags
         await supabase
@@ -505,7 +473,6 @@ export async function POST(request: Request) {
             
             // If tag has a local ID, create it in the database first
             if (tag.id && tag.id.startsWith('local-')) {
-              console.log('[AIMS API] Creating local tag:', tag.name);
               try {
                 // Check if tag already exists by name
                 const { data: existingTag } = await supabase
@@ -551,7 +518,6 @@ export async function POST(request: Request) {
             if (tagsError) {
               console.error('[AIMS API] Error updating tags:', tagsError);
             } else {
-              console.log('[AIMS API] Successfully updated', processedTags.length, 'tags');
             }
           }
         }
@@ -559,7 +525,6 @@ export async function POST(request: Request) {
 
       // Handle working groups
       if (body.workingGroups !== undefined) {
-        console.log('[AIMS API] Updating working groups for activity:', body.id);
         
         // Delete existing activity working groups
         await supabase
@@ -592,7 +557,6 @@ export async function POST(request: Request) {
             if (wgError) {
               console.error('[AIMS API] Error updating working groups:', wgError);
             } else {
-              console.log('[AIMS API] Successfully updated', workingGroupsData.length, 'working groups');
             }
           }
         }
@@ -600,7 +564,6 @@ export async function POST(request: Request) {
 
       // Handle policy markers
       if (body.policyMarkers !== undefined) {
-        console.log('[AIMS API] Updating policy markers for activity:', body.id);
         // Delete existing activity policy markers
         await supabase
           .from('activity_policy_markers')
@@ -623,14 +586,12 @@ export async function POST(request: Request) {
           if (policyMarkersError) {
             console.error('[AIMS API] Error updating policy markers:', policyMarkersError);
           } else {
-            console.log('[AIMS API] Successfully updated', policyMarkersData.length, 'policy markers');
           }
         }
       }
 
       // Handle locations
       if (body.locations !== undefined) {
-        console.log('[AIMS API] Updating locations for activity:', body.id);
         // Delete existing locations
         await supabase
           .from('activity_locations')
@@ -676,14 +637,12 @@ export async function POST(request: Request) {
           if (locationsError) {
             console.error('[AIMS API] Error updating locations:', locationsError);
           } else {
-            console.log('[AIMS API] Successfully updated', locationsToInsert.length, 'locations');
           }
         }
       }
 
       // Handle contacts
       if (body.contacts !== undefined) {
-        console.log('[AIMS API] Updating contacts for activity:', body.id);
         // Delete existing contacts
         await supabase
           .from('activity_contacts')
@@ -737,8 +696,6 @@ export async function POST(request: Request) {
             return contactData;
           });
 
-          console.log('[AIMS API] Attempting to insert', contactsData.length, 'contacts');
-          console.log('[AIMS API] Contact data sample:', JSON.stringify(contactsData[0], null, 2));
           
           const { data: insertedContacts, error: contactsError } = await supabase
             .from('activity_contacts')
@@ -757,8 +714,6 @@ export async function POST(request: Request) {
               console.error('[AIMS API] activity_contacts table does not exist. Please create it first.');
             }
           } else {
-            console.log('[AIMS API] ✅ Successfully updated', contactsData.length, 'contacts');
-            console.log('[AIMS API] Inserted contact IDs:', insertedContacts?.map(c => c.id));
           }
         }
       }
@@ -803,8 +758,6 @@ export async function POST(request: Request) {
         }
       }
       
-      console.log('[AIMS] Updated activity:', updatedActivity);
-      console.log('[AIMS] Updated Partner ID:', updatedActivity.partner_id);
       
       // Fetch updated SDG mappings
       const { data: sdgMappings } = await supabase
@@ -828,8 +781,6 @@ export async function POST(request: Request) {
       if (sectorsError) {
         console.error('[AIMS API] Error fetching updated sectors:', sectorsError);
       } else {
-        console.log('[AIMS API] Fetched', sectors?.length || 0, 'sectors after update');
-        console.log('[AIMS API] Sectors data:', JSON.stringify(sectors, null, 2));
       }
       
       // Fetch updated contacts
@@ -1010,7 +961,6 @@ export async function POST(request: Request) {
       };
 
       if (body.user?.id) {
-        console.log('[AIMS API] Fetching user organization data for user:', body.user.id);
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select(`
@@ -1029,13 +979,11 @@ export async function POST(request: Request) {
           .single();
 
         if (userData) {
-          console.log('[AIMS API] Found user data:', userData);
           const userName = userData.first_name && userData.last_name 
             ? `${userData.first_name} ${userData.last_name}` 
             : userData.email;
           
           if (userData.organizations) {
-            console.log('[AIMS API] Found user organization data:', userData.organizations);
             console.log('[AIMS API DEBUG] User organization details:', {
               user_id: userData.id,
               user_email: userData.email,
@@ -1051,7 +999,6 @@ export async function POST(request: Request) {
               submitted_by: userData.id || userOrgData.submitted_by,
             };
           } else if (userData.organization_id) {
-            console.log('[AIMS API] No organization join data found, fetching organization directly');
             // Fetch organization details directly
             const { data: orgData, error: orgError } = await supabase
               .from('organizations')
@@ -1060,7 +1007,6 @@ export async function POST(request: Request) {
               .single();
             
             if (orgData) {
-              console.log('[AIMS API] Found organization data:', orgData);
               console.log('[AIMS API DEBUG] Direct organization fetch:', {
                 user_id: userData.id,
                 user_organization_id: userData.organization_id,
@@ -1075,7 +1021,6 @@ export async function POST(request: Request) {
                 submitted_by: userData.id || userOrgData.submitted_by,
               };
             } else {
-              console.log('[AIMS API] Error fetching organization data:', orgError);
               userOrgData = {
                 created_by_org_name: userOrgData.created_by_org_name,
                 created_by_org_acronym: userOrgData.created_by_org_acronym,
@@ -1084,7 +1029,6 @@ export async function POST(request: Request) {
               };
             }
           } else {
-            console.log('[AIMS API] No organization ID found for user');
             userOrgData = {
               created_by_org_name: userOrgData.created_by_org_name,
               created_by_org_acronym: userOrgData.created_by_org_acronym,
@@ -1093,18 +1037,13 @@ export async function POST(request: Request) {
             };
           }
         } else if (userError) {
-          console.log('[AIMS API] Error fetching user organization data:', userError);
         } else {
-          console.log('[AIMS API] No user data found');
         }
       }
 
       // Generate UUID for new activity
       const activityUuid = uuidv4();
       
-      console.log('[AIMS API] Creating new activity with acronym:', body.acronym);
-      console.log('[AIMS API] Acronym type:', typeof body.acronym);
-      console.log('[AIMS API] Acronym length:', body.acronym?.length);
       
       // Normalize and validate activity scope (IATI codes '1'-'8')
       const normalizeScope = (val: any): string | null => {
@@ -1176,8 +1115,6 @@ export async function POST(request: Request) {
       reporting_org_id: insertData.reporting_org_id,
       user_id: body.user?.id
     });
-    console.log('[AIMS API] Attempting to create new activity with data:', JSON.stringify(insertData, null, 2));
-    console.log('[AIMS API] Acronym in insertData:', insertData.acronym);
     const { data: newActivity, error: insertError } = await supabase
       .from('activities')
       .insert([insertData])
@@ -1215,13 +1152,9 @@ export async function POST(request: Request) {
     }
 
     // Debug: Check what was actually saved
-    console.log('[AIMS API] === AFTER DATABASE INSERT ===');
-    console.log('[AIMS API] newActivity from database:', newActivity);
-    console.log('[AIMS API] newActivity.acronym from database:', newActivity?.acronym);
 
     // Handle sectors
     if (body.sectors && body.sectors.length > 0) {
-      console.log('[AIMS API] Processing sectors for new activity:', body.sectors.length);
       
       // Validate sector allocation if publishing
       if (body.publicationStatus === 'published') {
@@ -1235,8 +1168,6 @@ export async function POST(request: Request) {
       }
       
       try {
-        console.log('[AIMS API] About to save sectors - body.sectors:', JSON.stringify(body.sectors, null, 2));
-        console.log('[AIMS API] Number of sectors to save:', body.sectors?.length || 0);
         await upsertActivitySectors(newActivity.id, body.sectors);
       } catch (error: any) {
         console.error('[AIMS API] Error inserting sectors for new activity:', error);
@@ -1244,7 +1175,6 @@ export async function POST(request: Request) {
         // Sectors can be added/fixed later
       }
     } else {
-      console.log('[AIMS API] No sectors provided for new activity');
     }
 
     // Handle transactions - only insert if provided
@@ -1357,7 +1287,6 @@ export async function POST(request: Request) {
         );
         
         if (usdResult.success) {
-          console.log(`[AIMS] USD conversion: ${transaction.value} ${transaction.currency} = $${usdResult.value_usd} USD`);
         } else {
           console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
         }
@@ -1387,9 +1316,7 @@ export async function POST(request: Request) {
           // Don't fail the entire activity creation - just warn
           console.warn('[AIMS] Activity will be created without transactions due to validation errors');
         } else {
-          console.log(`[AIMS] Successfully inserted ${validTransactions.length} transactions for new activity`);
           if (insertedData) {
-            console.log('[AIMS] Inserted transaction IDs:', insertedData.map((t: any) => t.uuid));
           }
         }
       }
@@ -1423,7 +1350,6 @@ export async function POST(request: Request) {
         
         // If tag has a local ID, create it in the database first
         if (tag.id && tag.id.startsWith('local-')) {
-          console.log('[AIMS API] Creating local tag:', tag.name);
           try {
             // Check if tag already exists by name
             const { data: existingTag } = await supabase
@@ -1469,18 +1395,15 @@ export async function POST(request: Request) {
         if (tagsError) {
           console.error('[AIMS API] Error saving tags:', tagsError);
         } else {
-          console.log('[AIMS API] Successfully saved', processedTags.length, 'tags');
         }
       }
     }
 
     // Handle working groups
     if (body.workingGroups && body.workingGroups.length > 0) {
-      console.log('[AIMS API] Processing working groups:', body.workingGroups.length);
       
       // Fetch working group IDs from database
       const codes = body.workingGroups.map((wg: any) => wg.code);
-      console.log('[AIMS API] Looking up working groups with codes:', codes);
       
       const { data: dbWorkingGroups, error: wgFetchError } = await supabase
         .from('working_groups')
@@ -1490,14 +1413,12 @@ export async function POST(request: Request) {
       if (wgFetchError) {
         console.error('[AIMS API] Error fetching working groups:', wgFetchError);
       } else {
-        console.log('[AIMS API] Found', dbWorkingGroups?.length || 0, 'working groups in database');
         
         // Check if any working groups weren't found in the database and create them
         const foundCodes = dbWorkingGroups?.map((wg: any) => wg.code) || [];
         const missingCodes = codes.filter(code => !foundCodes.includes(code));
         
         if (missingCodes.length > 0) {
-          console.log('[AIMS API] Creating missing working groups:', missingCodes);
           
           // Create missing working groups from the provided data
           const workingGroupsToCreate = body.workingGroups
@@ -1517,7 +1438,6 @@ export async function POST(request: Request) {
           if (createError) {
             console.error('[AIMS API] Error creating working groups:', createError);
           } else {
-            console.log('[AIMS API] Successfully created', newWorkingGroups?.length || 0, 'working groups');
             
             // Merge newly created working groups with found ones
             if (newWorkingGroups) {
@@ -1540,7 +1460,6 @@ export async function POST(request: Request) {
           if (wgError) {
             console.error('[AIMS API] Error saving working groups:', wgError);
           } else {
-            console.log('[AIMS API] Successfully saved', workingGroupsData.length, 'working groups');
           }
         }
       }
@@ -1562,7 +1481,6 @@ export async function POST(request: Request) {
       if (policyMarkersError) {
         console.error('[AIMS API] Error saving policy markers:', policyMarkersError);
       } else {
-        console.log('[AIMS API] Successfully saved', policyMarkersData.length, 'policy markers');
       }
     }
 
@@ -1607,14 +1525,12 @@ export async function POST(request: Request) {
         if (locationsError) {
           console.error('[AIMS API] Error saving locations:', locationsError);
         } else {
-          console.log('[AIMS API] Successfully saved', locationsToInsert.length, 'locations');
         }
       }
     }
 
     // Handle contacts
     if (body.contacts && body.contacts.length > 0) {
-      console.log('[AIMS API] Processing contacts:', body.contacts.length);
       const contactsData = body.contacts.map((contact: any) => ({
         activity_id: newActivity.id,
         type: contact.type,
@@ -1642,7 +1558,6 @@ export async function POST(request: Request) {
           console.error('[AIMS API] activity_contacts table does not exist. Please create it first.');
         }
       } else {
-        console.log('[AIMS API] Successfully saved', contactsData.length, 'contacts');
       }
     }
     
@@ -1651,8 +1566,6 @@ export async function POST(request: Request) {
       await ActivityLogger.activityCreated(newActivity, body.user);
     }
     
-    console.log('[AIMS] Created new activity:', newActivity);
-    console.log('[AIMS] Created Other Identifier:', newActivity.other_identifier);
     
     // Fetch created SDG mappings
     const { data: sdgMappings } = await supabase
@@ -1833,15 +1746,8 @@ export async function POST(request: Request) {
       })()
     };
     
-    console.log('[AIMS API] ============ SUCCESS ============');
-    console.log('[AIMS API] Activity saved successfully with ID:', responseData.id);
-    console.log('[AIMS API] Title:', responseData.title);
-    console.log('[AIMS API] Status:', responseData.activityStatus);
-    console.log('[AIMS API] Publication:', responseData.publicationStatus);
     if (transactionWarnings.length > 0) {
-      console.log('[AIMS API] Warnings:', transactionWarnings);
     }
-    console.log('[AIMS API] ==================================');
     
     // Include warnings in response if any occurred
     const response = transactionWarnings.length > 0 
@@ -1865,7 +1771,6 @@ export async function GET(request: NextRequest) {
     if (authResponse) return authResponse;
 
     // Debug logging
-    console.log('[AIMS] GET /api/activities - Starting request');
     console.log('[AIMS] Environment check:', {
       url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
       anon: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
@@ -1945,19 +1850,16 @@ export async function GET(request: NextRequest) {
     
     // Apply organization filter if provided
     if (organizationIdFilter) {
-      console.log('[AIMS] Filtering activities by organization ID:', organizationIdFilter);
       query = query.eq('reporting_org_id', organizationIdFilter);
     }
     
     // Apply exact iati_identifier filter if provided
     if (iatiIdentifierFilter) {
-      console.log('[AIMS] Filtering activities by IATI identifier:', iatiIdentifierFilter);
       query = query.eq('iati_identifier', iatiIdentifierFilter);
     }
     
     // Apply search filter if provided
     if (searchQuery) {
-      console.log('[AIMS] Searching activities with query:', searchQuery);
       
       // Search across multiple fields using OR conditions, including published AND draft activities
       // Build the OR query without newlines
@@ -2226,7 +2128,6 @@ export async function GET(request: NextRequest) {
 
     // If no activities found, return empty array
     if (!activities || activities.length === 0) {
-      console.log('[AIMS] No activities found in database');
       return NextResponse.json([]);
     }
 
@@ -2469,7 +2370,6 @@ export async function GET(request: NextRequest) {
     return transformed;
     });
 
-    console.log(`[AIMS] Successfully fetched ${transformedActivities.length} activities from database`);
 
     const response = NextResponse.json(transformedActivities);
     
@@ -2527,7 +2427,6 @@ export async function DELETE(request: NextRequest) {
       }
       
       const deletionTimestamp = new Date().toISOString();
-      console.log(`[AIMS] [${deletionTimestamp}] Bulk deleting ${ids.length} activities:`, ids);
       
       // Fetch all activities before deletion for logging
       const { data: activities, error: fetchError } = await supabase
@@ -2565,7 +2464,6 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "Failed to delete activities" }, { status: 500 });
       }
       
-      console.log(`[AIMS] [${deletionTimestamp}] Deletion query executed successfully for ${activities.length} activities`);
       
       // Log each activity deletion
       if (user && activities) {
@@ -2577,7 +2475,6 @@ export async function DELETE(request: NextRequest) {
       // Clear cache after successful deletion
       try {
         supabaseOptimized.clearCache();
-        console.log(`[AIMS] [${deletionTimestamp}] Cleared activities cache after bulk deletion`);
       } catch (cacheError) {
         console.warn("[AIMS] Error clearing cache:", cacheError);
       }
@@ -2585,7 +2482,6 @@ export async function DELETE(request: NextRequest) {
       // Refresh materialized view after deletion
       try {
         await supabase.rpc('refresh_activity_transaction_summaries');
-        console.log(`[AIMS] [${deletionTimestamp}] Refreshed activity_transaction_summaries materialized view`);
       } catch (refreshError) {
         console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
       }
@@ -2606,14 +2502,12 @@ export async function DELETE(request: NextRequest) {
           if (verifyActivities && verifyActivities.length > 0) {
             console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: ${verifyActivities.length} activities still exist after deletion!`, verifyActivities);
           } else {
-            console.log(`[AIMS] [${deletionTimestamp}] Verification successful: All ${activities.length} activities confirmed deleted`);
           }
         } catch (verifyException) {
           console.error(`[AIMS] [${deletionTimestamp}] Exception during verification:`, verifyException);
         }
       }, 2000);
       
-      console.log(`[AIMS] [${deletionTimestamp}] Successfully bulk deleted ${activities.length} activities`);
       return NextResponse.json({ 
         message: `${activities.length} activities deleted successfully`,
         deletedCount: activities.length,
@@ -2629,7 +2523,6 @@ export async function DELETE(request: NextRequest) {
     }
     
     const deletionTimestamp = new Date().toISOString();
-    console.log(`[AIMS] [${deletionTimestamp}] Starting deletion for activity ID:`, id);
     
     // Fetch the activity before deletion
     const { data: activity, error: fetchError } = await supabase
@@ -2663,7 +2556,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Failed to delete activity" }, { status: 500 });
     }
     
-    console.log(`[AIMS] [${deletionTimestamp}] Deletion query executed successfully for activity ${id}`);
     
     // Log the activity deletion
     if (user) {
@@ -2673,7 +2565,6 @@ export async function DELETE(request: NextRequest) {
     // Clear cache after successful deletion
     try {
       supabaseOptimized.clearCache();
-      console.log(`[AIMS] [${deletionTimestamp}] Cleared activities cache after deletion`);
     } catch (cacheError) {
       console.warn("[AIMS] Error clearing cache:", cacheError);
     }
@@ -2681,7 +2572,6 @@ export async function DELETE(request: NextRequest) {
     // Refresh materialized view after deletion
     try {
       await supabase.rpc('refresh_activity_transaction_summaries');
-      console.log(`[AIMS] [${deletionTimestamp}] Refreshed activity_transaction_summaries materialized view`);
     } catch (refreshError) {
       console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
     }
@@ -2697,7 +2587,6 @@ export async function DELETE(request: NextRequest) {
         
         if (verifyError && verifyError.code === 'PGRST116') {
           // PGRST116 means no rows returned, which is expected
-          console.log(`[AIMS] [${deletionTimestamp}] Verification successful: Activity ${id} confirmed deleted`);
         } else if (verifyError) {
           console.error(`[AIMS] [${deletionTimestamp}] Error verifying deletion:`, verifyError);
         } else if (verifyActivity) {

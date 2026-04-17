@@ -427,14 +427,12 @@ export default function TransactionsManager({
     // This prevents empty props from clearing fetched data
     if (initialTransactions.length > 0 || !hasFetchedTransactions) {
       const converted = initialTransactions.map(convertLegacyTransaction);
-      console.log('[TransactionsManager] Updating local state from props, converted length:', converted.length);
       setTransactions(converted);
       // If we receive transactions from props, mark as fetched
       if (initialTransactions.length > 0) {
         setHasFetchedTransactions(true);
       }
     } else {
-      console.log('[TransactionsManager] Skipping props update - already have fetched transactions');
     }
   }, [initialTransactions]);
 
@@ -448,7 +446,6 @@ export default function TransactionsManager({
       if (activityId && activityId !== 'new' && !hasFetchedTransactions && initialTransactions.length === 0) {
         try {
           setIsLoading(true);
-          console.log('[TransactionsManager] No transactions provided, fetching for activity:', activityId);
           const response = await apiFetch(`/api/activities/${activityId}/transactions`);
           if (response.ok) {
             const responseData = await response.json();
@@ -456,7 +453,6 @@ export default function TransactionsManager({
             // Handle both response formats: { data: [...] } or direct array [...]
             const transactionsData = Array.isArray(responseData) ? responseData : (responseData.data || []);
             
-            console.log('[TransactionsManager] Successfully loaded', transactionsData.length, 'transactions from API');
             const convertedTransactions = transactionsData.map(convertLegacyTransaction);
             setTransactions(convertedTransactions);
             setHasFetchedTransactions(true);
@@ -494,11 +490,9 @@ export default function TransactionsManager({
     // 2. We're not loading
     // 3. The transaction count has actually changed since last notification
     if (onTransactionsChange && !isLoading && lastNotifiedCountRef.current !== transactions.length) {
-      console.log('[TransactionsManager] Notifying parent with transactions:', transactions.length);
       lastNotifiedCountRef.current = transactions.length;
       onTransactionsChange(transactions);
     } else {
-      console.log('[TransactionsManager] NOT notifying parent - isLoading:', isLoading, 'or count unchanged');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, isLoading]); // Intentionally exclude onTransactionsChange to prevent infinite loops
@@ -524,7 +518,6 @@ export default function TransactionsManager({
   // Auto-open transaction modal when initialTransactionId is provided
   useEffect(() => {
     if (initialTransactionId && transactions.length > 0) {
-      console.log('[TransactionsManager] Auto-opening modal for transaction:', initialTransactionId);
       
       // Find the transaction by ID (check both uuid and id fields)
       const transaction = transactions.find(
@@ -532,7 +525,6 @@ export default function TransactionsManager({
       );
       
       if (transaction) {
-        console.log('[TransactionsManager] Found transaction to edit:', transaction);
         setEditingTransaction(transaction);
         setShowAddDialog(true);
         
@@ -552,7 +544,6 @@ export default function TransactionsManager({
       // If transaction already has a uuid/id, it was already saved by TransactionModal
       // Just refresh the list and close the dialog - don't make another POST request
       if (formData.uuid || (formData.id && typeof formData.id === 'string' && formData.id.includes('-'))) {
-        console.log('[TransactionsManager] Transaction already saved by modal, skipping duplicate save:', formData.uuid || formData.id);
 
         // Refresh from server to get complete data
         if (onRefreshNeeded) {
@@ -636,7 +627,6 @@ export default function TransactionsManager({
   };
 
   const handleEdit = (transaction: Transaction) => {
-    console.log("Editing transaction:", transaction);
     setEditingTransaction(transaction);
     setShowAddDialog(true);
   };

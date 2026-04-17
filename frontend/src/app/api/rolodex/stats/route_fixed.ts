@@ -3,7 +3,6 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[AIMS Rolodex Stats] Fetching contact type statistics');
 
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -14,7 +13,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Direct approach - get counts from each table
-    console.log('[AIMS Rolodex Stats] Using direct table queries...');
     
     const { count: usersCount } = await supabase
       .from('users')
@@ -34,7 +32,6 @@ export async function GET(request: NextRequest) {
 
     const total = (usersCount || 0) + (contactsCount || 0);
 
-    console.log(`[AIMS Rolodex Stats] Successfully fetched stats:`, stats);
 
     return NextResponse.json({
       stats,

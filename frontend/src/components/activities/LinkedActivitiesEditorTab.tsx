@@ -105,15 +105,12 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   // Fetch current activity details
   const fetchCurrentActivity = useCallback(async () => {
     if (!activityId) {
-      console.log('No activityId provided');
       return;
     }
     
     try {
-      console.log('Fetching activity:', activityId);
       // OPTIMIZATION: Use cached basic activity data
       const data = await fetchBasicActivityWithCache(activityId);
-      console.log('Activity data:', data);
       
       setCurrentActivity({
         id: data.id,

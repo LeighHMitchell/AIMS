@@ -31,7 +31,6 @@ const IATI_ORGANIZATION_TYPES: OrganizationType[] = [
 ]
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/organization-types - Starting request');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -50,13 +49,11 @@ export async function GET(request: NextRequest) {
     
     if (error) {
       console.error('[AIMS] Error fetching organization types from database:', error);
-      console.log('[AIMS] Returning default organization types');
       
       // Return default organization types
       return NextResponse.json(IATI_ORGANIZATION_TYPES, { status: 200 });
     }
 
-    console.log('[AIMS] Successfully fetched organization types from database:', organizationTypes?.length || 0);
     
     // If we have data from database, use it; otherwise use defaults
     const responseData = organizationTypes && organizationTypes.length > 0 
@@ -75,7 +72,6 @@ export async function GET(request: NextRequest) {
 
 // Initialize/update organization types in the database
 export async function POST(request: NextRequest) {
-  console.log('[AIMS] POST /api/organization-types - Starting request to initialize data');
 
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -102,7 +98,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('[AIMS] Successfully initialized organization types:', data?.length || 0);
     
     return NextResponse.json({
       message: 'Organization types initialized successfully',

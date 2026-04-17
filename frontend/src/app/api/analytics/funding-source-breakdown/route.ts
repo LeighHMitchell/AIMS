@@ -50,11 +50,9 @@ export async function GET(request: NextRequest) {
     const cacheKey = `funding-source:${dateFrom}:${dateTo}:${sourceType}:${transactionTypes.join(',')}`
     const cached = getCached(cacheKey)
     if (cached) {
-      console.log('[Funding Source Breakdown] Returning cached data')
       return NextResponse.json(cached)
     }
 
-    console.log('[Funding Source Breakdown] Request params:', { dateFrom, dateTo, sourceType, transactionTypes })
 
     // Early return if no activities exist
     const { count: activityCount } = await supabase
@@ -128,7 +126,6 @@ export async function GET(request: NextRequest) {
         return { provider, receiver, value }
       })
 
-      console.log(`[Funding Source Breakdown] Planned: ${plannedDisbursements?.length || 0} records, ${flows.length} flows`)
 
       const result = {
         providers: Object.entries(byOrg)
@@ -232,7 +229,6 @@ export async function GET(request: NextRequest) {
         return { provider, receiver, value }
       })
 
-      console.log(`[Funding Source Breakdown] Transactions: ${transactions?.length || 0} records, ${aggregatedFlowsArray.length} flows`)
 
       const result = {
         providers: Object.entries(byOrg)

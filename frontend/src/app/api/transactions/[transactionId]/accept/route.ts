@@ -33,7 +33,6 @@ export async function POST(
       );
     }
 
-    console.log('[AIMS] POST /api/transactions/[id]/accept - Accepting transaction:', transactionId);
 
     // Get the original linked transaction
     const { data: originalTransaction, error: fetchError } = await supabase
@@ -119,7 +118,6 @@ export async function POST(
       // Don't fail the request as the acceptance was successful
     }
 
-    console.log('[AIMS] Successfully accepted transaction:', transactionId);
 
     return NextResponse.json({
       success: true,

@@ -89,7 +89,6 @@ export default function RolodexPage() {
   
   // Manual initial fetch to avoid infinite loops
   useEffect(() => {
-    console.log('[RolodexPage] Initial fetch on mount');
     refetch();
   }, []); // Only run once on mount
 

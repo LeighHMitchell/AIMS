@@ -126,7 +126,6 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
         setAvailableMarkers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching IATI policy markers:', error);
-        console.log('Using fallback IATI policy markers...');
         setAvailableMarkers(FALLBACK_IATI_MARKERS);
         toast.warning('Using offline IATI policy markers. Database connection may be required for full functionality.');
       } finally {

@@ -118,7 +118,6 @@ export async function POST(
     const { id: activityId } = await params;
     const body: CompareRequest = await request.json();
     
-    console.log('[IATI Compare Simple] Starting comparison for activity:', activityId);
     const homeCountryCode = await getSystemHomeCountry(supabase!);
     const homeCountryEntry = IATI_COUNTRIES.find(c => c.code === homeCountryCode);
     const homeCountryName = homeCountryEntry?.name || homeCountryCode;
@@ -176,11 +175,9 @@ export async function POST(
       const match = iatiIdentifier.match(/aid=([^&]+)/);
       if (match && match[1]) {
         cleanIatiIdentifier = match[1];
-        console.log('[IATI Compare Simple] Extracted IATI ID from d-portal URL:', cleanIatiIdentifier);
       }
     }
     
-    console.log('[IATI Compare Simple] Using IATI identifier:', cleanIatiIdentifier);
     
     // Prepare local data in normalized format
     const localData: any = {
@@ -251,7 +248,6 @@ export async function POST(
     const isDemoMode = !IATI_API_KEY || IATI_API_KEY.trim() === '';
     
     if (isDemoMode) {
-      console.log('[IATI Compare Simple] Running in DEMO MODE - no API key configured');
       
       // Return demo IATI data for demonstration purposes
       iatiData = {
@@ -340,7 +336,6 @@ export async function POST(
       try {
         // Use the correct IATI datastore API endpoint with proper query format
         const iatiUrl = `${IATI_API_BASE_URL}/activity/select?q=iati_identifier:"${encodeURIComponent(cleanIatiIdentifier)}"&wt=json&rows=1`;
-        console.log('[IATI Compare Simple] Fetching from IATI:', iatiUrl);
         
         const headers: HeadersInit = {
           'Accept': 'application/json',
@@ -385,7 +380,6 @@ export async function POST(
         }
         
         const iatiResult = await iatiResponse.json();
-        console.log('[IATI Compare Simple] IATI API response structure:', Object.keys(iatiResult));
         
         // Extract the activity data from the SOLR response format
         const activities = iatiResult.response?.docs || [];
@@ -395,7 +389,6 @@ export async function POST(
         }
         
         const iatiActivity = activities[0];
-        console.log('[IATI Compare Simple] Found activity:', iatiActivity.iati_identifier);
         
         // Normalize IATI data from SOLR format
         iatiData = {

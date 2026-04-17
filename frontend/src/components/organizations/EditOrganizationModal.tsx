@@ -321,8 +321,6 @@ export function EditOrganizationModal({
   // Reset form when organization changes
   useEffect(() => {
     if (organization) {
-      console.log('[EditOrgModal] Received organization:', organization.name);
-      console.log('[EditOrgModal] default_currency from prop:', organization.default_currency);
       
       setFormData({
         iati_org_id: organization.iati_org_id || '',
@@ -361,7 +359,6 @@ export function EditOrganizationModal({
         default_language: organization.default_language || 'en'
       })
       
-      console.log('[EditOrgModal] Set formData.default_currency to:', organization.default_currency || 'USD');
       setValidationErrors([])
     } else {
       setFormData({
@@ -1685,7 +1682,6 @@ export function EditOrganizationModal({
           <Button 
             onClick={() => {
               // TODO: Implement IATI import functionality
-              console.log('IATI import functionality not yet implemented');
               setShowIatiImport(false);
             }}
           >

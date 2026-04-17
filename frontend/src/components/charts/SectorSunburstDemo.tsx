@@ -23,7 +23,6 @@ const diverseSampleAllocations = [
 
 export default function SectorSunburstDemo() {
   const handleSegmentClick = (code: string, level: 'category' | 'sector' | 'subsector') => {
-    console.log(`Clicked on ${level}: ${code}`);
     // You can implement drill-down functionality here
     alert(`Clicked on ${level}: ${code}`);
   };

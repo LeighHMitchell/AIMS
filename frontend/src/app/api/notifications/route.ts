@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
     
-    console.log('[AIMS Notifications API] GET request for user:', userId);
     if (!supabase) {
       console.error('[AIMS Notifications API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -64,7 +63,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
     }
 
-    console.log('[AIMS Notifications API] Found', notifications?.length || 0, 'notifications');
 
     return NextResponse.json(notifications || []);
   } catch (error) {
@@ -86,7 +84,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
     
-    console.log('[AIMS Notifications API] PATCH request for user:', userId);
     if (!supabase) {
       console.error('[AIMS Notifications API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -124,7 +121,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
     }
 
-    console.log('[AIMS Notifications API] Updated notifications successfully');
 
     return NextResponse.json({ success: true, updated: data });
   } catch (error) {

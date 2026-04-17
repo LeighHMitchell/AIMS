@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
     }
     
     const cleanQuery = cleanSearchQuery(searchQuery);
-    console.log('[AIMS] Searching activities with query:', cleanQuery);
     
     // Build the query for live search - return minimal fields for performance
     let query = supabase
@@ -138,7 +137,6 @@ export async function GET(request: NextRequest) {
     // Sort by relevance score
     transformedActivities.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
 
-    console.log(`[AIMS] Found ${transformedActivities.length} activities matching search`);
 
     const response = NextResponse.json(transformedActivities);
     

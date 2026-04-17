@@ -175,8 +175,6 @@ export default function PlannedDisbursementsPage() {
       const response = await apiFetch(`/api/planned-disbursements/list?${params}`);
       if (response.ok) {
         const data = await response.json();
-        console.log('[Planned Disbursements Page] Sample disbursement from API:', data.disbursements?.[0]);
-        console.log('[Planned Disbursements Page] Sample activity:', data.disbursements?.[0]?.activity);
         setDisbursements(data.disbursements || []);
         setTotalDisbursements(data.total || 0);
       } else {

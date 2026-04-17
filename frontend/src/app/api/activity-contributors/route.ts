@@ -15,7 +15,6 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS] GET /api/activity-contributors - Starting request');
   
   try {
     const { supabase, response: authResponse } = await requireAuth();
@@ -42,14 +41,12 @@ export async function GET(request: NextRequest) {
       
       // Return empty array if table doesn't exist
       if (error.code === '42P01') {
-        console.log('[AIMS] activity_contributors table does not exist, returning empty array');
         return NextResponse.json([]);
       }
       
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[AIMS] Fetched activity contributors count:', contributors?.length || 0);
     
     const response = NextResponse.json(contributors || []);
     
@@ -76,8 +73,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    console.log('[AIMS] POST /api/activity-contributors - Adding contributor');
-    console.log('[AIMS] Request body:', body);
     
     // Validate required fields
     if (!body.organizationId || !body.organizationName) {
@@ -128,7 +123,6 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     };
     
-    console.log('[AIMS] Creating contributor with data:', contributorData);
     
     const { data: newContributor, error } = await supabase
       .from('activity_contributors')
@@ -144,7 +138,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Successfully created contributor:', newContributor.id);
     
     const response = NextResponse.json(newContributor, { status: 201 });
     
@@ -179,7 +172,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    console.log('[AIMS] DELETE /api/activity-contributors - Removing contributor:', contributorId);
     if (!supabase) {
       console.error('[AIMS] Supabase client is null');
       return NextResponse.json(
@@ -201,7 +193,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Successfully deleted contributor:', contributorId);
     
     const response = NextResponse.json({ success: true });
     

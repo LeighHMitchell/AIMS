@@ -46,7 +46,6 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
   const fetchData = async () => {
     try {
       setLoading(true)
-      console.log('[DonorsChart] Starting data fetch for view:', viewMode)
 
       // First get organizations to map IDs to names
       const { data: orgs } = await supabase
@@ -54,7 +53,6 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
         .select('id, name')
 
       const orgMap = new Map(orgs?.map((o: any) => [o.id, o.name]) || [])
-      console.log('[DonorsChart] Organization count:', orgMap.size)
 
       const donorTotals = new Map<string, number>()
 
@@ -179,7 +177,6 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
         }
       }
 
-      console.log('[DonorsChart] Unique donors:', donorTotals.size)
 
       // Convert to array and sort by value
       const sortedDonors = Array.from(donorTotals.entries())
@@ -195,7 +192,6 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
         .sort((a, b) => b.value - a.value)
         .slice(0, 10) // Top 10
 
-      console.log('[DonorsChart] Top donors:', sortedDonors.map(d => ({ name: d.shortName, value: d.value })))
       setData(sortedDonors)
       onDataChange?.(sortedDonors)
     } catch (error) {

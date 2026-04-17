@@ -4,7 +4,6 @@ import { requireAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request: NextRequest) {
-  console.log('[AIMS] PUT /api/users/change-email - Starting request');
   
   const { supabase, response } = await requireAuth();
   if (response) return response;
@@ -20,7 +19,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { userId, newEmail, currentUserRole } = body;
     
-    console.log('[AIMS] Email change request:', { userId, newEmail, currentUserRole });
     
     if (!userId || !newEmail || !currentUserRole) {
       return NextResponse.json(
@@ -75,11 +73,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Found user profile:', userProfile.first_name, userProfile.last_name);
-    console.log('[AIMS] Changing email from', userProfile.email, 'to', newEmail, 'for user', userId);
 
     // Check if this user exists in Supabase Auth by trying to get user by ID first
-    console.log('[AIMS] Checking if user exists in Supabase Auth...');
     
     let authUserExists = false;
     try {
@@ -94,13 +89,10 @@ export async function PUT(request: NextRequest) {
       }
       
       authUserExists = !authUserCheckError && authUserCheck?.user;
-      console.log('[AIMS] User exists in Auth:', authUserExists);
     } catch (error) {
-      console.log('[AIMS] Error checking auth user:', error);
     }
     
     if (!authUserExists) {
-      console.log('[AIMS] User not found in Auth, this might be a database-only user');
       
       // If user doesn't exist in Auth, just update the database
       const { data: updatedProfile, error: profileUpdateError } = await supabase
@@ -121,7 +113,6 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      console.log('[AIMS] Email updated successfully in database for user:', userId);
       
       return NextResponse.json({ 
         success: true, 
@@ -131,10 +122,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // User exists in Auth, proceed with full update
-    console.log('[AIMS] User found in Auth, proceeding with full update');
     
     // Update the Supabase Auth user
-    console.log('[AIMS] Attempting to update auth user email for userId:', userId);
     
     let authUser: any = null;
     
@@ -185,7 +174,6 @@ export async function PUT(request: NextRequest) {
         );
       }
       
-      console.log('[AIMS] Auth email updated successfully');
     } catch (error) {
       console.error('[AIMS] Unexpected error during auth update:', error);
       return NextResponse.json(
@@ -226,7 +214,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Email changed successfully for user:', userId);
     
     return NextResponse.json({ 
       success: true, 

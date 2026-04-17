@@ -136,7 +136,6 @@ export function useComprehensiveAutosave(
       
       if (isLargeDataset && !isManual) {
         // For autosave with large datasets, start with a reduced payload
-        console.log('[ComprehensiveAutosave] Large dataset detected, using reduced autosave payload');
         payload = {
           ...data.general,
           created_by_org_name: data.general?.created_by_org_name || userRef.current?.organisation || userRef.current?.organization?.name || "",
@@ -326,7 +325,6 @@ export function useComprehensiveAutosave(
           });
         } else if (!isManual) {
           // For autosave, show a less intrusive message
-          console.log('[ComprehensiveAutosave] Partial autosave completed successfully');
         }
         
         onSaveSuccess?.(responseData);
@@ -408,7 +406,6 @@ export function useComprehensiveAutosave(
       // Retry logic
       if (retryCountRef.current < maxRetries) {
         retryCountRef.current++;
-        console.log(`[ComprehensiveAutosave] Retrying save (attempt ${retryCountRef.current}/${maxRetries})`);
         
         setTimeout(() => {
           performSave(data, isManual);
@@ -455,7 +452,6 @@ export function useComprehensiveAutosave(
   const triggerSave = useCallback((immediate = false) => {
     if (!enabled) return;
 
-    console.log('[ComprehensiveAutosave] Save triggered:', { immediate });
 
     // Clear existing debounce timeout
     if (debounceTimeoutRef.current) {
@@ -478,7 +474,6 @@ export function useComprehensiveAutosave(
 
     intervalRef.current = setInterval(() => {
       if (state.hasUnsavedChanges && !state.isAutoSaving) {
-        console.log('[ComprehensiveAutosave] Periodic save triggered');
         performSave(activityDataRef.current, false);
       }
     }, intervalMs);
@@ -492,7 +487,6 @@ export function useComprehensiveAutosave(
 
   // Manual save function
   const saveNow = useCallback(() => {
-    console.log('[ComprehensiveAutosave] Manual save requested');
     return performSave(activityDataRef.current, true);
   }, [performSave]);
 

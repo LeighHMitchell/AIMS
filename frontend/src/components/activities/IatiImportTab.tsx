@@ -478,10 +478,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   // Debug: Track component mount/unmount
   React.useEffect(() => {
     isMountedRef.current = true;
-    console.log('[IATI Search Card] 🔄 Component mounted:', activity.iatiIdentifier);
     return () => {
       isMountedRef.current = false;
-      console.log('[IATI Search Card] 🔄 Component unmounting:', activity.iatiIdentifier);
     };
   }, [activity.iatiIdentifier]);
   
@@ -781,17 +779,14 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     });
     
     if (financialData.loading) {
-      console.log('[IATI Search Card] ⏳ Skipping - already loading');
       return;
     }
     
     // Skip if we already have data (check if loading is false and we have at least one value)
     if (!financialData.loading && (financialData.totalBudget !== undefined || financialData.totalPlannedDisbursement !== undefined || financialData.totalOutgoingCommitment !== undefined || financialData.totalDisbursement !== undefined)) {
-      console.log('[IATI Search Card] ✅ Skipping - already have data');
       return;
     }
 
-    console.log('[IATI Search Card] 🚀 Starting fetch for:', activity.iatiIdentifier);
 
     const fetchFinancialData = async () => {
       // Check if component is still mounted before setting loading state
@@ -799,7 +794,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
       setFinancialData({ loading: true });
       
       try {
-        console.log('[IATI Search Card] 📡 Fetching XML for:', activity.iatiIdentifier);
         const response = await apiFetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
         
         console.log('[IATI Search Card] 📡 Fetch response:', { 
@@ -810,7 +804,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
         
         // Check if component is still mounted after fetch
         if (!isMountedRef.current) {
-          console.log('[IATI Search Card] ⚠️ Component unmounted after fetch, skipping');
           return;
         }
         
@@ -833,7 +826,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
         
         // Check if component is still mounted after parsing JSON
         if (!isMountedRef.current) {
-          console.log('[IATI Search Card] ⚠️ Component unmounted after JSON parse, skipping');
           return;
         }
         
@@ -1017,7 +1009,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
         // Check if component is still mounted before final state update
         if (!isMountedRef.current) {
-          console.log('[IATI Search Card] Component unmounted, skipping state update');
           return;
         }
 
@@ -1802,7 +1793,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     ).join(' ') : ''}`;
     
     setDebugLogs(prev => [...prev, logMessage]);
-    console.log(message, ...args);
   };
 
   // Check for pre-loaded XML from IATI Datastore
@@ -1812,12 +1802,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   useEffect(() => {
     // Only check once
     if (hasCheckedLocalStorage.current) {
-      console.log('[IATI Import] Already checked localStorage, skipping...');
       return;
     }
     hasCheckedLocalStorage.current = true;
     
-    console.log('[IATI Import] 🔍 Checking for preloaded XML from IATI Datastore...')
     const preloadedXml = localStorage.getItem('iati_import_xml')
     const source = localStorage.getItem('iati_import_source')
     const choice = localStorage.getItem('iati_import_choice')
@@ -1844,7 +1832,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       localStorage.removeItem('iati_import_timestamp')
       
       // Set all required state immediately
-      console.log('[IATI Import] 🎯 Setting import method to snippet and loading XML')
       setImportMethod('snippet')
       setSnippetContent(preloadedXml)
       
@@ -1854,7 +1841,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       const toastId = toast.loading(`Parsing IATI activity for ${choice === 'fork' ? 'fork' : 'merge'}...`);
       loadingToastRef.current = toastId;
     } else {
-      console.log('[IATI Import] ❌ No preloaded XML found or source mismatch')
     }
   }, [activityId])
 
@@ -1875,7 +1861,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   useEffect(() => {
     const loadOrgPreferences = async () => {
       if (!user?.organizationId) {
-        console.log('[IATI Import] No organization ID, skipping preferences load');
         return;
       }
       
@@ -1884,9 +1869,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         if (response.ok) {
           const prefs = await response.json();
           setOrgPreferences(prefs);
-          console.log('[IATI Import] Loaded organization IATI import preferences:', prefs);
         } else {
-          console.log('[IATI Import] No preferences found for organization');
         }
       } catch (error) {
         console.error('[IATI Import] Failed to load org preferences:', error);
@@ -1975,7 +1958,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     const selectionRatio = selectedFields.length / totalFields;
     const isComprehensiveSelection = selectionRatio > 0.8;
     
-    console.log(`[IATI Import] generateDetailedFields: Comprehensive selection active: ${isComprehensiveSelection}, defaulting detailed fields to selected`);
     
     if (itemType === 'budget') {
       if (itemData.type) {
@@ -2314,23 +2296,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       const selectionRatio = selectedFields.length / totalFields;
       const isComprehensiveSelection = selectionRatio > 0.8;
       
-      console.log(`[IATI Import] Modal Opening: Selection analysis - ${selectedFields.length}/${totalFields} fields selected (${(selectionRatio * 100).toFixed(1)}%)`);
-      console.log(`[IATI Import] Modal Opening: Comprehensive selection active: ${isComprehensiveSelection}`);
-      console.log(`[IATI Import] Modal Opening: Generated ${detailFields.length} detailed fields for ${field.itemType} ${field.itemIndex + 1}`);
       
       if (isComprehensiveSelection) {
-        console.log(`[IATI Import] Modal Opening: FORCING all transaction field toggles to selected=true`);
         // Force ALL detailed fields to selected for comprehensive imports
         detailFields.forEach((detailField, index) => {
           const wasSelected = detailField.selected;
           detailField.selected = true;
-          console.log(`[IATI Import] Modal Opening: Field ${index + 1} "${detailField.fieldName}": ${wasSelected} → true`);
         });
-        console.log(`[IATI Import] Modal Opening: All ${detailFields.length} transaction fields forced to selected=true`);
       } else {
-        console.log(`[IATI Import] Modal Opening: Not comprehensive selection - keeping default field states`);
         detailFields.forEach((detailField, index) => {
-          console.log(`[IATI Import] Modal Opening: Field ${index + 1} "${detailField.fieldName}": selected=${detailField.selected} (unchanged)`);
         });
       }
       
@@ -2349,7 +2323,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   // Fetch user and organization data
   useEffect(() => {
     const fetchOrgData = async () => {
-      console.log('[IATI Import] User data from hook:', user);
       
       // First set user's organization name if available
       if (user?.organisation) {
@@ -2367,7 +2340,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           if (response.ok) {
             const data = await response.json();
-            console.log('[IATI Import] Organizations response:', data);
             
             // Find the matching organization
             const orgs = Array.isArray(data) ? data : data.organizations || [];
@@ -2377,7 +2349,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             );
             
             if (matchingOrg) {
-              console.log('[IATI Import] Found matching org:', matchingOrg);
               
               // Set the organization name properly
               setUserOrgName(matchingOrg.name || orgName);
@@ -2387,18 +2358,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 // IATI org IDs can be comma-separated or single values
                 const refs = matchingOrg.iati_org_id.split(',').map((ref: string) => ref.trim());
                 setUserPublisherRefs(refs);
-                console.log('[IATI Import] Set publisher refs:', refs);
               } else if (matchingOrg.acronym === 'AFD' || matchingOrg.name?.includes('AFD')) {
                 // Special case for AFD
                 setUserPublisherRefs(['FR-AFD', 'FR-3']);
-                console.log('[IATI Import] Set AFD publisher refs');
               }
             } else {
               // If no exact match, but we know it's AFD
               if (orgName?.includes('AFD') || orgName?.includes('Agence Française')) {
                 setUserOrgName('Agence Française de Développement');
                 setUserPublisherRefs(['FR-AFD', 'FR-3']);
-                console.log('[IATI Import] Defaulting to AFD publisher refs');
               }
             }
           }
@@ -2441,9 +2409,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       try {
         // Fetch full activity data to include location data
-        console.log('[IatiImportTab] Fetching activity data for:', activityId);
         const data = await fetchBasicActivityWithCache(activityId);
-        console.log('[IatiImportTab] Fetched activity data:', data);
         console.log('[IatiImportTab] Location data:', {
           recipient_countries: data.recipient_countries,
           recipient_regions: data.recipient_regions,
@@ -2453,36 +2419,29 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
         // Also fetch current activity locations
         
-        console.log('[IatiImportTab] Fetching current activity locations...');
         
         const locationsResponse = await apiFetch(`/api/activities/${activityId}/locations`);
         
         const locationsData = locationsResponse.ok ? await locationsResponse.json() : { locations: [] };
         currentLocations = locationsData.locations || [];
         
-        console.log('[IatiImportTab] Current locations:', currentLocations);
 
         // Fetch current participating organizations
-        console.log('[IatiImportTab] Fetching current participating organizations...');
 
         const participatingOrgsResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`);
 
         currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
 
-        console.log('[IatiImportTab] Current participating organizations:', currentParticipatingOrgs);
 
         // Fetch current planned disbursements
-        console.log('[IatiImportTab] Fetching current planned disbursements...');
 
         const plannedDisbursementsResponse = await apiFetch(`/api/activities/${activityId}/planned-disbursements`);
 
         const currentDisbursements = plannedDisbursementsResponse.ok ? await plannedDisbursementsResponse.json() : [];
 
-        console.log('[IatiImportTab] Current planned disbursements:', currentDisbursements);
         setCurrentPlannedDisbursements(currentDisbursements);
 
         // Fetch all current values for comparison
-        console.log('[IatiImportTab] Fetching current budgets, transactions, etc...');
 
         // Fetch budgets
         try {
@@ -2490,7 +2449,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (budgetsResponse.ok) {
             const budgets = await budgetsResponse.json();
             setCurrentBudgets(budgets);
-            console.log(`[IatiImportTab] Fetched ${budgets.length} current budgets`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch budgets:', error);
@@ -2502,7 +2460,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (transactionsResponse.ok) {
             const transactions = await transactionsResponse.json();
             setCurrentTransactions(transactions);
-            console.log(`[IatiImportTab] Fetched ${transactions.length} current transactions`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch transactions:', error);
@@ -2516,7 +2473,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             // API returns { country_budget_items: [...] } - extract the array
             const cbi = cbiData.country_budget_items || [];
             setCurrentCountryBudgetItems(cbi);
-            console.log(`[IatiImportTab] Fetched ${cbi.length} current country budget items`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch country budget items:', error);
@@ -2529,7 +2485,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             const hs = await hsResponse.json();
             // API returns { humanitarian, humanitarian_scopes } - extract the array
             setCurrentHumanitarianScopes(hs.humanitarian_scopes || []);
-            console.log(`[IatiImportTab] Fetched ${hs.humanitarian_scopes?.length || 0} current humanitarian scopes`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch humanitarian scopes:', error);
@@ -2542,7 +2497,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             const data = await docsResponse.json();
             const docs = data.documents || [];
             setCurrentDocumentLinks(docs);
-            console.log(`[IatiImportTab] Fetched ${docs.length} current document links`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch document links:', error);
@@ -2554,7 +2508,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (contactsResponse.ok) {
             const contacts = await contactsResponse.json();
             setCurrentContacts(contacts);
-            console.log(`[IatiImportTab] Fetched ${contacts.length} current contacts`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch contacts:', error);
@@ -2567,7 +2520,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             const response = await resultsResponse.json();
             const results = response.results || [];
             setCurrentResults(results);
-            console.log(`[IatiImportTab] Fetched ${results.length} current results`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch results:', error);
@@ -2605,12 +2557,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           locations: currentLocations || [],
           participatingOrgs: currentParticipatingOrgs || [],
         });
-        console.log('[IatiImportTab] Set current activity data with title:', data.title_narrative || data.title);
       } catch (error) {
         console.error('[IatiImportTab] Error fetching activity data:', error);
         // If basic endpoint fails, try the full endpoint as fallback
         try {
-          console.log('[IatiImportTab] Trying full endpoint as fallback');
           const response = await apiFetch(`/api/activities/${activityId}`);
           if (response.ok) {
             const data = await response.json();
@@ -2651,7 +2601,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               custom_geographies: data.custom_geographies || [],
               participatingOrgs: currentParticipatingOrgs || [],
             });
-            console.log('[IatiImportTab] Fallback successful, got title:', data.title_narrative || data.title);
           }
         } catch (fallbackError) {
           console.error('[IatiImportTab] Fallback also failed:', fallbackError);
@@ -2665,14 +2614,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('[IATI Import Debug] File selected:', file?.name, 'Type:', file?.type);
     if (file) {
       if (file.type !== 'text/xml' && !file.name.endsWith('.xml')) {
-        console.log('[IATI Import Debug] Invalid file type:', file.type);
         toast.error('Please select a valid XML file');
         return;
       }
-      console.log('[IATI Import Debug] Setting selected file and resetting state');
       setSelectedFile(file);
       setImportStatus({ stage: 'idle' });
       setParsedFields([]);
@@ -2700,14 +2646,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Try to read clipboard with better error handling
       const text = await navigator.clipboard.readText();
-      console.log('[IATI Import Debug] Paste button - clipboard text:', text);
       if (text && text.trim()) {
         // Extract the clean URL by finding the first occurrence of the URL pattern
         const urlPattern = /https?:\/\/[^\s]+/;
         const match = text.match(urlPattern);
         const cleanUrl = match ? match[0] : text.trim();
         
-        console.log('[IATI Import Debug] Paste button - clean URL:', cleanUrl);
         setXmlUrl(cleanUrl);
         toast.success('URL pasted from clipboard');
       } else {
@@ -2757,12 +2701,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   // Fetch XML from URL via server-side proxy to avoid CORS issues
   const fetchXmlFromUrl = async (url: string): Promise<string> => {
     try {
-      console.log('[IATI Import Debug] Fetching XML from URL via proxy:', url);
-      console.log('[IATI Import Debug] URL length:', url.length);
-      console.log('[IATI Import Debug] URL first 100 chars:', url.substring(0, 100));
-      console.log('[IATI Import Debug] URL last 100 chars:', url.substring(url.length - 100));
-      console.log('[IATI Import Debug] Timestamp:', new Date().toISOString());
-      console.log('[IATI Import Debug] Fetch API endpoint:', '/api/xml/fetch');
       
       // Use our server-side API to fetch the XML
       const response = await apiFetch('/api/xml/fetch', {
@@ -2795,7 +2733,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         throw new Error('Empty XML content received from URL');
       }
 
-      console.log('[IATI Import Debug] Successfully fetched XML via proxy, size:', data.size);
       return data.content;
     } catch (error) {
       console.error('[IATI Import Debug] Error fetching XML from URL:', error);
@@ -2849,27 +2786,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
   // Parse XML file or URL or Snippet
   const parseXmlFile = async () => {
-    console.log('[IATI Import Debug] parseXmlFile called, method:', importMethod);
-    console.log('[IATI Import Debug] Environment:', typeof window !== 'undefined' ? 'browser' : 'server');
-    console.log('[IATI Import Debug] User Agent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A');
-    console.log('[IATI Import Debug] Origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
 
     // Prevent concurrent parses using ref (persists across re-renders)
     if (isParsingRef.current) {
-      console.log('[IATI Import Debug] ⚠️ Parse already in progress (ref check), ignoring duplicate call');
       return;
     }
 
     // Mark parsing as in progress immediately
     isParsingRef.current = true;
-    console.log('[IATI Import Debug] ✅ Set isParsingRef.current = true');
     
     // Set status immediately so progress bar shows right away
     setImportStatus({ stage: 'parsing', progress: 5 });
     setIsParsing(true);
 
     if (importMethod === 'file' && !selectedFile) {
-      console.log('[IATI Import Debug] No selected file, returning');
       isParsingRef.current = false;
       setImportStatus({ stage: 'idle', progress: 0 });
       setIsParsing(false);
@@ -2877,7 +2807,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     }
 
     if (importMethod === 'url' && !xmlUrl.trim()) {
-      console.log('[IATI Import Debug] No URL provided, returning');
       toast.error('Please enter a valid XML URL');
       isParsingRef.current = false;
       setImportStatus({ stage: 'idle', progress: 0 });
@@ -2886,7 +2815,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     }
 
     if (importMethod === 'snippet' && !snippetContent.trim()) {
-      console.log('[IATI Import Debug] No snippet content, returning');
       toast.error('Please paste some XML content');
       isParsingRef.current = false;
       setImportStatus({ stage: 'idle', progress: 0 });
@@ -2912,7 +2840,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     let fetchedPolicyMarkers: any[] = [];
 
     if (activityId) {
-      console.log('[IATI Import Debug] Fetching latest activity data before parsing');
       setImportStatus({ stage: 'parsing', progress: 10 });
       // Invalidate cache to ensure fresh data
       invalidateActivityCache(activityId);
@@ -2955,7 +2882,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch all current values for comparison IN PARALLEL for better performance
         // Using proper async/await pattern to ensure all data is populated before continuing
-        console.log('[IATI Import Debug] Fetching current budgets, transactions, etc... (in parallel)');
         
         // Update progress after a short delay to show activity
         const progressTimeout = setTimeout(() => {
@@ -3133,68 +3059,51 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // Assign all results to local variables (ensures data is populated before field building)
         fetchedBudgets = budgetsResult || [];
         setCurrentBudgets(fetchedBudgets);
-        console.log(`[IATI Import Debug] Fetched ${fetchedBudgets.length} current budgets`);
         
         fetchedTransactions = transactionsResult || [];
         setCurrentTransactions(fetchedTransactions);
-        console.log(`[IATI Import Debug] Fetched ${fetchedTransactions.length} current transactions`);
         
         fetchedPlannedDisbursements = plannedDisbursementsResult || [];
         setCurrentPlannedDisbursements(fetchedPlannedDisbursements);
-        console.log(`[IATI Import Debug] Fetched ${fetchedPlannedDisbursements.length} current planned disbursements`);
         
         fetchedCountryBudgetItems = countryBudgetItemsResult || [];
         setCurrentCountryBudgetItems(fetchedCountryBudgetItems);
-        console.log(`[IATI Import Debug] Fetched ${fetchedCountryBudgetItems.length} current country budget items`);
         
         fetchedHumanitarianScopes = humanitarianResult?.humanitarian_scopes || [];
         setCurrentHumanitarianScopes(fetchedHumanitarianScopes);
-        console.log(`[IATI Import Debug] Fetched ${fetchedHumanitarianScopes.length} current humanitarian scopes`);
         
         fetchedDocumentLinks = documentsResult || [];
         setCurrentDocumentLinks(fetchedDocumentLinks);
-        console.log(`[IATI Import Debug] Fetched ${fetchedDocumentLinks.length} current document links`);
         
         fetchedContacts = contactsResult || [];
         setCurrentContacts(fetchedContacts);
-        console.log(`[IATI Import Debug] Fetched ${fetchedContacts.length} current contacts`);
         
         fetchedResults = resultsResult || [];
         setCurrentResults(fetchedResults);
-        console.log(`[IATI Import Debug] Fetched ${fetchedResults.length} current results`);
         
         fetchedActivityData.locations = locationsResult || [];
-        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.locations.length} current locations`);
         
         fetchedActivityData.participatingOrgs = participatingOrgsResult || [];
-        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.participatingOrgs.length} current participating orgs`);
         
         fetchedLoanStatuses = loanStatusResult || [];
         fetchedActivityData.loanStatuses = fetchedLoanStatuses;
-        console.log(`[IATI Import Debug] Fetched ${fetchedLoanStatuses.length} current loan statuses`);
         
         fetchedFss = fssResult;
         if (fetchedFss) {
-          console.log(`[IATI Import Debug] Fetched current FSS with ${fetchedFss.forecasts?.length || 0} forecasts`);
         }
         
         fetchedLoanTerms = loanTermsResult;
         fetchedActivityData.loanTerms = fetchedLoanTerms;
         if (fetchedLoanTerms) {
-          console.log(`[IATI Import Debug] Fetched current loan terms`);
         }
         
         fetchedPolicyMarkers = policyMarkersResult || [];
         fetchedActivityData.policyMarkers = fetchedPolicyMarkers;
-        console.log(`[IATI Import Debug] Fetched ${fetchedPolicyMarkers.length} current policy markers`);
         
         fetchedActivityData.tags = tagsResult || [];
-        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.tags?.length || 0} current tags`);
         
         fetchedActivityData.relatedActivities = relatedActivitiesResult || [];
-        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.relatedActivities?.length || 0} current related activities`);
 
-        console.log('[IATI Import Debug] ✅ All parallel fetches completed successfully');
         console.log('[IATI Import Debug] Fetched data summary:', {
           transactions: fetchedTransactions?.length || 0,
           budgets: fetchedBudgets?.length || 0,
@@ -3220,8 +3129,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       setImportStatus({ stage: 'parsing', progress: 20 });
     }
 
-    console.log('[IATI Import Debug] Current activity data:', currentActivityData);
-    console.log('[IATI Import Debug] Setting status to uploading');
     setImportStatus({ stage: 'uploading', progress: 30 });
     try {
       let content: string;
@@ -3235,29 +3142,21 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
         
         // Read file content
-        console.log('[IATI Import Debug] Reading file content, size:', selectedFile.size);
         setImportStatus({ stage: 'uploading', progress: 30 });
         content = await selectedFile.text();
         fileToCheck = selectedFile;
       } else if (importMethod === 'url') {
         // Fetch from URL
-        console.log('[IATI Import Debug] 🌐 Starting URL fetch for:', xmlUrl.trim());
         setImportStatus({ stage: 'uploading', progress: 30 });
-        console.log('[IATI Import Debug] 🌐 Calling fetchXmlFromUrl...');
         content = await fetchXmlFromUrl(xmlUrl.trim());
-        console.log('[IATI Import Debug] 🌐 URL fetch completed, content length:', content.length);
         // Create a File object from the fetched content for metadata extraction
         fileToCheck = new File([content], 'fetched.xml', { type: 'text/xml' });
-        console.log('[IATI Import Debug] 🌐 File object created');
       } else {
         // Use snippet content
-        console.log('[IATI Import Debug] Using snippet content');
         setImportStatus({ stage: 'parsing', progress: 25 });
         
         // Detect snippet type BEFORE wrapping
         const snippetType = detectSnippetType(snippetContent.trim());
-        console.log('[IATI Import Debug] Detected snippet type:', snippetType);
-        console.log('[IATI Import Debug] Original snippet content:', snippetContent.trim().substring(0, 200));
         
         // Store snippet type in state for filtering later
         (window as any).__snippetType = snippetType;
@@ -3271,7 +3170,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
         // Wrap snippet if needed to make it a valid IATI XML
         const wrappedContent = wrapSnippetIfNeeded(snippetContent.trim());
-        console.log('[IATI Import Debug] Wrapped content:', wrappedContent.substring(0, 500));
         content = wrappedContent;
         // Create a File object from the snippet for metadata extraction
         fileToCheck = new File([content], 'snippet.xml', { type: 'text/xml' });
@@ -3280,15 +3178,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Ensure valid IATI structure across all import methods
       const wrappedAll = wrapSnippetIfNeeded(content);
       if (wrappedAll !== content) {
-        console.log('[IATI Import Debug] Applied wrapping to', importMethod, 'import');
-        console.log('[IATI Import Debug] Original content length:', content.length);
-        console.log('[IATI Import Debug] Wrapped content length:', wrappedAll.length);
         content = wrappedAll;
       }
       
       setXmlContent(content);
       
-      console.log('[IATI Import Debug] Setting status to parsing');
       setImportStatus({ stage: 'parsing', progress: 35 });
       
       // Check if content is HTML instead of XML (common error response)
@@ -3311,28 +3205,23 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       // Parse the IATI XML
-      console.log('[IATI Import Debug] Parsing IATI XML with real parser');
       setImportStatus({ stage: 'parsing', progress: 60 });
       const parser = new IATIXMLParser(content);
       
       // Multi-activity detection
       const activityCount = parser.countActivities();
-      console.log(`[Multi-Activity] Detected ${activityCount} activities in XML`);
       
       if (activityCount > 1) {
-        console.log('[Multi-Activity] Multiple activities detected, showing preview modal');
         setImportStatus({ stage: 'parsing', progress: 70 });
         
         try {
           // Parse metadata for all activities
           const activitiesMetadata = parser.parseAllActivitiesMetadata();
-          console.log('[Multi-Activity] Parsed metadata for all activities:', activitiesMetadata);
           
           // Check which exist in database
           setImportStatus({ stage: 'parsing', progress: 80 });
           const iatiIds = activitiesMetadata.map(a => a.iatiIdentifier);
           const existingMap = await checkExistingActivities(iatiIds);
-          console.log('[Multi-Activity] Checked existing activities:', existingMap.size, 'found');
           
           // Show preview modal
           setMultiActivityData({ 
@@ -3359,14 +3248,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
       
       // Single activity - continue existing flow
-      console.log('[Multi-Activity] Single activity detected, continuing normal flow');
       const parsedActivity = parser.parseActivity();
       
       // Add hierarchy from multiple sources (priority: search result > extracted from XML > parsed from XML)
       if (hierarchyFromSearchResult !== null && !isNaN(hierarchyFromSearchResult)) {
         // Priority 1: Use hierarchy from search result (most reliable - IATI Search API includes it in JSON)
         parsedActivity.hierarchy = hierarchyFromSearchResult;
-        console.log('[IATI Import] ✅ Added hierarchy from search result to parsed activity:', hierarchyFromSearchResult);
       } else if (!parsedActivity.hierarchy && content) {
         // Priority 2: Extract hierarchy from raw XML string if parser didn't find it
         const hierarchyMatch = content.match(/<iati-activity[^>]*\shierarchy=["']?(\d+)["']?/i);
@@ -3383,7 +3270,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
       } else if (parsedActivity.hierarchy) {
         // Priority 3: Use hierarchy parsed from XML (already set)
-        console.log('[IATI Import] ✅ Hierarchy already parsed from XML:', parsedActivity.hierarchy);
       }
       
       // Store parsed activity data in state for use by import function
@@ -3401,10 +3287,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         setDetectedAcronyms([]);
       }
       
-      console.log('[IATI Import Debug] Parsed activity data:', parsedActivity);
       
       // PHASE 1: Comprehensive diagnostic logging for URL import debugging
-      console.log('🔍 [IATI Import] DIAGNOSTIC - Parsed Activity Analysis:');
       console.log('🔍 [IATI Import] DIAGNOSTIC - Transactions:', {
         exists: !!parsedActivity.transactions,
         count: parsedActivity.transactions?.length || 0,
@@ -3419,8 +3303,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         exists: !!parsedActivity.capitalSpendPercentage,
         value: parsedActivity.capitalSpendPercentage
       });
-      console.log('🔍 [IATI Import] DIAGNOSTIC - Import Method:', importMethod);
-      console.log('🔍 [IATI Import] DIAGNOSTIC - Is Snippet:', importMethod === 'snippet');
       
       // Update progress for field processing
       setImportStatus({ stage: 'parsing', progress: 80 });
@@ -3546,7 +3428,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       };
 
       // Create fields from parsed data organized by tabs
-      console.log('[IATI Import Debug] Starting field creation process...');
       console.log('[IATI Import Debug] 🔍 Pre-field-creation data check:', {
         policyMarkersCount: fetchedActivityData?.policyMarkers?.length || 0,
         tagsCount: fetchedActivityData?.tags?.length || 0,
@@ -3560,7 +3441,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Check if this is a snippet import and what type
       const snippetType = (window as any).__snippetType;
       const isSnippetImport = importMethod === 'snippet' && snippetType;
-      console.log('[IATI Import Debug] Is snippet import:', isSnippetImport, 'Type:', snippetType);
 
       // Wrap field creation in a timeout to prevent infinite hangs
       const fieldCreationStartTime = Date.now();
@@ -3744,7 +3624,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         parsedActivityKeys: Object.keys(parsedActivity).slice(0, 20)
       });
       if (typeof parsedActivity.hierarchy === 'number' && !isNaN(parsedActivity.hierarchy)) {
-        console.log('[IATI Import] Found hierarchy in parsed activity:', parsedActivity.hierarchy);
         const currentHierarchy = fetchedActivityData.hierarchy ?? null;
         const hierarchyLabels: Record<string, string> = {
           '1': 'Top-level Program/Strategy',
@@ -3788,7 +3667,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           totalFieldsCount: fields.length
         });
       } else {
-        console.log('[IATI Import] ❌ No hierarchy found in parsed activity. parsedActivity.hierarchy:', parsedActivity.hierarchy, 'type:', typeof parsedActivity.hierarchy);
 
         // FALLBACK: Always show hierarchy field even if XML doesn't have it, so users can see current value
         const currentHierarchy = fetchedActivityData.hierarchy ?? null;
@@ -3819,7 +3697,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             description: 'Organizational level within project structure (current value shown, no import value available)'
           });
 
-          console.log('[IATI Import] ✅ Added hierarchy field with current value only');
         }
       }
 
@@ -4554,7 +4431,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
           let currentDisbursementValue = null;
           if (currentDisbursement) {
-            console.log('[Planned Disbursement Debug] Found matching disbursement by content:', currentDisbursement);
 
             // Convert database status to type (status 'original' -> type '1', status 'revised' -> type '2')
             const dbType = currentDisbursement.status === 'revised' ? '2' : 
@@ -4589,7 +4465,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               receiver_org_activity_id: currentDisbursement.receiver_org_activity_id
             };
           } else {
-            console.log('[Planned Disbursement Debug] No matching disbursement found by content. Total fetched:', fetchedPlannedDisbursements.length);
             console.log('[Planned Disbursement Debug] Available disbursements in database:', fetchedPlannedDisbursements.map((db: any) => ({
               id: db.id,
               type: db.status === 'revised' ? '2' : db.status === 'original' ? '1' : db.type || '1',
@@ -5452,9 +5327,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) &&
           (s.vocabulary === '1' || !s.vocabulary) // Only vocabulary 1 or missing
         );
-        console.log('[Sector Import Debug] Parsed sectors:', parsedActivity.sectors);
-        console.log('[Sector Import Debug] 3-digit sectors needing refinement:', has3DigitSectors);
-        console.log('[Sector Import Debug] Sector codes:', parsedActivity.sectors.map(s => s.code));
         
         const hasConflict = !!fetchedActivityData.sectors?.length;
         const hasNonDacSectors = nonDacSectors.length > 0;
@@ -5512,7 +5384,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Use pre-fetched policy markers from parallel fetch block for current value comparison
         const existingPolicyMarkers = fetchedActivityData?.policyMarkers || fetchedPolicyMarkers || [];
-        console.log('[IATI Import] Using pre-fetched policy markers:', existingPolicyMarkers.length);
 
         // Create individual fields for each policy marker
         parsedActivity.policyMarkers.forEach((marker: any, index: number) => {
@@ -5589,18 +5460,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       // === TAGS ===
-      console.log('[IATI Import Debug] Processing tags section...');
       
       if (parsedActivity.tagClassifications && parsedActivity.tagClassifications.length > 0) {
-        console.log('[IATI Import Debug] Found tagClassifications:', parsedActivity.tagClassifications.length);
         // Use pre-fetched tags from parallel fetch block
         const existingTags = fetchedActivityData?.tags || [];
-        console.log('[IATI Import] Using pre-fetched tags:', existingTags.length);
 
-        console.log('[IATI Import Debug] Starting tag forEach loop, count:', parsedActivity.tagClassifications.length);
         // Create a separate field for each tag
         parsedActivity.tagClassifications.forEach((tag: any, tagIndex: number) => {
-          console.log(`[IATI Import Debug] Processing tag ${tagIndex + 1}/${parsedActivity.tagClassifications.length}`);
           const vocabLabel = tag.vocabulary === '1' ? 'OECD DAC CRS Purpose Codes (5 digit)' :
                             tag.vocabulary === '99' ? 'Reporting Organisation' :
                             tag.vocabulary ? `Vocabulary ${tag.vocabulary}` : 'Unknown';
@@ -5632,12 +5498,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             existingTags: existingTags
           });
         });
-        console.log('[IATI Import Debug] Completed tag forEach loop');
       } else {
-        console.log('[IATI Import Debug] No tagClassifications found or empty');
       }
 
-      console.log('[IATI Import Debug] Moving to contacts section...');
       // === CONTACTS ===
       // Individual contact fields are created below (Contact 1, Contact 2, etc.)
       // No need for a summary field since individual contacts show all details
@@ -5718,7 +5581,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             if (matchingDoc) {
               currentDocValue = matchingDoc;
-              console.log(`[Document Link Match] Found match for doc ${docIndex + 1}:`, matchingDoc.title);
             }
           }
 
@@ -5841,7 +5703,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           if (!error && data) {
             existingConditions = data;
-            console.log('[IATI Import] Fetched existing conditions:', existingConditions);
           }
         } catch (error) {
           console.warn('[IATI Import] Error fetching existing conditions:', error);
@@ -5985,7 +5846,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
         // Use pre-fetched related activities from parallel fetch block
         const existingLinkedActivities = fetchedActivityData?.relatedActivities || [];
-        console.log(`[IATI Import] Using pre-fetched related activities: ${existingLinkedActivities.length}`);
         
         parsedActivity.relatedActivities.forEach((relatedActivity: any, index: number) => {
           const relationshipTypeLabel = getRelationshipTypeName(relatedActivity.type);
@@ -6016,7 +5876,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         });
         
-        console.log(`[IATI Import] Found ${parsedActivity.relatedActivities.length} related activities`);
       }
 
       // === CONTACTS TAB ===
@@ -6035,7 +5894,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const contactTypeLabel = contactTypeLabels[contactTypeCode] || 'Contact';
           const contactName = contact.personName || contact.organization || 'Contact';
           
-          console.log('[IATI Import Debug] Processing contact:', contact);
           
           // Match with current database value
           let currentContactValue = null;
@@ -6259,11 +6117,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             description: `${typeLabel}: ${narrativesText}`
           });
         });
-        console.log('[IATI Import Debug] Completed humanitarian scopes processing');
       }
 
       const fieldCreationDuration = Date.now() - fieldCreationStartTime;
-      console.log('[IATI Import Debug] Field creation complete, total fields:', fields.length, `(took ${fieldCreationDuration}ms)`);
       
       // Log all field names to verify hierarchy is included
       const fieldNames = fields.map(f => f.fieldName);
@@ -6276,7 +6132,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         otherTabFields: fields.filter(f => f.tab === 'other').map(f => f.fieldName)
       });
       
-      console.log('[IATI Import Debug] About to exit try block for field creation');
       
       if (fieldCreationDuration > FIELD_CREATION_TIMEOUT) {
         console.warn('[IATI Import Debug] Field creation took longer than expected:', fieldCreationDuration, 'ms');
@@ -6291,13 +6146,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         throw new Error(`Failed to create import fields: ${fieldCreationError instanceof Error ? fieldCreationError.message : 'Unknown error'}`);
       }
 
-      console.log('[IATI Import Debug] Setting parsed fields:', fields.length, 'fields');
       
       // PHASE 1: Diagnostic logging for field creation analysis
       const transactionFields = fields.filter(f => f.fieldName.includes('Transaction'));
       const financingFields = fields.filter(f => f.fieldName.includes('Financing') || f.fieldName.includes('Capital'));
       
-      console.log('🔍 [IATI Import] DIAGNOSTIC - Field Creation Results:');
       console.log('🔍 [IATI Import] DIAGNOSTIC - Transaction Fields Created:', {
         count: transactionFields.length,
         names: transactionFields.map(f => f.fieldName),
@@ -6309,13 +6162,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         hasImportValue: financingFields.map(f => ({ name: f.fieldName, hasValue: !!f.importValue }))
       });
       setParsedFields(fields);
-      console.log('[IATI Import Debug] Parsed fields set, count:', fields.length);
       
       // EXTERNAL PUBLISHER DETECTION - After parsing is complete
-      console.log('[IATI Import] Checking for external publisher...');
       if (fileToCheck) {
         try {
-          console.log('[IATI Import] Starting metadata extraction...');
           // Add timeout to prevent hanging
           const metaPromise = extractIatiMeta(fileToCheck);
           let timeoutId: NodeJS.Timeout | null = null;
@@ -6326,8 +6176,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           try {
             const meta = await Promise.race([metaPromise, timeoutPromise]);
             if (timeoutId) clearTimeout(timeoutId);
-          console.log('[IATI Import] Extracted metadata:', meta);
-          console.log('[IATI Import] User publisher refs:', userPublisherRefs);
           
           // Store metadata for display in the modal
           setXmlMetadata(meta);
@@ -6339,12 +6187,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           );
           
           if (!isOwnedActivity) {
-            console.log('[IATI Import] EXTERNAL PUBLISHER DETECTED!');
-            console.log('[IATI Import] Reporting org:', meta.reportingOrgRef);
-            console.log('[IATI Import] User refs:', userPublisherRefs);
             
             // SIMPLIFIED: Always use import_as_reporting_org mode (skip mode selection modal)
-            console.log('[IATI Import] ✅ Automatically using import_as_reporting_org mode');
             setSelectedImportMode('import_as_reporting_org');
             
             // Store metadata for the reporting org selection modal
@@ -6404,10 +6248,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 if (matchingOrg) {
                   setSelectedReportingOrgId(matchingOrg.id);
-                  console.log('[IATI Import] ✅ Auto-selected matching organization:', matchingOrg.name);
                 } else {
                   setSelectedReportingOrgId(null);
-                  console.log('[IATI Import] ⚠️  No matching org found - user will select manually');
                 }
                 
                 // Show the reporting org selection modal
@@ -6422,7 +6264,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             return; // Exit here - reporting org selection modal will handle the rest
           } else {
-            console.log('[IATI Import] Activity is owned by user, proceeding with normal import');
             }
           } catch (timeoutError) {
             if (timeoutId) clearTimeout(timeoutId);
@@ -6435,13 +6276,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
       }
       
-      console.log('[IATI Import Debug] Setting status to previewing');
       setImportStatus({ stage: 'previewing', progress: 100 });
       
       // AUTO-TRIGGER SECTOR REFINEMENT for 3-digit sectors
       const sectorField = fields.find(f => f.fieldName === 'Sectors');
       if (sectorField && (sectorField as any).needsRefinement) {
-        console.log('[IATI Import] Auto-triggering sector refinement for 3-digit DAC 5 Digit sectors');
         const importedSectors = (sectorField as any).importedSectors || [];
         
         // Filter to only include 3-digit DAC 5 Digit (vocabulary=1) sectors that need refinement
@@ -6486,7 +6325,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     } finally {
       setIsParsing(false);
       isParsingRef.current = false;
-      console.log('[IATI Import Debug] ✅ Reset isParsingRef.current = false');
     }
   };
 
@@ -6502,7 +6340,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     });
     
     if (shouldAutoParseRef && snippetContent && (importMethod === 'snippet' || importMethod === 'iatiSearch') && !isParsing && importStatus.stage === 'idle') {
-      console.log('[IATI Import] 🚀 Auto-triggering parse from IATI Search/Datastore');
       setShouldAutoParseRef(false); // Reset flag
       parseXmlFile();
     }
@@ -6519,81 +6356,66 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
   // Enhanced Select all fields - selects main fields AND all sub-toggles
   const selectAllFields = (select: boolean) => {
-    console.log(`[IATI Import] Enhanced Select All: ${select ? 'Selecting' : 'Clearing'} all fields and sub-items`);
     
     // 1. Select all main fields (existing behavior)
     setParsedFields(prev => prev.map(field => ({ ...field, selected: select })));
     
     if (select) {
-      console.log('[IATI Import] Enhanced Select All: Setting all sub-selection flags');
       
       // 2. Select all financial items - set flags to import ALL items
       if (parsedActivity?.budgets?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.budgets.length} budgets`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       if (parsedActivity?.transactions?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.transactions.length} transactions`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       if (parsedActivity?.plannedDisbursements?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.plannedDisbursements.length} planned disbursements`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 3. Select all policy markers
       if (parsedActivity?.policyMarkers?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.policyMarkers.length} policy markers`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 4. Select all locations
       if (parsedActivity?.locations?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.locations.length} locations`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 5. Select all tags
       if (parsedActivity?.tagClassifications?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.tagClassifications.length} tags`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 6. Select all conditions
       if (parsedActivity?.conditions?.conditions?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.conditions.conditions.length} conditions`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 7. Select all FSS items
       if (parsedActivity?.forwardSpendingPlans?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.forwardSpendingPlans.length} FSS items`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 8. Select all humanitarian scopes
       if (parsedActivity?.humanitarianScopes?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.humanitarianScopes.length} humanitarian scopes`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 9. Select all document links
       if (parsedActivity?.document_links?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.document_links.length} document links`);
         // This will be processed in importSelectedFields as bulk import
       }
       
       // 10. Select all results
       if (parsedActivity?.results?.length > 0) {
-        console.log(`[IATI Import] Enhanced Select All: Selecting all ${parsedActivity.results.length} results`);
         // This will be processed in importSelectedFields as bulk import
       }
       
-      console.log('[IATI Import] Enhanced Select All: All items selected for comprehensive import');
     } else {
-      console.log('[IATI Import] Enhanced Select All: Cleared all selections');
     }
   };
 
@@ -6650,8 +6472,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       return;
     }
 
-    console.log('[Multi-Activity Import] Starting import with mode:', multiActivityImportMode);
-    console.log('[Multi-Activity Import] Selected indices:', selectedActivityIndices);
 
     setShowActivityPreview(false);
     setImportStatus({ stage: 'importing', progress: 0 });
@@ -6660,7 +6480,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     try {
       if (multiActivityImportMode === 'update_current' && selectedActivityIndices.length === 1) {
         // Parse selected activity and continue with existing import flow
-        console.log('[Multi-Activity Import] Update current mode - parsing activity at index', selectedActivityIndices[0]);
         
         const parser = new IATIXMLParser(xmlContent);
         const parsedActivity = parser.parseActivityByIndex(selectedActivityIndices[0]);
@@ -6678,7 +6497,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           setDetectedAcronyms([]);
         }
         
-        console.log('[Multi-Activity Import] Parsed selected activity:', parsedActivity);
         
         // Continue with existing field mapping and import flow
         // This will trigger the normal field selection UI
@@ -6691,7 +6509,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
       } else if (multiActivityImportMode === 'create_new' && selectedActivityIndices.length === 1) {
         // Create a single new activity
-        console.log('[Multi-Activity Import] Create new mode - single activity');
         
         const response = await apiFetch('/api/activities/bulk-import-iati', {
           method: 'POST',
@@ -6709,7 +6526,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
 
         const result = await response.json();
-        console.log('[Multi-Activity Import] Create new result:', result);
         
         setImportStatus({ stage: 'complete', progress: 100 });
         toast.success(`Created 1 new activity successfully`);
@@ -6723,7 +6539,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
       } else if (multiActivityImportMode === 'bulk_create') {
         // Bulk create multiple activities
-        console.log('[Multi-Activity Import] Bulk create mode - creating', selectedActivityIndices.length, 'activities');
         
         const response = await apiFetch('/api/activities/bulk-import-iati', {
           method: 'POST',
@@ -6741,7 +6556,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
 
         const result = await response.json();
-        console.log('[Multi-Activity Import] Bulk create result:', result);
         
         setImportStatus({ stage: 'complete', progress: 100 });
         toast.success(`Created ${result.created || selectedActivityIndices.length} new activities successfully`);
@@ -6767,8 +6581,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
   // Handle sector refinement
   const handleSectorRefinement = (importedSectors: any[]) => {
-    console.log('[Sector Refinement] Opening refinement dialog for sectors:', importedSectors);
-    console.log('[Sector Refinement] Sector count:', importedSectors.length);
     console.log('[Sector Refinement] Sector details:', importedSectors.map(s => ({
       code: s.code,
       narrative: s.narrative,
@@ -6781,7 +6593,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       s.code && s.code.length === 3 && /^\d{3}$/.test(s.code)
     );
     
-    console.log('[Sector Refinement] Sectors to refine:', sectorsToRefine);
     
     setSectorRefinementData({
       originalSectors: sectorsToRefine,
@@ -6792,7 +6603,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
   // IATI Search handlers
   const handleIatiSearch = useCallback(async () => {
-    console.log('[IATI Search] Starting search with filters:', iatiSearchFilters);
 
     if (!iatiSearchFilters.activityTitle.trim()) {
       toast.error('Please enter an activity title to search');
@@ -6845,7 +6655,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
   // Handle External Publisher modal choice
   const handleExternalPublisherChoice = async (choice: 'merge' | 'import_as_reporting_org') => {
-    console.log('[External Publisher] User chose:', choice);
     console.log('[External Publisher] Current state:', {
       parsedFieldsCount: parsedFields.length,
       importStage: importStatus.stage,
@@ -6856,7 +6665,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
     if (choice === 'import_as_reporting_org') {
       // Import under original publisher - show reporting org selection modal first
-      console.log('[External Publisher] ✅ Setting import mode to import_as_reporting_org');
       setSelectedImportMode('import_as_reporting_org');
       
       // Extract reporting org from XML - use multiple sources for reliability
@@ -6949,7 +6757,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             // Step 2: Try match by alias_refs array (case-insensitive)
-            console.log('[External Publisher] No direct match, checking alias_refs...');
             matchingOrg = orgs?.find((o: any) => {
               if (!o || !o.alias_refs || !Array.isArray(o.alias_refs)) {
                 return false;
@@ -6974,7 +6781,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
         
         if (!matchingOrg && normalizedXmlOrgRef) {
-          console.log('[External Publisher] ❌ No matching org found for:', xmlOrgRef);
           // Log available orgs with IATI IDs for debugging
           const orgsWithIatiIds = orgs?.filter((o: any) => 
             o && (o.iati_org_id || (o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.length > 0))
@@ -7014,7 +6820,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         } else {
           setSelectedReportingOrgId(null);
-          console.log('[External Publisher] ⚠️  No match found - user will need to select manually');
           // Show a helpful message to the user
           toast.info('No matching organization found', {
             description: `Could not find an organization matching "${xmlOrgRef}". Please select one manually.`
@@ -7035,7 +6840,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     } else {
       // For fork or merge, the fields are already parsed and preview is already showing
       // Ensure the import status is set correctly
-      console.log('[External Publisher] Ensuring preview mode is active');
       setImportStatus({ stage: 'previewing', progress: 100 });
       toast.success(`Proceeding with ${choice}. Review and select fields to import below.`);
     }
@@ -7091,7 +6895,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         throw new Error('No XML data received from IATI Datastore');
       }
       
-      console.log('[IATI Search] Fetched XML for:', activity.iatiIdentifier);
       
       console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Structure Analysis:', {
         xmlLength: data.xml.length,
@@ -7135,18 +6938,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         }
       } else {
-        console.log('[IATI Search] ❌ No hierarchy found in original XML string');
         // IATI Standard: If hierarchy is not reported, 1 is assumed
         // Since IATI Datastore often strips this attribute, default to 1
         extractedHierarchy = 1;
-        console.log('[IATI Search] ℹ️ Defaulting to hierarchy=1 (IATI standard default)');
       }
       
       // Extract single activity from multi-activity XML if needed
       let singleActivityXml = data.xml;
       
       if (data.xml.includes('<iati-activities')) {
-        console.log('[IATI Search] Multi-activity XML detected, extracting single activity');
         
         try {
           // Parse the XML DOM
@@ -7154,7 +6954,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const xmlDoc = parser.parseFromString(data.xml, 'text/xml');
           const activities = xmlDoc.getElementsByTagName('iati-activity');
           
-          console.log('[IATI Search] Found', activities.length, 'activities in XML');
           
           // DIAGNOSTIC: Log transaction count per activity
           const activityTransactionCounts: Array<{identifier: string, transactionCount: number, index: number}> = [];
@@ -7168,7 +6967,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               index: i
             });
           }
-          console.log('[IATI Search] 🔍 DIAGNOSTIC - Transaction counts per activity:', activityTransactionCounts);
           
           // Find the activity with matching identifier
           let matchingActivity = null;
@@ -7178,7 +6976,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             if (identifierEl && identifierEl.textContent?.trim() === activity.iatiIdentifier) {
               matchingActivity = activities[i];
               matchingIndex = i;
-              console.log('[IATI Search] Found matching activity at index', i);
               console.log('[IATI Search] 🔍 DIAGNOSTIC - Matching activity details:', {
                 index: i,
                 identifier: activity.iatiIdentifier,
@@ -7228,7 +7025,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 /<iati-activity(\s)/,
                 `<iati-activity hierarchy="${hierarchyToInject}"$1`
               );
-              console.log('[IATI Search] ✅ Hierarchy attribute injected. New XML:', activityXml.substring(0, 500));
             } else {
               console.log('[IATI Search] ℹ️ Hierarchy injection check:', {
                 alreadyHasHierarchy: activityXml.includes('hierarchy='),
@@ -7240,7 +7036,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
             // Wrap in proper root element with XML declaration
             singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
-            console.log('[IATI Search] Extracted single activity, length:', singleActivityXml.length);
             console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Extraction:', {
               originalLength: data.xml.length,
               extractedLength: singleActivityXml.length,
@@ -7265,34 +7060,28 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   /<iati-activity(\s)/,
                   `<iati-activity hierarchy="${hierarchyToInject}"$1`
                 );
-                console.log('[IATI Search] ✅ Hierarchy attribute injected (fallback)');
               }
 
               // Wrap in proper root element with XML declaration
               singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
-              console.log('[IATI Search] Using first activity, length:', singleActivityXml.length);
               console.warn('[IATI Search] 🔍 DIAGNOSTIC - Using fallback activity (first activity in XML)');
             }
           }
         } catch (extractError) {
           console.error('[IATI Search] Error extracting single activity:', extractError);
-          console.log('[IATI Search] Falling back to original XML');
           // Fall back to using the original XML
         }
       } else {
         // Single activity XML - ensure it's properly wrapped
         if (!singleActivityXml.includes('<iati-activities>') && singleActivityXml.includes('<iati-activity')) {
-          console.log('[IATI Search] 🔍 DIAGNOSTIC - Single activity XML detected, ensuring proper wrapper');
           // Check if it needs wrapping
           if (!singleActivityXml.trim().startsWith('<?xml')) {
             singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${singleActivityXml}</iati-activities>`;
-            console.log('[IATI Search] Wrapped single activity XML in iati-activities root');
           }
         }
       }
       
       // Parse the XML to check for external publisher
-      console.log('[IATI Search] 🔍 DIAGNOSTIC - About to parse XML, length:', singleActivityXml.length);
       const parser = new IATIXMLParser(singleActivityXml);
       const parsedActivity = parser.parseActivity();
       
@@ -7300,16 +7089,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       if (hierarchyFromSearchResult !== null && !isNaN(hierarchyFromSearchResult)) {
         // Priority 1: Use hierarchy from search result (most reliable)
         parsedActivity.hierarchy = hierarchyFromSearchResult;
-        console.log('[IATI Search] ✅ Added hierarchy from search result to parsed activity:', hierarchyFromSearchResult);
       } else if (extractedHierarchy !== null && !parsedActivity.hierarchy) {
         // Priority 2: Use hierarchy extracted from raw XML string
         parsedActivity.hierarchy = extractedHierarchy;
-        console.log('[IATI Search] ✅ Manually added hierarchy from raw XML to parsed activity:', extractedHierarchy);
       } else if (parsedActivity.hierarchy) {
         // Priority 3: Use hierarchy parsed from XML (already set)
-        console.log('[IATI Search] ✅ Hierarchy already parsed from XML:', parsedActivity.hierarchy);
       } else {
-        console.log('[IATI Search] ❌ No hierarchy found from any source');
       }
       
       // DIAGNOSTIC: Log parser results
@@ -7348,7 +7133,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       );
       
       // Store the extracted single activity XML
-      console.log('[IATI Search] Setting snippet content, length:', singleActivityXml.length);
       setSnippetContent(singleActivityXml);
       
       // Clear hierarchy from previous search when starting new import
@@ -7359,7 +7143,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       if (!isOwnedActivity && reportingOrgRef) {
         // External publisher detected - parse after state updates
-        console.log('[IATI Search] External publisher detected, will parse after state update');
         
         const meta = {
           iatiId: parsedActivity.iatiIdentifier || activity.iatiIdentifier,
@@ -7376,7 +7159,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         setShouldAutoParseRef(true);
       } else {
         // Activity is owned by user or no reporting org - proceed with automatic import
-        console.log('[IATI Search] Activity is owned by user, will parse after state update');
         
         const toastId = toast.loading('Parsing IATI activity from Datastore...');
         loadingToastRef.current = toastId;
@@ -7396,7 +7178,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   
   // Handler for continuing with import after acronym review
   const handleContinueWithImport = (acronyms: Record<string, string>) => {
-    console.log('[IATI Import] User reviewed acronyms:', acronyms);
     setUserAcronyms(acronyms);
     setShowAcronymModal(false);
     
@@ -7478,7 +7259,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       originalConsoleWarn.apply(console, args);
     };
     
-    console.log('🚀 [IATI Import] Starting enhanced import process with comprehensive selection support...');
     
     // Check if parsedActivity is available
     if (!parsedActivity) {
@@ -7582,63 +7362,50 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     const selectionRatio = selectedFields.length / totalFields;
     const isComprehensiveSelection = selectionRatio > 0.8; // If more than 80% of fields are selected
     
-    console.log(`[IATI Import] Selection analysis: ${selectedFields.length}/${totalFields} fields selected (${(selectionRatio * 100).toFixed(1)}%)`);
-    console.log(`[IATI Import] Comprehensive selection detected: ${isComprehensiveSelection}`);
     
     if (isComprehensiveSelection) {
-      console.log('[IATI Import] Comprehensive selection detected - enabling bulk import for all available sub-items');
       
       // Auto-enable bulk import flags for comprehensive selection
       const updateData: any = {};
       
       if (parsedActivity?.transactions?.length > 0) {
         updateData._importTransactions = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.transactions.length} transactions`);
       }
 
       if (parsedActivity?.participatingOrgs?.length > 0) {
         updateData.importedParticipatingOrgs = parsedActivity.participatingOrgs;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.participatingOrgs.length} participating organizations`);
       }
 
       if (parsedActivity?.budgets?.length > 0) {
         updateData._importBudgets = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.budgets.length} budgets`);
       }
       
       if (parsedActivity?.plannedDisbursements?.length > 0) {
         updateData._importPlannedDisbursements = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.plannedDisbursements.length} planned disbursements`);
       }
       
       if (parsedActivity?.policyMarkers?.length > 0) {
         updateData._importPolicyMarkers = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.policyMarkers.length} policy markers`);
       }
       
       if (parsedActivity?.locations?.length > 0) {
         updateData._importLocations = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.locations.length} locations`);
       }
       
       if (parsedActivity?.tagClassifications?.length > 0) {
         updateData._importTags = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.tagClassifications.length} tags`);
       }
       
       if (parsedActivity?.conditions?.conditions?.length > 0) {
         updateData._importConditions = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.conditions.conditions.length} conditions`);
       }
       
       if (parsedActivity?.humanitarianScopes?.length > 0) {
         updateData._importHumanitarianScopes = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.humanitarianScopes.length} humanitarian scopes`);
       }
       
       if (parsedActivity?.document_links?.length > 0) {
         updateData._importDocumentLinks = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.document_links.length} document links`);
       }
       
       if (parsedActivity?.results?.length > 0) {
@@ -7648,26 +7415,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         parsedActivity.results.forEach((result: any) => {
           updateData.importedResults!.push(result);
         });
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.results.length} results`);
       }
       
       if (parsedActivity?.sectors?.length > 0) {
         updateData._importSectors = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.sectors.length} sectors`);
       }
       
       if (parsedActivity?.forwardSpendingPlans?.length > 0) {
         updateData._importFss = true;
-        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.forwardSpendingPlans.length} FSS items`);
       }
       
       // Store the comprehensive selection flags
       (window as any).__comprehensiveImportFlags = updateData;
-      console.log('[IATI Import] Comprehensive import flags stored for processing');
     }
     const selectedFieldsList = parsedFields.filter(f => f.selected);
-    console.log('📋 [IATI Import] Selected fields:', selectedFieldsList);
-    console.log('📋 [IATI Import] Selected fields count:', selectedFieldsList.length);
     
     // Track selected fields in summary
     importSummary.selectedFields = selectedFieldsList.map(f => ({
@@ -7693,7 +7454,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       const comprehensiveFlags = (window as any).__comprehensiveImportFlags;
       if (comprehensiveFlags) {
         Object.assign(updateData, comprehensiveFlags);
-        console.log('[IATI Import] Merged comprehensive import flags:', Object.keys(comprehensiveFlags));
         // Clear the flags after use
         delete (window as any).__comprehensiveImportFlags;
       }
@@ -7709,7 +7469,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       if (updateData._importTransactions === true && !updateData.importedTransactions) {
         updateData.importedTransactions = parsedActivity?.transactions || [];
-        console.log(`[IATI Import] 🎯 BULK MODE: Collected ${updateData.importedTransactions.length} transactions from parsed activity for comprehensive import`);
         console.log('[IATI Import] 🔍 DIAGNOSTIC - Post-bulk collection:', {
           transactionCount: updateData.importedTransactions.length,
           transactionRefs: updateData.importedTransactions.map((t: any) => t.ref || `no-ref-${t.type}-${t.date}`).slice(0, 10)
@@ -7724,21 +7483,17 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       if (updateData._importBudgets === true && !updateData.importedBudgets) {
         updateData.importedBudgets = parsedActivity?.budgets || [];
-        console.log(`[IATI Import] 🎯 BULK MODE: Collected ${updateData.importedBudgets.length} budgets from parsed activity for comprehensive import`);
       }
       
       if (updateData._importPlannedDisbursements === true && !updateData.importedPlannedDisbursements) {
         updateData.importedPlannedDisbursements = parsedActivity?.plannedDisbursements || [];
-        console.log(`[IATI Import] 🎯 BULK MODE: Collected ${updateData.importedPlannedDisbursements.length} planned disbursements from parsed activity for comprehensive import`);
       }
       
       if (updateData._importLocations === true && !updateData.importedLocations) {
         updateData.importedLocations = parsedActivity?.locations || [];
-        console.log(`[IATI Import] 🎯 BULK MODE: Collected ${updateData.importedLocations.length} locations from parsed activity for comprehensive import`);
       }
       
       // PHASE 1: Comprehensive diagnostic logging for field processing
-      console.log('🔍 [IATI Import] DIAGNOSTIC - Field Processing Analysis:');
       console.log('🔍 [IATI Import] DIAGNOSTIC - Fields to Process:', selectedFieldsList.map(f => ({ 
         name: f.fieldName, 
         hasItemData: !!f.itemData, 
@@ -7749,7 +7504,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       // Check specifically for document fields
       const documentFields = selectedFieldsList.filter(f => f.fieldName.startsWith('Document Link '));
-      console.log('📄 [IATI Import] DOCUMENT FIELDS SELECTED:', documentFields.length);
       if (documentFields.length > 0) {
         console.log('📄 [IATI Import] DOCUMENT FIELDS DETAILS:', documentFields.map(f => ({
           fieldName: f.fieldName,
@@ -7768,7 +7522,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       selectedFieldsList.forEach(field => {
         // Check for cancel request
         if (importCancelRequested) {
-          console.log('[IATI Import] Import cancelled by user during field processing');
           return; // Skip this field
         }
 
@@ -7779,7 +7532,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         });
 
         // PHASE 1: Diagnostic logging for each field being processed
-        console.log(`🔍 [IATI Import] DIAGNOSTIC - Processing Field: ${field.fieldName} (tab: ${field.tab})`);
         console.log(`🔍 [IATI Import] DIAGNOSTIC - Field Data:`, {
           hasImportValue: !!field.importValue,
           hasItemData: !!field.itemData,
@@ -7794,19 +7546,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             importSummary.basicFields.push({ field: 'Activity Title', value: field.importValue });
             break;
           case 'Activity Description':
-            console.log('[Import Update] Setting description_narrative:', field.importValue?.substring(0, 100));
             updateData.description_narrative = field.importValue;
             break;
           case 'Activity Description - Objectives':
-            console.log('[Import Update] Setting description_objectives:', field.importValue?.substring(0, 100));
             updateData.description_objectives = field.importValue;
             break;
           case 'Activity Description - Target Groups':
-            console.log('[Import Update] Setting description_target_groups:', field.importValue?.substring(0, 100));
             updateData.description_target_groups = field.importValue;
             break;
           case 'Activity Description - Other':
-            console.log('[Import Update] Setting description_other:', field.importValue?.substring(0, 100));
             updateData.description_other = field.importValue;
             break;
           case 'Planned Start Date':
@@ -7867,11 +7615,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             // Extract numeric value from string like "88.8%"
             const percentageStr = typeof field.importValue === 'string' ? field.importValue : String(field.importValue);
             const numericValue = parseFloat(percentageStr.replace('%', ''));
-            console.log(`[IATI Import] Processing Capital Spend Percentage: ${percentageStr} -> ${numericValue}`);
             // Validate range 0-100 and round to 2 decimal places
             if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 100) {
               updateData.capital_spend_percentage = Math.round(numericValue * 100) / 100;
-              console.log(`[IATI Import] ✅ Capital spend percentage set to: ${updateData.capital_spend_percentage}`);
             } else if (!isNaN(numericValue)) {
               console.warn(`[IATI Import] Capital spend percentage ${numericValue} is out of range (0-100), skipping`);
             } else {
@@ -7893,7 +7639,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 type: updateData.reporting_org_type
               });
             } else {
-              console.log(`[IATI Import] Skipping reporting org update - mode is ${selectedImportMode}, not import_as_reporting_org`);
             }
             break;
           case 'Sectors':
@@ -8001,7 +7746,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             if (!updateData.importedResults) updateData.importedResults = [];
             if (field.itemData && field.itemIndex !== undefined) {
               updateData.importedResults.push(field.itemData);
-              console.log(`[IATI Import] Added result ${field.itemIndex} to import queue`);
             }
             break;
           case 'Contacts':
@@ -8022,12 +7766,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   mailingAddress: contact.mailingAddress
                 });
               });
-              console.log(`[IATI Import] Adding ${parsedActivity.contactInfo.length} contacts for import`);
             }
             break;
           case 'Conditions':
             // Handle conditions import
-            console.log('[XML Import DEBUG] Conditions case triggered!', parsedActivity.conditions);
             if (parsedActivity.conditions && parsedActivity.conditions.conditions.length > 0) {
               updateData._importConditions = true;
               updateData.conditionsData = {
@@ -8039,7 +7781,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   }
                 }))
               };
-              console.log(`[IATI Import] Adding ${parsedActivity.conditions.conditions.length} conditions for import`);
             }
             break;
           case 'Participating Organizations':
@@ -8048,10 +7789,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
               // Check if bulk mode is already active to avoid duplicates
               if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
-                console.log(`[IATI Import] Skipping participating orgs addition - already have ${updateData.importedParticipatingOrgs.length} orgs`);
               } else {
                 updateData.importedParticipatingOrgs = parsedActivity.participatingOrgs;
-                console.log(`[IATI Import] Adding ${parsedActivity.participatingOrgs.length} participating organizations for bulk import`);
               }
             }
             break;
@@ -8060,13 +7799,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
               // Check if bulk mode is already active to avoid duplicates
               if (updateData._importBudgets === true) {
-                console.log(`[IATI Import] Skipping individual budget addition - bulk mode already active with ${updateData.importedBudgets?.length || 0} budgets`);
               } else {
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
                 parsedActivity.budgets.forEach((budget: any) => {
                   updateData.importedBudgets.push(budget);
                 });
-                console.log(`[IATI Import] Adding ${parsedActivity.budgets.length} budgets for import`);
               }
             }
             break;
@@ -8075,13 +7812,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
               // Check if bulk mode is already active to avoid duplicates
               if (updateData._importPlannedDisbursements === true) {
-                console.log(`[IATI Import] Skipping individual planned disbursement addition - bulk mode already active with ${updateData.importedPlannedDisbursements?.length || 0} planned disbursements`);
               } else {
                 if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
                 parsedActivity.plannedDisbursements.forEach((pd: any) => {
                   updateData.importedPlannedDisbursements.push(pd);
                 });
-                console.log(`[IATI Import] Adding ${parsedActivity.plannedDisbursements.length} planned disbursements for import`);
               }
             }
             break;
@@ -8091,7 +7826,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             if (parsedActivity.locations && parsedActivity.locations.length > 0) {
               updateData._importLocations = true;
               updateData.locationsData = parsedActivity.locations;
-              console.log(`[IATI Import] Adding ${parsedActivity.locations.length} locations for import`);
             }
             break;
           case 'Humanitarian Scope':
@@ -8110,7 +7844,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (parsedActivity.humanitarian) {
                 updateData.humanitarian = parsedActivity.humanitarian;
               }
-              console.log(`[IATI Import] Adding ${parsedActivity.humanitarianScopes.length} humanitarian scopes for import`);
             }
             break;
           case 'Document Links':
@@ -8127,12 +7860,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 language_code: doc.language_code || 'en',
                 document_date: doc.document_date
               }));
-              console.log(`[IATI Import] Adding ${parsedActivity.document_links.length} document links for import`);
             }
             break;
           case 'DAC CRS Reporting':
             // Handle full DAC CRS Reporting import (includes all financing terms data)
-            console.log('[XML Import DEBUG] DAC CRS Reporting case triggered!');
             if (parsedActivity.financingTerms) {
               updateData._importFinancingTerms = true;
               updateData.financingTermsData = {
@@ -8147,7 +7878,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             break;
           case 'Loan Terms':
             // Handle loan terms import (part of CRS financing)
-            console.log('[XML Import DEBUG] Loan Terms case triggered!');
             if (parsedActivity.financingTerms?.loanTerms) {
               updateData._importFinancingTerms = true;
               if (!updateData.financingTermsData) {
@@ -8157,12 +7887,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (parsedActivity.financingTerms.channel_code) {
                 updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
               }
-              console.log('[IATI Import] Adding loan terms for import:', parsedActivity.financingTerms.loanTerms);
             }
             break;
           case 'Loan Status (Yearly)':
             // Handle loan status import (part of CRS financing)
-            console.log('[XML Import DEBUG] Loan Status case triggered!');
             if (parsedActivity.financingTerms?.loanStatuses) {
               updateData._importFinancingTerms = true;
               if (!updateData.financingTermsData) {
@@ -8172,12 +7900,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (parsedActivity.financingTerms.channel_code) {
                 updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
               }
-              console.log('[IATI Import] Adding loan statuses for import:', parsedActivity.financingTerms.loanStatuses.length);
             }
             break;
           case 'OECD CRS Flags':
             // Handle CRS flags import (part of CRS financing)
-            console.log('[XML Import DEBUG] OECD CRS Flags case triggered!');
             if (parsedActivity.financingTerms?.other_flags) {
               updateData._importFinancingTerms = true;
               if (!updateData.financingTermsData) {
@@ -8187,13 +7913,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (parsedActivity.financingTerms.channel_code) {
                 updateData.financingTermsData.channelCode = parsedActivity.financingTerms.channel_code;
               }
-              console.log('[IATI Import] Adding CRS flags for import:', parsedActivity.financingTerms.other_flags.length);
             }
             break;
           case 'Financing Terms':
           case 'CRS Financing':
             // Handle grouped CRS financing terms import (fallback - should not normally be used)
-            console.log('[XML Import DEBUG] Grouped Financing Terms case triggered!', parsedActivity.financingTerms);
             if (parsedActivity.financingTerms) {
               updateData._importFinancingTerms = true;
               updateData.financingTermsData = {
@@ -8202,7 +7926,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 loanStatuses: parsedActivity.financingTerms.loanStatuses,
                 channelCode: parsedActivity.financingTerms.channel_code
               };
-              console.log('[IATI Import] Adding all financing terms for import');
             }
             break;
           default:
@@ -8211,7 +7934,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (!updateData.importedOtherIdentifiers) updateData.importedOtherIdentifiers = [];
               const rawData = (field.importValue as any)?._rawData || field.importValue;
               updateData.importedOtherIdentifiers.push(rawData);
-              console.log(`[IATI Import] Adding other identifier for import:`, rawData);
             } else if (field.fieldName === 'Participating Organization' || 
                        field.fieldName.startsWith('Participating Organization:') ||
                        field.fieldName.startsWith('Participating Organization')) {
@@ -8225,30 +7947,24 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                                   );
               
               if (hasBulkMode) {
-                console.log(`[IATI Import] Skipping individual participating org addition - bulk mode already active with ${updateData.importedParticipatingOrgs.length} orgs`);
               } else {
                 // Collect participating organization data for import
                 if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
                 updateData.importedParticipatingOrgs.push(field.importValue);
-                console.log(`[IATI Import] Adding participating organization for import:`, field.importValue);
               }
             } else if (field.fieldName.startsWith('Related Activity')) {
               // Collect related activity data for import
               if (!updateData.importedRelatedActivities) updateData.importedRelatedActivities = [];
               updateData.importedRelatedActivities.push(field.importValue);
-              console.log(`[IATI Import] Adding related activity for import:`, field.importValue);
             } else if (field.fieldName.startsWith('Tag ') || field.fieldName === 'Tags') {
               // Handle tag import - set flag to trigger server-side import
               updateData._importTags = true;
-              console.log(`[IATI Import] 🏷️ Enabling tags import for field: ${field.fieldName}`);
-              console.log(`[IATI Import] 🏷️ parsedActivity?.tagClassifications:`, parsedActivity?.tagClassifications);
             } else
             if (field.fieldName === 'Policy Marker' || field.fieldName.startsWith('Policy Marker')) {
               // Handle individual policy marker import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPolicyMarkers === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[IATI Import] Skipping individual policy marker processing - comprehensive selection active');
               } else {
                 // Individual selection mode
               if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
@@ -8259,7 +7975,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importTransactions === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log(`[IATI Import] Skipping individual transaction ${field.fieldName} - bulk mode already active`);
               } else {
                 console.log('🔍 [IATI Import] DIAGNOSTIC - Transaction Processing:', {
                   fieldName: field.fieldName,
@@ -8291,15 +8006,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                         existingCount: updateData.importedTransactions.length
                       });
                     } else {
-                      console.log('[XML Import DEBUG] Adding transaction to array:', txData);
                       updateData.importedTransactions.push(txData);
-                      console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
                     }
                   } else {
                     // No ref attribute - import all transactions (they're unique by their position/index)
-                    console.log('[XML Import DEBUG] Adding transaction to array:', txData);
                     updateData.importedTransactions.push(txData);
-                    console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
                   }
                 } else {
                   console.warn('🔍 [IATI Import] DIAGNOSTIC - No transaction data found for:', field.fieldName);
@@ -8310,7 +8021,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importBudgets === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[IATI Import] Skipping individual budget processing - comprehensive selection active');
               } else {
                 // Individual selection mode
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
@@ -8321,7 +8031,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPlannedDisbursements === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[IATI Import] Skipping individual planned disbursement processing - comprehensive selection active');
               } else {
                 // Individual selection mode
                 if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
@@ -8332,7 +8041,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importLocations === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log('[IATI Import] Skipping individual location processing - comprehensive selection active');
               } else {
                 // Individual selection mode
                 if (!updateData.importedLocations) updateData.importedLocations = [];
@@ -8357,26 +8065,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   field
                 });
               }
-              console.log(`[IATI Import] Total country budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
             } else if (field.fieldName === 'Budget' || field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
               // Check if bulk mode is already active to avoid duplicates
               if (updateData._importBudgets === true) {
-                console.log(`[IATI Import] Skipping individual budget ${field.fieldName} - bulk mode already active`);
               } else {
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
                 const budgetIndex = field.itemIndex !== undefined ? field.itemIndex : (field.fieldName.includes(' ') ? parseInt(field.fieldName.split(' ')[1]) - 1 : 0);
                 if (parsedActivity?.budgets && parsedActivity.budgets[budgetIndex]) {
                   updateData.importedBudgets.push(parsedActivity.budgets[budgetIndex]);
                 }
-                console.log(`[IATI Import] Adding budget ${budgetIndex + 1} for import`);
               }
             } else if (field.fieldName === 'Planned Disbursement' || field.fieldName.startsWith('Planned Disbursement ')) {
               // Collect planned disbursement data for import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPlannedDisbursements === true) {
                 // Comprehensive selection is active - skip individual processing
-                console.log(`[IATI Import] Skipping individual planned disbursement ${field.fieldName} - bulk mode already active`);
               } else {
                 // Individual selection mode
                 if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
@@ -8384,17 +8088,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 if (parsedActivity?.plannedDisbursements && parsedActivity.plannedDisbursements[disbursementIndex]) {
                   updateData.importedPlannedDisbursements.push(parsedActivity.plannedDisbursements[disbursementIndex]);
                 }
-                console.log(`[IATI Import] Adding planned disbursement ${disbursementIndex + 1} for import`);
               }
             } else if (field.fieldName === 'Forward Spend') {
               // Collect FSS data for import
               if (field.fssData) {
                 updateData.importedFss = field.fssData;
-                console.log('[IATI Import] Adding FSS for import');
               }
             } else if (field.fieldName.startsWith('Document Link ') && field.itemType === 'document') {
               // Handle individual document import
-              console.log(`[IATI Import] 📄 DOCUMENT FIELD MATCHED: ${field.fieldName}`);
               console.log(`[IATI Import] 📄 Document field details:`, {
                 fieldName: field.fieldName,
                 itemType: field.itemType,
@@ -8410,17 +8111,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   category: field.itemData.category_code
                 });
               } else {
-                console.log(`[IATI Import] 📄 Document field has no itemData, trying fallback`);
                 // Fallback: try to get from parsedActivity using itemIndex
                 const docIndex = field.itemIndex !== undefined ? field.itemIndex : (field.fieldName.includes(' ') ? parseInt(field.fieldName.split(' ')[2]) - 1 : 0);
                 if (parsedActivity?.document_links && parsedActivity.document_links[docIndex]) {
                   updateData.importedDocuments.push(parsedActivity.document_links[docIndex]);
-                  console.log(`[IATI Import] 📄 Adding document ${docIndex + 1} for import (fallback):`, parsedActivity.document_links[docIndex]);
                 } else {
                   console.error(`[IATI Import] 📄 ERROR: Could not find document at index ${docIndex} in parsedActivity.document_links`);
                 }
               }
-              console.log(`[IATI Import] 📄 Total documents queued for import: ${updateData.importedDocuments?.length || 0}`);
               // PHASE 2: Transaction processing is now handled earlier in the unified logic (line 3824-3856)
             } else if (field.fieldName.startsWith('Location ')) {
               // Collect location data for import
@@ -8429,7 +8127,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (parsedActivity?.locations && parsedActivity.locations[locationIndex]) {
                 updateData.importedLocations.push(parsedActivity.locations[locationIndex]);
               }
-              console.log(`[IATI Import] Adding location ${locationIndex + 1} for import`);
             } else if (field.fieldName.startsWith('Recipient Country ') && field.isRecipientCountryItem) {
               // Collect individual recipient country data for import
               if (!updateData.importedRecipientCountries) updateData.importedRecipientCountries = [];
@@ -8449,7 +8146,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   vocabularyUri: null,
                   narrative: field.recipientCountryData.narrative || null
                 });
-                console.log(`[IATI Import] Adding recipient country: ${field.recipientCountryData.code}`);
               }
             } else if (field.fieldName.startsWith('Recipient Region ') && field.isRecipientRegionItem) {
               // Collect individual recipient region data for import
@@ -8470,18 +8166,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   vocabularyUri: field.recipientRegionData.vocabularyUri || null,
                   narrative: field.recipientRegionData.narrative || null
                 });
-                console.log(`[IATI Import] Adding recipient region: ${field.recipientRegionData.code}`);
               }
             } else if (field.tab === 'contacts' || field.fieldName.includes('Contact')) {
               // Collect contact data for import
               if (!updateData.importedContacts) updateData.importedContacts = [];
               updateData.importedContacts.push(field.importValue);
-              console.log(`[IATI Import] Adding contact for import:`, field.importValue);
             } else if (field.fieldName === 'Humanitarian Activity') {
               // Collect humanitarian flag for import
               if (!updateData.importedHumanitarian) updateData.importedHumanitarian = {};
               updateData.importedHumanitarian.humanitarian = field.importValue === 'Yes';
-              console.log(`[IATI Import] Adding humanitarian flag for import:`, field.importValue);
             } else if (field.fieldName.startsWith('Humanitarian Scope ')) {
               // Collect humanitarian scope data for import
               if (!updateData.importedHumanitarian) updateData.importedHumanitarian = {};
@@ -8504,7 +8197,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               };
               
               updateData.importedHumanitarian.humanitarian_scopes.push(transformedScope);
-              console.log(`[IATI Import] Adding humanitarian scope for import (flag auto-set to true):`, transformedScope);
             }
             break;
         }
@@ -8512,7 +8204,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Check for cancel before making API call
       if (importCancelRequested) {
-        console.log('[IATI Import] Import cancelled before API call');
         toast.warning('Import cancelled', {
           description: 'The import was cancelled. No data was saved.'
         });
@@ -8528,7 +8219,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       });
 
       // Make API call to update the activity
-      console.log('[IATI Import] Making API call with data:', updateData);
 
       // Log budget mapping data specifically if present
       if (updateData.importedCountryBudgetItems) {
@@ -8550,7 +8240,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       });
       
       if (selectedImportMode === 'import_as_reporting_org') {
-        console.log('[IATI Import] ✅ Using import-as-reporting-org endpoint for external publisher import');
 
         // Build selected fields map
         const selectedFieldsMap: Record<string, boolean> = {};
@@ -8580,7 +8269,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         });
       } else {
         // Regular import flow - update existing activity (merge/fork/reference)
-        console.log('[IATI Import] API URL:', `/api/activities/${activityId}/import-iati`);
 
         // Prepare the request body with fields and iati_data
         const importRequestBody = {
@@ -8670,11 +8358,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         };
 
-        console.log('[IATI Import] Sending import request with fields:', importRequestBody.fields);
-        console.log('[IATI Import] Transaction count:', importRequestBody.iati_data.transactions?.length);
-        console.log('[IATI Import] Budget count:', importRequestBody.iati_data.budgets?.length);
-        console.log('[IATI Import] 🏷️ Tags field value:', importRequestBody.fields.tags);
-        console.log('[IATI Import] 🏷️ Tags data:', importRequestBody.iati_data.tags);
 
         response = await apiFetch(`/api/activities/${activityId}/import-iati`, {
           method: 'POST',
@@ -8687,8 +8370,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }),
         });
 
-        console.log('[IATI Import] API Response status:', response.status);
-        console.log('[IATI Import] API Response ok:', response.ok);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -8698,15 +8379,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Parse response JSON to check import results
         const result = await response.json();
-        console.log('[IATI Import] API response data:', result);
 
         // If the server-side /import-iati endpoint actually added transactions, record that
         // Check transactions_added to ensure transactions were actually imported, not just requested
         if (importRequestBody.fields.transactions && result?.fields_updated?.includes('transactions')) {
           didServerSideTransactionImport = true;
-          console.log('[IATI Import] Server-side transaction import confirmed:', result.summary.transactions_added, 'transactions added');
         } else if (importRequestBody.fields.transactions) {
-          console.log('[IATI Import] Transactions were requested but none added server-side, will process client-side');
         }
         
         // If the server-side /import-iati endpoint handled related activities, record that
@@ -8717,8 +8395,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle import-as-reporting-org response
       if (selectedImportMode === 'import_as_reporting_org') {
-        console.log('[IATI Import] API Response status:', response.status);
-        console.log('[IATI Import] API Response ok:', response.ok);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -8727,7 +8403,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
 
         const result = await response.json();
-        console.log('[IATI Import] Import as reporting org result:', result);
 
         // Check if the API returned a new/different activity ID (happens when re-importing)
         const returnedActivityId = result.createdId || result.id || (result.count > 0 && result.importedActivities?.[0]?.id);
@@ -8736,7 +8411,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         if (activityId) {
           // Check if the activity was replaced (deleted and recreated with new ID)
           if (returnedActivityId && returnedActivityId !== activityId) {
-            console.log('[IATI Import] Activity was replaced! Old ID:', activityId, 'New ID:', returnedActivityId);
             // Invalidate old cache
             await invalidateActivityCache(activityId);
             // Update effective activity ID to the new one
@@ -8783,8 +8457,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }
       }
       // Refresh activity data to ensure subsequent imports use updated default_currency
-      console.log('[IATI Import] Refreshing activity data after field updates...');
-      console.log('[IATI Import] Current default_currency before refresh:', currentActivityData.default_currency);
       
       // Invalidate cache to force fresh fetch
       await invalidateActivityCache(effectiveActivityId);
@@ -8803,11 +8475,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       // Update state for UI
       setCurrentActivityData(freshActivityData);
-      console.log('[IATI Import] ✅ Refreshed default_currency:', freshActivityData.default_currency);
 
       // Handle other identifiers import if any
       if (updateData.importedOtherIdentifiers && updateData.importedOtherIdentifiers.length > 0) {
-        console.log('[IATI Import] Processing other identifiers import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 80,
@@ -8822,7 +8492,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             ownerOrg: identifier.ownerOrg || identifier._rawData?.ownerOrg
           }));
 
-          console.log('[IATI Import] Saving other identifiers:', otherIdentifiersData);
 
           // Save using the field API
           const otherIdentifiersResponse = await apiFetch(`/api/activities/field`, {
@@ -8845,7 +8514,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             const successData = await otherIdentifiersResponse.json();
-            console.log('[IATI Import] Other identifiers imported successfully:', successData);
             toast.success(`Other identifiers imported successfully`, {
               description: `${otherIdentifiersData.length} identifier(s) added to the activity`
             });
@@ -8860,7 +8528,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle sector imports if any
       if (updateData._importSectors) {
-        console.log('[IATI Import] Processing sector imports...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 85,
@@ -8873,7 +8540,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           // Check if we have refined sectors
           if ((sectorField as any).refinedSectors && (sectorField as any).refinedSectors.length > 0) {
-            console.log('[IATI Import] Using refined sectors:', (sectorField as any).refinedSectors);
             sectorsToImport = (sectorField as any).refinedSectors.map((sector: any) => ({
               sector_code: sector.code,
               sector_name: sector.name,
@@ -8882,7 +8548,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               level: 'subsector' // Refined sectors are always 5-digit subsectors
             }));
           } else if (savedRefinedSectors.length > 0) {
-            console.log('[IATI Import] Using saved refined sectors:', savedRefinedSectors);
             sectorsToImport = savedRefinedSectors.map((sector: any) => ({
               sector_code: sector.code,
               sector_name: sector.name,
@@ -8893,7 +8558,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           } else {
             // Use original sectors from import if no refinement was done
             // Filter out locked (non-DAC) sectors
-            console.log('[IATI Import] Using original sectors from field');
             const importableSectors = (sectorField.importValue || []).filter((sector: any) => !sector.locked);
             sectorsToImport = importableSectors.map((sector: any) => ({
               sector_code: sector.code,
@@ -8906,7 +8570,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
 
           if (sectorsToImport.length > 0) {
-            console.log('[IATI Import] Importing sectors to database:', sectorsToImport);
             
             // Track sectors in summary
             importSummary.sectors.attempted = sectorsToImport.length;
@@ -8975,7 +8638,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 const isValid = isValidSectorCode(s.sector_code, s.vocabulary);
                 
                 // Log validation for debugging
-                console.log('[Sector Validation] Checking code:', s.sector_code, 'vocabulary:', s.vocabulary, 'result:', isValid ? 'VALID' : 'INVALID');
                 
                 if (!isValid) {
                   console.warn('[Sector Validation] Invalid sector:', {
@@ -9029,7 +8691,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 }
               } else {
                 const successData = await sectorResponse.json();
-                console.log('[IATI Import] Sectors imported successfully:', successData);
                 importSummary.sectors.successful = sectorsToImport.length;
                 toast.success(`Sectors imported successfully`, {
                   description: `${sectorsToImport.length} sector(s) added to the activity`
@@ -9046,14 +8707,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               }
             }
           } else {
-            console.log('[IATI Import] No sectors to import');
           }
         }
       }
 
       // Handle locations import if any
       if (updateData.importedLocations && updateData.importedLocations.length > 0) {
-        console.log('[IATI Import] Processing locations import...');
         
         // Track locations in summary
         importSummary.locations.attempted = updateData.importedLocations.length;
@@ -9110,12 +8769,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
                 // Perform reverse geocoding to populate address fields
                 try {
-                  console.log(`[IATI Import] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
                   const geocodeResponse = await apiFetch(`/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`);
                   
                   if (geocodeResponse.ok) {
                     const geocodeData = await geocodeResponse.json();
-                    console.log('[IATI Import] Geocoding result:', geocodeData);
                     
                     // Populate address fields from geocoding
                     if (geocodeData.address) {
@@ -9135,7 +8792,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       locationData.village_name = geocodeData.address.village || 
                                                  geocodeData.address.hamlet;
                       
-                      console.log('[IATI Import] Address fields populated from geocoding');
                     }
                   } else {
                     console.warn('[IATI Import] Reverse geocoding failed, continuing without address data');
@@ -9155,7 +8811,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
           );
 
-          console.log('[IATI Import] Importing locations to database:', locationsToImport);
           
           // Track location details in summary
           importSummary.locations.list = locationsToImport.map((loc: any) => ({
@@ -9182,7 +8837,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             const successData = await locationsResponse.json();
-            console.log('[IATI Import] Locations imported successfully:', successData);
             importSummary.locations.successful = locationsToImport.length;
             toast.success(`Locations imported successfully`, {
               description: `${locationsToImport.length} location(s) added to the activity`
@@ -9200,7 +8854,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle FSS import if any
       if (updateData.importedFss) {
-        console.log('[IATI Import] Processing FSS import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 85,
@@ -9224,7 +8877,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             const successData = await fssResponse.json();
-            console.log('[IATI Import] FSS imported successfully:', successData);
             toast.success(`Forward Spending Survey imported successfully`, {
               description: `${successData.imported_forecasts} forecast(s) added to the activity`
             });
@@ -9239,7 +8891,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle document links import if any
       if (updateData.importedDocuments && updateData.importedDocuments.length > 0) {
-        console.log('[IATI Import] Processing document links import...');
         console.log('[IATI Import] Documents to import:', updateData.importedDocuments.map((d: any) => ({
           url: d.url,
           title: d.title,
@@ -9268,8 +8919,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             const successData = await docResponse.json();
-            console.log('[IATI Import] Documents imported successfully:', successData);
-            console.log('[IATI Import] Documents import response details:', JSON.stringify(successData, null, 2));
             toast.success(`Document links imported successfully`, {
               description: `${successData.success} of ${updateData.importedDocuments.length} document(s) added to the activity`
             });
@@ -9279,8 +8928,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               const verifyResponse = await apiFetch(`/api/activities/${effectiveActivityId}/documents?_verify=${Date.now()}`);
               if (verifyResponse.ok) {
                 const verifyData = await verifyResponse.json();
-                console.log('[IATI Import] VERIFICATION - Documents in database after import:', verifyData.documents?.length || 0);
-                console.log('[IATI Import] VERIFICATION - Document details:', verifyData.documents);
               } else {
                 console.error('[IATI Import] VERIFICATION - Failed to verify documents were saved');
               }
@@ -9295,12 +8942,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         }
       } else {
-        console.log('[IATI Import] No documents to import (importedDocuments is empty or undefined)');
       }
 
       // Handle contacts import if any
       if (updateData.importedContacts && updateData.importedContacts.length > 0) {
-        console.log('[IATI Import] Processing contacts import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 88,
@@ -9316,7 +8961,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             return mapIatiContactToDb(contact);
           });
 
-          console.log('[IATI Import] Transformed contacts data:', newContacts);
 
           // Fetch existing contacts for deduplication
           let existingContacts: any[] = [];
@@ -9360,7 +9004,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             const successData = await contactsResponse.json();
-            console.log('[IATI Import] Contacts imported successfully:', successData);
             toast.success(`Contacts imported successfully`, {
               description: `${contactsData.length} contact(s) added to the activity`
             });
@@ -9375,7 +9018,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle humanitarian data import if any
       if (updateData.importedHumanitarian) {
-        console.log('[IATI Import] Processing humanitarian data import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 89,
@@ -9383,7 +9025,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         });
 
         try {
-          console.log('[IATI Import] Saving humanitarian data:', updateData.importedHumanitarian);
 
           const humanitarianResponse = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/humanitarian`, {
             method: 'POST',
@@ -9401,7 +9042,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
           } else {
             const successData = await humanitarianResponse.json();
-            console.log('[IATI Import] Humanitarian data imported successfully:', successData);
             const scopeCount = updateData.importedHumanitarian.humanitarian_scopes?.length || 0;
             toast.success(`Humanitarian data imported successfully`, {
               description: scopeCount > 0 ? `Humanitarian flag set with ${scopeCount} scope(s)` : 'Humanitarian flag set'
@@ -9417,7 +9057,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle budgets import if any
       if (updateData.importedBudgets && updateData.importedBudgets.length > 0) {
-        console.log('[IATI Import] Processing budgets import...');
         
         // Track budgets in summary
         importSummary.budgets.attempted = updateData.importedBudgets.length;
@@ -9551,7 +9190,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle country budget items import if any
       if (updateData.importedCountryBudgetItems && updateData.importedCountryBudgetItems.length > 0) {
-        console.log('[IATI Import] Processing country budget items import...');
 
         setImportStatus({
           stage: 'importing',
@@ -9583,7 +9221,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
           }
 
-          console.log(`[IATI Import] Consolidated ${updateData.importedCountryBudgetItems.length} items into ${consolidatedByVocabulary.size} vocabulary group(s)`);
 
           let successCount = 0;
           let errorCount = 0;
@@ -9596,7 +9233,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 budget_items: budgetItems
               };
 
-              console.log('[IATI Import] Posting consolidated country budget items:', cbiData);
 
               const response = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/country-budget-items`, {
                 method: 'POST',
@@ -9606,7 +9242,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
               if (response.ok) {
                 successCount++;
-                console.log(`[IATI Import] ✅ Country budget items imported: vocabulary=${vocabulary}, ${budgetItems.length} item(s)`);
               } else {
                 errorCount++;
                 const errorText = await response.text();
@@ -9639,7 +9274,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle planned disbursements import if any
       if (updateData.importedPlannedDisbursements && updateData.importedPlannedDisbursements.length > 0) {
-        console.log('[IATI Import] Processing planned disbursements import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 90,
@@ -9648,7 +9282,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         try {
           // Build organization lookup map for planned disbursements
-          console.log('[IATI Import] Building organization lookup map for planned disbursements...');
           const pdOrgRefToIdMap = new Map<string, string>();
           let pdOrgsCreated = 0;
           let pdOrgsLinked = 0;
@@ -9673,7 +9306,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               const orgsResponse = await apiFetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
-                console.log(`[IATI Import] Fetched ${allOrgs.length} organizations for planned disbursements`);
                 
                 // Build lookup map for existing organizations
                 const existingOrgRefs = new Set<string>();
@@ -9682,14 +9314,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     pdOrgRefToIdMap.set(org.iati_org_id, org.id);
                     existingOrgRefs.add(org.iati_org_id);
                     pdOrgsLinked++;
-                    console.log(`[IATI Import] Linked existing org for PD: "${org.iati_org_id}" -> "${org.name}"`);
                   }
                 });
                 
                 // Create missing organizations using shared helper
                 const missingOrgRefs = Array.from(pdUniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
                 if (missingOrgRefs.length > 0) {
-                  console.log(`[IATI Import] Creating ${missingOrgRefs.length} missing organizations for planned disbursements...`);
                   
                   for (const ref of missingOrgRefs) {
                     const orgName = pdOrgRefToNameMap.get(ref) || ref;
@@ -10098,7 +9728,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle tags import if any
       if (updateData._importTags) {
-        console.log('[IATI Import] Processing tags import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 91,
@@ -10113,8 +9742,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             const tagsToImport = tagField.tagData;
             const existingTags = tagField.existingTags || [];
             
-            console.log('[IATI Import] Tags to import:', tagsToImport);
-            console.log('[IATI Import] Existing tags:', existingTags);
             
             // Track import results
             const importResults = {
@@ -10152,7 +9779,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 }
 
                 const tag = await tagResponse.json();
-                console.log('[IATI Import] Tag created/found:', tag);
                 
                 // Link tag to activity
                 const linkResponse = await apiFetch(`/api/activities/${effectiveActivityId}/tags`, {
@@ -10163,7 +9789,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
                 if (linkResponse.ok) {
                   importResults.successful.push(tag.name);
-                  console.log('[IATI Import] Tag linked to activity:', tag.name);
                 } else {
                   const linkError = await linkResponse.json();
                   if (linkError.message === 'Tag already linked to activity') {
@@ -10187,7 +9812,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             // Provide comprehensive feedback
             if (importResults.successful.length > 0) {
-              console.log('[IATI Import] Successfully imported tags:', importResults.successful);
               toast.success(`${importResults.successful.length} tag(s) imported successfully`);
               
               // Invalidate cache - page will be refreshed manually by user after reviewing import results
@@ -10195,7 +9819,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
             
             if (importResults.skipped.length > 0) {
-              console.log('[IATI Import] Skipped tags:', importResults.skipped);
               toast.info(`${importResults.skipped.length} tag(s) already linked to activity`);
             }
             
@@ -10226,7 +9849,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Handle results import
       if (updateData.importedResults && updateData.importedResults.length > 0) {
-        console.log('[IATI Import] Processing results import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 89,
@@ -10234,7 +9856,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         });
 
         try {
-          console.log(`[IATI Import] Importing ${updateData.importedResults.length} selected result(s)...`);
           
           const importResponse = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/results/import`, {
             method: 'POST',
@@ -10269,7 +9890,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             } else {
               const successData = await importResponse.json();
               const summary = successData.summary;
-              console.log('[IATI Import] Results imported successfully:', summary);
               
               // Store summary for detailed validation report
               setResultsImportSummary(summary);
@@ -10309,8 +9929,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       });
       
       if (updateData._importConditions && updateData.conditionsData) {
-        console.log('[IATI Import] Processing conditions import...');
-        console.log('[IATI Import] Conditions data:', updateData.conditionsData);
         setImportStatus({ 
           stage: 'importing', 
           progress: 87,
@@ -10320,7 +9938,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const conditionsData = updateData.conditionsData;
           const totalConditions = conditionsData.conditions.length;
-          console.log('[IATI Import] Total conditions to process:', totalConditions);
           
           // Delete existing conditions for this activity
           const { error: deleteError } = await supabase
@@ -10357,7 +9974,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               attached: conditionsData.attached
             }));
           
-          console.log('[IATI Import] Conditions to insert:', JSON.stringify(conditionsToInsert, null, 2));
           
           if (conditionsToInsert.length > 0) {
             const { data: insertedConditions, error: insertError } = await supabase
@@ -10371,7 +9987,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               throw insertError;
             }
             
-            console.log('[IATI Import] Successfully imported conditions:', insertedConditions);
             
             // Also update conditions_attached flag on activity
             await supabase
@@ -10388,13 +10003,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               toast.success(`${conditionsToInsert.length} condition(s) imported successfully`);
             }
 
-            console.log('[IATI Import] ✅ Conditions imported successfully');
             // Note: Cache will be invalidated at the end of the full import process
           } else if (totalConditions > 0) {
             toast.warning('No valid conditions to import', {
               description: 'All conditions were invalid or had empty descriptions'
             });
-            console.log('[IATI Import] ⚠️ No valid conditions to import');
           }
         } catch (conditionsError: any) {
           console.error('[IATI Import] Conditions import error:', conditionsError);
@@ -10403,7 +10016,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         }
       } else {
-        console.log('[IATI Import] Skipping conditions import (no conditions data or flag not set)');
       }
 
       // Handle transactions import if any
@@ -10421,9 +10033,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       if (updateData.importedTransactions && updateData.importedTransactions.length > 0 && !didServerSideTransactionImport) {
         // Each XML transaction becomes exactly one database transaction
         // Sectors are stored as metadata on each transaction, not consolidated
-        console.log('[IATI Import] Processing transactions import (client-side individual endpoint)...');
-        console.log('[IATI Import] Transactions array:', updateData.importedTransactions);
-        console.log('[IATI Import] Transaction count:', updateData.importedTransactions.length);
         
         // VALIDATION: Check transaction count against parsed activity
         const parsedTransactionCount = parsedActivity?.transactions?.length || 0;
@@ -10510,7 +10119,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           let errorCount = 0;
           
           // Build organization lookup map and auto-create missing organizations
-          console.log('[IATI Import] Building organization lookup map...');
           const orgRefToIdMap = new Map<string, string>();
           let orgsCreated = 0;
           let orgsLinked = 0;
@@ -10535,7 +10143,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               const orgsResponse = await apiFetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
-                console.log(`[IATI Import] Fetched ${allOrgs.length} organizations for lookup`);
                 
                 // Build lookup map for existing organizations
                 const existingOrgRefs = new Set<string>();
@@ -10544,14 +10151,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     orgRefToIdMap.set(org.iati_org_id, org.id);
                     existingOrgRefs.add(org.iati_org_id);
                     orgsLinked++;
-                    console.log(`[IATI Import] Linked existing org: "${org.iati_org_id}" -> ID "${org.id}" (${org.name})`);
                   }
                 });
                 
                 // Create missing organizations using shared helper
                 const missingOrgRefs = Array.from(uniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
                 if (missingOrgRefs.length > 0) {
-                  console.log(`[IATI Import] Creating ${missingOrgRefs.length} missing organizations...`);
                   
                   for (const ref of missingOrgRefs) {
                     const orgName = orgRefToNameMap.get(ref) || ref;
@@ -10573,10 +10178,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
           }
 
-          console.log('[IATI Import] Starting transaction loop...');
 
           for (const transaction of updateData.importedTransactions) {
-            console.log('[IATI Import] Processing transaction:', transaction);
             
             try {
               // Look up organization IDs by their IATI refs
@@ -10632,8 +10235,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 activityDefaultCurrency: freshActivityData?.default_currency,
                 resolvedCurrency: transactionData.currency
               });
-              console.log('[IATI Import] Prepared transaction data:', transactionData);
-              console.log('[IATI Import] Calling API to create transaction...');
 
               const apiRes = await apiFetch(`/api/activities/${effectiveActivityId}/transactions`, {
                 method: 'POST',
@@ -10643,7 +10244,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
               if (apiRes.ok) {
                 successCount++;
-                console.log('[IATI Import] ✓ Transaction inserted via API');
                 
                 // Track successful transaction in summary with detailed info
                 importSummary.transactions.successful++;
@@ -10724,7 +10324,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
           }
 
-          console.log('[IATI Import] Transaction import complete:', { successCount, errorCount });
 
           if (successCount > 0) {
             toast.success(`Transactions imported successfully`, {
@@ -10779,7 +10378,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       });
       
       if (updateData._importFinancingTerms && updateData.financingTermsData) {
-        console.log('[IATI Import] Processing financing terms import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 89,
@@ -10790,7 +10388,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const ftData = updateData.financingTermsData;
           
           // Use Supabase directly to save to correct table: activity_financing_terms
-          console.log('[IATI Import] Preparing financing terms data for activity_financing_terms table');
           
           // Prepare loan terms data (stored directly in activity_financing_terms)
           const financingTermsData: any = {
@@ -10800,7 +10397,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           // Add channel code if provided (from <crs-add>/<channel-code>)
           if (ftData.channelCode) {
             financingTermsData.channel_code = ftData.channelCode;
-            console.log('[IATI Import] Adding channel code:', ftData.channelCode);
           }
           
           // Add loan terms fields if provided
@@ -10835,7 +10431,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           // Count what was added
           if (ftData.loanTerms) {
             componentsAdded++;
-            console.log('[IATI Import] ✓ Loan terms saved to activity_financing_terms');
             importSummary.financingTerms.attempted++;
             importSummary.financingTerms.successful++;
             importSummary.financingTerms.details.push({
@@ -10849,7 +10444,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           if (ftData.otherFlags && ftData.otherFlags.length > 0) {
             componentsAdded++;
-            console.log('[IATI Import] ✓ Other flags saved to activity_financing_terms');
             importSummary.financingTerms.attempted++;
             importSummary.financingTerms.successful++;
             importSummary.financingTerms.details.push({
@@ -10860,7 +10454,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           // Insert loan statuses to activity_loan_status table (separate table)
           if (ftData.loanStatuses && Array.isArray(ftData.loanStatuses) && ftData.loanStatuses.length > 0) {
-            console.log('[IATI Import] Inserting', ftData.loanStatuses.length, 'loan statuses to activity_loan_status');
             
             // Clear existing loan statuses for this activity first
             await supabase
@@ -10885,7 +10478,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             if (!statusesError) {
               componentsAdded++;
-              console.log('[IATI Import] ✓ Loan statuses saved to activity_loan_status');
               importSummary.financingTerms.attempted++;
               importSummary.financingTerms.successful++;
               importSummary.financingTerms.details.push({
@@ -10907,7 +10499,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           // Note: Other flags are already saved in activity_financing_terms.other_flags as JSONB
           // No need for separate table insert
           
-          console.log('[IATI Import] ✅ Financing terms import complete. Components added:', componentsAdded);
           
         } catch (error) {
           console.error('[IATI Import] Error importing financing terms:', error);
@@ -10926,7 +10517,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Participating organizations are now handled server-side by /api/activities/[id]/import-iati
       // The server-side route will create missing organizations and link them to the activity
       if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
-        console.log('[IATI Import] Participating organizations were processed server-side during main import');
         importSummary.participatingOrgs.attempted = updateData.importedParticipatingOrgs.length;
         // The server-side route handles organization creation and linking
         // We'll update the summary based on the API response if needed
@@ -10934,7 +10524,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Handle related activities import if any
       // If server already processed related activities, just log and update summary
       if (didServerSideRelatedActivitiesImport && updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
-        console.log('[IATI Import] Related activities were processed server-side during main import');
         importSummary.relatedActivities = { 
           attempted: updateData.importedRelatedActivities.length, 
           successful: updateData.importedRelatedActivities.length, // Server handles all including external links
@@ -10955,7 +10544,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0 && !didServerSideRelatedActivitiesImport) {
         // Check for cancel before processing related activities
         if (importCancelRequested) {
-          console.log('[IATI Import] Import cancelled before related activities processing');
           toast.warning('Import cancelled', {
             description: 'Main fields were saved, but related activities were not imported.'
           });
@@ -10964,7 +10552,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           return;
         }
 
-        console.log('[IATI Import] Processing related activities import...');
         setImportStatus({
           stage: 'importing',
           progress: 95,
@@ -10992,7 +10579,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           for (const relatedActivityData of updateData.importedRelatedActivities) {
             // Check for cancel in loop
             if (importCancelRequested) {
-              console.log('[IATI Import] Import cancelled during related activities processing');
               break; // Exit the loop
             }
 
@@ -11005,7 +10591,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               });
 
               // First, try to find the activity by IATI identifier using Supabase directly
-              console.log(`[IATI Import] Searching for activity with IATI ID: ${relatedActivityData.ref}`);
 
               // Use Supabase directly with timeout to avoid hanging
               let matchingActivities = null;
@@ -11028,7 +10613,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 matchingActivities = result.data;
                 searchError = result.error;
 
-                console.log(`[IATI Import] Query completed for ${relatedActivityData.ref}`);
               } catch (timeoutError: any) {
                 console.error(`[IATI Import] Query timeout for ${relatedActivityData.ref}:`, timeoutError);
                 searchError = timeoutError;
@@ -11044,7 +10628,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 continue;
               }
 
-              console.log(`[IATI Import] Found ${matchingActivities?.length || 0} matching activities`);
               
               if (matchingActivities && matchingActivities.length > 0) {
                 console.log(`[IATI Import] First match:`, {
@@ -11055,7 +10638,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               }
               
               if (!matchingActivities || matchingActivities.length === 0) {
-                console.log(`[IATI Import] Activity not found in DB: ${relatedActivityData.ref}, creating as external link`);
                 
                 // Create as an external link since the target activity doesn't exist in the database
                 const externalLinkData = {
@@ -11072,7 +10654,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 });
 
                 if (externalResponse.ok) {
-                  console.log(`[IATI Import] ✅ Created external link: ${relatedActivityData.ref}`);
                   successCount++;
                   if (importSummary.relatedActivities) {
                     importSummary.relatedActivities.successful++;
@@ -11115,7 +10696,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               });
 
               if (createResponse.ok) {
-                console.log(`[IATI Import] ✅ Successfully linked activity: ${relatedActivityData.ref}`);
                 successCount++;
                 if (importSummary.relatedActivities) {
                   importSummary.relatedActivities.successful++;
@@ -11164,7 +10744,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
           // Check if cancelled after loop
           if (importCancelRequested) {
-            console.log('[IATI Import] Import was cancelled during related activities');
             toast.warning('Import cancelled', {
               description: `${successCount} relationship(s) were created before cancellation.`
             });
@@ -11262,28 +10841,24 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               break;
             case 'Planned Start Date':
               saveKey = 'plannedStartDate';
-              console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Planned Start Date Description':
               saveKey = 'plannedStartDescription';
               break;
             case 'Planned End Date':
               saveKey = 'plannedEndDate';
-              console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Planned End Date Description':
               saveKey = 'plannedEndDescription';
               break;
             case 'Actual Start Date':
               saveKey = 'actualStartDate';
-              console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Actual Start Date Description':
               saveKey = 'actualStartDescription';
               break;
             case 'Actual End Date':
               saveKey = 'actualEndDate';
-              console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
             case 'Actual End Date Description':
               saveKey = 'actualEndDescription';
@@ -11307,12 +10882,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
           
           if (saveKey) {
-            console.log(`[IATI Import] Marking field as saved: ${saveKey}`);
             setFieldSaved(activityId, user.id, saveKey);
           }
         });
         
-        console.log('[IATI Import] All imported fields marked as saved - green ticks should appear');
         
         // Trigger a gentle refresh to show the green ticks
         setTimeout(() => {
@@ -11329,7 +10902,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       setSavedRefinedSectors([]);
 
       // Refetch planned disbursements after import to update current values in fields
-      console.log('[IATI Import] Refetching planned disbursements after import to update current values...');
       try {
         const refreshResponse = await apiFetch(`/api/activities/${effectiveActivityId}/planned-disbursements?_=${Date.now()}`, {
           cache: 'no-store'
@@ -11337,8 +10909,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         if (refreshResponse.ok) {
           const refreshedDisbursements = await refreshResponse.json();
           setCurrentPlannedDisbursements(refreshedDisbursements);
-          console.log(`[IATI Import] Refetched ${refreshedDisbursements.length} planned disbursements after import`);
-          console.log('[IATI Import] Refreshed disbursements:', refreshedDisbursements);
           
           // Get default currency from current activity data or parsed activity
           const defaultCurrency = currentActivityData?.default_currency || parsedActivity?.defaultCurrency || 'USD';
@@ -11396,7 +10966,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     );
                     
                     if (matches) {
-                      console.log(`[IATI Import] Found match for ${field.fieldName}:`, dbDisb);
                     }
                     
                     return matches;
@@ -11445,7 +11014,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       normalizeOrgRef(updatedCurrentValue.receiver_org_ref) === normalizeOrgRef(disbursement.receiverOrg?.ref)
                     );
                     
-                    console.log(`[IATI Import] Updated ${field.fieldName} with current value, hasConflict: ${hasConflict}`);
                     
                     return {
                       ...field,
@@ -11711,13 +11279,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       const completeLogText = summaryLines.join('\n');
       
       // Output comprehensive summary to console
-      console.log('\n' + completeLogText + '\n');
       
       // Also output as a single copyable string
-      console.log('COPYABLE IMPORT SUMMARY (or click the copy button in the UI):\n' + completeLogText);
       
       // Show a prominent message about the copy button
-      console.log('%c✨ TIP: Click the "Copy Full Import Log" button in the UI instead of copying from console!', 'color: #4CAF50; font-size: 16px; font-weight: bold; padding: 10px;');
 
       // Restore original console methods
       console.log = originalConsoleLog;
@@ -11751,11 +11316,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // This allows the UI to show a "View New Activity" button
       if (selectedImportMode === 'import_as_reporting_org' && !activityId && effectiveActivityId) {
         setNewlyCreatedActivityId(effectiveActivityId);
-        console.log('[IATI Import] New activity created via import_as_reporting_org, ID:', effectiveActivityId);
       }
 
       // Invalidate activity cache and refetch current data to show updated values
-      console.log('[IATI Import] Invalidating activity cache and refetching current data for:', effectiveActivityId);
       invalidateActivityCache(effectiveActivityId);
 
       // Refetch current activity data so next import shows updated current values
@@ -11777,7 +11340,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         const currentLocations = locationsData.locations || [];
 
         // Refetch all current values for comparison
-        console.log('[IATI Import] Refetching current budgets, transactions, etc...');
 
         // Fetch budgets
         try {
@@ -11892,7 +11454,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           participatingOrgs: currentParticipatingOrgs || [],
         });
 
-        console.log('[IATI Import] Current activity data refreshed after import');
       } catch (error) {
         console.error('[IATI Import] Error refreshing current data after import:', error);
       }
@@ -12639,7 +12200,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               variant="outline"
               size="sm"
               onClick={() => {
-                console.log(`[IATI Import] Tab-level Select All clicked for tab: ${tabName}`);
                 
                 // Select main fields for this tab
                 fields.forEach((field) => {
@@ -12649,40 +12209,32 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 // Enhanced: Also select all sub-toggles for fields in this tab
                 fields.forEach((field) => {
-                  console.log(`[IATI Import] Tab Select All: Processing field ${field.fieldName}, type: ${field.itemType}`);
                   
                   // For financial items, the bulk import flags will be set during importSelectedFields
                   if (field.isFinancialItem) {
-                    console.log(`[IATI Import] Tab Select All: Financial item ${field.itemType} selected for bulk import`);
                   }
                   
                   // For policy markers, the bulk import flags will be set during importSelectedFields
                   if (field.isPolicyMarker) {
-                    console.log(`[IATI Import] Tab Select All: Policy marker selected for bulk import`);
                   }
                   
                   // For location items, the bulk import flags will be set during importSelectedFields
                   if (field.isLocationItem) {
-                    console.log(`[IATI Import] Tab Select All: Location item selected for bulk import`);
                   }
                   
                   // For tag fields, the bulk import flags will be set during importSelectedFields
                   if (field.isTagField) {
-                    console.log(`[IATI Import] Tab Select All: Tag field selected for bulk import`);
                   }
                   
                   // For conditions, the bulk import flags will be set during importSelectedFields
                   if (field.isConditionsField) {
-                    console.log(`[IATI Import] Tab Select All: Conditions field selected for bulk import`);
                   }
                   
                   // For FSS items, the bulk import flags will be set during importSelectedFields
                   if (field.isFssItem) {
-                    console.log(`[IATI Import] Tab Select All: FSS item selected for bulk import`);
                   }
                 });
                 
-                console.log(`[IATI Import] Tab-level Select All completed for tab: ${tabName}`);
               }}
             >
               Select All
@@ -12877,7 +12429,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        console.log('[IATI Import] Cancel requested during parsing/uploading');
                         resetImport();
                         toast.info('Import cancelled', {
                           description: 'Returned to XML Import tab.'
@@ -12893,7 +12444,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        console.log('[IATI Import] Cancel requested by user');
                         setImportCancelRequested(true);
                         toast.info('Cancelling import...', {
                           description: 'The import will stop after the current operation completes.'
@@ -13057,7 +12607,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                         placeholder="https://example.com/iati-activity.xml"
                         value={xmlUrl}
                         onChange={(e) => {
-                          console.log('[IATI Import Debug] URL input onChange:', e.target.value);
                           setXmlUrl(e.target.value);
                         }}
                         onPaste={(e) => {
@@ -13069,14 +12618,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           // Prevent default to avoid duplication, then manually set the value
                           e.preventDefault();
                           const pastedText = e.clipboardData.getData('text');
-                          console.log('[IATI Import Debug] Manual paste - pasted text:', pastedText);
                           if (pastedText && pastedText.trim()) {
                             // Extract the clean URL by finding the first occurrence of the URL pattern
                             const urlPattern = /https?:\/\/[^\s]+/;
                             const match = pastedText.match(urlPattern);
                             const cleanUrl = match ? match[0] : pastedText.trim();
                             
-                            console.log('[IATI Import Debug] Manual paste - clean URL:', cleanUrl);
                             setXmlUrl(cleanUrl);
                           }
                         }}
@@ -13346,7 +12893,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </Button>
             <Button 
               onClick={() => {
-                console.log('[IATI Import] Button clicked!');
                 
                 // Check if we need to show the acronym modal
                 const hasNewAcronyms = detectedAcronyms.length > 0 && detectedAcronyms.some(activity => {
@@ -13361,11 +12907,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 });
                 
                 if (hasNewAcronyms) {
-                  console.log('[IATI Import] New/different acronyms detected, showing modal');
                   setShowAcronymModal(true);
                 } else {
                   // No new acronyms or current matches detected, proceed directly
-                  console.log('[IATI Import] No new acronyms or current matches detected, skipping modal');
                   importSelectedFields();
                 }
               }}
@@ -13640,8 +13184,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         onClose={() => setShowSectorRefinement(false)}
         originalSectors={sectorRefinementData.originalSectors}
         onSave={(refinedSectors) => {
-          console.log('[Sector Refinement] Saving refined sectors:', refinedSectors);
-          console.log('[Sector Refinement] Refined sectors count:', refinedSectors.length);
           console.log('[Sector Refinement] Refined sectors details:', refinedSectors.map(s => ({
             code: s.code,
             name: s.name,
@@ -13651,7 +13193,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           })));
           
           const totalPercentage = refinedSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
-          console.log('[Sector Refinement] Total percentage:', totalPercentage);
           
           // Store the refined sectors for later import
           setSavedRefinedSectors(refinedSectors);
@@ -13711,7 +13252,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           currentActivityIatiId={currentActivityData.iati_identifier}
           existingActivity={existingActivity}
           onChoose={async (choice, targetActivityId) => {
-            console.log('[IATI Import] External publisher choice:', choice, targetActivityId);
             
             // Check if user is authenticated
             if (!user?.id) {
@@ -13798,7 +13338,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
                 case 'import_as_reporting_org':
                   // Import under original reporting organization - call the handler that shows the modal
-                  console.log('[IATI Import] Calling handleExternalPublisherChoice for import_as_reporting_org');
                   setShowExternalPublisherModal(false);
                   // Call the dedicated handler which will show the reporting org selection modal
                   await handleExternalPublisherChoice('import_as_reporting_org');
@@ -13899,7 +13438,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      console.log(`[IATI Import] Detail Modal: Selecting all fields for ${selectedItem.type} ${selectedItem.index + 1}`);
                       const updatedFields = selectedItem.fields.map(field => ({ ...field, selected: true }));
                       setSelectedItem({
                         ...selectedItem,
@@ -13913,7 +13451,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      console.log(`[IATI Import] Detail Modal: Clearing all fields for ${selectedItem.type} ${selectedItem.index + 1}`);
                       const updatedFields = selectedItem.fields.map(field => ({ ...field, selected: false }));
                       setSelectedItem({
                         ...selectedItem,
@@ -14564,7 +14101,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
   // Initialize mappings when modal opens
   useEffect(() => {
     if (isOpen && originalSectors.length > 0) {
-      console.log('[SectorRefinementModal] Initializing with sectors:', originalSectors);
       const initialMappings = originalSectors.map(sector => {
         const code = sector.code || '';
         const is5Digit = code.length === 5 && /^\d{5}$/.test(code);
@@ -14591,7 +14127,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           }
         }
         
-        console.log('[SectorRefinementModal] Processing sector:', code, 'Category:', categoryCode, 'Found subsectors:', subsectors.length);
         return {
           id: crypto.randomUUID(),
           originalCode: categoryCode,
@@ -14603,7 +14138,6 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           availableSubsectors: subsectors
         };
       });
-      console.log('[SectorRefinementModal] Created mappings:', initialMappings);
       setMappings(initialMappings);
     }
   }, [isOpen, originalSectors]);

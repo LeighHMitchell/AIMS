@@ -41,6 +41,5 @@ export async function notifyImportComplete(
     return false;
   }
 
-  console.log(`[Import Notifications] Notified user ${userId} of import completion`);
   return true;
 }

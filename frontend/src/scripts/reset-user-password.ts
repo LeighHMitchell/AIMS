@@ -79,7 +79,6 @@ function generateTempPassword(): string {
 }
 
 async function resetUserPassword(email: string) {
-  console.log(`🔑 Resetting password for: ${email}\n`);
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -89,7 +88,6 @@ async function resetUserPassword(email: string) {
 
   try {
     // 1. Find the user profile
-    console.log('📋 Looking for user profile...');
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('id, email, first_name, last_name, role')
@@ -101,14 +99,11 @@ async function resetUserPassword(email: string) {
       return;
     }
 
-    console.log(`✅ Found user: ${userProfile.first_name} ${userProfile.last_name}`);
-    console.log(`   Role: ${userProfile.role}`);
 
     // 2. Generate new password
     const newPassword = generateTempPassword();
     
     // 3. Reset password using the profile ID (which should match auth ID)
-    console.log('\n🔄 Resetting password...');
     const { error: resetError } = await supabase.auth.admin.updateUserById(userProfile.id, {
       password: newPassword
     });
@@ -118,21 +113,9 @@ async function resetUserPassword(email: string) {
       return;
     }
 
-    console.log('✅ Password reset successful!\n');
     
     // 4. Display new credentials
-    console.log('🔑 NEW LOGIN CREDENTIALS:');
-    console.log('='.repeat(40));
-    console.log(`Name: ${userProfile.first_name} ${userProfile.last_name}`);
-    console.log(`Email: ${email}`);
-    console.log(`Password: ${newPassword}`);
-    console.log(`Role: ${userProfile.role}`);
-    console.log('='.repeat(40));
     
-    console.log('\n📋 Next steps:');
-    console.log('1. Share these credentials with the user');
-    console.log('2. User can change password after first login');
-    console.log('3. Test login to confirm it works');
 
   } catch (error) {
     console.error('💥 Error resetting password:', error);

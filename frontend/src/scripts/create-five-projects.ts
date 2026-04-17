@@ -11,7 +11,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createFiveProjects() {
-  console.log('Creating 5 new comprehensive projects...');
 
   try {
     // Get organization IDs
@@ -154,7 +153,6 @@ async function createFiveProjects() {
       return;
     }
 
-    console.log('Activities created successfully');
 
     // Create sectors for all projects
     const sectors = [
@@ -318,7 +316,6 @@ async function createFiveProjects() {
 
     await supabase.from('activity_locations').insert(locations);
 
-    console.log('5 comprehensive projects created successfully!');
     
   } catch (error) {
     console.error('Error creating projects:', error);

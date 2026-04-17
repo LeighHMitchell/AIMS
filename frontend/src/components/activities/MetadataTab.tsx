@@ -296,7 +296,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }
       setError(null);
       
-      console.log('[MetadataTab] Fetching metadata for activity ID:', activityId);
       const response = await apiFetch(`/api/activities/${activityId}/metadata`, {
         cache: 'no-store', // Force fresh data, no caching
         headers: {
@@ -312,7 +311,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       }
       
       const result = await response.json();
-      console.log('[MetadataTab] Received metadata:', result);
       console.log('[MetadataTab] Reporting org data:', {
         reporting_org_id: result.metadata?.reporting_org_id,
         created_by_org_name: result.metadata?.created_by_org_name,
@@ -342,7 +340,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && activityId) {
-        console.log('[MetadataTab] Tab became visible, refreshing data...');
         fetchMetadata();
       }
     };
@@ -355,7 +352,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   useEffect(() => {
     const handleActivityUpdate = (event: CustomEvent) => {
       if (event.detail.activityId === activityId) {
-        console.log('[MetadataTab] Activity updated, refreshing metadata...');
         fetchMetadata();
       }
     };

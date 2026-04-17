@@ -142,7 +142,6 @@ export function HeroCard<T = any>({
   const prevCalculatedValueRef = useRef(calculatedValue);
   useEffect(() => {
     if (prevCalculatedValueRef.current !== calculatedValue) {
-      console.log('[HeroCard]', title, 'calculatedValue:', calculatedValue, 'currentValue:', currentValue, 'staticValue:', staticValue);
       prevCalculatedValueRef.current = calculatedValue;
     }
   }, [calculatedValue, currentValue, staticValue, title]);

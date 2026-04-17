@@ -278,7 +278,6 @@ interface GeneratedTransaction {
 }
 
 async function fetchExistingOrganizations() {
-  console.log('📋 Fetching existing organizations...')
   
   const { data: organizations, error } = await supabase
     .from('organizations')
@@ -289,7 +288,6 @@ async function fetchExistingOrganizations() {
     return []
   }
   
-  console.log(`✅ Found ${organizations.length} existing organizations`)
   return organizations
 }
 
@@ -533,8 +531,6 @@ async function generateActivity(index: number, organizations: any[]): Promise<Ge
 }
 
 async function main() {
-  console.log('🚀 Starting Myanmar AIMS IATI-compliant data generation...')
-  console.log('=' .repeat(60))
   
   try {
     // Step 1: Fetch existing organizations
@@ -546,7 +542,6 @@ async function main() {
     }
     
     // Step 2: Generate 20 activities
-    console.log('\n📊 Generating 20 Myanmar aid activities with transactions...\n')
     
     const activities: GeneratedActivity[] = []
     
@@ -554,11 +549,6 @@ async function main() {
       const activity = await generateActivity(i, organizations)
       activities.push(activity)
       
-      console.log(`✅ Generated activity ${i + 1}/20: ${activity.title}`)
-      console.log(`   - Status: ${ACTIVITY_STATUSES.find(s => s.code === activity.activity_status)?.name}`)
-      console.log(`   - Sectors: ${activity.sectors.map(s => `${s.name} (${s.percentage}%)`).join(', ')}`)
-      console.log(`   - Transactions: ${activity.transactions?.length || 0}`)
-      console.log(`   - Total value: $${activity.transactions?.reduce((sum, t) => sum + t.value, 0).toLocaleString() || 0}`)
     }
     
     // Step 3: Save to JSON files
@@ -581,22 +571,8 @@ async function main() {
     writeFileSync(transactionsFile, JSON.stringify(allTransactions, null, 2))
     
     // Generate summary
-    console.log('\n' + '=' .repeat(60))
-    console.log('🎉 Data generation complete!')
-    console.log('\n📈 Summary:')
-    console.log(`- Activities generated: ${activities.length}`)
-    console.log(`- Total transactions: ${allTransactions.length}`)
-    console.log(`- Total value: $${allTransactions.reduce((sum, t) => sum + t.value, 0).toLocaleString()}`)
-    console.log(`- Date range: ${activities.map(a => a.start_date).sort()[0]} to ${activities.map(a => a.end_date).sort().reverse()[0]}`)
     
-    console.log('\n📁 Output files:')
-    console.log(`- Activities: ${activitiesFile}`)
-    console.log(`- Transactions: ${transactionsFile}`)
     
-    console.log('\n💡 Next steps:')
-    console.log('1. Review the generated JSON files')
-    console.log('2. Use your existing import tools or database scripts to load the data')
-    console.log('3. Or manually insert using your admin interface')
     
   } catch (error) {
     console.error('❌ Error during data generation:', error)

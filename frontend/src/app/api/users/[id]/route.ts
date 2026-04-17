@@ -78,7 +78,6 @@ export async function PUT(
     }
 
     const body = await request.json();
-    console.log('[AIMS] PUT /api/users/[id] - Update data for user:', targetUserId);
 
     // SECURITY: Build update data with explicit field allowlist (no mass assignment)
     const updateData: Record<string, any> = {
@@ -135,7 +134,6 @@ export async function PUT(
       }
 
       updateData.role = body.role;
-      console.log(`[AIMS] Role change authorized: User ${authUser.id} setting ${targetUserId} role to ${body.role}`);
     }
 
     const { data, error } = await supabase
@@ -163,7 +161,6 @@ export async function PUT(
       );
     }
 
-    console.log('[AIMS] Updated user in Supabase:', data.email);
 
     // Transform data to match frontend User type expectations
     const transformedData = {
@@ -251,7 +248,6 @@ export async function DELETE(
       );
     }
 
-    console.log('[AIMS] DELETE /api/users/[id] - Super user deleting user:', targetUserId);
 
     // Delete the user profile
     const { error: deleteError } = await supabase
@@ -275,7 +271,6 @@ export async function DELETE(
       // Profile is already deleted, log but continue
     }
 
-    console.log('[AIMS] Deleted user:', targetUserId);
     return NextResponse.json({ success: true }, { status: 200 });
 
   } catch (error) {

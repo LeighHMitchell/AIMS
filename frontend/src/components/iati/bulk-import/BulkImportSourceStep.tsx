@@ -204,7 +204,6 @@ export default function BulkImportSourceStep({
     if (selectedHierarchy != null) {
       const beforeHierarchyFilter = result.length
       result = result.filter(a => a.hierarchy === selectedHierarchy)
-      console.log(`[Filter Debug] Hierarchy filter (level ${selectedHierarchy}): ${beforeHierarchyFilter} → ${result.length} activities`)
     }
 
     // Date range filter - include activities that overlap with the date range
@@ -243,7 +242,6 @@ export default function BulkImportSourceStep({
         return hasDateInRange || spansRange
       })
 
-      console.log(`[Filter Debug] Date filter (${dateRangeStart} to ${dateRangeEnd}): ${beforeDateFilter} → ${result.length} activities`)
     }
 
     return result
@@ -475,7 +473,6 @@ export default function BulkImportSourceStep({
   useEffect(() => {
     // Wait for user data to be loaded
     if (!user) {
-      console.log('[IATI Import] Waiting for user data...')
       return
     }
 
@@ -491,7 +488,6 @@ export default function BulkImportSourceStep({
 
     const fetchOrganizations = async () => {
       setLoadingOrgs(true)
-      console.log('[IATI Import] Starting organization fetch for super user...', { user: user?.id, role: user?.role })
 
       try {
         // Fetch all organizations via API (server-side, bypasses RLS)
@@ -548,11 +544,9 @@ export default function BulkImportSourceStep({
               logo: user.organization.logo,
               iati_org_id: user.organization.iati_org_id,
             }, ...orgList]
-            console.log('[IATI Import] Added user org to list (was missing)')
           }
         }
 
-        console.log('[IATI Import] Loaded', orgList.length, 'organizations for super user selection')
         setOrganizations(orgList)
         // Note: Don't set selectedOrgId here - empty means "use your own org"
         // We only set selectedOrgId when user explicitly selects a DIFFERENT org
@@ -561,7 +555,6 @@ export default function BulkImportSourceStep({
 
         // Fallback: at least show user's own org
         if (user?.organizationId && user?.organization) {
-          console.log('[IATI Import] Using fallback after error - user org only')
           setOrganizations([{
             id: user.organizationId,
             name: user.organization.name || '',
@@ -687,7 +680,6 @@ export default function BulkImportSourceStep({
                   break
                 }
                 const waitTime = 15000 + (retries * 5000)
-                console.log(`[Paginated Fetch] Rate limited on page ${page}, retry ${retries}/${MAX_RETRIES}, waiting ${waitTime / 1000}s...`)
                 await new Promise(r => setTimeout(r, waitTime))
                 continue
               }

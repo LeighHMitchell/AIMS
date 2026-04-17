@@ -1,7 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 async function diagnoseEmailChange() {
-  console.log('=== Email Change Diagnostics ===');
   
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -10,11 +9,9 @@ async function diagnoseEmailChange() {
     return;
   }
 
-  console.log('✅ Supabase admin client is configured');
 
   // Test 1: Check if we can access auth admin functions
   try {
-    console.log('\n📋 Test 1: Checking auth admin access...');
     const { data: users, error } = await supabase.auth.admin.listUsers({
       page: 1,
       perPage: 5
@@ -26,13 +23,10 @@ async function diagnoseEmailChange() {
       return;
     }
 
-    console.log(`✅ Auth admin access working. Found ${users?.length || 0} users`);
     
     // List some user IDs for testing
     if (users && users.length > 0) {
-      console.log('\nSample user IDs for testing:');
       users.slice(0, 3).forEach((user: any) => {
-        console.log(`- ${user.id} (${user.email})`);
       });
     }
   } catch (error) {
@@ -43,7 +37,6 @@ async function diagnoseEmailChange() {
   // Test 2: Check a specific user (if provided)
   const testUserId = process.argv[2];
   if (testUserId) {
-    console.log(`\n📋 Test 2: Checking specific user ${testUserId}...`);
     
     try {
       // Check in auth
@@ -69,12 +62,10 @@ async function diagnoseEmailChange() {
       if (dbError) {
         console.error('❌ User not found in database:', dbError.message);
       } else {
-        console.log('✅ User found in database:', dbUser);
       }
 
       // Test email update (dry run)
       if (authUser?.user) {
-        console.log('\n📋 Test 3: Testing email update capability...');
         const testEmail = `test-${Date.now()}@example.com`;
         
         try {
@@ -96,7 +87,6 @@ async function diagnoseEmailChange() {
               console.error('Go to: Authentication > Settings > Enable email confirmations');
             }
           } else {
-            console.log('✅ Email update API is accessible');
           }
         } catch (error) {
           console.error('❌ Unexpected error testing email update:', error);
@@ -107,9 +97,6 @@ async function diagnoseEmailChange() {
     }
   }
 
-  console.log('\n=== Diagnostics Complete ===');
-  console.log('\nTo test a specific user, run:');
-  console.log('npm run diagnose-email -- USER_ID');
 }
 
 diagnoseEmailChange().catch(console.error);

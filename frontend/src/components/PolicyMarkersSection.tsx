@@ -111,7 +111,6 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
         setAvailableMarkers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching policy markers:', error);
-        console.log('Using fallback policy markers...');
         setAvailableMarkers(FALLBACK_POLICY_MARKERS);
         toast.warning('Using offline policy markers. Database connection may be required for full functionality.');
       } finally {

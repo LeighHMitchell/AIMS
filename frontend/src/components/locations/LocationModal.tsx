@@ -657,13 +657,11 @@ export default function LocationModal({
   
   // Debug form state
   if (Object.keys(errors).length > 0) {
-    console.log('[LocationModal] ❌ FORM HAS ERRORS:', errors);
     // Extract just the error messages without circular references
     const errorMessages = Object.keys(errors).reduce((acc, key) => {
       acc[key] = (errors as any)[key]?.message || 'Unknown error';
       return acc;
     }, {} as Record<string, string>);
-    console.log('[LocationModal] Error messages:', errorMessages);
   }
 
   // Watch form values
@@ -674,9 +672,6 @@ export default function LocationModal({
   // Initialize form with existing location data
   useEffect(() => {
     if (location) {
-      console.log('Loading location data:', location);
-      console.log('Country code from location:', location.country_code);
-      console.log('Location ref from location:', (location as any).location_ref);
       
       // Convert numeric IATI codes to strings for the form (database stores as integers)
       // Also convert all null values to undefined for Zod validation
@@ -719,9 +714,6 @@ export default function LocationModal({
 
       // Debug: Check form value after reset
       setTimeout(() => {
-        console.log('Form country_code value after reset:', watch('country_code'));
-        console.log('Form location_ref value after reset:', watch('location_ref'));
-        console.log('All form values after reset:', watch());
       }, 100);
 
       if ((location as any).latitude && (location as any).longitude) {
@@ -775,7 +767,6 @@ export default function LocationModal({
       try {
         const options: any = { limit: 30 };
         
-        console.log('[Location Search] Starting cascading search for:', searchQuery.trim());
         
         const results = await smartLocationSearch(searchQuery.trim(), options);
         
@@ -910,24 +901,18 @@ const autoPopulateIatiFields = useCallback((params: {
 
   // Handle map click
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
-    console.log('[MAP CLICK] handleMapClick called with lat:', lat, 'lng:', lng);
     if (!isValidCoordinate(lat, lng)) {
-      console.log('[MAP CLICK] Invalid coordinates, returning');
       return;
     }
 
-    console.log('[MAP CLICK] Setting coordinates and marker position...');
     setValue('latitude', lat);
     setValue('longitude', lng);
     setMarkerPosition([lat, lng]);
 
     // Perform reverse geocoding to populate address fields
     try {
-      console.log('[MAP CLICK] Starting reverse geocoding...');
       const result = await reverseGeocode(lat, lng);
       
-      console.log('[MAP CLICK] Reverse geocoding result:', result);
-      console.log('Address fields:', result.address);
       
       if (result && result.address) {
         // Populate all address fields from reverse geocoding
@@ -1002,8 +987,6 @@ const autoPopulateIatiFields = useCallback((params: {
     try {
       const result = await reverseGeocode(lat, lng);
       
-      console.log('Reverse geocoding result (marker drag):', result);
-      console.log('Address fields (marker drag):', result.address);
       
       if (result && result.address) {
         // Populate all address fields from reverse geocoding
@@ -1055,9 +1038,6 @@ const autoPopulateIatiFields = useCallback((params: {
 
   // Form submission
   const onSubmit = async (data: LocationFormSchema) => {
-    console.log('[LocationModal] 🔥 onSubmit called!');
-    console.log('[LocationModal] Form data:', data);
-    console.log('[LocationModal] Form errors:', errors);
     
     try {
       setIsSaving(true);
@@ -1077,7 +1057,6 @@ const autoPopulateIatiFields = useCallback((params: {
 
 
       if (Object.keys(validationErrors).length > 0) {
-        console.log('[LocationModal] ❌ Validation errors:', validationErrors);
         setValidationErrors(validationErrors);
         return;
       }
@@ -1093,11 +1072,8 @@ const autoPopulateIatiFields = useCallback((params: {
         validation_status: 'valid',
       };
 
-      console.log('[LocationModal] ✅ Submitting location data:', locationData);
 
-      console.log('[LocationModal] 🚀 Calling onSave function...');
       await onSave(locationData);
-      console.log('[LocationModal] ✅ onSave completed successfully');
 
       toast.success(location?.id ? 'Location updated successfully' : 'Location added successfully');
       onClose();
@@ -1825,10 +1801,6 @@ const autoPopulateIatiFields = useCallback((params: {
               type="submit"
               disabled={isSaving}
               onClick={() => {
-                console.log('[LocationModal] Submit button clicked!');
-                console.log('[LocationModal] Current form errors:', errors);
-                console.log('[LocationModal] Form values:', watch());
-                console.log('[LocationModal] Is form valid:', isValid);
               }}
               className="flex items-center gap-2"
             >

@@ -10,10 +10,8 @@ export async function POST() {
   try {
 
     
-    console.log('[SETUP] Starting IATI policy markers setup...');
     
     // First, add the new columns if they don't exist
-    console.log('[SETUP] Adding IATI-compliant columns...');
     
     // Add new columns (will be ignored if they already exist)
     const alterQueries = [
@@ -32,22 +30,18 @@ export async function POST() {
       try {
         const { error } = await supabase.rpc('exec_sql', { sql: query });
         if (error) {
-          console.log(`[SETUP] Note: ${error.message} (this may be expected if columns already exist)`);
         }
       } catch (err) {
-        console.log(`[SETUP] Note: Could not execute query - ${err} (this may be expected)`);
       }
     }
     
     // First, clean up existing non-IATI policy markers
-    console.log('[SETUP] Cleaning up existing non-IATI policy markers...');
     const { error: deleteError } = await supabase
       .from('policy_markers')
       .delete()
       .neq('vocabulary', '1'); // Keep only IATI vocabulary markers
       
     if (deleteError) {
-      console.log('[SETUP] Note: Could not clean up existing markers:', deleteError.message);
     }
     
     // Insert ONLY official IATI Policy Markers based on https://iatistandard.org/en/iati-standard/203/codelists/policymarker/
@@ -210,7 +204,6 @@ export async function POST() {
     ];
     
     // Insert IATI policy markers (using upsert to avoid duplicates)
-    console.log('[SETUP] Inserting IATI standard policy markers...');
     for (const marker of iatiPolicyMarkersData) {
       const { error: insertError } = await supabase
         .from('policy_markers')
@@ -229,13 +222,10 @@ export async function POST() {
         sql: 'ALTER TABLE activity_policy_markers RENAME COLUMN score TO significance;' 
       });
       if (renameError) {
-        console.log('[SETUP] Note: Could not rename score to significance (may already be done):', renameError.message);
       }
     } catch (err) {
-      console.log('[SETUP] Note: Column rename may have already been completed');
     }
     
-    console.log('[SETUP] IATI policy markers setup completed successfully');
     
     return NextResponse.json({ 
       message: 'IATI policy markers setup completed successfully',

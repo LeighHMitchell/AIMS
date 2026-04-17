@@ -2090,7 +2090,6 @@ export function OrganizationFormContent({
           </Button>
           <Button 
             onClick={() => {
-              console.log('IATI import functionality not yet implemented');
               setShowIatiImport(false);
             }}
           >

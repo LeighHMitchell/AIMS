@@ -140,7 +140,6 @@ export async function POST(request: Request) {
         .single();
 
       if (existingMarker) {
-        console.log(`[Policy Markers API] Custom marker already exists: ${markerCode}`);
         return NextResponse.json(existingMarker);
       }
     }
@@ -160,7 +159,6 @@ export async function POST(request: Request) {
       default_visibility: body.default_visibility || 'public' // Default to public if not specified
     };
 
-    console.log('[Policy Markers API] Creating marker:', JSON.stringify(markerData, null, 2));
 
     const { data: newMarker, error } = await supabase
       .from('policy_markers')
@@ -183,7 +181,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('[Policy Markers API] Created marker:', newMarker);
     return NextResponse.json(newMarker);
   } catch (error) {
     console.error('Error in policy markers POST API:', error);
@@ -353,7 +350,6 @@ export async function DELETE(request: Request) {
 
     // Only allow deletion of custom markers (non-IATI standard)
     if (fullMarker.is_iati_standard) {
-      console.log(`DELETE attempt on standard IATI marker: code="${fullMarker.code}"`);
       return NextResponse.json(
         { error: 'Cannot delete standard IATI policy markers' },
         { status: 403 }

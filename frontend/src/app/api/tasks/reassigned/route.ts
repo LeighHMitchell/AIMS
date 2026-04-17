@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    console.log('[Tasks Reassigned API] GET for user:', userId);
 
     // Fetch reassignment history where the user performed the reassignment
     // and the task is now assigned to someone else

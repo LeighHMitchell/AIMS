@@ -4,7 +4,6 @@ import { requireAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request: NextRequest) {
-  console.log('[AIMS] PUT /api/users/change-email-simple - Starting request');
   
   const { supabase: authSupabase, response } = await requireAuth();
   if (response) return response;
@@ -13,7 +12,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { userId, newEmail, currentUserRole } = body;
     
-    console.log('[AIMS] Email change request:', { userId, newEmail, currentUserRole });
     
     if (!userId || !newEmail || !currentUserRole) {
       return NextResponse.json(
@@ -80,8 +78,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Found user profile:', userProfile.first_name, userProfile.last_name);
-    console.log('[AIMS] Changing email from', userProfile.email, 'to', newEmail, 'for user', userId);
 
     // Update the user profile in the database
     const { data: updatedProfile, error: profileUpdateError } = await authSupabase
@@ -102,7 +98,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Email updated successfully in database for user:', userId);
     
     return NextResponse.json({ 
       success: true, 

@@ -61,7 +61,6 @@ export function AutosaveFormWrapper({
     showSuccessToast: false, // We'll handle UI feedback ourselves
     showErrorToast: false,   // We'll show custom error alerts
     onSaveSuccess: (data) => {
-      console.log('[AutosaveFormWrapper] Save successful:', data);
     },
     onSaveError: (error) => {
       console.error('[AutosaveFormWrapper] Save error:', error);

@@ -9,7 +9,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function createCommentsTables() {
-  console.log('🔧 Creating comments tables...')
   
   try {
     // Create activity_comments table
@@ -32,13 +31,10 @@ async function createCommentsTables() {
       );
     `
     
-    console.log('Creating activity_comments table...')
     const { error: commentsError } = await supabase.rpc('exec_sql', { sql: createCommentsTable })
     
     if (commentsError) {
-      console.log('Comments table might already exist or create via direct SQL...')
     } else {
-      console.log('✅ Comments table created')
     }
     
     // Create activity_comment_replies table
@@ -56,17 +52,13 @@ async function createCommentsTables() {
       );
     `
     
-    console.log('Creating activity_comment_replies table...')
     const { error: repliesError } = await supabase.rpc('exec_sql', { sql: createRepliesTable })
     
     if (repliesError) {
-      console.log('Replies table might already exist or create via direct SQL...')
     } else {
-      console.log('✅ Replies table created')
     }
     
     // Test tables exist by selecting from them
-    console.log('\nTesting table access...')
     
     const { data: commentsTest, error: commentsTestError } = await supabase
       .from('activity_comments')
@@ -75,9 +67,7 @@ async function createCommentsTables() {
       
     if (commentsTestError) {
       console.error('❌ Comments table test failed:', commentsTestError.message)
-      console.log('You may need to run the SQL manually in Supabase dashboard')
     } else {
-      console.log('✅ Comments table accessible')
     }
     
     const { data: repliesTest, error: repliesTestError } = await supabase
@@ -87,17 +77,12 @@ async function createCommentsTables() {
       
     if (repliesTestError) {
       console.error('❌ Replies table test failed:', repliesTestError.message)
-      console.log('You may need to run the SQL manually in Supabase dashboard')
     } else {
-      console.log('✅ Replies table accessible')
     }
     
-    console.log('\n🎉 Comments tables setup complete!')
-    console.log('\nIf you see errors above, please run the SQL from sql/create_comments_tables.sql in your Supabase dashboard')
     
   } catch (error) {
     console.error('❌ Error setting up tables:', error)
-    console.log('\nPlease run the SQL from sql/create_comments_tables.sql manually in your Supabase dashboard')
   }
 }
 

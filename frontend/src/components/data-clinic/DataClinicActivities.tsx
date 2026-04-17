@@ -122,12 +122,10 @@ export function DataClinicActivities() {
 
   const fetchActivitiesWithGaps = async () => {
     try {
-      console.log('[DataClinic] Fetching activities with gaps...');
       const url = showAllActivities 
         ? '/api/data-clinic/activities?missing_fields=true&show_all=true'
         : '/api/data-clinic/activities?missing_fields=true';
       const res = await fetch(url);
-      console.log('[DataClinic] Response status:', res.status);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -136,10 +134,6 @@ export function DataClinicActivities() {
       }
       
       const data = await res.json();
-      console.log('[DataClinic] Response data:', data);
-      console.log('[DataClinic] Activities count:', data.activities?.length || 0);
-      console.log('[DataClinic] Data gaps:', data.dataGaps);
-      console.log('[DataClinic] Has IATI fields:', data.hasIatiFields);
       
       setActivities(data.activities || []);
       setDataGaps(data.dataGaps || []);

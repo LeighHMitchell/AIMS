@@ -17,7 +17,6 @@ const supabase = createClient(
 );
 
 async function checkForeignKey() {
-  console.log('Checking foreign key constraint for related_activities.created_by...\n');
   
   // Query to check the foreign key constraint
   const { data, error } = await supabase.rpc('get_foreign_key_info', {
@@ -26,7 +25,6 @@ async function checkForeignKey() {
   }).single();
   
   if (error) {
-    console.log('Could not run RPC, trying direct query...');
     
     // Try a direct SQL query to get constraint info
     const query = `
@@ -57,16 +55,12 @@ async function checkForeignKey() {
       
     if (constraintError) {
       console.error('Could not query constraint information directly');
-      console.log('This is expected - we may not have access to system tables');
     } else {
-      console.log('Foreign key constraint info:', constraintData);
     }
   } else {
-    console.log('Foreign key info:', data);
   }
   
   // Let's also check if the user exists in auth.users
-  console.log('\nChecking auth.users table...');
   const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
     page: 1,
     perPage: 50
@@ -75,13 +69,10 @@ async function checkForeignKey() {
   if (authError) {
     console.error('Error fetching auth users:', authError);
   } else {
-    console.log(`Found ${authUsers.users.length} users in auth.users`);
     
     // Check if john@example.com exists in auth.users
     const johnInAuth = authUsers.users.find(u => u.email === 'john@example.com');
-    console.log('\njohn@example.com in auth.users?', !!johnInAuth);
     if (johnInAuth) {
-      console.log('Auth user ID:', johnInAuth.id);
     }
   }
 }

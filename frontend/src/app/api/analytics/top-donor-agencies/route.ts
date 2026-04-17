@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
         throw new Error('Failed to fetch activities data');
       }
 
-      console.log(`[TopDonorAgencies] Found ${activitiesData?.length || 0} activities with reporting_org_id`);
 
       // Create activity to org mapping
       const activityOrgMap = new Map<string, string>();
@@ -88,7 +87,6 @@ export async function GET(request: NextRequest) {
         throw new Error('Failed to fetch budget data');
       }
 
-      console.log(`[TopDonorAgencies] Found ${budgetData?.length || 0} budgets`);
       
       // Debug: count how many budgets have matching activities
       let matchedBudgets = 0;
@@ -102,7 +100,6 @@ export async function GET(request: NextRequest) {
         }
       });
 
-      console.log(`[TopDonorAgencies] Matched budgets: ${matchedBudgets}, Unmatched: ${unmatchedBudgets}`);
 
       budgetData?.forEach((budget: any) => {
         // Apply date filter if provided

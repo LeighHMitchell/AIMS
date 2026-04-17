@@ -94,16 +94,13 @@ export function SubnationalBreakdownTab({
     Object.entries(breakdowns).forEach(([regionName, percentage]) => {
       if (percentage > 0 && !allocationStatus[regionName]) {
         initialStatus[regionName] = 'saved'
-        console.log(`[DEBUG] Marking ${regionName} as 'saved' (${percentage}%)`)
       }
     })
     
     // Only update if we have new regions to mark as saved
     if (Object.keys(initialStatus).length > 0) {
-      console.log('[DEBUG] Setting initial allocation status:', initialStatus)
       setAllocationStatus(prev => ({ ...prev, ...initialStatus }))
     } else {
-      console.log('[DEBUG] No initial status updates needed')
     }
   }, [loading, isLoadingData, Object.keys(breakdowns).join(',')]) // Run when data is fully loaded
 

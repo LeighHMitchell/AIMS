@@ -56,7 +56,6 @@ export const IconUpload: React.FC<IconUploadProps> = ({
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);
-        console.log(`Icon compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
 
         // Create preview from compressed file
         const reader = new FileReader();

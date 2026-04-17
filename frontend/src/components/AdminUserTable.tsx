@@ -182,7 +182,6 @@ export function AdminUserTable() {
         authProvider: user.authProvider || user.auth_provider
       }))
 
-      console.log('[AdminUserTable] Fetched users:', mappedUsers.length)
 
       setUsers(mappedUsers)
       setFilteredUsers(mappedUsers)
@@ -215,7 +214,6 @@ export function AdminUserTable() {
     } catch (error: any) {
       // Ignore abort errors - they're expected when we cancel stale requests
       if (error.name === 'AbortError') {
-        console.log('[AdminUserTable] Request aborted (superseded by newer request)')
         return
       }
       console.error('Error fetching data:', error)

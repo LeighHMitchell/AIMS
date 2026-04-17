@@ -73,7 +73,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(formatUsers(initialUsers || []));
     }
 
-    console.log('[User Search API] Searching for:', query);
 
     // Search users by first_name, last_name, or email
     // SECURITY: Escape ILIKE wildcards to prevent filter injection
@@ -111,7 +110,6 @@ export async function GET(request: NextRequest) {
 
     const formattedUsers = formatUsers(users || []);
 
-    console.log('[User Search API] Found users:', formattedUsers.length);
 
     return NextResponse.json(formattedUsers);
   } catch (error) {

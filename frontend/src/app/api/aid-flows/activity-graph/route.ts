@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('[Activity Graph API] Fetching activity relationships from both tables...');
     
     // Fetch from related_activities table (external/unresolved links)
     // Note: related_activities uses 'external_iati_identifier' for external links
@@ -125,7 +124,6 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    console.log('[Activity Graph API] Total normalized relationships:', normalizedRelationships.length);
     
     // Collect all unique activity IDs (for internal links) from normalized relationships
     const activityIds = new Set<string>();
@@ -145,8 +143,6 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    console.log('[Activity Graph API] Unique activity IDs:', activityIds.size);
-    console.log('[Activity Graph API] External activities:', externalActivities.size);
     
     // Fetch activity details - no date filtering for relationship graph
     // We want to show ALL activities that have relationships, regardless of dates
@@ -174,14 +170,11 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    console.log('[Activity Graph API] Fetched activities:', activities.length);
-    console.log('[Activity Graph API] Activity IDs requested:', Array.from(activityIds).slice(0, 5));
     
     // Debug: log which activities were found vs not found
     const foundActivityIds = new Set(activities.map((a: any) => a.id));
     const missingActivityIds = Array.from(activityIds).filter(id => !foundActivityIds.has(id));
     if (missingActivityIds.length > 0) {
-      console.log('[Activity Graph API] WARNING - Missing activities:', missingActivityIds);
     }
     
     // Build activity lookup map
@@ -257,8 +250,6 @@ export async function GET(request: NextRequest) {
     const links: ActivityLink[] = [];
     const linkSet = new Set<string>();
     
-    console.log('[Activity Graph API] Building links from', normalizedRelationships.length, 'relationships');
-    console.log('[Activity Graph API] Available nodeIds:', Array.from(nodeIds).slice(0, 10));
     
     normalizedRelationships.forEach((rel, index) => {
       const sourceId = rel.sourceActivityId;
@@ -294,14 +285,12 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    console.log('[Activity Graph API] Built graph:', { nodes: nodes.length, links: links.length });
     
     // If no valid nodes could be built (either no relationships exist, 
     // or relationships point to missing/deleted activities), show all activities
     // This helps users see their activities and understand they need to create relationships
     const hasValidInternalNodes = nodes.filter(n => n.status !== 'external').length > 0;
     if (!hasValidInternalNodes) {
-      console.log('[Activity Graph API] No relationships found, fetching all activities...');
       
       const { data: allActivities, error: allActError } = await supabase
         .from('activities')
@@ -318,7 +307,6 @@ export async function GET(request: NextRequest) {
         .limit(100); // Limit to prevent overwhelming the graph
       
       if (!allActError && allActivities) {
-        console.log('[Activity Graph API] Showing', allActivities.length, 'activities without relationships');
         
         // Get all activity IDs for transaction query
         const allActivityIds = allActivities.map((a: any) => a.id);

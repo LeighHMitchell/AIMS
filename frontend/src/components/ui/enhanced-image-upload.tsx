@@ -93,7 +93,6 @@ export function EnhancedImageUpload({
         };
 
         const compressedFile = await imageCompression(file, compressionOptions);
-        console.log(`${label} compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
 
         const reader = new FileReader();
         reader.onloadend = () => {

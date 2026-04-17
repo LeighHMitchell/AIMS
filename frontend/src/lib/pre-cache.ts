@@ -45,7 +45,6 @@ class PreCacheManager {
   async preCacheAPI(url: string, options: PreCacheOptions = {}): Promise<any> {
     // Only run on client-side to prevent SSR issues
     if (typeof window === 'undefined') {
-      console.log('[PreCache] Skipping server-side pre-cache for:', url)
       return null
     }
 
@@ -216,12 +215,10 @@ class PreCacheManager {
       // Clear specific pattern
       const keys = Array.from(apiCache.keys()).filter(key => key.includes(pattern))
       keys.forEach(key => apiCache.delete(key))
-      console.log(`[PreCache] Cleared ${keys.length} cache entries matching: ${pattern}`)
     } else {
       // Clear all
       apiCache.clear()
       resourceCache.clear()
-      console.log('[PreCache] Cleared all cache entries')
     }
   }
 
@@ -371,7 +368,6 @@ export async function cachedFetch(url: string, options?: RequestInit): Promise<R
       })
     } catch {
       // Fall back to regular fetch if cache fails
-      console.log(`[PreCache] Cache miss, falling back to fetch: ${url}`)
     }
   }
   

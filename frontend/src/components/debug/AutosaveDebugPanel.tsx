@@ -303,17 +303,14 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
 // Quick access functions for browser console
 if (typeof window !== 'undefined') {
   (window as any).debugAutosave = () => {
-    console.log('🔧 Autosave Debug Mode Enabled');
     autosaveDebugger.setDebugMode(true);
   };
   
   (window as any).stopDebugAutosave = () => {
-    console.log('🔧 Autosave Debug Mode Disabled');
     autosaveDebugger.setDebugMode(false);
   };
   
   (window as any).getAutosaveLogs = () => {
-    console.log('📋 Autosave Logs:', autosaveDebugger.exportLogs());
     return autosaveDebugger.exportLogs();
   };
 }

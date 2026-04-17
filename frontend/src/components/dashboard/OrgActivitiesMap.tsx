@@ -684,7 +684,6 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                       viewLevel={subnationalViewLevel}
                       onViewLevelChange={setSubnationalViewLevel}
                       onFeatureClick={(pcode, name, level) => {
-                        console.log('Feature clicked:', { pcode, name, level });
                       }}
                     />
                   </div>

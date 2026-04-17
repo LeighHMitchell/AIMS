@@ -26,7 +26,6 @@ export async function GET(
       );
     }
     
-    console.log('[AIMS] GET /api/organizations/[id]/sectors - Fetching sectors for org:', orgId);
     
     
     
@@ -110,7 +109,6 @@ export async function GET(
     // Sort by activity count descending
     sectors.sort((a, b) => b.activity_count - a.activity_count);
     
-    console.log('[AIMS] Found sectors for organization:', sectors.length);
     
     const response = NextResponse.json(sectors);
     response.headers.set('Access-Control-Allow-Origin', '*');

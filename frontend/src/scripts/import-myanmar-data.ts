@@ -22,7 +22,6 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function importActivities() {
-  console.log('📥 Starting Myanmar data import...\n')
   
   try {
     // Get the fixed files with corrected transaction types
@@ -33,10 +32,8 @@ async function importActivities() {
     const activities = JSON.parse(readFileSync(activitiesPath, 'utf-8'))
     const transactions = JSON.parse(readFileSync(transactionsPath, 'utf-8'))
     
-    console.log(`📋 Found ${activities.length} activities and ${transactions.length} transactions to import\n`)
     
     // Import activities
-    console.log('🔄 Importing activities...')
     let successCount = 0
     let errorCount = 0
     
@@ -78,7 +75,6 @@ async function importActivities() {
         console.error(`❌ Failed to import activity ${activity.iati_id}:`, error.message)
         errorCount++
       } else {
-        console.log(`✅ Imported activity: ${activity.title}`)
         successCount++
         
         // If successful, you might want to:
@@ -87,20 +83,15 @@ async function importActivities() {
       }
     }
     
-    console.log(`\n📊 Activity import complete: ${successCount} succeeded, ${errorCount} failed`)
     
     // Import transactions
-    console.log('\n🔄 Importing transactions...')
     successCount = 0
     errorCount = 0
     
     // Note: You'll need to map activity_iati_id to actual activity IDs
     // This is a simplified example
     
-    console.log('\n💡 Transaction import requires mapping IATI IDs to database IDs.')
-    console.log('Please implement the transaction import based on your schema.')
     
-    console.log('\n✨ Import process completed!')
     
   } catch (error) {
     console.error('❌ Import error:', error)

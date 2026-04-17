@@ -833,16 +833,13 @@ const router = useRouter();
 
   // Legacy fetch function for when optimizations are disabled
   const fetchActivities = useCallback(async (page: number = 1, fetchAll: boolean = false) => {
-    console.log('[AIMS] fetchActivities called - usingOptimization:', usingOptimization);
     
     if (usingOptimization) {
       // Use optimized hook's refetch instead
-      console.log('[AIMS] Using optimized refetch');
       optimizedData?.refetch();
       return;
     }
     
-    console.log('[AIMS] Using legacy fetch');
     
     // Cancel any in-flight request
     if (abortControllerRef.current) {
@@ -878,11 +875,9 @@ const router = useRouter();
       const response = await res.json();
       const data = response.data || response;
       setLegacyActivities(Array.isArray(data) ? data : []);
-      console.log("[AIMS Debug] Legacy fetch - Activities:", Array.isArray(data) ? data.length : 0);
       
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[AIMS] Legacy request aborted');
         return;
       }
 
@@ -1021,7 +1016,6 @@ const router = useRouter();
         if (res.status === 404) {
           // If the error message indicates the activity wasn't found, treat as success
           if (errorData.error === "Activity not found" || errorData.error === "No activities found") {
-            console.log("[AIMS] Activity already deleted:", id);
             toast.success(`"${activityTitle}" was deleted successfully`);
 
             // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
@@ -1064,7 +1058,6 @@ const router = useRouter();
         throw new Error(errorData.error || "Failed to delete activity");
       }
       
-      console.log('[AIMS] About to show success toast for deletion:', activityTitle);
       toast.success(`"${activityTitle}" was deleted successfully`);
       
       // Refetch to ensure UI is in sync with backend (prevents reappearing activity)

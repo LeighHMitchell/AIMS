@@ -7,7 +7,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function diagnoseCommentsTable() {
-  console.log('🔍 Diagnosing Comments Table Structure...\n')
   
   try {
     // Try to get table info
@@ -17,15 +16,11 @@ async function diagnoseCommentsTable() {
       .limit(0)
     
     if (tableError) {
-      console.log('❌ Comments table error:', tableError.message)
-      console.log('\nThe comments table likely doesn\'t exist.')
       return
     }
     
-    console.log('✅ Comments table exists!\n')
     
     // Try different inserts to understand the schema
-    console.log('Testing different field combinations...\n')
     
     // Test 1: Basic insert with content field
     const test1 = await supabase
@@ -39,9 +34,7 @@ async function diagnoseCommentsTable() {
       .select()
     
     if (test1.error) {
-      console.log('Test 1 (lowercase type) failed:', test1.error.message)
     } else {
-      console.log('✅ Test 1 passed - lowercase type works')
     }
     
     // Test 2: Try with capitalized type
@@ -56,9 +49,7 @@ async function diagnoseCommentsTable() {
       .select()
     
     if (test2.error) {
-      console.log('Test 2 (capitalized type) failed:', test2.error.message)
     } else {
-      console.log('✅ Test 2 passed - capitalized type works')
     }
     
     // Get actual comments to see structure
@@ -68,8 +59,6 @@ async function diagnoseCommentsTable() {
       .limit(5)
     
     if (!commentsError && comments && comments.length > 0) {
-      console.log('\nSample comment structure:')
-      console.log(JSON.stringify(comments[0], null, 2))
     }
     
     // Clean up test data

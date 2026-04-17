@@ -77,9 +77,6 @@ export function usePartners() {
 
   const updatePartner = async (id: string, updates: Partial<Partner>, user?: any) => {
     try {
-      console.log('[AIMS DEBUG usePartners] Updating partner:', id);
-      console.log('[AIMS DEBUG usePartners] Updates:', updates);
-      console.log('[AIMS DEBUG usePartners] User:', user);
       
       const response = await apiFetch('/api/partners', {
         method: 'PUT',
@@ -87,13 +84,11 @@ export function usePartners() {
         body: JSON.stringify({ id, ...updates, user }),
       });
       
-      console.log('[AIMS DEBUG usePartners] Response status:', response.status);
       
       if (!response.ok) {
         let errorMessage = 'Failed to update partner';
         try {
           const errorData = await response.json();
-          console.log('[AIMS DEBUG usePartners] Error response:', errorData);
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (parseError) {
           console.error('[AIMS DEBUG usePartners] Failed to parse error response:', parseError);
@@ -102,7 +97,6 @@ export function usePartners() {
       }
       
       const updatedPartner = await response.json();
-      console.log('[AIMS DEBUG usePartners] Updated partner:', updatedPartner);
       
       setPartners(prev => prev.map(p => p.id === id ? updatedPartner : p));
       toast.success('Partner updated successfully');

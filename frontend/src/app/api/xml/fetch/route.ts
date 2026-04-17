@@ -205,7 +205,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[XML Fetch API] User ${user?.id} fetching XML from URL:`, url);
 
     // Fetch the XML content with appropriate headers
     // SECURITY: Using AbortController for timeout and redirect: 'error' to prevent SSRF via redirects
@@ -258,7 +257,6 @@ export async function POST(request: NextRequest) {
     }
 
     const contentType = response.headers.get('content-type') || '';
-    console.log('[XML Fetch API] Content-Type:', contentType);
 
     // Get the content
     const content = await response.text();
@@ -278,7 +276,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[XML Fetch API] Successfully fetched XML for user ${user?.id}, length:`, content.length);
 
     return NextResponse.json({
       content,

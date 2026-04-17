@@ -1053,17 +1053,14 @@ export default function IATIImportPage() {
 
   // Enhanced Select/deselect all items - includes sub-item selections
   const toggleAllItems = (type: 'organizations' | 'activities' | 'transactions', items: string[]) => {
-    console.log(`[IATI Import] Enhanced Toggle All: ${type} with ${items.length} items`);
     
     setImportState(prev => {
       const allSelected = items.every(id => prev[type].selected.has(id))
       const newSelected = allSelected ? new Set<string>() : new Set(items)
       
-      console.log(`[IATI Import] Enhanced Toggle All: ${type} - ${allSelected ? 'Deselecting' : 'Selecting'} all items`);
       
       // Enhanced: For transactions, also ensure all sub-items are selected
       if (type === 'transactions' && !allSelected && parsedData?.transactions) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${(parsedData.transactions || []).length} individual transactions`);
         
         // Create enhanced selection that includes all transaction indices
         const allTransactionIndices = (parsedData.transactions || []).map((_, i) => `${i}`);
@@ -1077,7 +1074,6 @@ export default function IATIImportPage() {
       
       // Enhanced: For activities, ensure all sub-components are selected
       if (type === 'activities' && !allSelected && parsedData?.activities) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.activities.length} activities with full sub-component selection`);
         
         // For activities, we select the main activities - sub-components will be handled
         // during the actual import process based on the activity data
@@ -1089,7 +1085,6 @@ export default function IATIImportPage() {
       
       // Enhanced: For organizations, select all organization data
       if (type === 'organizations' && !allSelected && parsedData?.organizations) {
-        console.log(`[IATI Import] Enhanced Toggle All: Selecting all ${parsedData.organizations.length} organizations`);
         
         return {
           ...prev,
@@ -1339,7 +1334,6 @@ export default function IATIImportPage() {
                               setParsingProgress(10)
                               
                               // Fetch XML from URL using the existing API
-                              console.log('[IATI Import] Fetching XML from URL:', urlContent.trim())
                               const fetchResponse = await apiFetch('/api/xml/fetch', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1353,7 +1347,6 @@ export default function IATIImportPage() {
                               
                               setParsingProgress(30)
                               const { content } = await fetchResponse.json()
-                              console.log('[IATI Import] Successfully fetched XML, length:', content?.length)
                               
                               // Now parse the XML content (reuse existing parse logic)
                               setParsingProgress(50)

@@ -106,7 +106,6 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       }
 
       const data = await response.json()
-      console.log('[MapSearch] Results:', data)
       setResults(data)
       setOpen(data.length > 0)
     } catch (err) {
@@ -134,7 +133,6 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
     const lng = parseFloat(result.lon)
     const zoomLevel = getZoomLevel(result.type, result.class)
     
-    console.log('[MapSearch] Selected:', result.display_name, 'at', lat, lng, 'type:', result.type)
     onLocationSelect(lat, lng, result.display_name, result.type)
     
     setSearchQuery('')

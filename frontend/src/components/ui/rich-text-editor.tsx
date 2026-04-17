@@ -65,10 +65,8 @@ export function RichTextEditor({
       if (!isSettingContentRef.current && isInitializedRef.current) {
         // Additional check: ensure the content actually differs from what was set via props
         if (currentContent !== lastPropContentRef.current) {
-          console.log('[RichTextEditor] User-initiated onChange triggered');
           onChange(currentContent)
         } else {
-          console.log('[RichTextEditor] Content matches prop, ignoring onChange');
         }
       } else {
         console.log('[RichTextEditor] Programmatic onChange blocked', {

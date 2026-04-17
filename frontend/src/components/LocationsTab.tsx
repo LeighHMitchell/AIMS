@@ -209,7 +209,6 @@ export default function LocationsTab({
   // Handle save location (create or update)
   const handleSaveLocation = useCallback(async (locationData: LocationSchema) => {
     try {
-      console.log('[LocationsTab] 🚀 Starting save process for location:', locationData);
       
       const url = editingLocation 
         ? `/api/locations/${editingLocation.id}`
@@ -217,7 +216,6 @@ export default function LocationsTab({
       
       const method = editingLocation ? 'PATCH' : 'POST';
       
-      console.log('[LocationsTab] 📡 Making API request:', { url, method, isUpdate: !!editingLocation });
       
       const response = await apiFetch(url, {
         method,
@@ -227,7 +225,6 @@ export default function LocationsTab({
         body: JSON.stringify(locationData),
       });
 
-      console.log('[LocationsTab] 📡 API response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -236,13 +233,10 @@ export default function LocationsTab({
       }
 
       const result = await response.json();
-      console.log('[LocationsTab] ✅ API success response:', result);
       
       if (result.success) {
-        console.log('[LocationsTab] ✅ Location saved successfully, reloading...');
         toast.success(editingLocation ? 'Location updated successfully' : 'Location added successfully');
         await loadLocations();
-        console.log('[LocationsTab] ✅ Locations reloaded, closing modal');
         setIsModalOpen(false);
         setEditingLocation(undefined);
       } else {

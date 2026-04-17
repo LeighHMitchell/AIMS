@@ -24,7 +24,6 @@ export default function MapFlyTo({ target, onComplete, duration = 1500 }: MapFly
     
     lastTargetRef.current = targetKey;
 
-    console.log('[MapFlyTo] Flying to:', target);
 
     // Use MapLibre's flyTo method
     map.flyTo({

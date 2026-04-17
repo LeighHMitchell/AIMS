@@ -22,11 +22,9 @@ export function useActivityAutosave() {
       
       // Validation
       if (!activityData.general?.title?.trim()) {
-        console.log('[ActivityAutosave] Skipping save - no title');
         return;
       }
       
-      console.log('[ActivityAutosave] Starting save...');
       setAutoSaving(true);
       
       try {
@@ -91,7 +89,6 @@ export function useActivityAutosave() {
         
         setLastSaved(new Date());
         setHasUnsavedChanges(false);
-        console.log('[ActivityAutosave] Save successful');
         
       } catch (error) {
         console.error('[ActivityAutosave] Save error:', error);
@@ -104,17 +101,14 @@ export function useActivityAutosave() {
   // Create trigger function that properly debounces
   const createTriggerFunction = (saveFunction: () => Promise<void>) => {
     return () => {
-      console.log('[ActivityAutosave] Trigger called');
       
       // Clear existing timeout
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
-        console.log('[ActivityAutosave] Cleared existing timeout');
       }
       
       // Set new timeout
       autoSaveTimeoutRef.current = setTimeout(() => {
-        console.log('[ActivityAutosave] Timeout fired, executing save');
         autoSavePromiseRef.current = saveFunction();
       }, 2000);
     };
@@ -153,7 +147,6 @@ export function AutosaveSelectField({
   const previousValueRef = useRef(value);
   
   const handleValueChange = useCallback((newValue: string) => {
-    console.log(`[AutosaveSelect] ${id} changing from "${previousValueRef.current}" to "${newValue}"`);
     
     // Update state
     onChange(newValue);

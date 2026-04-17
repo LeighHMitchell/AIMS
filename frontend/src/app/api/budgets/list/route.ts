@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
     const sortField = searchParams.get('sortField') || 'period_start';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    console.log('[Budgets List API] Query params:', { page, limit, search, types, statuses, organizations, sortField, sortOrder });
 
     // Build query - fetch budgets first, then join activities separately
     let query = supabase
@@ -147,7 +146,6 @@ export async function GET(request: NextRequest) {
       if (adminErr) {
         console.error('[Budgets List API] Admin activities query error:', adminErr);
       }
-      console.log('[Budgets List API] Admin found', (adminData || []).length, 'of', allActivityIds.size);
 
       let merged = adminData || [];
 
@@ -159,7 +157,6 @@ export async function GET(request: NextRequest) {
           .select(activitySelect)
           .in('id', missing);
         if (rlsErr) console.error('[Budgets List API] RLS fallback activities error:', rlsErr);
-        console.log('[Budgets List API] RLS fallback found', (rlsData || []).length, 'of', missing.length, 'missing');
         merged = [...merged, ...(rlsData || [])];
       }
 
@@ -245,7 +242,6 @@ export async function GET(request: NextRequest) {
       sampleReportingOrg: data?.[0]?.activity?.reporting_org
     });
 
-    console.log(`[Budgets List API] Successfully fetched ${data?.length || 0} budgets, total: ${count}`);
 
     return NextResponse.json({
       budgets: data || [],

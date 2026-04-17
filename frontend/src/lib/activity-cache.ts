@@ -27,7 +27,6 @@ class ActivityCache {
     });
 
     const ttlType = key.includes('activity:') ? 'activity' : 'general';
-    console.log('[Activity Cache] Cached data for key:', key, 'expires at:', new Date(expiresAt).toISOString(), `(TTL: ${ttlType})`);
   }
 
   get<T>(key: string): T | null {
@@ -38,12 +37,10 @@ class ActivityCache {
     }
 
     if (Date.now() > entry.expiresAt) {
-      console.log('[Activity Cache] Cache expired for key:', key);
       this.cache.delete(key);
       return null;
     }
 
-    console.log('[Activity Cache] Cache hit for key:', key);
     return entry.data as T;
   }
 
@@ -61,12 +58,10 @@ class ActivityCache {
 
   delete(key: string): void {
     this.cache.delete(key);
-    console.log('[Activity Cache] Deleted cache for key:', key);
   }
 
   clear(): void {
     this.cache.clear();
-    console.log('[Activity Cache] Cache cleared');
   }
 
   // Clean up expired entries
@@ -82,7 +77,6 @@ class ActivityCache {
     }
     
     if (cleaned > 0) {
-      console.log('[Activity Cache] Cleaned up', cleaned, 'expired entries');
     }
   }
 
@@ -124,13 +118,11 @@ export async function fetchActivityWithCache(activityId: string, useBasic: boole
   // Check cache first
   const cached = activityCache.get(cacheKey);
   if (cached) {
-    console.log('[Activity Cache] Returning cached activity:', activityId, useBasic ? '(basic)' : '(full)');
     return cached;
   }
 
   // Fetch from API with retry (handles brief post-write consistency windows)
   const apiUrl = useBasic ? `/api/activities/${activityId}/basic` : `/api/activities/${activityId}`;
-  console.log('[Activity Cache] Fetching activity from API:', apiUrl);
   const maxRetries = 3;
   let attempt = 0;
   let lastError: any = null;
@@ -177,7 +169,6 @@ export function invalidateActivityCache(activityId: string): void {
   activityCache.delete(fullCacheKey);
   activityCache.delete(basicCacheKey);
 
-  console.log('[Activity Cache] Invalidated both full and basic cache for activity:', activityId);
 }
 
 // Force immediate cache refresh by clearing all activity-related cache entries
@@ -194,6 +185,5 @@ export function forceActivityCacheRefresh(activityId?: string): void {
       activityCache.delete(key);
     });
 
-    console.log('[Activity Cache] Force refreshed all activity cache entries');
   }
 }

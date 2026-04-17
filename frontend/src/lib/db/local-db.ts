@@ -69,7 +69,6 @@ export function initializeLocalDb() {
   });
   
   initialized = true;
-  console.log('[LocalDB] Initialized with', users.size, 'test users');
   
   // Store in localStorage for client-side persistence
   if (typeof window !== 'undefined') {
@@ -92,7 +91,6 @@ export function loadFromLocalStorage() {
         storedUsers.forEach((user, id) => {
           users.set(id as string, user as User);
         });
-        console.log('[LocalDB] Loaded', storedUsers.size, 'users from localStorage');
       }
     } catch (e) {
       console.error('Could not load from localStorage:', e);
@@ -124,25 +122,20 @@ export const localDb = {
         eq: (column: string, value: any) => ({
           single: async () => {
             ensureInitialized();
-            console.log(`[LocalDB] Selecting ${fields || '*'} from users where ${column} = ${value}`);
             
             if (column === 'id') {
               const user = users.get(value);
               if (!user) {
-                console.log('[LocalDB] User not found by ID:', value);
                 return { data: null, error: { message: 'User not found' } };
               }
-              console.log('[LocalDB] Found user by ID:', user.first_name, user.last_name);
               return { data: user, error: null };
             }
             
             if (column === 'email') {
               const user = Array.from(users.values()).find(u => u.email === value);
               if (!user) {
-                console.log('[LocalDB] User not found by email:', value);
                 return { data: null, error: { message: 'User not found' } };
               }
-              console.log('[LocalDB] Found user by email:', user.first_name, user.last_name);
               return { data: user, error: null };
             }
             
@@ -163,12 +156,10 @@ export const localDb = {
           select: () => ({
             single: async () => {
               ensureInitialized();
-              console.log(`[LocalDB] Updating user where ${column} = ${value} with:`, data);
               
               if (column === 'id') {
                 const user = users.get(value);
                 if (!user) {
-                  console.log('[LocalDB] User not found for update:', value);
                   return { data: null, error: { message: 'User not found' } };
                 }
                 
@@ -179,7 +170,6 @@ export const localDb = {
                 };
                 
                 users.set(value, updatedUser);
-                console.log('[LocalDB] User updated successfully:', updatedUser.first_name, updatedUser.last_name, 'new email:', updatedUser.email);
                 
                 // Save to localStorage if on client-side
                 if (typeof window !== 'undefined') {

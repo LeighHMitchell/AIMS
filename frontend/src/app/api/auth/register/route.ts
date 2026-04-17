@@ -5,9 +5,6 @@ import { notifySuperUsersOfNewRegistration } from '@/lib/notifications/user-regi
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
-  console.log('[Register] ========================================');
-  console.log('[Register] POST /api/auth/register - Starting');
-  console.log('[Register] Timestamp:', new Date().toISOString());
 
   try {
     const supabase = getSupabaseAdmin();
@@ -18,10 +15,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    console.log('[Register] Supabase admin client initialized');
 
     const body = await request.json();
-    console.log('[Register] Request body (email only):', body.email);
 
     const { email, password, firstName, lastName } = body;
 
@@ -51,10 +46,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Register] Validated - Email:', email);
 
     // Check if user already exists in the users table
-    console.log('[Register] Checking for existing user by email...');
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id, email')
@@ -67,7 +60,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingUser) {
-      console.log('[Register] User already exists in users table with email:', email);
       return NextResponse.json(
         { error: 'An account with this email already exists. Please sign in instead.' },
         { status: 409 }
@@ -77,7 +69,6 @@ export async function POST(request: NextRequest) {
     // Create auth user using Supabase Admin API
     // email_confirm: true means user is auto-confirmed and can sign in immediately
     // Set to false and configure SMTP if you want email verification
-    console.log('[Register] Creating auth user...');
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -115,11 +106,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Register] Auth user created:', authData.user.id);
 
     // Check if profile was already created by database trigger (handle_new_auth_user)
     // The trigger automatically creates a profile when an auth user is created
-    console.log('[Register] Checking if profile was created by trigger...');
     const { data: existingProfile, error: profileCheckError } = await supabase
       .from('users')
       .select('*')
@@ -130,7 +119,6 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
 
     if (existingProfile) {
-      console.log('[Register] Profile already created by trigger, updating with registration data...');
       // Update the profile with the data from registration
       const { data: updatedProfile, error: updateError } = await supabase
         .from('users')
@@ -154,7 +142,6 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // No profile created by trigger, create one manually
-      console.log('[Register] Creating user profile manually...');
       const newUser = {
         id: authData.user.id,
         email,
@@ -167,7 +154,6 @@ export async function POST(request: NextRequest) {
         updated_at: now,
       };
 
-      console.log('[Register] New user data:', JSON.stringify({ ...newUser, id: '[REDACTED]' }, null, 2));
 
       const { data: createdProfile, error: profileError } = await supabase
         .from('users')
@@ -182,10 +168,8 @@ export async function POST(request: NextRequest) {
         console.error('[Register] Error details:', profileError.details);
 
         // If profile creation fails, try to clean up the auth user
-        console.log('[Register] Attempting to clean up auth user...');
         try {
           await supabase.auth.admin.deleteUser(authData.user.id);
-          console.log('[Register] Auth user cleaned up successfully');
         } catch (cleanupError) {
           console.error('[Register] Failed to clean up auth user:', cleanupError);
         }
@@ -226,8 +210,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Register] SUCCESS - User created:', profileData.email);
-    console.log('[Register] User ID:', profileData.id);
 
     // Notify super users of new registration (fire and forget - don't block registration)
     notifySuperUsersOfNewRegistration({
@@ -253,7 +235,6 @@ export async function POST(request: NextRequest) {
       updatedAt: profileData.updated_at,
     };
 
-    console.log('[Register] ========================================');
 
     return NextResponse.json({
       user: transformedUser,

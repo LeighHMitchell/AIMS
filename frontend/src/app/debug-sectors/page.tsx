@@ -16,7 +16,6 @@ export default function DebugSectorsPage() {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}`;
     setLogs(prev => [...prev, logMessage]);
-    console.log(logMessage);
   };
 
   // Test: Load activity data directly

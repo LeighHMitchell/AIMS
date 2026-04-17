@@ -349,17 +349,14 @@ function ActivitiesPageContent() {
         setActivities(Array.isArray(data) ? data : []);
         // Store total count for pagination calculations
         setTotalActivitiesCount(pagination.total || 0);
-        console.log(`[AIMS Debug] Fetched ${fetchAll ? 'all' : `page ${page} of ${pagination.totalPages}`}: ${data.length} activities (total: ${pagination.total})`);
       } else {
         // Fallback for non-paginated response
         const data = response.data || response;
         setActivities(Array.isArray(data) ? data : []);
-        console.log("[AIMS Debug] Activities fetched:", Array.isArray(data) ? data.length : 0);
       }
     } catch (error) {
       // Don't handle AbortError - it's expected when requests are cancelled
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[AIMS] Request aborted');
         return;
       }
 
@@ -411,10 +408,8 @@ function ActivitiesPageContent() {
     // Only fetch data if user loading is complete
     // This prevents fetching with null user state before authentication is resolved
     if (!userLoading) {
-      console.log('[AIMS] User loading complete, fetching activities with user:', user?.email || 'no user');
       fetchData();
     } else {
-      console.log('[AIMS] Waiting for user to load before fetching activities...');
     }
   }, [userLoading]); // Add userLoading as dependency
 
@@ -449,7 +444,6 @@ function ActivitiesPageContent() {
         
         // If it's a 404, the activity is already gone
         if (res.status === 404) {
-          console.log("[AIMS] Activity already deleted:", id);
           toast.success("Activity deleted successfully");
           return;
         }

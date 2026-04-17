@@ -102,7 +102,6 @@ const SAMPLE_ORGS = [
 ]
 
 async function getOrCreateOrganizations() {
-  console.log('🏢 Setting up organizations...')
   
   for (const org of SAMPLE_ORGS) {
     const { data: existing } = await supabase
@@ -126,7 +125,6 @@ async function getOrCreateOrganizations() {
       if (error) {
         console.error(`Error creating organization ${org.name}:`, error)
       } else {
-        console.log(`✅ Created organization: ${org.name}`)
       }
     }
   }
@@ -168,7 +166,6 @@ async function generateActivity(index: number, organizations: any[]) {
     created_by_org: reportingOrg.id
   }
   
-  console.log(`📝 Creating activity ${index + 1}/20: ${activityData.title}`)
   
   const { data: activity, error } = await supabase
     .from('activities')
@@ -186,7 +183,6 @@ async function generateActivity(index: number, organizations: any[]) {
 
 async function generateTransactions(activityId: string, organizations: any[]) {
   const transactionCount = faker.number.int({ min: 15, max: 35 })
-  console.log(`   💰 Generating ${transactionCount} transactions...`)
   
   for (let i = 0; i < transactionCount; i++) {
     // Use only basic transaction types that likely exist
@@ -225,7 +221,6 @@ async function generateTransactions(activityId: string, organizations: any[]) {
 async function generateSectors(activityId: string) {
   const sectorCount = faker.number.int({ min: 1, max: 3 })
   const selectedSectors = faker.helpers.arrayElements(SECTOR_CODES, sectorCount)
-  console.log(`   🏷️  Adding ${sectorCount} sectors...`)
   
   let totalPercentage = 0
   const sectorData = selectedSectors.map((sector, index) => {
@@ -261,7 +256,6 @@ async function generateSectors(activityId: string) {
 async function generatePolicyMarkers(activityId: string) {
   const markerCount = faker.number.int({ min: 1, max: 4 })
   const selectedMarkers = faker.helpers.arrayElements(POLICY_MARKERS, markerCount)
-  console.log(`   🎯 Adding ${markerCount} policy markers...`)
   
   for (const marker of selectedMarkers) {
     const { error } = await supabase
@@ -282,7 +276,6 @@ async function generatePolicyMarkers(activityId: string) {
 }
 
 async function generateParticipatingOrgs(activityId: string, organizations: any[]) {
-  console.log(`   👥 Adding participating organizations...`)
   
   // Add 2-5 participating orgs with different roles
   const participatingCount = faker.number.int({ min: 2, max: 5 })
@@ -313,7 +306,6 @@ async function generateParticipatingOrgs(activityId: string, organizations: any[
 async function generateLocations(activityId: string) {
   const locationCount = faker.number.int({ min: 1, max: 4 })
   const selectedLocations = faker.helpers.arrayElements(MYANMAR_LOCATIONS, locationCount)
-  console.log(`   📍 Adding ${locationCount} locations...`)
   
   for (const location of selectedLocations) {
     const { error } = await supabase
@@ -356,7 +348,6 @@ async function generateTags(activityId: string) {
   ]
   
   const selectedTags = faker.helpers.arrayElements(workingGroups, tagCount)
-  console.log(`   🏷️  Adding ${tagCount} working group tags...`)
   
   for (const tag of selectedTags) {
     const { error } = await supabase
@@ -377,7 +368,6 @@ async function generateTags(activityId: string) {
 
 async function generateBudgets(activityId: string) {
   const budgetCount = faker.number.int({ min: 1, max: 3 })
-  console.log(`   💵 Adding ${budgetCount} budgets...`)
   
   for (let i = 0; i < budgetCount; i++) {
     const startDate = faker.date.between({ from: '2024-01-01', to: '2025-12-31' })
@@ -403,16 +393,12 @@ async function generateBudgets(activityId: string) {
 }
 
 async function main() {
-  console.log('🚀 Starting Myanmar AIMS dummy data generation...')
-  console.log('=' .repeat(50))
   
   try {
     // Step 1: Set up organizations
     const organizations = await getOrCreateOrganizations()
-    console.log(`\n✅ Organizations ready: ${organizations.length} total`)
     
     // Step 2: Generate 20 activities with comprehensive data
-    console.log('\n📊 Generating 20 Myanmar aid activities...\n')
     
     for (let i = 0; i < 20; i++) {
       const activity = await generateActivity(i, organizations)
@@ -427,18 +413,9 @@ async function main() {
         await generateTags(activity.id)
         await generateBudgets(activity.id)
         
-        console.log(`   ✅ Activity ${i + 1} complete: ${activity.iati_id}\n`)
       }
     }
     
-    console.log('=' .repeat(50))
-    console.log('🎉 Data generation complete!')
-    console.log('\nYou now have:')
-    console.log('- 20 Myanmar aid activities')
-    console.log('- 300-700 transactions across all activities')
-    console.log('- Comprehensive IATI fields populated')
-    console.log('- Multiple sectors, tags, and participating orgs per activity')
-    console.log('\n✨ Your Gantt charts and reports should now have rich data!')
     
   } catch (error) {
     console.error('❌ Error during data generation:', error)

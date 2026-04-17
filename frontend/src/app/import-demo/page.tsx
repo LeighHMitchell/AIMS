@@ -10,7 +10,6 @@ import { FileSpreadsheet, Activity, Building2, DollarSign } from 'lucide-react';
 export default function ImportDemoPage() {
   const handleImport = async (data: any[], mappings: FieldMapping[], fileName?: string): Promise<ImportResults> => {
     // Simulate API call
-    console.log('Import Data:', { data, mappings, fileName });
     
     // Mock successful import
     await new Promise(resolve => setTimeout(resolve, 2000));

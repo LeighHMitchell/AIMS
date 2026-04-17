@@ -191,7 +191,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
-    console.log('[Templates API] Template created:', template.id);
 
     return NextResponse.json({
       success: true,

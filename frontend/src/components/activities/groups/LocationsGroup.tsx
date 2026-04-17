@@ -128,7 +128,6 @@ export function LocationsGroup({
         }
       } catch (e) {
         // Non-critical — suggestedRegions will just be empty until LocationsTab loads
-        console.log('[LocationsGroup] Could not pre-fetch locations:', e)
       }
     }
 
@@ -169,9 +168,6 @@ export function LocationsGroup({
         township_name: loc.township_name || '(empty)',
         city: loc.city || '(empty)',
       }))
-      console.log('[LocationsGroup] currentLocations fields:', JSON.stringify(mapped, null, 2))
-      console.log('[LocationsGroup] suggestedRegions:', JSON.stringify(suggestedRegions))
-      console.log('[LocationsGroup] suggestedTownships:', JSON.stringify(suggestedTownships))
     }
   }, [currentLocations, suggestedRegions, suggestedTownships])
 

@@ -92,7 +92,6 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       
       // Count humanitarian transactions
       const humanitarianCount = transactions?.filter((t: any) => t.is_humanitarian).length || 0
-      console.log('[HumanitarianChart] Humanitarian transactions:', humanitarianCount)
 
       // Aggregate data based on grouping mode
       const periodMap = new Map<string, { humanitarian: number; development: number }>()

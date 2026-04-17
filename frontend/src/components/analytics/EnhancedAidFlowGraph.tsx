@@ -424,7 +424,6 @@ export default function EnhancedAidFlowGraph({
       .style('pointer-events', 'all') // Make links interactive
     
     // Log link count for debugging
-    console.log('[EnhancedAidFlowGraph] Rendering links:', validLinks.length, 'nodes:', graphData.nodes.length)
 
     // Create clipPath definitions for circular logo images
     graphData.nodes.forEach((d, i) => {

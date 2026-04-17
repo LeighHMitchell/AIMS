@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       created_by_org_acronym: meta.reportingOrgRef || 'EXT'
     };
 
-    console.log('[IATI Fork] Creating forked activity:', activityData);
 
     const { data: activity, error: createError } = await supabase
       .from('activities')
@@ -139,7 +138,6 @@ export async function POST(request: NextRequest) {
           : null
       });
 
-    console.log('[IATI Fork] Successfully created forked activity:', activity.id);
 
     return NextResponse.json({
       ok: true,

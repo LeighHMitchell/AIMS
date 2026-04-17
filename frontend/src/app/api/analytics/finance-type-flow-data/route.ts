@@ -74,11 +74,9 @@ export async function GET(request: NextRequest) {
     const cacheKey = `finance-type-flow:${dateFrom}:${dateTo}:${organizationId || 'all'}`
     const cached = getCached(cacheKey)
     if (cached) {
-      console.log('[FinanceTypeFlowData API] Returning cached data')
       return NextResponse.json(cached)
     }
 
-    console.log('[FinanceTypeFlowData API] Fetching data with params:', { dateFrom, dateTo, organizationId })
 
     // Early return if no activities exist
     const { count: activityCount } = await supabase
@@ -235,7 +233,6 @@ export async function GET(request: NextRequest) {
 
     // Cache the result
     setCache(cacheKey, result)
-    console.log('[FinanceTypeFlowData API] Cached result with', processedData.length, 'transactions')
 
     return NextResponse.json(result)
 

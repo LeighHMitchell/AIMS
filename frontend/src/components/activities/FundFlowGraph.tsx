@@ -92,7 +92,6 @@ export default function FundFlowGraph({
     if (!loading && viewMode === 'transactions') {
       const hasTransactions = transactionsData && transactionsData.nodes.length > 0
       const hasPlanned = plannedDisbursementsData && plannedDisbursementsData.nodes.length > 0
-      console.log('[FundFlowGraph] View mode check:', { hasTransactions, hasPlanned, viewMode })
       if (!hasTransactions && hasPlanned) {
         setViewMode('planned')
       } else if (hasTransactions && hasPlanned) {

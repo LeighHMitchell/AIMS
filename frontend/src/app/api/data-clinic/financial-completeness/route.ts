@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
   const activityIds = activityIdsParam ? activityIdsParam.split(',').filter(Boolean) : null;
 
   try {
-    console.log('[Financial Completeness API] Fetching data...');
 
     // Fetch activities with dates
     let activitiesQuery = supabase
@@ -62,7 +61,6 @@ export async function GET(request: NextRequest) {
       throw activitiesError;
     }
 
-    console.log('[Financial Completeness API] Found activities:', activities?.length || 0);
 
     if (!activities || activities.length === 0) {
       return NextResponse.json({
@@ -108,7 +106,6 @@ export async function GET(request: NextRequest) {
       throw transactionsError;
     }
 
-    console.log('[Financial Completeness API] Budgets:', budgets?.length || 0, 'Transactions:', transactions?.length || 0);
 
     // Aggregate budgets by activity
     const budgetsByActivity = new Map<string, { total: number; count: number }>();
@@ -192,7 +189,6 @@ export async function GET(request: NextRequest) {
     // Sort by overspend descending by default
     results.sort((a, b) => b.overspend_usd - a.overspend_usd);
 
-    console.log('[Financial Completeness API] Found', results.length, 'activities with completeness issues');
 
     return NextResponse.json({
       activities: results,

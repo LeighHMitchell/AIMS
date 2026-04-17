@@ -6,7 +6,6 @@ export async function GET() {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[System Settings] GET request received')
     if (!supabase) {
       console.error('[System Settings] Supabase admin client not available')
       return NextResponse.json(
@@ -15,7 +14,6 @@ export async function GET() {
       )
     }
 
-    console.log('[System Settings] Supabase client created successfully')
 
     // Try to fetch settings, and if table doesn't exist, return defaults
     const { data: settings, error } = await supabase
@@ -25,7 +23,6 @@ export async function GET() {
 
     if (error) {
       if (error.code === 'PGRST116' || error.message.includes('relation "system_settings" does not exist')) {
-        console.log('[System Settings] Table does not exist, returning defaults')
         return NextResponse.json({
           homeCountry: 'MM',
           defaultLanguage: 'en',
@@ -41,7 +38,6 @@ export async function GET() {
     }
 
     if (!settings) {
-      console.log('[System Settings] No settings found, returning defaults')
       return NextResponse.json({
         homeCountry: 'MM',
         defaultLanguage: 'en',
@@ -49,7 +45,6 @@ export async function GET() {
       })
     }
 
-    console.log('[System Settings] Successfully fetched settings:', settings)
     // Handle case where new columns might not exist yet
     return NextResponse.json({
       homeCountry: settings.home_country || 'MM',
@@ -70,7 +65,6 @@ export async function POST(request: NextRequest) {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    console.log('[System Settings] POST request received')
 
     const body = await request.json()
     const { homeCountry, defaultLanguage, defaultCurrency } = body
@@ -82,7 +76,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[System Settings] Attempting to save settings:', { homeCountry, defaultLanguage, defaultCurrency })
     if (!supabase) {
       console.error('[System Settings] Supabase admin client not available')
       return NextResponse.json(
@@ -111,7 +104,6 @@ export async function POST(request: NextRequest) {
       data = result.data
       error = result.error
     } catch (e) {
-      console.log('[System Settings] Full update failed, trying home_country only')
       // If the new columns don't exist yet, just update home_country
       const result = await supabase
         .from('system_settings')
@@ -130,7 +122,6 @@ export async function POST(request: NextRequest) {
     if (error) {
       // Check if it's a column-not-found error and try fallback
       if (error.message?.includes('default_language') || error.message?.includes('default_currency')) {
-        console.log('[System Settings] New columns not found, updating home_country only')
         const fallbackResult = await supabase
           .from('system_settings')
           .upsert({
@@ -149,7 +140,6 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        console.log('[System Settings] Successfully updated home_country (new columns not available yet)')
         return NextResponse.json({
           success: true,
           homeCountry: fallbackResult.data.home_country,
@@ -172,7 +162,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[System Settings] Successfully updated settings in database:', data)
     return NextResponse.json({
       success: true,
       homeCountry: data.home_country,

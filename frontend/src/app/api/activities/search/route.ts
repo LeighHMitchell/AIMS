@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100', 10);
     const idParam = searchParams.get('id');
 
-    console.log('[Activities Search API] Received search request:', { search, limit });
     if (!supabase) {
       console.error('[Activities Search] Supabase client is null');
       return NextResponse.json(
@@ -48,7 +47,6 @@ export async function GET(request: NextRequest) {
       query = query.eq('id', idParam);
     } else if (search) {
       const searchFilter = `title_narrative.ilike.%${search}%,acronym.ilike.%${search}%,other_identifier.ilike.%${search}%,iati_identifier.ilike.%${search}%,created_by_org_name.ilike.%${search}%`;
-      console.log('[Activities Search API] Applying search filter:', searchFilter);
       query = query.or(searchFilter);
     }
 

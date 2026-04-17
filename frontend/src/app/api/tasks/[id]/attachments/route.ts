@@ -196,7 +196,6 @@ export async function POST(
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
-    console.log('[Attachments API] Attachment created:', attachment.id);
 
     return NextResponse.json({
       success: true,
@@ -277,7 +276,6 @@ export async function DELETE(
       return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
 
-    console.log('[Attachments API] Attachment deleted:', attachmentId);
 
     return NextResponse.json({
       success: true,

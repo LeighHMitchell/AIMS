@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
       dateTo = `${year}-12-31`
     }
 
-    console.log('[SectorAnalytics] Fetching data with params:', { year, organizationId, groupByLevel, publicationStatus, dateFrom, dateTo })
 
     // Get activities based on publication status filter
     let activitiesQuery = supabase
@@ -71,7 +70,6 @@ export async function GET(request: NextRequest) {
       } as SectorAnalyticsResponse)
     }
 
-    console.log('[SectorAnalytics] Found activities:', activityIds.length)
 
     // Get budgets (activity-level, with sector allocation applied later)
     let budgetsQuery = supabase
@@ -409,7 +407,6 @@ export async function GET(request: NextRequest) {
       partners.forEach(p => allPartners.add(p))
     })
 
-    console.log('[SectorAnalytics] Returning sectors:', results.length)
 
     return NextResponse.json({
       success: true,

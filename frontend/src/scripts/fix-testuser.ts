@@ -31,7 +31,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 async function fixTestUser() {
-  console.log('🔧 Fixing testuser@aims.local authentication...\n');
 
   try {
     // First, check if user exists in our users table
@@ -43,7 +42,6 @@ async function fixTestUser() {
 
     if (profileError || !userProfile) {
       console.error('❌ User profile not found in users table:', profileError);
-      console.log('Creating user profile...');
       
       // Create the user profile first
       const { data: newProfile, error: createError } = await supabase
@@ -67,17 +65,14 @@ async function fixTestUser() {
         return;
       }
       
-      console.log('✅ Created user profile');
       // userProfile = newProfile; // Not needed since we already have the profile
     } else {
-      console.log('✅ Found user profile:', userProfile.email);
     }
 
     // Try to get the auth user
     const { data: authUser, error: authGetError } = await supabase.auth.admin.getUserById(userProfile.id);
 
     if (authGetError || !authUser) {
-      console.log('🔧 Auth user not found, creating...');
       
       // Create auth user with a known password
       const { data: newAuthUser, error: createError } = await supabase.auth.admin.createUser({
@@ -105,19 +100,11 @@ async function fixTestUser() {
         if (updateError) {
           console.error('⚠️  Error updating profile ID:', updateError);
         } else {
-          console.log('✅ Synced profile ID with auth user ID');
         }
       }
 
-      console.log('✅ Auth user created successfully!');
-      console.log('📝 Login credentials:');
-      console.log(`   Email: testuser@aims.local`);
-      console.log(`   Password: TestPass123!`);
-      console.log(`   Role: ${userProfile.role}`);
       
     } else {
-      console.log('✅ Auth user already exists');
-      console.log('🔧 Resetting password...');
       
       // Reset password for existing auth user
       const { error: resetError } = await supabase.auth.admin.updateUserById(authUser.user.id, {
@@ -129,11 +116,6 @@ async function fixTestUser() {
         return;
       }
 
-      console.log('✅ Password reset successfully!');
-      console.log('📝 Login credentials:');
-      console.log(`   Email: testuser@aims.local`);
-      console.log(`   Password: TestPass123!`);
-      console.log(`   Role: ${userProfile.role}`);
     }
 
   } catch (error) {

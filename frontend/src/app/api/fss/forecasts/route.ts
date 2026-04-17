@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log('[Forecasts API] POST request:', body);
 
     // Validate required fields
     if (!body.fss_id) {
@@ -48,7 +47,6 @@ export async function POST(request: NextRequest) {
           new Date(body.value_date)
         );
         usdAmount = result.usd_amount;
-        console.log('[Forecasts API] Converted', amount, body.currency, 'to', usdAmount, 'USD');
       } catch (conversionError) {
         console.error('[Forecasts API] Currency conversion failed:', conversionError);
         // Continue without USD conversion
@@ -80,7 +78,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[Forecasts API] Successfully created forecast:', forecast.id);
     return NextResponse.json(forecast);
   } catch (error) {
     console.error('[Forecasts API] Unexpected error:', error);
@@ -96,7 +93,6 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log('[Forecasts API] PUT request:', body);
 
     if (!body.id) {
       return NextResponse.json({ error: 'Forecast ID is required' }, { status: 400 });
@@ -128,7 +124,6 @@ export async function PUT(request: NextRequest) {
           new Date(body.value_date)
         );
         usdAmount = result.usd_amount;
-        console.log('[Forecasts API] Converted', body.amount, body.currency, 'to', usdAmount, 'USD');
       } catch (conversionError) {
         console.error('[Forecasts API] Currency conversion failed:', conversionError);
       }
@@ -163,7 +158,6 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[Forecasts API] Successfully updated forecast:', forecast.id);
     return NextResponse.json(forecast);
   } catch (error) {
     console.error('[Forecasts API] Unexpected error:', error);
@@ -180,7 +174,6 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const forecastId = searchParams.get('id');
 
-    console.log('[Forecasts API] DELETE request for forecastId:', forecastId);
 
     if (!forecastId) {
       return NextResponse.json({ error: 'Forecast ID is required' }, { status: 400 });
@@ -196,7 +189,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete forecast' }, { status: 500 });
     }
 
-    console.log('[Forecasts API] Successfully deleted forecast');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[Forecasts API] Unexpected error:', error);

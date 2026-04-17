@@ -78,7 +78,6 @@ export async function GET(request: NextRequest) {
       } else {
         // Deduplicate activity IDs
         sectorActivityIds = [...new Set(sectorActivities?.map(s => s.activity_id) || [])]
-        console.log('[EcosystemAPI] Sector filter: found', sectorActivityIds.length, 'activities for sectors:', sectorCodes)
       }
     }
 
@@ -152,29 +151,20 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    console.log('[EcosystemAPI] Transactions fetched:', transactions?.length || 0)
 
     // Log data availability for debugging
     const withProviderId = transactions?.filter(tx => tx.provider_org_id).length || 0
     const withReceiverId = transactions?.filter(tx => tx.receiver_org_id).length || 0
     const withProviderName = transactions?.filter(tx => tx.provider_org_name).length || 0
     const withReceiverName = transactions?.filter(tx => tx.receiver_org_name).length || 0
-    console.log('[EcosystemAPI] Transactions with provider_org_id:', withProviderId)
-    console.log('[EcosystemAPI] Transactions with receiver_org_id:', withReceiverId)
-    console.log('[EcosystemAPI] Transactions with provider_org_name:', withProviderName)
-    console.log('[EcosystemAPI] Transactions with receiver_org_name:', withReceiverName)
 
     // Debug humanitarian flags
     const withTxHumanitarian = transactions?.filter(tx => tx.is_humanitarian === true).length || 0
     const withActivityHumanitarian = transactions?.filter(tx => (tx.activities as any)?.humanitarian === true).length || 0
     const withActivityJoin = transactions?.filter(tx => tx.activities !== null).length || 0
-    console.log('[EcosystemAPI] Transactions with is_humanitarian=true:', withTxHumanitarian)
-    console.log('[EcosystemAPI] Transactions with activity.humanitarian=true:', withActivityHumanitarian)
-    console.log('[EcosystemAPI] Transactions with activities join data:', withActivityJoin)
 
     // Log a sample transaction to see the structure
     if (transactions?.length) {
-      console.log('[EcosystemAPI] Sample transaction:', JSON.stringify(transactions[0], null, 2))
     }
 
     // Fetch all organizations for metadata
@@ -199,7 +189,6 @@ export async function GET(request: NextRequest) {
       .in('contribution_type', ['funding', 'implementing', 'funder', 'implementer'])
 
     if (contribError) {
-      console.log('[EcosystemAPI] Activity contributors query warning (optional data):', contribError)
     }
 
     // Build lookup map of activity_id -> { funders: [], implementers: [] }
@@ -216,7 +205,6 @@ export async function GET(request: NextRequest) {
         roles.implementers.push(contrib.organization_id)
       }
     }
-    console.log('[EcosystemAPI] Activities with contributor roles:', activityOrgRoles.size)
 
     // Create organization lookup map with explicit typing
     interface OrgInfo {
@@ -365,10 +353,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[EcosystemAPI] Transactions processed with provider:', processedWithProvider)
-    console.log('[EcosystemAPI] Transactions processed with receiver:', processedWithReceiver)
-    console.log('[EcosystemAPI] Used reporting_org fallback:', usedReportingOrgFallback)
-    console.log('[EcosystemAPI] Used contributor fallback:', usedContributorFallback)
 
     // Convert to array and calculate derived metrics
     const orgList = Array.from(orgAggregates.values())
@@ -433,9 +417,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log('[EcosystemAPI] Organizations before threshold filter:', orgList.length)
-    console.log('[EcosystemAPI] Organizations after threshold filter:', orgsWithTotals.length)
-    console.log('[EcosystemAPI] Final ecosystem orgs:', ecosystemOrgs.length)
 
     // Calculate summary statistics
     const summary = {

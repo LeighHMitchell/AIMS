@@ -70,7 +70,6 @@ describe('IATI Import Route - /api/iati/import', () => {
   describe('TC-IMP-001: Import single new activity', () => {
     it('should create a new activity from IATI data', async () => {
       if (!apiAvailable) {
-        console.log('Skipping: API not available');
         return;
       }
 
@@ -95,7 +94,6 @@ describe('IATI Import Route - /api/iati/import', () => {
       });
 
       if (response.status === 401) {
-        console.log('Skipping: Authentication required');
         return;
       }
 

@@ -90,7 +90,6 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         // If we marked all as read within the last 5 seconds, don't overwrite with stale data
         // This prevents race conditions where a fetch that started before mark-all-read returns after
         if (lastMarkAllReadTime > 0 && fetchStartTime < lastMarkAllReadTime + 5000) {
-          console.log('[NotificationBell] Ignoring stale fetch after mark-all-read');
           // Still update notifications list but keep unreadCount at 0
           setNotifications(data.data?.map((n: Notification) => ({ ...n, is_read: true })) || []);
         } else {
@@ -162,7 +161,6 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         return;
       }
 
-      console.log('[NotificationBell] Successfully marked all as read');
       // Don't refetch - optimistic update is now the source of truth
     } catch (error) {
       console.error('[NotificationBell] Error marking all read:', error);

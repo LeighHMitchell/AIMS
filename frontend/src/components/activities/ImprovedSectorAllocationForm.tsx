@@ -502,7 +502,6 @@ function ImprovedSectorAllocationFormInner({
       console.error('[SectorAutosave] Save failed:', sectorsAutosave.state.error);
     }
     if (sectorsAutosave.state.lastSaved) {
-      console.log('[SectorAutosave] Save successful:', sectorsAutosave.state.lastSaved);
     }
   }, [sectorsAutosave.state.error, sectorsAutosave.state.lastSaved]);
 
@@ -887,7 +886,6 @@ function ImprovedSectorAllocationFormInner({
   const handleSunburstSegmentClick = (code: string, level: 'category' | 'sector' | 'subsector') => {
     // For now, just show information about the clicked segment
     // Could be extended later to highlight or show details
-    console.log(`Clicked on ${level}: ${code}`);
   };
 
   // Calculate summary statistics

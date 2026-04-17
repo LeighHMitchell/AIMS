@@ -19,10 +19,6 @@ function isValidUrl(url: string): boolean {
 // Log configuration status only once
 let hasLoggedConfig = false
 if (typeof window === 'undefined' && !hasLoggedConfig) {
-  console.log('[Supabase] Configuration status:')
-  console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
-  console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing')
-  console.log('- SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? '✓ Set' : '✗ Missing')
   hasLoggedConfig = true
 }
 
@@ -114,7 +110,6 @@ export function getDbClient() {
   const { localDb, ensureInitialized } = require('./db/local-db')
   ensureInitialized()
   
-  console.log('[Database] Using local database (Supabase not configured)')
   return localDb as any
 }
 

@@ -644,7 +644,6 @@ export function TransactionTable({
                     checked={selectedIds.size === transactions.length && transactions.length > 0}
                     indeterminate={selectedIds.size > 0 && selectedIds.size < transactions.length}
                     onCheckedChange={(checked) => {
-                      console.log('[TransactionTable] Select all clicked:', checked, 'transactions.length:', transactions.length);
                       onSelectAll(!!checked);
                     }}
                     aria-label="Select all transactions"

@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
       console.error('[BackfillXR] Error fetching transactions:', txError);
     } else if (transactions && transactions.length > 0) {
       results.transactions.checked = transactions.length;
-      console.log(`[BackfillXR] Found ${transactions.length} transactions to backfill`);
 
       for (const tx of transactions) {
         try {
@@ -94,7 +93,6 @@ export async function GET(request: NextRequest) {
       console.error('[BackfillXR] Error fetching planned disbursements:', pdError);
     } else if (disbursements && disbursements.length > 0) {
       results.planned_disbursements.checked = disbursements.length;
-      console.log(`[BackfillXR] Found ${disbursements.length} planned disbursements to backfill`);
 
       for (const pd of disbursements) {
         try {
@@ -140,7 +138,6 @@ export async function GET(request: NextRequest) {
       console.error('[BackfillXR] Error fetching budgets:', budgetError);
     } else if (budgets && budgets.length > 0) {
       results.budgets.checked = budgets.length;
-      console.log(`[BackfillXR] Found ${budgets.length} budgets to backfill`);
 
       for (const budget of budgets) {
         try {
@@ -173,7 +170,6 @@ export async function GET(request: NextRequest) {
     }
 
     const totalUpdated = results.transactions.updated + results.planned_disbursements.updated + results.budgets.updated;
-    console.log(`[BackfillXR] Complete. Updated ${totalUpdated} records.`, results);
 
     return NextResponse.json({
       success: true,

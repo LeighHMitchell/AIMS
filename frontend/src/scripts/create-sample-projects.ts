@@ -11,7 +11,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createSampleProjects() {
-  console.log('Creating sample projects...');
 
   try {
     // Get organization IDs
@@ -84,7 +83,6 @@ async function createSampleProjects() {
       return;
     }
 
-    console.log('Activities created successfully');
 
     // Create sectors
     const sectors = [
@@ -261,7 +259,6 @@ async function createSampleProjects() {
 
     await supabase.from('activity_planned_disbursements').insert(plannedDisbursements);
 
-    console.log('Sample projects created successfully!');
     
   } catch (error) {
     console.error('Error creating sample projects:', error);

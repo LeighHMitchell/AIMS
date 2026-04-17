@@ -17,7 +17,6 @@ export default function TestEmailChangePage() {
     setResult(null);
 
     try {
-      console.log('Testing email change with:', newEmail);
 
       const response = await apiFetch('/api/users/change-email-simple', {
         method: 'PUT',

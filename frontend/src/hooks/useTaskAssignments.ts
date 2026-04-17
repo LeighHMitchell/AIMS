@@ -45,7 +45,6 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     status: TaskStatus,
     note?: string
   ): Promise<TaskAssignment | null> => {
-    console.log('[useTaskAssignments] updateStatus called:', { assignmentId, status, userId });
     if (!userId) {
       console.warn('[useTaskAssignments] updateStatus: No userId, returning null');
       return null;
@@ -64,7 +63,6 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
         body.completion_note = note;
       }
 
-      console.log('[useTaskAssignments] Making PUT request to:', `/api/tasks/assignments/${assignmentId}`, body);
       const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +78,6 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
       }
 
       const result = await response.json();
-      console.log('[useTaskAssignments] PUT response:', response.status, result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to update status');

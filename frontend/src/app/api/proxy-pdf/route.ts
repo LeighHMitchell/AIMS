@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`[Proxy PDF] User ${user?.id} fetching: ${url}`);
 
     // Fetch the PDF
     // Follow redirects (many PDF hosts redirect HTTP→HTTPS or to CDN)

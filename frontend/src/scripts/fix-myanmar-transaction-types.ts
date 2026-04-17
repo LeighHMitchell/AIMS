@@ -15,7 +15,6 @@ const TRANSACTION_TYPE_MAP: Record<string, string> = {
 }
 
 async function fixTransactionTypes() {
-  console.log('🔧 Fixing transaction types in Myanmar data files...\n')
   
   try {
     // Fix activities file
@@ -38,8 +37,6 @@ async function fixTransactionTypes() {
     // Save fixed activities
     const fixedActivitiesPath = resolve(__dirname, '../../myanmar-activities-fixed.json')
     writeFileSync(fixedActivitiesPath, JSON.stringify(activities, null, 2))
-    console.log(`✅ Fixed ${fixedCount} transaction types in activities file`)
-    console.log(`   Saved to: ${fixedActivitiesPath}`)
     
     // Fix transactions file
     const transactionsPath = resolve(__dirname, '../../myanmar-transactions-2025-06-25.json')
@@ -56,15 +53,7 @@ async function fixTransactionTypes() {
     // Save fixed transactions
     const fixedTransactionsPath = resolve(__dirname, '../../myanmar-transactions-fixed.json')
     writeFileSync(fixedTransactionsPath, JSON.stringify(transactions, null, 2))
-    console.log(`✅ Fixed ${fixedCount} transaction types in transactions file`)
-    console.log(`   Saved to: ${fixedTransactionsPath}`)
     
-    console.log('\n🎉 Transaction type conversion complete!')
-    console.log('\nTransaction type mapping used:')
-    console.log('- C (Commitment) → 2')
-    console.log('- D (Disbursement) → 3')
-    console.log('- E (Expenditure) → 4')
-    console.log('- R (Reimbursement) → 7')
     
   } catch (error) {
     console.error('❌ Error fixing transaction types:', error)

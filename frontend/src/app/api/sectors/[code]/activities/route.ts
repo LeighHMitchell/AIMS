@@ -14,7 +14,6 @@ export async function GET(
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  console.log('[AIMS API] GET /api/sectors/[code]/activities - Starting request')
 
   try {
     const { code } = await params;
@@ -26,11 +25,9 @@ export async function GET(
       )
     }
 
-    console.log(`[AIMS API] Fetching data for sector: ${code}`)
 
     // For now, return basic sector info without database queries
     // This ensures the page works even if there are database issues
-    console.log(`[AIMS API] Returning basic sector info for: ${code}`)
 
     return NextResponse.json({
       activities: [],

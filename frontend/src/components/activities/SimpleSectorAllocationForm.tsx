@@ -46,10 +46,7 @@ export default function SimpleSectorAllocationForm({
 }: SimpleSectorAllocationFormProps) {
   // Debug logging for allocations
   useEffect(() => {
-    console.log('[SimpleSectorAllocationForm] Allocations prop changed:', allocations);
-    console.log('[SimpleSectorAllocationForm] Allocations count:', allocations.length);
     if (allocations.length > 0) {
-      console.log('[SimpleSectorAllocationForm] First allocation:', allocations[0]);
     }
   }, [allocations]);
 

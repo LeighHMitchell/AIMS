@@ -163,7 +163,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('[AIMS] GET /api/partners/summary - Starting request');
     const homeCountryName = await getSystemHomeCountryName(supabase);
 
     // Get search parameters
@@ -173,10 +172,8 @@ export async function GET(request: NextRequest) {
     // Determine current year for blending actual vs planned disbursements
     const currentYear = new Date().getFullYear();
     
-    console.log('[AIMS] Request parameters:', { groupBy, currentYear });
 
     // Fetch all organizations from Supabase Organizations table
-    console.log('[AIMS] Fetching organizations from Supabase...');
     const { data: organizations, error: orgError } = await supabase
       .from('organizations')
       .select('*')
@@ -190,10 +187,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS] Found organizations:', organizations?.length || 0);
 
     if (!organizations || organizations.length === 0) {
-      console.log('[AIMS] No organizations found, returning empty result');
       return NextResponse.json({
         groups: [],
         totalOrganizations: 0,
@@ -205,7 +200,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all activities for counting active projects
-    console.log('[AIMS] Fetching activities...');
     const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id, activity_status, reporting_org_id, created_by_org_name, created_by_org_acronym')
@@ -215,10 +209,8 @@ export async function GET(request: NextRequest) {
       console.error('[AIMS] Error fetching activities:', activitiesError);
     }
 
-    console.log('[AIMS] Found active activities:', activities?.length || 0);
     
     // Fetch participating organizations to count activities where org is a funder/implementer/etc
-    console.log('[AIMS] Fetching participating organizations...');
     const { data: participatingOrgs, error: participatingOrgsError } = await supabase
       .from('activity_participating_organizations')
       .select('activity_id, organization_id, role_type');
@@ -227,7 +219,6 @@ export async function GET(request: NextRequest) {
       console.error('[AIMS] Error fetching participating organizations:', participatingOrgsError);
     }
     
-    console.log('[AIMS] Found participating org relationships:', participatingOrgs?.length || 0);
     
     // Create a map of organization_id -> Set of activity_ids where they participate
     const orgActivityMap = new Map<string, Set<string>>();
@@ -255,12 +246,10 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    console.log('[AIMS] Organizations with activities:', orgActivityMap.size);
 
     // Fetch actual disbursement transactions (types 3=Disbursement, 4=Expenditure)
     // These are used for current year and earlier
     const disbursementTypeCodes = ['3', '4'];
-    console.log('[AIMS] Fetching actual disbursement transactions...');
     const { data: disbursementTransactions, error: disbursementError } = await supabase
       .from('transactions')
       .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, transaction_date, value_usd, transaction_type')
@@ -269,11 +258,9 @@ export async function GET(request: NextRequest) {
     if (disbursementError) {
       console.error('[AIMS] Error fetching disbursement transactions:', disbursementError);
     }
-    console.log('[AIMS] Found disbursement transactions:', disbursementTransactions?.length || 0);
 
     // Fetch planned disbursements with full financial data
     // These are used for future years (year > currentYear)
-    console.log('[AIMS] Fetching planned disbursements with financial data...');
     const { data: plannedDisbursements, error: plannedError } = await supabase
       .from('planned_disbursements')
       .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, amount, usd_amount, period_start');
@@ -281,7 +268,6 @@ export async function GET(request: NextRequest) {
     if (plannedError) {
       console.error('[AIMS] Error fetching planned disbursements:', plannedError);
     }
-    console.log('[AIMS] Found planned disbursements:', plannedDisbursements?.length || 0);
 
     // Provider/receiver counts now only count actual disbursement transactions
     // (not commitments, not planned disbursements)
@@ -307,7 +293,6 @@ export async function GET(request: NextRequest) {
       
       // Debug logging for organizations with matched activities
       if (activeProjects > 0) {
-        console.log(`[AIMS] ${org.name} (${org.acronym || 'no acronym'}) has ${activeProjects} activities`);
       }
 
       // Calculate financial data by year (2022-2027)
@@ -429,14 +414,12 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log('[AIMS] Calculated metrics for', organizationMetrics.length, 'organizations');
 
     // Group organizations based on groupBy parameter
     let groupedData: GroupData[];
     
     if (groupBy === 'country') {
       // Group by country
-      console.log('[AIMS] Country grouping requested - grouping by countryRepresented');
       
       // Create a map of countries to organizations
       const countryMap = new Map<string, OrganizationMetrics[]>();
@@ -514,7 +497,6 @@ export async function GET(request: NextRequest) {
       
     } else if (groupBy === 'custom') {
       // Fetch custom groups and their member organizations
-      console.log('[AIMS] Custom grouping requested - fetching custom groups');
       
       try {
         // Fetch custom groups
@@ -527,7 +509,6 @@ export async function GET(request: NextRequest) {
           console.error('[AIMS] Error fetching custom groups:', customGroupsError);
           groupedData = [];
         } else {
-          console.log('[AIMS] Found custom groups:', customGroups?.length || 0);
 
           // Fetch memberships for all custom groups
           const { data: memberships, error: membershipsError } = await supabase
@@ -576,7 +557,6 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Group by IATI-based categories
-      console.log('[AIMS] Grouping by IATI-based partner types');
       groupedData = PARTNER_GROUPS.map(group => {
         const groupOrganizations = organizationMetrics.filter(org => {
           // Get the organization type (prefer organisation_type over type)
@@ -592,14 +572,12 @@ export async function GET(request: NextRequest) {
 
             // Only include external government organizations in bilateral partners
             if (isHomeGov) {
-              console.log(`[AIMS] Excluding home country government org from bilateral: ${org.name}`);
               return false;
             }
           }
           
           // Log unmapped types for debugging
           if (!IATI_TYPE_TO_GROUP[orgType] && orgType) {
-            console.log(`[AIMS] Unmapped organization type: ${orgType} for ${org.name}`);
           }
           
           return mappedGroup === group.id;
@@ -629,9 +607,7 @@ export async function GET(request: NextRequest) {
       return orderA - orderB;
     });
 
-    console.log('[AIMS] Final grouped data:', groupedData.length, 'groups');
     groupedData.forEach(group => {
-      console.log(`[AIMS] Group ${group.name}: ${group.totalOrganizations} organizations`);
     });
     
     // Calculate summary statistics
@@ -659,7 +635,6 @@ export async function GET(request: NextRequest) {
       console.error('[AIMS] Error fetching custom groups count:', error);
     }
 
-    console.log('[AIMS] Summary stats:', { totalOrganizations, totalActiveProjects, totalAmount, customGroupsCount });
 
     return NextResponse.json({
       groups: groupedData,

@@ -53,7 +53,6 @@ export class IATIServiceEnhanced {
     // Check cache first
     const cached = this.cache.get(iatiIdentifier);
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log('[IATI Service] Returning cached data for:', iatiIdentifier);
       return cached.data;
     }
 
@@ -369,7 +368,6 @@ export class IATIAutoSyncService {
       const compareData = await compareResponse.json();
       
       if (!compareData.iati_data) {
-        console.log(`[Auto Sync] No IATI data found for activity ${activityId}`);
         return false;
       }
 

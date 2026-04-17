@@ -30,7 +30,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
   }
 
   try {
-    console.log('[Bulk IATI Import] Starting bulk import');
     
     const body: BulkImportRequest = await request.json();
     const { xmlContent, activityIndices, createNew } = body;
@@ -43,7 +42,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
       }, { status: 400 });
     }
 
-    console.log('[Bulk IATI Import] Importing', activityIndices.length, 'activities');
 
     // Initialize results
     const results: BulkImportResponse = {
@@ -68,11 +66,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
     // Process each selected activity
     for (const activityIndex of activityIndices) {
       try {
-        console.log(`[Bulk IATI Import] Processing activity at index ${activityIndex}`);
         
         // Parse the specific activity
         const parsedActivity = parser.parseActivityByIndex(activityIndex);
-        console.log(`[Bulk IATI Import] Parsed activity:`, parsedActivity.iatiIdentifier, parsedActivity.title);
 
         // Check if activity already exists
         const { data: existingActivity } = await supabase
@@ -83,7 +79,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
 
         if (existingActivity && !createNew) {
           // Update existing activity
-          console.log(`[Bulk IATI Import] Updating existing activity:`, existingActivity.id);
           
           const { error: updateError } = await supabase
             .from('activities')
@@ -113,7 +108,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
 
         } else {
           // Create new activity
-          console.log(`[Bulk IATI Import] Creating new activity for:`, parsedActivity.iatiIdentifier);
           
           const { data: newActivity, error: createError } = await supabase
             .from('activities')
@@ -143,7 +137,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
             console.error(`[Bulk IATI Import] Failed to create activity:`, createError);
             results.errors?.push(`Failed to create activity ${parsedActivity.iatiIdentifier}: ${createError.message}`);
           } else if (newActivity) {
-            console.log(`[Bulk IATI Import] Created activity with ID:`, newActivity.id);
             results.created = (results.created || 0) + 1;
             results.activityIds?.push(newActivity.id);
 
@@ -151,7 +144,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
             try {
               // Import sectors
               if (parsedActivity.sectors && parsedActivity.sectors.length > 0) {
-                console.log(`[Bulk IATI Import] Importing ${parsedActivity.sectors.length} sectors for activity ${newActivity.id}`);
                 
                 const sectorsToInsert = parsedActivity.sectors.map((sector: any) => ({
                   activity_id: newActivity.id,
@@ -173,7 +165,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
 
               // Import recipient countries
               if (parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0) {
-                console.log(`[Bulk IATI Import] Importing ${parsedActivity.recipientCountries.length} countries for activity ${newActivity.id}`);
                 
                 const countriesToInsert = parsedActivity.recipientCountries.map((country: any) => ({
                   activity_id: newActivity.id,
@@ -192,7 +183,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
 
               // Import transactions
               if (parsedActivity.transactions && parsedActivity.transactions.length > 0) {
-                console.log(`[Bulk IATI Import] Importing ${parsedActivity.transactions.length} transactions for activity ${newActivity.id}`);
                 
                 const transactionsToInsert = parsedActivity.transactions.map((transaction: any) => ({
                   activity_id: newActivity.id,
@@ -236,7 +226,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
     // Determine overall success
     results.success = (results.errors?.length || 0) === 0;
 
-    console.log('[Bulk IATI Import] Completed:', results);
 
     return NextResponse.json(results, { 
       status: results.success ? 200 : 207 // 207 Multi-Status for partial success

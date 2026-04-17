@@ -17,8 +17,6 @@ export async function GET(
   try {
     const { id: activityId } = await params;
 
-    console.log('[PlannedDisbursementsAPI] GET request for activityId:', activityId);
-    console.log('[PlannedDisbursementsAPI] Admin client exists:', !!supabase);
 
     if (!supabase) {
       console.error('[PlannedDisbursementsAPI] Admin client is null!');
@@ -31,7 +29,6 @@ export async function GET(
 
     // Fetch planned disbursements for the activity
     // Order by sequence_index first (to preserve XML order), then by period_start as fallback
-    console.log('[PlannedDisbursementsAPI] Querying planned_disbursements table...');
     const { data: disbursements, error } = await supabase
       .from('planned_disbursements')
       .select('*')
@@ -110,7 +107,6 @@ export async function GET(
       };
     });
 
-    console.log('[PlannedDisbursementsAPI] Returning', enrichedDisbursements.length, 'disbursements');
     return NextResponse.json(enrichedDisbursements, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -137,7 +133,6 @@ export async function POST(
     const { id: activityId } = await params;
     const body = await request.json();
 
-    console.log('[PlannedDisbursementsAPI] Creating disbursement for activity:', activityId, body);
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
@@ -196,7 +191,6 @@ export async function POST(
       const result = await fixedCurrencyConverter.convertToUSD(amount, resolvedCurrency, conversionDate);
       if (result.success && result.usd_amount !== null) {
         usdAmount = result.usd_amount;
-        console.log(`[PlannedDisbursementsAPI] Converted ${amount} ${resolvedCurrency} to $${usdAmount} USD`);
       } else {
         console.warn(`[PlannedDisbursementsAPI] Currency conversion failed: ${result.error}`);
       }
@@ -220,9 +214,6 @@ export async function POST(
       usd_amount: usdAmount
     };
 
-    console.log(`[PlannedDisbursementsAPI] Resolved currency: ${resolvedCurrency} (from ${body.currency || 'missing'}), value_date: ${resolvedValueDate}`);
-    console.log(`[PlannedDisbursementsAPI] Resolved provider_org_id: ${providerOrgId}, receiver_org_id: ${receiverOrgId}`);
-    console.log(`[PlannedDisbursementsAPI] USD conversion: ${amount} ${resolvedCurrency} = $${usdAmount} USD`);
 
     const { data: disbursement, error } = await supabase
       .from('planned_disbursements')
@@ -235,7 +226,6 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create planned disbursement', details: error.message }, { status: 500 });
     }
 
-    console.log('[PlannedDisbursementsAPI] Successfully created disbursement:', disbursement);
     return NextResponse.json(disbursement);
   } catch (error) {
     console.error('[PlannedDisbursementsAPI] Unexpected error:', error);
@@ -253,7 +243,6 @@ export async function DELETE(
   try {
     const { id: activityId } = await params;
 
-    console.log('[PlannedDisbursementsAPI] Deleting disbursements for activity:', activityId);
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
@@ -270,7 +259,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete planned disbursements', details: error.message }, { status: 500 });
     }
 
-    console.log('[PlannedDisbursementsAPI] Successfully deleted', deletedData?.length || 0, 'disbursements');
     return NextResponse.json({ success: true, deleted: deletedData?.length || 0 });
   } catch (error) {
     console.error('[PlannedDisbursementsAPI] Unexpected error:', error);

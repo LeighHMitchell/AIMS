@@ -45,7 +45,6 @@ export const MemoryActivityLogger = {
       activityLogs.length = MAX_LOGS;
     }
 
-    console.log('[MemoryActivityLogger] Logged activity:', newLog);
   },
 
   async getActivityLogs(limit: number = 50): Promise<ActivityLog[]> {

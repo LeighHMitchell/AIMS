@@ -427,7 +427,6 @@ export function PlannedDisbursementsTable({
                       checked={selectedIds.size === disbursements.length && disbursements.length > 0}
                       indeterminate={selectedIds.size > 0 && selectedIds.size < disbursements.length}
                       onCheckedChange={(checked) => {
-                        console.log('[PlannedDisbursementsTable] Select all clicked:', checked, 'disbursements.length:', disbursements.length);
                         onSelectAll(!!checked);
                       }}
                       aria-label="Select all disbursements"

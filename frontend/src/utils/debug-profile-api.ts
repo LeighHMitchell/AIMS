@@ -2,7 +2,6 @@
 // You can run this in your browser console to see what's happening
 
 export const debugProfileUpdate = async () => {
-  console.log('🔍 Starting profile update debug...');
   
   // Test data - modify these values to test
   const testData = {
@@ -15,7 +14,6 @@ export const debugProfileUpdate = async () => {
   };
   
   try {
-    console.log('📤 Sending request to /api/users with data:', testData);
     
     const response = await fetch('/api/users', {
       method: 'PUT',
@@ -25,11 +23,8 @@ export const debugProfileUpdate = async () => {
       body: JSON.stringify(testData),
     });
     
-    console.log('📥 Response status:', response.status);
-    console.log('📥 Response headers:', Array.from(response.headers.entries()));
     
     const responseText = await response.text();
-    console.log('📥 Raw response:', responseText);
     
     if (!response.ok) {
       console.error('❌ Request failed');
@@ -44,9 +39,7 @@ export const debugProfileUpdate = async () => {
     
     try {
       const data = JSON.parse(responseText);
-      console.log('✅ Success! Response data:', data);
     } catch (e) {
-      console.log('✅ Request succeeded but response is not JSON:', responseText);
     }
     
   } catch (error) {

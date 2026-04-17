@@ -53,7 +53,6 @@ export async function getOrCreateOrganization(
   }
 
   const orgName = name || ref || 'Unknown Organization';
-  console.log(`[Org Helper] Resolving organization: "${orgName}" (ref: ${ref || 'none'}, type: ${type || 'none'})`);
 
   try {
     // Step 1: Try exact match by iati_org_id (most reliable)
@@ -72,7 +71,6 @@ export async function getOrCreateOrganization(
         );
 
         if (!refError && orgByRef) {
-          console.log(`[Org Helper] ✓ Found by iati_org_id: ${orgByRef.name} (ID: ${orgByRef.id})`);
           return orgByRef.id;
         }
       } catch (err) {
@@ -97,7 +95,6 @@ export async function getOrCreateOrganization(
         );
 
         if (aliasMatch) {
-          console.log(`[Org Helper] ✓ Found by alias_refs: ${aliasMatch.name} (ID: ${aliasMatch.id})`);
           return aliasMatch.id;
         }
       } catch (err) {
@@ -123,7 +120,6 @@ export async function getOrCreateOrganization(
           // Prefer exact case match, otherwise take first
           const exactMatch = orgsByName.find((o: any) => o.name === name);
           const match = exactMatch || orgsByName[0];
-          console.log(`[Org Helper] ✓ Found by name: ${match.name} (ID: ${match.id})`);
           return match.id;
         }
       } catch (err) {
@@ -132,7 +128,6 @@ export async function getOrCreateOrganization(
     }
 
     // Step 4: Create new organization
-    console.log(`[Org Helper] Creating new organization: "${orgName}"`);
 
     const newOrgData = {
       name: orgName,
@@ -159,7 +154,6 @@ export async function getOrCreateOrganization(
       if (createError) {
         // Check if it's a unique constraint violation (org already exists)
         if (createError.code === '23505') {
-          console.log(`[Org Helper] Organization already exists, trying to find it...`);
           // Try to find the existing organization
           const { data: existingOrg } = await supabase
             .from('organizations')
@@ -168,7 +162,6 @@ export async function getOrCreateOrganization(
             .maybeSingle();
 
           if (existingOrg) {
-            console.log(`[Org Helper] ✓ Found existing org after conflict: ${existingOrg.name} (ID: ${existingOrg.id})`);
             return existingOrg.id;
           }
         }
@@ -177,7 +170,6 @@ export async function getOrCreateOrganization(
       }
 
       if (createdOrg) {
-        console.log(`[Org Helper] ✓ Created organization: "${createdOrg.name}" (ID: ${createdOrg.id})`);
         return createdOrg.id;
       }
     } catch (createErr) {
@@ -220,7 +212,6 @@ export async function prefetchOrganizations(
   }
   const uniqueOrgs = Array.from(uniqueMap.values());
   const allRefs = uniqueOrgs.map(o => o.ref).filter((r): r is string => !!r);
-  console.log(`[Org Prefetch] ${orgParams.length} total params → ${uniqueOrgs.length} unique (${allRefs.length} with refs)`);
 
   // Helper to store result in cache under both ref and lowercase name
   const storeInCache = (ref: string | undefined, name: string | undefined, id: string) => {
@@ -243,7 +234,6 @@ export async function prefetchOrganizations(
         for (const org of refMatches) {
           storeInCache(org.iati_org_id, org.name, org.id);
         }
-        console.log(`[Org Prefetch] Matched ${refMatches.length} orgs by iati_org_id`);
       }
     } catch (err) {
       console.warn('[Org Prefetch] Batch ref lookup failed, will fall back:', err);
@@ -274,7 +264,6 @@ export async function prefetchOrganizations(
         }
         const aliasResolved = unresolvedWithRef.filter(o => o.ref && cache.has(o.ref)).length;
         if (aliasResolved > 0) {
-          console.log(`[Org Prefetch] Matched ${aliasResolved} orgs by alias_refs`);
         }
       }
     } catch (err) {
@@ -319,7 +308,6 @@ export async function prefetchOrganizations(
     return key && !cache.has(key);
   });
   if (stillUnresolved.length > 0) {
-    console.log(`[Org Prefetch] Creating ${stillUnresolved.length} new organizations...`);
     for (const param of stillUnresolved) {
       const orgId = await getOrCreateOrganization(supabase, param);
       if (orgId) {
@@ -328,6 +316,5 @@ export async function prefetchOrganizations(
     }
   }
 
-  console.log(`[Org Prefetch] Resolved ${cache.size} cache entries total`);
   return cache;
 }

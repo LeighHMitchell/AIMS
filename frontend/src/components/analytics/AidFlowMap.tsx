@@ -106,7 +106,6 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
       
       // Log debug info if available
       if (data.metadata?.debug) {
-        console.log('[AidFlowMap] API Debug Info:', data.metadata.debug)
       }
       
       // Transform data to include both totalIn/totalOut and inflow/outflow
@@ -116,7 +115,6 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         outflow: node.totalOut || node.outflow || 0
       }))
       
-      console.log('[AidFlowMap] Transformed nodes:', transformedNodes.length, 'Links:', data.links?.length)
       
       setGraphData({
         nodes: transformedNodes || [],

@@ -4,7 +4,6 @@
  */
 
 export async function testAutosaveAPI() {
-  console.log('🧪 Testing autosave API connectivity...');
   
   const testPayload = {
     title: 'Autosave Test ' + new Date().toISOString(),
@@ -32,7 +31,6 @@ export async function testAutosaveAPI() {
   };
 
   try {
-    console.log('📤 Sending test payload:', testPayload);
     
     const response = await fetch('/api/activities', {
       method: 'POST',
@@ -43,8 +41,6 @@ export async function testAutosaveAPI() {
       body: JSON.stringify(testPayload)
     });
 
-    console.log('📥 Response status:', response.status, response.statusText);
-    console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -61,7 +57,6 @@ export async function testAutosaveAPI() {
     }
 
     const responseData = await response.json();
-    console.log('✅ API test successful:', responseData);
     
     return {
       success: true,
@@ -84,7 +79,6 @@ export async function testAutosaveAPI() {
 }
 
 export async function testAutosaveWithLargePayload() {
-  console.log('🧪 Testing autosave with large payload...');
   
   // Create a large payload to test size limits
   const largeSectors = Array.from({ length: 50 }, (_, i) => ({
@@ -149,13 +143,11 @@ export async function testAutosaveWithLargePayload() {
   const payloadString = JSON.stringify(testPayload);
   const payloadSizeKB = new TextEncoder().encode(payloadString).length / 1024;
   
-  console.log(`📦 Large payload size: ${payloadSizeKB.toFixed(2)} KB`);
 
   return await testAutosaveAPI();
 }
 
 export function diagnoseCurrentActivity() {
-  console.log('🔍 Diagnosing current activity state...');
   
   // Check if we're on an activity editor page
   const currentPath = window.location.pathname;
@@ -185,14 +177,12 @@ export function diagnoseCurrentActivity() {
     }
   });
 
-  console.log('📊 Found data sources:', Object.keys(foundData));
 
   // Check local storage for any relevant data
   const relevantLocalStorageKeys = Object.keys(localStorage).filter(key => 
     key.includes('activity') || key.includes('autosave') || key.includes('draft')
   );
 
-  console.log('💾 Relevant localStorage keys:', relevantLocalStorageKeys);
 
   // Check for React DevTools if available
   const hasReactDevTools = !!(window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -222,8 +212,4 @@ if (typeof window !== 'undefined') {
   (window as any).testAutosaveWithLargePayload = testAutosaveWithLargePayload;
   (window as any).diagnoseCurrentActivity = diagnoseCurrentActivity;
   
-  console.log('🧪 Autosave test utilities loaded. Available commands:');
-  console.log('  - window.testAutosaveAPI()');
-  console.log('  - window.testAutosaveWithLargePayload()');
-  console.log('  - window.diagnoseCurrentActivity()');
 }

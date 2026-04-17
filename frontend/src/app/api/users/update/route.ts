@@ -23,7 +23,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS Users Update] Updating user:', { id, updateData });
 
     // Prepare the update data, removing any undefined values
     const cleanUpdateData = Object.fromEntries(
@@ -33,7 +32,6 @@ export async function PUT(request: NextRequest) {
     // Add updated timestamp
     cleanUpdateData.updated_at = new Date().toISOString();
 
-    console.log('[AIMS Users Update] Clean update data:', cleanUpdateData);
 
     // Update the user in the users table
     const { data, error } = await supabase
@@ -66,7 +64,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('[AIMS Users Update] User updated successfully:', data);
     
     // Transform data to match frontend User type expectations
     const transformedData = {

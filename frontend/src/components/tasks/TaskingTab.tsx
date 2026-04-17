@@ -114,9 +114,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
 
   // Handle status change
   const handleStatusChange = useCallback(async (assignmentId: string, status: TaskStatus) => {
-    console.log('[TaskingTab] handleStatusChange called:', { assignmentId, status });
     const result = await updateStatus(assignmentId, status);
-    console.log('[TaskingTab] updateStatus result:', result);
     if (result) {
       toast.success(`Task ${status === 'completed' ? 'completed' : status === 'in_progress' ? 'started' : 'updated'}`);
       // Await the refetch to ensure UI updates with new status

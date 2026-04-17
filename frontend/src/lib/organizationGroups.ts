@@ -30,17 +30,12 @@ export function ensureDataDirectory() {
 export function loadOrganizationGroups(): OrganizationGroup[] {
   try {
     ensureDataDirectory();
-    console.log('[OrganizationGroups] Loading from path:', DATA_FILE_PATH);
-    console.log('[OrganizationGroups] File exists:', fs.existsSync(DATA_FILE_PATH));
-    console.log('[OrganizationGroups] Working directory:', process.cwd());
     
     if (fs.existsSync(DATA_FILE_PATH)) {
       const data = fs.readFileSync(DATA_FILE_PATH, 'utf-8');
       const groups = JSON.parse(data);
-      console.log('[OrganizationGroups] Loaded groups:', groups.length);
       return groups;
     }
-    console.log('[OrganizationGroups] File not found, returning empty array');
     return [];
   } catch (error) {
     console.error('[OrganizationGroups] Error loading organization groups:', error);

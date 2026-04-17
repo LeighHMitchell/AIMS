@@ -53,12 +53,10 @@ export function useFieldAutosave(
   // Field-level save function
   const performFieldSave = useCallback(async (value: any) => {
     if (!enabled || !activityId) {
-      console.log(`[FieldAutosave] Skipping save for ${fieldName} - not enabled or no activity ID`);
       return;
     }
 
     if (isSavingRef.current) {
-      console.log(`[FieldAutosave] Already saving ${fieldName}, skipping`);
       return;
     }
 
@@ -72,7 +70,6 @@ export function useFieldAutosave(
     setState(prev => ({ ...prev, isSaving: true, error: null }));
 
     try {
-      console.log(`[FieldAutosave] Saving field ${fieldName}:`, value);
 
       // Create minimal payload for field-level update
       const payload = {
@@ -106,11 +103,9 @@ export function useFieldAutosave(
       }));
 
       onSuccess?.(responseData);
-      console.log(`[FieldAutosave] Field ${fieldName} saved successfully`);
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log(`[FieldAutosave] Request for ${fieldName} aborted`);
         return;
       }
 

@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('[Donor Rankings] Successfully fetched', data?.length || 0, 'donors')
     return NextResponse.json({
       data: data || [],
       error: null

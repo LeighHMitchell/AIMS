@@ -45,7 +45,6 @@ async function createNotification(payload: FocalPointNotificationPayload): Promi
     return false;
   }
 
-  console.log('[Focal Point Notifications] Notification created:', data?.[0]?.id);
   return true;
 }
 

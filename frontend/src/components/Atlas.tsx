@@ -550,7 +550,6 @@ export default function Atlas() {
 
   // Handler for location search
   const handleLocationSearch = useCallback((lat: number, lng: number, name: string, type: string) => {
-    console.log('[Atlas] handleLocationSearch called:', { lat, lng, name, type });
 
     // Determine zoom level based on location type
     let zoomLevel = 10;
@@ -606,7 +605,6 @@ export default function Atlas() {
         
         if (data.success && data.locations) {
           setLocations(data.locations);
-          console.log('[Atlas] Locations loaded:', data.locations.length);
         } else {
           throw new Error('Invalid response format');
         }
@@ -1573,7 +1571,6 @@ export default function Atlas() {
                         viewLevel={subnationalViewLevel}
                         onViewLevelChange={setSubnationalViewLevel}
                         onFeatureClick={(pcode, name, level) => {
-                          console.log('Feature clicked:', { pcode, name, level });
                         }}
                       />
                     </div>

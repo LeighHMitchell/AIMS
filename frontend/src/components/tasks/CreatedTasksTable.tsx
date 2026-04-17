@@ -92,12 +92,10 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
       return;
     }
 
-    console.log('[Download] Fetching signed URL for:', { taskId, attachmentId, fileName });
 
     const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`);
     const data = await response.json();
 
-    console.log('[Download] API response:', data);
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);

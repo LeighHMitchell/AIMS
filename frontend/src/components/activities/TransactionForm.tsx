@@ -145,7 +145,6 @@ export default function TransactionForm({
   // Debug logging to see what transaction data we're getting
   useEffect(() => {
     if (transaction) {
-      console.log('[TransactionForm] Editing transaction:', transaction);
     }
   }, [transaction]);
   
@@ -188,7 +187,6 @@ export default function TransactionForm({
       if (result.success && result.exchange_rate) {
         setExchangeRateUsed(result.exchange_rate);
         setRateError(null);
-        console.log(`[TransactionForm] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
       } else {
         setRateError(result.error || 'Failed to fetch exchange rate');
         setExchangeRateUsed(null);
@@ -1070,7 +1068,6 @@ export default function TransactionForm({
                 <ActivityCombobox
                   value={formData.provider_activity_uuid || ''}
                   onValueChange={async (activityId) => {
-                    console.log('[TransactionForm] Provider activity selected:', activityId);
                     setFormData(prev => ({ ...prev, provider_activity_uuid: activityId }));
                     
                     if (activityId) {
@@ -1078,7 +1075,6 @@ export default function TransactionForm({
                         const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
-                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
                           setFormData(prev => ({ 
                             ...prev, 
                             provider_org_activity_id: activity.iati_identifier || '' 
@@ -1117,7 +1113,6 @@ export default function TransactionForm({
                 <ActivityCombobox
                   value={formData.receiver_activity_uuid || ''}
                   onValueChange={async (activityId) => {
-                    console.log('[TransactionForm] Receiver activity selected:', activityId);
                     setFormData(prev => ({ ...prev, receiver_activity_uuid: activityId }));
                     
                     if (activityId) {
@@ -1125,7 +1120,6 @@ export default function TransactionForm({
                         const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
-                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
                           setFormData(prev => ({ 
                             ...prev, 
                             receiver_org_activity_id: activity.iati_identifier || '' 

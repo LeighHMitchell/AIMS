@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
 
   try {
     const today = new Date().toISOString().split('T')[0];
-    console.log('[Monitoring Reminders] Running at', today);
 
     let markedOverdue = 0;
     let notificationsSent = 0;
@@ -116,7 +115,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`[Monitoring Reminders] Done: ${markedOverdue} marked overdue, ${notificationsSent} notifications sent`);
 
     return NextResponse.json({
       success: true,
