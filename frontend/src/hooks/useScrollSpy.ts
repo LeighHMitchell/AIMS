@@ -260,28 +260,28 @@ export function useScrollSpy(
       const targetElement = document.getElementById(sectionId)
       if (!targetElement) return
 
-      const scroll = (behavior: ScrollBehavior) =>
-        targetElement.scrollIntoView({ behavior, block: 'start' })
-
       // Initial smooth scroll for a nice transition
-      scroll('smooth')
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-      // Follow-up re-scrolls (instant, so they don't fight the smooth one)
-      // handle the case where lazy-loaded upstream sections render in AFTER
-      // the first scroll settles and push the target down. Without these,
-      // deeper sections like Humanitarian Marker, Focal Points, Policy
-      // Markers land midway because the sections above them finish rendering
-      // late.
-      let lastTop = targetElement.getBoundingClientRect().top
-      ;[300, 600, 1100, 1800, 2500].forEach(delay => {
-        setTimeout(() => {
-          const currentTop = targetElement.getBoundingClientRect().top
-          if (Math.abs(currentTop - lastTop) > 5) {
-            scroll('instant' as ScrollBehavior)
-            lastTop = targetElement.getBoundingClientRect().top
-          }
-        }, delay)
-      })
+      // Single follow-up re-scroll AFTER the smooth animation has
+      // completed (~400ms), to catch cases where lazy-loaded upstream
+      // sections finished rendering after the smooth scroll settled and
+      // pushed the target down.
+      //
+      // Firing earlier competes with the smooth scroll and causes visible
+      // flicker; firing later is pointless because by then the user sees
+      // the misaligned target and starts scrolling manually. 1200ms is a
+      // conservative "smooth scroll is definitely finished" point that
+      // also covers most lazy-render windows.
+      //
+      // Tolerance is 8px instead of 5 to avoid jitter from sub-pixel
+      // rendering or tiny layout adjustments.
+      setTimeout(() => {
+        const currentTop = targetElement.getBoundingClientRect().top
+        if (Math.abs(currentTop) > 8) {
+          targetElement.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+        }
+      }, 1200)
     })
   }, [sections, lockScrollSpy])
 

@@ -156,19 +156,14 @@ export function StrategicAlignmentGroup({
           if (!el) return
           const scroll = () => el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
           scroll()
-          // Re-scroll several times as upstream lazy-loaded sections render in
-          // above us. Keeps checking for drift over the first ~2.5s and
-          // re-anchors if the target has moved.
-          let lastTop = el.getBoundingClientRect().top
-          ;[150, 400, 800, 1500, 2500].forEach(delay => {
-            setTimeout(() => {
-              const currentTop = el.getBoundingClientRect().top
-              if (Math.abs(currentTop - lastTop) > 5) {
-                scroll()
-                lastTop = el.getBoundingClientRect().top
-              }
-            }, delay)
-          })
+          // Single follow-up re-scroll AFTER lazy-loaded upstream sections
+          // have had time to render in. Earlier/more-frequent retries
+          // compete with scroll-spy and cause flicker.
+          setTimeout(() => {
+            if (Math.abs(el.getBoundingClientRect().top) > 8) {
+              scroll()
+            }
+          }, 1200)
         })
       }
       prevInitialSection.current = initialSection
