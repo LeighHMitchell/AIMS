@@ -1187,7 +1187,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="e.g., ACT-001, PJ-2024-567"
-              className={''}
+              className="font-mono"
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 3 : -1}
             />
@@ -1254,7 +1254,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="Enter IATI identifier"
-              className={''}
+              className="font-mono"
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 4 : -1}
             />
@@ -1295,7 +1295,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               readOnly
               value={general.autoRef || ''}
               placeholder="Will be assigned on save"
-              className="bg-muted text-muted-foreground cursor-default"
+              className="bg-muted text-muted-foreground font-mono cursor-default"
               tabIndex={-1}
             />
             {general.autoRef && (
