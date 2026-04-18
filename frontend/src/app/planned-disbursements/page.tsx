@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,11 @@ import {
 } from "@/components/planned-disbursements/PlannedDisbursementsTable";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
-import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+import type { SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+const YearlyTotalsBarChart = dynamic(
+  () => import("@/components/charts/YearlyTotalsBarChart").then(mod => mod.YearlyTotalsBarChart),
+  { ssr: false, loading: () => <div className="h-[320px] w-full" /> }
+);
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";

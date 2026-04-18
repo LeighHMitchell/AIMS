@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,13 +27,17 @@ import {
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
-import TransactionModal from "@/components/TransactionModal";
+const TransactionModal = dynamic(() => import("@/components/TransactionModal"), { ssr: false });
 import { TransactionsListSkeleton } from "@/components/skeletons";
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
-import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+import type { MultiSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+const YearlyTotalsBarChart = dynamic(
+  () => import("@/components/charts/YearlyTotalsBarChart").then(mod => mod.YearlyTotalsBarChart),
+  { ssr: false, loading: () => <div className="h-[320px] w-full" /> }
+);
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
@@ -123,10 +128,14 @@ export default function TransactionsPage() {
     }
   }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
 
-  // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
+  // Map UI sort field to DB column; `activity` is a client-joined title, so sort by activity_id server-side
+  const serverSortField = sortField === 'activity' ? 'activity_id' : sortField;
+
   const { transactions, loading, error, refetch, deleteTransaction, addTransaction, acceptTransaction, rejectTransaction } = useTransactions({
     searchQuery,
     filters,
+    sortField: serverSortField,
+    sortOrder,
     page: currentPage,
     limit: pageLimit,
     includeLinked: true, // Always include linked transactions
