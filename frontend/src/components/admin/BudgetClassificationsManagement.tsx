@@ -767,6 +767,7 @@ export function BudgetClassificationsManagement() {
                 <Label htmlFor="code">Code <RequiredDot /></Label>
                 <Input
                   id="code"
+                  className="font-mono"
                   value={formData.code}
                   onChange={(e) =>
                     setFormData({ ...formData, code: e.target.value })

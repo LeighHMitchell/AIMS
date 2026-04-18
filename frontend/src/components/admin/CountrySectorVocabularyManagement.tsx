@@ -803,6 +803,7 @@ export function CountrySectorVocabularyManagement() {
                   <Label htmlFor="vocab-code">Code <RequiredDot /></Label>
                   <Input
                     id="vocab-code"
+                    className="font-mono"
                     placeholder="e.g., TNG"
                     value={vocabForm.code}
                     onChange={(e) =>
@@ -901,6 +902,7 @@ export function CountrySectorVocabularyManagement() {
                   <Label htmlFor="sector-code">Code <RequiredDot /></Label>
                   <Input
                     id="sector-code"
+                    className="font-mono"
                     placeholder="e.g., AGR-01"
                     value={sectorForm.code}
                     onChange={(e) => setSectorForm({ ...sectorForm, code: e.target.value })}

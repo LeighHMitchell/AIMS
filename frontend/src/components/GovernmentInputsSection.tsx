@@ -713,7 +713,7 @@ export default function GovernmentInputsSection({
                         value={governmentInputs.nationalPlanAlignment?.nationalIndicatorCode || ""}
                         onChange={(e) => updateField('nationalPlanAlignment.nationalIndicatorCode', e.target.value)}
                         placeholder="e.g., NSP-EDU-12"
-                        className="border-input"
+                        className="border-input font-mono"
                       />
                     </div>
                   </>
@@ -1212,7 +1212,7 @@ export default function GovernmentInputsSection({
                       value={governmentInputs.evaluationResults?.nationalIndicatorRef || ""}
                       onChange={(e) => updateField('evaluationResults.nationalIndicatorRef', e.target.value)}
                       placeholder="e.g., NSP-GEN-01"
-                      className="border-input"
+                      className="border-input font-mono"
                     />
                   </div>
                 )}

@@ -1250,6 +1250,7 @@ export default function TransactionForm({
                   </Label>
                   <Input
                     id="sector_code"
+                    className="font-mono"
                     value={formData.sector_code || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, sector_code: e.target.value }))}
                     onBlur={async (e) => {
@@ -1269,6 +1270,7 @@ export default function TransactionForm({
                   </Label>
                   <Input
                     id="recipient_country_code"
+                    className="font-mono"
                     value={formData.recipient_country_code || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, recipient_country_code: e.target.value }))}
                     onBlur={async (e) => {
@@ -1486,7 +1488,7 @@ export default function TransactionForm({
                 }
               }}
               placeholder="Internal reference number"
-              className="bg-white border-border h-10"
+              className="bg-white border-border h-10 font-mono"
             />
             {renderFieldIcon("transaction_reference")}
           </div>

@@ -641,6 +641,7 @@ export function PBSectorsManagement() {
               </Label>
               <Input
                 id="sector-code"
+                className="font-mono"
                 value={sectorForm.code}
                 onChange={(e) =>
                   setSectorForm({ ...sectorForm, code: e.target.value })

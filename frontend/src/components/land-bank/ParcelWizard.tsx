@@ -197,6 +197,7 @@ function StepBasicInfo({
           </Label>
           <Input
             id="wiz-code"
+            className="font-mono"
             value={formData.parcel_code}
             onChange={e => updateField("parcel_code", e.target.value)}
             placeholder="e.g. YGN-0001"

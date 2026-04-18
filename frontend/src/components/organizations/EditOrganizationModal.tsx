@@ -1052,7 +1052,7 @@ export function EditOrganizationModal({
                       id="uuid_class"
                       value={formData.id || ''}
                       readOnly
-                      className="bg-muted text-muted-foreground"
+                      className="bg-muted text-muted-foreground font-mono"
                     />
                     <Button
                       variant="outline"

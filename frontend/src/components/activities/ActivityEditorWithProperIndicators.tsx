@@ -377,7 +377,7 @@ export function ActivityEditorWithProperIndicators({
                   id="uuid"
                   value={formData.uuid}
                   readOnly={true}
-                  className="bg-muted cursor-default"
+                  className="bg-muted cursor-default font-mono"
                 />
               </PrefilledFieldWrapper>
             </div>

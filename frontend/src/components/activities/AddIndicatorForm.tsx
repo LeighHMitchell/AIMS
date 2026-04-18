@@ -246,7 +246,7 @@ export function AddIndicatorForm({
                     setFormData(prev => ({ ...prev, reference_code: e.target.value }))
                   }
                   placeholder="Reference code"
-                  className="w-full"
+                  className="w-full font-mono"
                 />
               </div>
 
@@ -259,7 +259,7 @@ export function AddIndicatorForm({
                     setFormData(prev => ({ ...prev, reference_uri: e.target.value }))
                   }
                   placeholder="http://..."
-                  className="w-full"
+                  className="w-full font-mono"
                 />
               </div>
             </div>

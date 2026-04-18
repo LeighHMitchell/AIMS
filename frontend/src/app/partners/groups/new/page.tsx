@@ -179,6 +179,7 @@ export default function NewGroupPage() {
                 <Label htmlFor="group_code">Group Code</Label>
                 <Input
                   id="group_code"
+                  className="font-mono"
                   value={formData.group_code}
                   onChange={(e) => setFormData(prev => ({ ...prev, group_code: e.target.value }))}
                   placeholder="e.g., HDC-2024"

@@ -305,6 +305,7 @@ export function ParticipatingOrgModal({
                 </Label>
                 <Input
                   id="activity_id_ref"
+                  className="font-mono"
                   value={formData.activity_id_ref || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, activity_id_ref: e.target.value }))}
                   placeholder="e.g., GB-COH-1234567-PROJ001"

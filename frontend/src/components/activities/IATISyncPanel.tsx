@@ -512,6 +512,7 @@ export function IATISyncPanel({
               <div className="flex gap-2">
                 <Input
                   id="iati-identifier"
+                  className="font-mono"
                   placeholder="e.g. MM-GOV-1234"
                   value={iatiId}
                   onChange={(e) => setIatiId(e.target.value)}

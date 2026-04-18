@@ -1603,6 +1603,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   </Label>
                   <Input
                     id="location_ref"
+                    className="font-mono"
                     {...register('location_ref')}
                     placeholder="e.g., AF-KAN, KH-PNH"
                   />
@@ -1679,7 +1680,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           type="text"
                           {...register('location_id_code')}
                           placeholder="e.g., 1821306"
-                          className="flex-1"
+                          className="flex-1 font-mono"
                         />
                         {watch('location_id_code') && (
                           <Button
@@ -1738,7 +1739,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           id="admin_code"
                           {...register('admin_code')}
                           placeholder="e.g., MMR013"
-                          className="flex-1"
+                          className="flex-1 font-mono"
                         />
                         {watch('admin_code') && (
                           <Button
@@ -1768,7 +1769,7 @@ const autoPopulateIatiFields = useCallback((params: {
                       {...register('spatial_reference_system')}
                       defaultValue="http://www.opengis.net/def/crs/EPSG/0/4326"
                       placeholder="http://www.opengis.net/def/crs/EPSG/0/4326"
-                      className="w-full"
+                      className="w-full font-mono"
                     />
                   </div>
 
