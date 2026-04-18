@@ -1295,7 +1295,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               readOnly
               value={general.autoRef || ''}
               placeholder="Will be assigned on save"
-              className="bg-muted text-muted-foreground font-mono cursor-default"
+              className="bg-muted text-muted-foreground cursor-default"
               tabIndex={-1}
             />
             {general.autoRef && (
