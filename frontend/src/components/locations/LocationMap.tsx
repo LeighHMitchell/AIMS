@@ -164,7 +164,7 @@ function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; 
           type="button"
           onClick={handle2DView}
           title="2D View"
-          className="flex items-center gap-1.5 bg-white shadow-md border border-input rounded-md h-8 px-2.5 text-xs text-foreground hover:bg-muted"
+          className="flex items-center gap-1.5 bg-white shadow-md border border-input rounded-md h-8 px-2.5 text-helper text-foreground hover:bg-muted"
         >
           <Mountain className="h-3.5 w-3.5" />
           2D
@@ -174,7 +174,7 @@ function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; 
           type="button"
           onClick={handle3DView}
           title="3D View"
-          className="flex items-center gap-1.5 bg-white shadow-md border border-input rounded-md h-8 px-2.5 text-xs text-foreground hover:bg-muted"
+          className="flex items-center gap-1.5 bg-white shadow-md border border-input rounded-md h-8 px-2.5 text-helper text-foreground hover:bg-muted"
         >
           <Mountain className="h-3.5 w-3.5" />
           3D
@@ -241,7 +241,7 @@ function LocationMapComponent({
               <div className="h-3 w-3 rounded-full border-2 border-white bg-muted0 shadow-md" />
             </MarkerContent>
             <MarkerPopup>
-              <div className="text-sm">
+              <div className="text-body">
                 <strong>{loc.location_name}</strong>
                 {loc.site_type && (
                   <>
@@ -268,7 +268,7 @@ function LocationMapComponent({
             <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-200" />
           </MarkerContent>
           <MarkerPopup>
-            <div className="text-sm">
+            <div className="text-body">
               <strong>{locationName || 'New Location'}</strong>
               {displayLatitude !== undefined && displayLongitude !== undefined && 
                displayLatitude !== null && displayLongitude !== null && (

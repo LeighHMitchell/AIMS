@@ -155,7 +155,7 @@ export function OrgTypeMappingModal({
                 {orgDisplayName}
               </div>
               {organization.country && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   {organization.country}
                 </div>
               )}
@@ -167,10 +167,10 @@ export function OrgTypeMappingModal({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <div className="text-sm font-medium text-amber-800">
+                <div className="text-body font-medium text-amber-800">
                   Current Type: <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-xs">{currentTypeCode}</code> {legacyMapping.legacyLabel}
                 </div>
-                <div className="text-xs text-amber-700 mt-1">
+                <div className="text-helper text-amber-700 mt-1">
                   This code has been deprecated. Please select a more specific type below.
                 </div>
               </div>
@@ -179,7 +179,7 @@ export function OrgTypeMappingModal({
 
           {/* New Type Selection */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Select new organization type</Label>
+            <Label className="text-body font-medium">Select new organization type</Label>
             
             <RadioGroup
               value={selectedType}
@@ -207,12 +207,12 @@ export function OrgTypeMappingModal({
                           {option.label}
                         </span>
                         {isSuggested && (
-                          <Badge variant="secondary" className="text-xs bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
+                          <Badge variant="secondary" className="text-helper bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border-[hsl(var(--success-border))]">
                             Suggested
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">
+                      <div className="text-body text-muted-foreground mt-1">
                         {option.description}
                       </div>
                     </div>
@@ -226,7 +226,7 @@ export function OrgTypeMappingModal({
           {suggestionReason && (
             <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <Lightbulb className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <div className="text-body text-blue-800">
                 <span className="font-medium">Suggestion:</span> {suggestionReason}
               </div>
             </div>

@@ -30,7 +30,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
       if (filteredPayload.length === 0) return null;
       
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg text-sm max-h-[400px] overflow-hidden">
+        <div className="bg-white border border-border rounded-lg shadow-lg text-body max-h-[400px] overflow-hidden">
           <div className="bg-surface-muted px-4 py-2 border-b border-border">
             <p className="font-semibold text-foreground">Year: {label}</p>
             <p className="text-muted-foreground">
@@ -105,7 +105,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
           <Tooltip content={<CustomTooltip />} />
           <Legend
             wrapperStyle={{ paddingTop: '20px' }}
-            formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
+            formatter={(value) => <span className="text-foreground text-body">{value}</span>}
             iconType="square"
           />
           {sectorNames.map((sectorName, index) => (

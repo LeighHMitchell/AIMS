@@ -217,7 +217,7 @@ export function SystemsSettings() {
             <div className="flex items-center justify-center py-8 text-destructive">
               <div className="text-center">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                <p className="text-sm">Error: {error}</p>
+                <p className="text-body">Error: {error}</p>
               </div>
             </div>
           </CardContent>
@@ -242,7 +242,7 @@ export function SystemsSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="home-country" className="text-sm font-medium">
+              <Label htmlFor="home-country" className="text-body font-medium">
                 Country
               </Label>
               <HelpTextTooltip
@@ -292,7 +292,7 @@ export function SystemsSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="default-language" className="text-sm font-medium">
+              <Label htmlFor="default-language" className="text-body font-medium">
                 Language
               </Label>
               <HelpTextTooltip
@@ -342,7 +342,7 @@ export function SystemsSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="default-currency" className="text-sm font-medium">
+              <Label htmlFor="default-currency" className="text-body font-medium">
                 Currency
               </Label>
               <HelpTextTooltip

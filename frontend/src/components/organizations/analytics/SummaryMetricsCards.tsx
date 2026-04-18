@@ -61,7 +61,7 @@ export function SummaryMetricsCards({
           helpText="Total number of active projects in the organization's portfolio"
         />
         {previousYear.activeProjects > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs">
+          <div className="mt-2 flex items-center gap-1 text-helper">
             {projectsDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
@@ -85,7 +85,7 @@ export function SummaryMetricsCards({
           helpText="Total financial commitments made by or to the organization in 2025"
         />
         {previousYear.commitments > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs">
+          <div className="mt-2 flex items-center gap-1 text-helper">
             {commitmentsDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
@@ -109,7 +109,7 @@ export function SummaryMetricsCards({
           helpText="Total funds disbursed to or from the organization in 2025"
         />
         {previousYear.disbursements > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs">
+          <div className="mt-2 flex items-center gap-1 text-helper">
             {disbursementsDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (
@@ -133,7 +133,7 @@ export function SummaryMetricsCards({
           helpText="Total expenditures reported by the organization in 2025"
         />
         {previousYear.expenditures > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs">
+          <div className="mt-2 flex items-center gap-1 text-helper">
             {expendituresDelta.isPositive ? (
               <TrendingUp className="h-3 w-3 text-[hsl(var(--success-icon))]" />
             ) : (

@@ -164,7 +164,7 @@ export function SearchableSelect({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger 
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
           disabled={disabled}
@@ -219,14 +219,14 @@ export function SearchableSelect({
             </div>
             <CommandList>
               {Object.keys(filteredGroups).length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-6 text-center text-body text-muted-foreground">
                   {emptyText}
                 </div>
               ) : (
                 Object.entries(filteredGroups).map(([category, items]) => (
                   <CommandGroup key={category}>
                     {Object.keys(groupedOptions).length > 1 && (
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                         {category}
                       </div>
                     )}
@@ -261,13 +261,13 @@ export function SearchableSelect({
                               </span>
                             )}
                             {option.rightLabel && (
-                              <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                              <span className="ml-auto text-helper text-muted-foreground shrink-0">
                                 {option.rightLabel}
                               </span>
                             )}
                           </div>
                           {option.description && (
-                            <span className="text-xs text-muted-foreground pl-7">
+                            <span className="text-helper text-muted-foreground pl-7">
                               {option.description}
                             </span>
                           )}
@@ -282,7 +282,7 @@ export function SearchableSelect({
         </PopoverContent>
       </Popover>
       {selectedOption?.description && (
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-helper text-muted-foreground mt-1">
           {selectedOption.description}
         </p>
       )}

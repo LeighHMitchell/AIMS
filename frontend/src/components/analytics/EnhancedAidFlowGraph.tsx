@@ -671,7 +671,7 @@ export default function EnhancedAidFlowGraph({
               title="Bring nodes together"
             >
               <Shrink className="h-4 w-4 mr-1" />
-              <span className="text-xs">Cluster</span>
+              <span className="text-helper">Cluster</span>
             </Button>
             <Button
               variant={clusterLevel === 'spread' ? 'default' : 'ghost'}
@@ -681,7 +681,7 @@ export default function EnhancedAidFlowGraph({
               title="Spread nodes apart"
             >
               <Expand className="h-4 w-4 mr-1" />
-              <span className="text-xs">Spread</span>
+              <span className="text-helper">Spread</span>
             </Button>
             {clusterLevel !== 'normal' && (
               <Button
@@ -691,7 +691,7 @@ export default function EnhancedAidFlowGraph({
                 className="h-8 px-2"
                 title="Reset to normal layout"
               >
-                <span className="text-xs">Reset</span>
+                <span className="text-helper">Reset</span>
               </Button>
             )}
           </div>
@@ -711,32 +711,32 @@ export default function EnhancedAidFlowGraph({
           <div className="bg-white/90 backdrop-blur p-3 rounded-lg border">
             <div className="flex items-center gap-2 mb-2">
               <ArrowRight className="h-4 w-4" />
-              <span className="text-sm font-medium">Transaction Types</span>
+              <span className="text-body font-medium">Transaction Types</span>
             </div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5" style={{ backgroundColor: '#7b95a7' }}></div>
-                <span className="text-xs">Incoming Commit.</span>
+                <span className="text-helper">Incoming Commit.</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
-                <span className="text-xs">Outgoing Commit.</span>
+                <span className="text-helper">Outgoing Commit.</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
-                <span className="text-xs">Disbursement</span>
+                <span className="text-helper">Disbursement</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
-                <span className="text-xs">Expenditure</span>
+                <span className="text-helper">Expenditure</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
-                <span className="text-xs">Incoming Funds</span>
+                <span className="text-helper">Incoming Funds</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5" style={{ backgroundColor: '#cfd0d5' }}></div>
-                <span className="text-xs">Other</span>
+                <span className="text-helper">Other</span>
               </div>
             </div>
           </div>
@@ -810,7 +810,7 @@ export default function EnhancedAidFlowGraph({
                       {selectedNode.type || 'Organization'}
                     </span>
                     {flowRole !== 'Organization' && (
-                      <span className="text-xs text-muted-foreground">{flowRole}</span>
+                      <span className="text-helper text-muted-foreground">{flowRole}</span>
                     )}
                   </div>
                 </div>
@@ -823,7 +823,7 @@ export default function EnhancedAidFlowGraph({
                   
                   {inflow > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                      <span className="text-body text-muted-foreground flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                         Inflow
                       </span>
@@ -832,7 +832,7 @@ export default function EnhancedAidFlowGraph({
                   )}
                   {outflow > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                      <span className="text-body text-muted-foreground flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                         Outflow
                       </span>
@@ -843,7 +843,7 @@ export default function EnhancedAidFlowGraph({
                     <>
                       <div className="border-t border-border pt-2 mt-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-foreground">Net Flow</span>
+                          <span className="text-body font-medium text-foreground">Net Flow</span>
                           <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
                             {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
                           </span>
@@ -852,7 +852,7 @@ export default function EnhancedAidFlowGraph({
                     </>
                   )}
                   {totalFlow > 0 && (
-                    <div className="flex justify-between items-center text-xs text-muted-foreground pt-1">
+                    <div className="flex justify-between items-center text-helper text-muted-foreground pt-1">
                       <span>Total Volume</span>
                       <span>{formatCurrency(totalFlow)}</span>
                     </div>
@@ -870,7 +870,7 @@ export default function EnhancedAidFlowGraph({
                   }}
                 >
                   <div className="text-2xl font-bold text-foreground">{connectionStats.partnerCount}</div>
-                  <div className="text-xs text-muted-foreground">Partners</div>
+                  <div className="text-helper text-muted-foreground">Partners</div>
                 </button>
                 <button 
                   className="bg-muted hover:bg-muted rounded-lg p-3 text-center transition-colors cursor-pointer"
@@ -880,13 +880,13 @@ export default function EnhancedAidFlowGraph({
                   }}
                 >
                   <div className="text-2xl font-bold text-foreground">{connectionStats.totalConnections}</div>
-                  <div className="text-xs text-muted-foreground">Transactions</div>
+                  <div className="text-helper text-muted-foreground">Transactions</div>
                 </button>
               </div>
               
               {/* Flow Direction Breakdown - Clickable */}
               {(connectionStats.incomingCount > 0 || connectionStats.outgoingCount > 0) && (
-                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                <div className="mt-3 flex items-center justify-center gap-4 text-helper text-muted-foreground">
                   {connectionStats.incomingCount > 0 && (
                     <button 
                       className="flex items-center gap-1 hover:text-emerald-600 transition-colors cursor-pointer"
@@ -916,7 +916,7 @@ export default function EnhancedAidFlowGraph({
               {nestedPopup && (
                 <div className="mt-3 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   <div className="sticky top-0 bg-white border-b border-border px-3 py-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground capitalize">
+                    <span className="text-body font-medium text-foreground capitalize">
                       {nestedPopup.type === 'partners' ? 'Partners' : 
                        nestedPopup.type === 'incoming' ? 'Incoming Transactions' :
                        nestedPopup.type === 'outgoing' ? 'Outgoing Transactions' : 'All Transactions'}
@@ -952,8 +952,8 @@ export default function EnhancedAidFlowGraph({
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-foreground truncate">{partner.name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="text-body text-foreground truncate">{partner.name}</div>
+                            <div className="text-helper text-muted-foreground flex items-center gap-1">
                               <span className="capitalize">{partner.type || 'Organization'}</span>
                               <span>•</span>
                               <span className={partner.direction === 'incoming' ? 'text-emerald-500' : partner.direction === 'outgoing' ? 'text-blue-500' : 'text-purple-500'}>
@@ -964,7 +964,7 @@ export default function EnhancedAidFlowGraph({
                         </div>
                       ))}
                       {nestedPopup.data.length === 0 && (
-                        <div className="px-3 py-4 text-center text-sm text-muted-foreground">No partners</div>
+                        <div className="px-3 py-4 text-center text-body text-muted-foreground">No partners</div>
                       )}
                     </div>
                   ) : (
@@ -988,14 +988,14 @@ export default function EnhancedAidFlowGraph({
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm text-foreground truncate">{tx.partnerName}</div>
-                              <div className="text-xs text-muted-foreground">{tx.typeName}</div>
+                              <div className="text-body text-foreground truncate">{tx.partnerName}</div>
+                              <div className="text-helper text-muted-foreground">{tx.typeName}</div>
                             </div>
                             <div className="text-right">
                               <div className={`text-sm font-medium ${tx.direction === 'incoming' ? 'text-emerald-600' : 'text-blue-600'}`}>
                                 {tx.direction === 'incoming' ? '+' : '-'}{formatCurrency(tx.value)}
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-helper text-muted-foreground">
                                 {tx.direction === 'incoming' ? '↓ In' : '↑ Out'}
                               </div>
                             </div>
@@ -1003,7 +1003,7 @@ export default function EnhancedAidFlowGraph({
                         </div>
                       ))}
                       {nestedPopup.data.length === 0 && (
-                        <div className="px-3 py-4 text-center text-sm text-muted-foreground">No transactions</div>
+                        <div className="px-3 py-4 text-center text-body text-muted-foreground">No transactions</div>
                       )}
                     </div>
                   )}
@@ -1017,7 +1017,7 @@ export default function EnhancedAidFlowGraph({
         <svg ref={svgRef} className="w-full h-full"></svg>
 
         {/* Help Text */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 text-helper text-muted-foreground">
           <Info className="h-3 w-3" />
           <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
         </div>

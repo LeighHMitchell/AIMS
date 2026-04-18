@@ -100,7 +100,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Fund Balance</p>
+                <p className="text-body font-medium text-muted-foreground">Fund Balance</p>
                 <p className={`text-2xl font-bold ${balanceColor}`}>
                   {formatUSD(data.balance)}
                 </p>
@@ -117,9 +117,9 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Contributions</p>
+                <p className="text-body font-medium text-muted-foreground">Total Contributions</p>
                 <p className="text-2xl font-bold text-foreground">{formatUSD(data.totalContributions)}</p>
-                <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                <div className="flex gap-2 mt-1 text-helper text-muted-foreground">
                   {data.totalPledged > 0 && <span>Pledged: {formatUSD(data.totalPledged)}</span>}
                   {data.totalCommitted > 0 && <span>Committed: {formatUSD(data.totalCommitted)}</span>}
                   {data.totalReceived > 0 && <span>Received: {formatUSD(data.totalReceived)}</span>}
@@ -137,10 +137,10 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Disbursements</p>
+                <p className="text-body font-medium text-muted-foreground">Total Disbursements</p>
                 <p className="text-2xl font-bold text-foreground">{formatUSD(data.totalDisbursements)}</p>
                 {data.totalContributions > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-helper text-muted-foreground mt-1">
                     {((data.totalDisbursements / data.totalContributions) * 100).toFixed(0)}% utilised
                   </p>
                 )}
@@ -160,12 +160,12 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
             <div className="flex items-center gap-6 justify-center">
               <div className="text-center">
                 <p className="text-2xl font-bold text-foreground">{data.donorCount}</p>
-                <p className="text-xs text-muted-foreground">Donors</p>
+                <p className="text-helper text-muted-foreground">Donors</p>
               </div>
               <div className="h-8 w-px bg-border" />
               <div className="text-center">
                 <p className="text-2xl font-bold text-foreground">{data.childCount}</p>
-                <p className="text-xs text-muted-foreground">Child Activities</p>
+                <p className="text-helper text-muted-foreground">Child Activities</p>
               </div>
             </div>
           </CardContent>
@@ -175,21 +175,21 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-medium text-xs">Top Donors</TableHead>
-                <TableHead className="font-medium text-xs text-right">Amount</TableHead>
+                <TableHead className="font-medium text-helper">Top Donors</TableHead>
+                <TableHead className="font-medium text-helper text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.topDonors.length > 0 ? (
                 data.topDonors.map((d, i) => (
                   <TableRow key={i}>
-                    <TableCell className="text-sm py-2">{d.name}</TableCell>
-                    <TableCell className="text-sm py-2 text-right text-muted-foreground">{formatUSD(d.total)}</TableCell>
+                    <TableCell className="text-body py-2">{d.name}</TableCell>
+                    <TableCell className="text-body py-2 text-right text-muted-foreground">{formatUSD(d.total)}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-sm text-muted-foreground text-center py-3">No contributions yet</TableCell>
+                  <TableCell colSpan={2} className="text-body text-muted-foreground text-center py-3">No contributions yet</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -200,21 +200,21 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="font-medium text-xs">Top Sectors</TableHead>
-                <TableHead className="font-medium text-xs text-right">Activities</TableHead>
+                <TableHead className="font-medium text-helper">Top Sectors</TableHead>
+                <TableHead className="font-medium text-helper text-right">Activities</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.topSectors.length > 0 ? (
                 data.topSectors.map((s, i) => (
                   <TableRow key={i}>
-                    <TableCell className="text-sm py-2">{s.name}</TableCell>
-                    <TableCell className="text-sm py-2 text-right text-muted-foreground">{s.count}</TableCell>
+                    <TableCell className="text-body py-2">{s.name}</TableCell>
+                    <TableCell className="text-body py-2 text-right text-muted-foreground">{s.count}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-sm text-muted-foreground text-center py-3">No sectors assigned</TableCell>
+                  <TableCell colSpan={2} className="text-body text-muted-foreground text-center py-3">No sectors assigned</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -225,7 +225,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
       {/* Quarterly Sparkline */}
       {data.sparkline.length > 1 && (
         <div>
-          <p className="text-sm font-medium text-muted-foreground mb-3">Disbursements Over Time (Quarterly)</p>
+          <p className="text-body font-medium text-muted-foreground mb-3">Disbursements Over Time (Quarterly)</p>
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.sparkline}>

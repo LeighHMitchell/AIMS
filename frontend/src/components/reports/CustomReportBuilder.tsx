@@ -26,7 +26,7 @@ const PivotTableUI = dynamic(
       <div className="flex items-center justify-center h-96 bg-muted/30 rounded-lg">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading pivot table...</p>
+          <p className="text-body text-muted-foreground">Loading pivot table...</p>
         </div>
       </div>
     )
@@ -1367,7 +1367,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
 
         {/* Data info and status */}
         {dataInfo && (
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-body text-muted-foreground">
             <span className="flex items-center gap-1">
               <Info className="h-4 w-4" />
               {dataInfo.totalRows.toLocaleString()} rows loaded
@@ -1417,7 +1417,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
                 variant="ghost" 
                 size="sm"
                 onClick={() => setFieldSearch('')}
-                className="text-xs"
+                className="text-helper"
               >
                 Clear search
               </Button>
@@ -1552,7 +1552,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
                 <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Loading data...</p>
+                <p className="text-body text-muted-foreground">Loading data...</p>
               </div>
             </div>
           ) : reportData.length === 0 ? (
@@ -1560,7 +1560,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
               <div className="text-center">
                 <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg font-medium">No data available</p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   Try adjusting your filters or check that activities are published.
                 </p>
               </div>
@@ -1740,7 +1740,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
         </div>
 
         {/* Help text */}
-        <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg">
+        <div className="text-helper text-muted-foreground bg-muted/30 p-3 rounded-lg">
           <strong>How to use:</strong>
           <ul className="mt-1 ml-4 list-disc space-y-0.5">
             <li>Drag field names from the unused area to &ldquo;rows&rdquo; or &ldquo;columns&rdquo; to create your pivot table structure</li>

@@ -65,10 +65,10 @@ export default function SectorSunburstDemo() {
       {/* Usage Instructions */}
       <div className="bg-muted p-6 rounded-lg">
         <h3 className="text-lg font-semibold text-foreground mb-4">How to Use</h3>
-        <div className="space-y-4 text-sm text-foreground">
+        <div className="space-y-4 text-body text-foreground">
           <div>
             <strong>Data Structure:</strong> Simply pass an array of sector allocations with the format:
-            <pre className="mt-2 p-3 bg-white rounded border text-xs overflow-x-auto">
+            <pre className="mt-2 p-3 bg-white rounded border text-helper overflow-x-auto">
 {`[
   { code: '11120', name: 'Education facilities and training', percentage: 33.3 },
   { code: '11130', name: 'Teacher training', percentage: 33.3 },

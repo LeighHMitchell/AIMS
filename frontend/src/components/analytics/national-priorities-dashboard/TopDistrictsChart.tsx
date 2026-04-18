@@ -112,14 +112,14 @@ export function TopDistrictsChart({
           <p className="font-semibold text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Value</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Value</span>
+              <span className="text-body font-medium text-foreground">
                 {formatCurrency(data.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Percentage</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Percentage</span>
+              <span className="text-body font-medium text-foreground">
                 {formatPercent(data.value, grandTotal)}
               </span>
             </div>
@@ -152,7 +152,7 @@ export function TopDistrictsChart({
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[80px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -334,7 +334,7 @@ export function TopDistrictsChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart shows the top districts (states and regions) by financial allocation. Compare geographic distribution of funding to identify which areas receive the most development assistance and spot potential gaps in coverage.
       </p>
 

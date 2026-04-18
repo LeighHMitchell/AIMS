@@ -578,7 +578,7 @@ export default function PartnersPage() {
           <td className="py-3 px-2 text-center font-semibold">
             {country.organizations.reduce((sum, org) => sum + (org.reportedActivities || 0), 0)}
           </td>
-          <td className="py-3 px-2 text-center font-semibold text-xs text-foreground">
+          <td className="py-3 px-2 text-center font-semibold text-helper text-foreground">
             {country.organizations.reduce((sum, org) => sum + (org.providerTransactionCount || 0), 0)}
             {' / '}
             {country.organizations.reduce((sum, org) => sum + (org.receiverTransactionCount || 0), 0)}
@@ -644,7 +644,7 @@ export default function PartnersPage() {
               <td className="py-3 px-2 text-center font-semibold">
                 {org.reportedActivities || 0}
               </td>
-              <td className="py-3 px-2 text-center font-semibold text-xs text-foreground">
+              <td className="py-3 px-2 text-center font-semibold text-helper text-foreground">
                 {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
               </td>
               <td className="py-3 px-2 text-center font-semibold">
@@ -703,35 +703,35 @@ export default function PartnersPage() {
                       )}
                       <a
                         href={`/activities/${activity.id}`}
-                        className="text-left text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+                        className="text-left text-blue-600 hover:text-blue-800 hover:underline text-body font-medium"
                       >
                         {activity.activity_title || activity.title || 'Untitled Activity'}
                         {activity.acronym && ` (${activity.acronym})`}
                       </a>
                     </div>
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     -
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     -
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     {formatCurrency(activity.financialData?.['2022'] || 0)}
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     {formatCurrency(activity.financialData?.['2023'] || 0)}
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     {formatCurrency(activity.financialData?.['2024'] || 0)}
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     {formatCurrency(activity.financialData?.['2025'] || 0)}
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     {formatCurrency(activity.financialData?.['2026'] || 0)}
                   </td>
-                  <td className="py-2 px-2 text-center text-sm">
+                  <td className="py-2 px-2 text-center text-body">
                     {formatCurrency(activity.financialData?.['2027'] || 0)}
                   </td>
                 </tr>
@@ -837,7 +837,7 @@ export default function PartnersPage() {
           <td className="py-3 px-2 text-center font-semibold">
             {org.reportedActivities || 0}
           </td>
-          <td className="py-3 px-2 text-center font-semibold text-xs text-foreground">
+          <td className="py-3 px-2 text-center font-semibold text-helper text-foreground">
             {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
           </td>
           <td className="py-3 px-2 text-center font-semibold">
@@ -889,36 +889,36 @@ export default function PartnersPage() {
                 )}
                 <a
                   href={`/activities/${activity.id}`}
-                  className="text-left text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+                  className="text-left text-blue-600 hover:text-blue-800 hover:underline text-body font-medium"
                 >
                   {activity.activity_title || activity.title || 'Untitled Activity'}
                   {activity.acronym && ` (${activity.acronym})`}
                 </a>
               </div>
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {/* Individual activity doesn't show these org-level counts */}
               -
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               -
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {formatCurrency(activity.financialData?.['2022'] || 0)}
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {formatCurrency(activity.financialData?.['2023'] || 0)}
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {formatCurrency(activity.financialData?.['2024'] || 0)}
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {formatCurrency(activity.financialData?.['2025'] || 0)}
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {formatCurrency(activity.financialData?.['2026'] || 0)}
             </td>
-            <td className="py-2 px-2 text-center text-sm">
+            <td className="py-2 px-2 text-center text-body">
               {formatCurrency(activity.financialData?.['2027'] || 0)}
             </td>
           </tr>
@@ -1090,7 +1090,7 @@ export default function PartnersPage() {
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                      <table className="w-full text-body">
                         <thead className="bg-surface-muted">
                           <tr className="border-b border-border bg-surface-muted">
                             <th className="text-left py-3 px-2 font-medium text-muted-foreground">
@@ -1199,7 +1199,7 @@ export default function PartnersPage() {
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-body">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border bg-surface-muted">
                               <th className="text-left py-3 px-2 font-medium text-muted-foreground">
@@ -1307,7 +1307,7 @@ export default function PartnersPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-body">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-3 px-2 font-medium text-muted-foreground">
@@ -1455,7 +1455,7 @@ export default function PartnersPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
-                              <Badge variant="secondary" className="text-sm">
+                              <Badge variant="secondary" className="text-body">
                                 {group.totalOrganizations} organizations
                               </Badge>
                             </div>
@@ -1470,7 +1470,7 @@ export default function PartnersPage() {
                               </div>
                             ) : (
                               <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
+                                <table className="w-full text-body">
                                   <thead className="bg-surface-muted">
                                     <tr className="border-b border-border">
                                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">
@@ -1590,7 +1590,7 @@ export default function PartnersPage() {
               )}
               <div>
                 <div className="font-semibold">{selectedOrg?.name}</div>
-                <div className="text-sm text-muted-foreground font-normal">{selectedOrg?.fullName}</div>
+                <div className="text-body text-muted-foreground font-normal">{selectedOrg?.fullName}</div>
               </div>
             </DialogTitle>
             <DialogDescription>View organization details, contact information, and activity involvement.</DialogDescription>
@@ -1601,19 +1601,19 @@ export default function PartnersPage() {
               {/* Organization Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Acronym</label>
+                  <label className="text-body font-medium text-foreground">Acronym</label>
                   <p className="text-foreground">{selectedOrg.acronym || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Type</label>
+                  <label className="text-body font-medium text-foreground">Type</label>
                   <p className="text-foreground">{selectedOrg.organisationType}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Country</label>
+                  <label className="text-body font-medium text-foreground">Country</label>
                   <p className="text-foreground">{selectedOrg.countryRepresented || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Activities</label>
+                  <label className="text-body font-medium text-foreground">Activities</label>
                   <p className="text-foreground">{selectedOrg.activeProjects}</p>
                 </div>
               </div>
@@ -1626,7 +1626,7 @@ export default function PartnersPage() {
                 <div className="grid grid-cols-3 gap-4">
                   {[2022, 2023, 2024, 2025, 2026, 2027].map(year => (
                     <div key={year} className="text-center p-3 bg-muted rounded">
-                      <div className="text-sm text-muted-foreground">{year}</div>
+                      <div className="text-body text-muted-foreground">{year}</div>
                       <div className="font-mono font-medium">
                         {formatCurrency(selectedOrg.financialData[year.toString()] || 0)}
                       </div>

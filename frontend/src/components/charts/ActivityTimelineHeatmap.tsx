@@ -79,7 +79,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 text-xs">
+      <div className="flex items-center gap-4 text-helper">
         <span className="text-muted-foreground">Less</span>
         <div className="flex gap-1">
           <div className="w-3 h-3 bg-muted rounded-sm" />
@@ -94,7 +94,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
       <div className="space-y-3">
         {Object.entries(yearGroups).map(([year, yearMonths]) => (
           <div key={year}>
-            <h4 className="text-sm font-medium mb-2">{year}</h4>
+            <h4 className="text-body font-medium mb-2">{year}</h4>
             <div className="grid grid-cols-12 gap-1">
               {yearMonths.map((month, idx) => (
                 <div
@@ -108,7 +108,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
         ))}
       </div>
       
-      <p className="text-xs text-muted-foreground">
+      <p className="text-helper text-muted-foreground">
         Showing activity coverage across {validActivities.length} activities with date ranges
       </p>
     </div>

@@ -53,9 +53,9 @@ function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
     <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-body text-muted-foreground">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
@@ -288,7 +288,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
       {/* Filters and Export */}
       <div className="flex items-end gap-4 flex-wrap">
           <div className="space-y-2">
-            <Label htmlFor="statusFilter" className="text-xs text-muted-foreground">Status</Label>
+            <Label htmlFor="statusFilter" className="text-helper text-muted-foreground">Status</Label>
             <div className="relative">
               <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="statusFilter" className={`w-[140px] ${statusFilter !== 'all' ? 'pr-8' : ''}`}>
@@ -321,7 +321,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="typeFilter" className="text-xs text-muted-foreground">Type</Label>
+            <Label htmlFor="typeFilter" className="text-helper text-muted-foreground">Type</Label>
             <div className="relative">
               <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="typeFilter" className={`w-[140px] ${typeFilter !== 'all' ? 'pr-8' : ''}`}>
@@ -354,7 +354,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="activityFilter" className="text-xs text-muted-foreground">Activity</Label>
+            <Label htmlFor="activityFilter" className="text-helper text-muted-foreground">Activity</Label>
             <div className="relative">
               <Select value={activityFilter} onValueChange={(v) => { setActivityFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger id="activityFilter" className={`w-[450px] ${activityFilter !== 'all' ? 'pr-8' : ''}`}>
@@ -391,7 +391,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                 checked={groupedView}
                 onCheckedChange={setGroupedView}
               />
-              <Label htmlFor="grouped-view" className="text-sm cursor-pointer whitespace-nowrap">
+              <Label htmlFor="grouped-view" className="text-body cursor-pointer whitespace-nowrap">
                 Group by Activity
               </Label>
             </div>
@@ -405,7 +405,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
                   style={{ width: '250px' }}
                   onClick={() => handleSort('activity')}
                 >
@@ -419,7 +419,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   </div>
                 </TableHead>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
                   style={{ width: '180px' }}
                   onClick={() => handleSort('period_start')}
                 >
@@ -433,7 +433,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   </div>
                 </TableHead>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
                   style={{ width: '120px' }}
                   onClick={() => handleSort('status')}
                 >
@@ -447,7 +447,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   </div>
                 </TableHead>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
                   style={{ width: '110px' }}
                   onClick={() => handleSort('type')}
                 >
@@ -461,7 +461,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   </div>
                 </TableHead>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 text-right cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 text-right cursor-pointer hover:bg-muted/30"
                   style={{ width: '150px' }}
                   onClick={() => handleSort('value')}
                 >
@@ -475,7 +475,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   </div>
                 </TableHead>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"
                   style={{ width: '120px' }}
                   onClick={() => handleSort('value_date')}
                 >
@@ -489,7 +489,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                   </div>
                 </TableHead>
                 <TableHead
-                  className="text-sm font-medium py-3 px-4 text-right cursor-pointer hover:bg-muted/30"
+                  className="text-body font-medium py-3 px-4 text-right cursor-pointer hover:bg-muted/30"
                   style={{ width: '130px' }}
                   onClick={() => handleSort('usd_value')}
                 >
@@ -528,14 +528,14 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                               <span className="ml-1">({group.activity.acronym})</span>
                             )}
                           </Link>
-                          <span className="text-muted-foreground text-sm">
+                          <span className="text-muted-foreground text-body">
                             ({group.budgets.length} budget{group.budgets.length !== 1 ? 's' : ''})
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="py-2 px-4 text-right">
                         <span className="font-medium">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
+                          <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
                           {group.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
@@ -551,17 +551,17 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                             {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                           </span>
                         </TableCell>
-                        <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '120px' }}>
+                        <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '120px' }}>
                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.status}</code>
                           {budget.status === 1 ? 'Indicative' : 'Committed'}
                         </TableCell>
-                        <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '110px' }}>
+                        <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '110px' }}>
                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.type}</code>
                           {budget.type === 1 ? 'Original' : 'Revised'}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
                           <span className="font-medium">
-                            <span className="text-muted-foreground text-xs">{budget.currency}</span>{' '}
+                            <span className="text-muted-foreground text-helper">{budget.currency}</span>{' '}
                             {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                         </TableCell>
@@ -571,7 +571,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '130px' }}>
                           {budget.usd_value != null ? (
                             <span className="font-medium">
-                              <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
+                              <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
                               {budget.usd_value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           ) : (
@@ -602,17 +602,17 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                         {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                       </span>
                     </TableCell>
-                    <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '120px' }}>
+                    <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '120px' }}>
                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.status}</code>
                       {budget.status === 1 ? 'Indicative' : 'Committed'}
                     </TableCell>
-                    <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '110px' }}>
+                    <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '110px' }}>
                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.type}</code>
                       {budget.type === 1 ? 'Original' : 'Revised'}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
                       <span className="font-medium">
-                        <span className="text-muted-foreground text-xs">{budget.currency}</span>{' '}
+                        <span className="text-muted-foreground text-helper">{budget.currency}</span>{' '}
                         {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </span>
                     </TableCell>
@@ -622,7 +622,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '130px' }}>
                       {budget.usd_value != null ? (
                         <span className="font-medium">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span>{' '}
+                          <span className="text-helper text-muted-foreground font-normal">USD</span>{' '}
                           {budget.usd_value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       ) : (
@@ -642,7 +642,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Showing {Math.min(startIndex + 1, sortedBudgets.length)} to {Math.min(endIndex, sortedBudgets.length)} of {sortedBudgets.length} budgets
               </div>
 
@@ -714,7 +714,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Items per page:</label>
+                <label className="text-body text-muted-foreground">Items per page:</label>
                 <Select
                   value={itemsPerPage.toString()}
                   onValueChange={(value) => {

@@ -115,7 +115,7 @@ export function ValidationSummaryPanel({
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-body font-medium text-muted-foreground">
               Total Activities
             </CardTitle>
           </CardHeader>
@@ -126,7 +126,7 @@ export function ValidationSummaryPanel({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-body font-medium text-muted-foreground">
               Total Transactions
             </CardTitle>
           </CardHeader>
@@ -137,7 +137,7 @@ export function ValidationSummaryPanel({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-body font-medium text-muted-foreground">
               Valid Transactions
             </CardTitle>
           </CardHeader>
@@ -154,7 +154,7 @@ export function ValidationSummaryPanel({
         {summary.transactionsNeedingAssignment !== undefined && summary.transactionsNeedingAssignment > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-body font-medium text-muted-foreground">
                 Need Assignment
               </CardTitle>
             </CardHeader>
@@ -171,7 +171,7 @@ export function ValidationSummaryPanel({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-body font-medium text-muted-foreground">
               Success Rate
             </CardTitle>
           </CardHeader>
@@ -266,7 +266,7 @@ export function ValidationSummaryPanel({
                           {issue.count} {issue.count === 1 ? 'issue' : 'issues'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-body text-muted-foreground mt-1">
                         {config.description}
                       </p>
                     </div>

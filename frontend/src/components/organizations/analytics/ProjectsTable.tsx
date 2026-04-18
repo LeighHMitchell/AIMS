@@ -283,25 +283,25 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                           {STATUS_LABELS[project.status] || project.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs">
+                      <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.sectors}>
                           {project.sectors || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs">
+                      <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.developmentPartners}>
                           {project.developmentPartners || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs">
+                      <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.executingAgencies}>
                           {project.executingAgencies || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right text-sm font-medium">
+                      <TableCell className="text-right text-body font-medium">
                         {formatCurrency(project.commitments)}
                       </TableCell>
-                      <TableCell className="text-right text-sm font-medium">
+                      <TableCell className="text-right text-body font-medium">
                         {formatCurrency(project.disbursements)}
                       </TableCell>
                     </TableRow>
@@ -315,7 +315,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               Showing {((currentPage - 1) * itemsPerPage) + 1} to{' '}
               {Math.min(currentPage * itemsPerPage, filteredAndSortedProjects.length)} of{' '}
               {filteredAndSortedProjects.length} projects

@@ -380,7 +380,7 @@ export function SidebarNav({
             <div className="pb-2">
               <Link
                 href="/home"
-                className="group flex items-center gap-2 py-1.5 px-3 ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                className="group flex items-center gap-2 py-1.5 px-3 ml-2 text-helper font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span className={cn(
@@ -429,7 +429,7 @@ export function SidebarNav({
                       <FolderPlus className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
                         <span className="font-medium">Full Activity Editor</span>
-                        <span className="text-xs text-muted-foreground">Complete data entry</span>
+                        <span className="text-helper text-muted-foreground">Complete data entry</span>
                       </div>
                     </Link>
                   </DropdownMenuItem>
@@ -437,7 +437,7 @@ export function SidebarNav({
                     <Zap className="mr-2 h-4 w-4" />
                     <div className="flex flex-col">
                       <span className="font-medium">Quick Add</span>
-                      <span className="text-xs text-muted-foreground">Minimal activity creation</span>
+                      <span className="text-helper text-muted-foreground">Minimal activity creation</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -472,7 +472,7 @@ export function SidebarNav({
                     <Upload className="mr-2 h-4 w-4" />
                     <div className="flex flex-col">
                       <span className="font-medium">Import Single Activity</span>
-                      <span className="text-xs text-muted-foreground">From IATI search, file, URL, or paste</span>
+                      <span className="text-helper text-muted-foreground">From IATI search, file, URL, or paste</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -480,7 +480,7 @@ export function SidebarNav({
                       <Database className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
                         <span className="font-medium">Bulk IATI Import</span>
-                        <span className="text-xs text-muted-foreground">Import multiple activities at once</span>
+                        <span className="text-helper text-muted-foreground">Import multiple activities at once</span>
                       </div>
                     </Link>
                   </DropdownMenuItem>
@@ -534,7 +534,7 @@ export function SidebarNav({
                   <Link
                     href={item.href}
                     className={cn(
-                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-sm font-bold rounded-md",
+                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-body font-bold rounded-md",
                       "transition-colors duration-200",
                       "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                       isActive
@@ -607,7 +607,7 @@ export function SidebarNav({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => toggleGroup(group.label)}
-                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50"
+                          className="flex w-full items-center justify-center px-3 py-2 text-body font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50"
                         >
                           {group.isAnimated ? (
                             <GroupIcon size={20} className="flex-shrink-0" />
@@ -622,7 +622,7 @@ export function SidebarNav({
                     </Tooltip>
                   ) : (
                     <CollapsibleTrigger asChild>
-                      <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50">
+                      <button className="flex w-full items-center justify-between px-3 py-2 text-body font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50">
                         <div className="flex items-center gap-3">
                           {group.isAnimated ? (
                             <GroupIcon size={20} className="flex-shrink-0" />
@@ -684,7 +684,7 @@ export function SidebarNav({
                             <Link
                               href={item.href}
                               className={cn(
-                                "group relative flex items-center justify-between py-2 px-3 text-sm font-medium rounded-md",
+                                "group relative flex items-center justify-between py-2 px-3 text-body font-medium rounded-md",
                                 "transition-colors duration-200",
                                 "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                                 isActive

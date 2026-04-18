@@ -175,7 +175,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
                     <h3 className="font-semibold text-lg">{currentMeta.fileName}</h3>
                     <Badge variant="outline" className="bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]">Ready</Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-body">
                     <div>
                       <span className="text-muted-foreground">File Size:</span>{' '}
                       <span className="font-medium">{formatFileSize(currentMeta.fileSize ?? 0)}</span>
@@ -201,7 +201,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
               <div className="mt-4 pt-4 border-t">
                 <button
                   onClick={() => onFileReady(null as any, null as any)}
-                  className="text-sm text-muted-foreground hover:text-foreground underline"
+                  className="text-body text-muted-foreground hover:text-foreground underline"
                 >
                   Choose a different file
                 </button>
@@ -235,7 +235,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
             <>
               <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
               <p className="text-lg font-medium text-foreground">Processing file...</p>
-              <p className="text-sm text-muted-foreground mt-2">Extracting metadata and computing file hash</p>
+              <p className="text-body text-muted-foreground mt-2">Extracting metadata and computing file hash</p>
             </>
           ) : isDragActive ? (
             <>
@@ -248,8 +248,8 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
               <p className="text-lg font-medium text-foreground">
                 Drop your IATI XML file here
               </p>
-              <p className="text-sm text-muted-foreground mt-2">or click to select file</p>
-              <p className="text-xs text-muted-foreground mt-4">Supports IATI 2.03 format, max 50MB</p>
+              <p className="text-body text-muted-foreground mt-2">or click to select file</p>
+              <p className="text-helper text-muted-foreground mt-4">Supports IATI 2.03 format, max 50MB</p>
             </>
           )}
         </div>
@@ -259,7 +259,7 @@ export default function BulkUploadStep({ onFileReady, currentFile, currentMeta }
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           The bulk import process will guide you through:
-          <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
+          <ol className="list-decimal list-inside mt-2 space-y-1 text-body">
             <li>Upload your IATI XML file</li>
             <li>Validate all activities against IATI standards</li>
             <li>Preview and select activities to import</li>

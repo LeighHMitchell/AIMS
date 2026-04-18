@@ -158,7 +158,7 @@ export function TaskAudienceStep({
     <div className="space-y-6">
       {/* Error Banner */}
       {hasError && (
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-body">
           {errors[0]}
         </div>
       )}
@@ -166,14 +166,14 @@ export function TaskAudienceStep({
       {/* Selection Summary */}
       <div className="p-4 rounded-lg border bg-muted/30">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium">Selected Recipients</span>
+          <span className="text-body font-medium">Selected Recipients</span>
           {totalSelected > 0 && (
             <Badge variant="secondary">{totalSelected} selected</Badge>
           )}
         </div>
 
         {totalSelected === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             No recipients selected. Use the tabs below to add users, organizations, or roles.
           </p>
         ) : (
@@ -261,7 +261,7 @@ export function TaskAudienceStep({
 
         {/* Users Tab */}
         <TabsContent value="users" className="mt-4 space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Select specific users to assign this task to.
           </p>
 
@@ -284,7 +284,7 @@ export function TaskAudienceStep({
           ) : (
             <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
               {filteredUsers.length === 0 ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
+                <div className="p-4 text-center text-body text-muted-foreground">
                   No users found
                 </div>
               ) : (
@@ -309,11 +309,11 @@ export function TaskAudienceStep({
                       />
                       <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage src={user.avatar_url || undefined} alt={displayName} />
-                        <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                        <AvatarFallback className="text-helper">{initials}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{displayName}</div>
-                        <div className="text-xs text-muted-foreground truncate">
+                        <div className="font-medium text-body">{displayName}</div>
+                        <div className="text-helper text-muted-foreground truncate">
                           {user.email}
                         </div>
                       </div>
@@ -327,7 +327,7 @@ export function TaskAudienceStep({
 
         {/* Organizations Tab */}
         <TabsContent value="organizations" className="mt-4 space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Select organisations to assign this task to all their members.
           </p>
 
@@ -350,7 +350,7 @@ export function TaskAudienceStep({
           ) : (
             <div className="border rounded-lg max-h-[300px] overflow-y-auto">
               {filteredOrgsWithMembers.length === 0 && filteredOrgsWithoutMembers.length === 0 ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
+                <div className="p-4 text-center text-body text-muted-foreground">
                   No organisations found
                 </div>
               ) : (
@@ -379,13 +379,13 @@ export function TaskAudienceStep({
                             />
                             <Avatar className="h-8 w-8 flex-shrink-0">
                               <AvatarImage src={org.logo || undefined} alt={org.name} />
-                              <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
+                              <AvatarFallback className="text-helper bg-muted">{initials}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm flex flex-wrap items-baseline gap-x-1.5">
+                              <div className="font-medium text-body flex flex-wrap items-baseline gap-x-1.5">
                                 <span>{org.name}</span>
-                                {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
-                                <span className="text-xs text-muted-foreground">· {memberCount} member{memberCount !== 1 ? 's' : ''}</span>
+                                {org.acronym && <span className="text-helper text-muted-foreground">({org.acronym})</span>}
+                                <span className="text-helper text-muted-foreground">· {memberCount} member{memberCount !== 1 ? 's' : ''}</span>
                               </div>
                             </div>
                           </label>
@@ -399,7 +399,7 @@ export function TaskAudienceStep({
                     <>
                       <div className="border-t-2 border-dashed border-muted-foreground/30 mx-3 my-2" />
                       <div className="px-3 py-2 bg-muted/30">
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-helper text-muted-foreground">
                           These organisations have no members and cannot be selected
                         </p>
                       </div>
@@ -416,13 +416,13 @@ export function TaskAudienceStep({
                               <Checkbox disabled checked={false} />
                               <Avatar className="h-8 w-8 flex-shrink-0">
                                 <AvatarImage src={org.logo || undefined} alt={org.name} />
-                                <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
+                                <AvatarFallback className="text-helper bg-muted">{initials}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm flex flex-wrap items-baseline gap-x-1.5">
+                                <div className="font-medium text-body flex flex-wrap items-baseline gap-x-1.5">
                                   <span>{org.name}</span>
-                                  {org.acronym && <span className="text-xs text-muted-foreground">({org.acronym})</span>}
-                                  <span className="text-xs text-muted-foreground">· 0 members</span>
+                                  {org.acronym && <span className="text-helper text-muted-foreground">({org.acronym})</span>}
+                                  <span className="text-helper text-muted-foreground">· 0 members</span>
                                 </div>
                               </div>
                             </div>
@@ -439,7 +439,7 @@ export function TaskAudienceStep({
 
         {/* Roles Tab */}
         <TabsContent value="roles" className="mt-4 space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Select roles to assign this task to all users with those roles.
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -457,7 +457,7 @@ export function TaskAudienceStep({
                   checked={selectedRoles.includes(role.value)}
                   onCheckedChange={() => toggleRole(role.value)}
                 />
-                <span className="text-sm">{role.label}</span>
+                <span className="text-body">{role.label}</span>
               </label>
             ))}
           </div>

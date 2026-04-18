@@ -105,7 +105,7 @@ export function AskQuestionModal({ isOpen, onClose, sourcePageSlug, sourcePageTi
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {sourcePageTitle && (
-            <div className="rounded-md border bg-surface-muted px-3 py-2 text-xs text-muted-foreground">
+            <div className="rounded-md border bg-surface-muted px-3 py-2 text-helper text-muted-foreground">
               Asking about: <span className="font-medium text-foreground">{sourcePageTitle}</span>
             </div>
           )}
@@ -132,7 +132,7 @@ export function AskQuestionModal({ isOpen, onClose, sourcePageSlug, sourcePageTi
               rows={2}
               className="resize-none"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               This helps our team understand the situation better.
             </p>
           </div>
@@ -145,7 +145,7 @@ export function AskQuestionModal({ isOpen, onClose, sourcePageSlug, sourcePageTi
               onChange={(e) => setTags(e.target.value)}
               placeholder="e.g., activities, transactions, reporting (comma-separated)"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Add relevant tags to help categorize your question.
             </p>
           </div>
@@ -154,7 +154,7 @@ export function AskQuestionModal({ isOpen, onClose, sourcePageSlug, sourcePageTi
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex gap-3">
               <Lightbulb className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <div className="text-body text-blue-800">
                 <p className="font-medium mb-1">Tips for a good question:</p>
                 <ul className="list-disc list-inside space-y-1 text-blue-700">
                   <li>Be specific about what you want to know</li>

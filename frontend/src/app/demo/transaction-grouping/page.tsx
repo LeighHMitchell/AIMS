@@ -67,10 +67,10 @@ export default function TransactionGroupingDemoPage() {
                 {Object.entries(TRANSACTION_COLUMNS).map(([key, column]) => (
                   <div key={key} className={`p-4 rounded-lg border-2 ${getGroupColor(key)}`}>
                     <h3 className="font-semibold mb-2">{column.label}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{column.description}</p>
+                    <p className="text-body text-muted-foreground mb-3">{column.description}</p>
                     <div className="space-y-1">
                       {column.types.map(typeCode => (
-                        <div key={typeCode} className="text-xs">
+                        <div key={typeCode} className="text-helper">
                           <Badge variant="outline" className="mr-2">Type {typeCode}</Badge>
                           {TRANSACTION_TYPE_DEFINITIONS[typeCode as keyof typeof TRANSACTION_TYPE_DEFINITIONS]}
                         </div>
@@ -141,7 +141,7 @@ export default function TransactionGroupingDemoPage() {
                   <p className="text-3xl font-bold text-blue-700 mb-4">{formatCurrency(totals.commitments)}</p>
                   <div className="space-y-2">
                     {groupedTransactions.commitments.map(t => (
-                      <div key={t.id} className="text-sm flex justify-between">
+                      <div key={t.id} className="text-body flex justify-between">
                         <span>{getTransactionTypeLabel(t.transaction_type)}</span>
                         <span className="font-medium">{formatCurrency(parseInt(t.value))}</span>
                       </div>
@@ -154,7 +154,7 @@ export default function TransactionGroupingDemoPage() {
                   <p className="text-3xl font-bold text-green-700 mb-4">{formatCurrency(totals.disbursements)}</p>
                   <div className="space-y-2">
                     {groupedTransactions.disbursements.map(t => (
-                      <div key={t.id} className="text-sm flex justify-between">
+                      <div key={t.id} className="text-body flex justify-between">
                         <span>{getTransactionTypeLabel(t.transaction_type)}</span>
                         <span className="font-medium">{formatCurrency(parseInt(t.value))}</span>
                       </div>
@@ -167,7 +167,7 @@ export default function TransactionGroupingDemoPage() {
                   <p className="text-3xl font-bold text-orange-700 mb-4">{formatCurrency(totals.returns)}</p>
                   <div className="space-y-2">
                     {groupedTransactions.returns.map(t => (
-                      <div key={t.id} className="text-sm flex justify-between">
+                      <div key={t.id} className="text-body flex justify-between">
                         <span>{getTransactionTypeLabel(t.transaction_type)}</span>
                         <span className="font-medium">{formatCurrency(parseInt(t.value))}</span>
                       </div>
@@ -186,7 +186,7 @@ export default function TransactionGroupingDemoPage() {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-semibold mb-2">Key Functions:</h3>
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-body">
 {`import { 
   getTransactionGroup, 
   groupTransactionsByType, 
@@ -206,7 +206,7 @@ const totals = calculateTransactionGroupTotals(transactions)`}
 
               <div>
                 <h3 className="font-semibold mb-2">Benefits:</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <ul className="text-body text-muted-foreground space-y-1">
                   <li>• Aligns with international development finance conventions</li>
                   <li>• Provides clearer understanding of fund flows</li>
                   <li>• Separates commitments from actual spending</li>
@@ -218,7 +218,7 @@ const totals = calculateTransactionGroupTotals(transactions)`}
 
               <div>
                 <h3 className="font-semibold mb-2">Usage in Tables:</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <ul className="text-body text-muted-foreground space-y-1">
                   <li>• Column headers include helpful tooltips</li>
                   <li>• Sorting works across all three columns</li>
                   <li>• CSV export maintains the three-column structure</li>

@@ -183,7 +183,7 @@ export function ContactDropdown({
       <PopoverTrigger
         role="combobox"
         aria-expanded={open}
-        className={cn("w-full justify-between border border-input bg-background px-3 py-2 text-sm ring-offset-background rounded-md hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center", className)}
+        className={cn("w-full justify-between border border-input bg-background px-3 py-2 text-body ring-offset-background rounded-md hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center", className)}
       >
         <span className="truncate">
           {placeholder}
@@ -199,7 +199,7 @@ export function ContactDropdown({
               placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex h-9 w-full rounded-md bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-9 w-full rounded-md bg-transparent py-2 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           
@@ -212,7 +212,7 @@ export function ContactDropdown({
                   setOpen(false);
                   onCreateNew();
                 }}
-                className="w-full flex items-center gap-2 rounded-sm px-2 py-3 text-sm outline-none text-blue-600 hover:bg-blue-50 transition-colors"
+                className="w-full flex items-center gap-2 rounded-sm px-2 py-3 text-body outline-none text-blue-600 hover:bg-blue-50 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 <span className="font-medium">Create New Contact</span>
@@ -220,7 +220,7 @@ export function ContactDropdown({
 
               {/* Loading State */}
               {loading && !hasInitiallyLoaded && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-6 text-center text-body text-muted-foreground">
                   Loading contacts...
                 </div>
               )}
@@ -228,10 +228,10 @@ export function ContactDropdown({
               {/* No Results - with search query */}
               {!loading && filteredContacts.length === 0 && searchQuery && (
                 <div className="py-6 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No contacts found matching "{searchQuery}"
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try a different search or create a new contact
                   </div>
                 </div>
@@ -240,10 +240,10 @@ export function ContactDropdown({
               {/* No Contacts at all - no search query */}
               {!loading && contacts.length === 0 && !searchQuery && hasInitiallyLoaded && (
                 <div className="py-6 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No contacts yet
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Type a name to search, or click &ldquo;Create New Contact&rdquo; to add someone
                   </div>
                 </div>
@@ -252,14 +252,14 @@ export function ContactDropdown({
               {/* Contact List */}
               {!loading && filteredContacts.length > 0 && (
                 <>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground">
                     Existing Contacts
                   </div>
                   {filteredContacts.map((contact) => (
                     <button
                       key={contact.id || contact.email}
                       onClick={() => handleSelectContact(contact)}
-                      className="w-full flex items-start gap-3 rounded-sm px-2 py-3 text-sm outline-none hover:bg-accent transition-colors"
+                      className="w-full flex items-start gap-3 rounded-sm px-2 py-3 text-body outline-none hover:bg-accent transition-colors"
                     >
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         {contact.avatar_url ? (
@@ -273,27 +273,27 @@ export function ContactDropdown({
                         )}
                       </div>
                       <div className="flex-1 min-w-0 text-left">
-                        <div className="font-medium text-sm">
+                        <div className="font-medium text-body">
                           {getContactDisplay(contact)}
                         </div>
                         {contact.position && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             {contact.position}
                           </div>
                         )}
                         {contact.organisationName && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             {contact.organisationName}
                           </div>
                         )}
                         {contact.email && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             {contact.email}
                           </div>
                         )}
                       </div>
                       {contact.source === 'user' && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           System User
                         </Badge>
                       )}

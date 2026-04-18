@@ -345,7 +345,7 @@ export function DataClinicBudgets() {
     return (
       <div className="flex items-center gap-2">
         {value ? (
-          <span className="text-sm">
+          <span className="text-body">
             {field === 'type' && BUDGET_TYPE_LABELS[String(value) as keyof typeof BUDGET_TYPE_LABELS] ?
               BUDGET_TYPE_LABELS[String(value) as keyof typeof BUDGET_TYPE_LABELS] :
               field === 'status' && BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] ?
@@ -356,7 +356,7 @@ export function DataClinicBudgets() {
             }
           </span>
         ) : (
-          <Badge variant="destructive" className="text-xs">
+          <Badge variant="destructive" className="text-helper">
             <AlertCircle className="h-3 w-3 mr-1" />
             Missing
           </Badge>
@@ -427,7 +427,7 @@ export function DataClinicBudgets() {
                 className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelectedFilter(gap.field)}
               >
-                <p className="text-sm text-muted-foreground">{gap.label}</p>
+                <p className="text-body text-muted-foreground">{gap.label}</p>
                 <p className="text-2xl font-semibold">{gap.count}</p>
               </div>
             ))}
@@ -479,7 +479,7 @@ export function DataClinicBudgets() {
           {isSuperUser && selectedBudgets.size > 0 && (
             <div className="mt-4 p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-4">
-                <p className="text-sm font-medium">
+                <p className="text-body font-medium">
                   {selectedBudgets.size} budgets selected
                 </p>
                 <Select value={bulkEditField} onValueChange={setBulkEditField}>
@@ -532,28 +532,28 @@ export function DataClinicBudgets() {
                   <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
                     <div className="flex items-center gap-1">Activity {getSortIcon('activity', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
                     <div className="flex items-center gap-1">Start Date {getSortIcon('start', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('end')}>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('end')}>
                     <div className="flex items-center gap-1">End Date {getSortIcon('end', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
                     <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
                     <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('currency')}>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('currency')}>
                     <div className="flex items-center gap-1">Currency {getSortIcon('currency', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-right text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                  <th className={`p-4 text-right text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
                     <div className="flex items-center justify-end gap-1">Value {getSortIcon('value', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('valueDate')}>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('valueDate')}>
                     <div className="flex items-center gap-1">Value Date {getSortIcon('valueDate', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`p-4 text-right text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('usd')}>
+                  <th className={`p-4 text-right text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('usd')}>
                     <div className="flex items-center justify-end gap-1">USD Value {getSortIcon('usd', sortField, sortDirection)}</div>
                   </th>
                 </tr>
@@ -607,7 +607,7 @@ export function DataClinicBudgets() {
                         {budget.currency ? (
                           <span className="text-sm font-mono">{budget.currency}</span>
                         ) : (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>
@@ -621,11 +621,11 @@ export function DataClinicBudgets() {
                       </td>
                       <td className="p-4 text-right">
                         {budget.value_usd || budget.usd_value ? (
-                          <span className="text-sm font-medium">
+                          <span className="text-body font-medium">
                             {formatCurrency(budget.value_usd || budget.usd_value || 0, 'USD')}
                           </span>
                         ) : (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>

@@ -712,11 +712,11 @@ export function SectorDisbursementOverTime({
       <div className="bg-white border rounded-lg shadow-lg min-w-[300px] max-w-[420px]">
         {/* Header - Fixed */}
         <div className="p-3 pb-2 border-b bg-surface-muted rounded-t-lg">
-          <span className="font-semibold text-sm">{label}</span>
+          <span className="font-semibold text-body">{label}</span>
           {customYears.find(cy => cy.id === calendarType)?.name && (
-            <p className="text-xs text-muted-foreground">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+            <p className="text-helper text-muted-foreground">{customYears.find(cy => cy.id === calendarType)!.name}</p>
           )}
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-helper text-muted-foreground mt-1">
             Total: <span className="font-bold text-foreground">{formatCurrencyCompact(total)}</span>
           </div>
         </div>
@@ -748,11 +748,11 @@ export function SectorDisbursementOverTime({
                       <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground flex-shrink-0">
                         {entry.dataKey}
                       </span>
-                      <span className="text-sm text-foreground">
+                      <span className="text-body text-foreground">
                         {item?.name}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-foreground flex-shrink-0">
+                    <span className="text-body font-semibold text-foreground flex-shrink-0">
                       {formatCurrencyCompact(entry.value)}
                     </span>
                   </div>
@@ -767,9 +767,9 @@ export function SectorDisbursementOverTime({
                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
                       {group.groupCode}
                     </span>
-                    <span className="text-xs font-semibold text-foreground">{group.groupName}</span>
+                    <span className="text-helper font-semibold text-foreground">{group.groupName}</span>
                   </div>
-                  <span className="text-xs font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
+                  <span className="text-helper font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
                 </div>
                 <div className="ml-3 space-y-1">
                   {Array.from(group.categories.values())
@@ -784,11 +784,11 @@ export function SectorDisbursementOverTime({
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0">
                             {cat.categoryCode}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-helper text-muted-foreground">
                             {cat.categoryName}
                           </span>
                         </div>
-                        <span className="text-xs font-medium text-foreground flex-shrink-0">
+                        <span className="text-helper font-medium text-foreground flex-shrink-0">
                           {formatCurrencyCompact(cat.categoryTotal)}
                         </span>
                       </div>
@@ -805,9 +805,9 @@ export function SectorDisbursementOverTime({
                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
                       {group.groupCode}
                     </span>
-                    <span className="text-xs font-semibold text-foreground">{group.groupName}</span>
+                    <span className="text-helper font-semibold text-foreground">{group.groupName}</span>
                   </div>
-                  <span className="text-xs font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
+                  <span className="text-helper font-bold text-foreground">{formatCurrencyCompact(group.groupTotal)}</span>
                 </div>
                 <div className="ml-3 space-y-1">
                   {Array.from(group.categories.values())
@@ -819,9 +819,9 @@ export function SectorDisbursementOverTime({
                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                               {category.categoryCode}
                             </span>
-                            <span className="text-xs text-muted-foreground">{category.categoryName}</span>
+                            <span className="text-helper text-muted-foreground">{category.categoryName}</span>
                           </div>
-                          <span className="text-xs font-medium text-foreground">{formatCurrencyCompact(category.categoryTotal)}</span>
+                          <span className="text-helper font-medium text-foreground">{formatCurrencyCompact(category.categoryTotal)}</span>
                         </div>
                         <div className="ml-3 space-y-0.5">
                           {category.items
@@ -833,11 +833,11 @@ export function SectorDisbursementOverTime({
                                     className="w-2 h-2 rounded-sm flex-shrink-0 mt-0.5"
                                     style={{ backgroundColor: item.color }}
                                   />
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-helper text-muted-foreground">
                                     {item.name}
                                   </span>
                                 </div>
-                                <span className="text-xs font-medium text-foreground flex-shrink-0">
+                                <span className="text-helper font-medium text-foreground flex-shrink-0">
                                   {formatCurrencyCompact(item.value)}
                                 </span>
                               </div>
@@ -855,7 +855,7 @@ export function SectorDisbursementOverTime({
         {/* Scroll indicator */}
         {hasMoreContent && (
           <div className="px-3 py-1.5 border-t bg-muted text-center rounded-b-lg">
-            <span className="text-xs text-muted-foreground">↓ Scroll for more</span>
+            <span className="text-helper text-muted-foreground">↓ Scroll for more</span>
           </div>
         )}
       </div>
@@ -891,7 +891,7 @@ export function SectorDisbursementOverTime({
       return <div className="h-full w-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
-      return <div className="h-full w-full flex items-center justify-center text-destructive"><p className="text-sm">{error}</p></div>
+      return <div className="h-full w-full flex items-center justify-center text-destructive"><p className="text-body">{error}</p></div>
     }
     if (timeSeriesData.length === 0) {
       return (
@@ -1013,7 +1013,7 @@ export function SectorDisbursementOverTime({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                          <span className="text-helper font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
@@ -1066,7 +1066,7 @@ export function SectorDisbursementOverTime({
                   {/* Date Range Indicator */}
                   {localDateRange?.from && localDateRange?.to &&
                    !isNaN(localDateRange.from.getTime()) && !isNaN(localDateRange.to.getTime()) && (
-                    <span className="text-xs text-muted-foreground text-center">
+                    <span className="text-helper text-muted-foreground text-center">
                       {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                     </span>
                   )}
@@ -1148,7 +1148,7 @@ export function SectorDisbursementOverTime({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="p-3 w-[340px]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-foreground">
+                    <span className="text-helper font-medium text-foreground">
                       Filter {aggregationLevel === 'group' ? 'Sector Categories' : aggregationLevel === 'category' ? 'Sectors' : 'Sub-sectors'}
                     </span>
                     <div className="flex gap-1">
@@ -1175,7 +1175,7 @@ export function SectorDisbursementOverTime({
                       placeholder="Search by code or name..."
                       value={filterSearch}
                       onChange={(e) => setFilterSearch(e.target.value)}
-                      className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full pl-7 pr-3 py-1.5 text-helper border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
 
@@ -1196,7 +1196,7 @@ export function SectorDisbursementOverTime({
                   {/* Flat list of items at current level */}
                   <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
                     {filteredItems.length === 0 ? (
-                      <div className="text-center text-xs text-muted-foreground py-4">
+                      <div className="text-center text-helper text-muted-foreground py-4">
                         No matching items found
                       </div>
                     ) : (
@@ -1218,7 +1218,7 @@ export function SectorDisbursementOverTime({
                             <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                               {item.code}
                             </span>
-                            <span className="text-sm text-foreground leading-tight">
+                            <span className="text-body text-foreground leading-tight">
                               {item.name}
                             </span>
                           </button>
@@ -1287,7 +1287,7 @@ export function SectorDisbursementOverTime({
               <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-xs text-muted-foreground">Use the Filter button to select items to compare</p>
+                <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
               </div>
             ) : timeSeriesData.length === 0 ? (
               <div className="h-80 flex items-center justify-center text-muted-foreground">
@@ -1332,7 +1332,7 @@ export function SectorDisbursementOverTime({
               <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-xs text-muted-foreground">Use the Filter button to select items to compare</p>
+                <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
               </div>
             ) : timeSeriesData.length === 0 ? (
               <div className="h-80 flex items-center justify-center text-muted-foreground">
@@ -1378,7 +1378,7 @@ export function SectorDisbursementOverTime({
               <div className="h-80 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
-                <p className="text-xs text-muted-foreground">Use the Filter button to select items to compare</p>
+                <p className="text-helper text-muted-foreground">Use the Filter button to select items to compare</p>
               </div>
             ) : (
             <div className="overflow-auto max-h-[500px]">
@@ -1394,7 +1394,7 @@ export function SectorDisbursementOverTime({
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground mb-1">
                             {item.code}
                           </span>
-                          <span className="text-xs">{item.name}</span>
+                          <span className="text-helper">{item.name}</span>
                         </div>
                       </TableHead>
                     ))}
@@ -1466,7 +1466,7 @@ export function SectorDisbursementOverTime({
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows how sector disbursements have changed over time. Toggle between planned and actual disbursements, and view data at Sector Category, Sector, or Sub-sector levels.
           Use the stacked area chart to see cumulative totals across sectors, or switch to line view to compare individual sector trends. Hover over any point to see a detailed breakdown by sector for that year.
         </p>

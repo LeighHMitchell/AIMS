@@ -16,7 +16,7 @@ export function DashboardFilters({
 }: DashboardFiltersProps) {
   return (
     <div className="flex items-center gap-4 mb-6">
-      <span className="text-sm font-medium text-muted-foreground">Show:</span>
+      <span className="text-body font-medium text-muted-foreground">Show:</span>
       <Tabs value={measure} onValueChange={(v) => onMeasureChange(v as MeasureType)}>
         <TabsList className="bg-muted">
           <TabsTrigger

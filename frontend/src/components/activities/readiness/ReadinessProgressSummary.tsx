@@ -73,25 +73,25 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   <span className="font-medium">{progress.completed}</span> Completed
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   <span className="font-medium">{progress.in_progress}</span> In Progress
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   <span className="font-medium">{progress.not_completed}</span> Not Started
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <MinusCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   <span className="font-medium">{progress.not_required}</span> Not Required
                 </span>
               </div>
@@ -118,7 +118,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                 <div 
                   key={stage.id}
                   className={cn(
-                    "flex items-center justify-between p-2 rounded-lg text-sm",
+                    "flex items-center justify-between p-2 rounded-lg text-body",
                     stage.signoff 
                       ? "bg-green-100" 
                       : stage.progress.percentage === 100 
@@ -145,7 +145,7 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      "text-xs",
+                      "text-helper",
                       stage.signoff ? "text-green-700" : "text-muted-foreground"
                     )}>
                       {stage.signoff 
@@ -168,10 +168,10 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-yellow-800">
+              <p className="text-body font-medium text-yellow-800">
                 All items are complete, but stages need to be signed off
               </p>
-              <p className="text-xs text-yellow-700 mt-1">
+              <p className="text-helper text-yellow-700 mt-1">
                 A designated official must sign off on each stage to formally certify completion.
               </p>
             </div>
@@ -182,10 +182,10 @@ export function ReadinessProgressSummary({ progress, stages }: ReadinessProgress
           <div className="mt-4 p-3 bg-green-100 border border-green-200 rounded-lg flex items-start gap-2">
             <Award className="h-5 w-5 text-[hsl(var(--success-icon))] mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-green-800">
+              <p className="text-body font-medium text-green-800">
                 Readiness checklist is complete
               </p>
-              <p className="text-xs text-green-700 mt-1">
+              <p className="text-helper text-green-700 mt-1">
                 All items have been completed and all stages have been signed off.
               </p>
             </div>

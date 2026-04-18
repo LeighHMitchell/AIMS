@@ -76,7 +76,7 @@ export function SDGAnalyticsFilters({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Organization Filter */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Organization</Label>
+          <Label className="text-helper text-muted-foreground">Organization</Label>
           <Select
             value={organizationId}
             onValueChange={onOrganizationChange}
@@ -98,7 +98,7 @@ export function SDGAnalyticsFilters({
 
         {/* Date Range Filter */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Date Range</Label>
+          <Label className="text-helper text-muted-foreground">Date Range</Label>
           <div className="flex gap-2">
             <Popover>
               <PopoverTrigger asChild>
@@ -149,7 +149,7 @@ export function SDGAnalyticsFilters({
 
         {/* Metric Selection */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Metric</Label>
+          <Label className="text-helper text-muted-foreground">Metric</Label>
           <Select value={metric} onValueChange={(value: 'activities' | 'budget' | 'planned') => onMetricChange(value)}>
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -179,7 +179,7 @@ export function SDGAnalyticsFilters({
 
         {/* SDG Selection */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">SDG Selection</Label>
+          <Label className="text-helper text-muted-foreground">SDG Selection</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start">
@@ -191,13 +191,13 @@ export function SDGAnalyticsFilters({
             <PopoverContent className="w-80 p-4" align="start">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">Select SDGs</h4>
+                  <h4 className="font-medium text-body">Select SDGs</h4>
                   {selectedSdgs.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={clearSdgSelection}
-                      className="h-7 text-xs"
+                      className="h-7 text-helper"
                     >
                       Clear
                     </Button>
@@ -219,8 +219,8 @@ export function SDGAnalyticsFilters({
                         onChange={() => toggleSdg(goal.id)}
                         className="rounded"
                       />
-                      <span className="text-xs font-medium">SDG {goal.id}</span>
-                      <span className="text-xs text-muted-foreground truncate">{goal.name}</span>
+                      <span className="text-helper font-medium">SDG {goal.id}</span>
+                      <span className="text-helper text-muted-foreground truncate">{goal.name}</span>
                     </div>
                   ))}
                 </div>
@@ -233,7 +233,7 @@ export function SDGAnalyticsFilters({
       {/* Selected SDGs Display */}
       {selectedSdgs.length > 0 && (
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-muted-foreground">Selected:</span>
+          <span className="text-body text-muted-foreground">Selected:</span>
           {selectedSdgs.map((sdgId) => {
             const goal = SDG_GOALS.find(g => g.id === sdgId)
             return (

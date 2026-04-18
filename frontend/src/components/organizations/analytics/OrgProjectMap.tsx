@@ -16,7 +16,7 @@ const EmbeddedAtlasMap = dynamic(() => import('@/components/maps-v2/EmbeddedAtla
     <div className="h-[500px] flex items-center justify-center bg-muted rounded-lg">
       <div className="text-center">
         <Skeleton className="h-8 w-8 rounded-full mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Loading map...</p>
+        <p className="text-body text-muted-foreground">Loading map...</p>
       </div>
     </div>
   ),
@@ -135,7 +135,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
           <div className="h-[500px] flex flex-col items-center justify-center text-muted-foreground bg-muted rounded-lg">
             <MapPin className="h-12 w-12 mb-4 text-slate-300" />
             <p className="text-lg font-medium">No project locations available</p>
-            <p className="text-sm mt-1">
+            <p className="text-body mt-1">
               Projects with geographic coordinates will appear on this map
             </p>
           </div>
@@ -151,7 +151,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
           <CardTitle className="text-lg font-semibold text-foreground">
             Project Locations Map
           </CardTitle>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             {locations.length} location{locations.length !== 1 ? 's' : ''}
           </div>
         </div>

@@ -284,7 +284,7 @@ export function StaleTransactionsTable() {
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-2" />
               <p className="text-muted-foreground font-medium">Failed to load data</p>
-              <p className="text-sm text-muted-foreground mt-2">{error}</p>
+              <p className="text-body text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
         </CardContent>
@@ -316,7 +316,7 @@ export function StaleTransactionsTable() {
         {/* Time Period Filter */}
         <div className="flex items-center gap-4 mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">No transaction in:</span>
+            <span className="text-body text-muted-foreground">No transaction in:</span>
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Select period" />
@@ -340,7 +340,7 @@ export function StaleTransactionsTable() {
             <div className="text-center">
               <Clock className="h-12 w-12 text-green-400 mx-auto mb-2" />
               <p className="text-muted-foreground font-medium">All caught up!</p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-body text-muted-foreground mt-2">
                 All ongoing activities have transactions within the last {TIME_PERIOD_OPTIONS.find(o => o.value === selectedPeriod)?.label.toLowerCase()}
               </p>
             </div>
@@ -429,7 +429,7 @@ export function StaleTransactionsTable() {
                               {activity.reporting_org_acronym}
                             </span>
                           )}
-                          <span className="block text-xs text-muted-foreground break-words">
+                          <span className="block text-helper text-muted-foreground break-words">
                             {activity.reporting_org_name}
                           </span>
                         </div>
@@ -443,12 +443,12 @@ export function StaleTransactionsTable() {
                           <span className="text-foreground">
                             {format(parseISO(activity.last_transaction_date), 'MMM d, yyyy')}
                           </span>
-                          <span className="block text-xs text-muted-foreground">
+                          <span className="block text-helper text-muted-foreground">
                             {activity.days_since_transaction} days ago
                           </span>
                         </div>
                       ) : (
-                        <Badge variant="destructive" className="text-xs">
+                        <Badge variant="destructive" className="text-helper">
                           No transactions
                         </Badge>
                       )}
@@ -479,7 +479,7 @@ export function StaleTransactionsTable() {
               </TableBody>
             </Table>
             {sortedActivities.length > 100 && (
-              <div className="p-3 text-center text-sm text-muted-foreground border-t">
+              <div className="p-3 text-center text-body text-muted-foreground border-t">
                 Showing 100 of {sortedActivities.length} activities
               </div>
             )}

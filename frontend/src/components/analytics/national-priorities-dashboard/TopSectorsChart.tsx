@@ -213,13 +213,13 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
     return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">
+            <p className="font-semibold text-foreground text-body">
               {item.sectorCode && <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs mr-1.5">{item.sectorCode}</span>}
               {item.sectorName}
             </p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
                   <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
@@ -416,11 +416,11 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
             <span className="text-xs font-mono bg-muted px-1 rounded text-foreground">{item.sectorCode}</span>
           )}
           {expanded ? (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-helper text-muted-foreground">
               {item.sectorName}
             </span>
           ) : (
-            <span className="text-xs text-muted-foreground truncate max-w-[60px]" title={item.sectorName}>
+            <span className="text-helper text-muted-foreground truncate max-w-[60px]" title={item.sectorName}>
               {item.sectorName.length > 8 ? `${item.sectorName.slice(0, 8)}...` : item.sectorName}
             </span>
           )}
@@ -459,7 +459,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -522,7 +522,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
       <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-xs">
+        <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -546,7 +546,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Top Sectors
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Top 5 DAC sectors by financial allocation
               </CardDescription>
             </div>
@@ -564,7 +564,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows the top 5 DAC sectors by financial allocation, with remaining sectors aggregated into an "Others" category. Use the metric selector to switch between budgets, planned disbursements, commitments, and disbursements to see different views of sector-level funding.
           </p>
         </CardContent>

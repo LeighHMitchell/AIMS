@@ -125,16 +125,16 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
               )}
             </div>
             {description && (
-              <p className="text-sm text-muted-foreground ml-6 mb-2">{description}</p>
+              <p className="text-body text-muted-foreground ml-6 mb-2">{description}</p>
             )}
             <div className="ml-6 space-y-2">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-body">
                 <span className="text-muted-foreground w-20">Your data:</span>
                 <div className={`flex-1 ${hasLocalData ? 'font-medium' : ''}`}>
                   {formatValue(yourValue, field)}
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-body">
                 <span className="text-muted-foreground w-20">IATI data:</span>
                 <div className={`flex-1 ${hasIatiData ? 'font-medium text-blue-600' : ''}`}>
                   {formatValue(iatiValue, field)}
@@ -187,10 +187,10 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
             {/* Show details for arrays */}
             {field === 'sectors' && iatiArray.length > 0 && (
               <div className="ml-6 mt-3 space-y-2">
-                <p className="text-sm text-muted-foreground mb-2">IATI sectors to import:</p>
+                <p className="text-body text-muted-foreground mb-2">IATI sectors to import:</p>
                 <div className="bg-white rounded p-3 space-y-1">
                   {iatiArray.map((sector: any, idx: number) => (
-                    <div key={idx} className="text-sm flex items-center justify-between">
+                    <div key={idx} className="text-body flex items-center justify-between">
                       <span>
                         <span className="font-medium">{sector.code}</span> - {sector.name}
                       </span>
@@ -203,10 +203,10 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
             
             {field === 'participating_orgs' && iatiArray.length > 0 && (
               <div className="ml-6 mt-3 space-y-2">
-                <p className="text-sm text-muted-foreground mb-2">IATI organizations to import:</p>
+                <p className="text-body text-muted-foreground mb-2">IATI organizations to import:</p>
                 <div className="bg-white rounded p-3 space-y-1">
                   {iatiArray.map((org: any, idx: number) => (
-                    <div key={idx} className="text-sm flex items-center justify-between">
+                    <div key={idx} className="text-body flex items-center justify-between">
                       <span className="font-medium">{org.name || org.ref}</span>
                       <Badge variant="secondary">{org.roleLabel}</Badge>
                     </div>
@@ -217,7 +217,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
             
             {field === 'transactions' && (
               <div className="ml-6 mt-3">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   {iatiArray.length > 0 
                     ? `${iatiArray.length} transactions available from IATI`
                     : 'No transactions available from IATI'}
@@ -296,7 +296,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
             )}
             
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 Select the fields you want to import from IATI. Fields with differences or new data are highlighted.
               </p>
               <Button
@@ -347,7 +347,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
         
         <div className="border-t px-6 py-4 bg-muted">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               {selectedFields.length === 0 ? (
                 'No fields selected'
               ) : (

@@ -272,9 +272,9 @@ export function DataClinicDuplicates() {
                 please run the following SQL migration in your Supabase database:
               </p>
               <div className="bg-muted p-4 rounded-lg">
-                <code className="text-sm">frontend/sql/create_duplicates_tables.sql</code>
+                <code className="text-body">frontend/sql/create_duplicates_tables.sql</code>
               </div>
-              <p className="text-sm text-muted-foreground mt-4">
+              <p className="text-body text-muted-foreground mt-4">
                 After running the migration, click &quot;Refresh Detection&quot; to scan for duplicates.
               </p>
               {isSuperUser && (
@@ -349,7 +349,7 @@ export function DataClinicDuplicates() {
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2 h-2 rounded-full bg-destructive/100" />
-                  <p className="text-sm text-muted-foreground">High Confidence</p>
+                  <p className="text-body text-muted-foreground">High Confidence</p>
                 </div>
                 <p className="text-2xl font-semibold">{currentStats?.byConfidence.high || 0}</p>
               </div>
@@ -360,7 +360,7 @@ export function DataClinicDuplicates() {
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2 h-2 rounded-full bg-orange-500" />
-                  <p className="text-sm text-muted-foreground">Medium</p>
+                  <p className="text-body text-muted-foreground">Medium</p>
                 </div>
                 <p className="text-2xl font-semibold">{currentStats?.byConfidence.medium || 0}</p>
               </div>
@@ -371,7 +371,7 @@ export function DataClinicDuplicates() {
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                  <p className="text-sm text-muted-foreground">Low / Review</p>
+                  <p className="text-body text-muted-foreground">Low / Review</p>
                 </div>
                 <p className="text-2xl font-semibold">{currentStats?.byConfidence.low || 0}</p>
               </div>
@@ -383,7 +383,7 @@ export function DataClinicDuplicates() {
                   className={`p-4 rounded-lg border cursor-pointer hover:bg-muted/50 ${detectionTypeFilter === type ? 'ring-2 ring-primary' : ''}`}
                   onClick={() => setDetectionTypeFilter(detectionTypeFilter === type ? 'all' : type)}
                 >
-                  <p className="text-sm text-muted-foreground mb-1">{DETECTION_TYPE_LABELS[type]}</p>
+                  <p className="text-body text-muted-foreground mb-1">{DETECTION_TYPE_LABELS[type]}</p>
                   <p className="text-2xl font-semibold">
                     {(currentStats?.byDetectionType as any)?.[type] || 0}
                   </p>
@@ -396,7 +396,7 @@ export function DataClinicDuplicates() {
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">
+                  <span className="text-body font-medium text-blue-800">
                     {stats.activities.suggestedLinks} cross-organization pairs may be related activities (funder/implementer)
                   </span>
                 </div>
@@ -405,7 +405,7 @@ export function DataClinicDuplicates() {
 
             {/* Last detection time */}
             {stats?.lastDetectedAt && (
-              <p className="text-xs text-muted-foreground mt-4">
+              <p className="text-helper text-muted-foreground mt-4">
                 Last detection: {new Date(stats.lastDetectedAt).toLocaleString()}
               </p>
             )}
@@ -456,7 +456,7 @@ export function DataClinicDuplicates() {
                 </Button>
               )}
 
-              <div className="ml-auto text-sm text-muted-foreground">
+              <div className="ml-auto text-body text-muted-foreground">
                 Showing {duplicates.length} duplicate pairs
               </div>
             </div>

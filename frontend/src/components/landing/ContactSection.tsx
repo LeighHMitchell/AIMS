@@ -116,7 +116,7 @@ export function ContactSection() {
                       <h4 className="mb-1 font-semibold text-foreground transition-colors group-hover:text-foreground">
                         {audience.label}
                       </h4>
-                      <p className="text-sm text-muted-foreground">{audience.description}</p>
+                      <p className="text-body text-muted-foreground">{audience.description}</p>
                     </div>
                   </div>
                 </Card>

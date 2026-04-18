@@ -154,7 +154,7 @@ export function ExcelImportModal({
             <DialogTitle className="flex items-center gap-3">
               <FileSpreadsheet className="h-5 w-5" />
               Import from Excel
-              <Badge variant="outline" className="text-xs font-normal capitalize">
+              <Badge variant="outline" className="text-helper font-normal capitalize">
                 {area.replace('_', ' ')}
               </Badge>
             </DialogTitle>
@@ -163,23 +163,23 @@ export function ExcelImportModal({
           {/* Stats badges in preview mode */}
           {stats && (
             <div className="flex items-center gap-3 mt-3">
-              <div className="flex items-center gap-1.5 text-xs">
+              <div className="flex items-center gap-1.5 text-helper">
                 <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />
                 <span className="text-green-700">{stats.valid} matched</span>
               </div>
               {stats.warnings > 0 && (
-                <div className="flex items-center gap-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-helper">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-amber-600">{stats.warnings} needs review</span>
                 </div>
               )}
               {stats.errors > 0 && (
-                <div className="flex items-center gap-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-helper">
                   <AlertCircle className="h-3.5 w-3.5 text-destructive" />
                   <span className="text-destructive">{stats.errors} unmatched</span>
                 </div>
               )}
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 {stats.populated} of {preview.length} fields populated
               </div>
             </div>
@@ -230,7 +230,7 @@ export function ExcelImportModal({
               <p className="text-lg font-medium text-muted-foreground mb-1">
                 Drop an Excel file here or click to browse
               </p>
-              <p className="text-sm text-muted-foreground/70">
+              <p className="text-body text-muted-foreground/70">
                 Only .xlsx files are accepted. Download the template below for the correct format.
               </p>
             </div>

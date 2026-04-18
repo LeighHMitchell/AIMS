@@ -108,7 +108,7 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
         )}
         
         <div className="p-2">
-          <div className="font-semibold text-xs text-foreground mb-1.5 line-clamp-2">
+          <div className="font-semibold text-helper text-foreground mb-1.5 line-clamp-2">
             {location.activity?.title || 'Untitled Activity'}
           </div>
           
@@ -140,19 +140,19 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
         {location.activity?.id ? (
           <a 
             href={`/activities/${location.activity.id}`}
-            className="block font-bold text-sm text-foreground mb-2 leading-tight hover:text-muted-foreground cursor-pointer transition-colors"
+            className="block font-bold text-body text-foreground mb-2 leading-tight hover:text-muted-foreground cursor-pointer transition-colors"
           >
             {location.activity?.title || 'Untitled Activity'}
           </a>
         ) : (
-          <h3 className="font-bold text-sm text-foreground mb-2 leading-tight">
+          <h3 className="font-bold text-body text-foreground mb-2 leading-tight">
             {location.activity?.title || 'Untitled Activity'}
           </h3>
         )}
         
         <hr className="border-border mb-2" />
         
-        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+        <div className="grid grid-cols-2 gap-2 text-helper mb-2">
           <div>
             <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Organisation</div>
             <div className="text-foreground">{location.activity?.organization_name || '-'}</div>
@@ -170,7 +170,7 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
         </div>
         
         {location.name && (
-          <div className="text-xs mb-2">
+          <div className="text-helper mb-2">
             <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Location</div>
             <div className="text-foreground">{location.name}</div>
             {location.description && (
@@ -180,7 +180,7 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
         )}
         
         {location.activity?.total_budget !== undefined && location.activity.total_budget > 0 && (
-          <div className="text-xs mb-2">
+          <div className="text-helper mb-2">
             <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Budget</div>
             <div className="font-semibold text-foreground">{formatCompactCurrency(location.activity.total_budget)}</div>
           </div>
@@ -283,7 +283,7 @@ export default function EmbeddedAtlasMap({
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="font-medium text-muted-foreground">No locations to display</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Add locations to see them on the map
           </p>
         </div>

@@ -285,7 +285,7 @@ export function SectorTimeSeriesPanel() {
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 text-destructive" />
               <p className="text-destructive font-medium">Failed to load data</p>
-              <p className="text-sm text-destructive mt-1">{error}</p>
+              <p className="text-body text-destructive mt-1">{error}</p>
               <Button 
                 variant="outline" 
                 size="sm" 

@@ -123,7 +123,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
     <Card className="border-border">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-foreground">
+          <CardTitle className="text-body font-medium text-foreground">
             <Calendar className="h-4 w-4 inline mr-2 text-muted-foreground" />
             {formatDate(period.period_start)} — {formatDate(period.period_end)}
           </CardTitle>
@@ -190,7 +190,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                     </div>
                     
                     {targetComment && (
-                      <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                      <p className="text-body text-muted-foreground bg-muted p-2 rounded">
                         {targetComment}
                       </p>
                     )}
@@ -199,7 +199,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                       <div className="flex flex-wrap gap-1">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         {period.target_locations.map((loc: LocationReference) => (
-                          <Badge key={loc.id} variant="outline" className="text-xs">
+                          <Badge key={loc.id} variant="outline" className="text-helper">
                             {loc.location_ref}
                           </Badge>
                         ))}
@@ -210,7 +210,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                       <div className="flex flex-wrap gap-1">
                         <Layers className="h-4 w-4 text-muted-foreground" />
                         {period.target_dimensions.map((dim: Dimension) => (
-                          <Badge key={dim.id} variant="outline" className="text-xs bg-purple-50">
+                          <Badge key={dim.id} variant="outline" className="text-helper bg-purple-50">
                             {dim.name}: {dim.value}
                           </Badge>
                         ))}
@@ -225,7 +225,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                            className="flex items-center gap-2 text-body text-blue-600 hover:text-blue-700"
                           >
                             <FileText className="h-4 w-4" />
                             {getLocalizedString(doc.title) || 'Document'}
@@ -245,7 +245,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                     </div>
                     
                     {actualComment && (
-                      <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                      <p className="text-body text-muted-foreground bg-muted p-2 rounded">
                         {actualComment}
                       </p>
                     )}
@@ -254,7 +254,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                       <div className="flex flex-wrap gap-1">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         {period.actual_locations.map((loc: LocationReference) => (
-                          <Badge key={loc.id} variant="outline" className="text-xs">
+                          <Badge key={loc.id} variant="outline" className="text-helper">
                             {loc.location_ref}
                           </Badge>
                         ))}
@@ -265,7 +265,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                       <div className="flex flex-wrap gap-1">
                         <Layers className="h-4 w-4 text-muted-foreground" />
                         {period.actual_dimensions.map((dim: Dimension) => (
-                          <Badge key={dim.id} variant="outline" className="text-xs bg-green-50">
+                          <Badge key={dim.id} variant="outline" className="text-helper bg-green-50">
                             {dim.name}: {dim.value}
                           </Badge>
                         ))}
@@ -280,7 +280,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                            className="flex items-center gap-2 text-body text-blue-600 hover:text-blue-700"
                           >
                             <FileText className="h-4 w-4" />
                             {getLocalizedString(doc.title) || 'Document'}
@@ -320,7 +320,7 @@ export function PeriodsDetailPanel({ periods = [], measure, className }: Periods
       {/* Timeline visualization */}
       <Card className="border-border">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-foreground">
+          <CardTitle className="text-body font-medium text-foreground">
             Progress Timeline
           </CardTitle>
         </CardHeader>
@@ -331,7 +331,7 @@ export function PeriodsDetailPanel({ periods = [], measure, className }: Periods
 
       {/* Period cards */}
       <div>
-        <h4 className="text-sm font-medium text-foreground mb-3">
+        <h4 className="text-body font-medium text-foreground mb-3">
           Period Details ({periods.length})
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

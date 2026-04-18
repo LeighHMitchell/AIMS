@@ -480,13 +480,13 @@ export function FinancingTermsTab({
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Primary Interest Rate</div>
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Primary Interest Rate</div>
                         <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '-'}
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Secondary Interest Rate</div>
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Secondary Interest Rate</div>
                         <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '-'}
                         </div>
@@ -505,8 +505,8 @@ export function FinancingTermsTab({
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Repayment Type</div>
-                        <div className="text-sm font-semibold text-foreground">
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Repayment Type</div>
+                        <div className="text-body font-semibold text-foreground">
                           {loanTermsForm.repayment_type_code ? 
                             getRepaymentTypeLabel(loanTermsForm.repayment_type_code) : 
                             '-'
@@ -514,8 +514,8 @@ export function FinancingTermsTab({
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">Repayment Plan</div>
-                        <div className="text-sm font-semibold text-foreground">
+                        <div className="text-helper font-medium text-muted-foreground mb-1">Repayment Plan</div>
+                        <div className="text-body font-semibold text-foreground">
                           {loanTermsForm.repayment_plan_code ? 
                             getRepaymentPlanLabel(loanTermsForm.repayment_plan_code) : 
                             '-'
@@ -538,8 +538,8 @@ export function FinancingTermsTab({
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">Commitment Date</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">Commitment Date</div>
+                      <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.commitment_date ? formatDate(loanTermsForm.commitment_date) : '-'}
                       </div>
                     </div>
@@ -555,8 +555,8 @@ export function FinancingTermsTab({
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">First Repayment</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">First Repayment</div>
+                      <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.repayment_first_date ? formatDate(loanTermsForm.repayment_first_date) : '-'}
                       </div>
                     </div>
@@ -572,8 +572,8 @@ export function FinancingTermsTab({
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">Final Repayment</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">Final Repayment</div>
+                      <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.repayment_final_date ? formatDate(loanTermsForm.repayment_final_date) : '-'}
                       </div>
                     </div>
@@ -591,8 +591,8 @@ export function FinancingTermsTab({
                       <FileText className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-muted-foreground mb-1">OECD CRS Flags</div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-helper font-medium text-muted-foreground mb-1">OECD CRS Flags</div>
+                      <div className="text-body font-semibold text-foreground">
                         {selectedCRSFlags.length > 0 ? `${selectedCRSFlags.length} selected` : '-'}
                       </div>
                     </div>
@@ -635,7 +635,7 @@ export function FinancingTermsTab({
           {/* Loan Status Table */}
           {loanStatuses.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted">
                   <tr className="border-b bg-muted">
                     <th className="text-left p-2 font-medium">Year</th>

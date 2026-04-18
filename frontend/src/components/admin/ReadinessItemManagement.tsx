@@ -356,7 +356,7 @@ export function ReadinessItemManagement({
                           Conditional
                         </Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground">All projects</span>
+                        <span className="text-helper text-muted-foreground">All projects</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -501,17 +501,17 @@ export function ReadinessItemManagement({
 
             {/* Applicable Conditions */}
             <div className="border rounded-lg p-4 space-y-4">
-              <h4 className="font-medium text-sm">Applicable Conditions</h4>
-              <p className="text-xs text-muted-foreground">
+              <h4 className="font-medium text-body">Applicable Conditions</h4>
+              <p className="text-helper text-muted-foreground">
                 Set conditions for when this item should appear. Leave empty to show for all projects.
               </p>
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label className="text-xs">Financing Types (show only for these)</Label>
+                  <Label className="text-helper">Financing Types (show only for these)</Label>
                   <div className="flex flex-wrap gap-2">
                     {FINANCING_TYPE_OPTIONS.map((option) => (
-                      <label key={option.value} className="flex items-center gap-1 text-sm">
+                      <label key={option.value} className="flex items-center gap-1 text-body">
                         <Checkbox
                           checked={(formData.applicable_conditions?.financing_type as string[] || []).includes(option.value)}
                           onCheckedChange={(checked) => {
@@ -529,10 +529,10 @@ export function ReadinessItemManagement({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">Modalities (show only for these)</Label>
+                  <Label className="text-helper">Modalities (show only for these)</Label>
                   <div className="flex flex-wrap gap-2">
                     {FINANCING_MODALITY_OPTIONS.map((option) => (
-                      <label key={option.value} className="flex items-center gap-1 text-sm">
+                      <label key={option.value} className="flex items-center gap-1 text-body">
                         <Checkbox
                           checked={(formData.applicable_conditions?.modality as string[] || []).includes(option.value)}
                           onCheckedChange={(checked) => {
@@ -557,7 +557,7 @@ export function ReadinessItemManagement({
                       updateConditions('is_infrastructure', checked ? true : undefined);
                     }}
                   />
-                  <Label htmlFor="is_infrastructure" className="text-sm">
+                  <Label htmlFor="is_infrastructure" className="text-body">
                     Only for infrastructure projects
                   </Label>
                 </div>

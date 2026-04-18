@@ -64,7 +64,7 @@ function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: numb
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-muted-foreground">{data.value.toFixed(1)}%</p>
+          <p className="text-body text-muted-foreground">{data.value.toFixed(1)}%</p>
         </div>
       );
     }
@@ -287,7 +287,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     %
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Fixed assets, infrastructure
                 </p>
               </div>
@@ -321,7 +321,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     %
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Operational, running costs
                 </p>
               </div>
@@ -335,7 +335,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
             )}
 
             <Collapsible open={showExamples} onOpenChange={setShowExamples} className="pt-4">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+              <CollapsibleTrigger className="flex items-center gap-2 text-body font-medium">
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
                   showExamples && "rotate-180"
@@ -343,7 +343,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                 Examples by Project Type
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2">
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-4">
+                <ul className="text-body text-muted-foreground space-y-1 list-disc list-inside ml-4">
                   <li>Infrastructure projects (roads, buildings): typically 80-100% capital</li>
                   <li>Equipment procurement: typically 60-90% capital</li>
                   <li>Training programs: typically 0-10% capital</li>

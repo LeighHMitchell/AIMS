@@ -209,16 +209,16 @@ export function TaskDetailModal({
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline" className={cn('text-xs', getPriorityColor(task.priority))}>
+                    <Badge variant="outline" className={cn('text-helper', getPriorityColor(task.priority))}>
                       {getPriorityLabel(task.priority)}
                     </Badge>
                     {task.task_type && (
-                      <Badge variant="secondary" className="text-xs capitalize">
+                      <Badge variant="secondary" className="text-helper capitalize">
                         {task.task_type}
                       </Badge>
                     )}
                     {isOverdue && (
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge variant="destructive" className="text-helper">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         Overdue
                       </Badge>
@@ -262,7 +262,7 @@ export function TaskDetailModal({
                     <div className="grid grid-cols-2 gap-4">
                       <Card>
                         <CardContent className="pt-4">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                          <div className="flex items-center gap-2 text-body text-muted-foreground mb-1">
                             <Calendar className="h-4 w-4" />
                             Deadline
                           </div>
@@ -273,7 +273,7 @@ export function TaskDetailModal({
                             {deadline ? format(deadline, 'PPP') : 'No deadline'}
                           </p>
                           {daysUntil !== null && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {isOverdue
                                 ? `${Math.abs(daysUntil)} days overdue`
                                 : daysUntil === 0
@@ -286,20 +286,20 @@ export function TaskDetailModal({
 
                       <Card>
                         <CardContent className="pt-4">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                          <div className="flex items-center gap-2 text-body text-muted-foreground mb-1">
                             <User className="h-4 w-4" />
                             Created by
                           </div>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={task.creator?.avatar_url || undefined} />
-                              <AvatarFallback className="text-xs">
+                              <AvatarFallback className="text-helper">
                                 {getTaskUserDisplayName(task.creator).slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <span className="font-medium">{getTaskUserDisplayName(task.creator)}</span>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-helper text-muted-foreground mt-1">
                             {task.created_at && formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
                           </p>
                         </CardContent>
@@ -309,7 +309,7 @@ export function TaskDetailModal({
                     {/* Delivery Settings */}
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Delivery Settings</CardTitle>
+                        <CardTitle className="text-body">Delivery Settings</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-center gap-4">
@@ -318,7 +318,7 @@ export function TaskDetailModal({
                               'h-4 w-4',
                               task.send_in_app ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground'
                             )} />
-                            <span className="text-sm">
+                            <span className="text-body">
                               In-app: {task.send_in_app ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
@@ -327,14 +327,14 @@ export function TaskDetailModal({
                               'h-4 w-4',
                               task.send_email ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground'
                             )} />
-                            <span className="text-sm">
+                            <span className="text-body">
                               Email: {task.send_email ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
                           {task.reminder_days > 0 && (
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
+                              <span className="text-body">
                                 Reminder: {task.reminder_days} days before
                               </span>
                             </div>
@@ -347,7 +347,7 @@ export function TaskDetailModal({
                     {task.entity_type && (
                       <Card>
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-sm">Linked To</CardTitle>
+                          <CardTitle className="text-body">Linked To</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ export function TaskDetailModal({
                                     </Avatar>
                                     <div>
                                       <p className="font-medium">{assigneeName}</p>
-                                      <p className="text-xs text-muted-foreground">
+                                      <p className="text-helper text-muted-foreground">
                                         {assignment.assignee?.email}
                                       </p>
                                     </div>
@@ -400,11 +400,11 @@ export function TaskDetailModal({
                                   <div className="text-right">
                                     <Badge
                                       variant="outline"
-                                      className={cn('text-xs', getStatusColor(assignment.status))}
+                                      className={cn('text-helper', getStatusColor(assignment.status))}
                                     >
                                       {getStatusLabel(assignment.status)}
                                     </Badge>
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <p className="text-helper text-muted-foreground mt-1">
                                       {assignment.completed_at
                                         ? `Completed ${formatDistanceToNow(new Date(assignment.completed_at), { addSuffix: true })}`
                                         : `Assigned ${formatDistanceToNow(new Date(assignment.created_at), { addSuffix: true })}`}
@@ -413,7 +413,7 @@ export function TaskDetailModal({
                                 </div>
                                 {(assignment.completion_note || assignment.declined_reason) && (
                                   <div className="mt-3 pt-3 border-t">
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-body text-muted-foreground">
                                       {assignment.completion_note || assignment.declined_reason}
                                     </p>
                                   </div>
@@ -453,8 +453,8 @@ export function TaskDetailModal({
                                     {getFileIcon(attachment.file_type)}
                                   </div>
                                   <div>
-                                    <p className="font-medium text-sm">{attachment.file_name}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="font-medium text-body">{attachment.file_name}</p>
+                                    <p className="text-helper text-muted-foreground">
                                       {formatFileSize(attachment.file_size)} &bull;{' '}
                                       {attachment.uploaded_at &&
                                         formatDistanceToNow(new Date(attachment.uploaded_at), { addSuffix: true })}

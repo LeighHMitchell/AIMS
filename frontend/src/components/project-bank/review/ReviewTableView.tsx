@@ -51,14 +51,14 @@ export function ReviewTableView({ projects, columns, onRowClick, emptyMessage }:
     return (
       <div className="text-center py-12 text-muted-foreground">
         <Inbox className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-        <p className="text-sm">{emptyMessage || "No projects found"}</p>
+        <p className="text-body">{emptyMessage || "No projects found"}</p>
       </div>
     )
   }
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
+      <table className="w-full text-body">
         <thead className="bg-surface-muted">
           <tr className="bg-surface-muted border-b border-border">
             {columns.map(col => (

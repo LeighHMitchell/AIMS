@@ -178,7 +178,7 @@ export function RecurrenceSelector({
         <div className="space-y-6 py-4">
           {/* Quick Presets */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Quick Presets</Label>
+            <Label className="text-body font-medium">Quick Presets</Label>
             <div className="flex flex-wrap gap-2">
               {presets.slice(0, 5).map((preset) => (
                 <Button
@@ -204,7 +204,7 @@ export function RecurrenceSelector({
           {/* Frequency */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Frequency</Label>
+              <Label className="text-body font-medium">Frequency</Label>
               <Select
                 value={formData.frequency}
                 onValueChange={(value) =>
@@ -230,7 +230,7 @@ export function RecurrenceSelector({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Every</Label>
+              <Label className="text-body font-medium">Every</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -240,7 +240,7 @@ export function RecurrenceSelector({
                   onChange={(e) => updateFormData({ interval: parseInt(e.target.value) || 1 })}
                   className="w-20"
                 />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   {formData.frequency === 'daily' && 'day(s)'}
                   {formData.frequency === 'weekly' && 'week(s)'}
                   {formData.frequency === 'monthly' && 'month(s)'}
@@ -254,7 +254,7 @@ export function RecurrenceSelector({
           {/* Weekly: Day of Week */}
           {formData.frequency === 'weekly' && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">On these days</Label>
+              <Label className="text-body font-medium">On these days</Label>
               <div className="flex gap-1">
                 {WEEKDAYS.map((day) => (
                   <button
@@ -262,7 +262,7 @@ export function RecurrenceSelector({
                     type="button"
                     onClick={() => toggleWeekday(day.value)}
                     className={cn(
-                      'flex-1 py-2 px-1 rounded text-sm font-medium transition-colors',
+                      'flex-1 py-2 px-1 rounded text-body font-medium transition-colors',
                       formData.by_weekday?.includes(day.value)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -278,7 +278,7 @@ export function RecurrenceSelector({
           {/* Monthly/Quarterly: Day of Month */}
           {['monthly', 'quarterly'].includes(formData.frequency) && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">On day</Label>
+              <Label className="text-body font-medium">On day</Label>
               <Select
                 value={String(formData.by_month_day?.[0] || '')}
                 onValueChange={(value) =>
@@ -303,7 +303,7 @@ export function RecurrenceSelector({
           {formData.frequency === 'yearly' && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Month</Label>
+                <Label className="text-body font-medium">Month</Label>
                 <Select
                   value={String(formData.by_month?.[0] || '')}
                   onValueChange={(value) =>
@@ -323,7 +323,7 @@ export function RecurrenceSelector({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Day</Label>
+                <Label className="text-body font-medium">Day</Label>
                 <Select
                   value={String(formData.by_month_day?.[0] || '')}
                   onValueChange={(value) =>
@@ -347,7 +347,7 @@ export function RecurrenceSelector({
 
           {/* Generation Time */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
+            <Label className="text-body font-medium flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Time of Day
             </Label>
@@ -356,14 +356,14 @@ export function RecurrenceSelector({
               value={formData.generation_time || '09:00'}
               onChange={(e) => updateFormData({ generation_time: e.target.value })}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Tasks will be generated at this time
             </p>
           </div>
 
           {/* End Condition */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Ends</Label>
+            <Label className="text-body font-medium">Ends</Label>
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
@@ -373,7 +373,7 @@ export function RecurrenceSelector({
                     updateFormData({ count: undefined, end_date: undefined });
                   }}
                 />
-                <span className="text-sm">Never</span>
+                <span className="text-body">Never</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
@@ -383,7 +383,7 @@ export function RecurrenceSelector({
                     updateFormData({ end_date: undefined });
                   }}
                 />
-                <span className="text-sm">After</span>
+                <span className="text-body">After</span>
                 {endType === 'count' && (
                   <Input
                     type="number"
@@ -394,7 +394,7 @@ export function RecurrenceSelector({
                     className="w-20 h-8"
                   />
                 )}
-                <span className="text-sm">occurrences</span>
+                <span className="text-body">occurrences</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
@@ -404,7 +404,7 @@ export function RecurrenceSelector({
                     updateFormData({ count: undefined });
                   }}
                 />
-                <span className="text-sm">On date</span>
+                <span className="text-body">On date</span>
                 {endType === 'date' && (
                   <Input
                     type="date"
@@ -422,13 +422,13 @@ export function RecurrenceSelector({
           <div className="p-4 rounded-lg bg-muted/50 border">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Preview</span>
+              <span className="text-body font-medium">Preview</span>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-body text-muted-foreground mb-2">
               {formatRecurrenceRule(formData)}
             </p>
             {preview.length > 0 && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 <span className="font-medium">Next dates: </span>
                 {preview.map((date, i) => (
                   <span key={i}>

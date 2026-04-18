@@ -72,7 +72,7 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
         <div className="space-y-3">
           <div className="flex items-baseline justify-between">
             <h3 className="text-3xl font-bold text-foreground">{completionPercentage}%</h3>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-body text-muted-foreground">
               {filledFields.length} of {totalFields} fields completed
             </span>
           </div>
@@ -103,10 +103,10 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
           </Alert>
         ) : (
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-foreground">Missing Fields:</h4>
+            <h4 className="text-body font-medium text-foreground">Missing Fields:</h4>
             <ul className="space-y-2">
               {missingFields.map((field) => (
-                <li key={field.key} className="flex items-start gap-2 text-sm">
+                <li key={field.key} className="flex items-start gap-2 text-body">
                   <Circle className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">{field.label}</span>
                 </li>
@@ -118,7 +118,7 @@ export const ActivityCompletion: React.FC<ActivityCompletionProps> = ({ activity
         {/* Information Section */}
         <div className="bg-muted rounded-lg p-4 flex gap-3">
           <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This completion score reflects the number of key data fields filled out in your 
             activity form. Completing all fields improves transparency, validation, and 
             analytics quality.

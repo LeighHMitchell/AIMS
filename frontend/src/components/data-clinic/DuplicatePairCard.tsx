@@ -93,12 +93,12 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
           <div className="min-w-0">
             <Link
               href={`/activities/${entity.id}`}
-              className="font-medium text-sm hover:underline line-clamp-2"
+              className="font-medium text-body hover:underline line-clamp-2"
             >
               {entity.title_narrative || 'Untitled Activity'}
             </Link>
             {entity.acronym && (
-              <span className="text-xs text-muted-foreground ml-2">({entity.acronym})</span>
+              <span className="text-helper text-muted-foreground ml-2">({entity.acronym})</span>
             )}
           </div>
         </div>
@@ -110,7 +110,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
         </Link>
       </div>
 
-      <div className="space-y-1 text-xs text-muted-foreground">
+      <div className="space-y-1 text-helper text-muted-foreground">
         {entity.iati_identifier && (
           <div>
             <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{entity.iati_identifier}</span>
@@ -140,7 +140,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
   const renderOrganizationEntity = (entity: any, isPrimary: boolean) => (
     <div className="flex-1 p-4">
       {isPrimary && (
-        <div className="flex items-center gap-1 text-xs text-blue-600 mb-2">
+        <div className="flex items-center gap-1 text-helper text-blue-600 mb-2">
           <Star className="h-3 w-3 fill-current" />
           Recommended Primary (Score: {entity.score})
         </div>
@@ -159,12 +159,12 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
           <div className="min-w-0">
             <Link
               href={`/organizations/${entity.id}`}
-              className="font-medium text-sm hover:underline line-clamp-2"
+              className="font-medium text-body hover:underline line-clamp-2"
             >
               {entity.name || 'Unknown Organization'}
             </Link>
             {entity.acronym && (
-              <span className="text-xs text-muted-foreground ml-2">({entity.acronym})</span>
+              <span className="text-helper text-muted-foreground ml-2">({entity.acronym})</span>
             )}
           </div>
         </div>
@@ -176,7 +176,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
         </Link>
       </div>
 
-      <div className="space-y-1 text-xs text-muted-foreground">
+      <div className="space-y-1 text-helper text-muted-foreground">
         {entity.iati_org_id && (
           <div>
             <code className="bg-muted px-1 rounded">{entity.iati_org_id}</code>
@@ -219,12 +219,12 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
                 {pair.confidence.charAt(0).toUpperCase() + pair.confidence.slice(1)} Confidence
               </Badge>
               
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body font-medium text-foreground">
                 {DETECTION_TYPE_LABELS[pair.detection_type]}
               </span>
 
               {pair.similarity_score && pair.similarity_score < 1 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-helper text-muted-foreground">
                   ({Math.round(pair.similarity_score * 100)}% similar)
                 </span>
               )}
@@ -239,7 +239,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs text-xs">
+                      <p className="max-w-xs text-helper">
                         These activities appear to be reported by different organizations 
                         (e.g., funder and implementer). Consider linking them as related 
                         activities rather than treating as duplicates.
@@ -265,7 +265,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
 
           {/* Match Details (collapsed by default) */}
           {expanded && pair.match_details && (
-            <div className="px-4 py-2 bg-muted/30 text-xs border-b">
+            <div className="px-4 py-2 bg-muted/30 text-helper border-b">
               <span className="font-medium">Match Details: </span>
               {pair.match_details.field && (
                 <span>Field: <code>{pair.match_details.field}</code></span>
@@ -284,7 +284,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
             }
             
             <div className="flex items-center justify-center px-2 bg-muted/20">
-              <div className="text-muted-foreground text-xs font-medium rotate-90 whitespace-nowrap">
+              <div className="text-muted-foreground text-helper font-medium rotate-90 whitespace-nowrap">
                 vs
               </div>
             </div>
@@ -298,7 +298,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
           {/* Actions */}
           <Separator />
           <div className="px-4 py-3 flex items-center justify-between bg-muted/20">
-            <div className="text-xs text-muted-foreground">
+            <div className="text-helper text-muted-foreground">
               Detected: {new Date(pair.detected_at).toLocaleDateString()}
             </div>
 

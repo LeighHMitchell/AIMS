@@ -261,7 +261,7 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
       <Card>
         <CardHeader>
           <CardTitle>Working Activity Editor - Guaranteed Save Indicators</CardTitle>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-body text-muted-foreground mt-2">
             This example demonstrates working save indicators with guaranteed behavior.
           </p>
         </CardHeader>
@@ -306,8 +306,8 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
                   >
                     <input {...bannerDropzone.getInputProps()} />
                     <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-sm font-medium text-foreground">Click or drag banner image</p>
-                    <p className="text-xs text-muted-foreground">Max 5MB</p>
+                    <p className="text-body font-medium text-foreground">Click or drag banner image</p>
+                    <p className="text-helper text-muted-foreground">Max 5MB</p>
                   </div>
                 )}
               </SimpleSaveIndicator>
@@ -346,8 +346,8 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
                   >
                     <input {...iconDropzone.getInputProps()} />
                     <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm font-medium text-foreground text-center">Click or drag icon</p>
-                    <p className="text-xs text-muted-foreground">Max 2MB</p>
+                    <p className="text-body font-medium text-foreground text-center">Click or drag icon</p>
+                    <p className="text-helper text-muted-foreground">Max 2MB</p>
                   </div>
                 )}
               </SimpleSaveIndicator>
@@ -445,7 +445,7 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
           {/* Status Display */}
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
             <h4 className="font-medium text-green-800 mb-2">✅ Fields with Guaranteed Green Ticks:</h4>
-            <ul className="text-sm text-green-700 space-y-1">
+            <ul className="text-body text-green-700 space-y-1">
               <li>• <strong>UUID:</strong> Always shows green tick (auto-generated)</li>
               <li>• <strong>Activity Status:</strong> Always shows green tick (prefilled with Pipeline)</li>
               <li>• <strong>Activity Scope:</strong> Always shows green tick (prefilled with National)</li>

@@ -396,7 +396,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
               <div className="border rounded-lg">
                 <div className="p-6 pb-2">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Project Configuration</h3>
-                  <p className="text-sm text-muted-foreground mt-1.5">
+                  <p className="text-body text-muted-foreground mt-1.5">
                     Configure the project type to see applicable checklist items
                   </p>
                 </div>
@@ -465,7 +465,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                     <FileCheck className="h-5 w-5" />
                     Endorsement Details
                   </h3>
-                  <p className="text-sm text-muted-foreground mt-1.5">
+                  <p className="text-body text-muted-foreground mt-1.5">
                     Complete this section to formally validate the activity after the checklist is complete
                   </p>
                 </div>
@@ -480,7 +480,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                     <>
                       {/* Save indicator */}
                       {endorsementSaving && (
-                        <div className="flex items-center gap-2 text-blue-600 text-sm">
+                        <div className="flex items-center gap-2 text-blue-600 text-body">
                           <Clock className="h-4 w-4 animate-spin" />
                           <span>Saving...</span>
                         </div>
@@ -518,7 +518,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                                     <IconComponent className={`h-4 w-4 mt-0.5 flex-shrink-0 ${iconColor}`} />
                                     <div>
                                       <div className="font-medium">{option.label}</div>
-                                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                                      <div className="text-helper text-muted-foreground">{option.description}</div>
                                     </div>
                                   </div>
                                 </SelectItem>
@@ -544,7 +544,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality }: Readiness
                           </SelectTrigger>
                           <SelectContent>
                             {governmentOrgs.length === 0 && !loadingOrgs ? (
-                              <div className="p-2 text-sm text-muted-foreground">No government organizations found</div>
+                              <div className="p-2 text-body text-muted-foreground">No government organizations found</div>
                             ) : (
                               governmentOrgs.map((org) => (
                                 <SelectItem key={org.id} value={org.name}>

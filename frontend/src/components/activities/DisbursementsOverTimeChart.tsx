@@ -149,7 +149,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
           </div>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
-              <Label htmlFor="data-mode" className="text-sm">
+              <Label htmlFor="data-mode" className="text-body">
                 {dataMode === 'planned' ? 'Planned' : 'Actual'}
               </Label>
               <Switch
@@ -274,7 +274,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                   {data.sectors.map(sector => (
                     <TableHead key={sector.sectorCode} className="text-right">
                       {sector.sectorName}
-                      <div className="text-xs text-muted-foreground font-normal">
+                      <div className="text-helper text-muted-foreground font-normal">
                         {sector.sectorCode}
                       </div>
                     </TableHead>

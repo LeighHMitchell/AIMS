@@ -101,7 +101,7 @@ export function ReadinessDocumentUpload({
 
   return (
     <div className="space-y-3">
-      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+      <Label className="text-body font-medium text-foreground flex items-center gap-2">
         <FileText className="h-4 w-4" />
         Supporting Document
       </Label>
@@ -124,7 +124,7 @@ export function ReadinessDocumentUpload({
                       <Input
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="h-7 text-sm"
+                        className="h-7 text-body"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') saveEdit(doc.id);
@@ -140,7 +140,7 @@ export function ReadinessDocumentUpload({
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-foreground truncate">
+                      <p className="text-body font-medium text-foreground truncate">
                         {doc.file_name}
                       </p>
                       {!readOnly && (
@@ -156,7 +156,7 @@ export function ReadinessDocumentUpload({
                       )}
                     </div>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-helper text-muted-foreground">
                     {formatFileSize(doc.file_size)}
                     {doc.uploaded_at && (
                       <> • Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}</>
@@ -211,20 +211,20 @@ export function ReadinessDocumentUpload({
           {isUploading ? (
             <div className="space-y-2">
               <Loader2 className="h-6 w-6 mx-auto text-muted-foreground animate-spin" />
-              <p className="text-sm text-muted-foreground">Uploading...</p>
+              <p className="text-body text-muted-foreground">Uploading...</p>
             </div>
           ) : isDragActive ? (
             <div className="space-y-2">
               <Upload className="h-6 w-6 mx-auto text-foreground" />
-              <p className="text-sm font-medium text-foreground">Drop file here</p>
+              <p className="text-body font-medium text-foreground">Drop file here</p>
             </div>
           ) : (
             <div className="space-y-2">
               <Upload className="h-6 w-6 mx-auto text-muted-foreground/60" />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {hasDocuments ? 'Add another document' : 'Drag & drop evidence document'}
                 <br />
-                <span className="text-xs text-muted-foreground/60">
+                <span className="text-helper text-muted-foreground/60">
                   or click to browse (PDF, Word, Images - max 10MB)
                   {isRequired && ' · Recommended for completed items'}
                 </span>

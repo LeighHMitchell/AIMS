@@ -221,9 +221,9 @@ export function TimelinessChart({ dateRange, filters, refreshKey }: TimelinessCh
                 return (
                   <div className="bg-slate-800 text-white p-3 rounded-lg shadow-lg">
                     <p className="font-medium">{data.donor}</p>
-                    <p className="text-sm">On-time: {Number.isFinite(data.onTimePercentage) ? data.onTimePercentage : 0}%</p>
-                    <p className="text-sm">Avg delay: {Number.isFinite(data.averageDelay) ? data.averageDelay : 0} days</p>
-                    <p className="text-sm">Total: {Number.isFinite(data.totalTransactions) ? data.totalTransactions : 0} transactions</p>
+                    <p className="text-body">On-time: {Number.isFinite(data.onTimePercentage) ? data.onTimePercentage : 0}%</p>
+                    <p className="text-body">Avg delay: {Number.isFinite(data.averageDelay) ? data.averageDelay : 0} days</p>
+                    <p className="text-body">Total: {Number.isFinite(data.totalTransactions) ? data.totalTransactions : 0} transactions</p>
                   </div>
                 )
               }

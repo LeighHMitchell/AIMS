@@ -114,7 +114,7 @@ export function OrganizationDropdownWithLogo({
           {getOrganizationDisplay(org)}
         </div>
         {getIatiCountryLine(org) && (
-          <div className="text-xs text-muted-foreground truncate mt-0.5">
+          <div className="text-helper text-muted-foreground truncate mt-0.5">
             {getIatiCountryLine(org)}
           </div>
         )}
@@ -164,7 +164,7 @@ export function OrganizationDropdownWithLogo({
                   {getOrganizationDisplay(selectedOrg)}
                 </span>
                 {getIatiCountryLine(selectedOrg) && (
-                  <span className="text-sm text-muted-foreground truncate">
+                  <span className="text-body text-muted-foreground truncate">
                     {getIatiCountryLine(selectedOrg)}
                   </span>
                 )}
@@ -175,7 +175,7 @@ export function OrganizationDropdownWithLogo({
               <span className="truncate font-medium text-base text-yellow-600">
                 {fallbackRef}
               </span>
-              <span className="text-sm text-yellow-500 truncate">
+              <span className="text-body text-yellow-500 truncate">
                 Organization not found in list
               </span>
             </span>
@@ -201,7 +201,7 @@ export function OrganizationDropdownWithLogo({
                 placeholder="Search organizations..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full h-9 px-3 text-body rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 autoFocus
               />
             </div>
@@ -214,7 +214,7 @@ export function OrganizationDropdownWithLogo({
             onTouchMove={(e) => e.stopPropagation()}
           >
             {filteredOrgs.length === 0 ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
+              <div className="p-4 text-center text-body text-muted-foreground">
                 No organization found.
               </div>
             ) : (

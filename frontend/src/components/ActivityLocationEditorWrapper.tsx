@@ -62,7 +62,7 @@ export default function ActivityLocationEditorWrapper({
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Label htmlFor="activity-scope" className="text-sm font-medium">
+            <Label htmlFor="activity-scope" className="text-body font-medium">
               Geographic Scope *
             </Label>
             <Select
@@ -80,7 +80,7 @@ export default function ActivityLocationEditorWrapper({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Defines the geographic level of the activity according to IATI standards
             </p>
           </div>

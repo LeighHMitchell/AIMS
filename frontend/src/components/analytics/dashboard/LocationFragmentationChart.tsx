@@ -111,7 +111,7 @@ export function LocationFragmentationChart({
       <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
         {/* Measure Dropdown */}
         <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
-          <SelectTrigger className="w-[140px] h-9 text-sm bg-white">
+          <SelectTrigger className="w-[140px] h-9 text-body bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -122,7 +122,7 @@ export function LocationFragmentationChart({
 
         {/* Dimension Dropdown - Location levels */}
         <Select defaultValue="municipality">
-          <SelectTrigger className="w-[180px] h-9 text-sm bg-white">
+          <SelectTrigger className="w-[180px] h-9 text-body bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -143,7 +143,7 @@ export function LocationFragmentationChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This heatmap shows how each donor distributes their funding across geographic locations. Darker cells indicate a higher concentration of a donor's funding in that location. Use the swap axes button to view the data from the location perspective instead.
       </p>
     </div>

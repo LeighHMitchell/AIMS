@@ -181,7 +181,7 @@ export function ActionsRequiredPanel({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Failed to load actions: {error}</p>
+          <p className="text-body text-destructive">Failed to load actions: {error}</p>
         </CardContent>
       </Card>
     );
@@ -204,7 +204,7 @@ export function ActionsRequiredPanel({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="text-lg font-medium text-foreground">All caught up!</p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               You have no pending actions at the moment.
             </p>
           </div>
@@ -258,10 +258,10 @@ export function ActionsRequiredPanel({
                       {config.label}
                     </Badge>
                   </div>
-                  <p className="font-medium text-sm text-foreground truncate">
+                  <p className="font-medium text-body text-foreground truncate">
                     {action.activityTitle}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-helper text-muted-foreground mt-0.5">
                     {action.message}
                   </p>
                 </div>

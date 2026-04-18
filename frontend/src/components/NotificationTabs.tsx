@@ -316,7 +316,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
 
     return (
       <div className="flex items-center justify-between mt-3 pt-3 border-t">
-        <span className="text-xs text-muted-foreground">
+        <span className="text-helper text-muted-foreground">
           Page {currentPage} of {totalPages}
         </span>
         <div className="flex items-center gap-1">
@@ -418,7 +418,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground">Per page:</label>
+          <label className="text-body text-muted-foreground">Per page:</label>
           <Select
             value={pageLimit.toString()}
             onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -465,7 +465,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-7 text-helper"
                   onClick={() => handleMarkAllAsRead('mention')}
                 >
                   Mark all read
@@ -496,7 +496,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
             ) : (
               <div className="text-center py-8">
                 <AtSign className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No mentions yet</p>
+                <p className="text-body text-muted-foreground">No mentions yet</p>
               </div>
             )}
           </CardContent>
@@ -529,7 +529,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-7 text-helper"
                   onClick={() => handleMarkAllAsRead('system')}
                 >
                   Mark all read
@@ -560,7 +560,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
             ) : (
               <div className="text-center py-8">
                 <Bell className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No system notifications</p>
+                <p className="text-body text-muted-foreground">No system notifications</p>
               </div>
             )}
           </CardContent>

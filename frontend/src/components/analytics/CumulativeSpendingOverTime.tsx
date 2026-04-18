@@ -203,7 +203,7 @@ export function CumulativeSpendingOverTime({
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: entry.color }}
             >
               {`${entry.name}: ${formatTooltipValue(entry.value)}`}
@@ -331,13 +331,13 @@ export function CumulativeSpendingOverTime({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No cumulative spending data available</p>
-              <p className="text-xs mt-2">Add disbursement or expenditure transactions to see this chart</p>
+              <p className="text-helper mt-2">Add disbursement or expenditure transactions to see this chart</p>
             </div>
           </div>
         )}
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart tracks the running total of all disbursement and expenditure transactions over time. The upward slope indicates the rate of spending, with steeper sections representing periods of higher activity. Use the time period filter to focus on recent trends or zoom out to see the full spending trajectory.
         </p>
       </CardContent>

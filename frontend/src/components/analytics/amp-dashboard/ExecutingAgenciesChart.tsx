@@ -172,10 +172,10 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{item.name}</p>
+            <p className="font-semibold text-foreground text-body">{item.name}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
                   <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
@@ -343,7 +343,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.fill }}
           />
-          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[80px]" title={item.name}>
             {item.acronym}
           </span>
         </div>
@@ -381,7 +381,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[180px] h-8 text-xs">
+        <SelectTrigger className="w-[180px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -465,7 +465,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
                 <Building className="h-4 w-4" />
                 Executing Agencies
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-helper text-muted-foreground mt-0.5">
                 Organizations managing budgets on behalf of funders
               </p>
             </div>
@@ -477,7 +477,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory footer */}
-          <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+          <p className="text-body text-muted-foreground leading-relaxed mt-2">
             This chart displays the top executing agencies managing budgets on behalf of funders. Switch between commitments and disbursements using the dropdown, and toggle between bar, pie, and table views to analyze the distribution of resources.
           </p>
           {renderControls(false)}

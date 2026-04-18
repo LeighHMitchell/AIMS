@@ -281,7 +281,7 @@ export function ActivityProfileHeader({
     date?: string
     desc?: string
   }) => (
-    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+    <span className="inline-flex items-center gap-1 text-helper text-muted-foreground">
       <span>{label}:</span>
       <span className="font-medium text-foreground">{formatDate(date)}</span>
       {desc && (
@@ -315,7 +315,7 @@ export function ActivityProfileHeader({
         <div className="flex items-center gap-1">
           {/* Engagement indicators — quiet, inline */}
           {viewCount != null && viewCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums px-2">
+            <span className="inline-flex items-center gap-1 text-helper text-muted-foreground tabular-nums px-2">
               <Eye className="h-3.5 w-3.5" />
               {viewCount}
             </span>
@@ -419,7 +419,7 @@ export function ActivityProfileHeader({
 
           <Link
             href={`/activities/new?id=${activity.id}`}
-            className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-body font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             <Pencil className="h-3.5 w-3.5 mr-1.5" />
             Edit
@@ -525,7 +525,7 @@ export function ActivityProfileHeader({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
               {/* Reporting org (publisher) */}
               {reportingOrg && (
-                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 text-body text-muted-foreground">
                   {reportingOrg.logo && (
                     <img
                       src={reportingOrg.logo}
@@ -549,14 +549,14 @@ export function ActivityProfileHeader({
               {reportingOrg && <div className="h-3.5 w-px bg-border" />}
 
               {/* Activity status */}
-              <Badge className={cn(statusClassName, "text-xs")}>{statusLabel}</Badge>
+              <Badge className={cn(statusClassName, "text-helper")}>{statusLabel}</Badge>
 
               {/* Publication status */}
               {activity.publicationStatus && (
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-xs",
+                    "text-helper",
                     activity.publicationStatus === "published"
                       ? "border-[hsl(var(--success-icon))]/30 text-[hsl(var(--success-icon))]"
                       : "border-border text-muted-foreground"
@@ -571,7 +571,7 @@ export function ActivityProfileHeader({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant="outline" className="text-xs border-border text-muted-foreground">
+                      <Badge variant="outline" className="text-helper border-border text-muted-foreground">
                         {activity.syncStatus === "live" ? (
                           <>
                             <RefreshCw className="h-3 w-3 mr-1 text-[hsl(var(--success-icon))]" />
@@ -591,7 +591,7 @@ export function ActivityProfileHeader({
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <div className="text-xs space-y-1">
+                      <div className="text-helper space-y-1">
                         <p className="font-medium">IATI Sync Status</p>
                         {activity.lastSyncTime && (
                           <p>Last synced: {format(new Date(activity.lastSyncTime), "dd MMM yyyy HH:mm")}</p>
@@ -605,7 +605,7 @@ export function ActivityProfileHeader({
 
               {/* IATI imported (not auto-synced) */}
               {activity.iatiIdentifier && !activity.autoSync && (
-                <Badge className="text-xs bg-[#124e5f] text-white hover:bg-[#0d3a47]">
+                <Badge className="text-helper bg-[#124e5f] text-white hover:bg-[#0d3a47]">
                   <Globe className="h-3 w-3 mr-1" />
                   Imported from IATI
                 </Badge>
@@ -613,7 +613,7 @@ export function ActivityProfileHeader({
 
               {/* Humanitarian */}
               {activity.humanitarian && (
-                <Badge className="text-xs bg-destructive text-white hover:bg-destructive">Humanitarian</Badge>
+                <Badge className="text-helper bg-destructive text-white hover:bg-destructive">Humanitarian</Badge>
               )}
             </div>
           </div>
@@ -625,7 +625,7 @@ export function ActivityProfileHeader({
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           {/* IDs */}
           {(activity as any).auto_ref && (
-            <span className="inline-flex items-center gap-1 group text-xs">
+            <span className="inline-flex items-center gap-1 group text-helper">
               <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                 {(activity as any).auto_ref}
               </code>
@@ -642,7 +642,7 @@ export function ActivityProfileHeader({
             </span>
           )}
           {activity.partnerId && (
-            <span className="inline-flex items-center gap-1 group text-xs">
+            <span className="inline-flex items-center gap-1 group text-helper">
               <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                 {activity.partnerId}
               </code>
@@ -659,7 +659,7 @@ export function ActivityProfileHeader({
             </span>
           )}
           {activity.iatiIdentifier && (
-            <span className="inline-flex items-center gap-1 group text-xs">
+            <span className="inline-flex items-center gap-1 group text-helper">
               <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                 {activity.iatiIdentifier}
               </code>
@@ -685,7 +685,7 @@ export function ActivityProfileHeader({
           {countryAllocations.length > 0 && (
             <div className="flex items-center gap-1.5">
               {countryAllocations.slice(0, 4).map((ca: any) => (
-                <span key={ca.id || ca.country?.code} className="inline-flex items-center gap-1 text-xs text-foreground">
+                <span key={ca.id || ca.country?.code} className="inline-flex items-center gap-1 text-helper text-foreground">
                   <img
                     src={`https://flagcdn.com/w20/${(ca.country?.code || "").toLowerCase()}.png`}
                     alt=""
@@ -698,7 +698,7 @@ export function ActivityProfileHeader({
                 </span>
               ))}
               {countryAllocations.length > 4 && (
-                <span className="text-xs text-muted-foreground">+{countryAllocations.length - 4} more</span>
+                <span className="text-helper text-muted-foreground">+{countryAllocations.length - 4} more</span>
               )}
             </div>
           )}
@@ -716,7 +716,7 @@ export function ActivityProfileHeader({
           {(countryAllocations.length > 0 || regionAllocations.length > 0) && <div className="h-3.5 w-px bg-border" />}
 
           {/* Active date range — one compact label */}
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 text-helper text-muted-foreground">
             <Calendar className="h-3 w-3" />
             <span className="font-medium text-foreground">
               {formatDate(activity.actualStartDate || activity.plannedStartDate)}
@@ -739,7 +739,7 @@ export function ActivityProfileHeader({
 
           <div className="h-3.5 w-px bg-border" />
 
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             Updated <span className="font-medium text-foreground">{formatDate(activity.updatedAt)}</span>
           </span>
         </div>
@@ -760,13 +760,13 @@ export function ActivityProfileHeader({
                 )}
                 {objectives && (
                   <div className="mt-5 pt-5 border-t border-border">
-                    <h3 className="text-sm font-semibold text-foreground mb-2">Objectives</h3>
+                    <h3 className="text-body font-semibold text-foreground mb-2">Objectives</h3>
                     <SafeHtml html={objectives} level="rich" className="text-foreground/85 leading-relaxed text-[15px]" />
                   </div>
                 )}
                 {targetGroups && (
                   <div className="mt-5 pt-5 border-t border-border">
-                    <h3 className="text-sm font-semibold text-foreground mb-2">Target Groups</h3>
+                    <h3 className="text-body font-semibold text-foreground mb-2">Target Groups</h3>
                     <SafeHtml
                       html={targetGroups}
                       level="rich"
@@ -776,7 +776,7 @@ export function ActivityProfileHeader({
                 )}
                 {other && (
                   <div className="mt-5 pt-5 border-t border-border">
-                    <h3 className="text-sm font-semibold text-foreground mb-2">Additional Information</h3>
+                    <h3 className="text-body font-semibold text-foreground mb-2">Additional Information</h3>
                     <SafeHtml html={other} level="rich" className="text-foreground/85 leading-relaxed text-[15px]" />
                   </div>
                 )}
@@ -785,7 +785,7 @@ export function ActivityProfileHeader({
                 <div className="mt-5 mb-2">
                   <button
                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="inline-flex items-center gap-1.5 text-foreground hover:text-foreground/70 text-sm font-medium transition-colors underline underline-offset-4 decoration-border hover:decoration-foreground"
+                    className="inline-flex items-center gap-1.5 text-foreground hover:text-foreground/70 text-body font-medium transition-colors underline underline-offset-4 decoration-border hover:decoration-foreground"
                   >
                     {isDescriptionExpanded ? (
                       <>
@@ -806,7 +806,7 @@ export function ActivityProfileHeader({
               {/* Participating Orgs */}
               {participatingOrgs.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-3">
+                  <h3 className="text-body font-semibold text-foreground mb-3">
                     Participating Organisations
                   </h3>
                   <div className="space-y-2.5">
@@ -834,14 +834,14 @@ export function ActivityProfileHeader({
                             {org.organization?.id ? (
                               <Link
                                 href={`/organizations/${org.organization.id}`}
-                                className="text-sm text-foreground hover:underline"
+                                className="text-body text-foreground hover:underline"
                               >
                                 {orgName}
                               </Link>
                             ) : (
-                              <span className="text-sm text-foreground">{orgName}</span>
+                              <span className="text-body text-foreground">{orgName}</span>
                             )}
-                            <span className="text-xs text-muted-foreground ml-1.5">{roleLabel}</span>
+                            <span className="text-helper text-muted-foreground ml-1.5">{roleLabel}</span>
                           </div>
                         </div>
                       )
@@ -850,7 +850,7 @@ export function ActivityProfileHeader({
                   {participatingOrgs.length > 5 && (
                     <button
                       onClick={() => setShowAllPartners(!showAllPartners)}
-                      className="text-xs text-muted-foreground hover:text-foreground mt-2 transition-colors"
+                      className="text-helper text-muted-foreground hover:text-foreground mt-2 transition-colors"
                     >
                       {showAllPartners ? "Show less" : `+${participatingOrgs.length - 5} more`}
                     </button>
@@ -861,7 +861,7 @@ export function ActivityProfileHeader({
               {/* SDG Alignment — compact */}
               {sdgMappings && sdgMappings.length > 0 && (
                 <div className={cn(participatingOrgs.length > 0 && "mt-6")}>
-                  <h3 className="text-sm font-semibold text-foreground mb-3">
+                  <h3 className="text-body font-semibold text-foreground mb-3">
                     SDG Alignment
                   </h3>
                   <SDGImageGrid
@@ -879,9 +879,9 @@ export function ActivityProfileHeader({
       {/* ── Technical Details (disclosure) ───────────────────────────── */}
       {hasTechnicalDetails && (
         <div className="mt-10 pt-8 pb-4 border-t border-border">
-          <h3 className="text-sm font-semibold text-foreground mb-4">IATI Classification Details</h3>
+          <h3 className="text-body font-semibold text-foreground mb-4">IATI Classification Details</h3>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-x-5 gap-y-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-x-5 gap-y-4 text-helper">
             {activity.hierarchy && (
               <div>
                 <div className="text-muted-foreground mb-1">Hierarchy</div>

@@ -117,11 +117,11 @@ function ProjectTypesTab() {
         {showAdd && (
           <div className="flex gap-2 mb-4 items-end">
             <div>
-              <label className="text-xs text-muted-foreground">Code</label>
+              <label className="text-helper text-muted-foreground">Code</label>
               <Input value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="e.g. INFRA" className="w-24" />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground">Name</label>
+              <label className="text-helper text-muted-foreground">Name</label>
               <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Infrastructure" />
             </div>
             <Button size="sm" onClick={handleAdd}><Save className="h-4 w-4 mr-1.5" />Save</Button>
@@ -142,15 +142,15 @@ function ProjectTypesTab() {
               <GripVertical className="h-4 w-4 text-muted-foreground/40" />
               {editingId === t.id ? (
                 <>
-                  <Input value={editCode} onChange={e => setEditCode(e.target.value)} className="w-24 h-8 text-sm" />
-                  <Input value={editName} onChange={e => setEditName(e.target.value)} className="flex-1 h-8 text-sm" />
+                  <Input value={editCode} onChange={e => setEditCode(e.target.value)} className="w-24 h-8 text-body" />
+                  <Input value={editName} onChange={e => setEditName(e.target.value)} className="flex-1 h-8 text-body" />
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleSaveEdit(t.id)}><Check className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}><X className="h-3.5 w-3.5" /></Button>
                 </>
               ) : (
                 <>
                   <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{t.code}</span>
-                  <span className="text-sm flex-1">{t.name}</span>
+                  <span className="text-body flex-1">{t.name}</span>
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100" onClick={() => { setEditingId(t.id); setEditCode(t.code); setEditName(t.name); }}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
@@ -258,11 +258,11 @@ function SectorsTab() {
         {showAdd && (
           <div className="flex gap-2 mb-4 items-end">
             <div>
-              <label className="text-xs text-muted-foreground">Code</label>
+              <label className="text-helper text-muted-foreground">Code</label>
               <Input value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="e.g. TRAN" className="w-24" />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground">Name</label>
+              <label className="text-helper text-muted-foreground">Name</label>
               <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Transport" />
             </div>
             <Button size="sm" onClick={handleAddSector}><Save className="h-4 w-4 mr-1.5" />Save</Button>
@@ -278,16 +278,16 @@ function SectorsTab() {
                 </button>
                 {editingId === s.id ? (
                   <>
-                    <Input value={editCode} onChange={e => setEditCode(e.target.value)} className="w-24 h-8 text-sm" />
-                    <Input value={editName} onChange={e => setEditName(e.target.value)} className="flex-1 h-8 text-sm" />
+                    <Input value={editCode} onChange={e => setEditCode(e.target.value)} className="w-24 h-8 text-body" />
+                    <Input value={editName} onChange={e => setEditName(e.target.value)} className="flex-1 h-8 text-body" />
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleSaveEdit(s.id)}><Check className="h-3.5 w-3.5" /></Button>
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}><X className="h-3.5 w-3.5" /></Button>
                   </>
                 ) : (
                   <>
                     <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{s.code}</span>
-                    <span className="text-sm flex-1">{s.name}</span>
-                    <span className="text-xs text-muted-foreground">{s.sub_sectors.length} sub-sectors</span>
+                    <span className="text-body flex-1">{s.name}</span>
+                    <span className="text-helper text-muted-foreground">{s.sub_sectors.length} sub-sectors</span>
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100" onClick={() => { setEditingId(s.id); setEditCode(s.code); setEditName(s.name); }}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -300,7 +300,7 @@ function SectorsTab() {
               {expandedId === s.id && (
                 <div className="ml-10 border-l pl-3 pb-2 space-y-1">
                   {s.sub_sectors.map(ss => (
-                    <div key={ss.id} className="flex items-center gap-2 py-1 text-sm group/sub">
+                    <div key={ss.id} className="flex items-center gap-2 py-1 text-body group/sub">
                       <span className="flex-1 text-muted-foreground">{ss.name}</span>
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover/sub:opacity-100 text-destructive" onClick={() => handleDeleteSubSector(s.id, ss.name)}>
                         <X className="h-3 w-3" />
@@ -312,10 +312,10 @@ function SectorsTab() {
                       value={newSubName}
                       onChange={e => setNewSubName(e.target.value)}
                       placeholder="New sub-sector name"
-                      className="h-7 text-xs flex-1"
+                      className="h-7 text-helper flex-1"
                       onKeyDown={e => { if (e.key === "Enter") handleAddSubSector(s.id) }}
                     />
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleAddSubSector(s.id)}>
+                    <Button size="sm" variant="outline" className="h-7 text-helper" onClick={() => handleAddSubSector(s.id)}>
                       <Plus className="h-3 w-3 mr-1" /> Add
                     </Button>
                   </div>

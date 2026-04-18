@@ -179,11 +179,11 @@ function TimelineProgress({
       <div className="flex justify-between mb-1.5">
         <div>
           <div className="text-[10px] text-muted-foreground">Actual Start</div>
-          <div className="text-xs font-semibold text-foreground">{formatTimelineDate(actualStartDate)}</div>
+          <div className="text-helper font-semibold text-foreground">{formatTimelineDate(actualStartDate)}</div>
         </div>
         <div className="text-right">
           <div className="text-[10px] text-muted-foreground">Planned End</div>
-          <div className="text-xs font-semibold text-foreground">{formatTimelineDate(plannedEndDate)}</div>
+          <div className="text-helper font-semibold text-foreground">{formatTimelineDate(plannedEndDate)}</div>
         </div>
       </div>
       
@@ -222,7 +222,7 @@ function TimelineProgress({
       <div className="flex justify-end">
         <div className="text-right">
           <div className="text-[10px] text-muted-foreground">Progress by time</div>
-          <div className="text-xs font-semibold text-foreground">{Math.round(progressPercent)}%</div>
+          <div className="text-helper font-semibold text-foreground">{Math.round(progressPercent)}%</div>
         </div>
       </div>
     </div>
@@ -253,8 +253,8 @@ function SectorSegment({ sector, width }: { sector: SectorData & { normalizedPer
             style={{ backgroundColor: color }}
           />
           <span className="text-xs font-mono text-foreground">{sector.code}</span>
-          <span className="text-xs text-foreground">{sector.name || sector.categoryName || 'Unknown Sector'}</span>
-          <span className="text-xs font-semibold text-foreground">{sector.percentage}%</span>
+          <span className="text-helper text-foreground">{sector.name || sector.categoryName || 'Unknown Sector'}</span>
+          <span className="text-helper font-semibold text-foreground">{sector.percentage}%</span>
         </div>
       </HoverCardContent>
     </HoverCard>
@@ -359,7 +359,7 @@ function LocationMarker({
 
         <div className="p-2.5">
           {/* Title */}
-          <div className="font-semibold text-xs text-foreground mb-2 leading-snug">
+          <div className="font-semibold text-helper text-foreground mb-2 leading-snug">
             {location.activity?.title || 'Untitled Activity'}
           </div>
 
@@ -444,7 +444,7 @@ function LocationMarker({
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </div>
             )}
-            <span className="text-xs text-foreground">
+            <span className="text-helper text-foreground">
               {location.activity?.organization_name || '-'}
               {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
                 <span className="text-foreground"> ({location.activity.organization_acronym})</span>
@@ -468,7 +468,7 @@ function LocationMarker({
         {/* Address */}
         <div className="mb-3">
           <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Address</div>
-          <div className="text-xs text-foreground leading-snug">{getFullAddress(location)}</div>
+          <div className="text-helper text-foreground leading-snug">{getFullAddress(location)}</div>
         </div>
         
         {/* Divider */}
@@ -511,20 +511,20 @@ function LocationMarker({
           <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">Financial Summary</div>
           <div className="rounded border border-border overflow-hidden">
             <div className="flex justify-between px-2.5 py-1.5 bg-white">
-              <span className="text-xs text-muted-foreground">Total Budgeted</span>
-              <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalBudget)}</span>
+              <span className="text-helper text-muted-foreground">Total Budgeted</span>
+              <span className="text-helper font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalBudget)}</span>
             </div>
             <div className="flex justify-between px-2.5 py-1.5 bg-muted">
-              <span className="text-xs text-muted-foreground">Total Planned Disbursement</span>
-              <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalPlannedDisbursement)}</span>
+              <span className="text-helper text-muted-foreground">Total Planned Disbursement</span>
+              <span className="text-helper font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalPlannedDisbursement)}</span>
             </div>
             <div className="flex justify-between px-2.5 py-1.5 bg-white">
-              <span className="text-xs text-muted-foreground">Total Committed</span>
-              <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalCommitments)}</span>
+              <span className="text-helper text-muted-foreground">Total Committed</span>
+              <span className="text-helper font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalCommitments)}</span>
             </div>
             <div className="flex justify-between px-2.5 py-1.5 bg-muted">
-              <span className="text-xs text-muted-foreground">Total Disbursed</span>
-              <span className="text-xs font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalDisbursed)}</span>
+              <span className="text-helper text-muted-foreground">Total Disbursed</span>
+              <span className="text-helper font-semibold text-foreground">{formatCompactCurrency(location.activity?.totalDisbursed)}</span>
             </div>
           </div>
         </div>

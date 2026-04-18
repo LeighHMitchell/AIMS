@@ -71,7 +71,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
 
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <thead className="bg-surface-muted">
             <tr className="border-b">
               <th className="text-left px-2 py-1.5 font-medium text-muted-foreground w-[80px]">Year</th>
@@ -94,7 +94,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.year}
                       onChange={e => updateRow(globalIdx, 'year', Number(e.target.value))}
-                      className="h-8 w-[80px] text-xs"
+                      className="h-8 w-[80px] text-helper"
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -102,7 +102,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.revenue ?? ''}
                       onChange={e => updateRow(globalIdx, 'revenue', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-xs text-right"
+                      className="h-8 text-helper text-right"
                       placeholder="0"
                     />
                   </td>
@@ -111,7 +111,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.expenses ?? ''}
                       onChange={e => updateRow(globalIdx, 'expenses', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-xs text-right"
+                      className="h-8 text-helper text-right"
                       placeholder="0"
                     />
                   </td>
@@ -120,7 +120,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.net_income ?? ''}
                       onChange={e => updateRow(globalIdx, 'net_income', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-xs text-right"
+                      className="h-8 text-helper text-right"
                       placeholder="0"
                     />
                   </td>
@@ -129,7 +129,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.free_cash_flow ?? ''}
                       onChange={e => updateRow(globalIdx, 'free_cash_flow', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-xs text-right"
+                      className="h-8 text-helper text-right"
                       placeholder="0"
                     />
                   </td>
@@ -138,7 +138,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.capex ?? ''}
                       onChange={e => updateRow(globalIdx, 'capex', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-xs text-right"
+                      className="h-8 text-helper text-right"
                       placeholder="0"
                     />
                   </td>
@@ -147,7 +147,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
                       type="number"
                       value={row.depreciation ?? ''}
                       onChange={e => updateRow(globalIdx, 'depreciation', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-xs text-right"
+                      className="h-8 text-helper text-right"
                       placeholder="0"
                     />
                   </td>
@@ -168,7 +168,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
           variant="ghost"
           size="sm"
           onClick={() => addRow(periodType)}
-          className="mt-2 text-xs"
+          className="mt-2 text-helper"
         >
           <Plus className="h-3.5 w-3.5 mr-1" />
           Add {periodType === 'historical' ? 'Historical' : 'Projected'} Year
@@ -182,7 +182,7 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold mb-1">Financial History</h3>
-          <p className="text-sm text-muted-foreground">Enter 5 years of historical data and 5 years of projected financials.</p>
+          <p className="text-body text-muted-foreground">Enter 5 years of historical data and 5 years of projected financials.</p>
         </div>
         {financials.length === 0 && (
           <Button variant="outline" size="sm" onClick={seedDefaults}>
@@ -194,13 +194,13 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
       {/* Historical */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <h4 className="text-sm font-semibold">Historical</h4>
+          <h4 className="text-body font-semibold">Historical</h4>
           <Badge variant="gray" className="text-[10px]">{historicalRows.length} years</Badge>
         </div>
         {historicalRows.length > 0 ? (
           renderTable(historicalRows, 'historical')
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
+          <p className="text-body text-muted-foreground text-center py-4 border rounded-md">
             No historical data. Click &quot;Pre-fill Years&quot; or add rows manually.
           </p>
         )}
@@ -209,13 +209,13 @@ export function StageFinancialHistory({ wizard }: StageFinancialHistoryProps) {
       {/* Projected */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <h4 className="text-sm font-semibold">Projected</h4>
+          <h4 className="text-body font-semibold">Projected</h4>
           <Badge variant="blue" className="text-[10px]">{projectedRows.length} years</Badge>
         </div>
         {projectedRows.length > 0 ? (
           renderTable(projectedRows, 'projected')
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
+          <p className="text-body text-muted-foreground text-center py-4 border rounded-md">
             No projected data. Click &quot;Pre-fill Years&quot; or add rows manually.
           </p>
         )}

@@ -187,7 +187,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
         <Button variant="outline" className="gap-2">
           <Columns3 className="h-4 w-4" />
           <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-helper">
             {visibleCount}
           </Badge>
           <ChevronDown className="h-3 w-3 opacity-50" />
@@ -196,13 +196,13 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
       <PopoverContent className="w-72 p-0 z-[200]" align="end" sideOffset={5}>
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <h4 className="font-medium text-body">Visible Columns</h4>
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={selectAll}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Select all
               </Button>
@@ -210,13 +210,13 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
                 variant="ghost" 
                 size="sm" 
                 onClick={resetToDefaults}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Reset
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-helper text-muted-foreground mt-1">
             {visibleCount} of {totalColumns} columns visible
           </p>
         </div>
@@ -240,7 +240,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
                     indeterminate={someVisible && !allVisible}
                     onCheckedChange={() => toggleGroup(groupKey)}
                   />
-                  <span className="text-sm font-medium">{ACTIVITY_EDITOR_COLUMN_GROUPS[groupKey]}</span>
+                  <span className="text-body font-medium">{ACTIVITY_EDITOR_COLUMN_GROUPS[groupKey]}</span>
                 </div>
                 <div className="py-1">
                   {groupColumns.map(column => (
@@ -253,7 +253,7 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
                         checked={visibleColumns.includes(column.id)}
                         onCheckedChange={() => toggleColumn(column.id)}
                       />
-                      <span className="text-sm">{column.label}</span>
+                      <span className="text-body">{column.label}</span>
                     </div>
                   ))}
                 </div>
@@ -279,9 +279,9 @@ function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
     <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-body text-muted-foreground">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
@@ -1039,7 +1039,7 @@ export default function TransactionsManager({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Transactions</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 Manage IATI-compliant financial transactions
               </p>
             </div>
@@ -1051,7 +1051,7 @@ export default function TransactionsManager({
                     checked={groupedView}
                     onCheckedChange={setGroupedView}
                   />
-                  <Label htmlFor="grouped-view" className="text-sm cursor-pointer whitespace-nowrap">
+                  <Label htmlFor="grouped-view" className="text-body cursor-pointer whitespace-nowrap">
                     Grouped View
                   </Label>
                 </div>
@@ -1165,13 +1165,13 @@ export default function TransactionsManager({
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2 py-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-body text-muted-foreground">
                       <span>
                         Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} transactions
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Show:</span>
+                      <span className="text-body text-muted-foreground">Show:</span>
                       <Select value={pageSize.toString()} onValueChange={(value) => {
                         setPageSize(parseInt(value));
                         setCurrentPage(1); // Reset to first page when changing page size

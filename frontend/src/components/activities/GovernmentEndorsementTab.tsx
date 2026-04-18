@@ -330,7 +330,7 @@ export default function GovernmentEndorsementTab({
       return (
         <div className="flex items-center gap-2 text-blue-600">
           <Clock className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Saving...</span>
+          <span className="text-body">Saving...</span>
         </div>
       );
     }
@@ -339,7 +339,7 @@ export default function GovernmentEndorsementTab({
       return (
         <div className="flex items-center gap-2 text-amber-600">
           <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Unsaved changes</span>
+          <span className="text-body">Unsaved changes</span>
         </div>
       );
     }
@@ -348,7 +348,7 @@ export default function GovernmentEndorsementTab({
       return (
         <div className="flex items-center gap-2 text-[hsl(var(--success-icon))]">
           <CheckCircle className="h-4 w-4" />
-          <span className="text-sm">
+          <span className="text-body">
             Saved {format(lastSaved, 'HH:mm:ss')}
           </span>
         </div>
@@ -457,13 +457,13 @@ export default function GovernmentEndorsementTab({
                 </Badge>
               </div>
               {formData.validating_authority && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-body text-muted-foreground">
                   <Building className="h-4 w-4" />
                   {formData.validating_authority}
                 </div>
               )}
               {formData.validation_date && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-body text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   {format(new Date(formData.validation_date), 'MMM dd, yyyy')}
                 </div>
@@ -501,7 +501,7 @@ export default function GovernmentEndorsementTab({
                   <SelectItem key={option.value} value={option.value}>
                     <div>
                       <div className="font-medium">{option.label}</div>
-                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                      <div className="text-helper text-muted-foreground">{option.description}</div>
                     </div>
                   </SelectItem>
                 ))}
@@ -632,7 +632,7 @@ export default function GovernmentEndorsementTab({
                     <SelectItem key={category.value} value={category.value}>
                       <div>
                         <div className="font-medium">{category.value} - {category.label}</div>
-                        <div className="text-xs text-muted-foreground">{category.description}</div>
+                        <div className="text-helper text-muted-foreground">{category.description}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -710,7 +710,7 @@ export default function GovernmentEndorsementTab({
           )}
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-body text-muted-foreground mb-4">
             Link this activity to government budget codes, donor project IDs, or internal tracking numbers.
             These references enable reconciliation with the national budget system.
           </p>
@@ -832,7 +832,7 @@ export default function GovernmentEndorsementTab({
                     <SelectItem key={type} value={type}>
                       <div>
                         <div className="font-medium">{REFERENCE_TYPE_LABELS[type]}</div>
-                        <div className="text-xs text-muted-foreground">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
+                        <div className="text-helper text-muted-foreground">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -865,7 +865,7 @@ export default function GovernmentEndorsementTab({
                 onChange={(e) => handleRefFormChange('vocabulary', e.target.value)}
                 placeholder="e.g., national_pip, ministry_code"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 The standard or system this code comes from
               </p>
             </div>

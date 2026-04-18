@@ -201,7 +201,7 @@ export function IATIImportLogsManagement() {
         <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Last 7 Days</span>
+            <span className="text-helper font-medium text-muted-foreground">Last 7 Days</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{analytics?.last7Days || 0}</p>
         </div>
@@ -209,7 +209,7 @@ export function IATIImportLogsManagement() {
         <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Last Month</span>
+            <span className="text-helper font-medium text-muted-foreground">Last Month</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{analytics?.last1Month || 0}</p>
         </div>
@@ -217,7 +217,7 @@ export function IATIImportLogsManagement() {
         <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Last 3 Months</span>
+            <span className="text-helper font-medium text-muted-foreground">Last 3 Months</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{analytics?.last3Months || 0}</p>
         </div>
@@ -225,7 +225,7 @@ export function IATIImportLogsManagement() {
         <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Last 6 Months</span>
+            <span className="text-helper font-medium text-muted-foreground">Last 6 Months</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{analytics?.last6Months || 0}</p>
         </div>
@@ -233,7 +233,7 @@ export function IATIImportLogsManagement() {
         <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Last 12 Months</span>
+            <span className="text-helper font-medium text-muted-foreground">Last 12 Months</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{analytics?.last12Months || 0}</p>
         </div>
@@ -242,7 +242,7 @@ export function IATIImportLogsManagement() {
         <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             {getTrendIcon()}
-            <span className="text-xs font-medium text-muted-foreground">Trend</span>
+            <span className="text-helper font-medium text-muted-foreground">Trend</span>
           </div>
           <p className="text-lg font-bold text-foreground capitalize">{analytics?.trend || 'N/A'}</p>
           <span className="text-[10px] text-muted-foreground">{getTrendLabel()}</span>
@@ -316,7 +316,7 @@ export function IATIImportLogsManagement() {
                 <div className="py-12 text-center text-muted-foreground">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="font-medium">No import logs found</p>
-                  <p className="text-sm mt-2">Import logs will appear here once IATI imports are made</p>
+                  <p className="text-body mt-2">Import logs will appear here once IATI imports are made</p>
                 </div>
               ) : (
                 <Table>
@@ -353,7 +353,7 @@ export function IATIImportLogsManagement() {
                                   {log.iati_identifier}
                                 </span>
                               ) : (
-                                <span className="text-xs text-muted-foreground mt-1 inline-block">No IATI ID</span>
+                                <span className="text-helper text-muted-foreground mt-1 inline-block">No IATI ID</span>
                               )}
                             </div>
                           </TableCell>
@@ -361,7 +361,7 @@ export function IATIImportLogsManagement() {
                             <div>
                               <div className="font-medium">{log.imported_by_name || 'Unknown'}</div>
                               {log.imported_by_email && (
-                                <div className="text-xs text-muted-foreground">{log.imported_by_email}</div>
+                                <div className="text-helper text-muted-foreground">{log.imported_by_email}</div>
                               )}
                             </div>
                           </TableCell>
@@ -371,15 +371,15 @@ export function IATIImportLogsManagement() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-helper">
                               {SOURCE_LABELS[log.import_source] || log.import_source}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-body text-muted-foreground">
                               {formatDistanceToNow(new Date(log.import_date), { addSuffix: true })}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-helper text-muted-foreground">
                               {format(new Date(log.import_date), 'MMM d, yyyy HH:mm')}
                             </div>
                           </TableCell>
@@ -415,7 +415,7 @@ export function IATIImportLogsManagement() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} imports
                   </div>
                   <div className="flex items-center gap-2">
@@ -428,7 +428,7 @@ export function IATIImportLogsManagement() {
                       <ChevronLeft className="h-4 w-4" />
                       Previous
                     </Button>
-                    <span className="text-sm">
+                    <span className="text-body">
                       Page {currentPage} of {totalPages}
                     </span>
                     <Button

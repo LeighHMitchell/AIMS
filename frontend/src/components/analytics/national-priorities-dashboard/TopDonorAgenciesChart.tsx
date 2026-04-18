@@ -216,14 +216,14 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground mb-1">{item.name}</p>
           {item.acronym !== item.name && (
-            <p className="text-xs text-muted-foreground mb-1">{item.acronym}</p>
+            <p className="text-helper text-muted-foreground mb-1">{item.acronym}</p>
           )}
           <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-body font-medium text-foreground">
               {formatCurrency(item.value)}
             </p>
             {item.activityCount > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 {item.activityCount} {getMetricLabel(metric, item.activityCount)}
               </p>
             )}
@@ -305,7 +305,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
                 <div>
                   <div className="font-medium">{donor.name}</div>
                   {donor.acronym !== donor.name && (
-                    <div className="text-xs text-muted-foreground">{donor.acronym}</div>
+                    <div className="text-helper text-muted-foreground">{donor.acronym}</div>
                   )}
                 </div>
               </TableCell>
@@ -330,7 +330,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.fill }}
           />
-          <span className="text-xs text-muted-foreground">{item.acronym}</span>
+          <span className="text-helper text-muted-foreground">{item.acronym}</span>
         </div>
       ))}
     </div>
@@ -366,7 +366,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -429,7 +429,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
       <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-xs">
+        <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -453,7 +453,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Funding by Donor
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Top 5 development partners by contribution
               </CardDescription>
             </div>
@@ -471,7 +471,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0 }: TopDonorAgenciesChartP
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows the top 5 individual development partner organizations by financial contribution, with remaining donors aggregated. Use the metric and time range selectors to analyze funding patterns across different measures and periods.
           </p>
         </CardContent>

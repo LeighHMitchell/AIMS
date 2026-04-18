@@ -84,10 +84,10 @@ export function TopSectorsChart({
                 return (
                   <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
                     <div className="bg-surface-muted px-3 py-2 border-b border-border">
-                      <p className="font-semibold text-foreground text-sm">{item.name}</p>
+                      <p className="font-semibold text-foreground text-body">{item.name}</p>
                     </div>
                     <div className="p-2">
-                      <table className="w-full text-sm">
+                      <table className="w-full text-body">
                         <tbody>
                           <tr>
                             <td className="py-1 pr-4 text-foreground font-medium">Value</td>
@@ -115,7 +115,7 @@ export function TopSectorsChart({
         {chartData.map((item, index) => (
           <div
             key={item.id}
-            className="flex items-center justify-between text-xs"
+            className="flex items-center justify-between text-helper"
           >
             <div className="flex items-center gap-2">
               <div
@@ -137,7 +137,7 @@ export function TopSectorsChart({
         ))}
       </div>
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart shows the top sectors by financial allocation, using the OECD DAC sector classification. Each bar represents a sector with its DAC code, helping to identify where development funds are concentrated. Hover over bars for sector names and values.
       </p>
     </div>

@@ -954,12 +954,12 @@ function ImprovedSectorAllocationFormInner({
         <Card className="bg-muted border-border">
           <CardHeader className="py-3 px-4">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-medium text-foreground">IATI Sector Export Level</CardTitle>
+              <CardTitle className="text-body font-medium text-foreground">IATI Sector Export Level</CardTitle>
               <HelpTextTooltip
                 content="When exporting to IATI XML, sectors can be published at the activity level (all transactions inherit) or at the transaction level (each transaction has its own sector breakdown). IATI requires consistency - sectors must be at one level or the other, not both."
               />
             </div>
-            <CardDescription className="text-xs text-muted-foreground">
+            <CardDescription className="text-helper text-muted-foreground">
               Choose how sectors are included in IATI exports
             </CardDescription>
           </CardHeader>
@@ -974,8 +974,8 @@ function ImprovedSectorAllocationFormInner({
                   className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground">Activity Level</span>
-                  <p className="text-xs text-muted-foreground">
+                  <span className="text-body font-medium text-foreground">Activity Level</span>
+                  <p className="text-helper text-muted-foreground">
                     Sectors are exported as activity-level elements. All transactions share these sectors.
                   </p>
                 </div>
@@ -990,8 +990,8 @@ function ImprovedSectorAllocationFormInner({
                   className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground">Transaction Level</span>
-                  <p className="text-xs text-muted-foreground">
+                  <span className="text-body font-medium text-foreground">Transaction Level</span>
+                  <p className="text-helper text-muted-foreground">
                     Sectors are exported within each transaction. Transactions using activity sectors will export the activity sectors.
                   </p>
                 </div>
@@ -1009,7 +1009,7 @@ function ImprovedSectorAllocationFormInner({
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">You've chosen to report sectors at the transaction level</p>
-                <p className="text-sm mt-1">
+                <p className="text-body mt-1">
                   Each transaction specifies its own sector breakdown. The view below shows the weighted average across all transactions.
                   To edit sectors, go to individual transactions.
                 </p>
@@ -1041,7 +1041,7 @@ function ImprovedSectorAllocationFormInner({
       */}
       {allocations.length > 0 && (
         <div className="space-y-2 pb-2 border-b border-border">
-          <div className="flex items-baseline justify-between gap-4 text-sm">
+          <div className="flex items-baseline justify-between gap-4 text-body">
             <div className="flex items-baseline gap-3 flex-wrap">
               <span className={cn(
                 "font-semibold text-lg tabular-nums",
@@ -1132,7 +1132,7 @@ function ImprovedSectorAllocationFormInner({
                             variant="default" 
                             size="sm"
                             onClick={distributeEqually}
-                            className="text-xs bg-foreground hover:bg-foreground/90 text-white"
+                            className="text-helper bg-foreground hover:bg-foreground/90 text-white"
                             disabled={isLocked}
                           >
                             <Sparkles className="h-3 w-3 mr-1" />
@@ -1153,7 +1153,7 @@ function ImprovedSectorAllocationFormInner({
                             variant="outline" 
                             size="sm"
                             onClick={clearAll}
-                            className="text-xs text-[#DC2625] border-[#DC2625]/30 hover:bg-[#DC2625]/10 hover:text-[#DC2625] active:text-[#DC2625] focus-visible:text-[#DC2625]"
+                            className="text-helper text-[#DC2625] border-[#DC2625]/30 hover:bg-[#DC2625]/10 hover:text-[#DC2625] active:text-[#DC2625] focus-visible:text-[#DC2625]"
                             disabled={isLocked}
                           >
                             <Trash2 className="h-3 w-3 mr-1 text-destructive" />
@@ -1204,19 +1204,19 @@ function ImprovedSectorAllocationFormInner({
                           )}
                         >
                           {/* Sector Category Code and Name */}
-                          <TableCell className="py-2 text-sm">
+                          <TableCell className="py-2 text-body">
                             <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>{' '}
                             {categoryGroupName}
                           </TableCell>
 
                           {/* Sector Code and Name */}
-                          <TableCell className="py-2 text-sm">
+                          <TableCell className="py-2 text-body">
                             <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{sectorCode}</span>{' '}
                             {sectorName.replace(/^\d{3}\s*-\s*/, '')}
                           </TableCell>
 
                           {/* Sub-sector Code and Name */}
-                          <TableCell className="py-2 text-sm">
+                          <TableCell className="py-2 text-body">
                             <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{subSectorCode}</span>{' '}
                             {subSectorName}
                           </TableCell>
@@ -1233,7 +1233,7 @@ function ImprovedSectorAllocationFormInner({
                                 onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
                                 disabled={isLocked}
                                 className={cn(
-                                  "w-24 h-8 text-sm text-center p-2",
+                                  "w-24 h-8 text-body text-center p-2",
                                   allocation.percentage === 0 && "border-[#DC2625]/40",
                                   isLocked && "bg-muted cursor-not-allowed"
                                 )}

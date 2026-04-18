@@ -188,7 +188,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
             <div className="flex items-center gap-3">
               {selectMode ? (
                 <>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-body text-muted-foreground">
                     {selectedCodesForBulk.size} selected
                   </span>
                   <Button
@@ -279,7 +279,7 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
                       )}
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{wg.label}</span>
+                          <span className="font-medium text-body">{wg.label}</span>
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {wg.code}
                           </span>
@@ -287,9 +287,9 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
                       </TableCell>
                       <TableCell>
                         {wg.description ? (
-                          <p className="text-sm text-muted-foreground line-clamp-2">{wg.description}</p>
+                          <p className="text-body text-muted-foreground line-clamp-2">{wg.description}</p>
                         ) : (
-                          <span className="text-xs text-muted-foreground/60">—</span>
+                          <span className="text-helper text-muted-foreground/60">—</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -339,11 +339,11 @@ export default function WorkingGroupsSection({ activityId, workingGroups, onChan
                     </div>
 
                     {wg.description ? (
-                      <p className="text-sm line-clamp-3 text-muted-foreground">
+                      <p className="text-body line-clamp-3 text-muted-foreground">
                         {wg.description}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground/60 italic">No description</p>
+                      <p className="text-body text-muted-foreground/60 italic">No description</p>
                     )}
 
                     <div className="flex justify-end mt-4">

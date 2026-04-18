@@ -106,7 +106,7 @@ function Map3DController({
             className="bg-white shadow-md border-input h-9 px-2.5"
           >
             <Mountain className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">2D</span>
+            <span className="text-helper">2D</span>
           </Button>
         ) : (
           <Button
@@ -117,7 +117,7 @@ function Map3DController({
             className="bg-white shadow-md border-input h-9 px-2.5"
           >
             <Mountain className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">3D</span>
+            <span className="text-helper">3D</span>
           </Button>
         )}
         <Button
@@ -249,7 +249,7 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="font-medium text-muted-foreground">Failed to load map data</p>
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-body text-muted-foreground">{error}</p>
         </div>
       </div>
     );
@@ -261,7 +261,7 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="font-medium text-muted-foreground">No activity locations</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             This organization has no activities with location data
           </p>
         </div>
@@ -274,7 +274,7 @@ export function OrganizationActivityLocationsMap({ organizationId }: Organizatio
       {/* Location count badge */}
       <div className="absolute top-3 left-3 z-20">
         <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-md border border-input shadow-md">
-          <span className="text-xs font-medium text-foreground">
+          <span className="text-helper font-medium text-foreground">
             {validLocations.length} location{validLocations.length !== 1 ? 's' : ''}
           </span>
         </div>

@@ -83,7 +83,7 @@ function LoadingTextRoller({ orgName }: { orgName: string }) {
   }, [messages])
 
   return (
-    <p className="h-6 flex items-center justify-center text-sm text-muted-foreground animate-pulse">
+    <p className="h-6 flex items-center justify-center text-body text-muted-foreground animate-pulse">
       {currentMessage}
     </p>
   )
@@ -906,13 +906,13 @@ export default function BulkImportSourceStep({
                 // Super user: show organization selector
                 <div className="space-y-2">
                   {loadingOrgs ? (
-                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-muted-foreground border border-border rounded-md bg-muted">
+                    <div className="flex items-center gap-2 h-10 px-3 text-body text-muted-foreground border border-border rounded-md bg-muted">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading organizations...
                     </div>
                   ) : organizations.length === 0 ? (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 h-10 px-3 text-sm text-amber-600 border border-amber-200 rounded-md bg-amber-50">
+                      <div className="flex items-center gap-2 h-10 px-3 text-body text-amber-600 border border-amber-200 rounded-md bg-amber-50">
                         <AlertCircle className="h-4 w-4" />
                         Could not load organizations. Check console for details.
                       </div>
@@ -943,7 +943,7 @@ export default function BulkImportSourceStep({
                 // Regular user: show fixed organization info
                 <>
                   <p className="font-semibold text-foreground">{orgDisplayName}</p>
-                  <div className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 mt-0.5 text-body text-muted-foreground">
                     {orgIatiId && (
                       <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground">
                         {orgIatiId}
@@ -1007,7 +1007,7 @@ export default function BulkImportSourceStep({
                       <h3 className="font-semibold text-lg text-foreground">
                         Fetch IATI Activities
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body text-muted-foreground">
                         Configure filters below, then fetch from the IATI Registry
                       </p>
                     </div>
@@ -1015,7 +1015,7 @@ export default function BulkImportSourceStep({
 
                   {/* Pre-fetch filters */}
                   <div className="border rounded-lg p-4 bg-white space-y-4">
-                    <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <div className="text-body font-medium text-foreground flex items-center gap-2">
                       <SlidersHorizontal className="h-4 w-4" />
                       Pre-Fetch Filters
                     </div>
@@ -1023,7 +1023,7 @@ export default function BulkImportSourceStep({
                     <div className="space-y-3">
                       {/* Country filter - one line */}
                       <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium text-foreground w-36 shrink-0">
+                        <div className="text-body font-medium text-foreground w-36 shrink-0">
                           Recipient Country
                         </div>
                         <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
@@ -1076,7 +1076,7 @@ export default function BulkImportSourceStep({
                               <div className="p-1">
                                 <button
                                   onClick={() => { setSelectedCountry(''); setCountryOpen(false); setCountrySearch('') }}
-                                  className="w-full flex items-center gap-2.5 px-2 py-2 rounded text-sm hover:bg-muted transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-2 py-2 rounded text-body hover:bg-muted transition-colors"
                                 >
                                   <span className="text-muted-foreground">All countries</span>
                                 </button>
@@ -1084,7 +1084,7 @@ export default function BulkImportSourceStep({
                                   <button
                                     key={country.code}
                                     onClick={() => { setSelectedCountry(country.code); setCountryOpen(false); setCountrySearch('') }}
-                                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded text-sm hover:bg-muted transition-colors ${selectedCountry === country.code ? 'bg-muted' : ''}`}
+                                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded text-body hover:bg-muted transition-colors ${selectedCountry === country.code ? 'bg-muted' : ''}`}
                                   >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
@@ -1099,7 +1099,7 @@ export default function BulkImportSourceStep({
                                   </button>
                                 ))}
                                 {searchedCountries.length === 0 && (
-                                  <p className="text-sm text-muted-foreground text-center py-4">No countries found</p>
+                                  <p className="text-body text-muted-foreground text-center py-4">No countries found</p>
                                 )}
                               </div>
                             </ScrollArea>
@@ -1110,7 +1110,7 @@ export default function BulkImportSourceStep({
                       {/* Country filter mode - only show when a country is selected */}
                       {selectedCountry && (
                         <div className="flex items-center gap-3">
-                          <div className="text-sm font-medium text-foreground w-36 shrink-0">
+                          <div className="text-body font-medium text-foreground w-36 shrink-0">
                             Include
                           </div>
                           <div className="flex items-center gap-1">
@@ -1147,7 +1147,7 @@ export default function BulkImportSourceStep({
 
                       {/* Hierarchy filter - one line */}
                       <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium text-foreground w-36 shrink-0">
+                        <div className="text-body font-medium text-foreground w-36 shrink-0">
                           Level
                         </div>
                         <div className="flex items-center gap-1">
@@ -1180,7 +1180,7 @@ export default function BulkImportSourceStep({
 
                       {/* Date range filter - one line */}
                       <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium text-foreground w-36 shrink-0">
+                        <div className="text-body font-medium text-foreground w-36 shrink-0">
                           Date Range
                         </div>
                         <div className="flex items-center gap-2">
@@ -1211,7 +1211,7 @@ export default function BulkImportSourceStep({
 
                     {/* Preview count */}
                     {previewCount && (
-                      <div className="text-sm text-muted-foreground pt-3 border-t flex items-center gap-2">
+                      <div className="text-body text-muted-foreground pt-3 border-t flex items-center gap-2">
                         {previewCount.loading ? (
                           <>
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
@@ -1256,15 +1256,15 @@ export default function BulkImportSourceStep({
                         <p className="font-medium text-lg mb-1">
                           Fetching activities published by {orgName}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           {paginatedProgress.currentPage === 0
                             ? 'Starting paginated download...'
                             : `Downloading page ${paginatedProgress.currentPage} of ${paginatedProgress.totalPages}...`}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-2">
+                        <p className="text-body text-muted-foreground mt-2">
                           {paginatedProgress.activitiesFetched.toLocaleString()} of {paginatedProgress.totalActivities.toLocaleString()} activities downloaded
                         </p>
-                        <p className="text-sm text-muted-foreground mt-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        <p className="text-body text-muted-foreground mt-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
                           {paginatedProgress.currentPage > 0 && paginatedProgress.currentPage < paginatedProgress.totalPages && (
                             <span className="text-muted-foreground ml-2">
@@ -1288,7 +1288,7 @@ export default function BulkImportSourceStep({
                             style={{ width: `${paginatedProgress.totalPages > 0 ? (paginatedProgress.currentPage / paginatedProgress.totalPages) * 100 : 0}%` }}
                           />
                         </div>
-                        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                        <div className="flex justify-between mt-2 text-helper text-muted-foreground">
                           <span>{paginatedProgress.totalPages > 0 ? Math.round((paginatedProgress.currentPage / paginatedProgress.totalPages) * 100) : 0}%</span>
                           <span className="flex items-center gap-1.5">
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -1306,14 +1306,14 @@ export default function BulkImportSourceStep({
                         <p className="font-medium text-lg mb-1">
                           Fetching activities published by {orgName}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           {fetchPhase === 'connecting' && 'Connecting to IATI Registry...'}
                           {fetchPhase === 'fetching' && 'Downloading activity data from IATI Datastore...'}
                           {fetchPhase === 'enriching' && 'Enriching with sector percentages...'}
                           {fetchPhase === 'processing' && 'Processing and validating data...'}
                         </p>
                         {estimatedTime && (
-                          <p className="text-sm text-muted-foreground mt-2">
+                          <p className="text-body text-muted-foreground mt-2">
                             {estimatedTime.count.toLocaleString()} activities found — estimated time: ~{
                               estimatedTime.seconds < 60
                                 ? `${estimatedTime.seconds} seconds`
@@ -1323,7 +1323,7 @@ export default function BulkImportSourceStep({
                             }
                           </p>
                         )}
-                        <p className="text-sm text-muted-foreground mt-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        <p className="text-body text-muted-foreground mt-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {Math.floor(elapsedSeconds / 60)}:{Math.floor(elapsedSeconds % 60).toString().padStart(2, '0')}.{Math.floor((elapsedSeconds % 1) * 10)} elapsed
                         </p>
                       </div>
@@ -1336,7 +1336,7 @@ export default function BulkImportSourceStep({
                             style={{ width: `${fetchProgress}%` }}
                           />
                         </div>
-                        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                        <div className="flex justify-between mt-2 text-helper text-muted-foreground">
                           <span>{Math.round(fetchProgress)}%</span>
                           <span className="flex items-center gap-1.5">
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -1347,14 +1347,14 @@ export default function BulkImportSourceStep({
                           </span>
                         </div>
                         {fetchProgressMessage && (
-                          <p className="mt-2 text-xs text-amber-600 text-center">
+                          <p className="mt-2 text-helper text-amber-600 text-center">
                             {fetchProgressMessage}
                           </p>
                         )}
                       </div>
 
                       {/* Phase indicators */}
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-2 text-helper">
                         <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-foreground font-medium' : fetchProgress >= 5 ? 'text-[hsl(var(--success-icon))]' : 'text-muted-foreground'}`}>
                           {fetchProgress >= 5 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
                           Connecting
@@ -1381,7 +1381,7 @@ export default function BulkImportSourceStep({
                   )}
 
                   {/* Info message */}
-                  <div className="mt-6 p-4 bg-muted border border-border rounded-lg text-sm text-foreground max-w-md text-center">
+                  <div className="mt-6 p-4 bg-muted border border-border rounded-lg text-body text-foreground max-w-md text-center">
                     <p className="font-medium">You can navigate away from this screen</p>
                     <p className="text-muted-foreground mt-1">
                       Just don&apos;t close this browser tab. Come back when you&apos;re ready — the fetch will continue in the background.
@@ -1414,7 +1414,7 @@ export default function BulkImportSourceStep({
                       <h3 className="font-semibold text-lg text-foreground">
                         Found <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{filteredActivities.length.toLocaleString()}</span> activit{filteredActivities.length === 1 ? 'y' : 'ies'} with <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions published by {orgDisplayName}
                       </h3>
-                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="mt-2 flex flex-wrap gap-4 text-body text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <Database className="h-4 w-4" />
                           <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{datastoreActivities.filter((a) => a.matched).length}</span> already in database
@@ -1484,13 +1484,13 @@ export default function BulkImportSourceStep({
                     <h3 className="font-semibold text-red-800">
                       Could not fetch IATI activities
                     </h3>
-                    <p className="text-sm text-destructive mt-1">
+                    <p className="text-body text-destructive mt-1">
                       {fetchError}
                     </p>
                     {fetchError?.includes('no IATI identifiers') && (
                       <a
                         href={`/organizations/${user?.organizationId}/edit`}
-                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2"
+                        className="inline-flex items-center gap-1 text-body text-blue-600 hover:text-blue-800 mt-2"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         Configure IATI identifiers in organisation settings
@@ -1517,7 +1517,7 @@ export default function BulkImportSourceStep({
             <AlertDescription>
               {isSuperUser ? (
                 <span className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-xs text-white border-0" style={{ backgroundColor: '#DC2625' }}>
+                  <Badge variant="outline" className="text-helper text-white border-0" style={{ backgroundColor: '#DC2625' }}>
                     {ROLE_LABELS[user?.role as keyof typeof ROLE_LABELS] || 'Administrator'}
                   </Badge>
                   You can fetch IATI activities for any organisation with an IATI identifier.
@@ -1527,7 +1527,7 @@ export default function BulkImportSourceStep({
                 <span className="flex items-center gap-2 flex-wrap">
                   <Badge
                     variant="outline"
-                    className="text-xs text-white border-0"
+                    className="text-helper text-white border-0"
                     style={{
                       backgroundColor: user?.role?.includes('gov_') ? '#059669' :
                                        user?.role?.includes('dev_') ? '#2563EB' :
@@ -1572,7 +1572,7 @@ export default function BulkImportSourceStep({
                     <h3 className="font-semibold text-lg text-green-800">
                       Validated {xmlParsedActivities.length} activities from {xmlMeta?.fileName}
                     </h3>
-                    <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <div className="mt-2 flex flex-wrap gap-4 text-body text-muted-foreground">
                       <div>
                         Valid: {xmlParsedActivities.filter((a) => !a.validationIssues?.some((i) => i.severity === 'error')).length}
                       </div>
@@ -1587,7 +1587,7 @@ export default function BulkImportSourceStep({
                         setXmlParsedActivities([])
                         setXmlValidated(false)
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground underline mt-2"
+                      className="text-body text-muted-foreground hover:text-foreground underline mt-2"
                     >
                       Choose a different file
                     </button>

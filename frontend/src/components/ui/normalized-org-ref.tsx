@@ -28,7 +28,7 @@ export function NormalizedOrgRef({
   const refDisplay = getOrgRefDisplay(orgRef);
   
   if (!refDisplay.normalized) {
-    return <span className="text-muted-foreground text-sm">Not set</span>;
+    return <span className="text-muted-foreground text-body">Not set</span>;
   }
   
   const baseClasses = `text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${className}`;
@@ -44,10 +44,10 @@ export function NormalizedOrgRef({
       {!refDisplay.isValid && showValidationIndicator && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="text-destructive text-xs cursor-help">⚠</span>
+            <span className="text-destructive text-helper cursor-help">⚠</span>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">Invalid IATI organization identifier format</p>
+            <p className="text-helper">Invalid IATI organization identifier format</p>
           </TooltipContent>
         </Tooltip>
       )}

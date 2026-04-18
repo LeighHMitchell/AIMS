@@ -207,7 +207,7 @@ export function ActivityEditorWithProperIndicators({
       <Card>
         <CardHeader>
           <CardTitle>Activity Editor - Proper Save Indicators</CardTitle>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-body text-muted-foreground mt-2">
             This example demonstrates the correct save indicator behavior for all field types including uploads.
           </p>
         </CardHeader>
@@ -255,7 +255,7 @@ export function ActivityEditorWithProperIndicators({
             </div>
             
             {(!activityId || activityId === 'NEW') && (
-              <p className="text-sm text-amber-600 mt-2">
+              <p className="text-body text-amber-600 mt-2">
                 Note: Banner and icon uploads will be enabled after the activity is created (after saving the title).
               </p>
             )}
@@ -554,7 +554,7 @@ export function ActivityEditorWithProperIndicators({
           {/* Behavior Examples */}
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <h4 className="font-semibold text-blue-900 mb-2">Save Indicator Behavior:</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+            <ul className="text-body text-blue-800 space-y-1">
               <li>• **Text fields**: No indicator while typing, orange on blur, green after save</li>
               <li>• **Select fields**: Save immediately on selection with brief orange indicator</li>
               <li>• **Upload fields**: Orange while processing, **green tick after successful backend save**</li>
@@ -566,7 +566,7 @@ export function ActivityEditorWithProperIndicators({
             
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
               <h5 className="font-medium text-green-800 mb-1">Fields with immediate green ticks:</h5>
-              <ul className="text-sm text-green-700 space-y-1">
+              <ul className="text-body text-green-700 space-y-1">
                 <li>• **UUID** - Auto-generated, always valid ✅</li>
                 <li>• **Activity Status** - Prefilled with "Pipeline" ✅</li>
                 <li>• **Activity Scope** - Prefilled with "National" ✅</li>

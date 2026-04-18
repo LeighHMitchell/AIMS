@@ -192,21 +192,21 @@ export function DocumentDropzone({
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">Uploading...</p>
+            <p className="text-body text-muted-foreground">Uploading...</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
             <Upload className="h-8 w-8 text-muted-foreground" />
             {isDragActive ? (
-              <p className="text-sm font-medium text-primary">
+              <p className="text-body font-medium text-primary">
                 Drop files here
               </p>
             ) : (
               <>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-body font-medium text-foreground">
                   Drag & drop files here, or click to browse
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   PDF, Word, Excel, images up to {formatFileSize(maxSize)}
                 </p>
               </>
@@ -225,8 +225,8 @@ export function DocumentDropzone({
             >
               {getFileIcon(doc.mimeType)}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{doc.fileName}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-body font-medium truncate">{doc.fileName}</p>
+                <p className="text-helper text-muted-foreground">
                   {formatFileSize(doc.fileSize)}
                 </p>
               </div>

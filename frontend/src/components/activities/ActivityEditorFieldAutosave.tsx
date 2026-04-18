@@ -134,7 +134,7 @@ export function ActivityEditorFieldAutosave({
               }}
             />
             {titleAutosave.state.error && (
-              <p className="text-xs text-destructive mt-1">{titleAutosave.state.error.toString()}</p>
+              <p className="text-helper text-destructive mt-1">{titleAutosave.state.error.toString()}</p>
             )}
           </div>
         </div>
@@ -167,7 +167,7 @@ export function ActivityEditorFieldAutosave({
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">Activity Status</span>
+                <span className="text-body font-medium text-foreground">Activity Status</span>
                 <HelpTextTooltip>
                   Indicates the current phase of the activity. This field should be regularly updated to reflect the activity's progress over time.
                 </HelpTextTooltip>
@@ -200,7 +200,7 @@ export function ActivityEditorFieldAutosave({
               dropdownId={dropdownId ? `${dropdownId}-status` : 'activity-status-select'}
             />
             {statusAutosave.state.error && (
-              <p className="text-xs text-destructive mt-1">{statusAutosave.state.error.toString()}</p>
+              <p className="text-helper text-destructive mt-1">{statusAutosave.state.error.toString()}</p>
             )}
           </div>
         </div>
@@ -235,7 +235,7 @@ export function ActivityEditorFieldAutosave({
               placeholder="Select default aid type"
             />
             {aidTypeAutosave.state.error && (
-              <p className="text-xs text-destructive mt-1">{aidTypeAutosave.state.error.toString()}</p>
+              <p className="text-helper text-destructive mt-1">{aidTypeAutosave.state.error.toString()}</p>
             )}
           </div>
         </div>
@@ -244,8 +244,8 @@ export function ActivityEditorFieldAutosave({
       {/* Autosave Status Summary - only show if showing all fields */}
       {showAll && (
         <div className="mt-6 p-4 bg-muted rounded-lg">
-          <h4 className="text-sm font-medium text-foreground mb-2">Autosave Status</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <h4 className="text-body font-medium text-foreground mb-2">Autosave Status</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-helper">
             <div>
               <span className="font-medium">Title:</span>
               <span className={`ml-1 ${titleAutosave.state.isSaving ? 'text-blue-600' : 'text-[hsl(var(--success-icon))]'}`}>

@@ -246,7 +246,7 @@ export function HumanitarianTab({
                 isSaving={isSaving}
                 isSaved={!isLoading && activityId !== 'NEW'}
                 hasValue={humanitarian}
-                className="text-sm font-medium cursor-pointer text-foreground"
+                className="text-body font-medium cursor-pointer text-foreground"
               >
                 <span className="flex items-center gap-2">
                   Humanitarian Activity
@@ -254,7 +254,7 @@ export function HumanitarianTab({
                 </span>
               </LabelSaveIndicator>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-helper text-muted-foreground mt-1">
               Identify if this activity is for emergency response or disaster relief
             </p>
             <Switch
@@ -322,7 +322,7 @@ export function HumanitarianTab({
                   <TableBody>
                     {scopes.map((scope) => (
                       <TableRow key={scope.id}>
-                        <TableCell className="text-sm align-top whitespace-nowrap">
+                        <TableCell className="text-body align-top whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             {scope.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
@@ -330,7 +330,7 @@ export function HumanitarianTab({
                             {getScopeTypeName(scope.type)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm align-top whitespace-nowrap">
+                        <TableCell className="text-body align-top whitespace-nowrap">
                           <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">{scope.vocabulary}</code>{' '}
                           {getVocabularyName(scope.vocabulary)}
                         </TableCell>
@@ -341,7 +341,7 @@ export function HumanitarianTab({
                               .filter(Boolean)
                               .join(' \u2014 ');
                             const inner = scope.vocabulary === '98' && emergencyMap[scope.code] ? (
-                              <div className="text-sm">
+                              <div className="text-body">
                                 <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
                                   {scope.code}
                                 </code>{' '}
@@ -371,21 +371,21 @@ export function HumanitarianTab({
                                     <span className="inline-block cursor-help">{inner}</span>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="max-w-sm">
-                                    <p className="text-xs">{narrativeText}</p>
+                                    <p className="text-helper">{narrativeText}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             );
                           })()}
                         </TableCell>
-                        <TableCell className="align-top text-sm">
+                        <TableCell className="align-top text-body">
                           {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (
                             <span>{emergencyMap[scope.code].location}</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="align-top text-sm whitespace-nowrap">
+                        <TableCell className="align-top text-body whitespace-nowrap">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] && formatEmergencyDateRange(emergencyMap[scope.code]) ? (
                             <span>{formatEmergencyDateRange(emergencyMap[scope.code])}</span>
                           ) : (

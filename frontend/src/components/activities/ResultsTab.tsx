@@ -665,7 +665,7 @@ export function ResultsTab({
                 Results define what your activity aims to achieve. They are organized into three levels: Outputs (immediate deliverables), Outcomes (medium-term changes), and Impacts (long-term effects).
               </HelpTextTooltip>
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             What changes will this activity achieve?
           </p>
         </div>
@@ -693,7 +693,7 @@ export function ResultsTab({
         );
         const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
         return (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground bg-muted/50 border border-border rounded-md px-4 py-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body text-muted-foreground bg-muted/50 border border-border rounded-md px-4 py-2">
             <span className="font-medium text-foreground">{plural(resultCount, 'result')}</span>
             <span>·</span>
             <span>{plural(indicatorCount, 'indicator')}</span>
@@ -896,7 +896,7 @@ export function ResultsTab({
                   <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)]">
                     <div className="space-y-4 pr-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-foreground">Result Name</Label>
+                        <Label className="text-body font-medium text-foreground">Result Name</Label>
                         <Input
                           value={
                             editingResultData[result.id]?.title?.[defaultLanguage] ??
@@ -913,7 +913,7 @@ export function ResultsTab({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-foreground">Description</Label>
+                        <Label className="text-body font-medium text-foreground">Description</Label>
                         <Textarea
                           value={
                             editingResultData[result.id]?.description?.[defaultLanguage] ??
@@ -933,7 +933,7 @@ export function ResultsTab({
 
                       {/* Aggregation Status Toggle */}
                       <div className="flex items-center gap-3 py-2">
-                        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Label className="text-body font-medium text-foreground flex items-center gap-2">
                           Aggregation Status
                           <HelpTextTooltip>
                             Enable if this result can be aggregated across multiple activities
@@ -997,7 +997,7 @@ export function ResultsTab({
               <button
                 type="button"
                 onClick={() => toggleResult(result.id)}
-                className="ml-10 mt-2 mb-1 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="ml-10 mt-2 mb-1 inline-flex items-center gap-2 text-body text-muted-foreground hover:text-foreground transition-colors"
                 aria-expanded={expandedResults.includes(result.id)}
               >
                 {expandedResults.includes(result.id)
@@ -1008,7 +1008,7 @@ export function ResultsTab({
                     ? `${result.indicators.length} measure${result.indicators.length === 1 ? '' : 's'}`
                     : 'No measures yet'}
                 </span>
-                <span className="text-xs opacity-70">
+                <span className="text-helper opacity-70">
                   {expandedResults.includes(result.id) ? '(hide)' : '(show)'}
                 </span>
               </button>
@@ -1063,7 +1063,7 @@ export function ResultsTab({
                               <div className="space-y-4 pr-4">
                                 {/* Title Editing */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-foreground">Indicator Name</Label>
+                                  <Label className="text-body font-medium text-foreground">Indicator Name</Label>
                                   <Input
                                     value={editingIndicatorValues.title || ''}
                                     onChange={(e) => {
@@ -1079,7 +1079,7 @@ export function ResultsTab({
 
                                 {/* Indicator Description */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-foreground">Description</Label>
+                                  <Label className="text-body font-medium text-foreground">Description</Label>
                                   <Textarea
                                     value={editingIndicatorValues.description || ''}
                                     onChange={(e) => {
@@ -1090,13 +1090,13 @@ export function ResultsTab({
                                     }}
                                     placeholder="Detailed description of this indicator"
                                     rows={2}
-                                    className="text-sm"
+                                    className="text-body"
                                   />
                                 </div>
 
                                 {/* Measure Type */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                                  <Label className="text-body font-medium text-foreground flex items-center gap-2">
                                     Measure Type
                                     <HelpTextTooltip>
                                       How this indicator is measured (unit, percentage, nominal, ordinal, or qualitative)
@@ -1117,7 +1117,7 @@ export function ResultsTab({
 
                                 {/* Ascending Toggle */}
                                 <div className="flex items-center justify-between py-2">
-                                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                                  <Label className="text-body font-medium text-foreground flex items-center gap-2">
                                     Ascending Values
                                     <HelpTextTooltip>
                                       Enable if higher values indicate better performance (e.g., literacy rate). Disable for negative indicators (e.g., mortality rate).
@@ -1136,7 +1136,7 @@ export function ResultsTab({
 
                                 {/* Aggregation Status Toggle */}
                                 <div className="flex items-center gap-3 py-2">
-                                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                                  <Label className="text-body font-medium text-foreground flex items-center gap-2">
                                     Aggregation Status
                                     <HelpTextTooltip>
                                       Enable if this indicator can be aggregated or compared across activities
@@ -1180,11 +1180,11 @@ export function ResultsTab({
 
                                 {/* Baseline Section */}
                                 <div className="space-y-4 p-4 bg-muted rounded-lg">
-                                  <h6 className="text-sm font-semibold text-foreground">Baseline Information</h6>
+                                  <h6 className="text-body font-semibold text-foreground">Baseline Information</h6>
 
                                   <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                                      <Label className="text-body font-medium text-foreground flex items-center gap-2">
                                         Baseline Value
                                         <HelpTextTooltip>
                                           The starting value before your activity began
@@ -1201,12 +1201,12 @@ export function ResultsTab({
                                           }));
                                         }}
                                         placeholder="Starting value"
-                                        className="text-sm"
+                                        className="text-body"
                                       />
                                     </div>
 
                                     <div className="space-y-2">
-                                      <Label className="text-sm font-medium text-foreground">Baseline Year</Label>
+                                      <Label className="text-body font-medium text-foreground">Baseline Year</Label>
                                       <Input
                                         type="number"
                                         min="1900"
@@ -1219,13 +1219,13 @@ export function ResultsTab({
                                           }));
                                         }}
                                         placeholder="e.g., 2020"
-                                        className="text-sm"
+                                        className="text-body"
                                       />
                                     </div>
                                   </div>
 
                                   <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-foreground">Baseline Date</Label>
+                                    <Label className="text-body font-medium text-foreground">Baseline Date</Label>
                                     <Input
                                       type="date"
                                       value={editingIndicatorValues.baseline_iso_date || ''}
@@ -1235,12 +1235,12 @@ export function ResultsTab({
                                           baseline_iso_date: e.target.value
                                         }));
                                       }}
-                                      className="text-sm max-w-xs"
+                                      className="text-body max-w-xs"
                                     />
                                   </div>
 
                                   <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-foreground">Baseline Comment</Label>
+                                    <Label className="text-body font-medium text-foreground">Baseline Comment</Label>
                                     <Textarea
                                       value={editingIndicatorValues.baseline_comment || ''}
                                       onChange={(e) => {
@@ -1251,7 +1251,7 @@ export function ResultsTab({
                                       }}
                                       placeholder="Explanation of baseline measurement"
                                       rows={2}
-                                      className="text-sm"
+                                      className="text-body"
                                     />
                                   </div>
 
@@ -1297,7 +1297,7 @@ export function ResultsTab({
                                 {/* Period Management */}
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                                    <Label className="text-body font-medium text-foreground flex items-center gap-2">
                                       <Clock className="h-4 w-4" />
                                       Progress Tracking Periods
                                       <HelpTextTooltip>
@@ -1308,7 +1308,7 @@ export function ResultsTab({
                                       size="sm"
                                       variant="outline"
                                       onClick={() => setShowAddPeriod(indicator.id)}
-                                      className="text-xs"
+                                      className="text-helper"
                                     >
                                       <Plus className="h-3 w-3 mr-1" />
                                       Add Period
@@ -1341,11 +1341,11 @@ export function ResultsTab({
                                                   >
                                                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                                   </Button>
-                                                  <div className="text-sm">
+                                                  <div className="text-body">
                                                     <div className="font-medium text-foreground">
                                                       {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
                                                     </div>
-                                                    <div className="text-xs text-muted-foreground">
+                                                    <div className="text-helper text-muted-foreground">
                                                       Target: {period.target_value?.toLocaleString() || 'Not set'} |
                                                       Actual: {period.actual_value?.toLocaleString() || 'Not set'}
                                                       {period.target_value && period.actual_value && (
@@ -1393,7 +1393,7 @@ export function ResultsTab({
                                               <div className="px-3 pb-3 space-y-3 border-t pt-3">
                                                 {/* Comments Display */}
                                                 {(period.target_comment || period.actual_comment) && (
-                                                  <div className="space-y-2 text-xs">
+                                                  <div className="space-y-2 text-helper">
                                                     {period.target_comment && (
                                                       <div>
                                                         <span className="font-medium text-foreground">Target: </span>
@@ -1512,7 +1512,7 @@ export function ResultsTab({
                                         });
                                         setShowAddPeriod(indicator.id);
                                       }}
-                                      className="text-xs"
+                                      className="text-helper"
                                     >
                                       + This Month
                                     </Button>
@@ -1535,7 +1535,7 @@ export function ResultsTab({
                                         });
                                         setShowAddPeriod(indicator.id);
                                       }}
-                                      className="text-xs"
+                                      className="text-helper"
                                     >
                                       + This Quarter
                                     </Button>
@@ -1657,27 +1657,27 @@ export function ResultsTab({
                                   </h5>
                                   
                                   {/* Measure Type Badge */}
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-helper">
                                     {MEASURE_TYPE_LABELS[indicator.measure as MeasureType] || indicator.measure}
                                   </Badge>
                                   
                                   {/* Ascending Indicator */}
                                   {indicator.ascending === false && (
-                                    <Badge variant="outline" className="text-xs bg-yellow-50">
+                                    <Badge variant="outline" className="text-helper bg-yellow-50">
                                       Descending
                                     </Badge>
                                   )}
                                   
                                   {/* Metadata Badges */}
                                   {indicator.references && indicator.references.length > 0 && (
-                                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                    <Badge variant="outline" className="text-helper flex items-center gap-1">
                                       <Link2 className="h-3 w-3" />
                                       {indicator.references.length}
                                     </Badge>
                                   )}
                                   
                                   {indicator.document_links && indicator.document_links.length > 0 && (
-                                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                    <Badge variant="outline" className="text-helper flex items-center gap-1">
                                       <FileText className="h-3 w-3" />
                                       {indicator.document_links.length}
                                     </Badge>
@@ -1686,7 +1686,7 @@ export function ResultsTab({
                                 
                                 {/* Indicator Description */}
                                 {indicator.description && (
-                                  <p className="text-sm text-muted-foreground mb-2">
+                                  <p className="text-body text-muted-foreground mb-2">
                                     {(indicator.description as any)[defaultLanguage] || Object.values(indicator.description)[0]}
                                   </p>
                                 )}
@@ -1735,7 +1735,7 @@ export function ResultsTab({
                         {/* Progress Chart - Separate Sub-Card */}
                         {(indicator.baseline?.value || (indicator.periods && indicator.periods.length > 0)) && (
                           <div className="mt-4 bg-white border border-border rounded-lg p-4">
-                            <h6 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <h6 className="text-body font-semibold text-foreground mb-3 flex items-center gap-2">
                               <BarChart3 className="h-4 w-4" />
                               Progress Visualization
                             </h6>
@@ -1743,7 +1743,7 @@ export function ResultsTab({
                               {/* Left side - Progress values stacked */}
                               <div className="flex flex-col gap-4 justify-center min-w-[120px]">
                                 <div>
-                                  <span className="text-muted-foreground text-sm flex items-center gap-1">
+                                  <span className="text-muted-foreground text-body flex items-center gap-1">
                                     Start:
                                     <HelpTextTooltip>
                                       Baseline value - the starting point before the activity began
@@ -1752,7 +1752,7 @@ export function ResultsTab({
                                   <p className="font-semibold text-lg text-foreground">{indicator.baseline?.value || 'Not set'}</p>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground text-sm flex items-center gap-1">
+                                  <span className="text-muted-foreground text-body flex items-center gap-1">
                                     Target:
                                     <HelpTextTooltip>
                                       Target value to achieve by the end of the period
@@ -1763,7 +1763,7 @@ export function ResultsTab({
                                   </p>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground text-sm flex items-center gap-1">
+                                  <span className="text-muted-foreground text-body flex items-center gap-1">
                                     Current:
                                     <HelpTextTooltip>
                                       Current/actual value achieved so far
@@ -1831,7 +1831,7 @@ export function ResultsTab({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">No measures added yet</p>
+                  <p className="text-muted-foreground text-body">No measures added yet</p>
                 )}
               </div>
             </div>
@@ -1954,13 +1954,13 @@ export function ResultsTab({
                                   <h6 className="font-medium text-foreground">
                                     {(indicator.title as any)[defaultLanguage] || Object.values(indicator.title)[0]}
                                   </h6>
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-body text-muted-foreground">
                                     Result: {(result.title as any)[defaultLanguage] || Object.values(result.title)[0]}
                                   </p>
         </div>
                                 <div className="text-right">
                                   <div className="text-lg font-semibold text-foreground">{achievementRate}%</div>
-                                  <div className="text-sm text-muted-foreground">Achievement</div>
+                                  <div className="text-body text-muted-foreground">Achievement</div>
                                 </div>
                               </div>
                               
@@ -2196,7 +2196,7 @@ export function ResultsTab({
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Period Start</Label>
+                <Label className="text-body font-medium text-foreground">Period Start</Label>
                 <Input
                   type="date"
                   value={newPeriod.period_start}
@@ -2204,7 +2204,7 @@ export function ResultsTab({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Period End</Label>
+                <Label className="text-body font-medium text-foreground">Period End</Label>
                 <Input
                   type="date"
                   value={newPeriod.period_end}
@@ -2215,7 +2215,7 @@ export function ResultsTab({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Target Value</Label>
+                <Label className="text-body font-medium text-foreground">Target Value</Label>
                 <Input
                   type="number"
                   step="any"
@@ -2225,7 +2225,7 @@ export function ResultsTab({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Actual Value</Label>
+                <Label className="text-body font-medium text-foreground">Actual Value</Label>
                 <Input
                   type="number"
                   step="any"
@@ -2237,7 +2237,7 @@ export function ResultsTab({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Target Comment</Label>
+              <Label className="text-body font-medium text-foreground">Target Comment</Label>
               <Textarea
                 value={newPeriod.target_comment}
                 onChange={(e) => setNewPeriod(prev => ({ ...prev, target_comment: e.target.value }))}
@@ -2247,7 +2247,7 @@ export function ResultsTab({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Actual Comment</Label>
+              <Label className="text-body font-medium text-foreground">Actual Comment</Label>
               <Textarea
                 value={newPeriod.actual_comment}
                 onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_comment: e.target.value }))}

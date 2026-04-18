@@ -191,7 +191,7 @@ export default function RolodexPage() {
 
   const renderPaginationControls = () => (
     <div className="flex items-center justify-between">
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body text-muted-foreground">
         Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
         {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
         {pagination.total} people
@@ -402,7 +402,7 @@ export default function RolodexPage() {
                 <AlertCircle className="h-5 w-5" />
                 <div>
                   <h3 className="font-medium">Error loading rolodex data</h3>
-                  <p className="text-sm text-destructive mt-1">{error}</p>
+                  <p className="text-body text-destructive mt-1">{error}</p>
                 </div>
               </div>
             </CardContent>
@@ -439,9 +439,9 @@ export default function RolodexPage() {
                   <table className="w-full table-auto border-collapse">
                     <thead className="bg-surface-muted border-b border-border">
                       <tr>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[60px]"></th>
+                        <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground w-[60px]"></th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[180px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('name')}
                         >
                           <div className="flex items-center">
@@ -450,7 +450,7 @@ export default function RolodexPage() {
                           </div>
                         </th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('email')}
                         >
                           <div className="flex items-center">
@@ -458,9 +458,9 @@ export default function RolodexPage() {
                             {getSortIcon('email')}
                           </div>
                         </th>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">Phone</th>
+                        <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[140px]">Phone</th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('organization')}
                         >
                           <div className="flex items-center">
@@ -469,7 +469,7 @@ export default function RolodexPage() {
                           </div>
                         </th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground min-w-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('role')}
                         >
                           <div className="flex items-center">
@@ -478,7 +478,7 @@ export default function RolodexPage() {
                           </div>
                         </th>
                         <th 
-                          className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px] cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground w-[100px] cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => handleSortChange('source')}
                         >
                           <div className="flex items-center">
@@ -486,7 +486,7 @@ export default function RolodexPage() {
                             {getSortIcon('source')}
                           </div>
                         </th>
-                        <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[80px]" />
+                        <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground w-[80px]" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border bg-white">
@@ -501,18 +501,18 @@ export default function RolodexPage() {
                               initials={getInitials(person.name || '')}
                             />
                           </td>
-                          <td className="px-4 py-2 text-sm text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-middle">
                             <div className="font-medium text-foreground leading-tight">{person.name}</div>
                             {person.job_title && (
-                              <div className="text-xs text-muted-foreground">{person.job_title}</div>
+                              <div className="text-helper text-muted-foreground">{person.job_title}</div>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-sm text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-middle">
                             {person.email && (
                               <div className="group/email inline-flex items-center">
                                 <a
                                   href={`mailto:${person.email}`}
-                                  className="text-sm text-foreground inline-flex items-center"
+                                  className="text-body text-foreground inline-flex items-center"
                                 >
                                   <Mail className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
                                   <span>{person.email}</span>
@@ -531,22 +531,22 @@ export default function RolodexPage() {
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-sm text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-middle">
                             {person.phone && (
                               <a 
                                 href={`tel:${person.phone}`}
-                                className="text-sm text-foreground inline-flex items-center"
+                                className="text-body text-foreground inline-flex items-center"
                               >
                                 <Phone className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
                                 <span>{person.phone}</span>
                               </a>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-sm text-foreground align-middle text-left">
+                          <td className="px-4 py-2 text-body text-foreground align-middle text-left">
                             {person.organization_name && (
                               <button
                                 onClick={() => person.organization_id && handleOrganizationClick(person.organization_id)}
-                                className="text-sm text-foreground hover:text-blue-600 inline-flex items-center justify-start text-left"
+                                className="text-body text-foreground hover:text-blue-600 inline-flex items-center justify-start text-left"
                                 disabled={!person.organization_id}
                               >
                                 <Building2 className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
@@ -562,10 +562,10 @@ export default function RolodexPage() {
                               </button>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-sm text-foreground align-middle">
+                          <td className="px-4 py-2 text-body text-foreground align-middle">
                             <span>{person.role_label || person.role || '-'}</span>
                           </td>
-                          <td className="px-4 py-2 text-sm align-middle">
+                          <td className="px-4 py-2 text-body align-middle">
                             <Badge 
                               variant="secondary" 
                               className={`text-xs ${
@@ -577,7 +577,7 @@ export default function RolodexPage() {
                               {person.source === 'user' ? 'User' : 'Activity'}
                             </Badge>
                           </td>
-                          <td className="px-4 py-2 text-sm align-middle">
+                          <td className="px-4 py-2 text-body align-middle">
                             <div className="flex items-center gap-1">
                               {person.activity_id && (
                                 <Button

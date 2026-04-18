@@ -744,7 +744,7 @@ export default function TransactionModal({
           <Info className="h-3 w-3 text-muted-foreground inline-block ml-1" />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
-          <p className="text-sm">{text}</p>
+          <p className="text-body">{text}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -757,10 +757,10 @@ export default function TransactionModal({
 
   // Add missing imports and components needed
   const LabelSaveIndicator = ({ children, isSaving, isSaved }: { children: React.ReactNode; isSaving?: boolean; isSaved?: boolean }) => (
-    <Label className="text-sm font-medium">
+    <Label className="text-body font-medium">
       {children}
-      {isSaving && <span className="text-xs text-blue-500 ml-1">(saving...)</span>}
-      {isSaved && <span className="text-xs text-[hsl(var(--success-icon))] ml-1">(saved)</span>}
+      {isSaving && <span className="text-helper text-blue-500 ml-1">(saving...)</span>}
+      {isSaved && <span className="text-helper text-[hsl(var(--success-icon))] ml-1">(saved)</span>}
     </Label>
   );
 
@@ -768,7 +768,7 @@ export default function TransactionModal({
 
   const CopyField = ({ label, value, placeholder }: any) => (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-body font-medium">{label}</Label>
       <Input value={value} placeholder={placeholder} readOnly />
     </div>
   );
@@ -792,7 +792,7 @@ export default function TransactionModal({
   );
 
   const FieldDescription = ({ children }: { children: React.ReactNode }) => (
-    <p className="text-xs text-muted-foreground mt-1">{children}</p>
+    <p className="text-helper text-muted-foreground mt-1">{children}</p>
   );
 
   // Enhanced constants with descriptions
@@ -1099,7 +1099,7 @@ export default function TransactionModal({
               {/* Type and Status Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="transaction_type" className="text-sm font-medium">
+                  <Label htmlFor="transaction_type" className="text-body font-medium">
                     Transaction Type
                     <InfoTooltip text="IATI transaction type code, name, and description." />
                   </Label>
@@ -1171,7 +1171,7 @@ export default function TransactionModal({
                                     {opt.name}
                                   </span>
                                 </div>
-                                <div className="text-sm text-muted-foreground pl-10 leading-relaxed w-full">
+                                <div className="text-body text-muted-foreground pl-10 leading-relaxed w-full">
                                   {opt.desc}
                                 </div>
                               </CommandItem>
@@ -1189,10 +1189,10 @@ export default function TransactionModal({
                             );
                           }).length === 0 && (
                             <div className="py-8 text-center">
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-body text-muted-foreground">
                                 No transaction types found.
                               </div>
-                              <div className="text-xs text-muted-foreground mt-1">
+                              <div className="text-helper text-muted-foreground mt-1">
                                 Try adjusting your search terms
                               </div>
                             </div>
@@ -1209,7 +1209,7 @@ export default function TransactionModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium">
+                  <Label htmlFor="status" className="text-body font-medium">
                     Validation Status
                   </Label>
                   {user && getUserPermissions(user.role).canValidateActivities ? (
@@ -1228,10 +1228,10 @@ export default function TransactionModal({
                           className="h-5 w-5"
                         />
                         <div className="flex flex-col">
-                          <Label htmlFor="validated" className="text-sm font-medium cursor-pointer">
+                          <Label htmlFor="validated" className="text-body font-medium cursor-pointer">
                             Mark as Validated
                           </Label>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-helper text-muted-foreground">
                             Toggle to validate this transaction
                           </span>
                         </div>
@@ -1248,10 +1248,10 @@ export default function TransactionModal({
                     // Read-only status display for users without permission
                     <div className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-muted px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">
+                        <span className="text-body font-medium">
                           {formData.status === 'actual' ? 'Validated Transaction' : 'Unvalidated Transaction'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-helper text-muted-foreground">
                           Current status: {formData.status || 'draft'}
                         </span>
                       </div>
@@ -1270,7 +1270,7 @@ export default function TransactionModal({
               {/* Value and Currency Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="value" className="text-sm font-medium">
+                  <Label htmlFor="value" className="text-body font-medium">
                     Transaction Value
                   </Label>
                   <Input
@@ -1322,7 +1322,7 @@ export default function TransactionModal({
               {/* Dates Row - Transaction Date and Value Date aligned */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="transaction_date" className="text-sm font-medium">
+                  <Label htmlFor="transaction_date" className="text-body font-medium">
                     Transaction Date
                     <InfoTooltip text="The date the transaction took place (legal or accounting event)" />
                   </Label>
@@ -1343,7 +1343,7 @@ export default function TransactionModal({
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="value_date" className="text-sm font-medium">
+                    <Label htmlFor="value_date" className="text-body font-medium">
                       Value Date
                       <InfoTooltip text="Use only if the value was exchanged on a different date (e.g., FX settlement). Otherwise, leave blank." />
                     </Label>
@@ -1363,7 +1363,7 @@ export default function TransactionModal({
                       />
                       <Label 
                         htmlFor="fx_date_different" 
-                        className="text-sm font-normal cursor-pointer"
+                        className="text-body font-normal cursor-pointer"
                       >
                         FX settlement date is different
                       </Label>
@@ -1414,7 +1414,7 @@ export default function TransactionModal({
                         }
                       }}
                       placeholder="Select provider organization"
-                      className="w-full rounded-md border px-4 py-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-md border px-4 py-4 text-body shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1445,7 +1445,7 @@ export default function TransactionModal({
                         }
                       }}
                       placeholder="Select receiver organization"
-                      className="w-full rounded-md border px-4 py-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-md border px-4 py-4 text-body shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1562,7 +1562,7 @@ export default function TransactionModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Disbursement Channel */}
                 <div className="space-y-2">
-                  <Label htmlFor="disbursement_channel" className="text-sm font-medium">
+                  <Label htmlFor="disbursement_channel" className="text-body font-medium">
                     Disbursement Channel
                     <InfoTooltip text="How funds are disbursed" />
                   </Label>
@@ -1628,7 +1628,7 @@ export default function TransactionModal({
                                       {option.label}
                                     </span>
                                   </div>
-                                  <div className="text-sm text-muted-foreground pl-10 leading-relaxed w-full">
+                                  <div className="text-body text-muted-foreground pl-10 leading-relaxed w-full">
                                     {option.desc}
                                   </div>
                                 </CommandItem>
@@ -1646,10 +1646,10 @@ export default function TransactionModal({
                             );
                           }).length === 0 && (
                             <div className="py-8 text-center">
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-body text-muted-foreground">
                                 No disbursement channels found.
                               </div>
-                              <div className="text-xs text-muted-foreground mt-1">
+                              <div className="text-helper text-muted-foreground mt-1">
                                 Try adjusting your search terms
                               </div>
                             </div>
@@ -1672,7 +1672,7 @@ export default function TransactionModal({
                     checked={formData.is_humanitarian}
                     onCheckedChange={checked => setFormData({ ...formData, is_humanitarian: checked })}
                   />
-                  <Label htmlFor="is_humanitarian" className="text-sm font-normal cursor-pointer ml-3 flex items-center gap-2">
+                  <Label htmlFor="is_humanitarian" className="text-body font-normal cursor-pointer ml-3 flex items-center gap-2">
                     <Siren className="h-4 w-4 text-destructive" />
                     Humanitarian Transaction
                     <InfoTooltip text="Tick this if the transaction qualifies as humanitarian assistance under IATI or OCHA guidelines, including emergency response, disaster relief, or protection activities." />
@@ -1684,12 +1684,12 @@ export default function TransactionModal({
             {/* Supporting Documents Section */}
             <div className="space-y-4">
               <SectionHeader title="Supporting Documents" />
-              <div className="text-sm text-muted-foreground mb-4">
+              <div className="text-body text-muted-foreground mb-4">
                 Upload receipts, invoices, contracts, or other evidence to support this transaction. 
                 You can also add links to documents hosted elsewhere.
               </div>
               {!(createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) ? (
-                <div className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded p-3 my-2">
+                <div className="text-body text-muted-foreground bg-amber-50 border border-amber-200 rounded p-3 my-2">
                   You must complete the required fields before uploading documents.<br />
                   <strong>Required:</strong> Transaction Type, Date, Value, Currency, Activity ID.<br />
                   {creationError && <span className="text-destructive">{creationError}</span>}
@@ -1722,7 +1722,7 @@ export default function TransactionModal({
                     placeholder="Parent activity ID"
                   />
                   <div className="space-y-2">
-                    <Label htmlFor="transaction_reference_bottom" className="text-sm font-medium">
+                    <Label htmlFor="transaction_reference_bottom" className="text-body font-medium">
                       Transaction Reference
                       <InfoTooltip text="Internal grant, contract, or payment system reference" />
                     </Label>

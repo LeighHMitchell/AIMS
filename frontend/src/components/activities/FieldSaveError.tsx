@@ -36,7 +36,7 @@ export function FieldSaveError({
 
   return (
     <div
-      className={`flex items-start gap-2 text-xs text-destructive ${className}`}
+      className={`flex items-start gap-2 text-helper text-destructive ${className}`}
       role="alert"
     >
       <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0" aria-hidden="true" />

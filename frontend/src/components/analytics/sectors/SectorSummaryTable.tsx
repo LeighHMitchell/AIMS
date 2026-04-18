@@ -216,7 +216,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-helper">
                 {filteredAndSortedData.length} of {data.length} sectors
               </Badge>
               <Button
@@ -273,19 +273,19 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
                       <TableCell className="font-medium">
                         <div>
                           <div className="font-semibold text-foreground">{item.sectorName}</div>
-                          <div className="text-xs text-muted-foreground">{item.sectorCode}</div>
+                          <div className="text-helper text-muted-foreground">{item.sectorCode}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div>
                           <div className="font-medium">{formatCompactCurrency(item.plannedDisbursements)}</div>
-                          <div className="text-xs text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
+                          <div className="text-helper text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div>
                           <div className="font-semibold text-green-700">{formatCompactCurrency(item.actualDisbursements)}</div>
-                          <div className="text-xs text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
+                          <div className="text-helper text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">

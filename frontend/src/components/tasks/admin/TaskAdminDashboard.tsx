@@ -189,7 +189,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">On-Time Rate</p>
+                <p className="text-body font-medium text-muted-foreground">On-Time Rate</p>
                 <p className="text-2xl font-bold">{summary?.on_time_rate ?? 0}%</p>
               </div>
               <div className="rounded-full bg-muted p-3">
@@ -202,7 +202,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Decline Rate</p>
+                <p className="text-body font-medium text-muted-foreground">Decline Rate</p>
                 <p className="text-2xl font-bold">{summary?.decline_rate ?? 0}%</p>
               </div>
               <div className="rounded-full bg-muted p-3">
@@ -215,7 +215,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Emails Sent</p>
+                <p className="text-body font-medium text-muted-foreground">Emails Sent</p>
                 <p className="text-2xl font-bold">{summary?.emails_this_period ?? 0}</p>
               </div>
               <div className="rounded-full bg-muted p-3">
@@ -351,7 +351,7 @@ function SummaryCard({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <CardTitle className="text-body font-medium">{title}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
@@ -363,7 +363,7 @@ function SummaryCard({
         ) : (
           <>
             <div className={`text-2xl font-bold ${valueClassName || ''}`}>{value}</div>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="text-helper text-muted-foreground">{description}</p>
           </>
         )}
       </CardContent>

@@ -520,10 +520,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 </>
               ) : displayActivities.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     {searchQuery.trim() ? `No activities found for "${searchQuery}"` : 'No activities available'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-helper text-muted-foreground mt-2">
                     Try a different search term
                   </p>
                             </div>
@@ -555,7 +555,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           )}
                         </div>
                         {/* Second line: Org logo · Org name (acronym) · Org IATI ID */}
-                        <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="mt-1 flex items-center gap-1.5 text-helper text-muted-foreground">
                           <OrganizationLogo
                             logo={activity.organizationLogo}
                             name={activity.organizationName}
@@ -643,7 +643,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         {/* First line: Arrow + Title (Acronym) · Activity ID + Green tick */}
                         <div className="flex items-center gap-1.5 mb-1">
                           {getRelationshipIcon(link.relationshipType)}
-                          <span className="font-medium text-foreground text-sm">
+                          <span className="font-medium text-foreground text-body">
                             {link.activityTitle}
                             {link.acronym && ` (${link.acronym})`}
                           </span>
@@ -661,7 +661,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                         {/* Second line: Narrative or relationship description */}
                         <div className="ml-6 space-y-1">
                           {(link.organizationName || link.organizationAcronym) && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-helper text-muted-foreground">
                               {link.organizationName}
                               {link.organizationAcronym && ` (${link.organizationAcronym})`}
                             </p>
@@ -669,12 +669,12 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           {link.narrative && (
                             <div>
                               {link.narrative.startsWith('Imported from XML') ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md" style={{ backgroundColor: '#004F59', color: 'white' }}>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-helper font-semibold rounded-md" style={{ backgroundColor: '#004F59', color: 'white' }}>
                                   <FileCode className="h-3 w-3 flex-shrink-0" />
                                   Imported from XML
                                 </span>
                               ) : (
-                                <p className="text-sm text-muted-foreground">{link.narrative}</p>
+                                <p className="text-body text-muted-foreground">{link.narrative}</p>
                               )}
                             </div>
                           )}
@@ -759,7 +759,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                 <div className="flex-1 min-w-0">
                   {/* First line: Title (Acronym) · ID */}
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-foreground text-sm">
+                    <span className="font-medium text-foreground text-body">
                       {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
                       {(selectedActivity?.acronym || editingActivity?.acronym) && ` (${selectedActivity?.acronym || editingActivity?.acronym})`}
                     </span>
@@ -776,7 +776,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                   {/* Second line: Org name */}
                   {((selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym)) ||
                     (editingActivity && (editingActivity.organizationName || editingActivity.organizationAcronym))) && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       {selectedActivity ? (
                         selectedActivity.organizationName && selectedActivity.organizationAcronym
                           ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`

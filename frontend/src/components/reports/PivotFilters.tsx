@@ -170,12 +170,12 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
       <div className="bg-muted/30 rounded-lg border">
         <CollapsibleTrigger asChild>
           <button className="flex items-center justify-between w-full p-4 text-left hover:bg-muted/50 transition-colors rounded-lg">
-            <h3 className="text-sm font-medium flex items-center gap-2">
+            <h3 className="text-body font-medium flex items-center gap-2">
               <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
               <SlidersHorizontal className="h-4 w-4" />
               Filters
               {hasActiveFilters && (
-                <span className="text-xs text-muted-foreground font-normal">(active)</span>
+                <span className="text-helper text-muted-foreground font-normal">(active)</span>
               )}
             </h3>
             {hasActiveFilters && (
@@ -184,7 +184,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
                   e.stopPropagation()
                   handleClearFilters()
                 }}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-helper text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 Clear all
               </span>
@@ -197,7 +197,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Date Range */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   Transaction Date Range
                 </label>
@@ -209,7 +209,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
                     startDate={filters.startDate}
                     endDate={filters.endDate}
                     placeholderText="Start"
-                    className="w-full h-9 px-3 text-sm border rounded-md bg-background"
+                    className="w-full h-9 px-3 text-body border rounded-md bg-background"
                     dateFormat="MMM d, yyyy"
                   />
                   <DatePicker
@@ -220,7 +220,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
                     endDate={filters.endDate}
                     minDate={filters.startDate || undefined}
                     placeholderText="End"
-                    className="w-full h-9 px-3 text-sm border rounded-md bg-background"
+                    className="w-full h-9 px-3 text-body border rounded-md bg-background"
                     dateFormat="MMM d, yyyy"
                   />
                 </div>
@@ -228,7 +228,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
 
               {/* Organization Filter */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   <Building2 className="h-3 w-3" />
                   Development Partner
                 </label>
@@ -245,7 +245,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
 
               {/* Activity Status Filter */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   <Activity className="h-3 w-3" />
                   Activity Status
                 </label>
@@ -261,7 +261,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
 
               {/* Sector Filter */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   <Layers className="h-3 w-3" />
                   Sector
                 </label>
@@ -278,7 +278,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
 
               {/* Transaction Type Filter */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   Transaction Type
                 </label>
                 <MultiSelectFilter
@@ -292,7 +292,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
 
               {/* Fiscal Year Filter */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   Fiscal Year
                 </label>
                 <MultiSelectFilter
@@ -306,7 +306,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
 
               {/* Record Type Filter */}
               <div className="space-y-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <label className="text-helper text-muted-foreground flex items-center gap-1">
                   Record Type
                 </label>
                 <MultiSelectFilter

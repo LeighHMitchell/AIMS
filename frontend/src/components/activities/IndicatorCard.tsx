@@ -205,25 +205,25 @@ export function IndicatorCard({
               <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {getStatusIcon()}
-                    <Badge variant="outline" className="text-xs text-foreground">
+                    <Badge variant="outline" className="text-helper text-foreground">
                       {MEASURE_TYPE_LABELS[indicator.measure]}
                     </Badge>
                     {indicator.ascending && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-helper">
                         Ascending
                       </Badge>
                     )}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       {indicator.periods?.length || 0} periods
                     </span>
                   </div>
                   
-                  <CardTitle className="text-sm">
+                  <CardTitle className="text-body">
                     {indicator.title[defaultLanguage] || Object.values(indicator.title)[0]}
                   </CardTitle>
                   
                   {indicator.description && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       {indicator.description[defaultLanguage] || Object.values(indicator.description)[0]}
                     </p>
                   )}
@@ -231,7 +231,7 @@ export function IndicatorCard({
                   {/* Progress bar */}
                   {indicator.status && indicator.status.percentage > 0 && (
                     <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                      <div className="flex items-center justify-between text-helper text-muted-foreground mb-1">
                         <span>Progress: {indicator.status.label}</span>
                         <span>{indicator.status.percentage}%</span>
                       </div>
@@ -416,7 +416,7 @@ export function IndicatorCard({
 
               {indicator.baseline ? (
                 <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-body">
                     <div>
                       <span className="font-medium">Year:</span> {indicator.baseline.baseline_year}
                     </div>
@@ -439,11 +439,11 @@ export function IndicatorCard({
                     </div>
                   </div>
                   {indicator.baseline.comment && (
-                    <p className="text-xs text-muted-foreground mt-2">{indicator.baseline.comment}</p>
+                    <p className="text-helper text-muted-foreground mt-2">{indicator.baseline.comment}</p>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No baseline data yet — add a starting value to track progress</p>
+                <p className="text-body text-muted-foreground italic">No baseline data yet — add a starting value to track progress</p>
               )}
 
               {/* Baseline Form */}
@@ -606,7 +606,7 @@ export function IndicatorCard({
               {indicator.periods && indicator.periods.length > 0 ? (
                 <div className="space-y-2">
                   {/* Table Header */}
-                  <div className="grid grid-cols-6 gap-2 text-xs font-medium text-muted-foreground px-3 py-2 bg-muted rounded-lg">
+                  <div className="grid grid-cols-6 gap-2 text-helper font-medium text-muted-foreground px-3 py-2 bg-muted rounded-lg">
                     <div>FACET</div>
                     <div>BASELINE</div>
                     <div>TARGET</div>
@@ -647,9 +647,9 @@ export function IndicatorCard({
               ) : (
                 <div className="text-center py-6 border-2 border-dashed border-border rounded-lg">
                   <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No periods added yet</p>
+                  <p className="text-body text-muted-foreground">No periods added yet</p>
                   {!readOnly && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       Define time periods to set targets and record progress
                     </p>
                   )}

@@ -162,10 +162,10 @@ const CustomTooltip = ({ active, payload }: any) => {
       className="bg-white p-4 rounded-lg shadow-lg border"
       style={{ backgroundColor: "#f1f4f8", borderColor: "#cfd0d5" }}
     >
-      <div className="font-semibold text-sm mb-2" style={{ color: "#4c5568" }}>
+      <div className="font-semibold text-body mb-2" style={{ color: "#4c5568" }}>
         {data.code} - {data.name}
       </div>
-      <div className="space-y-1 text-sm">
+      <div className="space-y-1 text-body">
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Budget:</span>
           <span className="font-medium">{formatCurrency(data.budgetAmount, data.currency)}</span>
@@ -221,7 +221,7 @@ export function DomesticBudgetTreemap({ data, valueKey }: DomesticBudgetTreemapP
           <p className="text-lg font-medium" style={{ color: "#4c5568" }}>
             No data to visualize
           </p>
-          <p className="text-sm mt-1" style={{ color: "#7b95a7" }}>
+          <p className="text-body mt-1" style={{ color: "#7b95a7" }}>
             {valueKey === "budget"
               ? "Add budget entries with budget amounts to see the treemap"
               : "Add budget entries with expenditure amounts to see the treemap"}

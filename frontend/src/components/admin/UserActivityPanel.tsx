@@ -209,14 +209,14 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-muted/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                <div className="flex items-center gap-2 text-muted-foreground text-body mb-1">
                   <Activity className="h-4 w-4" />
                   Total Actions
                 </div>
                 <p className="text-2xl font-bold">{stats.totalActions}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                <div className="flex items-center gap-2 text-muted-foreground text-body mb-1">
                   <LogIn className="h-4 w-4" />
                   Login Count
                 </div>
@@ -225,7 +225,7 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
             </div>
 
             {/* Timestamps */}
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-body">
               {stats.lastLogin && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
@@ -250,7 +250,7 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
               {logs.length === 0 ? (
                 <div className="text-center py-8">
                   <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No activity recorded</p>
+                  <p className="text-body text-muted-foreground">No activity recorded</p>
                 </div>
               ) : (
                 <ScrollArea className="h-[400px] pr-4">
@@ -258,7 +258,7 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
                     {Object.entries(groupedLogs).map(([date, dayLogs]) => (
                       <div key={date}>
                         <div className="sticky top-0 bg-background py-1">
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-helper">
                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                           </Badge>
                         </div>
@@ -269,17 +269,17 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
                                 {getActionIcon(log.actionType, log.entityType)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm">
+                                <p className="text-body">
                                   {getActionDescription(log)}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-helper text-muted-foreground">
                                     {format(new Date(log.timestamp), 'HH:mm')}
                                   </span>
                                   {log.entityType && log.entityType !== 'session' && (
                                     <>
-                                      <span className="text-xs text-muted-foreground">•</span>
-                                      <Badge variant="secondary" className="text-xs h-5">
+                                      <span className="text-helper text-muted-foreground">•</span>
+                                      <Badge variant="secondary" className="text-helper h-5">
                                         {log.entityType}
                                       </Badge>
                                     </>

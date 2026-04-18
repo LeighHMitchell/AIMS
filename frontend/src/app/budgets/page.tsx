@@ -414,7 +414,7 @@ export default function BudgetsPage() {
         <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Search</Label>
+              <Label className="text-helper text-muted-foreground">Search</Label>
               <Input
                 placeholder="Search budgets..."
                 value={searchQuery}
@@ -425,7 +425,7 @@ export default function BudgetsPage() {
 
             {/* Filters */}
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Type</Label>
+                <Label className="text-helper text-muted-foreground">Type</Label>
                 <MultiSelectFilter
                   options={[
                     { value: "1", label: "Original", code: "1", color: "#3b82f6" },
@@ -442,7 +442,7 @@ export default function BudgetsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Label className="text-helper text-muted-foreground">Status</Label>
                 <MultiSelectFilter
                   options={[
                     { value: "1", label: "Indicative", code: "1", color: "#94a3b8" },
@@ -459,7 +459,7 @@ export default function BudgetsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Organisation</Label>
+                <Label className="text-helper text-muted-foreground">Organisation</Label>
                 <MultiSelectFilter
                   options={organizations.map((org) => ({
                     value: org.id,
@@ -484,7 +484,7 @@ export default function BudgetsPage() {
 
             {/* Column Selector */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Columns</Label>
+              <Label className="text-helper text-muted-foreground">Columns</Label>
               <BudgetColumnSelector
                 visibleColumns={visibleColumns}
                 onColumnsChange={setVisibleColumns}
@@ -568,7 +568,7 @@ export default function BudgetsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalBudgets)} to {Math.min(endIndex, totalBudgets)} of {totalBudgets} budgets
                 </div>
                 
@@ -646,7 +646,7 @@ export default function BudgetsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground">Items per page:</label>
+                  <label className="text-body text-muted-foreground">Items per page:</label>
                   <Select 
                     value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

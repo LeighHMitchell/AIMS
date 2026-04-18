@@ -290,7 +290,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                       <div className="px-4 pb-4 space-y-4 border-t border-border">
                         {/* Score Selection Dropdown */}
                         <div className="space-y-2 pt-4">
-                          <Label className="text-sm font-medium text-foreground">
+                          <Label className="text-body font-medium text-foreground">
                             Policy Marker Score
                           </Label>
                           <PolicyMarkerScoreSelect
@@ -303,7 +303,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                         {/* Rationale Field - Only show when score > 0 */}
                         {score > 0 && (
                           <div className="space-y-2 pt-2 border-t border-border">
-                            <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-foreground">
+                            <Label htmlFor={`${marker.id}-rationale`} className="text-body font-medium text-foreground">
                               Rationale for Scoring
                             </Label>
                             <Textarea
@@ -312,7 +312,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                               value={selected?.rationale || ''}
                               onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
                               rows={3}
-                              className="text-sm"
+                              className="text-body"
                             />
                           </div>
                         )}
@@ -374,7 +374,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                       <div className="px-4 pb-4 space-y-4 border-t border-border">
                         {/* Score Selection Dropdown */}
                         <div className="space-y-2 pt-4">
-                          <Label className="text-sm font-medium text-foreground">
+                          <Label className="text-body font-medium text-foreground">
                             Policy Marker Score
                           </Label>
                           <PolicyMarkerScoreSelect
@@ -387,7 +387,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                         {/* Rationale Field - Only show when score > 0 */}
                         {score > 0 && (
                           <div className="space-y-2 pt-2 border-t border-border">
-                            <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-foreground">
+                            <Label htmlFor={`${marker.id}-rationale`} className="text-body font-medium text-foreground">
                               Rationale for Scoring
                             </Label>
                             <Textarea
@@ -396,7 +396,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                               value={selected?.rationale || ''}
                               onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
                               rows={3}
-                              className="text-sm"
+                              className="text-body"
                             />
                           </div>
                         )}
@@ -458,7 +458,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                       <div className="px-4 pb-4 space-y-4 border-t border-border">
                         {/* Score Selection Dropdown */}
                         <div className="space-y-2 pt-4">
-                          <Label className="text-sm font-medium text-foreground">
+                          <Label className="text-body font-medium text-foreground">
                             Policy Marker Score
                           </Label>
                           <PolicyMarkerScoreSelect
@@ -471,7 +471,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                         {/* Rationale Field - Only show when score > 0 */}
                         {score > 0 && (
                           <div className="space-y-2 pt-2 border-t border-border">
-                            <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-foreground">
+                            <Label htmlFor={`${marker.id}-rationale`} className="text-body font-medium text-foreground">
                               Rationale for Scoring
                             </Label>
                             <Textarea
@@ -480,7 +480,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                               value={selected?.rationale || ''}
                               onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
                               rows={3}
-                              className="text-sm"
+                              className="text-body"
                             />
                           </div>
                         )}

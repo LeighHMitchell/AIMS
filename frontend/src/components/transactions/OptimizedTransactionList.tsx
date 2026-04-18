@@ -214,22 +214,22 @@ export function OptimizedTransactionList({
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-helper">
               {transaction.transaction_type}
             </Badge>
             {transaction.flow_type && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-helper">
                 {transaction.flow_type}
               </Badge>
             )}
             {transaction.finance_type && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-helper">
                 {transaction.finance_type}
               </Badge>
             )}
           </div>
           
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-4 text-body">
             <div className="flex items-center gap-1 text-muted-foreground">
               <DollarSign className="w-4 h-4" />
               <span className="font-medium">
@@ -244,13 +244,13 @@ export function OptimizedTransactionList({
           </div>
           
           {transaction.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+            <p className="text-body text-muted-foreground mt-1 line-clamp-1">
               {transaction.description}
             </p>
           )}
           
           {(transaction.provider_org || transaction.receiver_org) && (
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-helper text-muted-foreground mt-1">
               {transaction.provider_org && `From: ${transaction.provider_org}`}
               {transaction.provider_org && transaction.receiver_org && ' → '}
               {transaction.receiver_org && `To: ${transaction.receiver_org}`}
@@ -317,7 +317,7 @@ export function OptimizedTransactionList({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body text-muted-foreground">
         {searchResults ? (
           `Found ${searchResults.total} transactions`
         ) : (
@@ -328,7 +328,7 @@ export function OptimizedTransactionList({
 
       {/* Error Display */}
       {searchError && (
-        <div className="text-destructive text-sm p-2 bg-destructive/10 rounded">
+        <div className="text-destructive text-body p-2 bg-destructive/10 rounded">
           {searchError}
         </div>
       )}

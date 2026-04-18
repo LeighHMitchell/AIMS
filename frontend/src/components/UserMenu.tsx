@@ -11,9 +11,9 @@ export function UserMenu() {
 
   return (
     <div className="flex flex-col items-end gap-2 p-2 min-w-[180px]">
-      <div className="text-sm text-foreground">
+      <div className="text-body text-foreground">
         <div>Logged in as <b>{user.name}</b></div>
-        <div className="text-xs text-muted-foreground">{user.role}</div>
+        <div className="text-helper text-muted-foreground">{user.role}</div>
       </div>
       <Button
         size="sm"

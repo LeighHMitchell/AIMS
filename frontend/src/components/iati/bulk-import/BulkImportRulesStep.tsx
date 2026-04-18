@@ -40,7 +40,7 @@ function HelpTip({ text }: { text: string }) {
           <HelpCircle className="h-3.5 w-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs text-xs">
+      <TooltipContent side="top" className="max-w-xs text-helper">
         {text}
       </TooltipContent>
     </Tooltip>
@@ -88,7 +88,7 @@ function RadioOption({
           <span className={`text-sm ${checked ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>{label}</span>
           {helpTip && <HelpTip text={helpTip} />}
         </div>
-        <p className="text-xs mt-0.5 text-muted-foreground">{description}</p>
+        <p className="text-helper mt-0.5 text-muted-foreground">{description}</p>
       </div>
     </label>
   )
@@ -141,7 +141,7 @@ export default function BulkImportRulesStep({
               <div className="flex items-center gap-1.5">
                 <div>
                   <h3 className="font-semibold text-foreground">Activity Matching</h3>
-                  <p className="text-xs text-muted-foreground">Handle existing activities</p>
+                  <p className="text-helper text-muted-foreground">Handle existing activities</p>
                 </div>
                 <HelpTip text="Controls what happens when an imported activity already exists in your system (matched by IATI identifier). Choose how to handle duplicates." />
               </div>
@@ -191,7 +191,7 @@ export default function BulkImportRulesStep({
               <div className="flex items-center gap-1.5">
                 <div>
                   <h3 className="font-semibold text-foreground">Transaction Handling</h3>
-                  <p className="text-xs text-muted-foreground">Handle transaction data</p>
+                  <p className="text-helper text-muted-foreground">Handle transaction data</p>
                 </div>
                 <HelpTip text="Controls how financial transactions (disbursements, commitments, expenditures) are imported for each activity." />
               </div>
@@ -241,7 +241,7 @@ export default function BulkImportRulesStep({
               <div className="flex items-center gap-1.5">
                 <div>
                   <h3 className="font-semibold text-foreground">Organization Resolution</h3>
-                  <p className="text-xs text-muted-foreground">Match referenced orgs</p>
+                  <p className="text-helper text-muted-foreground">Match referenced orgs</p>
                 </div>
                 <HelpTip text="IATI data references organizations by name and ID. This setting controls whether to automatically link them to organizations in your system, or create new ones." />
               </div>
@@ -257,10 +257,10 @@ export default function BulkImportRulesStep({
               <div className="flex items-center gap-3">
                 <Building2 className={`h-4 w-4 ${rules.autoMatchOrganizations ? 'text-foreground' : 'text-muted-foreground'}`} />
                 <div>
-                  <Label className={`text-sm cursor-pointer ${rules.autoMatchOrganizations ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
+                  <Label className={`text-body cursor-pointer ${rules.autoMatchOrganizations ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
                     Auto-match by IATI ID
                   </Label>
-                  <p className="text-xs mt-0.5 text-muted-foreground">
+                  <p className="text-helper mt-0.5 text-muted-foreground">
                     Find or create orgs automatically
                   </p>
                 </div>
@@ -270,7 +270,7 @@ export default function BulkImportRulesStep({
                 onCheckedChange={(checked) => onRulesChange({ ...rules, autoMatchOrganizations: checked })}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-3 px-1">
+            <p className="text-helper text-muted-foreground mt-3 px-1">
               When enabled, organizations referenced in transactions will be matched by their IATI identifier or created if not found.
             </p>
           </CardContent>
@@ -296,7 +296,7 @@ export default function BulkImportRulesStep({
                     <Label className={`text-sm cursor-pointer ${rules.enableAutoSync ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
                       Enable Auto-Sync
                     </Label>
-                    <p className="text-xs mt-0.5 text-muted-foreground">
+                    <p className="text-helper mt-0.5 text-muted-foreground">
                       Keep these activities synchronized with the IATI Datastore
                     </p>
                   </div>
@@ -308,7 +308,7 @@ export default function BulkImportRulesStep({
                 onCheckedChange={(checked) => onRulesChange({ ...rules, enableAutoSync: checked })}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-3 px-1">
+            <p className="text-helper text-muted-foreground mt-3 px-1">
               When enabled, imported activities will be flagged for synchronisation with the IATI Datastore. Use the Sync panel on each activity to manually sync, or ask an administrator to enable scheduled sync.
             </p>
           </CardContent>
@@ -326,22 +326,22 @@ export default function BulkImportRulesStep({
             <div className="text-center p-3 bg-white rounded-lg border border-border">
               <Plus className="h-5 w-5 mx-auto mb-1 text-foreground" />
               <p className="text-2xl font-bold text-foreground">{impact.toCreate}</p>
-              <p className="text-xs text-muted-foreground">Will be created</p>
+              <p className="text-helper text-muted-foreground">Will be created</p>
             </div>
             <div className="text-center p-3 bg-white rounded-lg border border-border">
               <RefreshCw className="h-5 w-5 mx-auto mb-1 text-foreground" />
               <p className="text-2xl font-bold text-foreground">{impact.toUpdate}</p>
-              <p className="text-xs text-muted-foreground">Will be updated</p>
+              <p className="text-helper text-muted-foreground">Will be updated</p>
             </div>
             <div className="text-center p-3 bg-white rounded-lg border border-border">
               <SkipForward className="h-5 w-5 mx-auto mb-1 text-foreground" />
               <p className="text-2xl font-bold text-foreground">{impact.toSkip}</p>
-              <p className="text-xs text-muted-foreground">Will be skipped</p>
+              <p className="text-helper text-muted-foreground">Will be skipped</p>
             </div>
             <div className="text-center p-3 bg-white rounded-lg border border-border">
               <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-foreground" />
               <p className="text-2xl font-bold text-foreground">{impact.totalTransactions}</p>
-              <p className="text-xs text-muted-foreground">Transactions</p>
+              <p className="text-helper text-muted-foreground">Transactions</p>
             </div>
           </div>
         </CardContent>

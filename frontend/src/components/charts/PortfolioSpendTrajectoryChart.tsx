@@ -675,10 +675,10 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{formattedDate}</p>
+            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
@@ -733,7 +733,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
     if (error || !data || displayData.length === 0) {
       return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">{error || 'No data available'}</p>
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -849,7 +849,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         <div className="text-center">
           <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
           <p className="font-medium">No activities with budget data found.</p>
-          <p className="text-sm mt-2 text-muted-foreground">
+          <p className="text-body mt-2 text-muted-foreground">
             Add budget data to activities to view the portfolio spend trajectory.
           </p>
         </div>
@@ -925,7 +925,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="p-3 w-auto">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                        <span className="text-helper font-medium text-foreground">Select Year Range</span>
                         <div className="flex gap-1">
                           <button
                             onClick={selectAllYears}
@@ -977,7 +977,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                 </div>
                 {/* Date Range Indicator */}
                 {effectiveDateRange?.from && effectiveDateRange?.to && (
-                  <span className="text-xs text-muted-foreground text-center">
+                  <span className="text-helper text-muted-foreground text-center">
                     {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                   </span>
                 )}
@@ -1252,7 +1252,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       </div>
 
       {/* Explanatory Text */}
-      <div className="text-xs text-muted-foreground mt-4 space-y-2">
+      <div className="text-helper text-muted-foreground mt-4 space-y-2">
         <p>
           This chart compares the portfolio's <strong>actual cumulative disbursements</strong> (red stepped line) against an
           <strong> even-spend budget baseline</strong> (grey dashed line) that models uniform spending across each activity's

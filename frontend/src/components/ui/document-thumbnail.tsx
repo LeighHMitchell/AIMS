@@ -306,7 +306,7 @@ export function DocumentThumbnail({
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <div className="text-center">
               <Loader2 className="h-6 w-6 text-muted-foreground animate-spin mx-auto mb-2" />
-              <span className="text-xs text-muted-foreground">Loading...</span>
+              <span className="text-helper text-muted-foreground">Loading...</span>
             </div>
           </div>
         )}
@@ -315,7 +315,7 @@ export function DocumentThumbnail({
         {!loading && !pdfRendered && (
           <div className="flex flex-col items-center justify-center">
             {getDocumentIcon(url, format)}
-            <span className="text-xs text-muted-foreground mt-2 font-medium">PDF</span>
+            <span className="text-helper text-muted-foreground mt-2 font-medium">PDF</span>
           </div>
         )}
       </div>
@@ -331,7 +331,7 @@ export function DocumentThumbnail({
     >
       {getDocumentIcon(url, format)}
       {format && (
-        <span className="text-xs text-muted-foreground mt-2 font-medium uppercase">
+        <span className="text-helper text-muted-foreground mt-2 font-medium uppercase">
           {format.split('/').pop()?.replace('application/', '').slice(0, 10)}
         </span>
       )}

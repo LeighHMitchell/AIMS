@@ -400,7 +400,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                       <>
                         {availableTags.length > 0 ? (
                           <CommandGroup>
-                            <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            <div className="px-2 py-1.5 text-helper font-medium text-muted-foreground">
                               Existing Tags
                             </div>
                             {availableTags.map((tag) => (
@@ -422,7 +422,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                           t.name.toLowerCase() === inputValue.toLowerCase().trim()
                         ) && (
                           <CommandGroup>
-                            <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            <div className="px-2 py-1.5 text-helper font-medium text-muted-foreground">
                               Create New
                             </div>
                             <CommandItem
@@ -455,7 +455,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
           <div className="flex items-center justify-between">
             {selectMode ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   {selectedIds.size} selected
                 </span>
                 <Button
@@ -528,7 +528,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <div className="text-xs">
+                      <div className="text-helper">
                         {isIatiImportedTag(tag) && (
                           <div className="mb-2 pb-2 border-b border-border">
                             <p className="font-semibold text-blue-600 flex items-center gap-1">
@@ -574,11 +574,11 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         {/* API Status Notice */}
         {!apiAvailable && (
           <div className="bg-muted border border-border rounded-lg p-4">
-            <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+            <h4 className="text-body font-medium text-foreground mb-2 flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
               Working offline
             </h4>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               We can't reach the tags service right now. Tags you add will save with the activity when you next save.
             </p>
           </div>

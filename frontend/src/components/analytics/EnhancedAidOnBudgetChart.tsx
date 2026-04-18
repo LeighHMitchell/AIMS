@@ -997,7 +997,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           <div className="flex flex-col items-center justify-center h-[700px] text-center">
             <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
-            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <p className="text-body text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
@@ -1018,7 +1018,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           <div className="flex gap-1 border rounded-lg p-1 bg-white">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
+                <Button variant="ghost" size="sm" className="h-8 gap-1 text-helper">
                   <CalendarIcon className="h-4 w-4" />
                   {!startYear && !endYear
                     ? "All Years"
@@ -1033,7 +1033,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="p-3 w-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                  <span className="text-helper font-medium text-foreground">Select Year Range</span>
                   <div className="flex gap-1">
                     <button
                       onClick={selectAllYears}
@@ -1061,7 +1061,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                         key={year}
                         onClick={() => handleYearClick(year)}
                         className={`
-                          px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                          px-2 py-1.5 text-helper font-medium rounded transition-colors whitespace-nowrap
                           ${isAllSelected
                             ? "bg-primary/20 text-primary"
                             : isStartOrEnd
@@ -1085,7 +1085,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             </DropdownMenu>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="type-select" className="text-xs text-muted-foreground">Type</Label>
+            <Label htmlFor="type-select" className="text-helper text-muted-foreground">Type</Label>
             <Select
               value={classificationType}
               onValueChange={(v) => setClassificationType(v as ClassificationType)}
@@ -1149,73 +1149,73 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+              <div className="flex items-center gap-2 text-body mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#4c5568' }} />
                 Domestic Spending
                 <HelpTextTooltip>
                   <p className="font-semibold mb-1">Domestic Spending</p>
-                  <p className="text-xs">Total government expenditure from domestic budget data entered in the system.</p>
-                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of all expenditure amounts from the Domestic Budget Data table for the selected fiscal year(s).</p>
+                  <p className="text-helper">Total government expenditure from domestic budget data entered in the system.</p>
+                  <p className="text-helper mt-1"><strong>Calculation:</strong> Sum of all expenditure amounts from the Domestic Budget Data table for the selected fiscal year(s).</p>
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatAbbreviated(summary.totalDomesticExpenditure)}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
+              <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.domesticExecutionRate.toFixed(1)}% execution rate
               </div>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+              <div className="flex items-center gap-2 text-body mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#7b95a7' }} />
                 Aid on Budget
                 <HelpTextTooltip>
                   <p className="font-semibold mb-1">Aid on Budget</p>
-                  <p className="text-xs">Foreign aid that is recorded in the government&apos;s budget system.</p>
-                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Budget Status set to &quot;On Budget&quot;, plus the on-budget portion of activities marked as &quot;Partial&quot;.</p>
+                  <p className="text-helper">Foreign aid that is recorded in the government&apos;s budget system.</p>
+                  <p className="text-helper mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Budget Status set to &quot;On Budget&quot;, plus the on-budget portion of activities marked as &quot;Partial&quot;.</p>
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatAbbreviated(summary.totalOnBudgetAid + summary.totalPartialAid)}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
+              <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.onBudgetActivityCount + summary.partialActivityCount} activities
               </div>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+              <div className="flex items-center gap-2 text-body mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#dc2625' }} />
                 Aid off Budget
                 <HelpTextTooltip>
                   <p className="font-semibold mb-1">Aid off Budget</p>
-                  <p className="text-xs">Foreign aid that is NOT recorded in the government&apos;s budget system.</p>
-                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Budget Status set to &quot;Off Budget&quot; or &quot;Unknown&quot;, plus the off-budget portion of activities marked as &quot;Partial&quot;.</p>
+                  <p className="text-helper">Foreign aid that is NOT recorded in the government&apos;s budget system.</p>
+                  <p className="text-helper mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Budget Status set to &quot;Off Budget&quot; or &quot;Unknown&quot;, plus the off-budget portion of activities marked as &quot;Partial&quot;.</p>
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatAbbreviated(summary.totalOffBudgetAid + summary.totalUnknownAid)}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
+              <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.offBudgetActivityCount + summary.unknownActivityCount} activities
               </div>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+              <div className="flex items-center gap-2 text-body mb-1" style={{ color: '#4c5568' }}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: '#cfd0d5' }} />
                 Budget Support
                 <HelpTextTooltip>
                   <p className="font-semibold mb-1">Budget Support</p>
-                  <p className="text-xs">Direct financial contributions to the government&apos;s general or sector budgets.</p>
-                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Aid Type code A01 (General Budget Support) or A02 (Sector Budget Support). These are counted separately from regular on/off budget aid.</p>
+                  <p className="text-helper">Direct financial contributions to the government&apos;s general or sector budgets.</p>
+                  <p className="text-helper mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Aid Type code A01 (General Budget Support) or A02 (Sector Budget Support). These are counted separately from regular on/off budget aid.</p>
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatAbbreviated(summary.totalBudgetSupport)}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
+              <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.budgetSupportActivityCount} activities (A01/A02)
               </div>
             </div>
@@ -1242,11 +1242,11 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                   }}
                 >
                   <div
-                    className="font-semibold text-sm px-3 py-2 border-b border-border bg-surface-muted text-foreground"
+                    className="font-semibold text-body px-3 py-2 border-b border-border bg-surface-muted text-foreground"
                   >
                     {tooltip.content.title}
                   </div>
-                  <table className="text-sm">
+                  <table className="text-body">
                     <tbody>
                       {tooltip.content.values.map((item, i) => {
                         const lowerLabel = item.label.toLowerCase();
@@ -1360,12 +1360,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                 <TableCell className="pl-6">
                                   <Link 
                                     href={`/activities/${activity.id}`}
-                                    className="font-medium text-sm hover:text-muted-foreground cursor-pointer"
+                                    className="font-medium text-body hover:text-muted-foreground cursor-pointer"
                                     title={activity.title}
                                   >
                                     {activity.title}
                                   </Link>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                  <div className="flex items-center gap-2 text-helper text-muted-foreground mt-1">
                                     {activity.iatiIdentifier && (
                                       <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                                         {activity.iatiIdentifier}
@@ -1375,16 +1375,16 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                   </div>
                                 </TableCell>
                                 <TableCell></TableCell>
-                                <TableCell className="text-right text-sm">
+                                <TableCell className="text-right text-body">
                                   {formatCurrency(activity.onBudgetAmount)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm">
+                                <TableCell className="text-right text-body">
                                   {formatCurrency(activity.offBudgetAmount)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm font-medium">
+                                <TableCell className="text-right text-body font-medium">
                                   {formatCurrency(activity.onBudgetAmount)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm font-medium">
+                                <TableCell className="text-right text-body font-medium">
                                   {formatCurrency(activity.totalDisbursements)}
                                 </TableCell>
                                 <TableCell></TableCell>
@@ -1435,7 +1435,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                     })()}
                   </TableBody>
                 </Table>
-                <div className="p-3 bg-muted border-t text-xs text-muted-foreground space-y-2">
+                <div className="p-3 bg-muted border-t text-helper text-muted-foreground space-y-2">
                   <p><span className="font-medium">Click on any classification row with activities to expand and see individual activities.</span></p>
                   {data.chartData.sectorData.some(s => s.code === "99") && (
                     <p className="text-muted-foreground italic">
@@ -1452,7 +1452,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           </div>
         )}
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart analyses how aid spending aligns with government budget classifications, distinguishing between on-budget aid that flows through national systems, off-budget aid managed outside them, and domestic expenditure. Use the classification selector to switch between COFOG, programme, and other frameworks, and expand individual rows to see which activities contribute to each category.
       </p>
       </CardContent>

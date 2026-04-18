@@ -167,7 +167,7 @@ function TimelineView({
         <div key={monthKey}>
           <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-foreground py-2 px-3 border-b border-border rounded-t-lg">
             {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
+            <span className="ml-2 text-body font-normal text-muted-foreground">
               {days.length} day{days.length !== 1 ? 's' : ''} · {days.reduce((sum, d) => sum + d.count, 0)} transaction{days.reduce((sum, d) => sum + d.count, 0) !== 1 ? 's' : ''}
             </span>
           </div>
@@ -180,7 +180,7 @@ function TimelineView({
                   onMouseLeave={onLeaveDay}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-foreground w-16">
+                    <div className="text-body font-medium text-foreground w-16">
                       {format(day.date, 'MMM dd')}
                     </div>
                     <div className="flex gap-1">
@@ -193,7 +193,7 @@ function TimelineView({
                         />
                       ))}
                     </div>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-body text-muted-foreground">
                       {day.count} transaction{day.count !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -272,7 +272,7 @@ function MonthlySummaryView({
                     : `$${formatCurrencyAbbreviated(month.value)}`
                   }
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-helper text-muted-foreground">
                   {month.days} active day{month.days !== 1 ? 's' : ''}
                 </div>
               </div>
@@ -311,7 +311,7 @@ function MonthlySparkline({
   useEffect(() => {
     if (!sparklineTooltipRef.current) {
       sparklineTooltipRef.current = d3.select('body').append('div')
-        .attr('class', 'absolute bg-slate-900 text-white text-xs rounded px-2 py-1 pointer-events-none z-50')
+        .attr('class', 'absolute bg-slate-900 text-white text-helper rounded px-2 py-1 pointer-events-none z-50')
         .style('opacity', 0)
     }
     return () => {
@@ -454,7 +454,7 @@ function MonthlySparkline({
 
   return (
     <div className="mb-4">
-      <div className="text-xs text-muted-foreground mb-2">Monthly Trend</div>
+      <div className="text-helper text-muted-foreground mb-2">Monthly Trend</div>
       <svg ref={sparklineRef} className="w-full" />
     </div>
   )
@@ -910,7 +910,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No transaction data available</p>
-          <p className="text-xs mt-2">Add transactions to see the calendar heat map</p>
+          <p className="text-helper mt-2">Add transactions to see the calendar heat map</p>
         </div>
       </div>
     )
@@ -964,7 +964,7 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
           {/* Legend */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4 text-xs">
+            <div className="flex flex-wrap items-center gap-4 text-helper">
               <span className="text-muted-foreground font-medium">Transaction types:</span>
               {Object.entries(TRANSACTION_TYPE_COLORS)
                 .filter(([type]) => processedData.some((d) => d.typeBreakdown[type]))
@@ -1041,22 +1041,22 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div className="bg-muted p-2 rounded">
               <div className="text-lg font-bold text-foreground">{hoveredDay.count}</div>
-              <div className="text-xs text-muted-foreground">Transactions</div>
+              <div className="text-helper text-muted-foreground">Transactions</div>
             </div>
             <div className="bg-muted p-2 rounded">
               <div className="text-lg font-bold text-foreground">${formatCurrencyAbbreviated(hoveredDay.value)}</div>
-              <div className="text-xs text-muted-foreground">Total Value</div>
+              <div className="text-helper text-muted-foreground">Total Value</div>
             </div>
           </div>
 
           {/* Type Breakdown */}
           <div className="border-t border-border pt-3">
-            <p className="text-xs font-medium text-foreground mb-2">By Transaction Type</p>
+            <p className="text-helper font-medium text-foreground mb-2">By Transaction Type</p>
             <div className="space-y-1.5">
               {Object.entries(hoveredDay.typeBreakdown)
                 .sort((a, b) => b[1].value - a[1].value)
                 .map(([type, breakdown]) => (
-                  <div key={type} className="flex items-center justify-between text-xs">
+                  <div key={type} className="flex items-center justify-between text-helper">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"

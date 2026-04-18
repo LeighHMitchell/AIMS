@@ -99,8 +99,8 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg max-w-sm">
           <p className="font-semibold text-foreground">{data.partner_name}</p>
-          <p className="text-xs text-muted-foreground mb-2">{data.partner_type}</p>
-          <div className="space-y-1 text-sm">
+          <p className="text-helper text-muted-foreground mb-2">{data.partner_type}</p>
+          <div className="space-y-1 text-body">
             <p>Activities: {data.activity_count}</p>
             <p>Budget: ${(data.total_budget / 1000000).toFixed(1)}M</p>
             <p>Avg Outcome Indicators: {data.avg_outcome_indicators}</p>
@@ -156,7 +156,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
         <div className="text-center">
           <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
           <p>No implementing partners data available</p>
-          <p className="text-sm">Try adjusting your filters</p>
+          <p className="text-body">Try adjusting your filters</p>
         </div>
       </div>
     )
@@ -206,7 +206,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Partners</p>
+                  <p className="text-body font-medium text-muted-foreground">Total Partners</p>
                   <p className="text-2xl font-bold text-foreground">{summary.total_partners}</p>
                 </div>
                 <Users className="h-6 w-6 text-muted-foreground" />
@@ -218,7 +218,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg Compliance</p>
+                  <p className="text-body font-medium text-muted-foreground">Avg Compliance</p>
                   <p className="text-2xl font-bold text-foreground">{summary.avg_compliance_rate}%</p>
                 </div>
                 <Target className="h-6 w-6 text-muted-foreground" />
@@ -230,7 +230,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg Gov Systems</p>
+                  <p className="text-body font-medium text-muted-foreground">Avg Gov Systems</p>
                   <p className="text-2xl font-bold text-foreground">{summary.avg_gov_systems_usage}%</p>
                 </div>
                 <Building2 className="h-6 w-6 text-muted-foreground" />
@@ -242,9 +242,9 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Most Active</p>
-                  <p className="text-sm font-bold text-foreground">{summary.most_active?.partner_name}</p>
-                  <p className="text-xs text-muted-foreground">{summary.most_active?.activity_count} activities</p>
+                  <p className="text-body font-medium text-muted-foreground">Most Active</p>
+                  <p className="text-body font-bold text-foreground">{summary.most_active?.partner_name}</p>
+                  <p className="text-helper text-muted-foreground">{summary.most_active?.activity_count} activities</p>
                 </div>
                 <TrendingUp className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -341,10 +341,10 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                       return (
                         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
                           <p className="font-semibold text-foreground">{data.partner_name}</p>
-                          <p className="text-xs text-muted-foreground mb-1">{data.partner_type}</p>
-                          <p className="text-sm text-foreground">Gov Systems: {data.x}%</p>
-                          <p className="text-sm text-foreground">GPEDC Compliance: {data.y}%</p>
-                          <p className="text-xs text-muted-foreground">Activities: {data.z}</p>
+                          <p className="text-helper text-muted-foreground mb-1">{data.partner_type}</p>
+                          <p className="text-body text-foreground">Gov Systems: {data.x}%</p>
+                          <p className="text-body text-foreground">GPEDC Compliance: {data.y}%</p>
+                          <p className="text-helper text-muted-foreground">Activities: {data.z}</p>
                         </div>
                       )
                     }
@@ -380,7 +380,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                 <Badge 
                   key={type}
                   variant="outline"
-                  className="text-sm"
+                  className="text-body"
                   style={{ 
                     borderColor: PARTNER_TYPE_COLORS[type as keyof typeof PARTNER_TYPE_COLORS] || '#64748b',
                     color: PARTNER_TYPE_COLORS[type as keyof typeof PARTNER_TYPE_COLORS] || '#64748b'
@@ -420,7 +420,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                         {partner.partner_type}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-body">
                       <div>
                         <span className="text-muted-foreground">Activities:</span>
                         <span className="ml-1 font-medium">{partner.activity_count}</span>
@@ -442,11 +442,11 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Gov Systems</p>
+                    <p className="text-body text-muted-foreground">Gov Systems</p>
                     <p className="text-lg font-bold text-foreground">{partner.gov_systems_usage_rate}%</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">GPEDC</p>
+                    <p className="text-body text-muted-foreground">GPEDC</p>
                     <p className="text-lg font-bold text-foreground">{partner.gpedc_compliance_rate}%</p>
                   </div>
                   <Badge 
@@ -480,8 +480,8 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-semibold text-foreground">{summary.best_performer.partner_name}</p>
-                <p className="text-sm text-muted-foreground">{summary.best_performer.partner_type}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">{summary.best_performer.partner_type}</p>
+                <div className="flex items-center gap-4 mt-2 text-body text-muted-foreground">
                   <span>GPEDC: {summary.best_performer.gpedc_compliance_rate}%</span>
                   <span>Gov Systems: {summary.best_performer.gov_systems_usage_rate}%</span>
                   <span>Activities: {summary.best_performer.activity_count}</span>

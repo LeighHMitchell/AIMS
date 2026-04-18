@@ -37,7 +37,7 @@ export function FAQAttachmentGallery({ attachments }: FAQAttachmentGalleryProps)
       {/* Image Gallery */}
       {images.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-foreground">Images</h4>
+          <h4 className="text-body font-medium text-foreground">Images</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {images.map((attachment) => (
               <a
@@ -60,7 +60,7 @@ export function FAQAttachmentGallery({ attachments }: FAQAttachmentGalleryProps)
                   <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 {attachment.caption && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 truncate">
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-helper p-2 truncate">
                     {attachment.caption}
                   </div>
                 )}
@@ -73,7 +73,7 @@ export function FAQAttachmentGallery({ attachments }: FAQAttachmentGalleryProps)
       {/* File List */}
       {files.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-foreground">Documents</h4>
+          <h4 className="text-body font-medium text-foreground">Documents</h4>
           <div className="space-y-2">
             {files.map((attachment) => (
               <div
@@ -83,10 +83,10 @@ export function FAQAttachmentGallery({ attachments }: FAQAttachmentGalleryProps)
                 <div className="flex items-center gap-3">
                   <FileText className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium truncate max-w-[200px]">
+                    <p className="text-body font-medium truncate max-w-[200px]">
                       {attachment.filename}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-helper text-muted-foreground">
                       {formatFileSize(attachment.fileSize)}
                     </p>
                   </div>
@@ -116,7 +116,7 @@ export function FAQAttachmentBadge({ count }: { count: number }) {
   if (count === 0) return null;
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+    <span className="inline-flex items-center gap-1 text-helper text-muted-foreground">
       <ImageIcon className="h-3 w-3" />
       {count} {count === 1 ? 'attachment' : 'attachments'}
     </span>

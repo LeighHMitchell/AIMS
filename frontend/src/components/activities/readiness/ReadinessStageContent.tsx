@@ -75,14 +75,14 @@ export function ReadinessStageContent({
                 Stage {stage.stage_order}: {stage.name}
               </h3>
               {stage.description && (
-                <p className="text-sm text-muted-foreground">{stage.description}</p>
+                <p className="text-body text-muted-foreground">{stage.description}</p>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 {progress.completed + progress.not_required} / {progress.total} items
               </div>
               <div className="w-24">
@@ -124,7 +124,7 @@ export function ReadinessStageContent({
       {/* Items list */}
       <div className="space-y-3">
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
+          <p className="text-body text-muted-foreground text-center py-8">
             No applicable items for this stage based on current configuration.
           </p>
         ) : (

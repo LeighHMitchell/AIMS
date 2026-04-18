@@ -99,22 +99,22 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">Key</Label>
+              <Label className="text-helper">Key</Label>
               <Input value={key} onChange={e => setKey(e.target.value)} placeholder="e.g. ndp_goal_linked" />
             </div>
             <div>
-              <Label className="text-xs">Max Points</Label>
+              <Label className="text-helper">Max Points</Label>
               <Input type="number" value={maxPoints} onChange={e => setMaxPoints(Number(e.target.value))} />
             </div>
           </div>
 
           <div>
-            <Label className="text-xs">Label</Label>
+            <Label className="text-helper">Label</Label>
             <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Human-readable label" />
           </div>
 
           <div>
-            <Label className="text-xs">Rule Type</Label>
+            <Label className="text-helper">Rule Type</Label>
             <Select value={ruleType} onValueChange={v => setRuleType(v as ScoringRuleType)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -126,7 +126,7 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
           </div>
 
           <div>
-            <Label className="text-xs">Field Path</Label>
+            <Label className="text-helper">Field Path</Label>
             <Input
               value={fieldPath}
               onChange={e => setFieldPath(e.target.value)}
@@ -141,11 +141,11 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
           {needsThresholds && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs">Thresholds</Label>
+                <Label className="text-helper">Thresholds</Label>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 text-xs"
+                  className="h-6 text-helper"
                   onClick={() => setThresholds([...thresholds, { min: 0, points: 0 }])}
                 >
                   <Plus className="h-3 w-3 mr-1" /> Add
@@ -164,7 +164,7 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
                       setThresholds(next)
                     }}
                   />
-                  <span className="text-xs text-muted-foreground">=</span>
+                  <span className="text-helper text-muted-foreground">=</span>
                   <Input
                     type="number"
                     className="w-20 h-8"
@@ -176,7 +176,7 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
                       setThresholds(next)
                     }}
                   />
-                  <span className="text-xs text-muted-foreground">pts</span>
+                  <span className="text-helper text-muted-foreground">pts</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -194,11 +194,11 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
           {needsEnumMap && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs">Enum Values</Label>
+                <Label className="text-helper">Enum Values</Label>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 text-xs"
+                  className="h-6 text-helper"
                   onClick={() => setEnumEntries([...enumEntries, { key: '', value: 0 }])}
                 >
                   <Plus className="h-3 w-3 mr-1" /> Add
@@ -216,7 +216,7 @@ export function SubCriterionEditor({ open, onOpenChange, criterion, onSave }: Su
                       setEnumEntries(next)
                     }}
                   />
-                  <span className="text-xs text-muted-foreground">=</span>
+                  <span className="text-helper text-muted-foreground">=</span>
                   <Input
                     type="number"
                     className="w-20 h-8"

@@ -183,7 +183,7 @@ export default function NewGroupPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, group_code: e.target.value }))}
                   placeholder="e.g., HDC-2024"
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   An internal identifier or abbreviation for this group
                 </p>
               </div>
@@ -251,7 +251,7 @@ export default function NewGroupPage() {
                 <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                   <PopoverTrigger
                     className={cn(
-                      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
                       selectedOrgs.length === 0 && "text-muted-foreground"
                     )}
                     role="combobox"
@@ -298,7 +298,7 @@ export default function NewGroupPage() {
                   </PopoverContent>
                 </Popover>
                 {selectedOrgs.length > 0 && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-body text-muted-foreground mt-2">
                     Selected: {getSelectedOrgNames()}
                   </p>
                 )}
@@ -308,7 +308,7 @@ export default function NewGroupPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="is_public">Public Group</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     Public groups are visible to all users
                   </p>
                 </div>

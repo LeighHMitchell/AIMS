@@ -75,7 +75,7 @@ export function LockedOrganizationField({
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between">
         <Label className={cn(
-          "text-sm font-medium",
+          "text-body font-medium",
           isFieldDisabled && "text-muted-foreground"
         )}>
           {label}
@@ -88,7 +88,7 @@ export function LockedOrganizationField({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="h-6 px-2 text-xs"
+              className="h-6 px-2 text-helper"
             >
               Save
             </Button>
@@ -132,7 +132,7 @@ export function LockedOrganizationField({
       />
       
       {isFieldDisabled && (
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-helper text-muted-foreground mt-1">
           Unlock to edit this field
         </p>
       )}

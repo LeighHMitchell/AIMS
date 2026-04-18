@@ -161,7 +161,7 @@ export function AutosaveSelectField({
   
   return (
     <div className="w-full space-y-2">
-      <label htmlFor={id} className="text-sm font-medium text-foreground flex items-center">
+      <label htmlFor={id} className="text-body font-medium text-foreground flex items-center">
         {label}
         {helpText}
         {required && <RequiredDot />}

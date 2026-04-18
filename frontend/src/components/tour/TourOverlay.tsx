@@ -39,11 +39,11 @@ function CustomTooltip(props: {
       {step.title && (
         <h3 className="mb-2 font-semibold text-base text-foreground">{step.title}</h3>
       )}
-      <div className="text-sm text-muted-foreground [&_p]:mb-2 last:[&_p]:mb-0">
+      <div className="text-body text-muted-foreground [&_p]:mb-2 last:[&_p]:mb-0">
         {step.content}
       </div>
       <div className="mt-4 flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">
+        <span className="text-helper text-muted-foreground">
           Step {index + 1} of {size}
         </span>
         <div className="flex gap-2">

@@ -198,9 +198,9 @@ export function ResetPasswordModal({
             </div>
           </div>
 
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-body text-muted-foreground space-y-1">
             <p className="font-medium">Password requirements:</p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
+            <ul className="list-disc list-inside space-y-1 text-helper">
               <li>At least 6 characters long</li>
               <li>Contains uppercase and lowercase letters</li>
               <li>Contains at least one number</li>

@@ -71,7 +71,7 @@ export function LocationsManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+        <Label className="text-body font-medium text-foreground flex items-center gap-2">
           <MapPin className="h-4 w-4" />
           Location References {locationType && `(${locationType})`}
         </Label>
@@ -80,7 +80,7 @@ export function LocationsManager({
             size="sm"
             variant="outline"
             onClick={() => setShowAddForm(true)}
-            className="text-xs"
+            className="text-helper"
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Location
@@ -92,7 +92,7 @@ export function LocationsManager({
       {showAddForm && !readOnly && (
         <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-foreground">Add Location Reference</h4>
+            <h4 className="text-body font-medium text-foreground">Add Location Reference</h4>
             <Button
               type="button"
               variant="ghost"
@@ -104,7 +104,7 @@ export function LocationsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">
+            <Label className="text-helper text-foreground">
               Location Reference * 
               <span className="text-muted-foreground font-normal ml-1">
                 (IATI location code, e.g., AF-KAN, KH-PNH)
@@ -115,9 +115,9 @@ export function LocationsManager({
               onChange={(e) => setLocationRef(e.target.value)}
               placeholder="e.g., AF-KAN (Afghanistan - Kandahar)"
               required
-              className="text-sm"
+              className="text-body"
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-helper text-muted-foreground mt-1">
               Use ISO 3166 country codes or IATI administrative area codes
             </p>
           </div>
@@ -169,7 +169,7 @@ export function LocationsManager({
       )}
 
       {filteredLocations.length === 0 && !showAddForm && (
-        <p className="text-xs text-muted-foreground italic">No location references</p>
+        <p className="text-helper text-muted-foreground italic">No location references</p>
       )}
       <ConfirmDialog />
     </div>

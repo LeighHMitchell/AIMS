@@ -360,7 +360,7 @@ export function DocumentsAndImagesTab({
               <h3 className="text-lg font-medium text-foreground mb-1">
                 No documents yet
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-body text-muted-foreground mb-4">
                 Add your first document or image to get started
               </p>
               <Button onClick={handleAddDocument} className="gap-2">

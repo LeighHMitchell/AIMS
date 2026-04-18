@@ -98,7 +98,7 @@ export default function BulkImportResultsStep({
             <div className="text-center">
               <Plus className="h-6 w-6 mx-auto mb-1 text-foreground" />
               <p className="text-3xl font-bold text-foreground">{batchStatus.createdCount}</p>
-              <p className="text-sm text-muted-foreground">Created</p>
+              <p className="text-body text-muted-foreground">Created</p>
             </div>
           </CardContent>
         </Card>
@@ -107,7 +107,7 @@ export default function BulkImportResultsStep({
             <div className="text-center">
               <RefreshCw className="h-6 w-6 mx-auto mb-1 text-foreground" />
               <p className="text-3xl font-bold text-foreground">{batchStatus.updatedCount}</p>
-              <p className="text-sm text-muted-foreground">Updated</p>
+              <p className="text-body text-muted-foreground">Updated</p>
             </div>
           </CardContent>
         </Card>
@@ -116,7 +116,7 @@ export default function BulkImportResultsStep({
             <div className="text-center">
               <SkipForward className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
               <p className="text-3xl font-bold text-muted-foreground">{batchStatus.skippedCount}</p>
-              <p className="text-sm text-muted-foreground">Skipped</p>
+              <p className="text-body text-muted-foreground">Skipped</p>
             </div>
           </CardContent>
         </Card>
@@ -125,7 +125,7 @@ export default function BulkImportResultsStep({
             <div className="text-center">
               <XCircle className="h-6 w-6 mx-auto mb-1 text-foreground" />
               <p className="text-3xl font-bold text-foreground">{batchStatus.failedCount}</p>
-              <p className="text-sm text-muted-foreground">Failed</p>
+              <p className="text-body text-muted-foreground">Failed</p>
             </div>
           </CardContent>
         </Card>
@@ -161,10 +161,10 @@ export default function BulkImportResultsStep({
                 <div key={item.id} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                   <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium text-sm">{item.activityTitle || item.iatiIdentifier}</p>
+                    <p className="font-medium text-body">{item.activityTitle || item.iatiIdentifier}</p>
                     <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{item.iatiIdentifier}</span>
                     {item.errorMessage && (
-                      <p className="text-xs text-muted-foreground mt-1">{item.errorMessage}</p>
+                      <p className="text-helper text-muted-foreground mt-1">{item.errorMessage}</p>
                     )}
                   </div>
                 </div>
@@ -203,30 +203,30 @@ export default function BulkImportResultsStep({
                       {item.activityId ? (
                         <button
                           onClick={() => router.push(`/activities/${item.activityId}`)}
-                          className="text-sm text-left hover:text-muted-foreground truncate block w-full"
+                          className="text-body text-left hover:text-muted-foreground truncate block w-full"
                         >
                           {item.activityTitle || item.iatiIdentifier}
                         </button>
                       ) : (
-                        <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
+                        <p className="text-body truncate">{item.activityTitle || item.iatiIdentifier}</p>
                       )}
                       <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
                     </TableCell>
                     <TableCell>
                       {item.action === 'create' && (
-                        <Badge variant="outline" className="text-xs">Created</Badge>
+                        <Badge variant="outline" className="text-helper">Created</Badge>
                       )}
                       {item.action === 'update' && (
-                        <Badge variant="outline" className="text-xs">Updated</Badge>
+                        <Badge variant="outline" className="text-helper">Updated</Badge>
                       )}
                       {item.action === 'skip' && (
-                        <Badge variant="outline" className="text-xs">Skipped</Badge>
+                        <Badge variant="outline" className="text-helper">Skipped</Badge>
                       )}
                       {item.action === 'fail' && (
-                        <Badge variant="outline" className="text-xs">Failed</Badge>
+                        <Badge variant="outline" className="text-helper">Failed</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
+                    <TableCell className="text-right text-helper text-muted-foreground">
                       {formatImportCounts(item) || '-'}
                     </TableCell>
                   </TableRow>
@@ -243,7 +243,7 @@ export default function BulkImportResultsStep({
           <CardTitle className="text-base">Batch Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-body">
             <div>
               <span className="text-muted-foreground">Batch ID:</span>{' '}
               <span className="font-mono text-xs">{batchStatus.id}</span>

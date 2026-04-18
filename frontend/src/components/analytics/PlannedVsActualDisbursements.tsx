@@ -281,7 +281,7 @@ export function PlannedVsActualDisbursements({
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: entry.color }}
             >
               {`${entry.name}: ${formatTooltipValue(entry.value)}`}
@@ -331,7 +331,7 @@ export function PlannedVsActualDisbursements({
           variant={groupBy === 'year' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setGroupBy('year')}
-          className={`h-7 px-3 text-xs ${
+          className={`h-7 px-3 text-helper ${
             groupBy === 'year'
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-white text-muted-foreground border-input hover:bg-muted'
@@ -343,7 +343,7 @@ export function PlannedVsActualDisbursements({
           variant={groupBy === 'month' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setGroupBy('month')}
-          className={`h-7 px-3 text-xs ${
+          className={`h-7 px-3 text-helper ${
             groupBy === 'month'
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-white text-muted-foreground border-input hover:bg-muted'
@@ -401,7 +401,7 @@ export function PlannedVsActualDisbursements({
               variant="outline"
               size="sm"
               onClick={() => setChartType(chartType === 'line' ? 'bar' : 'line')}
-              className="h-7 px-3 text-xs"
+              className="h-7 px-3 text-helper"
             >
               {chartType === 'line' ? <BarChart3 className="h-3 w-3" /> : <TrendingUpIcon className="h-3 w-3" />}
             </Button>
@@ -488,13 +488,13 @@ export function PlannedVsActualDisbursements({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No disbursement data available</p>
-              <p className="text-xs mt-2">Add planned disbursements or transactions to see this chart</p>
+              <p className="text-helper mt-2">Add planned disbursements or transactions to see this chart</p>
             </div>
           </div>
         )}
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart compares planned disbursement schedules against actual disbursement transactions across all activities. Use the time period buttons to zoom into recent months or view the full history, and toggle between monthly and yearly grouping. Significant gaps between planned and actual lines may indicate forecasting issues or implementation delays.
         </p>
       </CardContent>

@@ -80,7 +80,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">Loading stats...</span>
+            <span className="ml-2 text-body text-muted-foreground">Loading stats...</span>
           </div>
         </CardContent>
       </Card>
@@ -107,12 +107,12 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
 
           {/* Breakdown by type */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-muted-foreground mb-2">By Contact Type</div>
+            <div className="text-body font-medium text-muted-foreground mb-2">By Contact Type</div>
             {stats.map((stat) => (
               <div key={stat.contact_type} className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors">
                 <div className="flex items-center gap-2">
                   {getIconForType(stat.contact_type)}
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-body font-medium text-foreground">
                     {getLabelForType(stat.contact_type)}
                   </span>
                 </div>
@@ -135,7 +135,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
             key !== 'limit'
           ) && (
             <div className="pt-2 border-t border-border">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 * Results filtered by active criteria
               </div>
             </div>

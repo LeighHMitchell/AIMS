@@ -99,14 +99,14 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground">{data.category}</p>
-          <p className="text-sm text-muted-foreground mb-2">Transparency Score: {data.transparency_score}%</p>
-          <div className="space-y-1 text-xs">
+          <p className="text-body text-muted-foreground mb-2">Transparency Score: {data.transparency_score}%</p>
+          <div className="space-y-1 text-helper">
             <p className="text-foreground">Both Shared: {data.both_shared}</p>
             <p className="text-foreground">Annual Only: {data.annual_budget_shared}</p>
             <p className="text-muted-foreground">Forward Only: {data.forward_plan_shared}</p>
             <p className="text-muted-foreground">None Shared: {data.none_shared}</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Total: {data.total_activities} activities</p>
+          <p className="text-helper text-muted-foreground mt-1">Total: {data.total_activities} activities</p>
         </div>
       )
     }
@@ -188,7 +188,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Transparency Score</p>
+                  <p className="text-body font-medium text-muted-foreground">Transparency Score</p>
                   <p className="text-2xl font-bold text-foreground">{summary.overall_transparency_score}%</p>
                 </div>
                 <Eye className="h-6 w-6 text-muted-foreground" />
@@ -201,7 +201,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Annual Budget</p>
+                  <p className="text-body font-medium text-muted-foreground">Annual Budget</p>
                   <p className="text-2xl font-bold text-foreground">{summary.annual_budget_percentage}%</p>
                 </div>
                 <Calendar className="h-6 w-6 text-muted-foreground" />
@@ -213,7 +213,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Forward Plan</p>
+                  <p className="text-body font-medium text-muted-foreground">Forward Plan</p>
                   <p className="text-2xl font-bold text-foreground">{summary.forward_plan_percentage}%</p>
                 </div>
                 <TrendingUp className="h-6 w-6 text-muted-foreground" />
@@ -225,7 +225,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Both Shared</p>
+                  <p className="text-body font-medium text-muted-foreground">Both Shared</p>
                   <p className="text-2xl font-bold text-foreground">{summary.both_shared_percentage}%</p>
                 </div>
                 <FileText className="h-6 w-6 text-muted-foreground" />
@@ -323,7 +323,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
                 <div key={item.category} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">{item.category}</h4>
-                    <div className="flex items-center gap-4 mt-2 text-sm">
+                    <div className="flex items-center gap-4 mt-2 text-body">
                       <span className="text-foreground">Both: {item.both_shared}</span>
                       <span className="text-foreground">Annual: {item.annual_budget_shared}</span>
                       <span className="text-muted-foreground">Forward: {item.forward_plan_shared}</span>
@@ -333,7 +333,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-lg font-bold text-foreground">{item.transparency_score}%</p>
-                      <p className="text-xs text-muted-foreground">Transparency</p>
+                      <p className="text-helper text-muted-foreground">Transparency</p>
                     </div>
                     <Badge 
                       variant={item.transparency_score >= 80 ? "default" : item.transparency_score >= 60 ? "secondary" : "destructive"}
@@ -359,18 +359,18 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 Best Transparency
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="font-semibold text-foreground">{summary.best_performer.category}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {summary.best_performer.transparency_score}% transparency score
               </p>
               <div className="flex items-center gap-2 mt-2">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-helper text-muted-foreground">
                   Both: {summary.best_performer.both_shared} |
                   Annual: {summary.best_performer.annual_budget_shared} |
                   Forward: {summary.best_performer.forward_plan_shared}
@@ -381,18 +381,18 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
 
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-border">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 Needs Improvement
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="font-semibold text-foreground">{summary.needs_improvement.category}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {summary.needs_improvement.transparency_score}% transparency score
               </p>
               <div className="flex items-center gap-2 mt-2">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-helper text-muted-foreground">
                   None shared: {summary.needs_improvement.none_shared} activities
                 </div>
               </div>
@@ -410,7 +410,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-body">
             <div>
               <h4 className="font-semibold text-foreground mb-2">Transparency Best Practices</h4>
               <ul className="space-y-1 text-foreground">

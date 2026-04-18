@@ -176,7 +176,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
         <div className="relative">
         <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto">
           <div className="p-2">
-            <p className="text-xs text-muted-foreground px-2 py-1">
+            <p className="text-helper text-muted-foreground px-2 py-1">
               {query
                 ? `Found ${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''}`
                 : `${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
@@ -202,7 +202,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
                         <AvatarImage src={result.profilePhoto} alt={fullName} />
                       ) : (
                         <AvatarFallback className="bg-muted">
-                          <span className="text-sm font-medium text-muted-foreground">
+                          <span className="text-body font-medium text-muted-foreground">
                             {getInitials(result.firstName, result.lastName)}
                           </span>
                         </AvatarFallback>
@@ -218,14 +218,14 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
 
                       {/* Job Title & Department */}
                       {jobLine && (
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-body text-muted-foreground truncate">
                           {jobLine}
                         </p>
                       )}
 
                       {/* Organization */}
                       {orgDisplay && (
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-body text-muted-foreground truncate">
                           {orgDisplay}
                         </p>
                       )}
@@ -242,12 +242,12 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
       {/* No Results */}
       {showResults && filteredResults.length === 0 && !isSearching && (
         <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-body text-muted-foreground text-center">
             {query
               ? <>No contacts found matching &quot;{query}&quot;</>
               : 'No contacts in the system yet'}
           </p>
-          <p className="text-xs text-muted-foreground text-center mt-2">
+          <p className="text-helper text-muted-foreground text-center mt-2">
             Try a different search or create a new contact
           </p>
         </div>

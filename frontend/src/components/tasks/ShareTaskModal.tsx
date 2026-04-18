@@ -134,9 +134,9 @@ export function ShareTaskModal({
         <div className="space-y-4 py-4">
           {/* Task Info */}
           <div className="bg-muted/50 rounded-lg p-3">
-            <div className="text-sm font-medium">{assignment.task?.title}</div>
+            <div className="text-body font-medium">{assignment.task?.title}</div>
             {assignment.task?.description && (
-              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              <div className="text-helper text-muted-foreground mt-1 line-clamp-2">
                 {assignment.task.description}
               </div>
             )}
@@ -144,7 +144,7 @@ export function ShareTaskModal({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-body text-destructive">
               {error}
             </div>
           )}
@@ -161,7 +161,7 @@ export function ShareTaskModal({
               <div className="flex-1">
                 <div className="font-medium">{getTaskUserDisplayName(selectedUser)}</div>
                 {selectedUser.organization && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-helper text-muted-foreground">
                     {selectedUser.organization.name}
                   </div>
                 )}
@@ -226,7 +226,7 @@ export function ShareTaskModal({
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{displayName}</div>
                         {user.organization && (
-                          <div className="text-xs text-muted-foreground truncate">
+                          <div className="text-helper text-muted-foreground truncate">
                             {user.organization.name}
                             {user.organization.acronym && ` (${user.organization.acronym})`}
                           </div>

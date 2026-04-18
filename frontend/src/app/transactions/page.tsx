@@ -718,7 +718,7 @@ export default function TransactionsPage() {
         <FilterBar data-tour="transactions-filters">
           {/* Search */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -732,7 +732,7 @@ export default function TransactionsPage() {
 
           {/* Filters */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Type</Label>
+              <Label className="text-helper text-muted-foreground">Type</Label>
               <MultiSelectFilter
                 options={[
                   { value: "1", label: "Incoming Funds", code: "1", color: "#4c5568" },
@@ -760,7 +760,7 @@ export default function TransactionsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Status</Label>
+              <Label className="text-helper text-muted-foreground">Status</Label>
               <MultiSelectFilter
                 options={[
                   { value: "draft", label: "Draft", color: "#94a3b8" },
@@ -780,7 +780,7 @@ export default function TransactionsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Organisation</Label>
+              <Label className="text-helper text-muted-foreground">Organisation</Label>
               <MultiSelectFilter
                 options={organizations.map((org) => ({
                   value: org.id,
@@ -798,7 +798,7 @@ export default function TransactionsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Finance Type</Label>
+              <Label className="text-helper text-muted-foreground">Finance Type</Label>
               <MultiSelectFilter
                 options={financeTypes.map((ft) => ({
                   value: ft.code,
@@ -821,7 +821,7 @@ export default function TransactionsPage() {
 
           {/* Column Selector */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Columns</Label>
+            <Label className="text-helper text-muted-foreground">Columns</Label>
             <ColumnSelector<TransactionColumnId>
               columns={transactionColumns}
               visibleColumns={visibleColumns}
@@ -834,7 +834,7 @@ export default function TransactionsPage() {
 
         {/* Performance Warning (if applicable) */}
         {(transactions?.total || 0) > 500 && pageLimit === 9999 && (
-          <div className="text-xs text-amber-600 px-4">
+          <div className="text-helper text-amber-600 px-4">
             ⚠️ Showing {transactions?.total || 0} items may affect performance
           </div>
         )}
@@ -923,7 +923,7 @@ export default function TransactionsPage() {
           <Card data-tour="transactions-pagination">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalTransactions)} to {Math.min(endIndex, totalTransactions)} of {totalTransactions} transactions
                 </div>
                 
@@ -1001,7 +1001,7 @@ export default function TransactionsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground">Items per page:</label>
+                  <label className="text-body text-muted-foreground">Items per page:</label>
                   <Select 
                     value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

@@ -85,7 +85,7 @@ export function IATIImportPreferences({ organizationId }: { organizationId?: str
   }
 
   if (!registry || !prefs) {
-    return <div className="px-2 mt-4 text-sm text-muted-foreground">Loading IATI field registry…</div>
+    return <div className="px-2 mt-4 text-body text-muted-foreground">Loading IATI field registry…</div>
   }
 
   return (
@@ -113,16 +113,16 @@ export function IATIImportPreferences({ organizationId }: { organizationId?: str
               <div key={f.id} className={cn('flex items-center justify-between gap-3 rounded-md border p-2', !f.supported && 'opacity-60') }>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{f.label}</span>
+                    <span className="font-medium text-body truncate">{f.label}</span>
                     {!f.supported && (
                       <HelpTextTooltip content="Not yet supported in AIMS; shown for future compatibility." />
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">{f.id}</div>
+                  <div className="text-helper text-muted-foreground truncate">{f.id}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   {f.docs && (
-                    <a href={f.docs} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">Docs</a>
+                    <a href={f.docs} target="_blank" rel="noreferrer" className="text-helper text-blue-600 hover:underline">Docs</a>
                   )}
                   <Switch
                     checked={!!prefs.fields[f.id]}

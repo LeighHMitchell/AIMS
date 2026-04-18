@@ -229,13 +229,13 @@ export function OrgTransactionsTable({
   );
 
   const errorContent = (
-    <p className="text-sm text-destructive">Failed to load transactions: {error}</p>
+    <p className="text-body text-destructive">Failed to load transactions: {error}</p>
   );
 
   const tableContent = loading ? loadingSkeleton : error ? errorContent : transactions.length === 0 ? (
     <div className="text-center py-8">
       <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-      <p className="text-sm text-muted-foreground">No transactions found</p>
+      <p className="text-body text-muted-foreground">No transactions found</p>
     </div>
   ) : (
     <>
@@ -279,7 +279,7 @@ export function OrgTransactionsTable({
                         ) : (
                           <ArrowDownLeft className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" title="Incoming" />
                         )}
-                        <span className="text-sm">
+                        <span className="text-body">
                           {transaction.activityTitle}{' '}
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
                             {transaction.activityIatiIdentifier || transaction.activityId}
@@ -288,10 +288,10 @@ export function OrgTransactionsTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{transaction.transactionTypeName}</span>
+                      <span className="text-body">{transaction.transactionTypeName}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-foreground">
+                      <span className="text-body text-foreground">
                         {capitalizeFirst(transaction.status)}
                       </span>
                     </TableCell>
@@ -303,7 +303,7 @@ export function OrgTransactionsTable({
                             name={transaction.providerOrgName}
                             size="sm"
                           />
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          <span className="text-body text-muted-foreground whitespace-nowrap">
                             {transaction.providerOrgAcronym || transaction.providerOrgName}
                           </span>
                           <span className="text-muted-foreground">→</span>
@@ -314,7 +314,7 @@ export function OrgTransactionsTable({
                             name={transaction.receiverOrgName}
                             size="sm"
                           />
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          <span className="text-body text-muted-foreground whitespace-nowrap">
                             {transaction.receiverOrgAcronym || transaction.receiverOrgName}
                           </span>
                         </span>
@@ -323,7 +323,7 @@ export function OrgTransactionsTable({
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <span className="font-medium text-foreground">
-                          <span className="text-xs text-muted-foreground mr-1 font-normal">
+                          <span className="text-helper text-muted-foreground mr-1 font-normal">
                             {transaction.currency}
                           </span>
                           {formatCurrency(transaction.value)}
@@ -331,7 +331,7 @@ export function OrgTransactionsTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      <span className="text-body text-muted-foreground whitespace-nowrap">
                         {transaction.valueDate ? format(new Date(transaction.valueDate), 'dd MMM yyyy') : '-'}
                       </span>
                     </TableCell>
@@ -339,20 +339,20 @@ export function OrgTransactionsTable({
                       {transaction.valueUsd != null ? (
                         <div className="flex items-center gap-1">
                           <span className="font-medium text-foreground">
-                            <span className="text-xs text-muted-foreground mr-1 font-normal">
+                            <span className="text-helper text-muted-foreground mr-1 font-normal">
                               USD
                             </span>
                             {formatCurrency(transaction.valueUsd)}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
+                        <span className="text-body text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5" title={transaction.reportedByOrgName}>
                         <OrganizationLogo logo={transaction.reportedByOrgLogo} name={transaction.reportedByOrgName} size="sm" />
-                        <span className="text-sm text-muted-foreground truncate max-w-[120px]">
+                        <span className="text-body text-muted-foreground truncate max-w-[120px]">
                           {transaction.reportedByOrgAcronym || transaction.reportedByOrgName}
                         </span>
                       </div>
@@ -371,7 +371,7 @@ export function OrgTransactionsTable({
             {/* Pagination Controls */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Rows per page:</span>
+                <span className="text-body text-muted-foreground">Rows per page:</span>
                 <Select
                   value={pageSize.toString()}
                   onValueChange={(val) => {
@@ -392,7 +392,7 @@ export function OrgTransactionsTable({
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   Page {page} of {Math.max(totalPages, 1)}
                 </span>
                 <Button

@@ -186,12 +186,12 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
       const data = payload[0].payload
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-semibold text-sm mb-2">{data.name}</p>
-          <div className="space-y-1 text-xs">
+          <p className="font-semibold text-body mb-2">{data.name}</p>
+          <div className="space-y-1 text-helper">
             <div className="flex items-center gap-2">
               <Badge 
                 variant="outline" 
-                className="text-xs"
+                className="text-helper"
                 style={{ 
                   backgroundColor: `${STATUS_COLORS[data.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.default}20`,
                   color: STATUS_COLORS[data.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.default,
@@ -200,7 +200,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
               >
                 {data.status}
               </Badge>
-              <Badge variant="outline" className="text-xs capitalize">
+              <Badge variant="outline" className="text-helper capitalize">
                 {data.role}
               </Badge>
             </div>
@@ -273,7 +273,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
             </DropdownMenu>
             
             {timelineData.minDate && timelineData.maxDate && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 {format(timelineData.minDate, 'MMM yyyy')} - {format(timelineData.maxDate, 'MMM yyyy')}
               </div>
             )}
@@ -364,14 +364,14 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
         
         {/* Legend */}
         <div className="mt-6 flex flex-wrap items-center gap-4 justify-center">
-          <div className="text-sm font-medium text-muted-foreground">Status:</div>
+          <div className="text-body font-medium text-muted-foreground">Status:</div>
           {Object.entries(STATUS_COLORS).filter(([key]) => key !== 'default').map(([status, color]) => (
             <div key={status} className="flex items-center gap-2">
               <div 
                 className="w-3 h-3 rounded" 
                 style={{ backgroundColor: color }}
               />
-              <span className="text-sm capitalize">{status}</span>
+              <span className="text-body capitalize">{status}</span>
             </div>
           ))}
         </div>

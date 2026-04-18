@@ -51,7 +51,7 @@ export default function MyanmarLocationEditor({
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="country" className="text-sm font-medium">
+              <Label htmlFor="country" className="text-body font-medium">
                 Country
               </Label>
               <Input
@@ -60,7 +60,7 @@ export default function MyanmarLocationEditor({
                 disabled
                 className="h-10 bg-muted"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 National scope automatically applies to Myanmar
               </p>
             </div>
@@ -71,7 +71,7 @@ export default function MyanmarLocationEditor({
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="states-regions" className="text-sm font-medium">
+              <Label htmlFor="states-regions" className="text-body font-medium">
                 States/Regions *
               </Label>
               <StateRegionSelect
@@ -81,7 +81,7 @@ export default function MyanmarLocationEditor({
                 placeholder="Select multiple states/regions"
                 multiple={true}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Select multiple states or regions for multi-subnational activities
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function MyanmarLocationEditor({
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="state-region" className="text-sm font-medium">
+              <Label htmlFor="state-region" className="text-body font-medium">
                 State/Region *
               </Label>
               <StateRegionSelect
@@ -102,7 +102,7 @@ export default function MyanmarLocationEditor({
                 placeholder="Select state/region"
                 multiple={false}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Select a single state or region
               </p>
             </div>
@@ -113,7 +113,7 @@ export default function MyanmarLocationEditor({
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="township" className="text-sm font-medium">
+              <Label htmlFor="township" className="text-body font-medium">
                 Township *
               </Label>
               <TownshipSelect
@@ -122,7 +122,7 @@ export default function MyanmarLocationEditor({
                 onValueChange={(value) => updateLocation('township', value)}
                 placeholder="Select township"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Select a specific township within Myanmar
               </p>
             </div>
@@ -135,7 +135,7 @@ export default function MyanmarLocationEditor({
             {/* Location Name and Category */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="location-name" className="text-sm font-medium">
+                <Label htmlFor="location-name" className="text-body font-medium">
                   Location Name *
                 </Label>
                 <Input
@@ -147,7 +147,7 @@ export default function MyanmarLocationEditor({
                 />
               </div>
               <div>
-                <Label htmlFor="location-category" className="text-sm font-medium">
+                <Label htmlFor="location-category" className="text-body font-medium">
                   Location Category *
                 </Label>
                 <LocationCategorySelect
@@ -161,7 +161,7 @@ export default function MyanmarLocationEditor({
 
             {/* Address Search */}
             <div>
-              <Label htmlFor="address-search" className="text-sm font-medium">
+              <Label htmlFor="address-search" className="text-body font-medium">
                 Address Search
               </Label>
               <div className="relative">
@@ -174,7 +174,7 @@ export default function MyanmarLocationEditor({
                   className="h-10 pl-9"
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Search and select location or drop a pin on the map below
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function MyanmarLocationEditor({
             {/* Coordinates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="latitude" className="text-sm font-medium">
+                <Label htmlFor="latitude" className="text-body font-medium">
                   Latitude
                 </Label>
                 <Input
@@ -196,7 +196,7 @@ export default function MyanmarLocationEditor({
                 />
               </div>
               <div>
-                <Label htmlFor="longitude" className="text-sm font-medium">
+                <Label htmlFor="longitude" className="text-body font-medium">
                   Longitude
                 </Label>
                 <Input
@@ -213,7 +213,7 @@ export default function MyanmarLocationEditor({
 
             {/* Address */}
             <div>
-              <Label htmlFor="address" className="text-sm font-medium">
+              <Label htmlFor="address" className="text-body font-medium">
                 Address
               </Label>
               <Input
@@ -227,7 +227,7 @@ export default function MyanmarLocationEditor({
 
             {/* Description */}
             <div>
-              <Label htmlFor="description" className="text-sm font-medium">
+              <Label htmlFor="description" className="text-body font-medium">
                 Description
               </Label>
               <Textarea
@@ -271,8 +271,8 @@ export default function MyanmarLocationEditor({
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <MapPin className="h-8 w-8 text-[hsl(var(--success-icon))]" />
                 </div>
-                <p className="text-sm font-medium text-foreground">Myanmar National Coverage</p>
-                <p className="text-xs text-muted-foreground mt-1">Activity covers the entire country</p>
+                <p className="text-body font-medium text-foreground">Myanmar National Coverage</p>
+                <p className="text-helper text-muted-foreground mt-1">Activity covers the entire country</p>
               </div>
             </div>
           );
@@ -284,7 +284,7 @@ export default function MyanmarLocationEditor({
             <div className="h-96 bg-muted rounded-lg border border-border p-4">
               <div className="h-full flex flex-col">
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-foreground mb-2">
+                  <h4 className="text-body font-medium text-foreground mb-2">
                     {scope === 5 ? 'Selected States/Regions' : 'Selected State/Region'}
                   </h4>
                   {selectedStates.length > 0 ? (
@@ -299,16 +299,16 @@ export default function MyanmarLocationEditor({
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">No states/regions selected</p>
+                    <p className="text-helper text-muted-foreground">No states/regions selected</p>
                   )}
                 </div>
                 <div className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-50 rounded border-2 border-dashed border-blue-200 flex items-center justify-center">
                   <div className="text-center">
                     <MapPin className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body text-muted-foreground">
                       {scope === 5 ? 'Multi-state/region' : 'Single state/region'} map view
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       Administrative boundaries with highlighting
                     </p>
                   </div>
@@ -324,20 +324,20 @@ export default function MyanmarLocationEditor({
             <div className="h-96 bg-muted rounded-lg border border-border p-4">
               <div className="h-full flex flex-col">
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-foreground mb-2">Selected Township</h4>
+                  <h4 className="text-body font-medium text-foreground mb-2">Selected Township</h4>
                   {selectedTownship ? (
                     <div className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs inline-block">
                       {selectedTownship.name}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">No township selected</p>
+                    <p className="text-helper text-muted-foreground">No township selected</p>
                   )}
                 </div>
                 <div className="flex-1 bg-gradient-to-br from-orange-50 to-yellow-50 rounded border-2 border-dashed border-orange-200 flex items-center justify-center">
                   <div className="text-center">
                     <MapPin className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-                    <p className="text-sm text-muted-foreground">Township boundary view</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-body text-muted-foreground">Township boundary view</p>
+                    <p className="text-helper text-muted-foreground mt-1">
                       Detailed township area highlighting
                     </p>
                   </div>
@@ -353,18 +353,18 @@ export default function MyanmarLocationEditor({
               <div className="h-full flex flex-col">
                 <div className="mb-4 flex justify-between items-start">
                   <div>
-                    <h4 className="text-sm font-medium text-foreground mb-2">Precise Location</h4>
+                    <h4 className="text-body font-medium text-foreground mb-2">Precise Location</h4>
                     {locations.name && (
-                      <p className="text-sm text-muted-foreground mb-1">{locations.name}</p>
+                      <p className="text-body text-muted-foreground mb-1">{locations.name}</p>
                     )}
                     {hasCoordinates && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         {locations.latitude?.toFixed(6)}, {locations.longitude?.toFixed(6)}
                       </p>
                     )}
                   </div>
                   {locations.category && (
-                    <div className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                    <div className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-helper">
                       {myanmarData.locationCategories.find(c => c.code === locations.category)?.name}
                     </div>
                   )}
@@ -377,8 +377,8 @@ export default function MyanmarLocationEditor({
                   )}
                   <div className="text-center">
                     <MapPin className="h-8 w-8 mx-auto mb-2 text-purple-500" />
-                    <p className="text-sm text-muted-foreground">Interactive map with pin</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-body text-muted-foreground">Interactive map with pin</p>
+                    <p className="text-helper text-muted-foreground mt-1">
                       Click to drop pin or search address
                     </p>
                   </div>
@@ -399,7 +399,7 @@ export default function MyanmarLocationEditor({
             <MapPin className="h-4 w-4" />
             Myanmar Map
             {scope && (
-              <span className="text-sm font-normal text-muted-foreground">
+              <span className="text-body font-normal text-muted-foreground">
                 (Scope {scope})
               </span>
             )}
@@ -407,7 +407,7 @@ export default function MyanmarLocationEditor({
         </CardHeader>
         <CardContent>
           {getMapContent()}
-          <div className="mt-4 text-xs text-muted-foreground text-center">
+          <div className="mt-4 text-helper text-muted-foreground text-center">
             <p>🗺️ Interactive map integration available in production</p>
           </div>
         </CardContent>
@@ -441,14 +441,14 @@ export default function MyanmarLocationEditor({
             <MapPin className="h-4 w-4" />
             Location Configuration
             {scope >= 4 && scope <= 8 && (
-              <span className="text-sm font-normal text-muted-foreground ml-2">
+              <span className="text-body font-normal text-muted-foreground ml-2">
                 (Scope {scope})
               </span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-body text-muted-foreground mb-4">
             {getScopeDescription()}
           </p>
           

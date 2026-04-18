@@ -198,13 +198,13 @@ export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps
       <table className="w-full">
         <thead className="bg-surface-muted">
           <tr>
-            <th className="text-left py-2 px-4 text-sm font-medium text-muted-foreground">
+            <th className="text-left py-2 px-4 text-body font-medium text-muted-foreground">
               Donor
             </th>
             {FIELDS_TO_CHECK.map(field => (
               <th 
                 key={field.key}
-                className="text-center py-2 px-2 text-xs font-medium text-muted-foreground"
+                className="text-center py-2 px-2 text-helper font-medium text-muted-foreground"
                 style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
               >
                 {field.label}
@@ -215,7 +215,7 @@ export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps
         <tbody>
           {donors.map(donor => (
             <tr key={donor}>
-              <td className="py-2 px-4 text-sm text-foreground font-medium">
+              <td className="py-2 px-4 text-body text-foreground font-medium">
                 {donor}
               </td>
               {FIELDS_TO_CHECK.map(field => {
@@ -230,7 +230,7 @@ export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps
                     className="p-2 text-center"
                   >
                     <div
-                      className="w-full h-10 flex items-center justify-center text-xs font-medium rounded"
+                      className="w-full h-10 flex items-center justify-center text-helper font-medium rounded"
                       style={{
                         backgroundColor: getHeatColor(value),
                         color: getTextColor(value)
@@ -248,7 +248,7 @@ export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps
       
       {/* Legend */}
       <div className="mt-4 flex items-center justify-center gap-2">
-        <span className="text-xs text-muted-foreground">Less Complete</span>
+        <span className="text-helper text-muted-foreground">Less Complete</span>
         <div className="flex gap-1">
           {[0, 15, 30, 45, 60, 75, 90].map(value => (
             <div
@@ -258,7 +258,7 @@ export function DataHeatmap({ dateRange, filters, refreshKey }: DataHeatmapProps
             />
           ))}
         </div>
-        <span className="text-xs text-muted-foreground">More Complete</span>
+        <span className="text-helper text-muted-foreground">More Complete</span>
       </div>
     </div>
   )

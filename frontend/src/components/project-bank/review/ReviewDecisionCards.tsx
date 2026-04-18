@@ -47,8 +47,8 @@ export function ReviewDecisionCards({ options, selected, onSelect, recommendedVa
             )}
 
             <div className="relative z-10 p-3">
-              <h4 className="text-sm font-semibold">{opt.label}</h4>
-              <p className="mt-1 text-xs text-muted-foreground">{opt.description}</p>
+              <h4 className="text-body font-semibold">{opt.label}</h4>
+              <p className="mt-1 text-helper text-muted-foreground">{opt.description}</p>
             </div>
           </button>
         )

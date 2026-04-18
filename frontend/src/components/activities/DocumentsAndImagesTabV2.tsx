@@ -471,7 +471,7 @@ export function DocumentsAndImagesTabV2({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Documents & Images</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             Upload files or link to external documents
           </p>
         </div>
@@ -526,7 +526,7 @@ export function DocumentsAndImagesTabV2({
                   <Upload className="w-5 h-5" />
                   Choose Files
                 </Button>
-                <p className="text-sm text-muted-foreground mt-4">
+                <p className="text-body text-muted-foreground mt-4">
                   Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
                 </p>
                 <input
@@ -596,11 +596,11 @@ export function DocumentsAndImagesTabV2({
           {uploadingFiles.map(upload => (
             <div key={upload.id} className="bg-muted rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium truncate flex-1">
+                <span className="text-body font-medium truncate flex-1">
                   {upload.file.name}
                 </span>
                 {upload.status === 'error' && (
-                  <span className="text-xs text-destructive">{upload.error}</span>
+                  <span className="text-helper text-destructive">{upload.error}</span>
                 )}
               </div>
               <Progress value={upload.progress} className="h-2" />
@@ -615,7 +615,7 @@ export function DocumentsAndImagesTabV2({
           <div className="bg-white rounded-2xl shadow-2xl p-12 flex flex-col items-center gap-4">
             <FileUp className="w-16 h-16 text-blue-500" />
             <p className="text-xl font-semibold">Drop files to upload</p>
-            <p className="text-sm text-muted-foreground">Images and documents supported</p>
+            <p className="text-body text-muted-foreground">Images and documents supported</p>
           </div>
         </div>
       )}
@@ -702,7 +702,7 @@ export function DocumentsAndImagesTabV2({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-body text-muted-foreground">
                           {primaryDescription?.text || '-'}
                         </span>
                       </TableCell>
@@ -710,7 +710,7 @@ export function DocumentsAndImagesTabV2({
                       <TableCell>
                         <Badge
                           variant="secondary"
-                          className="text-xs"
+                          className="text-helper"
                           style={
                             getFormatLabel(doc.format) === 'HTML'
                               ? { backgroundColor: '#0000FF', color: 'white', borderColor: '#0000FF' }
@@ -727,7 +727,7 @@ export function DocumentsAndImagesTabV2({
                         {doc.documentDate ? format(new Date(doc.documentDate), 'MMM d, yyyy') : '-'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={isUploaded ? 'default' : 'outline'} className="text-xs">
+                        <Badge variant={isUploaded ? 'default' : 'outline'} className="text-helper">
                           {isUploaded ? (
                             <>
                               <Cloud className="w-3 h-3 mr-1 inline" />
@@ -783,7 +783,7 @@ export function DocumentsAndImagesTabV2({
           {/* Pagination Controls */}
           {filteredDocuments.length > itemsPerPage && (
             <div className="flex items-center justify-between mt-4 px-2">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredDocuments.length)} of {filteredDocuments.length} documents
               </div>
               <div className="flex items-center gap-2">

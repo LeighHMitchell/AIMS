@@ -67,7 +67,7 @@ export function PatchedFinancesSection({
         
         {/* Default Aid Type - AFTER */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Default Aid Type</label>
+          <label className="text-body font-medium text-foreground">Default Aid Type</label>
           <SupabaseAidTypeSelect
             activityId={general.id}
             fieldName="default_aid_type"
@@ -80,7 +80,7 @@ export function PatchedFinancesSection({
 
         {/* Default Finance Type - AFTER */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Default Finance Type</label>
+          <label className="text-body font-medium text-foreground">Default Finance Type</label>
           <SupabaseFinanceTypeSelect
             activityId={general.id}
             fieldName="default_finance_type"
@@ -93,7 +93,7 @@ export function PatchedFinancesSection({
 
         {/* Default Flow Type - AFTER */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Default Flow Type</label>
+          <label className="text-body font-medium text-foreground">Default Flow Type</label>
           <SupabaseFlowTypeSelect
             activityId={general.id}
             fieldName="default_flow_type"
@@ -106,7 +106,7 @@ export function PatchedFinancesSection({
 
         {/* Default Currency - AFTER */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Default Currency</label>
+          <label className="text-body font-medium text-foreground">Default Currency</label>
           <SupabaseCurrencySelector
             activityId={general.id}
             fieldName="default_currency"
@@ -119,7 +119,7 @@ export function PatchedFinancesSection({
 
         {/* Default Tied Status - AFTER */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Default Tied Status</label>
+          <label className="text-body font-medium text-foreground">Default Tied Status</label>
           <SupabaseTiedStatusSelect
             activityId={general.id}
             fieldName="default_tied_status"

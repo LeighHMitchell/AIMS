@@ -864,7 +864,7 @@ export function OrganizationFormContent({
         {/* Branding - Logo & Banner at top like Activity Editor */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">General</h3>
-          <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
+          <p className="text-body text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Banner */}
             <div>
@@ -1089,7 +1089,7 @@ export function OrganizationFormContent({
                       {/* Institutional Groups */}
                       {hasInstitutionalResults && (
                         <>
-                          <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
+                          <div className="px-2 py-1.5 text-body font-semibold text-muted-foreground bg-muted">
                             Institutional Groups
                           </div>
                           {filteredInstitutionalGroups.map((group) => (
@@ -1113,7 +1113,7 @@ export function OrganizationFormContent({
                       {/* Country Options */}
                       {hasCountryResults && (
                         <>
-                          <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
+                          <div className="px-2 py-1.5 text-body font-semibold text-muted-foreground bg-muted">
                             Countries
                           </div>
                           {filteredCountries.map((country) => (
@@ -1129,7 +1129,7 @@ export function OrganizationFormContent({
 
                       {/* No Results */}
                       {!hasInstitutionalResults && !hasCountryResults && (
-                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                        <div className="px-2 py-6 text-center text-body text-muted-foreground">
                           No results found for "{countrySearchTerm}"
                         </div>
                       )}
@@ -1258,7 +1258,7 @@ export function OrganizationFormContent({
 
                   if (filteredTypes.length === 0) {
                     return (
-                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <div className="px-2 py-6 text-center text-body text-muted-foreground">
                         No results found for &quot;{orgTypeSearchTerm}&quot;
                       </div>
                     )
@@ -1544,7 +1544,7 @@ export function OrganizationFormContent({
               </SelectTrigger>
               <SelectContent>
                 {customYears.length === 0 && !loadingCustomYears && (
-                  <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                  <div className="px-2 py-4 text-center text-body text-muted-foreground">
                     No financial year types configured. Ask an admin to set them up in System Settings.
                   </div>
                 )}
@@ -1655,8 +1655,8 @@ export function OrganizationFormContent({
 
         {/* Social Media Section */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Social Media</h3>
-          <p className="text-sm text-muted-foreground">Add social media profiles for your organization</p>
+          <h3 className="text-body font-semibold text-foreground border-b pb-2">Social Media</h3>
+          <p className="text-body text-muted-foreground">Add social media profiles for your organization</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -1773,8 +1773,8 @@ export function OrganizationFormContent({
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
           <HelpCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-blue-800 mb-1">About Aliases</p>
-            <p className="text-sm text-blue-700">
+            <p className="text-body font-medium text-blue-800 mb-1">About Aliases</p>
+            <p className="text-body text-blue-700">
               Aliases help AIMS automatically recognize this organization when importing IATI data, 
               even if the source uses legacy codes or alternate names. This ensures consistent data 
               linking across different reporting sources.
@@ -1804,7 +1804,7 @@ export function OrganizationFormContent({
           />
         </div>
 
-        <div className="text-sm text-muted-foreground border-t pt-4">
+        <div className="text-body text-muted-foreground border-t pt-4">
           <p className="font-medium mb-2">How Aliases Work:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
@@ -1824,13 +1824,13 @@ export function OrganizationFormContent({
               <h3 className="text-base font-semibold text-foreground">Merge Another Organization</h3>
             </div>
             
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               Merge a duplicate organization into this one. All activities, transactions, and references 
               will be transferred to this organization, and the duplicate will be deleted.
             </p>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Search for organization to merge</Label>
+              <Label className="text-body font-medium">Search for organization to merge</Label>
               <OrganizationCombobox
                 organizations={allOrganizations}
                 value={mergeSourceOrgId || ''}
@@ -1841,7 +1841,7 @@ export function OrganizationFormContent({
 
             {/* Loading state */}
             {loadingMergePreview && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-body text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading impact preview...
               </div>
@@ -1864,12 +1864,12 @@ export function OrganizationFormContent({
                         </span>
                       )}
                       {mergePreview.sourceOrg.type && (
-                        <span className="text-xs text-amber-700">
+                        <span className="text-helper text-amber-700">
                           {mergePreview.sourceOrg.type}
                         </span>
                       )}
                       {mergePreview.sourceOrg.country && (
-                        <span className="text-xs text-amber-700">
+                        <span className="text-helper text-amber-700">
                           • {mergePreview.sourceOrg.country}
                         </span>
                       )}
@@ -1880,8 +1880,8 @@ export function OrganizationFormContent({
                 <Separator className="bg-amber-200" />
 
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-amber-900">This will reassign:</p>
-                  <ul className="text-sm text-amber-800 space-y-1">
+                  <p className="text-body font-medium text-amber-900">This will reassign:</p>
+                  <ul className="text-body text-amber-800 space-y-1">
                     <li>• {mergePreview.totals.activities} activity reference{mergePreview.totals.activities !== 1 ? 's' : ''}</li>
                     <li>• {mergePreview.totals.transactions} transaction{mergePreview.totals.transactions !== 1 ? 's' : ''}</li>
                     <li>• {mergePreview.totals.plannedDisbursements} planned disbursement{mergePreview.totals.plannedDisbursements !== 1 ? 's' : ''}</li>
@@ -1891,7 +1891,7 @@ export function OrganizationFormContent({
                     )}
                   </ul>
                   {mergePreview.willAddAlias && (
-                    <p className="text-sm text-amber-800 mt-2">
+                    <p className="text-body text-amber-800 mt-2">
                       The IATI ID <span className="font-mono font-medium">{mergePreview.willAddAlias}</span> will be added as an alias.
                     </p>
                   )}
@@ -1918,7 +1918,7 @@ export function OrganizationFormContent({
               </div>
             )}
 
-            <div className="bg-muted border border-border rounded-md p-3 text-sm text-muted-foreground">
+            <div className="bg-muted border border-border rounded-md p-3 text-body text-muted-foreground">
               <p className="font-medium text-foreground mb-1">Note:</p>
               <p>
                 Merging is permanent and cannot be undone. The source organization will be deleted 
@@ -1947,8 +1947,8 @@ export function OrganizationFormContent({
       <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <p className="text-sm font-medium text-red-800 mb-1">Please fix the validation errors</p>
-          <ul className="text-sm text-destructive space-y-0.5">
+          <p className="text-body font-medium text-red-800 mb-1">Please fix the validation errors</p>
+          <ul className="text-body text-destructive space-y-0.5">
             {validationErrors.map((error, index) => (
               <li key={index}>• {error}</li>
             ))}
@@ -2023,7 +2023,7 @@ export function OrganizationFormContent({
               
               <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 space-y-2">
                 <p className="font-medium text-red-800">This action will:</p>
-                <ul className="text-sm text-destructive space-y-1">
+                <ul className="text-body text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>
                   <li>• Add the source IATI ID as an alias</li>
                   <li>• <strong>Permanently delete</strong> the source organization</li>
@@ -2078,7 +2078,7 @@ export function OrganizationFormContent({
               id="iati_import_id"
               placeholder="e.g., DK-CVR-20228799"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Example: DK-CVR-20228799 (DANIDA), GB-GOV-1 (FCDO)
             </p>
           </div>
@@ -2111,7 +2111,7 @@ export function OrganizationFormContent({
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-xl font-semibold text-foreground">Add New Organization</h1>
-                  <p className="text-sm text-muted-foreground mt-1">Create a new organization profile</p>
+                  <p className="text-body text-muted-foreground mt-1">Create a new organization profile</p>
                 </div>
                 <TooltipProvider>
                   <Tooltip>

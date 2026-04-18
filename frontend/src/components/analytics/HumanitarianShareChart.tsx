@@ -144,7 +144,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
     if (!data || data.total === 0) {
       return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">No data available</p>
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -162,7 +162,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             </text>
           </svg>
         </div>
-        <div className="text-xs text-muted-foreground text-center">
+        <div className="text-helper text-muted-foreground text-center">
           <span className="text-destructive font-medium">{formatCurrency(data.humanitarian)}</span>
           {' / '}
           <span>{formatCurrency(data.total)}</span>
@@ -350,7 +350,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
 
   const renderTableView = () => (
     <div className="py-6">
-      <table className="w-full text-sm">
+      <table className="w-full text-body">
         <thead className="bg-surface-muted">
           <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
@@ -425,7 +425,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
         {viewMode === 'table' && renderTableView()}
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           This chart shows the proportion of total aid that is classified as humanitarian versus development cooperation. The percentage reflects the share of commitments, disbursements, and expenditures flagged as humanitarian within the selected date range. Use the toggle to switch between the visual indicator, bar chart, and table views.
         </p>
       </CardContent>

@@ -111,7 +111,7 @@ export function SDGImageGrid({
 
   if (validSDGs.length === 0) {
     return (
-      <div className={`inline-flex items-center px-3 py-1 rounded-md text-sm text-muted-foreground bg-muted border border-dashed border-input ${className}`}>
+      <div className={`inline-flex items-center px-3 py-1 rounded-md text-body text-muted-foreground bg-muted border border-dashed border-input ${className}`}>
         No SDG assigned
       </div>
     );
@@ -166,12 +166,12 @@ export function SDGImageGrid({
             <div className="text-left">
               <div className="font-semibold">Goal {goalNumber}: {goalName}</div>
               {SDG_GOALS.find(g => g.id === goalNumber)?.description && (
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-helper text-muted-foreground mt-1">
                   {SDG_GOALS.find(g => g.id === goalNumber)?.description}
                 </div>
               )}
               {clickable && (
-                <div className="text-xs text-blue-600 mt-1 font-medium">
+                <div className="text-helper text-blue-600 mt-1 font-medium">
                   Click to view profile →
                 </div>
               )}

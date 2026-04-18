@@ -174,7 +174,7 @@ export default function ImportParcelsPage() {
             <h1 className="text-3xl font-bold text-foreground">Import Parcels</h1>
             <p className="text-muted-foreground mt-1">
               Upload a CSV file with parcel metadata and optionally a GeoJSON file with geometries.
-              Match geometries to parcels using the <code className="text-xs bg-muted px-1 rounded">parcel_code</code> property.
+              Match geometries to parcels using the <code className="text-helper bg-muted px-1 rounded">parcel_code</code> property.
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ export default function ImportParcelsPage() {
             <CardContent className="p-6 text-center">
               <FileSpreadsheet className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium mb-1">Upload CSV Metadata</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 Headers: name, state_region, township, size_hectares, classification, parcel_code
               </p>
               <input
@@ -210,11 +210,11 @@ export default function ImportParcelsPage() {
             <CardContent className="p-6 text-center">
               <FileJson className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium mb-1">Upload GeoJSON Geometry</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 FeatureCollection with <code className="bg-muted px-1 rounded">parcel_code</code> in properties
               </p>
               {geometries.size > 0 && (
-                <p className="text-xs text-[hsl(var(--success-icon))] mt-2">{geometries.size} geometries loaded</p>
+                <p className="text-helper text-[hsl(var(--success-icon))] mt-2">{geometries.size} geometries loaded</p>
               )}
               <input
                 ref={geoJsonInputRef}
@@ -257,14 +257,14 @@ export default function ImportParcelsPage() {
           <Card>
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2">Import Complete</h3>
-              <p className="text-sm text-[hsl(var(--success-icon))] mb-1">{result.success} parcels imported successfully</p>
+              <p className="text-body text-[hsl(var(--success-icon))] mb-1">{result.success} parcels imported successfully</p>
               {result.errors.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-sm text-destructive flex items-center gap-1 mb-1">
+                  <p className="text-body text-destructive flex items-center gap-1 mb-1">
                     <AlertTriangle className="h-4 w-4" />
                     {result.errors.length} errors
                   </p>
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                  <ul className="text-helper text-muted-foreground space-y-0.5">
                     {result.errors.slice(0, 10).map((err, i) => (
                       <li key={i}>Row {err.index + 1}: {err.error}</li>
                     ))}

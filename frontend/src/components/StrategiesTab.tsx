@@ -202,7 +202,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-body text-muted-foreground">Total</p>
                   <p className="text-2xl font-bold">{strategies.length}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-600" />
@@ -214,7 +214,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Published</p>
+                  <p className="text-body text-muted-foreground">Published</p>
                   <p className="text-2xl font-bold">{publishedStrategies.length}</p>
                 </div>
                 <Eye className="h-8 w-8 text-[hsl(var(--success-icon))]" />
@@ -226,7 +226,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Draft/Internal</p>
+                  <p className="text-body text-muted-foreground">Draft/Internal</p>
                   <p className="text-2xl font-bold">{draftStrategies.length}</p>
                 </div>
                 <EyeOff className="h-8 w-8 text-orange-600" />
@@ -238,7 +238,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">With Files</p>
+                  <p className="text-body text-muted-foreground">With Files</p>
                   <p className="text-2xl font-bold">{strategies.filter(s => s.has_file).length}</p>
                 </div>
                 <Download className="h-8 w-8 text-purple-600" />
@@ -287,7 +287,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                             <h3 className="text-lg font-semibold text-foreground mb-1">
                               {strategy.title}
                             </h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <div className="flex items-center gap-2 text-body text-muted-foreground mb-2">
                               <span>{strategy.document_type}</span>
                               <span>•</span>
                               <span>{formatDateRange(strategy)}</span>
@@ -317,14 +317,14 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                             {strategy.thematic_pillars && strategy.thematic_pillars.length > 0 && (
                               <div className="flex flex-wrap gap-1 mb-3">
                                 {strategy.thematic_pillars.map((pillar, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
+                                  <Badge key={index} variant="secondary" className="text-helper">
                                     {pillar}
                                   </Badge>
                                 ))}
                               </div>
                             )}
 
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-body text-muted-foreground">
                               Created by {strategy.created_by_user.name} on{' '}
                               {new Date(strategy.created_at).toLocaleDateString()}
                               {strategy.last_edited_by_user && (

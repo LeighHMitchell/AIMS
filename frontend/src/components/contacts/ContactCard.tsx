@@ -105,7 +105,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p className="text-sm font-normal">This contact is designated as the focal point for this activity</p>
+                    <p className="text-body font-normal">This contact is designated as the focal point for this activity</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -113,13 +113,13 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
           </h3>
 
           {jobLine && (
-            <p className="text-sm text-muted-foreground break-words">
+            <p className="text-body text-muted-foreground break-words">
               {jobLine}
             </p>
           )}
 
           {contact.organisation && (
-            <p className="text-sm text-muted-foreground break-words">
+            <p className="text-body text-muted-foreground break-words">
               {contact.organisation}
               {contact.organisationAcronym && (
                 <span className="ml-1">({contact.organisationAcronym})</span>
@@ -136,7 +136,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
             <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <a
               href={`mailto:${contact.email}`}
-              className="text-sm text-foreground hover:text-primary transition-colors truncate"
+              className="text-body text-foreground hover:text-primary transition-colors truncate"
             >
               {contact.email}
             </a>
@@ -146,7 +146,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
         {(contact.phone || contact.phoneNumber) && (
           <div className="flex items-center space-x-2">
             <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-sm text-foreground">
+            <span className="text-body text-foreground">
               {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
             </span>
           </div>
@@ -159,7 +159,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
               href={contact.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-foreground hover:text-primary transition-colors truncate"
+              className="text-body text-foreground hover:text-primary transition-colors truncate"
             >
               {contact.website.replace(/^https?:\/\//, '')}
             </a>

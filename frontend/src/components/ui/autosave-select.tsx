@@ -132,7 +132,7 @@ export function AutosaveSelect({
           </SelectContent>
         </Select>
         {autosaveState.error && (
-          <p className="text-xs text-destructive mt-1">{autosaveState.error.toString()}</p>
+          <p className="text-helper text-destructive mt-1">{autosaveState.error.toString()}</p>
         )}
       </div>
     </div>

@@ -146,21 +146,21 @@ export function SupabaseSelect({
 
       {/* Error message */}
       {state.error && showStatus && (
-        <div className="mt-1 text-xs text-destructive">
+        <div className="mt-1 text-helper text-destructive">
           Update failed: {state.error}
         </div>
       )}
 
       {/* Success message */}
       {state.lastUpdated && !state.error && !state.isUpdating && !isOptimistic && showStatus && (
-        <div className="mt-1 text-xs text-[hsl(var(--success-icon))]">
+        <div className="mt-1 text-helper text-[hsl(var(--success-icon))]">
           Saved at {state.lastUpdated.toLocaleTimeString()}
         </div>
       )}
 
       {/* Optimistic update indicator */}
       {isOptimistic && showStatus && (
-        <div className="mt-1 text-xs text-blue-600">
+        <div className="mt-1 text-helper text-blue-600">
           Saving...
         </div>
       )}

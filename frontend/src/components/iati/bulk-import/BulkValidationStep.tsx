@@ -153,10 +153,10 @@ export default function BulkValidationStep({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="font-medium">Parsing and validating activities...</span>
               </div>
-              <span className="text-sm text-muted-foreground">{progress}%</span>
+              <span className="text-body text-muted-foreground">{progress}%</span>
             </div>
             <Progress value={progress} className="h-2" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               This may take a moment for large files.
             </p>
           </div>
@@ -177,7 +177,7 @@ export default function BulkValidationStep({
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-3xl font-bold">{summary.total}</p>
-              <p className="text-sm text-muted-foreground">Total Activities</p>
+              <p className="text-body text-muted-foreground">Total Activities</p>
             </div>
           </CardContent>
         </Card>
@@ -186,7 +186,7 @@ export default function BulkValidationStep({
             <div className="text-center">
               <CheckCircle2 className="h-6 w-6 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
               <p className="text-3xl font-bold text-[hsl(var(--success-icon))]">{summary.valid}</p>
-              <p className="text-sm text-muted-foreground">Valid</p>
+              <p className="text-body text-muted-foreground">Valid</p>
             </div>
           </CardContent>
         </Card>
@@ -195,7 +195,7 @@ export default function BulkValidationStep({
             <div className="text-center">
               <AlertTriangle className="h-6 w-6 mx-auto mb-1 text-yellow-600" />
               <p className="text-3xl font-bold text-yellow-600">{summary.warnings}</p>
-              <p className="text-sm text-muted-foreground">Warnings</p>
+              <p className="text-body text-muted-foreground">Warnings</p>
             </div>
           </CardContent>
         </Card>
@@ -204,7 +204,7 @@ export default function BulkValidationStep({
             <div className="text-center">
               <XCircle className="h-6 w-6 mx-auto mb-1 text-destructive" />
               <p className="text-3xl font-bold text-destructive">{summary.errors}</p>
-              <p className="text-sm text-muted-foreground">Errors</p>
+              <p className="text-body text-muted-foreground">Errors</p>
             </div>
           </CardContent>
         </Card>
@@ -213,7 +213,7 @@ export default function BulkValidationStep({
       {hasBlockingErrors && (
         <Card className="border-destructive/20 bg-destructive/10">
           <CardContent className="p-6">
-            <p className="text-sm text-destructive font-medium">
+            <p className="text-body text-destructive font-medium">
               All activities have errors. Fix the issues and re-upload, or deselect activities with errors in the Preview step.
             </p>
           </CardContent>
@@ -257,30 +257,30 @@ export default function BulkValidationStep({
                           <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                         )}
                         <div>
-                          <p className="font-medium text-sm">{activity.title || activity.iatiIdentifier}</p>
+                          <p className="font-medium text-body">{activity.title || activity.iatiIdentifier}</p>
                           <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {hasErrors && (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             {activity.validationIssues?.filter(i => i.severity === 'error').length} error(s)
                           </Badge>
                         )}
                         {hasWarnings && (
-                          <Badge variant="outline" className="text-xs text-yellow-700 bg-yellow-50">
+                          <Badge variant="outline" className="text-helper text-yellow-700 bg-yellow-50">
                             {activity.validationIssues?.filter(i => i.severity === 'warning').length} warning(s)
                           </Badge>
                         )}
                         {!hasErrors && !hasWarnings && (
-                          <Badge variant="outline" className="text-xs text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]">Valid</Badge>
+                          <Badge variant="outline" className="text-helper text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]">Valid</Badge>
                         )}
                       </div>
                     </button>
                     {isExpanded && activity.validationIssues && activity.validationIssues.length > 0 && (
                       <div className="border-t px-3 py-2 bg-muted space-y-1">
                         {activity.validationIssues.map((issue, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-sm py-1">
+                          <div key={idx} className="flex items-start gap-2 text-body py-1">
                             {issue.severity === 'error' ? (
                               <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
                             ) : issue.severity === 'warning' ? (

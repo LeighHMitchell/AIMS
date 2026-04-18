@@ -128,7 +128,7 @@ export function CompactChartCard({
               <CardTitle className="text-base font-medium text-foreground truncate">
                 {title}
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 {shortDescription}
               </CardDescription>
             </div>

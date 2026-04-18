@@ -141,23 +141,23 @@ export function StageRouting({ wizard }: StageRoutingProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Review & Submit</h3>
-        <p className="text-sm text-muted-foreground">Review all project details before final submission.</p>
+        <p className="text-body text-muted-foreground">Review all project details before final submission.</p>
       </div>
 
       {/* Routing Outcome Badge */}
       <div className="p-5 rounded-lg border-2 bg-[#f6f5f3] border-[#5f7f7a]/20">
-        <Badge variant={BADGE_VARIANT_MAP[routing.color] as any} className="mb-2 text-sm">
+        <Badge variant={BADGE_VARIANT_MAP[routing.color] as any} className="mb-2 text-body">
           {routing.label}
         </Badge>
-        <p className="text-sm text-muted-foreground">{routing.description}</p>
+        <p className="text-body text-muted-foreground">{routing.description}</p>
       </div>
 
       {/* Summary */}
       <div className="border rounded-lg divide-y">
         {summaryRows.map(([label, value], i) => (
           <div key={i} className="flex justify-between p-3">
-            <span className="text-sm text-muted-foreground">{label}</span>
-            <span className="text-sm font-medium">{value}</span>
+            <span className="text-body text-muted-foreground">{label}</span>
+            <span className="text-body font-medium">{value}</span>
           </div>
         ))}
       </div>
@@ -165,13 +165,13 @@ export function StageRouting({ wizard }: StageRoutingProps) {
       {/* Documents */}
       {documents.length > 0 && (
         <div>
-          <Label className="mb-2 block text-sm font-medium">Uploaded Documents ({documents.length})</Label>
+          <Label className="mb-2 block text-body font-medium">Uploaded Documents ({documents.length})</Label>
           <div className="space-y-1">
             {documents.map(doc => (
               <div key={doc.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{doc.file_name}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{doc.upload_stage}</span>
+                <span className="text-body">{doc.file_name}</span>
+                <span className="text-helper text-muted-foreground ml-auto">{doc.upload_stage}</span>
               </div>
             ))}
           </div>
@@ -188,7 +188,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
         >
           {submitting ? 'Submitting...' : 'Submit to Pipeline'}
         </Button>
-        <p className="text-xs text-muted-foreground text-center mt-2">
+        <p className="text-helper text-muted-foreground text-center mt-2">
           This will finalize the appraisal and route the project based on the analysis above.
         </p>
       </div>

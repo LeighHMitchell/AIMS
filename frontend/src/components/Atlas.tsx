@@ -347,7 +347,7 @@ function Map3DController({
           className="h-9 px-2.5"
         >
           <MapIcon className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">2D</span>
+          <span className="text-helper">2D</span>
         </Button>
       ) : (
         <Button
@@ -358,7 +358,7 @@ function Map3DController({
           className="h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">3D</span>
+          <span className="text-helper">3D</span>
         </Button>
       )}
 
@@ -812,7 +812,7 @@ export default function Atlas() {
             <div className="text-center">
               <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="font-medium">Failed to load map data</p>
-              <p className="text-sm">{error}</p>
+              <p className="text-body">{error}</p>
             </div>
           </div>
         </CardContent>
@@ -854,14 +854,14 @@ export default function Atlas() {
               <div className="flex items-end gap-2">
                 {/* Status Filter */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Status</label>
+                  <label className="text-helper font-medium text-muted-foreground">Status</label>
                   <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"
                         aria-expanded={statusFilterOpen}
-                        className="w-[140px] justify-between text-xs h-9 font-normal"
+                        className="w-[140px] justify-between text-helper h-9 font-normal"
                       >
                       <span className="truncate">
                         {statusFilter.length === 0
@@ -895,7 +895,7 @@ export default function Atlas() {
                                   key={status.code}
                                   value={status.code}
                                   onSelect={() => toggleStatusFilter(status.code)}
-                                  className="flex items-center text-xs"
+                                  className="flex items-center text-helper"
                                 >
                                   <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", statusFilter.includes(status.code) ? "opacity-100" : "opacity-0")} />
                                   <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2">{status.code}</code>
@@ -913,14 +913,14 @@ export default function Atlas() {
 
                 {/* Organization Filter */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Organization</label>
+                  <label className="text-helper font-medium text-muted-foreground">Organization</label>
                   <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"
                         aria-expanded={orgFilterOpen}
-                        className="w-[180px] justify-between text-xs h-9 font-normal"
+                        className="w-[180px] justify-between text-helper h-9 font-normal"
                       >
                         <span className="truncate">
                           {orgFilter.length === 0
@@ -949,7 +949,7 @@ export default function Atlas() {
                         placeholder="Search organizations..."
                         value={orgFilterSearch}
                         onValueChange={setOrgFilterSearch}
-                        className="text-xs"
+                        className="text-helper"
                       />
                       <CommandList>
                         <CommandEmpty>No organization found.</CommandEmpty>
@@ -964,7 +964,7 @@ export default function Atlas() {
                                 key={org.name}
                                 value={org.name}
                                 onSelect={() => toggleOrgFilter(org.name)}
-                                className="flex items-start text-xs py-2"
+                                className="flex items-start text-helper py-2"
                               >
                                 <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0 mt-0.5", orgFilter.includes(org.name) ? "opacity-100" : "opacity-0")} />
                                 <div className="h-5 w-5 mr-2 shrink-0 flex items-center justify-center mt-0.5">
@@ -995,7 +995,7 @@ export default function Atlas() {
 
                 {/* Sector Filter */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Sector</label>
+                  <label className="text-helper font-medium text-muted-foreground">Sector</label>
                   <SectorHierarchyFilter
                     selected={sectorFilter}
                     onChange={setSectorFilter}
@@ -1004,13 +1004,13 @@ export default function Atlas() {
                     activityCounts={sectorActivityCounts}
                     showOnlyActiveSectors={showOnlyActiveSectors}
                     onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                    className="w-[160px] h-9 text-xs"
+                    className="w-[160px] h-9 text-helper"
                   />
                 </div>
 
                 {/* Search */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted-foreground">Search</label>
+                  <label className="text-helper font-medium text-muted-foreground">Search</label>
                   <MapSearch
                     onLocationSelect={handleLocationSearch}
                     className="w-[130px]"
@@ -1042,7 +1042,7 @@ export default function Atlas() {
                         className={`h-9 px-3 gap-2 ${(showHealthFacilities || showPowerGrid || showFloodRisk) ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
                       >
                         <Layers className="h-4 w-4" />
-                        <span className="text-xs">Layers</span>
+                        <span className="text-helper">Layers</span>
                         {(showHealthFacilities || showPowerGrid || showFloodRisk) && (
                           <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
                             {[showHealthFacilities, showPowerGrid, showFloodRisk].filter(Boolean).length}
@@ -1053,8 +1053,8 @@ export default function Atlas() {
                     </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0" align="end">
                           <div className="p-3 border-b">
-                            <h4 className="font-medium text-sm">Data Layers</h4>
-                            <p className="text-xs text-muted-foreground">Toggle additional map layers</p>
+                            <h4 className="font-medium text-body">Data Layers</h4>
+                            <p className="text-helper text-muted-foreground">Toggle additional map layers</p>
                           </div>
                           <div className="p-2">
                             {/* OSM Health Facilities Layer */}
@@ -1074,8 +1074,8 @@ export default function Atlas() {
                                 </div>
                                 <Cross className="h-4 w-4 text-destructive" />
                                 <div className="flex-1">
-                                  <div className="text-sm font-medium">OSM Health Facilities</div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-body font-medium">OSM Health Facilities</div>
+                                  <div className="text-helper text-muted-foreground">
                                     {healthFacilitiesLoading ? 'Loading...' :
                                      healthFacilitiesCount !== null ? `${healthFacilitiesCount.toLocaleString()} facilities` :
                                      'Hospitals, clinics, pharmacies'}
@@ -1090,14 +1090,14 @@ export default function Atlas() {
                               {showHealthFacilities && (
                                 <div className="ml-6 pb-2 space-y-1">
                                   <div className="flex items-center justify-between px-2 py-1">
-                                    <span className="text-xs text-muted-foreground">Filter by type:</span>
+                                    <span className="text-helper text-muted-foreground">Filter by type:</span>
                                     {healthFacilityTypes.length > 0 && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setHealthFacilityTypes([]);
                                         }}
-                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                        className="text-helper text-blue-600 hover:text-blue-800"
                                       >
                                         Show all
                                       </button>
@@ -1141,7 +1141,7 @@ export default function Atlas() {
                                         )}
                                       </div>
                                       <span
-                                        className="text-xs"
+                                        className="text-helper"
                                         style={{
                                           color: healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)
                                             ? type.color
@@ -1173,8 +1173,8 @@ export default function Atlas() {
                                 </div>
                                 <Zap className="h-4 w-4 text-amber-600" />
                                 <div className="flex-1">
-                                  <div className="text-sm font-medium">OSM Power Grid</div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-body font-medium">OSM Power Grid</div>
+                                  <div className="text-helper text-muted-foreground">
                                     {powerGridLoading ? 'Loading...' :
                                      powerGridCount !== null ? `${powerGridCount.toLocaleString()} features` :
                                      'Lines, substations, plants'}
@@ -1189,14 +1189,14 @@ export default function Atlas() {
                               {showPowerGrid && (
                                 <div className="ml-6 pb-2 space-y-1">
                                   <div className="flex items-center justify-between px-2 py-1">
-                                    <span className="text-xs text-muted-foreground">Filter by type:</span>
+                                    <span className="text-helper text-muted-foreground">Filter by type:</span>
                                     {powerGridTypes.length > 0 && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setPowerGridTypes([]);
                                         }}
-                                        className="text-xs text-amber-600 hover:text-amber-800"
+                                        className="text-helper text-amber-600 hover:text-amber-800"
                                       >
                                         Show all
                                       </button>
@@ -1228,7 +1228,7 @@ export default function Atlas() {
                                         )}
                                       </div>
                                       <span
-                                        className="text-xs"
+                                        className="text-helper"
                                         style={{
                                           color: powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? type.color : '#9ca3af'
                                         }}
@@ -1258,8 +1258,8 @@ export default function Atlas() {
                                 </div>
                                 <Waves className="h-4 w-4 text-cyan-600" />
                                 <div className="flex-1">
-                                  <div className="text-sm font-medium">Flood Risk Zones</div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-body font-medium">Flood Risk Zones</div>
+                                  <div className="text-helper text-muted-foreground">
                                     {floodRiskLoading ? 'Loading...' :
                                      floodRiskCount !== null ? `${floodRiskCount.toLocaleString()} zones` :
                                      'Flood hazard areas'}
@@ -1274,14 +1274,14 @@ export default function Atlas() {
                               {showFloodRisk && (
                                 <div className="ml-6 pb-2 space-y-1">
                                   <div className="flex items-center justify-between px-2 py-1">
-                                    <span className="text-xs text-muted-foreground">Filter by risk:</span>
+                                    <span className="text-helper text-muted-foreground">Filter by risk:</span>
                                     {floodRiskLevels.length > 0 && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setFloodRiskLevels([]);
                                         }}
-                                        className="text-xs text-cyan-600 hover:text-cyan-800"
+                                        className="text-helper text-cyan-600 hover:text-cyan-800"
                                       >
                                         Show all
                                       </button>
@@ -1313,7 +1313,7 @@ export default function Atlas() {
                                         )}
                                       </div>
                                       <span
-                                        className="text-xs"
+                                        className="text-helper"
                                         style={{
                                           color: floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? level.color : '#9ca3af'
                                         }}
@@ -1432,14 +1432,14 @@ export default function Atlas() {
                         </div>
 
                         {/* Name */}
-                        <h3 className="font-bold text-sm text-foreground mb-2">
+                        <h3 className="font-bold text-body text-foreground mb-2">
                           {selectedFacility.facility.name}
                         </h3>
 
                         <hr className="border-border mb-2" />
 
                         {/* Details Grid */}
-                        <div className="space-y-1.5 text-xs">
+                        <div className="space-y-1.5 text-helper">
                           {selectedFacility.facility.operator && (
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Operator</span>
@@ -1538,7 +1538,7 @@ export default function Atlas() {
                     <div className="text-center">
                       <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="font-medium text-muted-foreground">No locations found</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body text-muted-foreground">
                         Try adjusting your filters or check if activities have location data
                       </p>
                     </div>
@@ -1549,7 +1549,7 @@ export default function Atlas() {
             
             <TabsContent value="subnational" className="space-y-4">
               <div className="space-y-6">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Sub-national breakdown showing activity distribution across Myanmar&apos;s states and regions from activity breakdown data.
                 </div>
                 
@@ -1558,7 +1558,7 @@ export default function Atlas() {
                     <div className="h-[85vh] min-h-[700px] w-full bg-muted rounded-lg flex items-center justify-center">
                       <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                        <div className="text-sm text-muted-foreground">Loading sub-national breakdown data...</div>
+                        <div className="text-body text-muted-foreground">Loading sub-national breakdown data...</div>
                       </div>
                     </div>
                   </div>
@@ -1727,7 +1727,7 @@ export default function Atlas() {
                                   {isExpanded && hasActivities && (
                                     <TableRow className="bg-muted/30">
                                       <TableCell colSpan={5} className="p-4">
-                                        <div className="text-sm">
+                                        <div className="text-body">
                                           <div className="font-medium mb-2">Activities in {region}:</div>
                                           <ul className="space-y-1 text-muted-foreground">
                                             {activities.map((activity) => (
@@ -1761,7 +1761,7 @@ export default function Atlas() {
                     <p className="text-muted-foreground mb-4">
                       No activities with sub-national breakdown information found for the current filters.
                     </p>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-helper text-muted-foreground">
                       Sub-national breakdowns are configured in individual activity editors.
                     </div>
                   </div>

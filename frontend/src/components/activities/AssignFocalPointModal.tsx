@@ -169,7 +169,7 @@ export function AssignFocalPointModal({
 
         <div className="space-y-4 py-2">
           <div ref={containerRef}>
-            <label className="text-sm font-medium mb-2 block">Select User</label>
+            <label className="text-body font-medium mb-2 block">Select User</label>
 
             {selectedUser ? (
               <div className="flex items-center gap-3 p-3 border border-input rounded-md bg-background">
@@ -177,25 +177,25 @@ export function AssignFocalPointModal({
                   {selectedUser.avatarUrl && (
                     <AvatarImage src={selectedUser.avatarUrl} alt={selectedUser.name} />
                   )}
-                  <AvatarFallback className="bg-muted text-xs">
+                  <AvatarFallback className="bg-muted text-helper">
                     {getInitials(selectedUser.firstName, selectedUser.lastName)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{selectedUser.name}</p>
+                  <p className="font-medium text-body truncate">{selectedUser.name}</p>
                   {(selectedUser.jobTitle || selectedUser.department) && (
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-helper text-muted-foreground truncate">
                       {[selectedUser.jobTitle, selectedUser.department].filter(Boolean).join(' · ')}
                     </p>
                   )}
                   {selectedUser.organization && (
-                    <p className="text-xs text-muted-foreground truncate">{selectedUser.organization}</p>
+                    <p className="text-helper text-muted-foreground truncate">{selectedUser.organization}</p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => onSelectedUserChange(null, null)}
-                  className="text-muted-foreground hover:text-foreground text-sm"
+                  className="text-muted-foreground hover:text-foreground text-body"
                 >
                   Change
                 </button>
@@ -221,7 +221,7 @@ export function AssignFocalPointModal({
             {showResults && filteredResults.length > 0 && !selectedUser && (
               <div className="mt-2 bg-white border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                 <div className="p-2">
-                  <p className="text-xs text-muted-foreground px-2 py-1">
+                  <p className="text-helper text-muted-foreground px-2 py-1">
                     {query
                       ? `Found ${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''}`
                       : `${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
@@ -239,7 +239,7 @@ export function AssignFocalPointModal({
                             <AvatarImage src={user.avatarUrl} alt={user.name} />
                           )}
                           <AvatarFallback className="bg-muted">
-                            <span className="text-sm font-medium text-muted-foreground">
+                            <span className="text-body font-medium text-muted-foreground">
                               {getInitials(user.firstName, user.lastName)}
                             </span>
                           </AvatarFallback>
@@ -247,12 +247,12 @@ export function AssignFocalPointModal({
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-foreground truncate">{user.name}</p>
                           {(user.jobTitle || user.department) && (
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-helper text-muted-foreground truncate">
                               {[user.jobTitle, user.department].filter(Boolean).join(' · ')}
                             </p>
                           )}
                           {user.organization && (
-                            <p className="text-xs text-muted-foreground truncate">{user.organization}</p>
+                            <p className="text-helper text-muted-foreground truncate">{user.organization}</p>
                           )}
                         </div>
                       </div>
@@ -264,7 +264,7 @@ export function AssignFocalPointModal({
 
             {showResults && filteredResults.length === 0 && !isSearching && !selectedUser && (
               <div className="mt-2 bg-white border border-border rounded-lg shadow-lg p-4">
-                <p className="text-sm text-muted-foreground text-center">No users found matching &quot;{query}&quot;</p>
+                <p className="text-body text-muted-foreground text-center">No users found matching &quot;{query}&quot;</p>
               </div>
             )}
           </div>

@@ -160,7 +160,7 @@ export function HumanitarianScopeModal({
                 onChange={(e) => setFormData({ ...formData, vocabulary_uri: e.target.value })}
                 placeholder="https://example.org/vocabularies/emergencies"
               />
-              <p className="text-xs text-muted-foreground">URL to your custom vocabulary documentation</p>
+              <p className="text-helper text-muted-foreground">URL to your custom vocabulary documentation</p>
             </div>
           )}
 

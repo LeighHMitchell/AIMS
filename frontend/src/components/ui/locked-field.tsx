@@ -47,7 +47,7 @@ export function LockedField({
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between">
         <Label className={cn(
-          "text-sm font-medium",
+          "text-body font-medium",
           isFieldDisabled && "text-muted-foreground"
         )}>
           {label}
@@ -113,7 +113,7 @@ export function LockedField({
       )}
       
       {isFieldDisabled && (
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-helper text-muted-foreground mt-1">
           {isSuperUser ? "Unlock to edit this field" : "This field can only be edited by super users"}
         </p>
       )}

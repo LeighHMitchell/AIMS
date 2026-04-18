@@ -67,7 +67,7 @@ export function AllocationScoringPanel({
 
   if (requests.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4 text-center">No allocation requests yet.</p>
+      <p className="text-body text-muted-foreground py-4 text-center">No allocation requests yet.</p>
     )
   }
 
@@ -86,16 +86,16 @@ export function AllocationScoringPanel({
             {/* Request header */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">
+                <p className="font-medium text-body">
                   {req.organization?.name || req.organization_id}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-helper text-muted-foreground mt-0.5">
                   {req.purpose || "No purpose specified"} &middot; {new Date(req.created_at).toLocaleDateString()}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 {req.total_score !== null && req.total_score > 0 && (
-                  <span className="text-xs font-medium text-muted-foreground">{req.total_score}/15</span>
+                  <span className="text-helper font-medium text-muted-foreground">{req.total_score}/15</span>
                 )}
                 <Badge variant={ALLOCATION_STATUS_BADGE_VARIANT[req.status as AllocationRequestStatus] as any}>
                   {ALLOCATION_STATUS_LABELS[req.status as AllocationRequestStatus] || req.status}
@@ -105,7 +105,7 @@ export function AllocationScoringPanel({
 
             {/* Dates */}
             {(req.proposed_start_date || req.proposed_end_date) && (
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-helper text-muted-foreground mt-2">
                 Proposed: {req.proposed_start_date || '—'} to {req.proposed_end_date || '—'}
               </p>
             )}
@@ -131,8 +131,8 @@ export function AllocationScoringPanel({
                     ].map(({ key, label }) => (
                       <div key={key} className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs">{label}</Label>
-                          <span className="text-xs font-medium">{(s as any)[key]}/5</span>
+                          <Label className="text-helper">{label}</Label>
+                          <span className="text-helper font-medium">{(s as any)[key]}/5</span>
                         </div>
                         <Input
                           type="range"
@@ -146,13 +146,13 @@ export function AllocationScoringPanel({
                       </div>
                     ))}
 
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-body">
                       <span className="text-muted-foreground">Total Score</span>
                       <span className="font-bold">{totalScore}/15</span>
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs">Reviewer Notes</Label>
+                      <Label className="text-helper">Reviewer Notes</Label>
                       <Textarea
                         placeholder="Notes about this request..."
                         value={s.notes}

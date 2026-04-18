@@ -258,8 +258,8 @@ export default function SectorSunburstChart({
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <div className="text-sm font-medium text-muted-foreground">No Sector Data</div>
-          <div className="text-xs text-muted-foreground">Add sectors to see the sunburst visualization</div>
+          <div className="text-body font-medium text-muted-foreground">No Sector Data</div>
+          <div className="text-helper text-muted-foreground">Add sectors to see the sunburst visualization</div>
         </div>
       </div>
     );
@@ -533,7 +533,7 @@ export default function SectorSunburstChart({
     
     return (
       <div
-        className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm pointer-events-none"
+        className="absolute z-10 px-3 py-2 text-body font-medium text-white bg-gray-900 rounded-lg shadow-sm pointer-events-none"
         style={{
           left: tooltip.x + 10,
           top: tooltip.y - 10,

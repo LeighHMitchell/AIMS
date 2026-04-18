@@ -387,7 +387,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 </section>
 
                 <section className="mt-6 pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-body text-muted-foreground leading-relaxed">
                     This list includes the major dependencies used in DFMIS. For a complete list of all packages
                     and their versions, please refer to the project's package.json file. We extend our thanks to
                     the entire open source community whose work makes projects like this possible.

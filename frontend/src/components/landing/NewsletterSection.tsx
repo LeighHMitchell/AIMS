@@ -50,7 +50,7 @@ export function NewsletterSection() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: 0.2 + index * 0.1 }}
-                      className="inline-flex items-center gap-1 rounded-md border border-input bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground"
+                      className="inline-flex items-center gap-1 rounded-md border border-input bg-muted px-2.5 py-0.5 text-helper font-medium text-foreground"
                     >
                       <Check className="h-3 w-3 text-foreground" />
                       {feature}
@@ -256,7 +256,7 @@ export function NewsletterSection() {
                       </form>
                     </div>
 
-                    <p className="text-center text-xs text-muted-foreground">
+                    <p className="text-center text-helper text-muted-foreground">
                       We respect your privacy. Unsubscribe at any time.
                     </p>
                   </motion.div>
@@ -285,7 +285,7 @@ export function NewsletterSection() {
                       <h3 className="mb-2 text-xl font-semibold text-foreground">
                         Subscription confirmed
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body text-muted-foreground">
                         Check your inbox to confirm your subscription
                       </p>
                     </div>

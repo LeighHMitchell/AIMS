@@ -153,13 +153,13 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
         <div className="flex items-center gap-3">
           <Icon className={`h-4 w-4 ${statusColors[field.status as keyof typeof statusColors]}`} />
           <div>
-            <p className="font-medium text-sm">{field.field}</p>
+            <p className="font-medium text-body">{field.field}</p>
             <div className="flex gap-4 mt-1">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-helper text-muted-foreground">
                 Local: <code className="bg-white px-1 rounded">{field.localValue || 'null'}</code>
               </span>
               {field.status !== 'match' && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-helper text-muted-foreground">
                   IATI: <code className="bg-white px-1 rounded">{field.iatiValue || 'null'}</code>
                 </span>
               )}
@@ -211,7 +211,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                 )}
               </div>
               {!iatiIdentifier && (
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-helper text-muted-foreground mt-1">
                   No IATI identifier set. Enter one to enable IATI linking.
                 </p>
               )}
@@ -278,7 +278,7 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
               {linkStatus.fields && linkStatus.fields.length > 0 ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Field Comparison</h3>
+                    <h3 className="text-body font-medium">Field Comparison</h3>
                     <Badge variant="outline">
                       {linkStatus.fields.filter(f => f.status === 'match').length}/{linkStatus.fields.length} matched
                     </Badge>
@@ -308,22 +308,22 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Local Field</p>
-                    <code className="text-xs">title_narrative</code>
+                    <p className="text-body font-medium">Local Field</p>
+                    <code className="text-helper">title_narrative</code>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">IATI Field</p>
-                    <code className="text-xs">iati-activity/title/narrative</code>
+                    <p className="text-body font-medium">IATI Field</p>
+                    <code className="text-helper">iati-activity/title/narrative</code>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Local Field</p>
-                    <code className="text-xs">description_narrative</code>
+                    <p className="text-body font-medium">Local Field</p>
+                    <code className="text-helper">description_narrative</code>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">IATI Field</p>
-                    <code className="text-xs">iati-activity/description/narrative</code>
+                    <p className="text-body font-medium">IATI Field</p>
+                    <code className="text-helper">iati-activity/description/narrative</code>
                   </div>
                 </div>
               </div>
@@ -392,15 +392,15 @@ export default function IatiLinkTab({ activityId, iatiIdentifier }: IatiLinkTabP
                   <div className="space-y-2 mt-2">
                     <label className="flex items-center gap-2">
                       <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Auto-link on save</span>
+                      <span className="text-body">Auto-link on save</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Validate against IATI schema</span>
+                      <span className="text-body">Validate against IATI schema</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Preserve local changes on conflict</span>
+                      <span className="text-body">Preserve local changes on conflict</span>
                     </label>
                   </div>
                 </div>

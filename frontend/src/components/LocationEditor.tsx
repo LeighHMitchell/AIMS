@@ -168,7 +168,7 @@ export default function LocationEditor({
               {Object.entries(errors).map(([locationId, error]) => {
                 const location = localLocations.find(l => l.id === locationId);
                 return (
-                  <li key={locationId} className="text-sm">
+                  <li key={locationId} className="text-body">
                     <strong>{location?.name || 'Location'}:</strong> {error}
                   </li>
                 );
@@ -182,14 +182,14 @@ export default function LocationEditor({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium text-foreground">Activity Locations</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Add specific locations where this activity takes place
           </p>
         </div>
         <div className="flex items-center gap-2">
           {localLocations.length > 0 && (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-body text-muted-foreground">
                 {localLocations.length} location{localLocations.length !== 1 ? 's' : ''}
               </span>
               <Button
@@ -454,7 +454,7 @@ export default function LocationEditor({
                         )}
                       </div>
                       {(location.city || location.stateProvince || location.postalCode || countryName) && (
-                        <div className="text-sm text-muted-foreground mt-1">
+                        <div className="text-body text-muted-foreground mt-1">
                           {[
                             location.city,
                             location.addressLine1,
@@ -465,7 +465,7 @@ export default function LocationEditor({
                         </div>
                       )}
                       {location.percentage !== undefined && location.percentage !== null && (
-                        <div className="text-sm text-muted-foreground mt-1">
+                        <div className="text-body text-muted-foreground mt-1">
                           {location.percentage}% allocation
                         </div>
                       )}

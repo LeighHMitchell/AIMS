@@ -171,7 +171,7 @@ export function DisaggregationChart({
     <div className={cn("space-y-4", className)}>
       {/* Dimension selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Disaggregate by:</span>
+        <span className="text-body text-muted-foreground">Disaggregate by:</span>
         <Select value={selectedDimension} onValueChange={setSelectedDimension}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select dimension" />
@@ -238,7 +238,7 @@ export function DisaggregationChart({
       {/* Summary table */}
       {chartData.length > 0 && (
         <div className="border rounded-md overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <thead className="bg-surface-muted">
               <tr>
                 <th className="text-left py-2 px-3 font-medium text-foreground">

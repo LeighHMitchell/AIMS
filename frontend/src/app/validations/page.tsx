@@ -182,12 +182,12 @@ export default function ValidationsPage() {
                         </div>
                         
                         {activity.description && (
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                          <p className="text-body text-muted-foreground mb-3 line-clamp-2">
                             {activity.description}
                           </p>
                         )}
                         
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4 text-body text-muted-foreground">
                           <span>Partner ID: {activity.partnerId}</span>
                           {activity.submittedByName && (
                             <span>Submitted by {activity.submittedByName}</span>

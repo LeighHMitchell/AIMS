@@ -408,7 +408,7 @@ export function AutosaveUpload({
               {isRepositioning && (
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                   <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <p className="text-body font-medium text-foreground flex items-center gap-2">
                       <Move className="h-4 w-4" />
                       Drag up or down to reposition
                     </p>
@@ -420,7 +420,7 @@ export function AutosaveUpload({
               {isZooming && (
                 <div className="absolute inset-x-0 bottom-0 flex justify-center pb-2 pointer-events-none">
                   <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
-                    <p className="text-xs font-medium text-white flex items-center gap-2">
+                    <p className="text-helper font-medium text-white flex items-center gap-2">
                       <ZoomIn className="h-3 w-3" />
                       Drag up/down to zoom
                     </p>
@@ -531,23 +531,23 @@ export function AutosaveUpload({
           >
             <input {...getInputProps()} id={id} />
             <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
-            <p className="text-sm font-medium text-foreground mb-1 text-center">
+            <p className="text-body font-medium text-foreground mb-1 text-center">
               {isDragActive ? 'Drop image here' : 'Click or drag image to upload'}
             </p>
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-helper text-muted-foreground text-center">
               {`Max size: ${maxSize / (1024 * 1024)}MB`}
             </p>
             {isProcessing && (
               <div className="mt-2 flex items-center gap-2 text-blue-600">
                 <CircleDashed className="h-4 w-4 animate-spin" />
-                <span className="text-xs">Processing...</span>
+                <span className="text-helper">Processing...</span>
               </div>
             )}
           </div>
         )}
 
         {autosaveState.error && (
-          <p className="text-xs text-destructive mt-1">{autosaveState.error.toString()}</p>
+          <p className="text-helper text-destructive mt-1">{autosaveState.error.toString()}</p>
         )}
       </div>
     </div>

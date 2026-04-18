@@ -503,10 +503,10 @@ export default function PartnerSummaryPage() {
           {/* Grouping Mode Tabs */}
           <Tabs value={groupingMode} onValueChange={(value: string) => setGroupingMode(value as 'organizationType' | 'userDefined')}>
             <TabsList className="grid w-full lg:w-fit grid-cols-2">
-              <TabsTrigger value="organizationType" className="text-sm">
+              <TabsTrigger value="organizationType" className="text-body">
                 🏷️ Organization Type
               </TabsTrigger>
-              <TabsTrigger value="userDefined" className="text-sm">
+              <TabsTrigger value="userDefined" className="text-body">
                 👤 Organization Groups
               </TabsTrigger>
             </TabsList>
@@ -530,7 +530,7 @@ export default function PartnerSummaryPage() {
                 variant={financialMode === 'disbursements' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setFinancialMode('disbursements')}
-                className="text-xs whitespace-nowrap"
+                className="text-helper whitespace-nowrap"
               >
                 Disbursements
               </Button>
@@ -538,7 +538,7 @@ export default function PartnerSummaryPage() {
                 variant={financialMode === 'commitments' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setFinancialMode('commitments')}
-                className="text-xs whitespace-nowrap"
+                className="text-helper whitespace-nowrap"
               >
                 Commitments
               </Button>
@@ -587,7 +587,7 @@ export default function PartnerSummaryPage() {
                             </CardDescription>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground flex-shrink-0">
+                        <div className="flex items-center space-x-4 text-body text-muted-foreground flex-shrink-0">
                           <div className="flex items-center whitespace-nowrap">
                             <Building2 className="h-4 w-4 mr-1 flex-shrink-0" />
                             {partners.length} organizations
@@ -825,7 +825,7 @@ export default function PartnerSummaryPage() {
                             }
                           }}
                         />
-                        <label htmlFor={partner.id} className="text-sm cursor-pointer flex-1">
+                        <label htmlFor={partner.id} className="text-body cursor-pointer flex-1">
                           {partner.fullName && partner.acronym 
                             ? `${partner.fullName} (${partner.acronym})`
                             : partner.displayName
@@ -836,7 +836,7 @@ export default function PartnerSummaryPage() {
                   </div>
                 </ScrollArea>
                 {selectedOrganizations.length > 0 && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     {selectedOrganizations.length} organization{selectedOrganizations.length !== 1 ? 's' : ''} selected
                   </p>
                 )}

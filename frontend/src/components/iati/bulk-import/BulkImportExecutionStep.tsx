@@ -201,7 +201,7 @@ export default function BulkImportExecutionStep({
             <Progress value={progressPercent} className="h-3 bg-muted [&>div]:bg-gray-700" />
 
             {batchStatus && (
-              <div className="flex gap-6 text-sm">
+              <div className="flex gap-6 text-body">
                 <span className="text-foreground">
                   Created: <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{batchStatus.createdCount}</span>
                 </span>
@@ -253,7 +253,7 @@ export default function BulkImportExecutionStep({
               <TableRow key={item.iatiIdentifier || i}>
                 {/* Activity Title + IATI Identifier */}
                 <TableCell className="min-w-0">
-                  <p className="text-sm truncate">
+                  <p className="text-body truncate">
                     {item.activityTitle || item.iatiIdentifier}
                     <span className="ml-2 font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{item.iatiIdentifier}</span>
                   </p>
@@ -264,14 +264,14 @@ export default function BulkImportExecutionStep({
                   {item.status === 'queued' && (
                     <>
                       <Circle className="h-4 w-4 text-gray-300" />
-                      <span className="text-xs text-muted-foreground">Pending</span>
+                      <span className="text-helper text-muted-foreground">Pending</span>
                     </>
                   )}
                   {item.status === 'processing' && (
                     <div className="flex items-center gap-2 w-full">
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0 text-right">
-                        <span className="text-xs text-muted-foreground block">Importing...</span>
+                        <span className="text-helper text-muted-foreground block">Importing...</span>
                         <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden my-1">
                           <div
                             className="h-full bg-muted0 rounded-full"
@@ -292,7 +292,7 @@ export default function BulkImportExecutionStep({
                   {item.status === 'completed' && item.action === 'create' && (
                     <div className="flex items-center gap-2">
                       <Plus className="h-4 w-4 text-foreground shrink-0" />
-                      <div className="text-xs text-muted-foreground text-right">
+                      <div className="text-helper text-muted-foreground text-right">
                         <span className="font-mono">Created {item.completedAt ? format(new Date(item.completedAt), 'HH:mm:ss') : ''}</span>
                         {formatImportCounts(item, 'imported') && (
                           <span className="block text-[11px] text-muted-foreground">
@@ -305,7 +305,7 @@ export default function BulkImportExecutionStep({
                   {item.status === 'completed' && item.action === 'update' && (
                     <div className="flex items-center gap-2">
                       <RefreshCw className="h-4 w-4 text-foreground shrink-0" />
-                      <div className="text-xs text-muted-foreground text-right">
+                      <div className="text-helper text-muted-foreground text-right">
                         <span className="font-mono">Updated {item.completedAt ? format(new Date(item.completedAt), 'HH:mm:ss') : ''}</span>
                         {formatImportCounts(item, 'imported') && (
                           <span className="block text-[11px] text-muted-foreground">
@@ -326,13 +326,13 @@ export default function BulkImportExecutionStep({
                   {item.status === 'failed' && (
                     <>
                       <XCircle className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Failed</span>
+                      <span className="text-helper text-muted-foreground">Failed</span>
                     </>
                   )}
                   {item.status === 'skipped' && (
                     <>
                       <SkipForward className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Skipped</span>
+                      <span className="text-helper text-muted-foreground">Skipped</span>
                     </>
                   )}
                   </div>

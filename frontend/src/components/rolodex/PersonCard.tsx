@@ -215,7 +215,7 @@ export function PersonCard({
           
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-foreground break-words leading-tight">
+              <p className="text-body font-medium text-foreground break-words leading-tight">
                 {displayName}
               </p>
               <div className="flex items-center space-x-1 ml-2">
@@ -223,7 +223,7 @@ export function PersonCard({
                 {isPersonSuperUser && (
                   <Badge
                     variant="secondary"
-                    className="text-xs flex-shrink-0 text-white border-0"
+                    className="text-helper flex-shrink-0 text-white border-0"
                     style={{ backgroundColor: '#DC2625' }}
                   >
                     Super User
@@ -232,7 +232,7 @@ export function PersonCard({
                 
                 <Badge
                   variant="secondary"
-                  className="text-xs flex-shrink-0"
+                  className="text-helper flex-shrink-0"
                   style={{
                     backgroundColor: person.source === 'user' ? '#4C5568' : '#DC2625',
                     color: 'white'
@@ -241,7 +241,7 @@ export function PersonCard({
                   {person.source === 'user' ? 'User' : 'Activity'}
                 </Badge>
                 {(person.activity_count ?? 0) > 1 && (
-                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                  <Badge variant="outline" className="text-helper flex-shrink-0">
                     <Layers className="h-3 w-3 mr-1" />
                     {person.activity_count} activities
                   </Badge>
@@ -255,7 +255,7 @@ export function PersonCard({
                 <div>
                   <Badge 
                     variant={getRoleBadgeVariant(person.role)} 
-                    className="text-xs"
+                    className="text-helper"
                   >
                     {getRoleDisplayLabel(person.role)}
                   </Badge>
@@ -263,19 +263,19 @@ export function PersonCard({
               )}
               
               {jobInfo && (
-                <div className="text-xs text-muted-foreground break-words">
+                <div className="text-helper text-muted-foreground break-words">
                   {jobInfo}
                 </div>
               )}
               
               {departmentInfo && (
-                <div className="text-xs text-muted-foreground break-words">
+                <div className="text-helper text-muted-foreground break-words">
                   {departmentInfo}
                 </div>
               )}
               
               {organizationInfo && (
-                <div className="text-xs text-muted-foreground break-words" title={organizationInfo}>
+                <div className="text-helper text-muted-foreground break-words" title={organizationInfo}>
                   {organizationInfo}
                 </div>
               )}
@@ -423,7 +423,7 @@ export function PersonCard({
           <h2 className="text-lg font-bold text-white mb-1 line-clamp-2">
             {displayName}
           </h2>
-          <div className="flex items-center gap-2 text-xs flex-wrap" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper flex-wrap" style={{ color: colors.paleSlate }}>
             {jobInfo && (
               <span className="flex items-center gap-1">
                 <Briefcase className="w-3 h-3" />
@@ -459,7 +459,7 @@ export function PersonCard({
             <div className="mb-3">
               <Badge
                 variant={getRoleBadgeVariant(person.role)}
-                className="text-xs"
+                className="text-helper"
               >
                 {getRoleDisplayLabel(person.role)}
               </Badge>
@@ -474,7 +474,7 @@ export function PersonCard({
                 <>
                   <button
                     onClick={() => handleEmailClick(person.email)}
-                    className="font-medium text-sm break-all hover:underline text-left"
+                    className="font-medium text-body break-all hover:underline text-left"
                     style={{ color: colors.blueSlate }}
                   >
                     {person.email}
@@ -492,7 +492,7 @@ export function PersonCard({
                   </button>
                 </>
               ) : (
-                <span className="text-sm" style={{ color: colors.coolSteel }}>—</span>
+                <span className="text-body" style={{ color: colors.coolSteel }}>—</span>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -500,19 +500,19 @@ export function PersonCard({
               {person.phone && isValidPhoneNumber(person.phone) ? (
                 <button
                   onClick={handlePhoneClick}
-                  className="font-medium text-sm break-all hover:underline text-left"
+                  className="font-medium text-body break-all hover:underline text-left"
                   style={{ color: colors.blueSlate }}
                 >
                   {person.phone}
                 </button>
               ) : (
-                <span className="text-sm" style={{ color: colors.coolSteel }}>—</span>
+                <span className="text-body" style={{ color: colors.coolSteel }}>—</span>
               )}
             </div>
             {(person.activity_count ?? 0) > 0 && (
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 shrink-0" style={{ color: colors.coolSteel }} />
-                <span className="font-medium text-sm" style={{ color: colors.blueSlate }}>
+                <span className="font-medium text-body" style={{ color: colors.blueSlate }}>
                   {person.activity_count} {person.activity_count === 1 ? 'activity' : 'activities'}
                 </span>
               </div>

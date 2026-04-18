@@ -298,7 +298,7 @@ export default function PartnerProfilePage() {
                 </div>
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-foreground mb-2">{partner.name}</h1>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4 text-body text-muted-foreground">
                     <Badge variant="secondary" className="bg-muted text-foreground">
                       {partner.type === 'bilateral' ? 'Bilateral Partner' : 
                        partner.type === 'partner_government' ? 'Partner Government' :
@@ -325,19 +325,19 @@ export default function PartnerProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-6 border-t border-b border-border">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-foreground">${(totalFunding / 1000000).toFixed(1)}M</div>
-                  <div className="text-sm text-muted-foreground">Total Funding</div>
+                  <div className="text-body text-muted-foreground">Total Funding</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-foreground">{activeProjects}</div>
-                  <div className="text-sm text-muted-foreground">Active Projects</div>
+                  <div className="text-body text-muted-foreground">Active Projects</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-foreground">{completedProjects}</div>
-                  <div className="text-sm text-muted-foreground">Completed Projects</div>
+                  <div className="text-body text-muted-foreground">Completed Projects</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-foreground">{teamMembers.length}</div>
-                  <div className="text-sm text-muted-foreground">Team Members</div>
+                  <div className="text-body text-muted-foreground">Team Members</div>
                 </div>
               </div>
 
@@ -428,7 +428,7 @@ export default function PartnerProfilePage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Commitments</p>
+                        <p className="text-body text-muted-foreground">Total Commitments</p>
                         <p className="text-2xl font-bold">${totalFunding.toLocaleString()}</p>
                       </div>
                       <div className="h-64">
@@ -492,11 +492,11 @@ export default function PartnerProfilePage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Active Projects</span>
+                        <span className="text-body text-muted-foreground">Active Projects</span>
                         <span className="font-bold">{activeProjects}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Completed Projects</span>
+                        <span className="text-body text-muted-foreground">Completed Projects</span>
                         <span className="font-bold">{completedProjects}</span>
                       </div>
                       <div className="h-48">
@@ -571,7 +571,7 @@ export default function PartnerProfilePage() {
                           <div className="flex items-start justify-between">
                             <div>
                               <h4 className="font-semibold text-foreground">{activity.title}</h4>
-                              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                              <div className="mt-2 space-y-1 text-body text-muted-foreground">
                                 <p>
                                   <span className="font-medium">Activity Status:</span> {
                                     activity.activityStatus || 
@@ -630,12 +630,12 @@ export default function PartnerProfilePage() {
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{member.name}</p>
-                            <p className="text-sm text-muted-foreground">{member.title || member.role}</p>
+                            <p className="text-body text-muted-foreground">{member.title || member.role}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-muted-foreground">{member.email}</p>
-                          {member.phone && <p className="text-sm text-muted-foreground">{member.phone}</p>}
+                          <p className="text-body text-muted-foreground">{member.email}</p>
+                          {member.phone && <p className="text-body text-muted-foreground">{member.phone}</p>}
                         </div>
                       </div>
                     ))}
@@ -662,7 +662,7 @@ export default function PartnerProfilePage() {
           <form onSubmit={handleUpdatePartner} className="space-y-4">
             {/* IATI Organisation Identifier */}
             <div>
-              <label htmlFor="iatiOrgId" className="text-sm font-medium flex items-center">
+              <label htmlFor="iatiOrgId" className="text-body font-medium flex items-center">
                 IATI Organisation Identifier
                 <OrganizationFieldHelp field="iatiOrgId" />
               </label>
@@ -679,13 +679,13 @@ export default function PartnerProfilePage() {
                 className={validationErrors.iatiOrgId ? "border-destructive" : ""}
               />
               {validationErrors.iatiOrgId && (
-                <p className="text-sm text-destructive mt-1">{validationErrors.iatiOrgId}</p>
+                <p className="text-body text-destructive mt-1">{validationErrors.iatiOrgId}</p>
               )}
             </div>
 
             {/* Full Name */}
             <div>
-              <label htmlFor="fullName" className="text-sm font-medium flex items-center">
+              <label htmlFor="fullName" className="text-body font-medium flex items-center">
                 Full Name *
                 <OrganizationFieldHelp field="fullName" />
               </label>
@@ -703,13 +703,13 @@ export default function PartnerProfilePage() {
                 required
               />
               {validationErrors.fullName && (
-                <p className="text-sm text-destructive mt-1">{validationErrors.fullName}</p>
+                <p className="text-body text-destructive mt-1">{validationErrors.fullName}</p>
               )}
             </div>
 
             {/* Acronym / Short Name */}
             <div>
-              <label htmlFor="acronym" className="text-sm font-medium flex items-center">
+              <label htmlFor="acronym" className="text-body font-medium flex items-center">
                 Acronym / Short Name *
                 <OrganizationFieldHelp field="acronym" />
               </label>
@@ -727,13 +727,13 @@ export default function PartnerProfilePage() {
                 required
               />
               {validationErrors.acronym && (
-                <p className="text-sm text-destructive mt-1">{validationErrors.acronym}</p>
+                <p className="text-body text-destructive mt-1">{validationErrors.acronym}</p>
               )}
             </div>
 
             {/* Country Represented */}
             <div>
-              <label htmlFor="country" className="text-sm font-medium flex items-center">
+              <label htmlFor="country" className="text-body font-medium flex items-center">
                 Country Represented *
                 <OrganizationFieldHelp field="countryRepresented" />
               </label>
@@ -760,17 +760,17 @@ export default function PartnerProfilePage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Select 'Global / Not Country-Specific' for multilaterals or regional organisations like UN agencies, the World Bank, etc.
               </p>
               {validationErrors.countryRepresented && (
-                <p className="text-sm text-destructive mt-1">{validationErrors.countryRepresented}</p>
+                <p className="text-body text-destructive mt-1">{validationErrors.countryRepresented}</p>
               )}
             </div>
 
             {/* Organisation Type */}
             <div>
-              <label htmlFor="organisationType" className="block text-sm font-medium mb-1.5">
+              <label htmlFor="organisationType" className="block text-body font-medium mb-1.5">
                 <span className="flex items-center">
                   Organisation Type *
                   <OrganizationFieldHelp field="organisationType" />
@@ -796,20 +796,20 @@ export default function PartnerProfilePage() {
                     <SelectItem key={type.value} value={type.value}>
                       <div className="text-left">
                         <div className="font-medium">{type.value} - {type.label}</div>
-                        <div className="text-xs text-muted-foreground">{type.description}</div>
+                        <div className="text-helper text-muted-foreground">{type.description}</div>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {validationErrors.organisationType && (
-                <p className="text-sm text-destructive mt-1">{validationErrors.organisationType}</p>
+                <p className="text-body text-destructive mt-1">{validationErrors.organisationType}</p>
               )}
             </div>
 
             {/* Cooperation Modality (Read-only) */}
             <div>
-              <label htmlFor="cooperationModality" className="text-sm font-medium flex items-center">
+              <label htmlFor="cooperationModality" className="text-body font-medium flex items-center">
                 Cooperation Modality
                 <OrganizationFieldHelp field="cooperationModality" />
               </label>
@@ -827,7 +827,7 @@ export default function PartnerProfilePage() {
             </div>
 
             <div>
-              <label htmlFor="description" className="text-sm font-medium">Description</label>
+              <label htmlFor="description" className="text-body font-medium">Description</label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -839,7 +839,7 @@ export default function PartnerProfilePage() {
 
             {/* Logo Upload */}
             <div>
-              <label className="text-sm font-medium">Partner Logo</label>
+              <label className="text-body font-medium">Partner Logo</label>
               <div className="mt-2">
                 <ImageUpload
                   currentImage={formData.logo}
@@ -855,7 +855,7 @@ export default function PartnerProfilePage() {
 
             {/* Banner Upload */}
             <div>
-              <label className="text-sm font-medium">Banner Image</label>
+              <label className="text-body font-medium">Banner Image</label>
               <div className="mt-2">
                 <ImageUpload
                   currentImage={formData.banner}
@@ -871,7 +871,7 @@ export default function PartnerProfilePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="website" className="text-sm font-medium">Website</label>
+                <label htmlFor="website" className="text-body font-medium">Website</label>
                 <Input
                   id="website"
                   type="url"
@@ -881,7 +881,7 @@ export default function PartnerProfilePage() {
                 />
               </div>
               <div>
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <label htmlFor="email" className="text-body font-medium">Email</label>
                 <Input
                   id="email"
                   type="email"
@@ -893,7 +893,7 @@ export default function PartnerProfilePage() {
             </div>
 
             <div>
-              <label htmlFor="phone" className="text-sm font-medium">Phone</label>
+              <label htmlFor="phone" className="text-body font-medium">Phone</label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -903,7 +903,7 @@ export default function PartnerProfilePage() {
             </div>
 
             <div>
-              <label htmlFor="address" className="text-sm font-medium">Address</label>
+              <label htmlFor="address" className="text-body font-medium">Address</label>
               <Textarea
                 id="address"
                 value={formData.address}

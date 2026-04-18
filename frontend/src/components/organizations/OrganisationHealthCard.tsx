@@ -31,14 +31,14 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
     <Card className="border-border bg-white">
       <CardContent className="p-6">
         <div className="mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Data Health</h3>
+          <h3 className="text-body font-semibold text-foreground">Data Health</h3>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {/* Missing Budgets */}
           <div className={`${budgetStatus.bgColor} p-3 rounded-lg`}>
             <div className="flex items-center gap-2 mb-1">
               <BudgetIcon className={`h-4 w-4 ${budgetStatus.color}`} />
-              <span className={`text-xs font-medium ${budgetStatus.color}`}>Missing Budgets</span>
+              <span className={`text-helper font-medium ${budgetStatus.color}`}>Missing Budgets</span>
             </div>
             <p className={`text-lg font-bold ${budgetStatus.color}`}>
               {healthMetrics.missingBudgetsPercent.toFixed(1)}%
@@ -50,7 +50,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
           <div className={`${disbursementStatus.bgColor} p-3 rounded-lg`}>
             <div className="flex items-center gap-2 mb-1">
               <DisbursementIcon className={`h-4 w-4 ${disbursementStatus.color}`} />
-              <span className={`text-xs font-medium ${disbursementStatus.color}`}>Missing Planned Disbursements</span>
+              <span className={`text-helper font-medium ${disbursementStatus.color}`}>Missing Planned Disbursements</span>
             </div>
             <p className={`text-lg font-bold ${disbursementStatus.color}`}>
               {healthMetrics.missingPlannedDisbursementsPercent.toFixed(1)}%
@@ -62,7 +62,7 @@ export function OrganisationHealthCard({ healthMetrics }: OrganisationHealthCard
           <div className={`${dataStatus.bgColor} p-3 rounded-lg`}>
             <div className="flex items-center gap-2 mb-1">
               <DataIcon className={`h-4 w-4 ${dataStatus.color}`} />
-              <span className={`text-xs font-medium ${dataStatus.color}`}>Outdated Data</span>
+              <span className={`text-helper font-medium ${dataStatus.color}`}>Outdated Data</span>
             </div>
             <p className={`text-lg font-bold ${dataStatus.color}`}>
               {healthMetrics.outdatedDataPercent.toFixed(1)}%

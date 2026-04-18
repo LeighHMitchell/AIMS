@@ -158,11 +158,11 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
           <div className="flex items-baseline justify-between">
             <h3 className="text-3xl font-bold text-foreground">{displayPercentage}%</h3>
             <div className="text-right">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-body text-muted-foreground">
                 {evaluation.filledCount} of {evaluation.totalCount} fields
               </span>
               {showWeightedScore && (
-                <div className="text-xs text-muted-foreground mt-0.5">
+                <div className="text-helper text-muted-foreground mt-0.5">
                   Quality-weighted score
                 </div>
               )}
@@ -200,7 +200,7 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
           <div className="space-y-3">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-sm text-primary hover:text-primary font-medium flex items-center gap-1"
+              className="text-body text-primary hover:text-primary font-medium flex items-center gap-1"
             >
               {isExpanded ? '▼' : '▶'} How can I improve this score?
             </button>
@@ -209,10 +209,10 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
               <div className="space-y-4 pt-2">
                 {evaluation.missingRequired.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-destructive mb-2">Required Fields:</h4>
+                    <h4 className="text-body font-semibold text-destructive mb-2">Required Fields:</h4>
                     <ul className="space-y-1.5">
                       {evaluation.missingRequired.map((field) => (
-                        <li key={field.key} className="flex items-start gap-2 text-sm">
+                        <li key={field.key} className="flex items-start gap-2 text-body">
                           <AlertCircle className="h-3 w-3 text-destructive mt-0.5 flex-shrink-0" />
                           <span className="text-foreground">{field.label}</span>
                         </li>
@@ -223,10 +223,10 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
                 
                 {evaluation.missingRecommended.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-foreground mb-2">Recommended Fields:</h4>
+                    <h4 className="text-body font-semibold text-foreground mb-2">Recommended Fields:</h4>
                     <ul className="space-y-1.5">
                       {evaluation.missingRecommended.map((field) => (
-                        <li key={field.key} className="flex items-start gap-2 text-sm">
+                        <li key={field.key} className="flex items-start gap-2 text-body">
                           <Circle className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
                           <span className="text-muted-foreground">{field.label}</span>
                         </li>
@@ -242,12 +242,12 @@ export const ActivityCompletionEnhanced: React.FC<ActivityCompletionEnhancedProp
         {/* Information Section */}
         <div className="bg-muted rounded-lg p-4 flex gap-3">
           <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="space-y-2 text-body text-muted-foreground">
             <p className="leading-relaxed">
               This score reflects your activity's data completeness and quality. 
               {showWeightedScore && " Required fields have higher weight in the calculation."}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Complete all required fields to publish your activity. Recommended fields improve 
               transparency and enable better analytics.
             </p>

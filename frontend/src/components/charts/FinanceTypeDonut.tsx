@@ -117,7 +117,7 @@ export default function FinanceTypeDonut({
 
   if (chartData.length === 0) {
     return (
-      <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
+      <div className="h-24 flex items-center justify-center text-muted-foreground text-helper">
         <p>No finance type data</p>
       </div>
     );
@@ -152,7 +152,7 @@ export default function FinanceTypeDonut({
       {/* Chart or Table View */}
       {viewMode === 'table' ? (
         <div className="h-24 overflow-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-helper">
             <thead className="bg-surface-muted">
               <tr className="border-b border-border">
                 <th className="text-left py-1 text-muted-foreground font-medium">Finance Type</th>
@@ -219,11 +219,11 @@ export default function FinanceTypeDonut({
                             className="w-3 h-3 rounded-full flex-shrink-0" 
                             style={{ backgroundColor: data.color }}
                           />
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="text-body font-semibold text-foreground">
                             {data.name}
                           </p>
                         </div>
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <tbody>
                             <tr className="border-b border-border">
                               <td className="px-1 py-1.5 text-muted-foreground">Code</td>

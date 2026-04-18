@@ -190,7 +190,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
         <div className="space-y-4">
           {/* Timeline Header */}
           <div className="relative">
-            <div className="flex text-xs text-muted-foreground mb-2">
+            <div className="flex text-helper text-muted-foreground mb-2">
               {timelineData.months.map((month, index) => (
                 <div 
                   key={index} 
@@ -216,13 +216,13 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
                     <div className="flex items-center gap-3 mb-2">
                       {getStatusIcon(activity.activity_status)}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" title={activity.title}>
+                        <p className="text-body font-medium truncate" title={activity.title}>
                           {activity.title}
                         </p>
                         <div className="flex items-center gap-2">
                           <Badge 
                             variant="outline" 
-                            className={`text-xs ${getRoleColor(activity.role)}`}
+                            className={`text-helper ${getRoleColor(activity.role)}`}
                           >
                             {activity.role}
                           </Badge>
@@ -258,7 +258,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
           </ScrollArea>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-4 pt-4 border-t border-border text-xs">
+          <div className="flex flex-wrap gap-4 pt-4 border-t border-border text-helper">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded"></div>
               <span>Active/Implementation</span>

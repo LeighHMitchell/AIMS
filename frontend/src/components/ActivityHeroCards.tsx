@@ -180,19 +180,19 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Budgeted</p>
+            <p className="text-body text-blue-600 font-medium">Total Budgeted</p>
             <p className="text-2xl font-bold text-blue-900">
               {formatCurrency(financials.totalPlannedBudget)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Disbursed</p>
+            <p className="text-body text-blue-600 font-medium">Total Disbursed</p>
             <p className="text-xl font-semibold text-blue-800">
               {formatCurrency(financials.totalDisbursement)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Expended</p>
+            <p className="text-body text-blue-600 font-medium">Total Expended</p>
             <p className="text-xl font-semibold text-blue-700">
               {formatCurrency(financials.totalExpenditure)}
             </p>
@@ -212,26 +212,26 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Reporting Organization</p>
+            <p className="text-body text-[hsl(var(--success-icon))] font-medium">Reporting Organization</p>
             <p className="text-lg font-bold text-green-900">
               {creatorOrg.acronym || creatorOrg.code || creatorOrg.name}
             </p>
             {activity.created_by_org_acronym && (
-              <p className="text-sm text-green-700">
+              <p className="text-body text-green-700">
                 {activity.created_by_org_name}
               </p>
             )}
           </div>
           <div>
-            <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Reported by</p>
+            <p className="text-body text-[hsl(var(--success-icon))] font-medium">Reported by</p>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-green-700" />
-              <p className="text-sm font-semibold text-green-800">
+              <p className="text-body font-semibold text-green-800">
                 {activity.createdBy?.name || 'Unknown User'}
               </p>
             </div>
             {activity.createdBy?.role && (
-              <Badge variant="outline" className="text-xs mt-1 border-green-300 text-green-700">
+              <Badge variant="outline" className="text-helper mt-1 border-green-300 text-green-700">
                 {activity.createdBy.role}
               </Badge>
             )}
@@ -252,10 +252,10 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
         <CardContent className="space-y-3">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-purple-600 font-medium">Timeline Progress</p>
+              <p className="text-body text-purple-600 font-medium">Timeline Progress</p>
               <Badge 
                 variant="outline" 
-                className="text-xs border-purple-300 text-purple-700"
+                className="text-helper border-purple-300 text-purple-700"
               >
                 {activityProgress.status}
               </Badge>
@@ -269,7 +269,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
               {activityProgress.progress}%
             </p>
           </div>
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-body">
             <div className="flex items-center gap-2">
               <Calendar className="h-3 w-3 text-purple-600" />
               <span className="text-purple-600">Start:</span>
@@ -300,18 +300,18 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-orange-600 font-medium">Execution Rate</p>
+            <p className="text-body text-orange-600 font-medium">Execution Rate</p>
             <p className="text-2xl font-bold text-orange-900">
               {financials.totalCommitment > 0 
                 ? Math.round((financials.totalSpent / financials.totalCommitment) * 100)
                 : 0}%
             </p>
-            <p className="text-xs text-orange-700">
+            <p className="text-helper text-orange-700">
               of committed funds spent
             </p>
           </div>
           <div>
-            <p className="text-sm text-orange-600 font-medium">Disbursement Rate</p>
+            <p className="text-body text-orange-600 font-medium">Disbursement Rate</p>
             <p className="text-xl font-semibold text-orange-800">
               {financials.totalCommitment > 0 
                 ? Math.round((financials.totalDisbursement / financials.totalCommitment) * 100)
@@ -319,7 +319,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
             </p>
           </div>
           <div>
-            <p className="text-sm text-orange-600 font-medium">Remaining Budget</p>
+            <p className="text-body text-orange-600 font-medium">Remaining Budget</p>
             <p className="text-lg font-semibold text-orange-700">
               {formatCurrency(Math.max(0, financials.totalCommitment - financials.totalSpent))}
             </p>

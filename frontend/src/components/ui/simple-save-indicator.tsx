@@ -54,7 +54,7 @@ export function SimpleSaveIndicator({
   
   return (
     <div className="space-y-2">
-      <label className={`text-sm font-medium flex items-center text-foreground ${className}`}>
+      <label className={`text-body font-medium flex items-center text-foreground ${className}`}>
         <div className="flex items-center gap-2">
           <span>
             {label}
@@ -70,7 +70,7 @@ export function SimpleSaveIndicator({
       </div>
       
       {errorMessage && showRed && (
-        <p className="text-xs text-destructive mt-1">{errorMessage}</p>
+        <p className="text-helper text-destructive mt-1">{errorMessage}</p>
       )}
     </div>
   );

@@ -230,7 +230,7 @@ export function DocumentCardInlineFixed({
                       {primaryTitle?.text || 'Untitled Document'}
                     </h3>
                 {primaryDescription && primaryDescription.text && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-body text-muted-foreground mt-1 line-clamp-2">
                         {primaryDescription.text}
                       </p>
                 )}
@@ -245,7 +245,7 @@ export function DocumentCardInlineFixed({
                         <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <div className="text-sm">
+                        <div className="text-body">
                           {validation.issues && validation.issues.length > 0 ? (
                             validation.issues.map((issue, i) => (
                               <div key={i}>{issue.message}</div>
@@ -266,7 +266,7 @@ export function DocumentCardInlineFixed({
               <div className="mt-3 space-y-2">
                 {/* First row: Format, Category, Language */}
                 <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-helper">
                   {getFormatLabel(formData.format)}
                 </Badge>
                 
@@ -274,14 +274,14 @@ export function DocumentCardInlineFixed({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                             {category.name}
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
                         <div className="max-w-xs">
                             <p className="font-medium">{category.name} ({category.code})</p>
-                          <p className="text-sm">{category.description}</p>
+                          <p className="text-body">{category.description}</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -289,14 +289,14 @@ export function DocumentCardInlineFixed({
                 )}
                 
                 {formData.languageCodes && formData.languageCodes.length > 0 && (
-                  <Badge variant="outline" className="text-xs gap-1">
+                  <Badge variant="outline" className="text-helper gap-1">
                     <Languages className="w-3 h-3" />
                       {getLanguageNames(formData.languageCodes).join(', ')}
                   </Badge>
                 )}
                 
                 {formData.documentDate && (
-                  <Badge variant="outline" className="text-xs gap-1">
+                  <Badge variant="outline" className="text-helper gap-1">
                     <Calendar className="w-3 h-3" />
                     {format(new Date(formData.documentDate), 'MMM d, yyyy')}
                   </Badge>
@@ -309,7 +309,7 @@ export function DocumentCardInlineFixed({
                     size="sm"
                     variant="ghost"
                     onClick={() => onEdit?.()}
-                    className="text-xs gap-1 h-7 px-2"
+                    className="text-helper gap-1 h-7 px-2"
             >
               <Pencil className="w-3 h-3 text-muted-foreground" />
               Edit
@@ -319,7 +319,7 @@ export function DocumentCardInlineFixed({
               size="sm"
               variant="ghost"
               onClick={handleOpen}
-                    className="text-xs gap-1 h-7 px-2"
+                    className="text-helper gap-1 h-7 px-2"
             >
               <ExternalLink className="w-3 h-3" />
               Open
@@ -329,7 +329,7 @@ export function DocumentCardInlineFixed({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(formData.url)}
-                    className="text-xs gap-1 h-7 px-2 text-destructive hover:text-destructive"
+                    className="text-helper gap-1 h-7 px-2 text-destructive hover:text-destructive"
             >
               <Trash2 className="w-3 h-3 text-destructive" />
               Delete

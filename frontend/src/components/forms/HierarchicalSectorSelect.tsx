@@ -215,7 +215,7 @@ export function HierarchicalSectorSelect({
               {selectedSubsectors.length === 0 ? (
                 <span className="text-muted-foreground">{placeholder}</span>
               ) : (
-                <span className="text-sm text-foreground">
+                <span className="text-body text-foreground">
                   {selectedSubsectors.length} sector{selectedSubsectors.length !== 1 ? 's' : ''} selected
                 </span>
               )}
@@ -248,7 +248,7 @@ export function HierarchicalSectorSelect({
           <ScrollArea className="h-[300px]">
             <div className="p-1">
               {filteredHierarchy.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-6 text-center text-body text-muted-foreground">
                   No sectors found.
                 </div>
               ) : (
@@ -256,7 +256,7 @@ export function HierarchicalSectorSelect({
                   <div key={category.code} className="mb-2">
                     {/* Category Header - Non-selectable */}
                     <div 
-                      className="px-3 py-2 text-sm font-semibold text-foreground bg-muted border-t border-border first:border-t-0"
+                      className="px-3 py-2 text-body font-semibold text-foreground bg-muted border-t border-border first:border-t-0"
                       role="heading"
                       aria-level={3}
                     >
@@ -268,7 +268,7 @@ export function HierarchicalSectorSelect({
                       <div key={sector.code}>
                         {/* 3-digit Sector Header - Non-selectable */}
                         <div
-                          className="px-3 py-1.5 text-sm font-semibold text-foreground bg-muted/50 cursor-default"
+                          className="px-3 py-1.5 text-body font-semibold text-foreground bg-muted/50 cursor-default"
                           role="heading"
                           aria-level={4}
                         >
@@ -284,7 +284,7 @@ export function HierarchicalSectorSelect({
                             <div
                               key={subsector.code}
                               className={cn(
-                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-colors",
+                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-body outline-none transition-colors",
                                 isSelected && "bg-blue-100 text-blue-900",
                                 !isSelected && !isDisabled && "hover:bg-muted",
                                 isDisabled && "text-muted-foreground cursor-not-allowed"
@@ -301,7 +301,7 @@ export function HierarchicalSectorSelect({
                                 )}
                               />
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm truncate">
+                                <div className="text-body truncate">
                                   <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{subsector.code}</span> {subsector.name}
                                 </div>
                               </div>
@@ -317,13 +317,13 @@ export function HierarchicalSectorSelect({
           </ScrollArea>
           {selectedSubsectors.length > 0 && (
             <div className="border-t p-3">
-              <div className="flex justify-between items-center text-xs text-muted-foreground">
+              <div className="flex justify-between items-center text-helper text-muted-foreground">
                 <span>{selectedSubsectors.length} of {maxSelections} selected</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearAll}
-                  className="h-6 px-2 text-xs"
+                  className="h-6 px-2 text-helper"
                 >
                   Clear all
                 </Button>

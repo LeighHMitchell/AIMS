@@ -128,7 +128,7 @@ export function ParcelWizard({ parcelId }: ParcelWizardProps) {
 
         {/* Error */}
         {errors._form && (
-          <div className="bg-destructive/10 text-destructive text-sm rounded-lg p-3 mt-4">
+          <div className="bg-destructive/10 text-destructive text-body rounded-lg p-3 mt-4">
             {errors._form}
           </div>
         )}
@@ -188,12 +188,12 @@ function StepBasicInfo({
             onChange={e => updateField("name", e.target.value)}
             placeholder="e.g. Thilawa Industrial Plot A"
           />
-          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+          {errors.name && <p className="text-helper text-destructive">{errors.name}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="wiz-code">
             Parcel Code
-            <span className="text-xs text-muted-foreground ml-1">(auto-generated if blank)</span>
+            <span className="text-helper text-muted-foreground ml-1">(auto-generated if blank)</span>
           </Label>
           <Input
             id="wiz-code"
@@ -218,7 +218,7 @@ function StepBasicInfo({
             }}
             placeholder="Select region..."
           />
-          {errors.state_region && <p className="text-xs text-destructive">{errors.state_region}</p>}
+          {errors.state_region && <p className="text-helper text-destructive">{errors.state_region}</p>}
         </div>
         <div className="space-y-2">
           <Label>Township</Label>
@@ -309,7 +309,7 @@ function StepBasicInfo({
 
       {/* Submitter Information */}
       <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-        <h3 className="text-sm font-semibold">Submitter Information</h3>
+        <h3 className="text-body font-semibold">Submitter Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="wiz-sub-first">First Name</Label>
@@ -374,7 +374,7 @@ function StepGeometry({
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Geometry</h2>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         Draw a polygon on the map or upload a GeoJSON file to define the parcel boundary. You can skip this step and add geometry later.
       </p>
       <ParcelDrawMap geometry={geometry} onChange={onChange} />
@@ -408,7 +408,7 @@ function StepReview({
       <h2 className="text-lg font-semibold">
         {isEditMode ? "Review Changes" : "Review & Register"}
       </h2>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         {isEditMode
           ? "Please review the changes below before saving."
           : "Please review the parcel details below before registering."}
@@ -417,21 +417,21 @@ function StepReview({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
         {fields.map(f => (
           <div key={f.label}>
-            <dt className="text-xs font-medium text-muted-foreground">{f.label}</dt>
-            <dd className="text-sm mt-0.5">{f.value || "\u2014"}</dd>
+            <dt className="text-helper font-medium text-muted-foreground">{f.label}</dt>
+            <dd className="text-body mt-0.5">{f.value || "\u2014"}</dd>
           </div>
         ))}
       </div>
 
       {/* Geometry preview */}
       <div>
-        <dt className="text-xs font-medium text-muted-foreground mb-2">Geometry</dt>
+        <dt className="text-helper font-medium text-muted-foreground mb-2">Geometry</dt>
         {formData.geometry ? (
           <div className="border rounded-lg overflow-hidden">
             <ParcelDrawMap geometry={formData.geometry} onChange={() => {}} />
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-body text-muted-foreground bg-muted/50 rounded-lg p-4">
             <MapPin className="h-4 w-4" />
             No geometry defined
           </div>
@@ -502,8 +502,8 @@ function NdpGoalCards({
   return (
     <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
       <div>
-        <h3 className="text-sm font-semibold">NDP/MSDP Goal Alignment</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <h3 className="text-body font-semibold">NDP/MSDP Goal Alignment</h3>
+        <p className="text-helper text-muted-foreground mt-0.5">
           Click to select goals. First selected = primary (green). Additional = secondary (blue).
         </p>
       </div>
@@ -528,7 +528,7 @@ function NdpGoalCards({
             >
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
-                <span className="text-sm font-medium">{goal.name}</span>
+                <span className="text-body font-medium">{goal.name}</span>
                 {isPrimary && (
                   <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-green-200 text-green-800">Primary</span>
                 )}
@@ -537,7 +537,7 @@ function NdpGoalCards({
                 )}
               </div>
               {goal.description && (
-                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{goal.description}</div>
+                <div className="text-helper text-muted-foreground mt-1 line-clamp-2">{goal.description}</div>
               )}
             </button>
           )

@@ -646,7 +646,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm max-w-[280px] break-words">{orgDisplay}</p>
+            <p className="font-semibold text-foreground text-body max-w-[280px] break-words">{orgDisplay}</p>
             {data.type && (
               <div className="flex items-center gap-1.5 mt-1">
                 {getOrganizationTypeCode(data.type) && (
@@ -654,21 +654,21 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     {getOrganizationTypeCode(data.type)}
                   </code>
                 )}
-                <span className="text-xs text-muted-foreground">{getOrganizationTypeName(data.type)}</span>
+                <span className="text-helper text-muted-foreground">{getOrganizationTypeName(data.type)}</span>
               </div>
             )}
           </div>
           <div className="p-3">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-muted-foreground text-sm">{selectedMetric.name}</span>
+              <span className="text-muted-foreground text-body">{selectedMetric.name}</span>
               <span className="text-lg font-bold text-foreground">
                 {formatCurrencyAbbreviated(selectedMetric.value)}
               </span>
             </div>
             {showPercentage && (
               <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-border">
-                <span className="text-muted-foreground text-xs">% of Total</span>
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-muted-foreground text-helper">% of Total</span>
+                <span className="text-body font-medium text-foreground">
                   {formatPercentage(data.value)}
                 </span>
               </div>
@@ -786,7 +786,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     if (!chartData || chartData.length === 0) {
       return (
         <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">No data available</p>
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -889,7 +889,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                          <span className="text-helper font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
@@ -973,7 +973,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
             <p className="text-muted-foreground font-medium">No donor data available</p>
-            <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>
       </div>
@@ -1039,7 +1039,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="p-3 w-auto">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                        <span className="text-helper font-medium text-foreground">Select Year Range</span>
                         <div className="flex gap-1">
                           <button
                             onClick={selectAllYears}
@@ -1123,7 +1123,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 text-xs", sectorAggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 text-helper", sectorAggregationLevel === 'group' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setSectorAggregationLevel('group')}
             >
               Category
@@ -1131,7 +1131,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 text-xs", sectorAggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 text-helper", sectorAggregationLevel === 'category' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setSectorAggregationLevel('category')}
             >
               Sector
@@ -1139,7 +1139,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             <Button
               variant="ghost"
               size="sm"
-              className={cn("h-8 text-xs", sectorAggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 text-helper", sectorAggregationLevel === 'sector' ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               onClick={() => setSectorAggregationLevel('sector')}
             >
               Sub-sector
@@ -1166,7 +1166,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="p-3 w-[340px]">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-foreground">
+                  <span className="text-helper font-medium text-foreground">
                     Filter by {sectorAggregationLevel === 'group' ? 'Sector Category' : sectorAggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
                   </span>
                   <div className="flex gap-1">
@@ -1193,14 +1193,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     placeholder="Search by code or name..."
                     value={sectorFilterSearch}
                     onChange={(e) => setSectorFilterSearch(e.target.value)}
-                    className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full pl-7 pr-3 py-1.5 text-helper border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
 
                 {/* Sector list */}
                 <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
                   {filteredSectorItems.length === 0 ? (
-                    <div className="text-center text-xs text-muted-foreground py-4">
+                    <div className="text-center text-helper text-muted-foreground py-4">
                       No matching items found
                     </div>
                   ) : (
@@ -1222,7 +1222,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                             {item.code}
                           </span>
-                          <span className="text-sm text-foreground leading-tight">
+                          <span className="text-body text-foreground leading-tight">
                             {item.name}
                           </span>
                         </button>
@@ -1369,7 +1369,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                             {item.type}
                           </code>
-                          <span className="text-sm text-muted-foreground">{item.typeName}</span>
+                          <span className="text-body text-muted-foreground">{item.typeName}</span>
                         </span>
                       )}
                     </TableCell>
@@ -1430,21 +1430,21 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                               <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
                                 {dataPoint?.typeCode}
                               </code>
-                              <span className="font-semibold text-foreground text-sm">{label}</span>
+                              <span className="font-semibold text-foreground text-body">{label}</span>
                             </div>
-                            <p className="text-sm text-foreground mt-1 font-medium">
+                            <p className="text-body text-foreground mt-1 font-medium">
                               {dataPoint?.donorCount} organization{dataPoint?.donorCount !== 1 ? 's' : ''}, Total {formatCurrencyAbbreviated(dataPoint?.totalValue || 0)}
                             </p>
                           </div>
                           {donorDetails && hoveredValue ? (
                             <div className="p-3">
-                              <p className="font-semibold text-foreground text-sm">{donorDisplay}</p>
+                              <p className="font-semibold text-foreground text-body">{donorDisplay}</p>
                               <p className="text-lg font-bold text-foreground mt-1">
                                 {formatCurrencyAbbreviated(hoveredValue)}
                               </p>
                             </div>
                           ) : (
-                            <div className="p-2 text-xs text-muted-foreground">
+                            <div className="p-2 text-helper text-muted-foreground">
                               Hover over a segment to see details
                             </div>
                           )}
@@ -1502,7 +1502,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart ranks funding organizations by their financial contributions, helping stakeholders understand the development assistance landscape. Compare organizations by total budgets, planned disbursements, commitments, or actual disbursements.
         The stacked view groups donors by organization type, showing individual organizations as segments within each bar for quick identification of major contributors.
       </p>

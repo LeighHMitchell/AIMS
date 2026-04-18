@@ -101,7 +101,7 @@ export function SimplePhoneInput({
             aria-expanded={open}
             aria-label="Select country"
             className={cn(
-              "flex items-center justify-between w-[100px] h-10 px-2 py-2 rounded-l-md rounded-r-none border border-input border-r-0 bg-background text-sm flex-shrink-0 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+              "flex items-center justify-between w-[100px] h-10 px-2 py-2 rounded-l-md rounded-r-none border border-input border-r-0 bg-background text-body flex-shrink-0 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
               disabled && "cursor-not-allowed opacity-50"
             )}
             disabled={disabled}
@@ -181,7 +181,7 @@ export function SimplePhoneInput({
         onChange={handlePhoneChange}
         placeholder={placeholder}
         disabled={disabled}
-        className="flex h-10 w-full rounded-r-md rounded-l-none border border-input border-l-0 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground -ml-px"
+        className="flex h-10 w-full rounded-r-md rounded-l-none border border-input border-l-0 bg-background px-3 py-2 text-body ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground -ml-px"
       />
     </div>
   );

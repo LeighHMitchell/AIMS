@@ -99,7 +99,7 @@ export function FilterPanel({
       <div className="flex items-end gap-3">
         {/* Search */}
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Search</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Search</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -124,7 +124,7 @@ export function FilterPanel({
 
         {/* Contact Type Filter */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Contact Type</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Contact Type</label>
           <Popover open={openPopover === 'type'} onOpenChange={(open) => setOpenPopover(open ? 'type' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
@@ -132,7 +132,7 @@ export function FilterPanel({
                   {filters.source ? (
                     <Badge
                       variant="secondary"
-                      className="text-xs"
+                      className="text-helper"
                       style={{
                         backgroundColor: filters.source === 'user' ? '#4C5568' : '#DC2625',
                         color: 'white'
@@ -163,7 +163,7 @@ export function FilterPanel({
                   className="w-full justify-start"
                   onClick={() => { onFiltersChange({ source: 'user' }); setOpenPopover(null); }}
                 >
-                  <Badge variant="secondary" className="text-xs" style={{ backgroundColor: '#4C5568', color: 'white' }}>
+                  <Badge variant="secondary" className="text-helper" style={{ backgroundColor: '#4C5568', color: 'white' }}>
                     User Contact
                   </Badge>
                 </Button>
@@ -173,7 +173,7 @@ export function FilterPanel({
                   className="w-full justify-start"
                   onClick={() => { onFiltersChange({ source: 'activity_contact' }); setOpenPopover(null); }}
                 >
-                  <Badge variant="secondary" className="text-xs" style={{ backgroundColor: '#DC2625', color: 'white' }}>
+                  <Badge variant="secondary" className="text-helper" style={{ backgroundColor: '#DC2625', color: 'white' }}>
                     Activity Contact
                   </Badge>
                 </Button>
@@ -184,13 +184,13 @@ export function FilterPanel({
 
         {/* Role Filter */}
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Role</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Role</label>
           <Popover open={openPopover === 'role'} onOpenChange={(open) => setOpenPopover(open ? 'role' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
                 <span className="flex items-center gap-2">
                   {filters.role ? (
-                    <Badge variant="secondary" className="text-xs bg-muted text-foreground">
+                    <Badge variant="secondary" className="text-helper bg-muted text-foreground">
                       {filters.role}
                     </Badge>
                   ) : (
@@ -218,7 +218,7 @@ export function FilterPanel({
                     className="w-full justify-start"
                     onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
                   >
-                    <Badge variant="secondary" className={`text-xs ${role.color}`}>
+                    <Badge variant="secondary" className={`text-helper ${role.color}`}>
                       {role.label}
                     </Badge>
                   </Button>
@@ -230,7 +230,7 @@ export function FilterPanel({
 
         {/* Organization Filter */}
         <div className="flex-1 min-w-[180px]">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Organization</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Organization</label>
           <Popover open={openPopover === 'org'} onOpenChange={(open) => {
             setOpenPopover(open ? 'org' : null);
             if (open) {
@@ -275,9 +275,9 @@ export function FilterPanel({
               </div>
               <div className="max-h-64 overflow-y-auto space-y-1">
                 {orgSearchLoading ? (
-                  <div className="text-sm text-muted-foreground p-2">Searching...</div>
+                  <div className="text-body text-muted-foreground p-2">Searching...</div>
                 ) : organizations.length === 0 ? (
-                  <div className="text-sm text-muted-foreground p-2">No organisations found</div>
+                  <div className="text-body text-muted-foreground p-2">No organisations found</div>
                 ) : organizations.map((org) => (
                   <Button
                     key={org.id}
@@ -307,7 +307,7 @@ export function FilterPanel({
 
         {/* Organisation Type Filter */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Organisation Type</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Organisation Type</label>
           <Popover open={openPopover === 'orgType'} onOpenChange={(open) => setOpenPopover(open ? 'orgType' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
@@ -354,7 +354,7 @@ export function FilterPanel({
 
         {/* Activity Filter */}
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Activity</label>
+          <label className="block text-helper font-medium text-muted-foreground mb-1">Activity</label>
           <Popover open={openPopover === 'activity'} onOpenChange={(open) => setOpenPopover(open ? 'activity' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
@@ -398,7 +398,7 @@ export function FilterPanel({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body text-muted-foreground">
         {loading ? (
           <LoadingText>Loading...</LoadingText>
         ) : (

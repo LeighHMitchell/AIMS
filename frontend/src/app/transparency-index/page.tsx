@@ -191,7 +191,7 @@ export default function TransparencyIndexPage() {
               <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Average Score</p>
+              <p className="text-body font-medium text-muted-foreground">Average Score</p>
               <p className="text-2xl font-bold text-foreground">{averageScore} / 100</p>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function TransparencyIndexPage() {
               <FileText className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Projects Assessed</p>
+              <p className="text-body font-medium text-muted-foreground">Projects Assessed</p>
               <p className="text-2xl font-bold text-foreground">{projects.length}</p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function TransparencyIndexPage() {
               <ShieldCheck className="h-6 w-6 text-[hsl(var(--success-icon))]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">In "Good" Standing</p>
+              <p className="text-body font-medium text-muted-foreground">In "Good" Standing</p>
               <p className="text-2xl font-bold text-foreground">{goodStandingPercent}%</p>
             </div>
           </div>
@@ -257,8 +257,8 @@ export default function TransparencyIndexPage() {
                 className="p-4 flex items-center justify-between hover:bg-muted/50 cursor-pointer transition-colors"
               >
                 <div className="flex-1 min-w-0 pr-4">
-                  <h4 className="text-sm font-medium text-foreground truncate">{project.title}</h4>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                  <h4 className="text-body font-medium text-foreground truncate">{project.title}</h4>
+                  <div className="flex items-center gap-2 mt-1 text-helper text-muted-foreground">
                     <span>{project.partner_name}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
@@ -286,14 +286,14 @@ export default function TransparencyIndexPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 border-t border-border">
                     
                     {/* Multiplier Badge */}
-                    <div className="lg:col-span-5 mb-2 flex items-center gap-2 text-sm">
+                    <div className="lg:col-span-5 mb-2 flex items-center gap-2 text-body">
                       <span className="font-medium text-foreground">Timeliness Multiplier:</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                         project.breakdown.multiplier === 1.0 ? 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]' : 'bg-destructive/10 text-destructive'
                       }`}>
                         x{project.breakdown.multiplier}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-helper text-muted-foreground">
                         (Based on last update date)
                       </span>
                     </div>
@@ -321,12 +321,12 @@ export default function TransparencyIndexPage() {
                 <h2 className="text-2xl font-bold text-foreground">Data Completeness Leaderboard</h2>
               </div>
               {donors.length > 0 && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   {donors.length} organization{donors.length !== 1 ? 's' : ''} ranked
                 </div>
               )}
             </div>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-body">
               Organizations ranked by average transparency score of their reported activities. 
               Higher scores indicate better data completeness and quality.
             </p>
@@ -369,8 +369,8 @@ export default function TransparencyIndexPage() {
                           return (
                             <div className="bg-card border border-border rounded-lg shadow-lg p-3">
                               <p className="font-semibold text-foreground mb-2">{data.fullName}</p>
-                              <p className="text-sm text-muted-foreground">Average Score: <span className="font-bold">{data.score}</span></p>
-                              <p className="text-sm text-muted-foreground">Projects: <span className="font-bold">{data.projects}</span></p>
+                              <p className="text-body text-muted-foreground">Average Score: <span className="font-bold">{data.score}</span></p>
+                              <p className="text-body text-muted-foreground">Projects: <span className="font-bold">{data.projects}</span></p>
                             </div>
                           )
                         }
@@ -407,8 +407,8 @@ export default function TransparencyIndexPage() {
               <div className="p-8 text-center">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-yellow-800 font-medium mb-2">Unable to load donor rankings</p>
-                  <p className="text-sm text-yellow-700">{donorError}</p>
-                  <p className="text-xs text-yellow-600 mt-2">
+                  <p className="text-body text-yellow-700">{donorError}</p>
+                  <p className="text-helper text-yellow-600 mt-2">
                     Make sure the database migrations have been run and that activities have reporting_org_id set.
                   </p>
                 </div>
@@ -417,8 +417,8 @@ export default function TransparencyIndexPage() {
               <div className="p-8 text-center text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="font-medium">No donor data available</p>
-                <p className="text-sm mt-1">Organizations will appear here once they have activities with transparency scores.</p>
-                <p className="text-xs mt-2 text-muted-foreground">
+                <p className="text-body mt-1">Organizations will appear here once they have activities with transparency scores.</p>
+                <p className="text-helper mt-2 text-muted-foreground">
                   Tip: Activities need a reporting_org_id to appear in donor rankings.
                 </p>
               </div>
@@ -459,7 +459,7 @@ export default function TransparencyIndexPage() {
                       <span className="text-foreground">{donor.projects_good_standing} / {donor.project_count}</span>
                     </div>
                     <div className="col-span-1 text-center flex items-center justify-center">
-                      <span className="text-sm text-muted-foreground">{donor.good_standing_percent.toFixed(0)}%</span>
+                      <span className="text-body text-muted-foreground">{donor.good_standing_percent.toFixed(0)}%</span>
                     </div>
                   </div>
                 ))}
@@ -475,14 +475,14 @@ export default function TransparencyIndexPage() {
 
 function ScoreCardSection({ title, data }: { title: string, data: ScoreCategory }) {
   return (
-    <div className="bg-card p-3 rounded border border-border text-sm">
+    <div className="bg-card p-3 rounded border border-border text-body">
       <div className="flex justify-between items-center mb-2 pb-2 border-b border-border">
         <span className="font-semibold text-foreground">{title}</span>
         <span className="font-bold text-blue-600">{data.score} pts</span>
       </div>
       <ul className="space-y-1.5">
         {data.details.map((detail, idx) => (
-          <li key={idx} className="flex justify-between items-start text-xs">
+          <li key={idx} className="flex justify-between items-start text-helper">
             <span className={`${detail.points > 0 ? 'text-muted-foreground' : 'text-destructive'}`}>
               {detail.label}
             </span>

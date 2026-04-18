@@ -158,7 +158,7 @@ export default function SectorAnalyticsPage() {
                   <PieChart className="h-6 w-6 text-foreground" />
                   <div>
                     <h1 className="text-xl font-semibold text-foreground">Sector Analytics</h1>
-                    <p className="text-sm text-muted-foreground">Loading sector data...</p>
+                    <p className="text-body text-muted-foreground">Loading sector data...</p>
                   </div>
                 </div>
               </div>
@@ -191,7 +191,7 @@ export default function SectorAnalyticsPage() {
                   <PieChart className="h-6 w-6 text-foreground" />
                   <div>
                     <h1 className="text-xl font-semibold text-foreground">Sector Analytics</h1>
-                    <p className="text-sm text-muted-foreground">Error loading data</p>
+                    <p className="text-body text-muted-foreground">Error loading data</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleRefresh}>
@@ -208,7 +208,7 @@ export default function SectorAnalyticsPage() {
                   <AlertCircle className="h-6 w-6" />
                   <div>
                     <p className="font-medium">Failed to load sector analytics</p>
-                    <p className="text-sm mt-1">{error}</p>
+                    <p className="text-body mt-1">{error}</p>
                   </div>
                 </div>
               </CardContent>
@@ -230,7 +230,7 @@ export default function SectorAnalyticsPage() {
                 <PieChart className="h-6 w-6 text-foreground" />
                 <div>
                   <h1 className="text-xl font-semibold text-foreground">Sector Analytics</h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     Comprehensive analysis of aid flows by DAC sector categories
                   </p>
                 </div>

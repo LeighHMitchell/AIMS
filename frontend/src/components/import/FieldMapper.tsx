@@ -240,7 +240,7 @@ export function FieldMapper({
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium">Internal AIMS Fields</h4>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-helper">
                   <span>{mappings.filter(m => m.fileColumnIndex !== null).length}/{systemFields.length} mapped</span>
                 </Badge>
                 <Tooltip>
@@ -285,7 +285,7 @@ export function FieldMapper({
                           <TooltipContent>
                             <p className="max-w-xs">{field.description}</p>
                             {field.format && (
-                              <p className="text-xs text-muted-foreground mt-1">Format: {field.format}</p>
+                              <p className="text-helper text-muted-foreground mt-1">Format: {field.format}</p>
                             )}
                           </TooltipContent>
                         )}

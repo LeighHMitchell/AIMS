@@ -60,7 +60,7 @@ export function SimpleDatePicker({
             "w-full pl-10 pr-4 py-2 border border-input rounded-md",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
             "disabled:bg-muted disabled:cursor-not-allowed",
-            "text-sm font-normal",
+            "text-body font-normal",
             "bg-white"
           )}
         />

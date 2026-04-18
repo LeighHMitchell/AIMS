@@ -244,10 +244,10 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
     return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{item.name}</p>
+            <p className="font-semibold text-foreground text-body">{item.name}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
                   <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
@@ -374,7 +374,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.fill }}
           />
-          <span className="text-xs text-muted-foreground">{item.name}</span>
+          <span className="text-helper text-muted-foreground">{item.name}</span>
         </div>
       ))}
     </div>
@@ -410,7 +410,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[180px] h-8 text-xs">
+        <SelectTrigger className="w-[180px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -486,7 +486,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
       <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-xs">
+        <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -507,7 +507,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
     return (
       <div className="text-right mt-2">
         <button 
-          className="text-xs text-blue-500 hover:text-blue-700 hover:underline"
+          className="text-helper text-blue-500 hover:text-blue-700 hover:underline"
           onClick={() => {
             // Could implement showing all groups
             toast.info("Showing top 5 groups. Expand for more details.");
@@ -529,7 +529,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
               <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                 Top Donor Groups
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-helper text-muted-foreground mt-0.5">
                 Top 5 donors grouped by country or multilateral institution
               </p>
             </div>
@@ -541,7 +541,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory footer */}
-          <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+          <p className="text-body text-muted-foreground leading-relaxed mt-2">
             This chart ranks donor groups by their contributions across different metrics. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and choose bar, pie, or table views for different perspectives.
           </p>
           {renderResetOthers()}

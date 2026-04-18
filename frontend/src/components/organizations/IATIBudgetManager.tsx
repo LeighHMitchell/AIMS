@@ -364,7 +364,7 @@ export function IATIBudgetManager({
                 <CardTitle className="text-base">
                   {typeInfo?.label} - {statusLabel}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   {budget.periodStart && budget.periodEnd
                     ? `${budget.periodStart} to ${budget.periodEnd}`
                     : 'No period specified'
@@ -400,7 +400,7 @@ export function IATIBudgetManager({
 
         {(budget.recipientRef || budget.recipientNarrative) && (
           <CardContent className="pt-0 pb-3">
-            <div className="text-sm">
+            <div className="text-body">
               <span className="font-medium">Recipient:</span>{' '}
               {budget.recipientNarrative || budget.recipientRef}
               {budget.recipientRef && budget.recipientNarrative && (
@@ -414,7 +414,7 @@ export function IATIBudgetManager({
           <CardContent className="pt-0">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Budget Lines</Label>
+                <Label className="text-body font-medium">Budget Lines</Label>
                 {!readOnly && (
                   <Button
                     variant="outline"
@@ -433,10 +433,10 @@ export function IATIBudgetManager({
                     className="flex items-center justify-between p-2 bg-muted rounded-md"
                   >
                     <div className="flex-1">
-                      <div className="text-sm font-medium">
+                      <div className="text-body font-medium">
                         {line.narrative || `Line ${lineIndex + 1}`}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-helper text-muted-foreground">
                         {formatCurrency(line.value, line.currency)}
                         {line.ref && <span className="ml-2">Ref: {line.ref}</span>}
                       </div>
@@ -511,12 +511,12 @@ export function IATIBudgetManager({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">IATI Budgets</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Manage organization budgets according to IATI standards
           </p>
         </div>
         {!readOnly && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             Total: {currentBudgets.length} budget{currentBudgets.length !== 1 ? 's' : ''}
           </div>
         )}
@@ -525,7 +525,7 @@ export function IATIBudgetManager({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           {BUDGET_TYPES.map((type) => (
-            <TabsTrigger key={type.value} value={type.value} className="text-xs">
+            <TabsTrigger key={type.value} value={type.value} className="text-helper">
               <type.icon className="h-3 w-3 mr-1" />
               {type.label.split(' ')[0]}
             </TabsTrigger>
@@ -537,7 +537,7 @@ export function IATIBudgetManager({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">{type.label}</h4>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
+                <p className="text-body text-muted-foreground">{type.description}</p>
               </div>
               {!readOnly && (
                 <Button
@@ -607,7 +607,7 @@ export function IATIBudgetManager({
                         <SelectItem key={status.value} value={status.value}>
                           <div>
                             <div className="font-medium">{status.label}</div>
-                            <div className="text-xs text-muted-foreground">{status.description}</div>
+                            <div className="text-helper text-muted-foreground">{status.description}</div>
                           </div>
                         </SelectItem>
                       ))}

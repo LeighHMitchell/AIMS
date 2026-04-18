@@ -137,7 +137,7 @@ export function DocumentCard({
                     {primaryTitle.text}
                   </h3>
                 {primaryDescription && (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  <p className="text-body text-muted-foreground mt-1 line-clamp-2">
                     {primaryDescription.text}
                   </p>
                 )}
@@ -151,7 +151,7 @@ export function DocumentCard({
                       <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <div className="text-sm">
+                      <div className="text-body">
                         {validation.issues && validation.issues.length > 0 ? (
                           validation.issues.map((issue, i) => (
                             <div key={i}>{issue.message}</div>
@@ -190,7 +190,7 @@ export function DocumentCard({
                     <TooltipContent>
                       <div className="max-w-xs">
                         <p className="font-medium">{category.name} ({category.code})</p>
-                        <p className="text-sm">{category.description}</p>
+                        <p className="text-body">{category.description}</p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -223,7 +223,7 @@ export function DocumentCard({
               size="sm"
               variant="ghost"
               onClick={() => onEdit(document)}
-              className="text-xs gap-1"
+              className="text-helper gap-1"
             >
               <Pencil className="w-3 h-3 text-muted-foreground" />
               Edit
@@ -234,7 +234,7 @@ export function DocumentCard({
             size="sm"
             variant="ghost"
             onClick={handleOpen}
-            className="text-xs gap-1"
+            className="text-helper gap-1"
           >
             <ExternalLink className="w-3 h-3" />
             Open
@@ -245,7 +245,7 @@ export function DocumentCard({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(document.url)}
-              className="text-xs gap-1 text-destructive hover:text-destructive"
+              className="text-helper gap-1 text-destructive hover:text-destructive"
             >
               <Trash2 className="w-3 h-3 text-destructive" />
               Delete

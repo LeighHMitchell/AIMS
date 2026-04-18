@@ -49,8 +49,8 @@ export function PooledFundTypeToggle({
           </div>
         )}
         <div className="relative z-10 p-3">
-          <h4 className="text-sm font-semibold">Standard activity</h4>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <h4 className="text-body font-semibold">Standard activity</h4>
+          <p className="mt-1 text-helper text-muted-foreground">
             Single project or programme
           </p>
         </div>
@@ -79,8 +79,8 @@ export function PooledFundTypeToggle({
           </div>
         )}
         <div className="relative z-10 p-3">
-          <h4 className="text-sm font-semibold">Pooled fund</h4>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <h4 className="text-body font-semibold">Pooled fund</h4>
+          <p className="mt-1 text-helper text-muted-foreground">
             Receives contributions and disburses to child activities
           </p>
         </div>

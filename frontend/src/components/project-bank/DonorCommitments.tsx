@@ -11,7 +11,7 @@ interface DonorCommitmentsProps {
 export function DonorCommitments({ donors }: DonorCommitmentsProps) {
   if (donors.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground text-center py-4">
+      <div className="text-body text-muted-foreground text-center py-4">
         No donor commitments yet
       </div>
     )
@@ -22,8 +22,8 @@ export function DonorCommitments({ donors }: DonorCommitmentsProps) {
       {donors.map(d => (
         <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
           <div>
-            <div className="text-sm font-medium">{d.donor_name}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-body font-medium">{d.donor_name}</div>
+            <div className="text-helper text-muted-foreground">
               {d.donor_type ? DONOR_TYPE_LABELS[d.donor_type] : ''}
               {d.instrument_type ? ` · ${INSTRUMENT_TYPE_LABELS[d.instrument_type]}` : ''}
             </div>

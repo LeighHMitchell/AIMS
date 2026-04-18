@@ -210,7 +210,7 @@ export default function AdvancedLocationFields({
               </CardTitle>
               <div className="flex items-center gap-2">
                 {localLocations.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-helper">
                     {localLocations.length} location{localLocations.length !== 1 ? 's' : ''}
                   </Badge>
                 )}
@@ -248,7 +248,7 @@ export default function AdvancedLocationFields({
                     <CardContent className="p-6 space-y-4">
                       {/* Location Header */}
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm text-foreground">
+                        <h4 className="font-medium text-body text-foreground">
                           Location {index + 1}
                         </h4>
                         {canEdit && (
@@ -267,7 +267,7 @@ export default function AdvancedLocationFields({
                       {errors[location.id] && (
                         <Alert variant="destructive">
                           <AlertCircle className="h-4 w-4" />
-                          <AlertDescription className="text-sm">
+                          <AlertDescription className="text-body">
                             {errors[location.id]}
                           </AlertDescription>
                         </Alert>
@@ -310,7 +310,7 @@ export default function AdvancedLocationFields({
 
                       {/* Location ID */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Location ID</Label>
+                        <Label className="text-body font-medium">Location ID</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`location-id-vocab-${location.id}`}>Vocabulary</Label>
@@ -350,7 +350,7 @@ export default function AdvancedLocationFields({
 
                       {/* Administrative Divisions */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Administrative Divisions</Label>
+                        <Label className="text-body font-medium">Administrative Divisions</Label>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`admin-vocab-${location.id}`}>Vocabulary</Label>
@@ -439,7 +439,7 @@ export default function AdvancedLocationFields({
 
                       {/* Coordinates */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Coordinates</Label>
+                        <Label className="text-body font-medium">Coordinates</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`latitude-${location.id}`}>Latitude</Label>

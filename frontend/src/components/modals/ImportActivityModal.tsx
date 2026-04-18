@@ -96,7 +96,7 @@ export function ImportActivityModal({ isOpen, onClose, user }: ImportActivityMod
 
         <div className="space-y-4 py-4">
           <Alert>
-            <AlertDescription className="text-sm">
+            <AlertDescription className="text-body">
               <strong>Available Import Methods:</strong>
               <ul className="mt-2 space-y-1 ml-4 list-disc">
                 <li className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function ImportActivityModal({ isOpen, onClose, user }: ImportActivityMod
           </Alert>
 
           <div className="bg-muted/50 p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               A draft activity will be created and you'll be taken to the import interface where you can choose your preferred import method.
             </p>
           </div>

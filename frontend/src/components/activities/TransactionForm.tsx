@@ -854,7 +854,7 @@ export default function TransactionForm({
               <Label htmlFor="status">
                 Transaction Status <RequiredDot />
               </Label>
-              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-muted">
+              <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-muted">
                 <span className="flex items-center gap-2">
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     {formData.status === 'actual' ? '1' : '2'}
@@ -895,12 +895,12 @@ export default function TransactionForm({
             <Card className="border border-green-200 bg-green-50/50">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2">
+                  <CardTitle className="text-body flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                     USD Conversion
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       {exchangeRateManual ? 'Manual' : 'API Rate'}
                     </span>
                     <Switch 
@@ -920,7 +920,7 @@ export default function TransactionForm({
                     )}
                   </div>
                 </div>
-                <CardDescription className="text-xs">
+                <CardDescription className="text-helper">
                   {exchangeRateManual 
                     ? 'Enter your own exchange rate below'
                     : 'Exchange rate is automatically fetched based on value date'
@@ -965,12 +965,12 @@ export default function TransactionForm({
                       )}
                     </div>
                     {exchangeRateUsed && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         1 {formData.currency} = {exchangeRateUsed.toFixed(6)} USD
                       </p>
                     )}
                     {rateError && (
-                      <p className="text-xs text-destructive">{rateError}</p>
+                      <p className="text-helper text-destructive">{rateError}</p>
                     )}
                   </div>
 
@@ -984,7 +984,7 @@ export default function TransactionForm({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-helper text-muted-foreground">
                       Calculated from {formData.currency} {formData.value?.toLocaleString() || 0}
                     </p>
                   </div>
@@ -997,7 +997,7 @@ export default function TransactionForm({
 
           {/* Organizations Section */}
           <div className="space-y-8"> {/* Add more whitespace between cards */}
-            <h3 className="text-sm font-semibold flex items-center gap-2">
+            <h3 className="text-body font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Organizations
             </h3>
@@ -1005,10 +1005,10 @@ export default function TransactionForm({
             {/* Provider Organization */}
             <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-muted'}`}>
               <CardHeader className="pb-3 border-b border-border">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-body flex items-center gap-2">
                   Provider Organization
                   {!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-600 font-normal">
+                    <Badge variant="outline" className="text-helper bg-blue-50 border-blue-200 text-blue-600 font-normal">
                       Auto-filled
                     </Badge>
                   )}
@@ -1036,10 +1036,10 @@ export default function TransactionForm({
             {/* Receiver Organization */}
             <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-muted'}`}>
               <CardHeader className="pb-3 border-b border-border">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-body flex items-center gap-2">
                   Receiver Organization
                   {typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId && (
-                    <Badge variant="outline" className="text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] font-normal">
+                    <Badge variant="outline" className="text-helper bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))] font-normal">
                       Auto-filled
                     </Badge>
                   )}
@@ -1070,8 +1070,8 @@ export default function TransactionForm({
             {/* Provider Activity */}
             <Card className="border-dashed bg-blue-50">
               <CardHeader className="pb-3 border-b border-blue-200">
-                <CardTitle className="text-sm">Provider Activity</CardTitle>
-                <CardDescription className="text-xs">Link to the activity providing these funds</CardDescription>
+                <CardTitle className="text-body">Provider Activity</CardTitle>
+                <CardDescription className="text-helper">Link to the activity providing these funds</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ActivityCombobox
@@ -1104,7 +1104,7 @@ export default function TransactionForm({
                   fallbackIatiId={formData.provider_org_activity_id}
                 />
                 {formData.provider_org_activity_id && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-helper text-muted-foreground">
                     IATI ID: {formData.provider_org_activity_id}
                   </p>
                 )}
@@ -1115,8 +1115,8 @@ export default function TransactionForm({
             {/* Receiver Activity */}
             <Card className="border-dashed bg-blue-50">
               <CardHeader className="pb-3 border-b border-blue-200">
-                <CardTitle className="text-sm">Receiver Activity</CardTitle>
-                <CardDescription className="text-xs">Link to the activity receiving these funds</CardDescription>
+                <CardTitle className="text-body">Receiver Activity</CardTitle>
+                <CardDescription className="text-helper">Link to the activity receiving these funds</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ActivityCombobox
@@ -1149,7 +1149,7 @@ export default function TransactionForm({
                   fallbackIatiId={formData.receiver_org_activity_id}
                 />
                 {formData.receiver_org_activity_id && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-helper text-muted-foreground">
                     IATI ID: {formData.receiver_org_activity_id}
                   </p>
                 )}
@@ -1181,7 +1181,7 @@ export default function TransactionForm({
           {/* Advanced Fields */}
           <div
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+            className="flex items-center justify-center gap-2 cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             <span>Advanced Fields</span>
             {showAdvanced ? (
@@ -1445,7 +1445,7 @@ export default function TransactionForm({
       {/* System Information - at bottom */}
       <Card className="bg-muted">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-muted-foreground">System Information</CardTitle>
+          <CardTitle className="text-body text-muted-foreground">System Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1474,7 +1474,7 @@ export default function TransactionForm({
           <div className="space-y-2">
             <Label htmlFor="transaction_reference_bottom">
               Transaction Reference
-              <span className="text-muted-foreground text-xs ml-2">(optional internal reference)</span>
+              <span className="text-muted-foreground text-helper ml-2">(optional internal reference)</span>
             </Label>
             <Input
               id="transaction_reference_bottom"

@@ -392,7 +392,7 @@ export default function BulkPreviewStep({
           <SlidersHorizontal className="h-4 w-4" />
           Filters
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 justify-center text-xs">
+            <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 justify-center text-helper">
               {activeFilterCount}
             </Badge>
           )}
@@ -418,7 +418,7 @@ export default function BulkPreviewStep({
             <div className="flex flex-wrap gap-6">
               {/* Activity Status */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <Activity className="h-4 w-4" />
                   Activity Status
                 </Label>
@@ -438,7 +438,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`status-${code}`}
-                        className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                        className="flex items-center gap-2 text-body cursor-pointer font-normal"
                       >
                         <span className="truncate">{ACTIVITY_STATUS_OPTIONS[code] || code}</span>
                         <span className="text-muted-foreground">({count})</span>
@@ -446,14 +446,14 @@ export default function BulkPreviewStep({
                     </div>
                   ))}
                   {availableOptions.statuses.length === 0 && (
-                    <span className="text-sm text-muted-foreground">No statuses available</span>
+                    <span className="text-body text-muted-foreground">No statuses available</span>
                   )}
                 </div>
               </div>
 
               {/* Hierarchy Level */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <Layers className="h-4 w-4" />
                   Hierarchy Level
                 </Label>
@@ -478,7 +478,7 @@ export default function BulkPreviewStep({
                         />
                         <Label
                           htmlFor={`hierarchy-${level}`}
-                          className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                          className="flex items-center gap-2 text-body cursor-pointer font-normal"
                         >
                           <span>Level {level} ({hierarchyNames[level] || `Level ${level}`})</span>
                           <span className="text-muted-foreground">({count})</span>
@@ -487,14 +487,14 @@ export default function BulkPreviewStep({
                     )
                   })}
                   {availableOptions.hierarchies.length === 0 && (
-                    <span className="text-sm text-muted-foreground">No hierarchy data</span>
+                    <span className="text-body text-muted-foreground">No hierarchy data</span>
                   )}
                 </div>
               </div>
 
               {/* Aid Type */}
               <div className="space-y-3 max-w-xs">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <Banknote className="h-4 w-4" />
                   Aid Type
                 </Label>
@@ -515,7 +515,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`aid-${code}`}
-                        className="text-sm cursor-pointer font-normal leading-snug"
+                        className="text-body cursor-pointer font-normal leading-snug"
                       >
                         <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">{code}</span>{' '}
                         {AID_TYPE_OPTIONS[code] || code}{' '}
@@ -524,14 +524,14 @@ export default function BulkPreviewStep({
                     </div>
                   ))}
                   {availableOptions.aidTypes.length === 0 && (
-                    <span className="text-sm text-muted-foreground">No aid types available</span>
+                    <span className="text-body text-muted-foreground">No aid types available</span>
                   )}
                 </div>
               </div>
 
               {/* Finance Type */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
                   Finance Type
                 </Label>
@@ -551,7 +551,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`finance-${code}`}
-                        className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                        className="flex items-center gap-2 text-body cursor-pointer font-normal"
                         title={FINANCE_TYPE_OPTIONS[code] || code}
                       >
                         <span className="truncate max-w-[120px]">{FINANCE_TYPE_OPTIONS[code] || code}</span>
@@ -560,14 +560,14 @@ export default function BulkPreviewStep({
                     </div>
                   ))}
                   {availableOptions.financeTypes.length === 0 && (
-                    <span className="text-sm text-muted-foreground">No finance types available</span>
+                    <span className="text-body text-muted-foreground">No finance types available</span>
                   )}
                 </div>
               </div>
 
               {/* Transactions */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <Receipt className="h-4 w-4" />
                   Transactions
                 </Label>
@@ -584,7 +584,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`tx-${opt}`}
-                        className="text-sm cursor-pointer font-normal"
+                        className="text-body cursor-pointer font-normal"
                       >
                         {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Transactions' : 'No Transactions'}
                       </Label>
@@ -595,7 +595,7 @@ export default function BulkPreviewStep({
 
               {/* Budgets */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <PiggyBank className="h-4 w-4" />
                   Budgets
                 </Label>
@@ -612,7 +612,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`budget-${opt}`}
-                        className="text-sm cursor-pointer font-normal"
+                        className="text-body cursor-pointer font-normal"
                       >
                         {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Budgets' : 'No Budgets'}
                       </Label>
@@ -623,7 +623,7 @@ export default function BulkPreviewStep({
 
               {/* Scope (National/Regional) */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <Globe className="h-4 w-4" />
                   Scope
                 </Label>
@@ -639,7 +639,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`scope-${opt}`}
-                        className="text-sm cursor-pointer font-normal"
+                        className="text-body cursor-pointer font-normal"
                       >
                         {opt === 'all' ? 'All Activities' : opt}
                       </Label>
@@ -650,7 +650,7 @@ export default function BulkPreviewStep({
 
               {/* Planned Disbursements */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
+                <Label className="text-body font-medium flex items-center gap-2">
                   <CalendarClock className="h-4 w-4" />
                   Planned Disbursements
                 </Label>
@@ -667,7 +667,7 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`pd-${opt}`}
-                        className="text-sm cursor-pointer font-normal"
+                        className="text-body cursor-pointer font-normal"
                       >
                         {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Planned Disbursements' : 'No Planned Disbursements'}
                       </Label>
@@ -680,7 +680,7 @@ export default function BulkPreviewStep({
             {/* Clear Button */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               {activeFilterCount > 0 ? (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   Showing <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">{filteredActivities.length}</span> of <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">{activities.length}</span> activities
                 </span>
               ) : (
@@ -696,7 +696,7 @@ export default function BulkPreviewStep({
       )}
 
       {/* Selection Controls */}
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between text-body">
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={selectAll}>
             Select All
@@ -778,7 +778,7 @@ export default function BulkPreviewStep({
                             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           )}
                           <div className="min-w-0 group/activity">
-                            <p className="font-medium text-sm flex items-center gap-1 flex-wrap">
+                            <p className="font-medium text-body flex items-center gap-1 flex-wrap">
                               <span className="inline-flex items-center gap-1">
                                 {activity.title || 'Untitled'}
                                 <button
@@ -815,7 +815,7 @@ export default function BulkPreviewStep({
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-helper text-muted-foreground">
                         {(() => {
                           const formatDate = (dateStr: string) => {
                             const d = new Date(dateStr)
@@ -834,13 +834,13 @@ export default function BulkPreviewStep({
                           )
                         })()}
                       </TableCell>
-                      <TableCell className="text-center text-xs text-muted-foreground">
+                      <TableCell className="text-center text-helper text-muted-foreground">
                         {classifyScope(activity, filterCountry) === 'Unknown' ? '-' : classifyScope(activity, filterCountry)}
                       </TableCell>
-                      <TableCell className="text-right text-sm">
+                      <TableCell className="text-right text-body">
                         {(activity.transactions || []).length}
                       </TableCell>
-                      <TableCell className="text-right text-sm">
+                      <TableCell className="text-right text-body">
                         {(activity.budgets || []).length || '-'}
                       </TableCell>
                       <TableCell className="text-center">
@@ -858,7 +858,7 @@ export default function BulkPreviewStep({
                     {isExpanded && (
                       <TableRow>
                         <TableCell colSpan={7} className="p-0">
-                          <div className="px-12 py-4 bg-muted border-t text-sm">
+                          <div className="px-12 py-4 bg-muted border-t text-body">
                         {/* Description - full width */}
                         {activity.description && (
                           <div className="mb-4">
@@ -868,7 +868,7 @@ export default function BulkPreviewStep({
                         )}
 
                         {activity.lastUpdatedDatetime && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                          <div className="flex items-center gap-1 text-helper text-muted-foreground mb-3">
                             <Clock className="h-3 w-3" />
                             Last updated: {new Date(activity.lastUpdatedDatetime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </div>
@@ -880,7 +880,7 @@ export default function BulkPreviewStep({
                           <div className="space-y-3">
                             {(activity.status || activity.activity_status) && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Status</span>
+                                <span className="font-medium text-foreground text-helper uppercase">Status</span>
                                 <p className="text-muted-foreground mt-0.5">
                                   {(() => {
                                     const statusCode = activity.status || activity.activity_status
@@ -905,7 +905,7 @@ export default function BulkPreviewStep({
 
                             {activity.hierarchy != null && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Hierarchy Level</span>
+                                <span className="font-medium text-foreground text-helper uppercase">Hierarchy Level</span>
                                 <p className="text-muted-foreground mt-0.5">
                                   {(() => {
                                     const hierarchyNames: Record<number, string> = {
@@ -925,10 +925,10 @@ export default function BulkPreviewStep({
 
                             {activity.otherIdentifiers && activity.otherIdentifiers.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Hash className="h-3 w-3" /> Other Identifiers
                                 </span>
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <tbody>
                                     {activity.otherIdentifiers.map((oi, i) => {
                                       const oiTypeNames: Record<string, string> = {
@@ -964,8 +964,8 @@ export default function BulkPreviewStep({
                             {/* DAC/CRS Classification Fields */}
                             {(activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus) && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Classification</span>
-                                <table className="mt-1 w-full text-xs">
+                                <span className="font-medium text-foreground text-helper uppercase">Classification</span>
+                                <table className="mt-1 w-full text-helper">
                                   <tbody>
                                     {activity.collaborationType && (
                                       <tr className="border-t border-border">
@@ -1039,7 +1039,7 @@ export default function BulkPreviewStep({
 
                             {activity.capitalSpend != null && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Capital Spend</span>
+                                <span className="font-medium text-foreground text-helper uppercase">Capital Spend</span>
                                 <p className="text-muted-foreground mt-0.5">
                                   <span className="font-semibold">{activity.capitalSpend}%</span>
                                 </p>
@@ -1048,7 +1048,7 @@ export default function BulkPreviewStep({
 
                             {activity.actual_start_date && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Calendar className="h-3 w-3" /> Actual Start
                                 </span>
                                 <p className="text-muted-foreground mt-0.5">
@@ -1059,7 +1059,7 @@ export default function BulkPreviewStep({
 
                             {activity.actual_end_date && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Calendar className="h-3 w-3" /> Actual End
                                 </span>
                                 <p className="text-muted-foreground mt-0.5">
@@ -1070,10 +1070,10 @@ export default function BulkPreviewStep({
 
                             {activity.recipientCountries && activity.recipientCountries.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Globe className="h-3 w-3" /> Recipient Countries
                                 </span>
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Country</th>
@@ -1103,10 +1103,10 @@ export default function BulkPreviewStep({
 
                             {activity.recipientRegions && activity.recipientRegions.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Globe className="h-3 w-3" /> Recipient Regions
                                 </span>
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Region</th>
@@ -1154,12 +1154,12 @@ export default function BulkPreviewStep({
 
                             {activity.locations && activity.locations.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <MapPin className="h-3 w-3" /> Locations
                                 </span>
                                 <div className="mt-1 space-y-1">
                                   {activity.locations.slice(0, 3).map((loc, i) => (
-                                    <p key={i} className="text-xs text-muted-foreground">
+                                    <p key={i} className="text-helper text-muted-foreground">
                                       {loc.name || 'Unnamed'}
                                       {loc.coordinates && (
                                         <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground ml-1.5">
@@ -1169,7 +1169,7 @@ export default function BulkPreviewStep({
                                     </p>
                                   ))}
                                   {activity.locations.length > 3 && (
-                                    <p className="text-xs text-muted-foreground">+ {activity.locations.length - 3} more</p>
+                                    <p className="text-helper text-muted-foreground">+ {activity.locations.length - 3} more</p>
                                   )}
                                 </div>
                               </div>
@@ -1180,8 +1180,8 @@ export default function BulkPreviewStep({
                           <div className="space-y-3">
                             {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Organizations</span>
-                                <table className="mt-1 w-full text-xs">
+                                <span className="font-medium text-foreground text-helper uppercase">Organizations</span>
+                                <table className="mt-1 w-full text-helper">
                                   <tbody>
                                     {activity.participatingOrgs.map((org, i) => {
                                       const roleNames: Record<string, string> = {
@@ -1230,8 +1230,8 @@ export default function BulkPreviewStep({
 
                             {activity.sectors && activity.sectors.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Sectors</span>
-                                <table className="mt-1 w-full text-xs">
+                                <span className="font-medium text-foreground text-helper uppercase">Sectors</span>
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Sector</th>
@@ -1274,10 +1274,10 @@ export default function BulkPreviewStep({
 
                             {activity.relatedActivities && activity.relatedActivities.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Link2 className="h-3 w-3" /> Related Activities
                                 </span>
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Type</th>
@@ -1310,16 +1310,16 @@ export default function BulkPreviewStep({
 
                             {(activity.conditionsAttached != null || (activity.conditions && activity.conditions.length > 0)) && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <ListChecks className="h-3 w-3" /> Conditions
                                 </span>
                                 {activity.conditionsAttached != null && (
-                                  <p className="text-xs text-muted-foreground mt-1">
+                                  <p className="text-helper text-muted-foreground mt-1">
                                     Conditions attached: <span className="font-medium">{activity.conditionsAttached ? 'Yes' : 'No'}</span>
                                   </p>
                                 )}
                                 {activity.conditions && activity.conditions.length > 0 && (
-                                  <table className="mt-1 w-full text-xs">
+                                  <table className="mt-1 w-full text-helper">
                                     <thead className="bg-surface-muted">
                                       <tr className="text-left text-muted-foreground">
                                         <th className="font-medium py-1">Type</th>
@@ -1354,8 +1354,8 @@ export default function BulkPreviewStep({
                           <div className="space-y-3">
                             {activity.transactions && activity.transactions.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Transactions</span>
-                                <table className="mt-1 w-full text-xs">
+                                <span className="font-medium text-foreground text-helper uppercase">Transactions</span>
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Type</th>
@@ -1393,24 +1393,24 @@ export default function BulkPreviewStep({
                                           <td className="py-1 text-center">
                                             {tx.recipientRegionCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientRegionCode}</span> : <span className="text-gray-300">-</span>}
                                           </td>
-                                          <td className="py-1 text-right font-medium"><span className="text-xs text-muted-foreground mr-0.5">{tx.currency}</span>{tx.value?.toLocaleString()}</td>
+                                          <td className="py-1 text-right font-medium"><span className="text-helper text-muted-foreground mr-0.5">{tx.currency}</span>{tx.value?.toLocaleString()}</td>
                                         </tr>
                                       )
                                     })}
                                   </tbody>
                                 </table>
                                 {activity.transactions.length > 5 && (
-                                  <p className="text-xs text-muted-foreground mt-1">+ {activity.transactions.length - 5} more</p>
+                                  <p className="text-helper text-muted-foreground mt-1">+ {activity.transactions.length - 5} more</p>
                                 )}
                               </div>
                             )}
 
                             {activity.budgets && activity.budgets.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Wallet className="h-3 w-3" /> Budgets
                                 </span>
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Period</th>
@@ -1431,15 +1431,15 @@ export default function BulkPreviewStep({
                                   </tbody>
                                 </table>
                                 {activity.budgets.length > 5 && (
-                                  <p className="text-xs text-muted-foreground mt-1">+ {activity.budgets.length - 5} more</p>
+                                  <p className="text-helper text-muted-foreground mt-1">+ {activity.budgets.length - 5} more</p>
                                 )}
                               </div>
                             )}
 
                             {activity.plannedDisbursements && activity.plannedDisbursements.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Planned Disbursements</span>
-                                <table className="mt-1 w-full text-xs">
+                                <span className="font-medium text-foreground text-helper uppercase">Planned Disbursements</span>
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Period</th>
@@ -1471,19 +1471,19 @@ export default function BulkPreviewStep({
                                   </tbody>
                                 </table>
                                 {activity.plannedDisbursements.length > 5 && (
-                                  <p className="text-xs text-muted-foreground mt-1">+ {activity.plannedDisbursements.length - 5} more</p>
+                                  <p className="text-helper text-muted-foreground mt-1">+ {activity.plannedDisbursements.length - 5} more</p>
                                 )}
                               </div>
                             )}
                             {activity.countryBudgetItems && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase">Country Budget Items</span>
+                                <span className="font-medium text-foreground text-helper uppercase">Country Budget Items</span>
                                 {activity.countryBudgetItems.vocabulary && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-helper text-muted-foreground mt-0.5">
                                     Vocabulary: <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.countryBudgetItems.vocabulary}</span>
                                   </p>
                                 )}
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Code</th>
@@ -1513,7 +1513,7 @@ export default function BulkPreviewStep({
                             {/* Contacts */}
                             {activity.contacts && activity.contacts.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <User className="h-3 w-3" /> Contacts
                                 </span>
                                 <div className="mt-1 space-y-3">
@@ -1525,7 +1525,7 @@ export default function BulkPreviewStep({
                                       '4': 'Communications',
                                     }
                                     return (
-                                      <table key={i} className="w-full text-xs border border-border rounded">
+                                      <table key={i} className="w-full text-helper border border-border rounded">
                                         <tbody>
                                           <tr className="border-b border-border">
                                             <td className="py-1.5 px-2 text-muted-foreground w-20 bg-muted">Type</td>
@@ -1586,7 +1586,7 @@ export default function BulkPreviewStep({
                                   })}
                                 </div>
                                 {activity.contacts.length > 5 && (
-                                  <p className="text-xs text-muted-foreground mt-1">+ {activity.contacts.length - 5} more</p>
+                                  <p className="text-helper text-muted-foreground mt-1">+ {activity.contacts.length - 5} more</p>
                                 )}
                               </div>
                             )}
@@ -1594,10 +1594,10 @@ export default function BulkPreviewStep({
                             {/* Documents */}
                             {activity.documents && activity.documents.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <FileText className="h-3 w-3" /> Documents
                                 </span>
-                                <table className="mt-1 w-full text-xs">
+                                <table className="mt-1 w-full text-helper">
                                   <thead className="bg-surface-muted">
                                     <tr className="text-left text-muted-foreground">
                                       <th className="font-medium py-1">Category</th>
@@ -1669,7 +1669,7 @@ export default function BulkPreviewStep({
                                   </tbody>
                                 </table>
                                 {activity.documents.length > 5 && (
-                                  <p className="text-xs text-muted-foreground mt-1">+ {activity.documents.length - 5} more</p>
+                                  <p className="text-helper text-muted-foreground mt-1">+ {activity.documents.length - 5} more</p>
                                 )}
                               </div>
                             )}
@@ -1695,7 +1695,7 @@ export default function BulkPreviewStep({
 
                               {activity.activityScope && (
                                 <div>
-                                  <span className="font-medium text-foreground text-xs uppercase">Activity Scope</span>
+                                  <span className="font-medium text-foreground text-helper uppercase">Activity Scope</span>
                                   <p className="text-muted-foreground mt-0.5">
                                     <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{activity.activityScope}</span>
                                     {(() => {
@@ -1713,7 +1713,7 @@ export default function BulkPreviewStep({
 
                               {activity.language && (
                                 <div>
-                                  <span className="font-medium text-foreground text-xs uppercase">Language</span>
+                                  <span className="font-medium text-foreground text-helper uppercase">Language</span>
                                   <p className="text-muted-foreground mt-0.5">
                                     <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.language}</span>
                                   </p>
@@ -1722,10 +1722,10 @@ export default function BulkPreviewStep({
 
                               {activity.policyMarkers && activity.policyMarkers.length > 0 && (
                                 <div>
-                                  <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                  <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                     <Shield className="h-3 w-3" /> Policy Markers
                                   </span>
-                                  <table className="mt-1 w-full text-xs">
+                                  <table className="mt-1 w-full text-helper">
                                     <tbody>
                                       {activity.policyMarkers.map((pm, i) => {
                                         const markerNames: Record<string, string> = {
@@ -1764,14 +1764,14 @@ export default function BulkPreviewStep({
                             <div className="space-y-3">
                               {activity.humanitarianScopes && activity.humanitarianScopes.length > 0 && (
                                 <div>
-                                  <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                  <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                     <Heart className="h-3 w-3" /> Humanitarian Scope
                                   </span>
                                   <div className="mt-1 space-y-1">
                                     {activity.humanitarianScopes.map((hs, i) => {
                                       const typeNames: Record<string, string> = { '1': 'Emergency', '2': 'Appeal' }
                                       return (
-                                        <div key={i} className="text-xs text-muted-foreground">
+                                        <div key={i} className="text-helper text-muted-foreground">
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{typeNames[hs.type] || hs.type}</span>
                                           <span className="font-mono">{hs.code}</span>
                                           {hs.narrative && <span className="ml-1 text-muted-foreground">{hs.narrative}</span>}
@@ -1784,7 +1784,7 @@ export default function BulkPreviewStep({
 
                               {activity.tags && activity.tags.length > 0 && (
                                 <div>
-                                  <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                  <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                     <Tag className="h-3 w-3" /> Tags / SDGs
                                   </span>
                                   <div className="mt-1 flex flex-wrap gap-1">
@@ -1793,7 +1793,7 @@ export default function BulkPreviewStep({
                                         '1': 'OECD', '2': 'SDG Goal', '3': 'SDG Target', '99': 'Custom',
                                       }
                                       return (
-                                        <Badge key={i} variant="outline" className="text-xs font-normal">
+                                        <Badge key={i} variant="outline" className="text-helper font-normal">
                                           {tag.vocabulary && tag.vocabulary !== '99' && (
                                             <span className="text-muted-foreground mr-1">{vocabLabels[tag.vocabulary] || `V${tag.vocabulary}`}:</span>
                                           )}
@@ -1814,16 +1814,16 @@ export default function BulkPreviewStep({
                             {/* FSS */}
                             {activity.fss && (
                               <div>
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <TrendingUp className="h-3 w-3" /> Forward Spending Survey
                                 </span>
-                                <div className="mt-1 space-y-1 text-xs text-muted-foreground">
+                                <div className="mt-1 space-y-1 text-helper text-muted-foreground">
                                   {activity.fss.extractionDate && <p>Extraction date: {activity.fss.extractionDate}</p>}
                                   {activity.fss.priority != null && <p>Priority: {activity.fss.priority}</p>}
                                   {activity.fss.phaseoutYear != null && <p>Phaseout year: {activity.fss.phaseoutYear}</p>}
                                 </div>
                                 {activity.fss.forecasts.length > 0 && (
-                                  <table className="mt-1 w-full text-xs">
+                                  <table className="mt-1 w-full text-helper">
                                     <thead className="bg-surface-muted">
                                       <tr className="text-left text-muted-foreground">
                                         <th className="font-medium py-1">Year</th>
@@ -1846,13 +1846,13 @@ export default function BulkPreviewStep({
                             {/* CRS Add */}
                             {activity.crsAdd && (
                               <div className="space-y-3">
-                                <span className="font-medium text-foreground text-xs uppercase flex items-center gap-1">
+                                <span className="font-medium text-foreground text-helper uppercase flex items-center gap-1">
                                   <Landmark className="h-3 w-3" /> CRS Additional
                                 </span>
 
                                 {activity.crsAdd.otherFlags && activity.crsAdd.otherFlags.length > 0 && (
                                   <div>
-                                    <p className="text-xs text-muted-foreground font-medium">Other Flags</p>
+                                    <p className="text-helper text-muted-foreground font-medium">Other Flags</p>
                                     <div className="mt-0.5 flex flex-wrap gap-1">
                                       {activity.crsAdd.otherFlags.map((f, i) => {
                                         const flagNames: Record<string, string> = {
@@ -1862,7 +1862,7 @@ export default function BulkPreviewStep({
                                           '4': 'Associated financing',
                                         }
                                         return (
-                                          <Badge key={i} variant="outline" className="text-xs font-normal">
+                                          <Badge key={i} variant="outline" className="text-helper font-normal">
                                             <span className="font-mono mr-1">{f.code}</span>
                                             {flagNames[f.code] || ''}
                                             {f.significance && <span className="text-muted-foreground ml-1">sig: {f.significance}</span>}
@@ -1875,8 +1875,8 @@ export default function BulkPreviewStep({
 
                                 {activity.crsAdd.loanTerms && (
                                   <div>
-                                    <p className="text-xs text-muted-foreground font-medium">Loan Terms</p>
-                                    <table className="mt-0.5 w-full text-xs">
+                                    <p className="text-helper text-muted-foreground font-medium">Loan Terms</p>
+                                    <table className="mt-0.5 w-full text-helper">
                                       <tbody>
                                         {activity.crsAdd.loanTerms.rate1 != null && (
                                           <tr className="border-t border-border">
@@ -1931,8 +1931,8 @@ export default function BulkPreviewStep({
 
                                 {activity.crsAdd.loanStatus && activity.crsAdd.loanStatus.length > 0 && (
                                   <div>
-                                    <p className="text-xs text-muted-foreground font-medium">Loan Status</p>
-                                    <table className="mt-0.5 w-full text-xs">
+                                    <p className="text-helper text-muted-foreground font-medium">Loan Status</p>
+                                    <table className="mt-0.5 w-full text-helper">
                                       <thead className="bg-surface-muted">
                                         <tr className="text-left text-muted-foreground">
                                           <th className="font-medium py-1">Year</th>
@@ -1964,10 +1964,10 @@ export default function BulkPreviewStep({
                         {/* Validation Issues - full width below grid */}
                         {activity.validationIssues && activity.validationIssues.length > 0 && (
                           <div className="mt-4 pt-4 border-t">
-                            <span className="font-medium text-foreground text-xs uppercase">Validation Issues</span>
+                            <span className="font-medium text-foreground text-helper uppercase">Validation Issues</span>
                             <div className="mt-1 space-y-1">
                               {activity.validationIssues.map((issue, i) => (
-                                <div key={i} className="flex items-start gap-2 text-xs">
+                                <div key={i} className="flex items-start gap-2 text-helper">
                                   {issue.severity === 'error' ? (
                                     <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
                                   ) : issue.severity === 'warning' ? (

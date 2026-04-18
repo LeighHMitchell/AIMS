@@ -91,7 +91,7 @@ export function DimensionsManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+        <Label className="text-body font-medium text-foreground flex items-center gap-2">
           <Tag className="h-4 w-4" />
           Disaggregation Dimensions {dimensionType && `(${dimensionType})`}
         </Label>
@@ -100,7 +100,7 @@ export function DimensionsManager({
             size="sm"
             variant="outline"
             onClick={() => setShowAddForm(true)}
-            className="text-xs"
+            className="text-helper"
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Dimension
@@ -112,7 +112,7 @@ export function DimensionsManager({
       {showAddForm && !readOnly && (
         <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-foreground">Add Dimension</h4>
+            <h4 className="text-body font-medium text-foreground">Add Dimension</h4>
             <Button
               type="button"
               variant="ghost"
@@ -125,7 +125,7 @@ export function DimensionsManager({
 
           {/* Template Selection */}
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Use Template</Label>
+            <Label className="text-helper text-foreground">Use Template</Label>
             <div className="flex flex-wrap gap-2">
               {Object.keys(DIMENSION_TEMPLATES).map((template) => (
                 <Button
@@ -143,29 +143,29 @@ export function DimensionsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Dimension Name <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Dimension Name <RequiredDot /></Label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value, useTemplate: false }))}
               placeholder="e.g., sex, age, disability"
               required
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Value <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Value <RequiredDot /></Label>
             {formData.useTemplate && formData.name && DIMENSION_TEMPLATES[formData.name as keyof typeof DIMENSION_TEMPLATES] ? (
               <Select
                 value={formData.value}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, value }))}
               >
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="text-body">
                   <SelectValue placeholder="Select value" />
                 </SelectTrigger>
                 <SelectContent>
                   {DIMENSION_TEMPLATES[formData.name as keyof typeof DIMENSION_TEMPLATES].map((value) => (
-                    <SelectItem key={value} value={value} className="text-sm">
+                    <SelectItem key={value} value={value} className="text-body">
                       {value}
                     </SelectItem>
                   ))}
@@ -177,7 +177,7 @@ export function DimensionsManager({
                 onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
                 placeholder="e.g., female, 18-24, urban"
                 required
-                className="text-sm"
+                className="text-body"
               />
             )}
           </div>
@@ -230,7 +230,7 @@ export function DimensionsManager({
       )}
 
       {filteredDimensions.length === 0 && !showAddForm && (
-        <p className="text-xs text-muted-foreground italic">No disaggregation dimensions</p>
+        <p className="text-helper text-muted-foreground italic">No disaggregation dimensions</p>
       )}
       <ConfirmDialog />
     </div>

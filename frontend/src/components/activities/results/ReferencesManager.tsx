@@ -75,7 +75,7 @@ export function ReferencesManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+        <Label className="text-body font-medium text-foreground flex items-center gap-2">
           <Link2 className="h-4 w-4" />
           External References
         </Label>
@@ -84,7 +84,7 @@ export function ReferencesManager({
             size="sm"
             variant="outline"
             onClick={() => setShowAddForm(true)}
-            className="text-xs"
+            className="text-helper"
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Reference
@@ -96,7 +96,7 @@ export function ReferencesManager({
       {showAddForm && !readOnly && (
         <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-foreground">Add External Reference</h4>
+            <h4 className="text-body font-medium text-foreground">Add External Reference</h4>
             <Button
               type="button"
               variant="ghost"
@@ -108,17 +108,17 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Result Vocabulary <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Result Vocabulary <RequiredDot /></Label>
             <Select
               value={formData.vocabulary}
               onValueChange={(value) => setFormData(prev => ({ ...prev, vocabulary: value }))}
             >
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-body">
                 <SelectValue placeholder="Select result vocabulary" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(REFERENCE_VOCABULARIES).map(([code, label]) => (
-                  <SelectItem key={code} value={code} className="text-sm">
+                  <SelectItem key={code} value={code} className="text-body">
                     {code} - {label}
                   </SelectItem>
                 ))}
@@ -127,36 +127,36 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Code <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Code <RequiredDot /></Label>
             <Input
               value={formData.code}
               onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
               placeholder="Enter code"
               required
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Vocabulary URI</Label>
+            <Label className="text-helper text-foreground">Vocabulary URI</Label>
             <Input
               type="url"
               value={formData.vocabulary_uri}
               onChange={(e) => setFormData(prev => ({ ...prev, vocabulary_uri: e.target.value }))}
               placeholder="https://example.com/vocabulary"
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           {entityType === 'indicator' && (
             <div className="space-y-2">
-              <Label className="text-xs text-foreground">Indicator URI</Label>
+              <Label className="text-helper text-foreground">Indicator URI</Label>
               <Input
                 type="url"
                 value={formData.indicator_uri}
                 onChange={(e) => setFormData(prev => ({ ...prev, indicator_uri: e.target.value }))}
                 placeholder="https://example.com/indicator"
-                className="text-sm"
+                className="text-body"
               />
             </div>
           )}
@@ -186,7 +186,7 @@ export function ReferencesManager({
       {references.length > 0 && (
         <div className="space-y-2">
           {references.map((ref) => (
-            <div key={ref.id} className="flex items-center justify-between bg-white p-3 rounded border text-sm">
+            <div key={ref.id} className="flex items-center justify-between bg-white p-3 rounded border text-body">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <Link2 className="h-4 w-4 text-muted-foreground" />
@@ -203,7 +203,7 @@ export function ReferencesManager({
                   </span>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-2 ml-6 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 ml-6 text-helper text-muted-foreground">
                   {ref.vocabulary_uri && (
                     <a
                       href={ref.vocabulary_uri}
@@ -244,7 +244,7 @@ export function ReferencesManager({
       )}
 
       {references.length === 0 && !showAddForm && (
-        <p className="text-xs text-muted-foreground italic">No external references</p>
+        <p className="text-helper text-muted-foreground italic">No external references</p>
       )}
       <ConfirmDialog />
     </div>

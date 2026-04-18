@@ -46,12 +46,12 @@ export function StatCard({
             <Icon className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-muted-foreground truncate">
+            <p className="text-body font-medium text-muted-foreground truncate">
               {label}
             </p>
             <p className="text-2xl font-bold mt-0.5">{value}</p>
             {subtext && (
-              <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
+              <p className="text-helper text-muted-foreground mt-1">{subtext}</p>
             )}
           </div>
         </div>

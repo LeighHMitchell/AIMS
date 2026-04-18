@@ -308,7 +308,7 @@ export function GlowyWavesHero() {
             alignment with international standards.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-body text-muted-foreground">
             <div className="flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
               <div className="h-2 w-2 rounded-full bg-gray-900" />
               Government validation

@@ -386,12 +386,12 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: ROLE_COLORS[role] }}
                   />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-body font-medium text-foreground">
                     {ROLE_LABELS[role]}
                   </span>
                 </div>
                 <p className="text-2xl font-bold text-foreground">{count}</p>
-                <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
+                <p className="text-helper text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
               </CardContent>
             </Card>
           )
@@ -413,7 +413,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
           {/* Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">Metric:</span>
+              <span className="text-body font-medium text-foreground">Metric:</span>
               <div className="flex gap-1">
                 <Button
                   variant={metricMode === 'count' ? 'default' : 'outline'}
@@ -471,19 +471,19 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
           <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-6">
               <div>
-                <span className="text-sm text-muted-foreground">Total Activities:</span>
+                <span className="text-body text-muted-foreground">Total Activities:</span>
                 <span className="ml-2 font-bold text-foreground">
                   {formatNumber(data.summary.totalActivities)}
                 </span>
               </div>
               <div>
-                <span className="text-sm text-muted-foreground">Organizations:</span>
+                <span className="text-body text-muted-foreground">Organizations:</span>
                 <span className="ml-2 font-bold text-foreground">
                   {formatNumber(data.summary.totalOrganizations)}
                 </span>
               </div>
               <div>
-                <span className="text-sm text-muted-foreground">Total Budget:</span>
+                <span className="text-body text-muted-foreground">Total Budget:</span>
                 <span className="ml-2 font-bold text-foreground">
                   {formatCurrency(data.summary.totalBudget)}
                 </span>
@@ -498,7 +498,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
                   <p className="text-lg font-medium">No Organizations Found</p>
-                  <p className="text-sm mt-2 text-center max-w-md">
+                  <p className="text-body mt-2 text-center max-w-md">
                     No participating organizations found for this dataset.
                   </p>
                 </div>
@@ -526,7 +526,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                           key={role}
                           x={avgX}
                           y={12}
-                          className="text-xs font-semibold"
+                          className="text-helper font-semibold"
                           fill={ROLE_COLORS[role]}
                           textAnchor="middle"
                         >
@@ -589,7 +589,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                           y={(node.y0 + node.y1) / 2}
                           dy="0.35em"
                           textAnchor={node.x0 < sankeyLayout.width / 2 ? 'start' : 'end'}
-                          className="text-xs"
+                          className="text-helper"
                           fill="#475569"
                         >
                           {node.name.length > 30 ? node.name.substring(0, 30) + '...' : node.name}
@@ -674,7 +674,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                 </TableBody>
               </Table>
               {data.links.length > 50 && (
-                <p className="text-sm text-muted-foreground mt-2 text-center">
+                <p className="text-body text-muted-foreground mt-2 text-center">
                   Showing top 50 of {data.links.length} flows
                 </p>
               )}
@@ -689,7 +689,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                   className="w-4 h-4 rounded"
                   style={{ backgroundColor: ROLE_COLORS[role] }}
                 />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body text-muted-foreground">
                   {ROLE_LABELS[role]} ({role})
                 </span>
               </div>
@@ -699,7 +699,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
       </ExpandableCard>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This Sankey diagram visualises how organisations flow across IATI participation roles, from Funding through Extending and Accountable to Implementing. The width of each link represents the number of activities (or budget value) shared between two organisations in consecutive roles. Use the metric toggle to switch between activity count and budget value, and export the data as CSV or JPG for reporting.
       </p>
     </div>

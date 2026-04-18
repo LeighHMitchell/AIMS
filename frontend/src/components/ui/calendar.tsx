@@ -76,7 +76,7 @@ function YearGridDropdown({ value, onChange, options, className, ...props }: any
                   setShowGrid(false)
                 }}
                 className={cn(
-                  "px-1 py-1.5 text-xs rounded-md text-center transition-colors",
+                  "px-1 py-1.5 text-helper rounded-md text-center transition-colors",
                   String(opt.value) === String(value)
                     ? "bg-black text-white font-semibold"
                     : "hover:bg-muted text-foreground"
@@ -110,7 +110,7 @@ function Calendar({
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         month_caption: "flex justify-center pt-1 relative items-center h-9",
-        caption_label: cn("text-sm font-medium", isDropdown && "hidden"),
+        caption_label: cn("text-body font-medium", isDropdown && "hidden"),
         nav: "space-x-1 flex items-center",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
@@ -122,15 +122,15 @@ function Calendar({
         ),
         // Dropdown styles for month/year navigation
         dropdowns: "flex gap-2 items-center justify-center",
-        dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-        months_dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-        years_dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 pr-6 text-sm font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 text-body font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        months_dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 pr-6 text-body font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+        years_dropdown: "appearance-none bg-white border border-border rounded-md px-2 py-1 pr-6 text-body font-medium cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
         // Table and day styles
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex",
         weekday: "text-muted-foreground rounded-md w-9 h-9 font-normal text-[0.8rem] flex items-center justify-center",
         week: "flex w-full mt-2",
-        day: "h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center",
+        day: "h-9 w-9 text-center text-body p-0 relative flex items-center justify-center",
         day_button: "h-9 w-9 p-0 font-normal rounded-full inline-flex items-center justify-center whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground aria-selected:!bg-black aria-selected:!text-white aria-selected:hover:!bg-black/80 aria-selected:hover:!text-white aria-selected:opacity-100",
         range_end: "day-range-end",
         selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-full",

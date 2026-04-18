@@ -269,7 +269,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
       <div className="space-y-4">
         {/* View Selector */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-body text-muted-foreground">
             {getViewIcon()}
             <span>Viewing by:</span>
           </div>
@@ -304,7 +304,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
           <div className="text-center">
             <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No donor {getViewLabel()} available</p>
-            <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>
       </div>
@@ -315,7 +315,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
     <div className="space-y-4">
       {/* View Selector */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-body text-muted-foreground">
           {getViewIcon()}
           <span>Viewing by:</span>
         </div>
@@ -376,10 +376,10 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
               return (
                 <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
                   <div className="bg-surface-muted px-3 py-2 border-b border-border">
-                    <p className="font-semibold text-foreground text-sm">{label}</p>
+                    <p className="font-semibold text-foreground text-body">{label}</p>
                   </div>
                   <div className="p-2">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <tbody>
                         <tr>
                           <td className="py-1 pr-4 text-foreground font-medium">Amount</td>

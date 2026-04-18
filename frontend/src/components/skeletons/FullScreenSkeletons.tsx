@@ -269,7 +269,7 @@ export function PartnerFundingSummarySkeleton() {
                 {/* Expanded Content */}
                 <CardContent className="pt-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <thead className="bg-surface-muted">
                         <tr className="border-b border-border">
                           <th className="text-left py-3 px-2">

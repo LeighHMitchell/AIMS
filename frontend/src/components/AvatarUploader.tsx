@@ -201,7 +201,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
               </span>
             </Button>
           </label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             JPG, PNG, GIF or WebP. Max 2MB. Images resized to 150x150px.
           </p>
         </div>
@@ -209,7 +209,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
 
       {/* Storage info */}
       <Alert>
-        <AlertDescription className="text-xs">
+        <AlertDescription className="text-helper">
           Images are compressed to 150x150px and stored directly in the database (same as organization logos).
         </AlertDescription>
       </Alert>

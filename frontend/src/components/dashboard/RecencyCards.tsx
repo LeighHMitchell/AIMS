@@ -87,7 +87,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
-        <p className="text-sm text-destructive">Failed to load recency data: {error}</p>
+        <p className="text-body text-destructive">Failed to load recency data: {error}</p>
       </div>
     );
   }
@@ -102,7 +102,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <Plus className="h-4 w-4 text-muted-foreground" />
               Last Activity Created
             </CardTitle>
@@ -140,7 +140,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </DropdownMenu>
                 </div>
                 {lastCreated.creatorProfile && (
-                  <div className="mt-2 text-xs text-muted-foreground">
+                  <div className="mt-2 text-helper text-muted-foreground">
                     <span>{lastCreated.creatorProfile.name}</span>
                     {lastCreated.creatorProfile.jobTitle && (
                       <span> · {lastCreated.creatorProfile.jobTitle}</span>
@@ -151,14 +151,14 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </div>
                 )}
                 <p
-                  className="text-xs text-muted-foreground mt-1.5"
+                  className="text-helper text-muted-foreground mt-1.5"
                   title={formatTimestamp(lastCreated.timestamp).absolute}
                 >
                   {formatTimestamp(lastCreated.timestamp).relative}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No activities created yet</p>
+              <p className="text-body text-muted-foreground italic">No activities created yet</p>
             )}
           </CardContent>
         </Card>
@@ -168,7 +168,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <Pencil className="h-4 w-4 text-muted-foreground" />
               Last Activity Edited
             </CardTitle>
@@ -206,7 +206,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </DropdownMenu>
                 </div>
                 {/* Editor details */}
-                <div className="mt-2 text-xs text-muted-foreground">
+                <div className="mt-2 text-helper text-muted-foreground">
                   {lastEdited.editedByYou ? (
                     <span>Edited by you</span>
                   ) : (
@@ -224,14 +224,14 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   )}
                 </div>
                 <p
-                  className="text-xs text-muted-foreground mt-1"
+                  className="text-helper text-muted-foreground mt-1"
                   title={formatTimestamp(lastEdited.timestamp).absolute}
                 >
                   {formatTimestamp(lastEdited.timestamp).relative}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No activities edited yet</p>
+              <p className="text-body text-muted-foreground italic">No activities edited yet</p>
             )}
           </CardContent>
         </Card>
@@ -241,7 +241,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
               Last Activity Validated
             </CardTitle>
@@ -257,7 +257,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                     {(() => {
                       const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
                       return (
-                        <Badge className={`text-xs ${config.bgColor} ${config.color} border-0`}>
+                        <Badge className={`text-helper ${config.bgColor} ${config.color} border-0`}>
                           {config.label}
                         </Badge>
                       );
@@ -291,24 +291,24 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </code>
                 )}
                 {lastValidation.validatorName && (
-                  <p className="text-xs text-muted-foreground mt-1.5">
+                  <p className="text-helper text-muted-foreground mt-1.5">
                     by <span>{lastValidation.validatorName}</span>
                   </p>
                 )}
                 {lastValidation.rejectionReason && (
-                  <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
+                  <p className="text-helper text-muted-foreground mt-1 italic line-clamp-2">
                     &ldquo;{lastValidation.rejectionReason}&rdquo;
                   </p>
                 )}
                 <p
-                  className="text-xs text-muted-foreground mt-1"
+                  className="text-helper text-muted-foreground mt-1"
                   title={formatTimestamp(lastValidation.timestamp).absolute}
                 >
                   {formatTimestamp(lastValidation.timestamp).relative}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No validation events yet</p>
+              <p className="text-body text-muted-foreground italic">No validation events yet</p>
             )}
           </CardContent>
         </Card>

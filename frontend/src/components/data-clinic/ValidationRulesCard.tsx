@@ -85,7 +85,7 @@ function RuleTable<T extends { id: string }>({
               {title}
               <Badge variant="destructive">{items.length}</Badge>
             </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+            <p className="text-body text-muted-foreground mt-0.5">{description}</p>
           </div>
         </div>
       </div>
@@ -387,7 +387,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Failed to load validation rules data: {error}</p>
+          <p className="text-body text-destructive">Failed to load validation rules data: {error}</p>
           <Button variant="outline" size="sm" onClick={fetchData} className="mt-2">
             Retry
           </Button>
@@ -423,7 +423,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="text-lg font-medium text-foreground">All data quality checks pass!</p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               Great job! All your activities meet the data quality requirements.
             </p>
           </div>
@@ -444,7 +444,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
               {totalIssues} {totalIssues === 1 ? 'issue' : 'issues'}
             </Badge>
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-body text-muted-foreground mt-0.5">
             Activities and transactions failing data quality rules
           </p>
         </div>
@@ -494,7 +494,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Planned End',
-                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.planned_end_date)}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.planned_end_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
@@ -528,7 +528,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Actual End Date',
-                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.actual_end_date)}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.actual_end_date)}</span>,
                     className: 'w-[140px]',
                   },
                   {
@@ -593,7 +593,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Planned Start',
-                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.planned_start_date)}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.planned_start_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
@@ -628,7 +628,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Planned End',
-                    accessor: (item) => <span className="text-sm text-foreground">{formatDate(item.planned_end_date)}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.planned_end_date)}</span>,
                     className: 'w-[130px]',
                   },
                   {
@@ -681,7 +681,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Other Transactions',
-                    accessor: (item) => <span className="text-sm text-foreground">{item.transaction_count}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{item.transaction_count}</span>,
                     className: 'w-[150px]',
                   },
                   {
@@ -734,7 +734,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Locations',
-                    accessor: (item) => <span className="text-sm text-foreground">{item.location_count}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{item.location_count}</span>,
                     className: 'w-[100px]',
                   },
                   {
@@ -798,7 +798,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Locations',
-                    accessor: (item) => <span className="text-sm text-foreground">{item.location_count}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{item.location_count}</span>,
                     className: 'w-[100px]',
                   },
                   {
@@ -806,7 +806,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     accessor: (item) => (
                       <div className="flex gap-1 flex-wrap">
                         {item.admin_levels.map((level, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
+                          <Badge key={idx} variant="outline" className="text-helper">
                             Level {level}
                           </Badge>
                         ))}
@@ -838,7 +838,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Location',
-                    accessor: (item) => <span className="text-sm text-foreground">{item.location_name}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{item.location_name}</span>,
                     className: 'w-[200px]',
                   },
                   {
@@ -890,7 +890,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Other Orgs',
-                    accessor: (item) => <span className="text-sm text-foreground">{item.participating_org_count}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{item.participating_org_count}</span>,
                     className: 'w-[110px]',
                   },
                   {
@@ -943,7 +943,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   },
                   {
                     header: 'Sectors',
-                    accessor: (item) => <span className="text-sm text-foreground">{item.sector_count}</span>,
+                    accessor: (item) => <span className="text-body text-foreground">{item.sector_count}</span>,
                     className: 'w-[100px]',
                   },
                   {
@@ -979,7 +979,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     header: 'Sector',
                     accessor: (item) => (
                       <div>
-                        <span className="text-sm text-foreground">{item.sector_name}</span>
+                        <span className="text-body text-foreground">{item.sector_name}</span>
                         <code className="text-xs font-mono text-muted-foreground block mt-0.5">{item.sector_code}</code>
                       </div>
                     ),

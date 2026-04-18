@@ -285,7 +285,7 @@ export default function ActivityLogsPage() {
           <Card>
             <CardContent className="text-center py-8">
               <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">{error}</p>
+              <p className="text-body text-muted-foreground">{error}</p>
               <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
                 Try Again
               </Button>
@@ -379,7 +379,7 @@ export default function ActivityLogsPage() {
                 </SelectContent>
               </Select>
 
-              <div className="text-sm text-muted-foreground flex items-center">
+              <div className="text-body text-muted-foreground flex items-center">
                 Showing {filteredLogs.length} of {logs.length} logs
               </div>
             </div>
@@ -391,7 +391,7 @@ export default function ActivityLogsPage() {
             {filteredLogs.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No activity logs found</p>
+                <p className="text-body text-muted-foreground">No activity logs found</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
@@ -408,7 +408,7 @@ export default function ActivityLogsPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           {/* Main description */}
-                          <p className="text-sm">
+                          <p className="text-body">
                             <span className="font-medium">{log.user?.name || 'Unknown User'}</span>{' '}
                             <span className="text-muted-foreground">
                               {getActionDescription(log)}
@@ -417,7 +417,7 @@ export default function ActivityLogsPage() {
 
                           {/* Additional metadata */}
                           {log.metadata && (log.metadata.oldValue !== undefined || log.metadata.newValue !== undefined) && (
-                            <div className="mt-1 text-xs text-muted-foreground">
+                            <div className="mt-1 text-helper text-muted-foreground">
                               {log.metadata.oldValue !== undefined && (
                                 <span>
                                   <span className="line-through">
@@ -440,17 +440,17 @@ export default function ActivityLogsPage() {
 
                           {/* Timestamp and role */}
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-helper text-muted-foreground">
                               {format(new Date(log.timestamp), 'dd MMM yyyy, HH:mm')}
                             </span>
-                            <span className="text-xs text-muted-foreground">•</span>
-                            <Badge variant={getRoleBadgeVariant(log.user?.role || 'unknown')} className="text-xs h-5">
+                            <span className="text-helper text-muted-foreground">•</span>
+                            <Badge variant={getRoleBadgeVariant(log.user?.role || 'unknown')} className="text-helper h-5">
                               {getRoleDisplayLabel(log.user?.role || 'unknown')}
                             </Badge>
                             {log.activityId && (
                               <>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-helper text-muted-foreground">•</span>
+                                <span className="text-helper text-muted-foreground">
                                   Activity ID: {log.activityId}
                                 </span>
                               </>

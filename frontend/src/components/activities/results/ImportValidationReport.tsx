@@ -157,7 +157,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
                 <TableRow key={index} className="border-b border-border">
                   <TableCell className="text-muted-foreground border-r border-border">{index + 1}</TableCell>
                   <TableCell className="font-medium text-foreground border-r border-border">{error.message}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-body text-muted-foreground">
                     {error.context && <div>Context: {error.context}</div>}
                     {error.element && <div>Element: {error.element}</div>}
                   </TableCell>
@@ -190,7 +190,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
                 <TableRow key={index} className="border-b border-border">
                   <TableCell className="text-muted-foreground border-r border-border">{index + 1}</TableCell>
                   <TableCell className="text-foreground border-r border-border">{warning.message}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{warning.element || '-'}</TableCell>
+                  <TableCell className="text-body text-muted-foreground">{warning.element || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -204,7 +204,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
           <CheckCircle className="h-4 w-4 text-muted-foreground" />
           <AlertDescription className="text-foreground">
             <p className="font-semibold">Import Completed Successfully!</p>
-            <p className="text-sm mt-1">
+            <p className="text-body mt-1">
               All results data has been imported with {overallCoverage}% IATI element coverage. 
               Navigate to the Results tab to view and manage the imported data.
             </p>

@@ -162,7 +162,7 @@ export function EditContactModal({ person, isOpen, onClose, onUpdate }: EditCont
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Photo Section */}
           <div className="flex flex-col items-center space-y-4">
-            <div className="text-sm font-medium">Profile Photo</div>
+            <div className="text-body font-medium">Profile Photo</div>
             <ProfilePhotoUpload
               currentPhoto={formData.profile_photo}
               userInitials={getInitials(formData.name || 'U')}

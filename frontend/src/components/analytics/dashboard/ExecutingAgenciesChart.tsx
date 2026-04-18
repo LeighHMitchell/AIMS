@@ -112,14 +112,14 @@ export function ExecutingAgenciesChart({
           <p className="font-semibold text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Value</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Value</span>
+              <span className="text-body font-medium text-foreground">
                 {formatCurrency(data.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Percentage</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Percentage</span>
+              <span className="text-body font-medium text-foreground">
                 {formatPercent(data.value, grandTotal)}
               </span>
             </div>
@@ -152,7 +152,7 @@ export function ExecutingAgenciesChart({
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[80px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -333,7 +333,7 @@ export function ExecutingAgenciesChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart shows executing agencies -- organizations that manage budgets and administer funds on behalf of the funding organization. Use the view toggles to compare agencies by bar chart, pie chart, or table format.
       </p>
 

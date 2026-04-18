@@ -86,7 +86,7 @@ function ResultAvatar({
 }) {
   const sizeClasses = size === 'xs' ? 'w-5 h-5' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
   const iconSize = size === 'xs' ? 'h-3 w-3' : size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
-  const textSize = size === 'xs' ? 'text-[10px]' : 'text-sm'
+  const textSize = size === 'xs' ? 'text-[10px]' : 'text-body'
 
   // Sectors and Tags: NO icons per specification
   if (result.type === 'sector' || result.type === 'tag') {
@@ -286,13 +286,13 @@ export function SearchResultRow({
         
         {/* Tag hash for tags */}
         {isTag && (
-          <span className="text-purple-600 font-semibold text-sm">#</span>
+          <span className="text-purple-600 font-semibold text-body">#</span>
         )}
 
         {/* Code pill + Title */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {code && <CodePill code={code} />}
-          <span className="font-medium text-sm text-foreground truncate">
+          <span className="font-medium text-body text-foreground truncate">
             {highlightText(result.title, searchQuery)}
             {result.type === 'activity' && result.metadata.acronym && (
               <span className="text-muted-foreground"> ({result.metadata.acronym})</span>
@@ -346,14 +346,14 @@ export function SearchResultRow({
 
         {/* Subtitle/description */}
         {subtitle && (
-          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+          <p className="text-body text-muted-foreground mt-0.5 line-clamp-2">
             {highlightText(subtitle, searchQuery)}
           </p>
         )}
 
         {/* Type indicator + Updated date (subtle) */}
         {showTypeIndicator && (
-          <div className="text-xs text-muted-foreground mt-1.5">
+          <div className="text-helper text-muted-foreground mt-1.5">
             {resultTypeLabels[result.type]}
             {updatedAt && (
               <span> • Updated {format(new Date(updatedAt), 'MMM d, yyyy')}</span>

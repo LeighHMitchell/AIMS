@@ -17,7 +17,7 @@ export function StageRestructuring({ wizard }: StageRestructuringProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Restructuring</h3>
-        <p className="text-sm text-muted-foreground">Pre-transfer restructuring requirements and compliance checks.</p>
+        <p className="text-body text-muted-foreground">Pre-transfer restructuring requirements and compliance checks.</p>
       </div>
 
       <div className="space-y-4">
@@ -27,7 +27,7 @@ export function StageRestructuring({ wizard }: StageRestructuringProps) {
             checked={!!formData.regulatory_separation_done}
             onCheckedChange={v => updateField('regulatory_separation_done', !!v)}
           />
-          <Label htmlFor="regulatory_separation_done" className="text-sm">
+          <Label htmlFor="regulatory_separation_done" className="text-body">
             Regulatory separation has been completed (separation of regulatory and commercial functions)
           </Label>
         </div>
@@ -38,7 +38,7 @@ export function StageRestructuring({ wizard }: StageRestructuringProps) {
             checked={!!formData.legislation_review_done}
             onCheckedChange={v => updateField('legislation_review_done', !!v)}
           />
-          <Label htmlFor="legislation_review_done" className="text-sm">
+          <Label htmlFor="legislation_review_done" className="text-body">
             Enabling legislation has been reviewed and amended as necessary
           </Label>
         </div>

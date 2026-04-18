@@ -561,7 +561,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                   className="text-xl font-semibold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 mb-1"
                 />
                 {formData.start && (
-                  <div className="text-sm text-[#4c5568] flex items-center gap-1">
+                  <div className="text-body text-[#4c5568] flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     {getRelativeTime(formData.start)}, {formatTime(formData.start)}
                   </div>
@@ -578,7 +578,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Calendar className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Date <RequiredDot /></Label>
+                <Label className="text-body font-medium text-[#4c5568]">Date <RequiredDot /></Label>
               </div>
               <div className="flex-1">
                 <DatePicker
@@ -587,7 +587,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                   placeholder="Select date"
                 />
                 {errors.start && (
-                  <p className="text-xs text-[#dc2625] mt-1 flex items-center gap-1">
+                  <p className="text-helper text-[#dc2625] mt-1 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.start}
                   </p>
@@ -599,7 +599,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Clock className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Time</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Time</Label>
               </div>
               <div className="flex-1 flex items-center gap-2">
                 <Input
@@ -608,7 +608,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                   onChange={(e) => handleStartTimeChange(e.target.value)}
                   className="w-auto"
                 />
-                <span className="text-[#4c5568] text-sm">to</span>
+                <span className="text-[#4c5568] text-body">to</span>
                 <Input
                   type="time"
                   value={endTime}
@@ -616,7 +616,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                   className="w-auto"
                 />
                 {formData.start && formData.end && (
-                  <span className="text-[#4c5568] text-sm">({calculateDuration()})</span>
+                  <span className="text-[#4c5568] text-body">({calculateDuration()})</span>
                 )}
               </div>
             </div>
@@ -625,7 +625,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Tag className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Event Type</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Event Type</Label>
               </div>
               <div className="flex-1">
                 <Select
@@ -651,7 +651,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 w-32 flex-shrink-0">
                   <Users className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">Working Group</Label>
+                  <Label className="text-body font-medium text-[#4c5568]">Working Group</Label>
                 </div>
                 <div className="flex-1">
                   <Select
@@ -670,7 +670,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-helper text-muted-foreground mt-1">
                     Link this meeting to a working group to track it there too
                   </p>
                 </div>
@@ -681,7 +681,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Palette className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Color</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Color</Label>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -717,7 +717,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <LinkIcon className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Link</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Link</Label>
               </div>
               <div className="flex-1 flex items-center gap-2">
                 <Select 
@@ -747,12 +747,12 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <MapPin className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Location</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Location</Label>
               </div>
               <div className="flex-1">
                 {formData.location ? (
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal flex-1">
+                    <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal flex-1">
                       {formData.location}
                     </Badge>
                     <Button
@@ -778,7 +778,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Bell className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Notification</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Notification</Label>
               </div>
               <div className="flex-1">
                 <Select 
@@ -804,7 +804,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Participants</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Participants</Label>
               </div>
               <Popover open={participantSearchOpen} onOpenChange={setParticipantSearchOpen}>
                 <PopoverTrigger asChild>
@@ -829,7 +829,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                     />
                     <CommandList>
                       {searchingPeople ? (
-                        <div className="py-6 text-center text-sm text-[#4c5568]">
+                        <div className="py-6 text-center text-body text-[#4c5568]">
                           {participantSearchQuery.trim().length === 0 ? 'Loading contacts...' : 'Searching...'}
                         </div>
                       ) : rolodexPeople.length === 0 ? (
@@ -848,14 +848,14 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                             >
                               <Avatar className="h-6 w-6 flex-shrink-0">
                                 <AvatarImage src={person.profile_photo} />
-                                <AvatarFallback className="text-xs bg-[#7b95a7] text-white">
+                                <AvatarFallback className="text-helper bg-[#7b95a7] text-white">
                                   {getInitials(person.name)}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex flex-col min-w-0">
                                 <span className="truncate">{person.name}</span>
                                 {person.email && (
-                                  <span className="text-xs text-[#4c5568] truncate">{person.email}</span>
+                                  <span className="text-helper text-[#4c5568] truncate">{person.email}</span>
                                 )}
                               </div>
                             </CommandItem>
@@ -877,7 +877,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                       >
                         <Avatar className="h-9 w-9 border-2 border-white ring-2 ring-transparent hover:ring-[#dc2625] cursor-pointer transition-all">
                           <AvatarImage src={participant.avatar || participant.profile_photo} />
-                          <AvatarFallback className="text-xs bg-[#7b95a7] text-white">
+                          <AvatarFallback className="text-helper bg-[#7b95a7] text-white">
                             {getInitials(participant.name)}
                           </AvatarFallback>
                         </Avatar>
@@ -888,18 +888,18 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                         >
                           <X className="h-2.5 w-2.5 text-white" />
                         </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-helper rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                           {participant.name}
                         </div>
                       </div>
                     ))}
                     {participants.length > 8 && (
                       <div className="h-9 w-9 rounded-full bg-[#f1f4f8] border-2 border-white flex items-center justify-center">
-                        <span className="text-xs font-medium text-[#4c5568]">+{participants.length - 8}</span>
+                        <span className="text-helper font-medium text-[#4c5568]">+{participants.length - 8}</span>
                       </div>
                     )}
                   </div>
-                  <span className="text-sm text-[#4c5568]">
+                  <span className="text-body text-[#4c5568]">
                     {participants.length} participant{participants.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -911,13 +911,13 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-[#4c5568]" />
-                  <Label className="text-sm font-medium text-[#4c5568]">
+                  <Label className="text-body font-medium text-[#4c5568]">
                     Documents {pendingDocuments.length > 0 && `(${pendingDocuments.length})`}
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Select value={documentType} onValueChange={(value: any) => setDocumentType(value)}>
-                    <SelectTrigger className="w-[120px] h-8 text-xs">
+                    <SelectTrigger className="w-[120px] h-8 text-helper">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -956,9 +956,9 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <File className="h-4 w-4 text-[#4c5568] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{doc.file.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-[#4c5568]">
-                            <Badge variant="outline" className="text-xs py-0 px-1">
+                          <p className="text-body font-medium truncate">{doc.file.name}</p>
+                          <div className="flex items-center gap-2 text-helper text-[#4c5568]">
+                            <Badge variant="outline" className="text-helper py-0 px-1">
                               {getDocumentTypeLabel(doc.documentType)}
                             </Badge>
                             <span>{formatFileSize(doc.file.size)}</span>
@@ -983,7 +983,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             {/* Description */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium text-[#4c5568]">Description</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Description</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -1012,7 +1012,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             {/* RSVP Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-[#cfd0d5]">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[#4c5568]">Going?</span>
+                <span className="text-body font-medium text-[#4c5568]">Going?</span>
                 <div className="flex gap-2">
                   <Button
                     type="button"

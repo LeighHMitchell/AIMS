@@ -419,7 +419,7 @@ export default function EnhancedSectorAllocationForm({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">OECD DAC Sector Allocation</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             Select sectors and assign percentage allocations (must total 100%)
           </p>
         </div>
@@ -448,7 +448,7 @@ export default function EnhancedSectorAllocationForm({
         <CardHeader className="pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <span>Select Sectors</span>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-helper">
               IATI Compliant
             </Badge>
           </CardTitle>
@@ -468,17 +468,17 @@ export default function EnhancedSectorAllocationForm({
               <AlertDescription className="text-amber-800">
                 <div className="space-y-2">
                   <p className="font-medium">Consider using more specific sector codes</p>
-                  <p className="text-sm">
+                  <p className="text-body">
                     You've selected {broadSectorWarning.broadSectors.length === 1 ? 'a broad/residual sector code' : 'broad/residual sector codes'}:{' '}
                     <span className="font-medium">
                       {broadSectorWarning.broadSectors.map(s => s.code).join(', ')}
                     </span>
                   </p>
-                  <p className="text-sm">
+                  <p className="text-body">
                     These are high-level or residual classifications. Selecting more specific 5-digit DAC sector codes
                     improves reporting quality, analysis, and comparability of your data.
                   </p>
-                  <p className="text-xs text-amber-600">
+                  <p className="text-helper text-amber-600">
                     You can continue with this selection if a more specific code is not applicable.
                   </p>
                 </div>
@@ -491,7 +491,7 @@ export default function EnhancedSectorAllocationForm({
               variant="outline" 
               size="sm" 
               onClick={distributeEqually}
-              className="text-xs"
+              className="text-helper"
             >
               Distribute Equally
             </Button>
@@ -500,7 +500,7 @@ export default function EnhancedSectorAllocationForm({
             variant="outline" 
             size="sm" 
             onClick={clearAll}
-            className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
+            className="text-helper text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:text-destructive focus-visible:text-destructive"
           >
             Clear All
           </Button>
@@ -524,7 +524,7 @@ export default function EnhancedSectorAllocationForm({
             <div className="space-y-3">
               {Object.entries(groupedAllocations).map(([category, allocations]) => (
                 <div key={category} className="mb-4">
-                  <div className="font-semibold text-sm text-foreground mb-2">{category}</div>
+                  <div className="font-semibold text-body text-foreground mb-2">{category}</div>
                   <div className="space-y-2">
                     {allocations.map((allocation) => (
                       <div 
@@ -532,11 +532,11 @@ export default function EnhancedSectorAllocationForm({
                         className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted transition-colors"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-foreground truncate">
+                          <div className="font-medium text-body text-foreground truncate">
                             {getSectorLabel(allocation.code)}
                           </div>
                           {getSectorDescription(allocation.code) && (
-                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <div className="text-helper text-muted-foreground mt-1 line-clamp-2">
                               {getSectorDescription(allocation.code)}
                             </div>
                           )}
@@ -550,10 +550,10 @@ export default function EnhancedSectorAllocationForm({
                               step="0.1"
                               value={allocation.percentage || ''}
                               onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
-                              className="w-20 h-8 text-sm text-right"
+                              className="w-20 h-8 text-body text-right"
                               placeholder="0"
                             />
-                            <span className="text-sm text-muted-foreground">%</span>
+                            <span className="text-body text-muted-foreground">%</span>
                           </div>
                           <Button
                             variant="ghost"
@@ -611,13 +611,13 @@ export default function EnhancedSectorAllocationForm({
                 <div className="text-center text-muted-foreground">
                   <PieChart className="h-12 w-12 mx-auto mb-2" />
                   <p>Donut chart visualization</p>
-                  <p className="text-xs">(Chart component integration needed)</p>
+                  <p className="text-helper">(Chart component integration needed)</p>
                 </div>
               ) : (
                 <div className="text-center text-muted-foreground">
                   <BarChart2 className="h-12 w-12 mx-auto mb-2" />
                   <p>Bar chart visualization</p>
-                  <p className="text-xs">(Chart component integration needed)</p>
+                  <p className="text-helper">(Chart component integration needed)</p>
                 </div>
               )}
             </div>
@@ -626,7 +626,7 @@ export default function EnhancedSectorAllocationForm({
       )}
 
       {/* Help Text */}
-      <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
+      <div className="text-helper text-muted-foreground bg-muted p-3 rounded-lg">
         <p><strong>OECD DAC Sector Codes:</strong> These are standardized codes used by the Development Assistance Committee (DAC) of the Organisation for Economic Co-operation and Development (OECD) to classify development assistance by purpose. All percentages must add up to exactly 100%.</p>
       </div>
     </div>

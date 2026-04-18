@@ -82,11 +82,11 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="text-sm font-medium text-foreground">
+                      <div className="text-body font-medium text-foreground">
                         {getLocalizedString(doc.title) || 'Untitled Document'}
                       </div>
                       {doc.format && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-helper text-muted-foreground">
                           {doc.format}
                         </div>
                       )}
@@ -109,7 +109,7 @@ export function BaselineDetailPanel({ baseline, className }: BaselineDetailPanel
 
       {/* Empty state for additional info */}
       {!comment && !hasDocuments && (
-        <div className="text-sm text-muted-foreground text-center py-4">
+        <div className="text-body text-muted-foreground text-center py-4">
           No additional baseline information available
         </div>
       )}

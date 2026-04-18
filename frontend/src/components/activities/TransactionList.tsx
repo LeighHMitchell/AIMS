@@ -214,7 +214,7 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
         <Button variant="outline" size="sm" className="gap-2">
           <Columns3 className="h-4 w-4" />
           <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-helper">
             {visibleCount}
           </Badge>
           <ChevronDown className="h-3 w-3 opacity-50" />
@@ -223,13 +223,13 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
       <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <h4 className="font-medium text-body">Visible Columns</h4>
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={selectAll}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Select all
               </Button>
@@ -237,13 +237,13 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
                 variant="ghost" 
                 size="sm" 
                 onClick={resetToDefaults}
-                className="h-7 text-xs"
+                className="h-7 text-helper"
               >
                 Reset
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-helper text-muted-foreground mt-1">
             {visibleCount} of {totalColumns} columns visible
           </p>
           <div className="relative mt-2">
@@ -252,7 +252,7 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
               placeholder="Search columns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
+              className="pl-8 h-8 text-body"
             />
           </div>
         </div>
@@ -260,7 +260,7 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
           {filteredColumns ? (
             // Show flat filtered list when searching
             filteredColumns.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
+              <div className="p-3 text-body text-muted-foreground text-center">
                 No columns match "{searchQuery}"
               </div>
             ) : (
@@ -275,8 +275,8 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
                       checked={visibleColumns.includes(column.id)}
                       onCheckedChange={() => toggleColumn(column.id)}
                     />
-                    <span className="text-sm">{column.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
+                    <span className="text-body">{column.label}</span>
+                    <span className="text-helper text-muted-foreground ml-auto">
                       {ACTIVITY_TRANSACTION_COLUMN_GROUPS[column.group as keyof typeof ACTIVITY_TRANSACTION_COLUMN_GROUPS]}
                     </span>
                   </div>
@@ -304,7 +304,7 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
                       indeterminate={someVisible && !allVisible}
                       onCheckedChange={() => toggleGroup(groupKey)}
                     />
-                    <span className="text-sm font-medium">{ACTIVITY_TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
+                    <span className="text-body font-medium">{ACTIVITY_TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
                   </div>
                   <div className="py-1">
                     {groupColumns.map(column => (
@@ -317,7 +317,7 @@ function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: 
                           checked={visibleColumns.includes(column.id)}
                           onCheckedChange={() => toggleColumn(column.id)}
                         />
-                        <span className="text-sm">{column.label}</span>
+                        <span className="text-body">{column.label}</span>
                       </div>
                     ))}
                   </div>
@@ -409,7 +409,7 @@ function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
           <TooltipContent>
             {isValidated ? 'Validated Transaction' : 'Unvalidated Transaction'}
             {canValidate && (
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-helper text-muted-foreground mt-1">
                 Click edit to change validation status
               </div>
             )}
@@ -420,17 +420,17 @@ function ValidationStatusCell({ transaction }: { transaction: Transaction }) {
       {/* Status badges */}
       <div className="flex flex-col items-center gap-1">
         {isValidated && (
-          <Badge variant="outline" className="w-fit text-xs bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))]">
+          <Badge variant="outline" className="w-fit text-helper bg-[hsl(var(--success-bg))] border-[hsl(var(--success-border))] text-[hsl(var(--success-text))]">
             Validated
           </Badge>
         )}
         {!transaction.created_by && (
-          <Badge variant="outline" className="w-fit text-xs bg-blue-50 border-blue-200 text-blue-700">
+          <Badge variant="outline" className="w-fit text-helper bg-blue-50 border-blue-200 text-blue-700">
             Imported
           </Badge>
         )}
         {(!transaction.currency || transaction.value <= 0) && (
-          <Badge variant="outline" className="w-fit text-xs bg-amber-50 border-amber-200 text-amber-700">
+          <Badge variant="outline" className="w-fit text-helper bg-amber-50 border-amber-200 text-amber-700">
             Needs Review
           </Badge>
         )}
@@ -1358,7 +1358,7 @@ export default function TransactionList({
                     checked={groupedView}
                     onCheckedChange={setGroupedView}
                   />
-                  <Label htmlFor="grouped-view" className="text-sm cursor-pointer whitespace-nowrap">
+                  <Label htmlFor="grouped-view" className="text-body cursor-pointer whitespace-nowrap">
                     Grouped View
                   </Label>
                 </div>
@@ -1425,7 +1425,7 @@ export default function TransactionList({
                   checked={groupedView}
                   onCheckedChange={setGroupedView}
                 />
-                <Label htmlFor="grouped-view-portal" className="text-sm cursor-pointer whitespace-nowrap">
+                <Label htmlFor="grouped-view-portal" className="text-body cursor-pointer whitespace-nowrap">
                   Grouped View
                 </Label>
               </div>
@@ -1440,7 +1440,7 @@ export default function TransactionList({
             {/* Transaction Type Filter - only show when transactions exist */}
             {transactions.length > 0 && (
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Transaction Type</label>
+                <label className="text-helper font-medium text-muted-foreground">Transaction Type</label>
                 <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                   <SelectTrigger className="w-[280px] h-9">
                     <SelectValue placeholder="Transaction Type" />
@@ -1463,7 +1463,7 @@ export default function TransactionList({
             {/* Finance Type Filter - only show when transactions exist */}
             {transactions.length > 0 && (
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Finance Type</label>
+                <label className="text-helper font-medium text-muted-foreground">Finance Type</label>
                 <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
                   <SelectTrigger className="w-[280px] h-9">
                     <SelectValue placeholder="Finance Type" />
@@ -1696,16 +1696,16 @@ export default function TransactionList({
                                 <Badge variant="outline" className="font-mono text-xs">
                                   {type}
                                 </Badge>
-                                <span className="font-semibold text-sm">
+                                <span className="font-semibold text-body">
                                   {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
                                 </span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-helper text-muted-foreground">
                                   ({groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'})
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">Total USD:</span>
-                                <span className="font-semibold text-sm">
+                                <span className="text-helper text-muted-foreground">Total USD:</span>
+                                <span className="font-semibold text-body">
                                   {formatCurrency(groupTotal?.total || 0, 'USD')}
                                 </span>
                               </div>
@@ -1780,7 +1780,7 @@ export default function TransactionList({
                                   <div className="font-semibold">
                                     {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-helper text-muted-foreground">
                                     {TRANSACTION_TYPE_DEFINITIONS[transaction.transaction_type] || 'No definition available'}
                                   </div>
                                 </div>
@@ -1809,13 +1809,13 @@ export default function TransactionList({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div className="flex items-center gap-1.5 text-muted-foreground opacity-70 cursor-help">
-                                        <span className="text-sm">
+                                        <span className="text-body">
                                           {FINANCE_TYPE_LABELS[displayValue] || displayValue}
                                         </span>
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs">Inherited from activity default</p>
+                                      <p className="text-helper">Inherited from activity default</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -1828,13 +1828,13 @@ export default function TransactionList({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div className="flex items-center gap-1.5 cursor-help">
-                                      <span className="text-sm">
+                                      <span className="text-body">
                                         {FINANCE_TYPE_LABELS[displayValue] || displayValue}
                                       </span>
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs">{displayValue} — {FINANCE_TYPE_LABELS[displayValue] || displayValue}</p>
+                                    <p className="text-helper">{displayValue} — {FINANCE_TYPE_LABELS[displayValue] || displayValue}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -1858,11 +1858,11 @@ export default function TransactionList({
                                     <TooltipTrigger asChild>
                                       <div className="flex items-center gap-2 text-muted-foreground opacity-70 cursor-help">
                                         <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{displayValue}</span>
-                                        <span className="text-sm truncate max-w-[140px]">{AID_TYPE_LABELS[displayValue] || displayValue}</span>
+                                        <span className="text-body truncate max-w-[140px]">{AID_TYPE_LABELS[displayValue] || displayValue}</span>
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs">Inherited from activity's default aid type</p>
+                                      <p className="text-helper">Inherited from activity's default aid type</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -1871,7 +1871,7 @@ export default function TransactionList({
                             return (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{displayValue}</span>
-                                <span className="text-sm truncate max-w-[140px]">{AID_TYPE_LABELS[displayValue] || displayValue}</span>
+                                <span className="text-body truncate max-w-[140px]">{AID_TYPE_LABELS[displayValue] || displayValue}</span>
                               </div>
                             );
                           })()}
@@ -1891,18 +1891,18 @@ export default function TransactionList({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-muted-foreground opacity-70 cursor-help text-sm">
+                                      <span className="text-muted-foreground opacity-70 cursor-help text-body">
                                         {FLOW_TYPE_LABELS[displayValue] || displayValue}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs">Inherited from activity's default flow type</p>
+                                      <p className="text-helper">Inherited from activity's default flow type</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
                               );
                             }
-                            return <span className="text-sm">{FLOW_TYPE_LABELS[displayValue] || displayValue}</span>;
+                            return <span className="text-body">{FLOW_TYPE_LABELS[displayValue] || displayValue}</span>;
                           })()}
                         </TableCell>
                       )}
@@ -1920,18 +1920,18 @@ export default function TransactionList({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-muted-foreground opacity-70 cursor-help text-sm">
+                                      <span className="text-muted-foreground opacity-70 cursor-help text-body">
                                         {TIED_STATUS_LABELS[displayValue] || displayValue}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs">Inherited from activity's default tied status</p>
+                                      <p className="text-helper">Inherited from activity's default tied status</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
                               );
                             }
-                            return <span className="text-sm">{TIED_STATUS_LABELS[displayValue] || displayValue}</span>;
+                            return <span className="text-body">{TIED_STATUS_LABELS[displayValue] || displayValue}</span>;
                           })()}
                         </TableCell>
                       )}
@@ -2035,7 +2035,7 @@ export default function TransactionList({
                           {transaction.value !== null && transaction.value !== undefined && !isNaN(transaction.value) ? (
                             <div>
                               <span className="font-medium">
-                                <span className="text-muted-foreground text-xs">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                <span className="text-muted-foreground text-helper">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </span>
                               {!isColumnVisible('valueDate') && (
                                 <div className="text-[11px] text-muted-foreground">
@@ -2056,7 +2056,7 @@ export default function TransactionList({
                       {/* Value Date */}
                       {isColumnVisible('valueDate') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
-                          <span className="text-sm">
+                          <span className="text-body">
                             {transaction.value_date 
                               ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
                               : transaction.transaction_date 
@@ -2082,11 +2082,11 @@ export default function TransactionList({
                                           <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                         )}
                                       </span>
-                                      <span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                      <span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent className="min-w-[200px]">
-                                    <table className="text-xs w-full">
+                                    <table className="text-helper w-full">
                                       <tbody>
                                         <tr>
                                           <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
@@ -2143,7 +2143,7 @@ export default function TransactionList({
                       {/* Description (optional) */}
                       {isColumnVisible('description') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
-                          <span className="text-sm truncate max-w-[180px] block">
+                          <span className="text-body truncate max-w-[180px] block">
                             {transaction.description || <span className="text-muted-foreground">—</span>}
                           </span>
                         </TableCell>
@@ -2153,7 +2153,7 @@ export default function TransactionList({
                       {isColumnVisible('disbursementChannel') && (
                         <TableCell className="py-3 px-4 whitespace-nowrap">
                           {transaction.disbursement_channel ? (
-                            <span className="text-sm">
+                            <span className="text-body">
                               {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}
                             </span>
                           ) : (
@@ -2188,17 +2188,17 @@ export default function TransactionList({
                               </Tooltip>
                             </TooltipProvider>
                           </div>
-                          <div className="grid gap-x-8 text-sm" style={{ gridTemplateColumns: '1fr 1.5fr 1fr' }}>
+                          <div className="grid gap-x-8 text-body" style={{ gridTemplateColumns: '1fr 1.5fr 1fr' }}>
                             {/* Column 1: Transaction Details */}
                             <div className="space-y-4">
                               <div>
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Transaction Details</h4>
+                                <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Transaction Details</h4>
                                 <div className="space-y-3 ml-4">
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">Transaction Type:</span>
                                   <div className="flex items-center gap-2">
                                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.transaction_type}</span>
-                                    <span className="text-xs">{TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}</span>
+                                    <span className="text-helper">{TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}</span>
                                   </div>
                                 </div>
                                 <div className="flex items-start gap-2">
@@ -2207,24 +2207,24 @@ export default function TransactionList({
                                     {transaction.status === 'actual' ? (
                                       <>
                                         <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                                        <span className="text-xs text-green-700 font-medium">Validated</span>
+                                        <span className="text-helper text-green-700 font-medium">Validated</span>
                                       </>
                                     ) : (
                                       <>
                                         <FileClock className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-xs text-muted-foreground font-medium">Unvalidated</span>
+                                        <span className="text-helper text-muted-foreground font-medium">Unvalidated</span>
                                       </>
                                     )}
                                   </div>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
-                                  <span className="font-medium"><span className="text-muted-foreground text-xs">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                  <span className="font-medium"><span className="text-muted-foreground text-helper">{transaction.currency}</span> {transaction.value?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
                                   {usdValues[transaction.uuid || transaction.id]?.usd != null ? (
-                                    <span className="font-medium"><span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                    <span className="font-medium"><span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                   ) : (
                                     <span className="text-muted-foreground">—</span>
                                   )}
@@ -2249,8 +2249,8 @@ export default function TransactionList({
                               {/* Description */}
                               {transaction.description && (
                                 <div className="pt-4 border-t border-border">
-                                  <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Description</h4>
-                                  <p className="ml-4 text-foreground text-xs leading-relaxed">{transaction.description}</p>
+                                  <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Description</h4>
+                                  <p className="ml-4 text-foreground text-helper leading-relaxed">{transaction.description}</p>
                                 </div>
                               )}
                             </div>
@@ -2258,7 +2258,7 @@ export default function TransactionList({
                             {/* Column 2: Parties Involved & System Identifiers */}
                             <div className="space-y-4">
                               <div>
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Parties Involved</h4>
+                                <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Parties Involved</h4>
                                 <div className="space-y-3 ml-4">
                                 {transaction.provider_org_name && (
                                   <div className="flex items-start gap-2">
@@ -2279,7 +2279,7 @@ export default function TransactionList({
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
-                                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                              <Badge variant="outline" className="text-helper text-muted-foreground">
                                                 Inferred
                                               </Badge>
                                             </TooltipTrigger>
@@ -2290,7 +2290,7 @@ export default function TransactionList({
                                         </TooltipProvider>
                                       )}
                                       {transaction.provider_org_type && (
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge variant="secondary" className="text-helper">
                                           {ORG_TYPE_LABELS[transaction.provider_org_type] || transaction.provider_org_type}
                                         </Badge>
                                       )}
@@ -2325,7 +2325,7 @@ export default function TransactionList({
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
-                                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                              <Badge variant="outline" className="text-helper text-muted-foreground">
                                                 Inferred
                                               </Badge>
                                             </TooltipTrigger>
@@ -2336,7 +2336,7 @@ export default function TransactionList({
                                         </TooltipProvider>
                                       )}
                                       {transaction.receiver_org_type && (
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge variant="secondary" className="text-helper">
                                           {ORG_TYPE_LABELS[transaction.receiver_org_type] || transaction.receiver_org_type}
                                         </Badge>
                                       )}
@@ -2356,7 +2356,7 @@ export default function TransactionList({
                               </div>
 
                               <div className="pt-4 border-t border-border">
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">System Identifiers</h4>
+                                <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">System Identifiers</h4>
                                 <div className="space-y-3 ml-4">
                                 <div className="flex items-center gap-1">
                                   <span className="text-muted-foreground min-w-[160px]">Activity ID:</span>
@@ -2427,7 +2427,7 @@ export default function TransactionList({
                             {/* Column 3: Funding Modality & Metadata */}
                             <div className="space-y-4">
                               <div>
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
+                                <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
                                 <div className="space-y-3 ml-4">
                                 {/* Aid Type - with inheritance support */}
                                 {(transaction.aid_type || defaultAidType) && (
@@ -2440,14 +2440,14 @@ export default function TransactionList({
                                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                               {transaction.aid_type || defaultAidType}
                                             </span>
-                                            <span className="text-xs">
+                                            <span className="text-helper">
                                               {AID_TYPE_LABELS[transaction.aid_type || defaultAidType || ''] || (transaction.aid_type || defaultAidType)}
                                             </span>
                                           </div>
                                         </TooltipTrigger>
                                         {((transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType)) && (
                                           <TooltipContent>
-                                            <p className="text-xs">
+                                            <p className="text-helper">
                                               This aid type has been inherited from the activity's default aid type (code {defaultAidType || transaction.aid_type} – {AID_TYPE_LABELS[defaultAidType || transaction.aid_type || ''] || defaultAidType || transaction.aid_type})
                                             </p>
                                           </TooltipContent>
@@ -2467,14 +2467,14 @@ export default function TransactionList({
                                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                               {transaction.flow_type || defaultFlowType}
                                             </span>
-                                            <span className="text-xs">
+                                            <span className="text-helper">
                                               {FLOW_TYPE_LABELS[transaction.flow_type || defaultFlowType || ''] || (transaction.flow_type || defaultFlowType)}
                                             </span>
                                           </div>
                                         </TooltipTrigger>
                                         {((transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType)) && (
                                           <TooltipContent>
-                                            <p className="text-xs">
+                                            <p className="text-helper">
                                               This flow type has been inherited from the activity's default flow type (code {defaultFlowType || transaction.flow_type} – {FLOW_TYPE_LABELS[defaultFlowType || transaction.flow_type || ''] || defaultFlowType || transaction.flow_type})
                                             </p>
                                           </TooltipContent>
@@ -2499,13 +2499,13 @@ export default function TransactionList({
                                               <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                                 {displayValue}
                                               </span>
-                                              <span className="text-xs">
+                                              <span className="text-helper">
                                                 {FINANCE_TYPE_LABELS[displayValue] || displayValue}
                                               </span>
                                             </div>
                                           </TooltipTrigger>
                                           <TooltipContent>
-                                            <p className="text-xs">
+                                            <p className="text-helper">
                                               {isInherited ? 'Inherited from activity default' : `${displayValue} — ${FINANCE_TYPE_LABELS[displayValue] || displayValue}`}
                                             </p>
                                           </TooltipContent>
@@ -2530,14 +2530,14 @@ export default function TransactionList({
                                               <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                                 {displayValue}
                                               </span>
-                                              <span className="text-xs">
+                                              <span className="text-helper">
                                                 {TIED_STATUS_LABELS[displayValue] || displayValue}
                                               </span>
                                             </div>
                                           </TooltipTrigger>
                                           {isInherited && (
                                             <TooltipContent>
-                                              <p className="text-xs">
+                                              <p className="text-helper">
                                                 Inherited from activity's default tied status (code {displayValue} – {TIED_STATUS_LABELS[displayValue] || displayValue})
                                               </p>
                                             </TooltipContent>
@@ -2550,7 +2550,7 @@ export default function TransactionList({
                                 {transaction.disbursement_channel && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Disbursement Channel:</span>
-                                    <div className="text-xs">
+                                    <div className="text-helper">
                                       <span className="font-mono bg-muted px-1.5 py-0.5 rounded mr-2">{transaction.disbursement_channel}</span>
                                       <span>{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}</span>
                                     </div>
@@ -2559,7 +2559,7 @@ export default function TransactionList({
                                 {transaction.is_humanitarian && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Humanitarian:</span>
-                                    <Badge variant="destructive" className="text-xs">
+                                    <Badge variant="destructive" className="text-helper">
                                       Yes
                                     </Badge>
                                   </div>
@@ -2568,7 +2568,7 @@ export default function TransactionList({
                               </div>
 
                               <div className="pt-4 border-t border-border">
-                                <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Metadata & History</h4>
+                                <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Metadata & History</h4>
                                 <div className="space-y-3 ml-4">
                                 {transaction.created_at && (
                                   <div className="flex items-start gap-2">
@@ -2597,7 +2597,7 @@ export default function TransactionList({
                                 {!transaction.created_by && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Source:</span>
-                                    <Badge className="w-fit text-xs bg-[#124e5f] text-white">
+                                    <Badge className="w-fit text-helper bg-[#124e5f] text-white">
                                       Imported from IATI
                                     </Badge>
                                   </div>
@@ -2617,7 +2617,7 @@ export default function TransactionList({
                                 {transaction.validation_comments && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Validation Notes:</span>
-                                    <span className="text-xs text-foreground italic">{transaction.validation_comments}</span>
+                                    <span className="text-helper text-foreground italic">{transaction.validation_comments}</span>
                                   </div>
                                 )}
                                 </div>
@@ -2627,7 +2627,7 @@ export default function TransactionList({
                               {transactionDocuments[transaction.uuid || transaction.id] && 
                                transactionDocuments[transaction.uuid || transaction.id].length > 0 && (
                                 <div className="pt-4 border-t border-border">
-                                  <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Documents</h4>
+                                  <h4 className="font-semibold text-helper uppercase text-muted-foreground mb-3">Documents</h4>
                                   <div className="space-y-2 ml-4">
                                     {transactionDocuments[transaction.uuid || transaction.id].map((doc: any) => (
                                       <div key={doc.id} className="flex items-start gap-2">
@@ -2641,12 +2641,12 @@ export default function TransactionList({
                                             href={doc.external_url || doc.file_url}
                                             target={doc.external_url ? "_blank" : undefined}
                                             rel={doc.external_url ? "noopener noreferrer" : undefined}
-                                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block"
+                                            className="text-helper text-blue-600 hover:text-blue-800 hover:underline truncate block"
                                           >
                                             {doc.file_name || doc.external_url}
                                           </a>
                                           {doc.description && (
-                                            <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
+                                            <p className="text-helper text-muted-foreground mt-0.5">{doc.description}</p>
                                           )}
                                         </div>
                                       </div>
@@ -2674,12 +2674,12 @@ export default function TransactionList({
             {!groupedView && transactions.length > 0 && (
               <div className="flex items-center justify-between mt-4 px-2">
                 <div className="flex items-center gap-4">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} transactions
                   </div>
                   {sortedTransactions.length > 20 && (
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="items-per-page" className="text-sm text-muted-foreground">
+                      <Label htmlFor="items-per-page" className="text-body text-muted-foreground">
                         Rows per page:
                       </Label>
                       <Select

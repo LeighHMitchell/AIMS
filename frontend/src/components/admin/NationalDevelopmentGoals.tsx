@@ -110,7 +110,7 @@ export function NationalDevelopmentGoals() {
             {[1, 2, 3].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
           </div>
         ) : goals.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No goals configured</p>
+          <p className="text-body text-muted-foreground text-center py-4">No goals configured</p>
         ) : (
           <div className="space-y-2">
             {goals.map(goal => (
@@ -119,12 +119,12 @@ export function NationalDevelopmentGoals() {
                   <span className="text-xs font-mono text-muted-foreground w-8">{goal.display_order}</span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{goal.code}</span>
-                      <span className="text-sm">{goal.name}</span>
+                      <span className="text-body font-medium">{goal.code}</span>
+                      <span className="text-body">{goal.name}</span>
                       {!goal.is_active && <Badge variant="gray" className="text-[10px]">Inactive</Badge>}
                     </div>
                     {goal.description && (
-                      <div className="text-xs text-muted-foreground">{goal.description}</div>
+                      <div className="text-helper text-muted-foreground">{goal.description}</div>
                     )}
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export function NationalDevelopmentGoals() {
                 <Input type="number" value={form.display_order} onChange={e => setForm(f => ({ ...f, display_order: Number(e.target.value) }))} />
               </div>
               <div className="flex items-end gap-2">
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-body">
                   <input
                     type="checkbox"
                     checked={form.is_active}

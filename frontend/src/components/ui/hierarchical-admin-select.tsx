@@ -198,7 +198,7 @@ export function HierarchicalAdminSelect({
         aria-controls={open ? listboxId : undefined}
         tabIndex={disabled ? -1 : 0}
         className={cn(
-          "flex w-full min-h-[40px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors",
+          "flex w-full min-h-[40px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body transition-colors",
           "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           disabled && "cursor-not-allowed opacity-60"
         )}
@@ -219,11 +219,11 @@ export function HierarchicalAdminSelect({
             <span className="text-muted-foreground">{placeholder}</span>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">
+              <span className="text-body font-medium">
                 {selected.length} unit{selected.length !== 1 ? "s" : ""} selected
               </span>
               {selectedCounts.townships > 0 && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-helper">
                   {selectedCounts.townships} township{selectedCounts.townships !== 1 ? 's' : ''}
                 </Badge>
               )}
@@ -259,12 +259,12 @@ export function HierarchicalAdminSelect({
                 placeholder="Search administrative units..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                className="flex h-11 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground"
                 autoFocus
               />
             </div>
             {filteredGroups.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
+              <div className="py-6 text-center text-body text-muted-foreground">
                 No administrative units found.
               </div>
             ) : (
@@ -330,7 +330,7 @@ export function HierarchicalAdminSelect({
                                   />
                                 )}
                                 {hasSelectedChildren && !isParentSelected && (
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-helper">
                                     {group.children.filter(c => selected.includes(c.id)).length} townships
                                   </Badge>
                                 )}
@@ -364,8 +364,8 @@ export function HierarchicalAdminSelect({
                                   }}
                                 >
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm">{unit.name}</span>
-                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                    <span className="text-body">{unit.name}</span>
+                                    <Badge variant="outline" className="text-helper text-muted-foreground">
                                       Township
                                     </Badge>
                                     {isSelected && (
@@ -407,7 +407,7 @@ export function HierarchicalAdminSelect({
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">{unit.fullName}</span>
+                          <span className="text-body font-medium text-foreground">{unit.fullName}</span>
                           {isSelected && (
                             <Check
                               className="h-4 w-4 shrink-0"

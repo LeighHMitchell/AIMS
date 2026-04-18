@@ -55,9 +55,9 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
 
       return (
         <div className="bg-slate-900 text-white p-4 rounded-lg shadow-lg max-w-xs">
-          <p className="font-semibold mb-2 text-sm">{project?.title || label}</p>
+          <p className="font-semibold mb-2 text-body">{project?.title || label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex justify-between gap-4 text-xs">
+            <div key={index} className="flex justify-between gap-4 text-helper">
               <span style={{ color: entry.color }}>{entry.name}:</span>
               <span className="font-medium">{formatCurrency(entry.value)}</span>
             </div>
@@ -99,7 +99,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
                   opacity: isHidden ? 0.5 : 1
                 }}
               />
-              <span className={`text-sm ${isHidden ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>
+              <span className={`text-body ${isHidden ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>
                 {entry.value}
               </span>
             </div>

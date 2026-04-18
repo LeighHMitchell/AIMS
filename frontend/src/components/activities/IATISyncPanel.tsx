@@ -486,7 +486,7 @@ export function IATISyncPanel({
   return (
     <div className="space-y-4">
       {/* Plain instruction line — matches Excel / XML Import below-header pattern. */}
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         Sync this activity with the IATI Datastore so your published record and your internal
         record stay consistent. Enable auto-sync to keep updates flowing automatically.
       </p>
@@ -496,7 +496,7 @@ export function IATISyncPanel({
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <Label htmlFor="iati-identifier">IATI Identifier</Label>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-xs">
+                  <span className="inline-flex items-center gap-1 text-helper">
                     {syncBanner.icon}
                     <span className={`font-medium ${syncBanner.text}`}>{syncBanner.label}</span>
                     {syncBanner.detail && (
@@ -565,7 +565,7 @@ export function IATISyncPanel({
                 <Label htmlFor="auto-sync" className="text-base cursor-pointer">
                   Enable auto-sync
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Flag this activity for synchronisation with the IATI Datastore
                 </p>
               </div>
@@ -603,7 +603,7 @@ export function IATISyncPanel({
                           onCheckedChange={(checked) => handleSyncFieldToggle(field, !!checked)}
                           disabled={!canEdit || isSavingSyncFields}
                         />
-                        <Label htmlFor={`auto-${field}`} className="text-sm font-normal cursor-pointer">
+                        <Label htmlFor={`auto-${field}`} className="text-body font-normal cursor-pointer">
                           {label}
                         </Label>
                       </div>
@@ -631,12 +631,12 @@ export function IATISyncPanel({
           <CollapsibleContent>
             <CardContent className="pt-0">
               {isLoadingHistory ? (
-                <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center py-4 text-body text-muted-foreground">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Loading history...
                 </div>
               ) : syncHistory.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
+                <p className="text-body text-muted-foreground py-4 text-center">
                   No sync history yet
                 </p>
               ) : (
@@ -644,7 +644,7 @@ export function IATISyncPanel({
                   {syncHistory.map((log: any) => (
                     <div
                       key={log.id}
-                      className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30 text-sm"
+                      className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30 text-body"
                     >
                       <div className="flex items-center gap-2">
                         {log.import_status === 'success' ? (
@@ -652,16 +652,16 @@ export function IATISyncPanel({
                         ) : (
                           <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
                         )}
-                        <Badge variant="outline" className="text-xs font-normal">
+                        <Badge variant="outline" className="text-helper font-normal">
                           {log.import_source === 'auto_sync' ? 'Auto sync' : 'Manual sync'}
                         </Badge>
                         {log.error_message && (
-                          <span className="text-xs text-destructive truncate max-w-[200px]" title={log.error_message}>
+                          <span className="text-helper text-destructive truncate max-w-[200px]" title={log.error_message}>
                             {log.error_message}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                      <span className="text-helper text-muted-foreground whitespace-nowrap ml-2">
                         {log.import_date
                           ? formatDistanceToNow(new Date(log.import_date), { addSuffix: true })
                           : 'Unknown'}

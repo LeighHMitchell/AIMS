@@ -66,7 +66,7 @@ export function ReadinessStageSignoff({
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-green-800">Stage Signed Off</h4>
-              <div className="mt-2 space-y-1 text-sm text-green-700">
+              <div className="mt-2 space-y-1 text-body text-green-700">
                 <p>
                   <span className="font-medium">Signed by:</span>{' '}
                   {signoff.signed_off_by_user?.name || 'Unknown'}
@@ -113,7 +113,7 @@ export function ReadinessStageSignoff({
             <PenTool className="h-5 w-5 text-blue-600" />
             <div>
               <p className="font-medium text-blue-800">Ready for Sign-off</p>
-              <p className="text-sm text-blue-600">
+              <p className="text-body text-blue-600">
                 All items are complete. You can now sign off this stage.
               </p>
             </div>
@@ -132,7 +132,7 @@ export function ReadinessStageSignoff({
               <h4 className="font-semibold">Sign Off: {stage.name}</h4>
             </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               By signing off, you certify that all applicable items in this stage have been properly completed or appropriately marked as not required.
             </p>
 
@@ -164,7 +164,7 @@ export function ReadinessStageSignoff({
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 {stage.progress.completed} completed, {stage.progress.not_required} not required
               </div>
               <div className="flex gap-2">

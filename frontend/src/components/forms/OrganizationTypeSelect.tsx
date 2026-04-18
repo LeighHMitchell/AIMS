@@ -69,7 +69,7 @@ export function OrganizationTypeSelect({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedOption && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -95,7 +95,7 @@ export function OrganizationTypeSelect({
                 className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                 aria-label="Clear selection"
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -119,7 +119,7 @@ export function OrganizationTypeSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -129,14 +129,14 @@ export function OrganizationTypeSelect({
                   className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                   aria-label="Clear search"
                 >
-                  <span className="text-xs">×</span>
+                  <span className="text-helper">×</span>
                 </button>
               )}
             </div>
             <CommandList>
               {Object.entries(groupedOptions).map(([categoryName, options]) => (
                 <CommandGroup key={categoryName}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                  <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                     {categoryName}
                   </div>
                   {options.map((option) => (
@@ -160,7 +160,7 @@ export function OrganizationTypeSelect({
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                           <span className="font-medium text-foreground">{option.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                        <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                           {option.description}
                         </div>
                       </div>
@@ -170,10 +170,10 @@ export function OrganizationTypeSelect({
               ))}
               {Object.keys(groupedOptions).length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No organization types found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms
                   </div>
                 </div>

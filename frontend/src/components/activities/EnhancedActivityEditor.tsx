@@ -494,7 +494,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     
     if (isSaving) {
       return (
-        <div className="flex items-center gap-1 text-blue-600 text-xs">
+        <div className="flex items-center gap-1 text-blue-600 text-helper">
           <Clock className="h-3 w-3 animate-spin" />
           Saving...
         </div>
@@ -503,7 +503,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     
     if (lastSave) {
       return (
-        <div className="flex items-center gap-1 text-[hsl(var(--success-icon))] text-xs">
+        <div className="flex items-center gap-1 text-[hsl(var(--success-icon))] text-helper">
           <CheckCircle className="h-3 w-3" />
           Saved {lastSave.toLocaleTimeString()}
         </div>
@@ -529,13 +529,13 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
   }) => (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-foreground">{label}</label>
+        <label className="block text-body font-medium text-foreground">{label}</label>
         {showCommentButton && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setContextForComments(section, field)}
-            className="h-6 px-2 text-xs"
+            className="h-6 px-2 text-helper"
           >
             <MessageSquare className="h-3 w-3 mr-1" />
             Comment
@@ -557,7 +557,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             className="text-2xl font-bold text-foreground"
             fallbackElement="h1"
           />
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             All changes are saved automatically • Comments are context-aware
           </p>
         </div>
@@ -636,7 +636,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 )}
 
                 {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-4 text-sm border-t border-border pt-4">
+                <div className="grid grid-cols-2 gap-4 text-body border-t border-border pt-4">
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground shrink-0">Reported by:</span>
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -645,7 +645,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex flex-wrap gap-4 text-body">
                     <div className="flex items-center">
                       <span className="text-muted-foreground">Activity Scope:</span>
                       <span className="ml-1 text-foreground">{formData.activity_scope || 'Not set'}</span>
@@ -654,7 +654,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 </div>
 
                 {/* Activity Dates */}
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-body">
                   {formData.planned_start_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
@@ -879,7 +879,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {formData.planned_start_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground">Description/Context</label>
+                        <label className="text-helper text-muted-foreground">Description/Context</label>
                         <Textarea
                           value={formData.planned_start_description || ''}
                           onChange={(e) => {
@@ -890,7 +890,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                           }}
                           placeholder="Add context about this date (e.g., 'Government approval received on this date')"
                           disabled={saving.planned_start_description}
-                          className="min-h-[60px] text-sm"
+                          className="min-h-[60px] text-body"
                         />
                         <SaveIndicator fieldName="planned_start_description" />
                       </div>
@@ -915,7 +915,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {formData.planned_end_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground">Description/Context</label>
+                        <label className="text-helper text-muted-foreground">Description/Context</label>
                         <Textarea
                           value={formData.planned_end_description || ''}
                           onChange={(e) => {
@@ -926,7 +926,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                           }}
                           placeholder="Add context about this date"
                           disabled={saving.planned_end_description}
-                          className="min-h-[60px] text-sm"
+                          className="min-h-[60px] text-body"
                         />
                         <SaveIndicator fieldName="planned_end_description" />
                       </div>
@@ -954,7 +954,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {!actualStartDisabled && formData.actual_start_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground">Description/Context</label>
+                        <label className="text-helper text-muted-foreground">Description/Context</label>
                         <Textarea
                           value={formData.actual_start_description || ''}
                           onChange={(e) => {
@@ -965,7 +965,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                           }}
                           placeholder="Add context about this date"
                           disabled={saving.actual_start_description}
-                          className="min-h-[60px] text-sm"
+                          className="min-h-[60px] text-body"
                         />
                         <SaveIndicator fieldName="actual_start_description" />
                       </div>
@@ -995,7 +995,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {!actualEndDisabled && formData.actual_end_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground">Description/Context</label>
+                        <label className="text-helper text-muted-foreground">Description/Context</label>
                         <Textarea
                           value={formData.actual_end_description || ''}
                           onChange={(e) => {
@@ -1006,7 +1006,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                           }}
                           placeholder="Add context about this date"
                           disabled={saving.actual_end_description}
-                          className="min-h-[60px] text-sm"
+                          className="min-h-[60px] text-body"
                         />
                         <SaveIndicator fieldName="actual_end_description" />
                       </div>
@@ -1021,8 +1021,8 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 <div className="mt-8 pt-6 border-t border-border">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h4 className="text-sm font-semibold text-foreground">Other Identifiers</h4>
-                      <p className="text-xs text-muted-foreground mt-1">Alternative identifiers for this activity (e.g., CRS codes, internal project IDs)</p>
+                      <h4 className="text-body font-semibold text-foreground">Other Identifiers</h4>
+                      <p className="text-helper text-muted-foreground mt-1">Alternative identifiers for this activity (e.g., CRS codes, internal project IDs)</p>
                     </div>
                     <Button
                       type="button"
@@ -1037,7 +1037,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   </div>
 
                   {otherIdentifiers.length === 0 ? (
-                    <div className="text-sm text-muted-foreground italic p-4 bg-muted rounded-lg text-center">
+                    <div className="text-body text-muted-foreground italic p-4 bg-muted rounded-lg text-center">
                       No other identifiers defined. Click "Add Identifier" to add one.
                     </div>
                   ) : (
@@ -1047,7 +1047,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                           <CardContent className="pt-6">
                             <div className="space-y-4">
                               <div className="flex items-center justify-between mb-2">
-                                <h5 className="text-sm font-medium text-foreground">Identifier {index + 1}</h5>
+                                <h5 className="text-body font-medium text-foreground">Identifier {index + 1}</h5>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -1063,7 +1063,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Identifier Code (Required) */}
                                 <div className="space-y-1">
-                                  <label className="text-sm font-medium text-foreground">
+                                  <label className="text-body font-medium text-foreground">
                                     Identifier Code <RequiredDot />
                                   </label>
                                   <Input
@@ -1078,7 +1078,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
                                 {/* Identifier Type */}
                                 <div className="space-y-1">
-                                  <label className="text-sm font-medium text-foreground">
+                                  <label className="text-body font-medium text-foreground">
                                     Identifier Type
                                   </label>
                                   <OtherIdentifierTypeSelect
@@ -1094,7 +1094,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
                                 {/* Owner Organisation Name (Required) */}
                                 <div className="space-y-1">
-                                  <label className="text-sm font-medium text-foreground">
+                                  <label className="text-body font-medium text-foreground">
                                     Owner Organisation Name <RequiredDot />
                                   </label>
                                   <Input
@@ -1109,7 +1109,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
                                 {/* Owner Organisation Ref (Optional) */}
                                 <div className="space-y-1">
-                                  <label className="text-sm font-medium text-foreground">
+                                  <label className="text-body font-medium text-foreground">
                                     Owner Organisation Ref
                                   </label>
                                   <Input
@@ -1127,13 +1127,13 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         </Card>
                       ))}
                       {saving.other_identifiers && (
-                        <div className="flex items-center gap-2 text-blue-600 text-sm">
+                        <div className="flex items-center gap-2 text-blue-600 text-body">
                           <Clock className="h-4 w-4 animate-spin" />
                           Saving identifiers...
                         </div>
                       )}
                       {lastSaved.other_identifiers && !saving.other_identifiers && (
-                        <div className="flex items-center gap-2 text-[hsl(var(--success-icon))] text-sm">
+                        <div className="flex items-center gap-2 text-[hsl(var(--success-icon))] text-body">
                           <CheckCircle className="h-4 w-4" />
                           Saved {lastSaved.other_identifiers.toLocaleTimeString()}
                         </div>
@@ -1151,7 +1151,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               <CardContent>
                 <div className="space-y-4">
                   <FieldWrapper section="finances" label="Budget & Transactions" showCommentButton={true}>
-                    <div className="text-sm text-muted-foreground p-4 border border-border rounded">
+                    <div className="text-body text-muted-foreground p-4 border border-border rounded">
                       <p>Financial information section will include:</p>
                       <ul className="list-disc list-inside mt-2 space-y-1">
                         <li>Default finance types and aid types</li>
@@ -1186,7 +1186,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardHeader>
               <CardContent>
                 <FieldWrapper section="locations" label="Activity Locations">
-                  <div className="text-sm text-muted-foreground p-4 border border-border rounded">
+                  <div className="text-body text-muted-foreground p-4 border border-border rounded">
                     <p>Location management will include:</p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Country and region selection</li>
@@ -1211,7 +1211,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardHeader>
               <CardContent>
                 <FieldWrapper section="results" label="Results Framework">
-                  <div className="text-sm text-muted-foreground p-4 border border-border rounded">
+                  <div className="text-body text-muted-foreground p-4 border border-border rounded">
                     <p>Results section will include:</p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Result hierarchies (Impact, Outcome, Output)</li>
@@ -1288,7 +1288,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         <div className="border-t border-border pt-6 mt-8">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-foreground mb-2">Administrative & Government Information</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               Administrative details and government coordination information for this activity
             </p>
           </div>
@@ -1329,7 +1329,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       />
                       <SaveIndicator fieldName="effective_date" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-body text-muted-foreground mt-1">
                       The date when this activity officially becomes effective
                     </p>
                   </FieldWrapper>
@@ -1341,7 +1341,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       <div className="border-2 border-dashed border-input rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                         <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground mb-2">Upload MOU, agreements, and other administrative documents</p>
-                        <p className="text-sm text-muted-foreground mb-4">
+                        <p className="text-body text-muted-foreground mb-4">
                           Drag & drop files here, or click to browse (Max 10MB per file)
                         </p>
                         <input
@@ -1374,14 +1374,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       {/* Uploaded Documents List */}
                       {mouDocuments.length > 0 && (
                         <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-foreground">Uploaded Documents</h4>
+                          <h4 className="text-body font-medium text-foreground">Uploaded Documents</h4>
                           {mouDocuments.map((doc, index) => (
                             <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                               <div className="flex items-center gap-3">
                                 <FileText className="h-5 w-5 text-muted-foreground" />
                                 <div>
-                                  <p className="text-sm font-medium text-foreground">{doc.name}</p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-body font-medium text-foreground">{doc.name}</p>
+                                  <p className="text-helper text-muted-foreground">
                                     {(doc.size / 1024 / 1024).toFixed(2)} MB • {new Date(doc.uploaded_at).toLocaleDateString()}
                                   </p>
                                 </div>
@@ -1424,7 +1424,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 </CardHeader>
                 <CardContent>
                   <FieldWrapper section="government_inputs" label="Government Coordination & Inputs">
-                    <div className="text-sm text-muted-foreground p-4 border border-border rounded">
+                    <div className="text-body text-muted-foreground p-4 border border-border rounded">
                       <p>Government inputs section will include:</p>
                       <ul className="list-disc list-inside mt-2 space-y-1">
                         <li>Budget classification and alignment</li>
@@ -1456,15 +1456,15 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         {/* Footer */}
         <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Changes are automatically saved when you finish editing each field.
             </p>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-helper">
                 Enhanced Editor with Context-Aware Comments
               </Badge>
               {user && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-helper">
                   Editing as {user.name}
                 </Badge>
               )}

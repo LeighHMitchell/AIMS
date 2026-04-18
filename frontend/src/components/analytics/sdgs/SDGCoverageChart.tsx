@@ -128,7 +128,7 @@ export function SDGCoverageChart({
             <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</span>
             <span className="ml-2">{goal?.name || data.sdgName}</span>
           </p>
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-body">
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Activities:</span>
               <span className="font-medium">{data.activityCount.toFixed(1)}</span>
@@ -141,7 +141,7 @@ export function SDGCoverageChart({
               <span className="text-muted-foreground">Planned Disbursements:</span>
               <span className="font-medium">{formatCurrency(data.totalPlannedDisbursements)}</span>
             </div>
-            <div className="pt-2 mt-2 border-t border-border text-xs text-muted-foreground italic">
+            <div className="pt-2 mt-2 border-t border-border text-helper text-muted-foreground italic">
               Values are equally split when activities map to multiple SDGs
             </div>
           </div>
@@ -283,7 +283,7 @@ export function SDGCoverageChart({
     if (chartData.length === 0) {
       return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">No data available</p>
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -355,7 +355,7 @@ export function SDGCoverageChart({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
               <p className="text-muted-foreground font-medium">No SDG data available</p>
-              <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters</p>
+              <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
             </div>
           </div>
         </CardContent>
@@ -411,7 +411,7 @@ export function SDGCoverageChart({
 
         {/* Explanatory paragraph */}
         <div className="mt-6">
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows how the organization&apos;s aid activities align with the 17 UN Sustainable Development Goals.
             Each bar represents the number of activities (or financial value) mapped to that SDG. When an activity addresses
             multiple SDGs, its value is split equally across those goals to avoid double-counting. Use this visualization to

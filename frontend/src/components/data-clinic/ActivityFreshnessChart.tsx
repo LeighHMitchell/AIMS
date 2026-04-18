@@ -287,12 +287,12 @@ export function ActivityFreshnessChart() {
     return (
       <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
         <div className="bg-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground text-sm">
+          <p className="font-semibold text-foreground text-body">
             Last updated: {data.label}
           </p>
         </div>
         <div className="p-2">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
               <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-foreground font-medium">Activities</td>
@@ -348,7 +348,7 @@ export function ActivityFreshnessChart() {
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-2" />
               <p className="text-muted-foreground font-medium">Failed to load data</p>
-              <p className="text-sm text-muted-foreground mt-2">{error}</p>
+              <p className="text-body text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
         </CardContent>
@@ -396,7 +396,7 @@ export function ActivityFreshnessChart() {
         <div className="flex flex-wrap items-center gap-4 mt-4">
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Status:</span>
+            <span className="text-body text-muted-foreground">Status:</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select status" />
@@ -413,7 +413,7 @@ export function ActivityFreshnessChart() {
 
           {/* Publication Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Publication:</span>
+            <span className="text-body text-muted-foreground">Publication:</span>
             <Select value={publicationFilter} onValueChange={setPublicationFilter}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Select" />
@@ -430,7 +430,7 @@ export function ActivityFreshnessChart() {
 
           {/* Organization Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Organization:</span>
+            <span className="text-body text-muted-foreground">Organization:</span>
             <Select value={orgFilter} onValueChange={setOrgFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Select organization" />
@@ -449,14 +449,14 @@ export function ActivityFreshnessChart() {
 
         {/* Freshness Legend */}
         <div className="flex flex-wrap items-center gap-3 mt-3">
-          <span className="text-xs text-muted-foreground">Freshness:</span>
+          <span className="text-helper text-muted-foreground">Freshness:</span>
           {Object.entries(BUCKET_CONFIG).map(([bucket, config]) => (
             <div key={bucket} className="flex items-center gap-1">
               <div 
                 className="w-3 h-3 rounded-sm" 
                 style={{ backgroundColor: config.color }} 
               />
-              <span className="text-xs text-muted-foreground">{config.label}</span>
+              <span className="text-helper text-muted-foreground">{config.label}</span>
             </div>
           ))}
         </div>
@@ -469,7 +469,7 @@ export function ActivityFreshnessChart() {
             <div className="text-center">
               <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
               <p className="text-muted-foreground font-medium">No activities found</p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-body text-muted-foreground mt-2">
                 {statusFilter !== 'all' || publicationFilter !== 'all' || orgFilter !== 'all' 
                   ? 'Try adjusting your filters' 
                   : 'No activity data available'}
@@ -593,7 +593,7 @@ export function ActivityFreshnessChart() {
               </TableBody>
             </Table>
             {sortedActivities.length > 100 && (
-              <div className="p-3 text-center text-sm text-muted-foreground border-t">
+              <div className="p-3 text-center text-body text-muted-foreground border-t">
                 Showing 100 of {sortedActivities.length} activities. Use filters to narrow results.
               </div>
             )}

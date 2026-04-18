@@ -57,7 +57,7 @@ export function FinanceTable({
                 <TableHead 
                   key={index} 
                   className={cn(
-                    "px-4 py-2 text-left text-sm font-medium text-muted-foreground",
+                    "px-4 py-2 text-left text-body font-medium text-muted-foreground",
                     column.className
                   )}
                   style={{ width: column.width }}
@@ -99,7 +99,7 @@ export function FinanceTable({
                 <TableHead 
                   key={index} 
                   className={cn(
-                    "px-4 py-2 text-left text-sm font-medium text-muted-foreground",
+                    "px-4 py-2 text-left text-body font-medium text-muted-foreground",
                     column.sortable && sortableHeaderClasses,
                     column.className
                   )}
@@ -142,7 +142,7 @@ export function FinanceTable({
               <TableHead 
                 key={index} 
                 className={cn(
-                  "h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground",
+                  "h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground",
                   column.sortable && sortableHeaderClasses,
                   column.className
                 )}
@@ -152,7 +152,7 @@ export function FinanceTable({
                 <div className="flex items-center gap-1">
                   <span>{column.header}</span>
                   {column.sortable && sortColumn === (column.accessor || column.header) && (
-                    <span className="text-xs">
+                    <span className="text-helper">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
@@ -177,7 +177,7 @@ export function FinanceTable({
                 <TableCell 
                   key={colIndex} 
                   className={cn(
-                    "px-4 py-3 text-sm font-normal text-foreground",
+                    "px-4 py-3 text-body font-normal text-foreground",
                     column.className
                   )}
                 >

@@ -943,7 +943,7 @@ export function SectorMappingsManagement() {
     return (
       <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
         <PopoverTrigger>
-          <div className="flex items-center justify-between min-h-[32px] px-2 py-1 text-xs border rounded-md bg-background hover:bg-accent cursor-pointer min-w-[300px] max-w-[400px]">
+          <div className="flex items-center justify-between min-h-[32px] px-2 py-1 text-helper border rounded-md bg-background hover:bg-accent cursor-pointer min-w-[300px] max-w-[400px]">
             {editValue ? (
               <span className="text-left">
                 {(() => {
@@ -1003,7 +1003,7 @@ export function SectorMappingsManagement() {
                       }`}
                     />
                     <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs shrink-0">{c.code}</span>
-                    <span className="ml-2 text-sm whitespace-normal">{c.name}</span>
+                    <span className="ml-2 text-body whitespace-normal">{c.name}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -1063,13 +1063,13 @@ export function SectorMappingsManagement() {
         disabled={isLocked}
       >
         {display ? (
-          <div className="text-xs">
+          <div className="text-helper">
             <span className="font-mono bg-muted px-1 py-0.5 rounded">{display.code}</span>
             <span className="ml-1.5">{display.name}</span>
             {isInherited && <span className="ml-1 text-[10px]">(inherited)</span>}
           </div>
         ) : (
-          <span className="text-xs">—</span>
+          <span className="text-helper">—</span>
         )}
       </button>
     );
@@ -1192,7 +1192,7 @@ export function SectorMappingsManagement() {
           <TabsContent value="sectors" className="mt-0">
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[280px]">DAC Sector</th>
@@ -1233,7 +1233,7 @@ export function SectorMappingsManagement() {
                                 <td className="p-4 pl-10">
                                   <div className="flex items-center gap-2">
                                     <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
-                                    <span className="text-sm truncate">{sector.name}</span>
+                                    <span className="text-body truncate">{sector.name}</span>
                                   </div>
                                 </td>
                                 <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "country_sector")}</td>
@@ -1257,7 +1257,7 @@ export function SectorMappingsManagement() {
           <TabsContent value="administrative" className="mt-0">
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization (Receiver)</th>
@@ -1282,12 +1282,12 @@ export function SectorMappingsManagement() {
                                 {org.organizationName}
                               </span>
                               {org.iatiOrgId && (
-                                <span className="text-xs text-muted-foreground">{org.iatiOrgId}</span>
+                                <span className="text-helper text-muted-foreground">{org.iatiOrgId}</span>
                               )}
                             </div>
                           </td>
                           <td className="p-4">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-body text-muted-foreground">
                               {org.orgTypeName || "—"}
                             </span>
                           </td>
@@ -1317,14 +1317,14 @@ export function SectorMappingsManagement() {
                                 disabled={isLocked}
                               >
                                 {org.mapping?.budgetClassification ? (
-                                  <div className="text-xs">
+                                  <div className="text-helper">
                                     <span className="font-mono bg-muted px-1 py-0.5 rounded">
                                       {org.mapping.budgetClassification.code}
                                     </span>
                                     <span className="ml-1.5">{org.mapping.budgetClassification.name}</span>
                                   </div>
                                 ) : (
-                                  <span className="text-xs">—</span>
+                                  <span className="text-helper">—</span>
                                 )}
                               </button>
                             )}
@@ -1336,7 +1336,7 @@ export function SectorMappingsManagement() {
                 </table>
               </div>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className="mt-2 text-helper text-muted-foreground">
               {filteredAdminMappings.length} receiver organizations
             </div>
           </TabsContent>
@@ -1345,7 +1345,7 @@ export function SectorMappingsManagement() {
           <TabsContent value="funding_sources" className="mt-0">
             {/* Organization Type Filter */}
             <div className="mb-4 flex items-center gap-2">
-              <label className="text-sm font-medium text-muted-foreground">Organization Type:</label>
+              <label className="text-body font-medium text-muted-foreground">Organization Type:</label>
               <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
                 <SelectTrigger className="w-[220px]">
                   <SelectValue placeholder="All Types" />
@@ -1362,7 +1362,7 @@ export function SectorMappingsManagement() {
             </div>
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization</th>
@@ -1387,12 +1387,12 @@ export function SectorMappingsManagement() {
                                 {org.organizationName}
                               </span>
                               {org.iatiOrgId && (
-                                <span className="text-xs text-muted-foreground">{org.iatiOrgId}</span>
+                                <span className="text-helper text-muted-foreground">{org.iatiOrgId}</span>
                               )}
                             </div>
                           </td>
                           <td className="p-4">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-body text-muted-foreground">
                               {org.orgTypeName || "—"}
                             </span>
                           </td>
@@ -1422,14 +1422,14 @@ export function SectorMappingsManagement() {
                                 disabled={isLocked}
                               >
                                 {org.mapping?.budgetClassification ? (
-                                  <div className="text-xs">
+                                  <div className="text-helper">
                                     <span className="font-mono bg-muted px-1 py-0.5 rounded">
                                       {org.mapping.budgetClassification.code}
                                     </span>
                                     <span className="ml-1.5">{org.mapping.budgetClassification.name}</span>
                                   </div>
                                 ) : (
-                                  <span className="text-xs">—</span>
+                                  <span className="text-helper">—</span>
                                 )}
                               </button>
                             )}
@@ -1441,7 +1441,7 @@ export function SectorMappingsManagement() {
                 </table>
               </div>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className="mt-2 text-helper text-muted-foreground">
               {filteredOrgMappings.length} organizations
               {orgTypeFilter !== "all" && ` (filtered by ${orgTypeFilter})`}
             </div>
@@ -1451,7 +1451,7 @@ export function SectorMappingsManagement() {
           <TabsContent value="revenue" className="mt-0">
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[400px]">Finance Type</th>
@@ -1471,7 +1471,7 @@ export function SectorMappingsManagement() {
                               >
                                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 <span>{group}</span>
-                                <span className="text-xs text-muted-foreground">({types.length})</span>
+                                <span className="text-helper text-muted-foreground">({types.length})</span>
                               </button>
                             </td>
                           </tr>
@@ -1488,7 +1488,7 @@ export function SectorMappingsManagement() {
                                       <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                         {ft.financeTypeCode}
                                       </span>
-                                      <span className="text-sm">{ft.financeTypeName}</span>
+                                      <span className="text-body">{ft.financeTypeName}</span>
                                     </div>
                                   </td>
                                   <td className="p-4">
@@ -1517,14 +1517,14 @@ export function SectorMappingsManagement() {
                                         disabled={isLocked}
                                       >
                                         {ft.mapping?.budgetClassification ? (
-                                          <div className="text-xs">
+                                          <div className="text-helper">
                                             <span className="font-mono bg-muted px-1 py-0.5 rounded">
                                               {ft.mapping.budgetClassification.code}
                                             </span>
                                             <span className="ml-1.5">{ft.mapping.budgetClassification.name}</span>
                                           </div>
                                         ) : (
-                                          <span className="text-xs">—</span>
+                                          <span className="text-helper">—</span>
                                         )}
                                       </button>
                                     )}
@@ -1545,7 +1545,7 @@ export function SectorMappingsManagement() {
           <TabsContent value="liabilities" className="mt-0">
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 shadow-sm">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[400px]">Finance Type</th>
@@ -1565,7 +1565,7 @@ export function SectorMappingsManagement() {
                               >
                                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 <span>{group}</span>
-                                <span className="text-xs text-muted-foreground">({types.length})</span>
+                                <span className="text-helper text-muted-foreground">({types.length})</span>
                               </button>
                             </td>
                           </tr>
@@ -1582,7 +1582,7 @@ export function SectorMappingsManagement() {
                                       <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                         {ft.financeTypeCode}
                                       </span>
-                                      <span className="text-sm">{ft.financeTypeName}</span>
+                                      <span className="text-body">{ft.financeTypeName}</span>
                                     </div>
                                   </td>
                                   <td className="p-4">
@@ -1611,14 +1611,14 @@ export function SectorMappingsManagement() {
                                         disabled={isLocked}
                                       >
                                         {ft.mapping?.budgetClassification ? (
-                                          <div className="text-xs">
+                                          <div className="text-helper">
                                             <span className="font-mono bg-muted px-1 py-0.5 rounded">
                                               {ft.mapping.budgetClassification.code}
                                             </span>
                                             <span className="ml-1.5">{ft.mapping.budgetClassification.name}</span>
                                           </div>
                                         ) : (
-                                          <span className="text-xs">—</span>
+                                          <span className="text-helper">—</span>
                                         )}
                                       </button>
                                     )}
@@ -1637,7 +1637,7 @@ export function SectorMappingsManagement() {
         </Tabs>
 
         {/* Legend */}
-        <div className="mt-4 flex gap-6 text-xs text-muted-foreground">
+        <div className="mt-4 flex gap-6 text-helper text-muted-foreground">
           <span>{isLocked ? "Unlock to edit mappings" : "Click any cell to edit"}</span>
           {activeMode === "sectors" && <span className="italic">Italic = inherited from category</span>}
           <span>— = no mapping</span>

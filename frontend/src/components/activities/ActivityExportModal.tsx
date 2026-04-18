@@ -93,7 +93,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
             <DialogDescription>Export the activity card as an image file or print it.</DialogDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-helper">
               Optimized Layout
             </Badge>
             <Button
@@ -143,9 +143,9 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
 
         {/* Preview */}
         <div className="space-y-4">
-          <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-body text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
             <div className="font-medium text-blue-900 mb-1">🎨 Optimized Image Export</div>
-            <ul className="text-blue-800 text-xs space-y-1">
+            <ul className="text-blue-800 text-helper space-y-1">
               <li>• Optimized dimensions (800x600px) for better sharing</li>
               <li>• Compact header with title overlay</li>
               <li>• Side-by-side financial and activity details</li>
@@ -164,7 +164,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground text-center pt-4 border-t">
+        <div className="text-helper text-muted-foreground text-center pt-4 border-t">
           <p>💡 This optimized layout is specifically designed for image exports and sharing while keeping your card UI unchanged.</p>
         </div>
       </DialogContent>

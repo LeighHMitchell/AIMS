@@ -79,7 +79,7 @@ export function ReportCard({
           </div>
           <div className="flex-1 min-w-0">
             <CardTitle className="text-base font-semibold">{title}</CardTitle>
-            <CardDescription className="mt-1 text-sm line-clamp-2">
+            <CardDescription className="mt-1 text-body line-clamp-2">
               {description}
             </CardDescription>
           </div>

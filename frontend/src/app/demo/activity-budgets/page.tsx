@@ -71,7 +71,7 @@ export default function ActivityBudgetsDemoPage() {
           <h3 className="text-lg font-medium text-foreground mb-2">
             IATI Budget Types
           </h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-foreground">
+          <div className="grid md:grid-cols-2 gap-4 text-body text-foreground">
             <div>
               <h4 className="font-medium mb-1">Type</h4>
               <p>• Original (1): Initial budget estimate</p>

@@ -39,7 +39,7 @@ export function ExpandableChartCard({
             <div className="flex-1">
               <CardTitle className="text-base font-semibold">{title}</CardTitle>
               {description && (
-                <p className="text-xs text-muted-foreground mt-1">{description}</p>
+                <p className="text-helper text-muted-foreground mt-1">{description}</p>
               )}
             </div>
             <Button

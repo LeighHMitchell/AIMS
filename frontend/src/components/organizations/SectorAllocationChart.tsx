@@ -114,10 +114,10 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground mb-1">{data.name}</p>
-          <p className="text-sm text-muted-foreground">Code: {data.code}</p>
-          <p className="text-sm text-blue-600">Allocation: {data.value.toFixed(1)}%</p>
-          <p className="text-sm text-[hsl(var(--success-icon))]">Activities: {data.activityCount}</p>
-          <p className="text-sm text-purple-600">Share: {data.percentage.toFixed(1)}%</p>
+          <p className="text-body text-muted-foreground">Code: {data.code}</p>
+          <p className="text-body text-blue-600">Allocation: {data.value.toFixed(1)}%</p>
+          <p className="text-body text-[hsl(var(--success-icon))]">Activities: {data.activityCount}</p>
+          <p className="text-body text-purple-600">Share: {data.percentage.toFixed(1)}%</p>
         </div>
       );
     }
@@ -137,7 +137,7 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
           <div className="text-center py-8 text-muted-foreground">
             <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No sector data available</p>
-            <p className="text-sm">Add sector information to activities to see allocation breakdown</p>
+            <p className="text-body">Add sector information to activities to see allocation breakdown</p>
           </div>
         </CardContent>
       </Card>
@@ -162,17 +162,17 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
             <div className="text-center p-3 bg-blue-50 rounded-lg">
               <Target className="h-6 w-6 mx-auto mb-1 text-blue-600" />
               <p className="text-xl font-bold text-blue-900">{sectorData.sectors.length}</p>
-              <p className="text-xs text-blue-600">Sectors</p>
+              <p className="text-helper text-blue-600">Sectors</p>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <TrendingUp className="h-6 w-6 mx-auto mb-1 text-[hsl(var(--success-icon))]" />
               <p className="text-xl font-bold text-green-900">{sectorData.activitiesWithSectors}</p>
-              <p className="text-xs text-[hsl(var(--success-icon))]">Activities with Sectors</p>
+              <p className="text-helper text-[hsl(var(--success-icon))]">Activities with Sectors</p>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-lg">
               <PieChartIcon className="h-6 w-6 mx-auto mb-1 text-purple-600" />
               <p className="text-xl font-bold text-purple-900">{sectorData.totalAllocation.toFixed(0)}%</p>
-              <p className="text-xs text-purple-600">Total Allocation</p>
+              <p className="text-helper text-purple-600">Total Allocation</p>
             </div>
           </div>
 
@@ -211,17 +211,17 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
                         style={{ backgroundColor: sector.color }}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate" title={sector.name}>
+                        <p className="text-body font-medium text-foreground truncate" title={sector.name}>
                           {sector.name}
                         </p>
-                        <p className="text-xs text-muted-foreground">{sector.code}</p>
+                        <p className="text-helper text-muted-foreground">{sector.code}</p>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-2">
-                      <p className="text-sm font-semibold text-foreground">
+                      <p className="text-body font-semibold text-foreground">
                         {sector.percentage.toFixed(1)}%
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         {sector.activityCount} {sector.activityCount === 1 ? 'activity' : 'activities'}
                       </p>
                     </div>
@@ -233,7 +233,7 @@ export const SectorAllocationChart: React.FC<SectorAllocationChartProps> = ({
 
           {/* Coverage Information */}
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-foreground">
+            <p className="text-body text-foreground">
               <strong>Coverage:</strong> {sectorData.activitiesWithSectors} of {sectorData.totalActivities} activities have sector information 
               ({((sectorData.activitiesWithSectors / sectorData.totalActivities) * 100).toFixed(1)}%)
             </p>

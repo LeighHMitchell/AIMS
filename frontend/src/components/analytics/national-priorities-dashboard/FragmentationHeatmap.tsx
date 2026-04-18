@@ -54,7 +54,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
     <TooltipProvider>
       <div className="space-y-4">
         {/* Legend */}
-        <div className="flex items-center gap-4 justify-end text-xs">
+        <div className="flex items-center gap-4 justify-end text-helper">
           <span className="text-muted-foreground">% of donor&apos;s total:</span>
           <div className="flex items-center gap-1">
             {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
@@ -74,16 +74,16 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
           <table className="min-w-full border-collapse">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="sticky left-0 bg-background z-10 px-2 py-1 text-left text-xs font-medium border-b">
+                <th className="sticky left-0 bg-background z-10 px-2 py-1 text-left text-helper font-medium border-b">
                   Donor
                 </th>
-                <th className="px-2 py-1 text-right text-xs font-medium border-b">
+                <th className="px-2 py-1 text-right text-helper font-medium border-b">
                   Total
                 </th>
                 {data.categories.map((cat) => (
                   <th
                     key={cat.id}
-                    className="px-2 py-1 text-center text-xs font-medium border-b whitespace-nowrap"
+                    className="px-2 py-1 text-center text-helper font-medium border-b whitespace-nowrap"
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -95,7 +95,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
                       <TooltipContent>
                         <p className="font-medium">{cat.name}</p>
                         {cat.code && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Code: {cat.code}
                           </p>
                         )}
@@ -108,7 +108,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
             <tbody>
               {data.donors.map((donor) => (
                 <tr key={donor.id} className="hover:bg-muted/30">
-                  <td className="sticky left-0 bg-background z-10 px-2 py-1 text-xs font-medium border-b whitespace-nowrap">
+                  <td className="sticky left-0 bg-background z-10 px-2 py-1 text-helper font-medium border-b whitespace-nowrap">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="cursor-help">
@@ -119,17 +119,17 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
                       <TooltipContent>
                         <p className="font-medium">{donor.name}</p>
                         {donor.country && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             {donor.country}
                           </p>
                         )}
-                        <p className="text-xs mt-1">
+                        <p className="text-helper mt-1">
                           Total: {formatCurrency(donor.total)}
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </td>
-                  <td className="px-2 py-1 text-xs text-right border-b text-muted-foreground">
+                  <td className="px-2 py-1 text-helper text-right border-b text-muted-foreground">
                     {formatCurrency(donor.total)}
                   </td>
                   {data.categories.map((cat) => {
@@ -158,8 +158,8 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="font-medium">{donor.name}</p>
-                              <p className="text-xs">{cat.name}</p>
-                              <div className="mt-1 text-xs space-y-0.5">
+                              <p className="text-helper">{cat.name}</p>
+                              <div className="mt-1 text-helper space-y-0.5">
                                 <p>Value: {formatCurrency(cell.value)}</p>
                                 <p>
                                   Share: {formatPercent(cell.percentage)} of donor
@@ -183,7 +183,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-helper text-muted-foreground">
           <span>
             {data.donors.length} donors × {data.categories.length} categories
           </span>
@@ -191,7 +191,7 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           This heatmap visualizes how funding is distributed between donors and categories. Each cell shows the percentage share of a donor's total allocation to that category. Darker colours indicate higher concentration, helping to identify specialization patterns.
         </p>
       </div>

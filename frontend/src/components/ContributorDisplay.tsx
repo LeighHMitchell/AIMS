@@ -42,7 +42,7 @@ export function ContributorDisplay({
 
   if (acceptedContributors.length === 0) {
     return (
-      <span className={`text-xs text-muted-foreground/70 ${className}`}>
+      <span className={`text-helper text-muted-foreground/70 ${className}`}>
         No contributors listed
       </span>
     );
@@ -76,10 +76,10 @@ export function ContributorDisplay({
     return (
       <TooltipContent className="max-w-sm">
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">All Contributing Organizations:</h4>
+          <h4 className="font-medium text-body">All Contributing Organizations:</h4>
           <div className="space-y-1">
             {acceptedContributors.map((contributor, index) => (
-              <div key={contributor.id} className="flex items-center justify-between text-xs">
+              <div key={contributor.id} className="flex items-center justify-between text-helper">
                 {contributor.organizationId ? (
                   <Link 
                     href={`/organizations/${contributor.organizationId}`}
@@ -100,7 +100,7 @@ export function ContributorDisplay({
                 )}
                 <Badge 
                   variant="outline" 
-                  className={`ml-2 text-xs ${getRoleBadgeColor(contributor.role)}`}
+                  className={`ml-2 text-helper ${getRoleBadgeColor(contributor.role)}`}
                 >
                   {contributor.role}
                 </Badge>
@@ -133,7 +133,7 @@ export function ContributorDisplay({
             {showRoles && (
               <Badge 
                 variant="outline" 
-                className={`ml-1 text-xs ${getRoleBadgeColor(contributor.role)}`}
+                className={`ml-1 text-helper ${getRoleBadgeColor(contributor.role)}`}
               >
                 {contributor.role}
               </Badge>
@@ -192,16 +192,16 @@ export function ContributorDisplayCompact({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className={`text-xs text-blue-600 hover:text-blue-800 cursor-help ${className}`}>
+        <span className={`text-helper text-blue-600 hover:text-blue-800 cursor-help ${className}`}>
           {acceptedContributors.length} organizations
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-sm">
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">Contributing Organizations:</h4>
+          <h4 className="font-medium text-body">Contributing Organizations:</h4>
           <div className="space-y-1">
             {acceptedContributors.map((contributor) => (
-              <div key={contributor.id} className="flex items-center justify-between text-xs">
+              <div key={contributor.id} className="flex items-center justify-between text-helper">
                 {contributor.organizationId ? (
                   <Link 
                     href={`/organizations/${contributor.organizationId}`}
@@ -220,7 +220,7 @@ export function ContributorDisplayCompact({
                     }
                   </span>
                 )}
-                <Badge variant="outline" className="ml-2 text-xs">
+                <Badge variant="outline" className="ml-2 text-helper">
                   {contributor.role}
                 </Badge>
               </div>

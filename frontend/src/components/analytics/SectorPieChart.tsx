@@ -201,7 +201,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
         fill="#fff" 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central"
-        className="text-xs font-medium"
+        className="text-helper font-medium"
       >
         {`${Math.round(safePercentage)}%`}
       </text>
@@ -219,7 +219,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
       <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
         <div className="text-center">
           <p className="text-muted-foreground">No sector data available</p>
-          <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )
@@ -267,7 +267,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
       </ResponsiveContainer>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+      <p className="text-body text-muted-foreground leading-relaxed mt-4">
         This pie chart shows the distribution of disbursement spending across DAC sectors. Each slice represents a sector weighted by actual disbursement value, with the top seven sectors shown individually and smaller sectors grouped under Others. Hover over any slice to see the exact amount in USD.
       </p>
     </div>

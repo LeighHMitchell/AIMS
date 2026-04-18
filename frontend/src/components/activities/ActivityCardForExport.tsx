@@ -172,7 +172,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 {activity.activity_status && (
                   <Badge 
                     variant={statusColors[activity.activity_status as keyof typeof statusColors] || 'secondary'}
-                    className="text-xs bg-white/90 text-foreground border-0"
+                    className="text-helper bg-white/90 text-foreground border-0"
                   >
                     {getStatusLabel(activity.activity_status)}
                   </Badge>
@@ -180,7 +180,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 {activity.submission_status && activity.submission_status !== 'draft' && (
                   <Badge 
                     variant="outline"
-                    className="text-xs bg-white/90 text-foreground border-white/20"
+                    className="text-helper bg-white/90 text-foreground border-white/20"
                   >
                     {activity.submission_status === 'pending_validation' ? 'Pending Validation' :
                      activity.submission_status === 'validated' ? 'Validated' :
@@ -238,7 +238,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                   <div className="bg-muted rounded-lg p-3 border">
                     <div className="flex justify-between items-center py-2 min-h-[3.5rem]">
                       <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reported by</div>
-                      <div className="text-sm font-medium text-foreground text-right">
+                      <div className="text-body font-medium text-foreground text-right">
                         {activity.created_by_org_name}
                         {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
                           <span> ({activity.created_by_org_acronym})</span>
@@ -255,33 +255,33 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                   <>
                     <div className="bg-muted rounded-lg p-3 border">
                       <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Budgeted</div>
-                      <div className="text-sm text-foreground">{formatCurrency(activity.totalBudget || 0)}</div>
+                      <div className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</div>
                     </div>
                     
                     <div className="bg-muted rounded-lg p-3 border">
                       <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Disbursed</div>
-                      <div className="text-sm text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                      <div className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</div>
                     </div>
                   </>
                 )}
                 
                 <div className="bg-muted rounded-lg p-3 border">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Aid Type</div>
-                  <div className="text-sm text-foreground">
+                  <div className="text-body text-foreground">
                     {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
                   </div>
                 </div>
                 
                 <div className="bg-muted rounded-lg p-3 border">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Flow Type</div>
-                  <div className="text-sm text-foreground">
+                  <div className="text-body text-foreground">
                     {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
                   </div>
                 </div>
                 
                 <div className="bg-muted rounded-lg p-3 border">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Tied Status</div>
-                  <div className="text-sm text-foreground">
+                  <div className="text-body text-foreground">
                     {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
                   </div>
                 </div>
@@ -293,8 +293,8 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
             <div className="border-t pt-4 mt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-foreground mb-1">Sustainable Development Goals</h4>
-                  <p className="text-xs text-muted-foreground">This activity contributes to {sdgGoals.length} SDG{sdgGoals.length !== 1 ? 's' : ''}</p>
+                  <h4 className="text-body font-semibold text-foreground mb-1">Sustainable Development Goals</h4>
+                  <p className="text-helper text-muted-foreground">This activity contributes to {sdgGoals.length} SDG{sdgGoals.length !== 1 ? 's' : ''}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <SDGImageGrid 
@@ -311,7 +311,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
 
           {/* Timeline Section - At bottom */}
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mt-6">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
+            <div className="flex items-center gap-2 text-body text-blue-800">
               <Calendar className="w-4 h-4 flex-shrink-0" />
               <span className="font-medium">
                 {activity.planned_start_date || activity.planned_end_date ? (
@@ -331,7 +331,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
               </span>
             </div>
             {activity.updated_at && (
-              <div className="flex items-center gap-2 text-xs text-blue-600 mt-1">
+              <div className="flex items-center gap-2 text-helper text-blue-600 mt-1">
                 <Clock className="w-3 h-3 flex-shrink-0" />
                 <span>Updated {formatRelativeTime(activity.updated_at)}</span>
               </div>
@@ -340,7 +340,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
 
           {/* Export Footer */}
           <div className="border-t pt-3 mt-6">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-helper text-muted-foreground">
               <span>Exported from AIMS Platform</span>
               <span>{new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 

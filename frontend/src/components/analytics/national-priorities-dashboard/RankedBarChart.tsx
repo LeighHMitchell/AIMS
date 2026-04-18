@@ -42,20 +42,20 @@ const CustomTooltip = ({ active, payload, grandTotal }: any) => {
       <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
         <p className="font-semibold text-foreground mb-1">{data.name}</p>
         {data.code && (
-          <p className="text-xs text-muted-foreground mb-1">Code: {data.code}</p>
+          <p className="text-helper text-muted-foreground mb-1">Code: {data.code}</p>
         )}
         {data.country && (
-          <p className="text-xs text-muted-foreground mb-1">Country: {data.country}</p>
+          <p className="text-helper text-muted-foreground mb-1">Country: {data.country}</p>
         )}
         <div className="border-t mt-2 pt-2 space-y-1">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-body font-medium text-foreground">
             {formatCurrency(data.value)}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             {percentage}% of total
           </p>
           {data.activityCount > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               {data.activityCount} {data.activityCount === 1 ? "activity" : "activities"}
             </p>
           )}

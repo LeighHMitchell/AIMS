@@ -83,7 +83,7 @@ export function StageTransferMode({ wizard }: StageTransferModeProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Transfer Mode</h3>
-        <p className="text-sm text-muted-foreground">Select the transfer mechanism and manage bidders for competitive processes.</p>
+        <p className="text-body text-muted-foreground">Select the transfer mechanism and manage bidders for competitive processes.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -136,7 +136,7 @@ export function StageTransferMode({ wizard }: StageTransferModeProps) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <h4 className="text-sm font-semibold">Bidders</h4>
+              <h4 className="text-body font-semibold">Bidders</h4>
               <Badge variant="gray" className="text-[10px]">{bidders.length}</Badge>
             </div>
             <Button variant="outline" size="sm" onClick={() => setShowAddBidder(true)}>
@@ -147,7 +147,7 @@ export function StageTransferMode({ wizard }: StageTransferModeProps) {
 
           {bidders.length > 0 ? (
             <div className="overflow-x-auto border rounded-md">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted">
                   <tr className="border-b bg-surface-muted">
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Company</th>
@@ -173,7 +173,7 @@ export function StageTransferMode({ wizard }: StageTransferModeProps) {
               </table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
+            <p className="text-body text-muted-foreground text-center py-4 border rounded-md">
               No bidders added yet
             </p>
           )}

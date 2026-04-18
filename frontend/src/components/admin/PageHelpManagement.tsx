@@ -225,7 +225,7 @@ export function PageHelpManagement() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3 mb-4">
-            <Label htmlFor="slug-filter" className="text-sm">
+            <Label htmlFor="slug-filter" className="text-body">
               Page
             </Label>
             <Select value={filterSlug} onValueChange={setFilterSlug}>
@@ -272,19 +272,19 @@ export function PageHelpManagement() {
                           <TableCell className="font-mono text-xs">{row.display_order}</TableCell>
                           <TableCell className="max-w-[480px]">
                             <div className="truncate font-medium">{row.question}</div>
-                            <div className="truncate text-xs text-muted-foreground">
+                            <div className="truncate text-helper text-muted-foreground">
                               {row.answer.replace(/\s+/g, ' ').slice(0, 100)}
                               {row.answer.length > 100 ? '…' : ''}
                             </div>
                           </TableCell>
                           <TableCell>
                             {row.published ? (
-                              <span className="inline-flex items-center gap-1.5 text-sm text-green-700">
+                              <span className="inline-flex items-center gap-1.5 text-body text-green-700">
                                 <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
                                 Published
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <span className="inline-flex items-center gap-1.5 text-body text-muted-foreground">
                                 <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
                                 Draft
                               </span>
@@ -327,8 +327,8 @@ export function PageHelpManagement() {
 
             {/* Live preview */}
             <div>
-              <div className="text-sm font-medium mb-1">Live preview</div>
-              <p className="text-xs text-muted-foreground mb-3">
+              <div className="text-body font-medium mb-1">Live preview</div>
+              <p className="text-helper text-muted-foreground mb-3">
                 How this page&rsquo;s published help will appear to users.
               </p>
               <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 bg-surface-muted/30">
@@ -381,7 +381,7 @@ export function PageHelpManagement() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="f-question">Question</Label>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-helper text-muted-foreground">
                   {fQuestion.length}/{QUESTION_MAX}
                 </span>
               </div>
@@ -396,7 +396,7 @@ export function PageHelpManagement() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="f-answer">Answer (markdown)</Label>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-helper text-muted-foreground">
                   {fAnswer.length}/{ANSWER_MAX}
                 </span>
               </div>
@@ -428,7 +428,7 @@ export function PageHelpManagement() {
                     checked={fPublished}
                     onChange={(e) => setFPublished(e.target.checked)}
                   />
-                  <Label htmlFor="f-pub" className="text-sm font-normal cursor-pointer">
+                  <Label htmlFor="f-pub" className="text-body font-normal cursor-pointer">
                     Published (visible to users)
                   </Label>
                 </div>

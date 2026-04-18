@@ -903,15 +903,15 @@ export function CumulativeFinancialOverview({
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{fullDate}</p>
+            <p className="font-semibold text-foreground text-body">{fullDate}</p>
             {customYears.find(cy => cy.id === calendarType)?.name && (
-              <p className="text-xs text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+              <p className="text-helper text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
             )}
           </div>
           <div className="p-2">
             {transactions.length > 0 && (
               <>
-                <table className="w-full text-sm mb-2">
+                <table className="w-full text-body mb-2">
                   <tbody>
                     {transactions.map(renderRow)}
                   </tbody>
@@ -921,7 +921,7 @@ export function CumulativeFinancialOverview({
             {plannedBudgets.length > 0 && (
               <>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <tbody>
                     {plannedBudgets.map(renderRow)}
                   </tbody>
@@ -1004,7 +1004,7 @@ export function CumulativeFinancialOverview({
                   style={{ backgroundColor: entry.color }}
                 />
               )}
-              <span className="text-sm text-foreground">{entry.value}</span>
+              <span className="text-body text-foreground">{entry.value}</span>
             </li>
           )
         })}
@@ -1076,7 +1076,7 @@ export function CumulativeFinancialOverview({
     if (error || displayData.length === 0) {
       return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">{error || 'No data available'}</p>
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -1199,7 +1199,7 @@ export function CumulativeFinancialOverview({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="p-3 w-auto">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                            <span className="text-helper font-medium text-foreground">Select Year Range</span>
                             <div className="flex gap-1">
                               <button
                                 onClick={selectAllYears}
@@ -1251,7 +1251,7 @@ export function CumulativeFinancialOverview({
                     </div>
                     {/* Date Range Indicator */}
                     {effectiveDateRange?.from && effectiveDateRange?.to && (
-                      <span className="text-xs text-muted-foreground text-center">
+                      <span className="text-helper text-muted-foreground text-center">
                         {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                       </span>
                     )}
@@ -1285,7 +1285,7 @@ export function CumulativeFinancialOverview({
               {/* Allocation Method Toggle */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white h-[34px]">
-                  <Label htmlFor="allocation-toggle" className="text-sm text-foreground cursor-pointer whitespace-nowrap">
+                  <Label htmlFor="allocation-toggle" className="text-body text-foreground cursor-pointer whitespace-nowrap">
                     {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
                   </Label>
                   <Switch
@@ -1549,7 +1549,7 @@ export function CumulativeFinancialOverview({
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
-                            <p className="font-semibold text-foreground text-sm">{payload[0].payload.name}</p>
+                            <p className="font-semibold text-foreground text-body">{payload[0].payload.name}</p>
                             <p className="font-bold text-foreground text-lg">{formatTooltipValue(payload[0].value as number)}</p>
                           </div>
                         )
@@ -1995,14 +1995,14 @@ export function CumulativeFinancialOverview({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No cumulative overview data available</p>
-              <p className="text-xs mt-2">Add transactions, planned disbursements, or budgets to see this chart</p>
+              <p className="text-helper mt-2">Add transactions, planned disbursements, or budgets to see this chart</p>
             </div>
           </div>
         )}
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart provides a comprehensive view of financial flows over time, tracking all IATI transaction types including incoming funds, commitments, disbursements, and expenditures, alongside planned disbursements and budgets.
           Toggle between cumulative view for running totals or periodic view for year-by-year changes, and use the proportional setting to distribute multi-year budgets evenly across their time periods. Click legend items to show or hide specific data series.
         </p>

@@ -213,7 +213,7 @@ export default function SectorAllocationPieChart({
 
       // Create tooltip with enhanced styling
       const tooltip = d3.select('body').append('div')
-        .attr('class', 'absolute invisible bg-gray-900/95 backdrop-blur-sm text-white text-sm rounded-lg px-4 py-3 pointer-events-none z-50 shadow-2xl border border-gray-700')
+        .attr('class', 'absolute invisible bg-gray-900/95 backdrop-blur-sm text-white text-body rounded-lg px-4 py-3 pointer-events-none z-50 shadow-2xl border border-gray-700')
         .style('opacity', 0);
 
       // Color scale
@@ -251,7 +251,7 @@ export default function SectorAllocationPieChart({
           tooltip.transition().duration(200).style('opacity', 1);
           tooltip.html(`
             <div class="font-semibold text-base mb-1">${d.data.code} - ${d.data.name}</div>
-            <div class="text-sm opacity-75 mb-1">Category: ${d.parent?.data.name}</div>
+            <div class="text-body opacity-75 mb-1">Category: ${d.parent?.data.name}</div>
             <div class="text-lg font-bold">${d.data.value.toFixed(1)}%</div>
           `)
             .style('left', `${event.pageX + 15}px`)
@@ -436,8 +436,8 @@ export default function SectorAllocationPieChart({
       <div className="h-full flex flex-col">
         <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-border flex items-center justify-center">
           <div className="text-center">
-            <div className="text-sm font-medium mb-1 text-muted-foreground">No Sector Data</div>
-            <div className="text-xs text-muted-foreground">Add sectors with percentages to see the visualization</div>
+            <div className="text-body font-medium mb-1 text-muted-foreground">No Sector Data</div>
+            <div className="text-helper text-muted-foreground">Add sectors with percentages to see the visualization</div>
           </div>
         </div>
       </div>

@@ -192,22 +192,22 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Budgeted</p>
+            <p className="text-body text-blue-600 font-medium">Total Budgeted</p>
             <p className="text-2xl font-bold text-blue-900">
               {formatCurrency(financials.totalBudget)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Expenditure</p>
+            <p className="text-body text-blue-600 font-medium">Total Expenditure</p>
             <p className="text-xl font-semibold text-blue-800">
               {formatCurrency(financials.totalExpenditure)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-blue-600 font-medium">Execution Rate</p>
+            <p className="text-body text-blue-600 font-medium">Execution Rate</p>
             <div className="flex items-center gap-2">
               <Progress value={financials.executionRate} className="flex-1 h-2" />
-              <span className="text-sm font-semibold text-blue-700">
+              <span className="text-body font-semibold text-blue-700">
                 {financials.executionRate.toFixed(1)}%
               </span>
             </div>
@@ -225,12 +225,12 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-[hsl(var(--success-icon))] font-medium">Total Activities</p>
+            <p className="text-body text-[hsl(var(--success-icon))] font-medium">Total Activities</p>
             <p className="text-2xl font-bold text-green-900">
               {activityMetrics.total}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="grid grid-cols-3 gap-2 text-helper">
             <div className="text-center">
               <p className="font-semibold text-green-800">{activityMetrics.active}</p>
               <p className="text-[hsl(var(--success-icon))]">Active</p>
@@ -246,7 +246,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
           </div>
           <div className="flex flex-wrap gap-1">
             {Object.entries(activityMetrics.roleDistribution).map(([role, count]) => (
-              <Badge key={role} variant="outline" className="text-xs border-green-300 text-green-700">
+              <Badge key={role} variant="outline" className="text-helper border-green-300 text-green-700">
                 {getRoleDisplayName(role)}: {count}
               </Badge>
             ))}
@@ -264,19 +264,19 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-purple-600 font-medium">Countries</p>
+            <p className="text-body text-purple-600 font-medium">Countries</p>
             <p className="text-2xl font-bold text-purple-900">
               {geographic.countries}
             </p>
           </div>
           <div>
-            <p className="text-sm text-purple-600 font-medium">Primary Country</p>
+            <p className="text-body text-purple-600 font-medium">Primary Country</p>
             <p className="text-lg font-semibold text-purple-800">
               {organization.country_represented || organization.country || 'Not specified'}
             </p>
           </div>
           <div>
-            <p className="text-sm text-purple-600 font-medium">Organization Type</p>
+            <p className="text-body text-purple-600 font-medium">Organization Type</p>
             <Badge variant="outline" className="border-purple-300 text-purple-700">
               {organization.organisation_type}
             </Badge>
@@ -294,19 +294,19 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-orange-600 font-medium">Years Active</p>
+            <p className="text-body text-orange-600 font-medium">Years Active</p>
             <p className="text-2xl font-bold text-orange-900">
               {experience.yearsActive}
             </p>
           </div>
           <div>
-            <p className="text-sm text-orange-600 font-medium">Established</p>
+            <p className="text-body text-orange-600 font-medium">Established</p>
             <p className="text-lg font-semibold text-orange-800">
               {experience.establishedDate}
             </p>
           </div>
           <div>
-            <p className="text-sm text-orange-600 font-medium">Avg. Project Value</p>
+            <p className="text-body text-orange-600 font-medium">Avg. Project Value</p>
             <p className="text-lg font-semibold text-orange-700">
               {activityMetrics.total > 0 
                 ? formatCurrency(financials.totalBudget / activityMetrics.total)

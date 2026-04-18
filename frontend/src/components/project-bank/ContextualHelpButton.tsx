@@ -72,7 +72,7 @@ export function ContextualHelpButton({ stage }: ContextualHelpButtonProps) {
             <div className="sticky top-0 bg-background border-b px-5 py-4 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold">Glossary</h3>
-                <p className="text-xs text-muted-foreground">Key terms and definitions</p>
+                <p className="text-helper text-muted-foreground">Key terms and definitions</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
                 <X className="h-4 w-4" />
@@ -87,8 +87,8 @@ export function ContextualHelpButton({ stage }: ContextualHelpButtonProps) {
                   <div className="space-y-3">
                     {relevantDefs.map(d => (
                       <div key={d.term} className="p-3 rounded-lg bg-muted/30 border">
-                        <div className="text-sm font-semibold">{d.term}</div>
-                        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{d.definition}</div>
+                        <div className="text-body font-semibold">{d.term}</div>
+                        <div className="text-helper text-muted-foreground mt-1 leading-relaxed">{d.definition}</div>
                       </div>
                     ))}
                   </div>
@@ -102,8 +102,8 @@ export function ContextualHelpButton({ stage }: ContextualHelpButtonProps) {
                   <div className="space-y-3">
                     {otherDefs.map(d => (
                       <div key={d.term} className="p-3 rounded-lg">
-                        <div className="text-sm font-semibold">{d.term}</div>
-                        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{d.definition}</div>
+                        <div className="text-body font-semibold">{d.term}</div>
+                        <div className="text-helper text-muted-foreground mt-1 leading-relaxed">{d.definition}</div>
                       </div>
                     ))}
                   </div>

@@ -38,7 +38,7 @@ export function TaskTypeBreakdown({ data }: TaskTypeBreakdownProps) {
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold">{total}</span>
-            <span className="text-xs text-muted-foreground">Total</span>
+            <span className="text-helper text-muted-foreground">Total</span>
           </div>
         </div>
       </div>
@@ -50,14 +50,14 @@ export function TaskTypeBreakdown({ data }: TaskTypeBreakdownProps) {
 
           return (
             <div key={item.task_type} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-body">
                 <div className="flex items-center gap-2">
                   <div className={`h-3 w-3 rounded-full ${typeColors[item.task_type]}`} />
                   <span>{getTaskTypeLabel(item.task_type)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{item.total}</span>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-helper">
                     {item.completion_rate}% done
                   </Badge>
                 </div>

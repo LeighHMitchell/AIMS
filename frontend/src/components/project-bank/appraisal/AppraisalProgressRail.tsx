@@ -174,7 +174,7 @@ export function AppraisalProgressRail({
                 className={cn('text-left transition-colors', (intakeActive || intakeComplete) && 'cursor-pointer hover:text-foreground')}
               >
                 <span className={cn(
-                  'block text-sm leading-snug',
+                  'block text-body leading-snug',
                   intakeActive && 'font-semibold text-foreground',
                   intakeComplete && !intakeActive && 'text-muted-foreground',
                   !intakeComplete && !intakeActive && 'text-muted-foreground',
@@ -195,7 +195,7 @@ export function AppraisalProgressRail({
                     key={sub.anchor}
                     type="button"
                     onClick={() => handleSubItemClick(sub.anchor)}
-                    className="block w-full text-left text-xs text-muted-foreground hover:text-foreground transition-colors py-1 pl-1"
+                    className="block w-full text-left text-helper text-muted-foreground hover:text-foreground transition-colors py-1 pl-1"
                   >
                     {sub.label}
                   </button>
@@ -245,7 +245,7 @@ export function AppraisalProgressRail({
                 )}
               >
                 <span className={cn(
-                  'block text-sm leading-snug',
+                  'block text-body leading-snug',
                   fs1Active && 'font-semibold text-foreground',
                   fs1Complete && !fs1Active && 'text-muted-foreground',
                   !fs1Complete && !fs1Active && 'text-muted-foreground',
@@ -270,7 +270,7 @@ export function AppraisalProgressRail({
                     type="button"
                     onClick={() => onFs1TabClick(tab.key)}
                     className={cn(
-                      'block w-full text-left text-xs transition-colors py-1 pl-1',
+                      'block w-full text-left text-helper transition-colors py-1 pl-1',
                       fs1ActiveTab === tab.key
                         ? 'text-foreground font-semibold'
                         : 'text-muted-foreground hover:text-foreground',
@@ -324,7 +324,7 @@ export function AppraisalProgressRail({
                 )}
               >
                 <span className={cn(
-                  'block text-sm leading-snug',
+                  'block text-body leading-snug',
                   fs2Active && 'font-semibold text-foreground',
                   fs2Complete && !fs2Active && 'text-muted-foreground',
                   !fs2Complete && !fs2Active && 'text-muted-foreground',
@@ -351,7 +351,7 @@ export function AppraisalProgressRail({
                     type="button"
                     onClick={() => onFs2TabClick?.(tab.key)}
                     className={cn(
-                      'block w-full text-left text-xs transition-colors py-1 pl-1',
+                      'block w-full text-left text-helper transition-colors py-1 pl-1',
                       fs2ActiveTab === tab.key
                         ? 'text-foreground font-semibold'
                         : 'text-muted-foreground hover:text-foreground',
@@ -391,7 +391,7 @@ export function AppraisalProgressRail({
                 )}
               >
                 <span className={cn(
-                  'block text-sm leading-snug',
+                  'block text-body leading-snug',
                   fs3Active && 'font-semibold text-foreground',
                   !fs3Active && 'text-muted-foreground',
                 )}>

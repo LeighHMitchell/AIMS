@@ -393,19 +393,19 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                               {activity.title}
                             </span>
                             {activity.acronym && (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-helper text-muted-foreground">
                                 {activity.acronym}
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                          <code className="text-helper bg-muted px-2 py-1 rounded">
                             {activity.iatiIdentifier || 'N/A'}
                           </code>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm text-foreground">
+                          <div className="text-body text-foreground">
                             {activity.organizationAcronym || activity.organizationName || 'N/A'}
                           </div>
                         </TableCell>
@@ -419,11 +419,11 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-foreground">
+                            <span className="text-body font-medium text-foreground">
                               {activity.relationshipType}
                             </span>
                             {activity.relationshipNarrative && (
-                              <span className="text-xs text-muted-foreground mt-1">
+                              <span className="text-helper text-muted-foreground mt-1">
                                 {activity.relationshipNarrative}
                               </span>
                             )}
@@ -431,11 +431,11 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-helper text-muted-foreground">
                               {activity.source}
                             </span>
                             {activity.isExternal && (
-                              <Badge variant="outline" className="text-xs w-fit bg-yellow-50 text-yellow-700 border-yellow-200">
+                              <Badge variant="outline" className="text-helper w-fit bg-yellow-50 text-yellow-700 border-yellow-200">
                                 External
                               </Badge>
                             )}
@@ -448,7 +448,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                                 <Link
                                   href={`/activities/${activity.id}`}
                                   target="_blank"
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-body"
                                 >
                                   <ExternalLink className="h-3 w-3" />
                                   <span className="sr-only">View activity</span>
@@ -474,7 +474,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
               </div>
 
               <div className="px-6 py-4 border-t border-border bg-muted">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Showing {relatedActivities.length} related {relatedActivities.length === 1 ? 'activity' : 'activities'}
                 </p>
               </div>

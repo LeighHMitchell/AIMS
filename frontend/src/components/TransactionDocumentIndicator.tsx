@@ -169,11 +169,11 @@ function DocumentsList({
           <div className="flex items-center space-x-2 min-w-0 flex-1">
             {getFileIcon(doc.fileType)}
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{doc.fileName}</p>
-              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <p className="text-body font-medium truncate">{doc.fileName}</p>
+              <div className="flex items-center space-x-2 text-helper text-muted-foreground">
                 {doc.fileSize > 0 && <span>{formatFileSize(doc.fileSize)}</span>}
                 <span>{doc.uploadedAt.toLocaleDateString()}</span>
-                {doc.externalUrl && <Badge variant="outline" className="text-xs">External</Badge>}
+                {doc.externalUrl && <Badge variant="outline" className="text-helper">External</Badge>}
               </div>
             </div>
           </div>

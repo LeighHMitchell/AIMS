@@ -64,9 +64,9 @@ function OtherOrgLocationMarker({ location }: { location: OtherOrgLocation }) {
       {/* Tooltip on hover */}
       <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[300px] overflow-hidden">
         <div className="p-2.5">
-          <div className="font-semibold text-xs text-blue-700 mb-1">{orgDisplay}</div>
+          <div className="font-semibold text-helper text-blue-700 mb-1">{orgDisplay}</div>
           {location.activity?.title && (
-            <div className="font-medium text-xs text-foreground mb-1 line-clamp-2">{location.activity.title}</div>
+            <div className="font-medium text-helper text-foreground mb-1 line-clamp-2">{location.activity.title}</div>
           )}
           <div className="text-[10px] space-y-1">
             {location.site_type && (

@@ -210,13 +210,13 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
     return (
       <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
         <div className="bg-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground text-sm">{item.fullName}</p>
+          <p className="font-semibold text-foreground text-body">{item.fullName}</p>
           {item.reporting_org_name && (
-            <p className="text-xs text-muted-foreground mt-0.5">{item.reporting_org_name}</p>
+            <p className="text-helper text-muted-foreground mt-0.5">{item.reporting_org_name}</p>
           )}
         </div>
         <div className="p-2">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <tbody>
               <tr className="border-b border-border">
                 <td className="py-1.5 pr-4 text-foreground font-medium">Budgeted</td>
@@ -289,7 +289,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
               <p className="text-muted-foreground font-medium">No data to display</p>
-              <p className="text-sm text-muted-foreground mt-2">Apply filters or check if data exists</p>
+              <p className="text-body text-muted-foreground mt-2">Apply filters or check if data exists</p>
             </div>
           </div>
         </CardContent>
@@ -336,18 +336,18 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
         </div>
         {/* Severity Legend */}
         <div className="flex items-center gap-4 mt-4">
-          <span className="text-xs text-muted-foreground">Severity:</span>
+          <span className="text-helper text-muted-foreground">Severity:</span>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#fbbf24' }} />
-            <span className="text-xs text-muted-foreground">Mild (&lt;150%)</span>
+            <span className="text-helper text-muted-foreground">Mild (&lt;150%)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f97316' }} />
-            <span className="text-xs text-muted-foreground">Moderate (150-200%)</span>
+            <span className="text-helper text-muted-foreground">Moderate (150-200%)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ef4444' }} />
-            <span className="text-xs text-muted-foreground">Severe (&gt;200%)</span>
+            <span className="text-helper text-muted-foreground">Severe (&gt;200%)</span>
           </div>
         </div>
       </CardHeader>

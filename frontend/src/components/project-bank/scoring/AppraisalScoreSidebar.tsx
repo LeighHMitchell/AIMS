@@ -148,7 +148,7 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
       ) : !displayScore ? (
         <div className="flex items-center justify-center gap-2 py-3">
           <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Calculating score...</span>
+          <span className="text-helper text-muted-foreground">Calculating score...</span>
         </div>
       ) : (
         <>
@@ -157,7 +157,7 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
             <span className="text-3xl font-bold" style={{ color }}>
               {compositeScore.toFixed(0)}
             </span>
-            <span className="text-sm text-muted-foreground">/100</span>
+            <span className="text-body text-muted-foreground">/100</span>
             <span className="text-[10px] text-muted-foreground ml-auto">
               {hasLive ? '' : STAGE_LABELS[activeStage]}
             </span>

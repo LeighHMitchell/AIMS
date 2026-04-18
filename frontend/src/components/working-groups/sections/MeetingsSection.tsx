@@ -281,10 +281,10 @@ function EditMeetingModal({
           {/* Documents */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Documents</Label>
+              <Label className="text-body font-medium">Documents</Label>
               <div className="flex items-center gap-2">
                 <Select value={uploadDocType} onValueChange={setUploadDocType}>
-                  <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectTrigger className="w-[130px] h-8 text-helper">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -320,20 +320,20 @@ function EditMeetingModal({
             />
 
             {loadingDocs ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <div className="flex items-center gap-2 text-body text-muted-foreground py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading documents...
               </div>
             ) : docs.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic py-2">No documents attached</p>
+              <p className="text-body text-muted-foreground italic py-2">No documents attached</p>
             ) : (
               <div className="space-y-1">
                 {docs.map(doc => (
                   <div key={doc.id} className="flex items-center justify-between bg-muted border rounded px-3 py-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm text-foreground truncate">{doc.title}</span>
-                      <Badge variant="secondary" className="text-xs flex-shrink-0">{doc.document_type}</Badge>
+                      <span className="text-body text-foreground truncate">{doc.title}</span>
+                      <Badge variant="secondary" className="text-helper flex-shrink-0">{doc.document_type}</Badge>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <a
@@ -410,16 +410,16 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
         <tbody className="divide-y divide-border">
           {meetings.map((meeting) => (
             <tr key={meeting.id} className="hover:bg-muted/50">
-              <td className="px-4 py-3 text-sm font-medium text-foreground">{meeting.title}</td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="px-4 py-3 text-body font-medium text-foreground">{meeting.title}</td>
+              <td className="px-4 py-3 text-body text-muted-foreground">
                 {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="px-4 py-3 text-body text-muted-foreground">
                 {meeting.start_time
                   ? `${meeting.start_time}${meeting.end_time ? ` – ${meeting.end_time}` : ''}`
                   : '—'}
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="px-4 py-3 text-body text-muted-foreground">
                 <div className="flex items-center gap-1">
                   {meeting.latitude && meeting.longitude && (
                     <MapPin className="h-3 w-3 text-blue-500 flex-shrink-0" />
@@ -427,7 +427,7 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
                   <span className="truncate max-w-[200px]">{meeting.location || '—'}</span>
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground capitalize">{meeting.status}</td>
+              <td className="px-4 py-3 text-body text-muted-foreground capitalize">{meeting.status}</td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
                   <Button
@@ -576,8 +576,8 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
       {meetings.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
           <Calendar className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">No meetings scheduled</p>
-          <p className="text-xs text-muted-foreground mt-1">Create your first meeting to get started</p>
+          <p className="text-body text-muted-foreground">No meetings scheduled</p>
+          <p className="text-helper text-muted-foreground mt-1">Create your first meeting to get started</p>
           <Button onClick={() => setShowAddDialog(true)} variant="outline" className="mt-4 gap-2">
             <Plus className="h-4 w-4" />
             Schedule Meeting
@@ -598,7 +598,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
                     {upcoming.length > 0 && <span className="ml-2 text-muted-foreground font-normal">({upcoming.length})</span>}
                   </h3>
                   {upcoming.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic py-4 text-center border rounded-lg">No upcoming meetings</p>
+                    <p className="text-body text-muted-foreground italic py-4 text-center border rounded-lg">No upcoming meetings</p>
                   ) : (
                     <MeetingsTable
                       meetings={upcoming}
@@ -615,7 +615,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
                     {past.length > 0 && <span className="ml-2 text-muted-foreground font-normal">({past.length})</span>}
                   </h3>
                   {past.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic py-4 text-center border rounded-lg">No past meetings</p>
+                    <p className="text-body text-muted-foreground italic py-4 text-center border rounded-lg">No past meetings</p>
                   ) : (
                     <MeetingsTable
                       meetings={past}

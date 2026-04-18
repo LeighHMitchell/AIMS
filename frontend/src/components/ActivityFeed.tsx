@@ -225,7 +225,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
         <CardContent>
           <div className="text-center py-8">
             <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">{error}</p>
+            <p className="text-body text-muted-foreground">{error}</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
               Try Again
             </Button>
@@ -258,7 +258,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
         {logs.length === 0 ? (
           <div className="text-center py-8">
             <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No activity to display</p>
+            <p className="text-body text-muted-foreground">No activity to display</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -276,7 +276,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       {/* Main description */}
-                      <p className="text-sm">
+                      <p className="text-body">
                         <span className="font-medium">{log.user?.name || 'Unknown User'}</span>{' '}
                         <span className="text-muted-foreground">
                           {getActionDescription(log)}
@@ -285,7 +285,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
 
                       {/* Additional metadata */}
                       {log.metadata && (log.metadata.oldValue !== undefined || log.metadata.newValue !== undefined) && (
-                        <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="mt-1 text-helper text-muted-foreground">
                           {log.metadata.oldValue !== undefined && (
                             <span>
                               <span className="line-through">
@@ -308,12 +308,12 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
 
                       {/* Timestamp and role */}
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-helper text-muted-foreground">
                           {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                         </span>
-                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-helper text-muted-foreground">•</span>
                         {log.user?.role && (
-                          <Badge variant={getRoleBadgeVariant(log.user.role)} className="text-xs h-5">
+                          <Badge variant={getRoleBadgeVariant(log.user.role)} className="text-helper h-5">
                             {getRoleDisplayLabel(log.user.role)}
                           </Badge>
                         )}

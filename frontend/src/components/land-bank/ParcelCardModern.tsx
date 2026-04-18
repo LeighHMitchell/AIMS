@@ -70,7 +70,7 @@ const ParcelCardModern: React.FC<ParcelCardModernProps> = ({
               </button>
             </span>
           </h2>
-          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             <span className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               {parcel.state_region}
@@ -92,7 +92,7 @@ const ParcelCardModern: React.FC<ParcelCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Size
             </p>
-            <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+            <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
               <Layers className="w-4 h-4" style={{ color: colors.coolSteel }} />
               <span>{formatHectares(parcel.size_hectares)}</span>
             </div>
@@ -101,7 +101,7 @@ const ParcelCardModern: React.FC<ParcelCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Classification
             </p>
-            <p className="text-sm font-medium truncate" style={{ color: colors.blueSlate }}>
+            <p className="text-body font-medium truncate" style={{ color: colors.blueSlate }}>
               {parcel.classification || '—'}
             </p>
           </div>
@@ -116,7 +116,7 @@ const ParcelCardModern: React.FC<ParcelCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Ministry
             </p>
-            <p className="text-xs font-medium truncate max-w-[180px]" style={{ color: colors.blueSlate }}>
+            <p className="text-helper font-medium truncate max-w-[180px]" style={{ color: colors.blueSlate }}>
               {parcel.controlling_ministry?.name || '—'}
             </p>
           </div>
@@ -124,7 +124,7 @@ const ParcelCardModern: React.FC<ParcelCardModernProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Asset Type
             </p>
-            <p className="text-xs font-medium" style={{ color: colors.blueSlate }}>
+            <p className="text-helper font-medium" style={{ color: colors.blueSlate }}>
               {parcel.asset_type || '—'}
             </p>
           </div>

@@ -125,7 +125,7 @@ export function LibraryFiltersPanel({
     <FilterBar className="flex-wrap">
       {/* Source Type */}
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Source Type</Label>
+        <Label className="text-helper text-muted-foreground">Source Type</Label>
         <MultiSelectFilter
           options={SOURCE_TYPE_OPTIONS}
           value={filters.sourceTypes || []}
@@ -143,7 +143,7 @@ export function LibraryFiltersPanel({
 
       {/* File Format */}
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">File Format</Label>
+        <Label className="text-helper text-muted-foreground">File Format</Label>
         <MultiSelectFilter
           options={FORMAT_OPTIONS}
           value={selectedFormatValues}
@@ -161,7 +161,7 @@ export function LibraryFiltersPanel({
 
       {/* Document Category */}
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Category</Label>
+        <Label className="text-helper text-muted-foreground">Category</Label>
         <MultiSelectFilter
           options={CATEGORY_OPTIONS}
           value={filters.categoryCodes || []}
@@ -184,7 +184,7 @@ export function LibraryFiltersPanel({
 
       {/* Reporting Organization */}
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Reported by</Label>
+        <Label className="text-helper text-muted-foreground">Reported by</Label>
         <SearchableSelect
           options={orgOptions}
           value={filters.reportingOrgIds?.[0] || ''}
@@ -204,7 +204,7 @@ export function LibraryFiltersPanel({
 
       {/* Date Range */}
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Date From</Label>
+        <Label className="text-helper text-muted-foreground">Date From</Label>
         <DatePicker
           value={filters.documentDateFrom || ''}
           onChange={(value) =>
@@ -218,7 +218,7 @@ export function LibraryFiltersPanel({
         />
       </div>
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Date To</Label>
+        <Label className="text-helper text-muted-foreground">Date To</Label>
         <DatePicker
           value={filters.documentDateTo || ''}
           onChange={(value) =>

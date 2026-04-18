@@ -85,17 +85,17 @@ export function BulkActionToolbar({
         }
       `}</style>
       <div className="bg-white shadow-lg rounded-lg border border-border px-6 py-3 flex items-center gap-4">
-        <div className="text-sm font-medium text-foreground">
+        <div className="text-body font-medium text-foreground">
           <div>
             {selectedCount} {getItemLabel(itemType, selectedCount)} selected
           </div>
           {hasLinkedTransactions && (
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-helper text-muted-foreground mt-1">
               {linkedTransactionCount} linked transaction{linkedTransactionCount === 1 ? '' : 's'}
             </div>
           )}
           {itemType === 'documents' && deletableCount !== undefined && deletableCount < selectedCount && (
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-helper text-muted-foreground mt-1">
               {deletableCount} can be deleted (standalone only)
             </div>
           )}

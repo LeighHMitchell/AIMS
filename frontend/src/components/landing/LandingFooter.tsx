@@ -83,13 +83,13 @@ export function LandingFooter() {
               <span className="font-bold text-xl text-foreground">aether</span>
             </div>
 
-            <p className="mb-4 max-w-md text-sm text-muted-foreground leading-relaxed">
+            <p className="mb-4 max-w-md text-body text-muted-foreground leading-relaxed">
               A Development Finance Management Information System built for
               transparency, coordination, and standards compliance. Aligned with
               IATI Standard v2.03 for international interoperability.
             </p>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Designed for recipient governments and development partners.
             </p>
           </motion.div>
@@ -102,7 +102,7 @@ export function LandingFooter() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: sectionIndex * 0.1 }}
             >
-              <h4 className="mb-4 text-sm font-semibold text-foreground">
+              <h4 className="mb-4 text-body font-semibold text-foreground">
                 {section.title}
               </h4>
               <ul className="space-y-2">
@@ -119,7 +119,7 @@ export function LandingFooter() {
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex items-center gap-1 text-body text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                         <ExternalLink className="h-3 w-3" />
@@ -127,14 +127,14 @@ export function LandingFooter() {
                     ) : link.href.startsWith("#") ? (
                       <a
                         href={link.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        className="text-body text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                       </a>
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        className="text-body text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                       </Link>
@@ -160,7 +160,7 @@ export function LandingFooter() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.6 }}
-            className="text-sm text-muted-foreground"
+            className="text-body text-muted-foreground"
           >
             <span>&copy; {new Date().getFullYear()} aether. All rights reserved.</span>
           </motion.div>

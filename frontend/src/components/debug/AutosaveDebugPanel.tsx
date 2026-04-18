@@ -173,7 +173,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
             </TabsList>
 
             <TabsContent value="status" className="space-y-2 max-h-64 overflow-y-auto">
-              <div className="text-xs space-y-1">
+              <div className="text-helper space-y-1">
                 <div className="flex justify-between">
                   <span>Debug Mode:</span>
                   <Badge variant={(autosaveDebugger as any).config.enabled ? 'default' : 'secondary'}>
@@ -194,7 +194,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                 </div>
                 <div className="flex justify-between">
                   <span>Last Saved:</span>
-                  <span className="text-xs">
+                  <span className="text-helper">
                     {autosaveContext?.lastSaved 
                       ? autosaveContext.lastSaved.toLocaleTimeString()
                       : 'Never'
@@ -202,7 +202,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   </span>
                 </div>
                 {autosaveContext?.lastError && (
-                  <div className="text-destructive text-xs">
+                  <div className="text-destructive text-helper">
                     <strong>Error:</strong> {autosaveContext.lastError.message}
                   </div>
                 )}
@@ -213,14 +213,14 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
               {diagnosis?.issues?.length > 0 ? (
                 <div className="space-y-2">
                   {diagnosis.issues.map((issue: any, index: number) => (
-                    <Alert key={index} className={`text-xs ${getStatusColor(issue.type)} border`}>
+                    <Alert key={index} className={`text-helper ${getStatusColor(issue.type)} border`}>
                       <div className="flex items-start gap-2">
                         {getStatusIcon(issue.type)}
                         <div className="flex-1">
-                          <AlertDescription className="text-xs">
+                          <AlertDescription className="text-helper">
                             <strong>{issue.type.toUpperCase()}:</strong> {issue.message}
                             {issue.fix && (
-                              <div className="mt-1 text-xs italic">
+                              <div className="mt-1 text-helper italic">
                                 Fix: {issue.fix}
                               </div>
                             )}
@@ -231,7 +231,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-green-400 text-sm py-4">
+                <div className="text-center text-green-400 text-body py-4">
                   <CheckCircle className="h-8 w-8 mx-auto mb-2" />
                   No issues detected
                 </div>
@@ -244,7 +244,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   onClick={handleForceSave}
                   variant="outline"
                   size="sm"
-                  className="text-green-400 border-green-400 text-xs"
+                  className="text-green-400 border-green-400 text-helper"
                   disabled={autosaveContext?.isAutoSaving}
                 >
                   <Play className="h-3 w-3 mr-1" />
@@ -255,7 +255,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   onClick={() => setRefreshKey(prev => prev + 1)}
                   variant="outline"
                   size="sm"
-                  className="text-green-400 border-green-400 text-xs"
+                  className="text-green-400 border-green-400 text-helper"
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
                   Refresh
@@ -265,7 +265,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   onClick={handleExportLogs}
                   variant="outline"
                   size="sm"
-                  className="text-green-400 border-green-400 text-xs"
+                  className="text-green-400 border-green-400 text-helper"
                 >
                   <Download className="h-3 w-3 mr-1" />
                   Export Logs
@@ -275,7 +275,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   onClick={() => autosaveDebugger.clearLogs()}
                   variant="outline"
                   size="sm"
-                  className="text-green-400 border-green-400 text-xs"
+                  className="text-green-400 border-green-400 text-helper"
                 >
                   <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                   Clear Logs
@@ -284,8 +284,8 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
 
               {diagnosis?.recommendations?.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="text-xs font-semibold mb-2">Recommendations:</h4>
-                  <ul className="text-xs space-y-1">
+                  <h4 className="text-helper font-semibold mb-2">Recommendations:</h4>
+                  <ul className="text-helper space-y-1">
                     {diagnosis.recommendations.map((rec: string, index: number) => (
                       <li key={index} className="text-green-300">• {rec}</li>
                     ))}

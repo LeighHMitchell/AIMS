@@ -133,7 +133,7 @@ export function ExampleActivityEditor() {
           <CardTitle>Activity Editor - Documents & Images Example</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             This example demonstrates the Documents & Images tab with various document types,
             including a PDF project document, an image with caption, a results brief, 
             an evaluation report, and an invalid document to showcase validation.
@@ -162,7 +162,7 @@ export function ExampleActivityEditor() {
             <TabsContent value="xml" className="mt-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium">Generated IATI XML</h3>
+                  <h3 className="text-body font-medium">Generated IATI XML</h3>
                   <Button
                     variant="outline"
                     size="sm"
@@ -180,7 +180,7 @@ export function ExampleActivityEditor() {
                   </ScrollArea>
                 )}
                 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Note: Only valid documents are included in the XML output.
                   Documents with validation errors are automatically excluded.
                 </p>
@@ -190,7 +190,7 @@ export function ExampleActivityEditor() {
             <TabsContent value="json" className="mt-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium">Generated JSON (API Format)</h3>
+                  <h3 className="text-body font-medium">Generated JSON (API Format)</h3>
                   <Button
                     variant="outline"
                     size="sm"
@@ -208,7 +208,7 @@ export function ExampleActivityEditor() {
                   </ScrollArea>
                 )}
                 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   This JSON format mirrors the structure expected by your API endpoints.
                 </p>
               </div>
@@ -222,7 +222,7 @@ export function ExampleActivityEditor() {
           <CardTitle>Features Demonstrated</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-body">
             <li>✓ IATI v2.03 compliant document-link implementation</li>
             <li>✓ Multi-language narratives for titles and descriptions</li>
             <li>✓ Document categorization with IATI Document Category codelist</li>

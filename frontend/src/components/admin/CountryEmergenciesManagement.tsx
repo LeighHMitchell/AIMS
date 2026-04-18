@@ -322,7 +322,7 @@ export function CountryEmergenciesManagement() {
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <AlertTriangle className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">No country emergencies found</p>
-              <p className="text-sm mb-4">
+              <p className="text-body mb-4">
                 {searchQuery
                   ? "Try adjusting your search"
                   : "Add your first country emergency to get started"}
@@ -337,7 +337,7 @@ export function CountryEmergenciesManagement() {
           ) : (
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">
@@ -377,16 +377,16 @@ export function CountryEmergenciesManagement() {
                         <td className="p-4 font-medium">
                           {emergency.name}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {emergency.description || "—"}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {formatDate(emergency.startDate)}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {formatDate(emergency.endDate)}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {emergency.location || "—"}
                         </td>
                         <td className="p-4 text-center">
@@ -434,7 +434,7 @@ export function CountryEmergenciesManagement() {
           )}
 
           {/* Summary */}
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-body text-muted-foreground">
             Showing {filteredEmergencies.length} emergenc{filteredEmergencies.length !== 1 ? "ies" : "y"}
           </div>
         </CardContent>

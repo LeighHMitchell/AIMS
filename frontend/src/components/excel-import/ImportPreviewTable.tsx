@@ -30,7 +30,7 @@ export function ImportPreviewTable({ preview, onValueOverride, repeatGroups }: I
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
+      <table className="w-full text-body">
         <thead className="bg-surface-muted">
           <tr className="bg-muted/50 border-b">
             <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-[30%]">Field Name</th>
@@ -139,7 +139,7 @@ function StatusCell({
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-            <span className="text-amber-600 text-xs">{importedValue.message}</span>
+            <span className="text-amber-600 text-helper">{importedValue.message}</span>
           </div>
           {importedValue.suggestions && importedValue.suggestions.length > 0 && (
             <SuggestionSelect
@@ -157,7 +157,7 @@ function StatusCell({
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <X className="h-4 w-4 text-destructive shrink-0" />
-            <span className="text-destructive text-xs">{importedValue.message}</span>
+            <span className="text-destructive text-helper">{importedValue.message}</span>
           </div>
           {importedValue.suggestions && importedValue.suggestions.length > 0 && (
             <SuggestionSelect
@@ -173,7 +173,7 @@ function StatusCell({
       return (
         <div className="flex items-center gap-2">
           <Minus className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-          <span className="text-muted-foreground/50 text-xs">No value</span>
+          <span className="text-muted-foreground/50 text-helper">No value</span>
         </div>
       );
 
@@ -203,12 +203,12 @@ function SuggestionSelect({
         }
       }}
     >
-      <SelectTrigger className="h-8 text-xs w-full max-w-[300px]">
+      <SelectTrigger className="h-8 text-helper w-full max-w-[300px]">
         <SelectValue placeholder="Select a match..." />
       </SelectTrigger>
       <SelectContent>
         {suggestions.map(s => (
-          <SelectItem key={s.code} value={s.code} className="text-xs">
+          <SelectItem key={s.code} value={s.code} className="text-helper">
             {s.code} - {s.name}
           </SelectItem>
         ))}

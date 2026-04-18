@@ -496,7 +496,7 @@ export function AidEcosystemSolarSystem({
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
-        <p className="text-sm">{error}</p>
+        <p className="text-body">{error}</p>
       </div>
     )
   }
@@ -506,7 +506,7 @@ export function AidEcosystemSolarSystem({
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
         <AlertCircle className="h-8 w-8 mb-2" />
-        <p className="text-sm">No organization data available</p>
+        <p className="text-body">No organization data available</p>
       </div>
     )
   }
@@ -566,10 +566,10 @@ export function AidEcosystemSolarSystem({
               transform: tooltipPos.x > width / 2 ? 'translateX(-100%)' : undefined
             }}
           >
-            <p className="font-medium text-xs text-foreground truncate max-w-[150px]">
+            <p className="font-medium text-helper text-foreground truncate max-w-[150px]">
               {hoveredOrg.name}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               #{hoveredOrg.rank} - {formatCurrency(hoveredOrg.totalValue)}
             </p>
           </div>
@@ -584,7 +584,7 @@ export function AidEcosystemSolarSystem({
       {/* Header with info and sector filter */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Ring legend */}
-        <div className="flex items-center gap-3 text-xs" style={{ color: '#4c5568' }}>
+        <div className="flex items-center gap-3 text-helper" style={{ color: '#4c5568' }}>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgba(220, 38, 37, 0.15)', border: '2px solid #dc2625' }} />
             <span className="font-medium">Top 10%</span>
@@ -645,7 +645,7 @@ export function AidEcosystemSolarSystem({
             <DropdownMenuContent align="end" className="p-3 w-[340px]">
               {/* Header with All/Clear */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-foreground">
+                <span className="text-helper font-medium text-foreground">
                   Filter by {aggregationLevel === 'group' ? 'Sector Category' : aggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
                 </span>
                 <div className="flex gap-1">
@@ -672,7 +672,7 @@ export function AidEcosystemSolarSystem({
                   placeholder="Search by code or name..."
                   value={sectorFilterSearch}
                   onChange={(e) => setSectorFilterSearch(e.target.value)}
-                  className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full pl-7 pr-3 py-1.5 text-helper border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -693,7 +693,7 @@ export function AidEcosystemSolarSystem({
               {/* Checkbox list */}
               <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
                 {filteredSectors.length === 0 ? (
-                  <div className="text-center text-xs text-muted-foreground py-4">
+                  <div className="text-center text-helper text-muted-foreground py-4">
                     No matching items found
                   </div>
                 ) : (
@@ -714,7 +714,7 @@ export function AidEcosystemSolarSystem({
                         <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                           {item.code}
                         </span>
-                        <span className="text-sm text-foreground leading-tight">
+                        <span className="text-body text-foreground leading-tight">
                           {item.name}
                         </span>
                       </button>
@@ -748,7 +748,7 @@ export function AidEcosystemSolarSystem({
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <AlertCircle className="h-12 w-12 text-slate-300 mb-4" />
             <p className="text-muted-foreground font-medium">No organizations found</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-md">
+            <p className="text-body text-muted-foreground mt-1 max-w-md">
               No organizations have transactions in the selected {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'}.
               Try selecting different sectors or clearing the filter.
             </p>
@@ -867,16 +867,16 @@ export function AidEcosystemSolarSystem({
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: ORG_TYPE_COLORS[hoveredOrg.organisationType || '90'] }}
               />
-              <span className="font-semibold text-foreground text-sm truncate">
+              <span className="font-semibold text-foreground text-body truncate">
                 {hoveredOrg.name}
               </span>
             </div>
             {hoveredOrg.organisationType && (
-              <p className="text-xs text-muted-foreground mb-2">
+              <p className="text-helper text-muted-foreground mb-2">
                 {getOrgTypeLabel(hoveredOrg.organisationType)}
               </p>
             )}
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1 text-helper">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Rank:</span>
                 <span className="font-medium text-foreground">#{hoveredOrg.rank}</span>
@@ -899,7 +899,7 @@ export function AidEcosystemSolarSystem({
 
       {/* Legend */}
       <div className="rounded-lg p-4" style={{ backgroundColor: '#f1f4f8' }}>
-        <p className="text-xs font-medium mb-2" style={{ color: '#4c5568' }}>Organization Types</p>
+        <p className="text-helper font-medium mb-2" style={{ color: '#4c5568' }}>Organization Types</p>
         <div className="flex flex-wrap gap-3">
           {legendItems.map(item => (
             <div key={item.value} className="flex items-center gap-1.5">
@@ -907,7 +907,7 @@ export function AidEcosystemSolarSystem({
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-xs" style={{ color: '#4c5568' }}>{item.label}</span>
+              <span className="text-helper" style={{ color: '#4c5568' }}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -915,10 +915,10 @@ export function AidEcosystemSolarSystem({
 
       {/* Explanatory text */}
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           This chart visualises the relative financial gravity of organisations within the aid ecosystem by arranging them in concentric rings based on total disbursement volume. Organisations at the centre represent the largest financial actors in the system, while those further out operate at progressively smaller scales. The inner ring contains the top ten percent of organisations by disbursement value, the middle ring contains the next thirty percent, and the outer ring contains the remaining organisations. Node size corresponds to the total value of funds flowing through each organisation, and colour indicates organisation type. By presenting the aid ecosystem in this radial form, the chart highlights how concentrated or distributed financial power is within the system, making it easy to see whether aid flows are dominated by a small number of large actors or spread across a wider range of organisations. Rankings are recalculated dynamically based on the selected time period and filters.
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           <strong>METHODOLOGY:</strong> Inner ring contains the top 10% of organizations by total disbursement value. Middle ring contains the next 30% (ranks 11-40%). Outer ring contains the remaining organizations (bottom 60%).
         </p>
       </div>

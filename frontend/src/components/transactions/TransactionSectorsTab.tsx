@@ -148,7 +148,7 @@ export default function TransactionSectorsTab({
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Sector allocation is managed at the activity level</p>
-                <p className="text-sm mt-1">
+                <p className="text-body mt-1">
                   These sectors are inherited from the activity and cannot be edited here.
                   To edit sectors, go to the activity's Sectors tab.
                 </p>
@@ -173,7 +173,7 @@ export default function TransactionSectorsTab({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Transaction Sectors</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             {isLocked 
               ? 'Inherited from activity sector allocation'
               : 'Allocate this transaction across different sectors'
@@ -220,7 +220,7 @@ export default function TransactionSectorsTab({
               </div>
               <div>
                 <h4 className="font-medium">No sector allocations yet</h4>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   Adding sector splits helps with downstream analytics and aligns 
                   transaction records with sector reporting.
                 </p>
@@ -327,7 +327,7 @@ export default function TransactionSectorsTab({
                             )}
                             disabled={effectiveDisabled}
                           />
-                          <span className="text-sm text-muted-foreground">%</span>
+                          <span className="text-body text-muted-foreground">%</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -358,7 +358,7 @@ export default function TransactionSectorsTab({
             <div className="space-y-3">
               {/* Progress bar */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-body">
                   <span>Total Allocation</span>
                   <span className={cn(
                     "font-medium",
@@ -377,7 +377,7 @@ export default function TransactionSectorsTab({
               </div>
               
               {/* Summary stats */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-body">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span className="font-mono">
@@ -398,14 +398,14 @@ export default function TransactionSectorsTab({
                   {validation.isValid ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                      <span className="text-sm text-[hsl(var(--success-icon))] font-medium">
+                      <span className="text-body text-[hsl(var(--success-icon))] font-medium">
                         Valid allocation (100%)
                       </span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm text-destructive font-medium">
+                      <span className="text-body text-destructive font-medium">
                         {validation.errors[0] || 'Invalid allocation'}
                       </span>
                     </>
@@ -470,7 +470,7 @@ export default function TransactionSectorsTab({
       {/* Help text */}
       <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
         <HelpCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           <p>
             <strong>Transaction sectors</strong> allow you to specify how this specific 
             transaction is allocated across different sectors. This provides more granular 

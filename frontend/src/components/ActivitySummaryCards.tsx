@@ -72,12 +72,12 @@ const ActivitySummaryCards: React.FC<ActivitySummaryCardsProps> = ({
       {/* Card 1: Total Activities */}
       <Card className="rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+          <CardTitle className="text-body font-medium">Total Activities</CardTitle>
           <LayoutGrid className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold">{currentPageActivities.length}</div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Currently visible
           </p>
         </CardContent>
@@ -86,7 +86,7 @@ const ActivitySummaryCards: React.FC<ActivitySummaryCardsProps> = ({
       {/* Card 2: Activity Status */}
       <Card className="rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Activity Status</CardTitle>
+          <CardTitle className="text-body font-medium">Activity Status</CardTitle>
           <Workflow className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -96,7 +96,7 @@ const ActivitySummaryCards: React.FC<ActivitySummaryCardsProps> = ({
             <div className="text-lg font-semibold">{filteredStatusCounts.completed}</div>
             <div className="text-lg font-semibold">{filteredStatusCounts.cancelled}</div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Planning, Implementation, Completed, Cancelled
           </p>
         </CardContent>
@@ -105,7 +105,7 @@ const ActivitySummaryCards: React.FC<ActivitySummaryCardsProps> = ({
       {/* Card 3: Publication Status */}
       <Card className="rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Publication Status</CardTitle>
+          <CardTitle className="text-body font-medium">Publication Status</CardTitle>
           <Eye className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -113,7 +113,7 @@ const ActivitySummaryCards: React.FC<ActivitySummaryCardsProps> = ({
             <div className="text-2xl font-bold">{filteredPublicationCounts.draft}</div>
             <div className="text-2xl font-bold">{filteredPublicationCounts.published}</div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Draft, Published
           </p>
         </CardContent>

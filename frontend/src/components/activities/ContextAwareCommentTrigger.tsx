@@ -74,7 +74,7 @@ export function ContextAwareCommentTrigger({
           <>
             <MessageSquare className="h-4 w-4" />
             {showCount && commentCount > 0 && (
-              <span className="ml-1 text-xs">{commentCount}</span>
+              <span className="ml-1 text-helper">{commentCount}</span>
             )}
           </>
         );
@@ -84,7 +84,7 @@ export function ContextAwareCommentTrigger({
   const getButtonProps = () => {
     const baseProps = {
       onClick: handleClick,
-      className: `${className} ${variant === 'inline' ? 'h-6 px-2 text-xs' : ''}`,
+      className: `${className} ${variant === 'inline' ? 'h-6 px-2 text-helper' : ''}`,
     };
 
     switch (variant) {

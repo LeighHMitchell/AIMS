@@ -221,7 +221,7 @@ export default function AuthCallbackPage() {
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">{getErrorTitle()}</h2>
           <p className="text-muted-foreground mb-2">{getErrorDescription()}</p>
-          <p className="text-sm text-muted-foreground mb-6">{errorMessage}</p>
+          <p className="text-body text-muted-foreground mb-6">{errorMessage}</p>
           <button
             onClick={() => router.push('/login')}
             className="w-full bg-gray-900 text-white py-2 px-4 rounded-md hover:bg-black transition"
@@ -252,7 +252,7 @@ export default function AuthCallbackPage() {
       <div className="text-center">
         <Loader2 className="w-12 h-12 animate-spin text-muted-foreground mx-auto mb-4" />
         <p className="text-muted-foreground">Completing sign in...</p>
-        <p className="text-sm text-muted-foreground mt-2">Please wait while we set up your account</p>
+        <p className="text-body text-muted-foreground mt-2">Please wait while we set up your account</p>
       </div>
     </div>
   );

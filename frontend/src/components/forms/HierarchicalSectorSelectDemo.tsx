@@ -36,10 +36,10 @@ export function HierarchicalSectorSelectDemo() {
           
           {selectedSectors.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium">Selected Sectors ({selectedSectors.length}):</p>
+              <p className="text-body font-medium">Selected Sectors ({selectedSectors.length}):</p>
               <div className="flex flex-wrap gap-1">
                 {selectedSectors.map(code => (
-                  <Badge key={code} variant="outline" className="text-xs">
+                  <Badge key={code} variant="outline" className="text-helper">
                     {code}
                   </Badge>
                 ))}
@@ -65,7 +65,7 @@ export function HierarchicalSectorSelectDemo() {
             maxSelections={3}
           />
           
-          <div className="text-xs text-muted-foreground">
+          <div className="text-helper text-muted-foreground">
             {selectedSectorsLimited.length} of 3 sectors selected
           </div>
         </CardContent>
@@ -77,7 +77,7 @@ export function HierarchicalSectorSelectDemo() {
           <CardTitle>Features</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-body">
             <li className="flex items-start gap-2">
               <span className="text-[hsl(var(--success-icon))]">✓</span>
               <span><strong>3-Level Hierarchy:</strong> Categories → 3-digit Sectors → 5-digit Subsectors</span>
@@ -112,7 +112,7 @@ export function HierarchicalSectorSelectDemo() {
           <CardTitle>Usage Example</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
+          <pre className="text-helper bg-muted p-3 rounded-md overflow-x-auto">
 {`import { HierarchicalSectorSelect } from '@/components/forms/HierarchicalSectorSelect';
 
 function MyForm() {

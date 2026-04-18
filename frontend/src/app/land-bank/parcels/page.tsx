@@ -157,7 +157,7 @@ export default function ParcelsListPage() {
 
   const SortHeader = ({ field, children, className }: { field: string; children: React.ReactNode; className?: string }) => (
     <th
-      className={`h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors ${className || ""}`}
+      className={`h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors ${className || ""}`}
       onClick={() => handleSort(field)}
     >
       <span className="flex items-center gap-1">
@@ -226,7 +226,7 @@ export default function ParcelsListPage() {
         {/* Filter bar */}
         <FilterBar className="flex-wrap">
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -239,7 +239,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Status</Label>
+            <Label className="text-helper text-muted-foreground">Status</Label>
             <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[160px] h-9">
                 <SelectValue placeholder="All" />
@@ -256,7 +256,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Region</Label>
+            <Label className="text-helper text-muted-foreground">Region</Label>
             <Select value={regionFilter} onValueChange={v => { setRegionFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[160px] h-9">
                 <SelectValue placeholder="All" />
@@ -271,7 +271,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Classification</Label>
+            <Label className="text-helper text-muted-foreground">Classification</Label>
             <Select value={classificationFilter} onValueChange={v => { setClassificationFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[180px] h-9">
                 <SelectValue placeholder="All" />
@@ -286,7 +286,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Ministry</Label>
+            <Label className="text-helper text-muted-foreground">Ministry</Label>
             <Select value={ministryFilter} onValueChange={v => { setMinistryFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[180px] h-9">
                 <SelectValue placeholder="All" />
@@ -301,7 +301,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Asset Type</Label>
+            <Label className="text-helper text-muted-foreground">Asset Type</Label>
             <Select value={assetTypeFilter} onValueChange={v => { setAssetTypeFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[160px] h-9">
                 <SelectValue placeholder="All" />
@@ -316,7 +316,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Title Status</Label>
+            <Label className="text-helper text-muted-foreground">Title Status</Label>
             <Select value={titleStatusFilter} onValueChange={v => { setTitleStatusFilter(v); setPage(1) }}>
               <SelectTrigger className="w-[170px] h-9">
                 <SelectValue placeholder="All" />
@@ -331,7 +331,7 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Size (ha)</Label>
+            <Label className="text-helper text-muted-foreground">Size (ha)</Label>
             <div className="flex items-center gap-1">
               <Input
                 type="number"
@@ -407,14 +407,14 @@ export default function ParcelsListPage() {
                     <tr>
                       <SortHeader field="name">Name</SortHeader>
                       <SortHeader field="state_region">Region</SortHeader>
-                      <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Township</th>
+                      <th className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground">Township</th>
                       <SortHeader field="size_hectares">Size</SortHeader>
                       <SortHeader field="classification">Classification</SortHeader>
                       <SortHeader field="asset_type">Asset Type</SortHeader>
                       <SortHeader field="title_status">Title</SortHeader>
                       <SortHeader field="status">Status</SortHeader>
                       <SortHeader field="created_at">Created</SortHeader>
-                      <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[60px]" />
+                      <th className="h-12 px-4 text-right align-middle text-body font-medium text-muted-foreground w-[60px]" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-background">
@@ -460,7 +460,7 @@ export default function ParcelsListPage() {
                           <td className="px-4 py-2.5">
                             <ParcelStatusBadge status={parcel.status} />
                           </td>
-                          <td className="px-4 py-2.5 text-muted-foreground text-xs">
+                          <td className="px-4 py-2.5 text-muted-foreground text-helper">
                             {new Date(parcel.created_at).toLocaleDateString()}
                           </td>
                           <td

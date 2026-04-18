@@ -77,7 +77,7 @@ export default function ImportDemoPage() {
           </Tabs>
         </Card>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-body text-muted-foreground">
           <p>This is a demo page. In the real app, import functionality requires authentication.</p>
           <p className="mt-2">
             <a href="/login" className="text-primary hover:underline">

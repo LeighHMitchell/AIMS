@@ -113,8 +113,8 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg max-w-xs">
           <p className="font-semibold text-foreground">{data.indicatorName}</p>
-          <p className="text-xs text-muted-foreground mb-2">{data.description}</p>
-          <div className="space-y-1 text-sm">
+          <p className="text-helper text-muted-foreground mb-2">{data.description}</p>
+          <div className="space-y-1 text-body">
             <p className="text-foreground">Compliant: {data.compliant_count} ({data.compliance_percentage}%)</p>
             <p className="text-muted-foreground">Non-compliant: {data.non_compliant_count} ({100 - data.compliance_percentage}%)</p>
           </div>
@@ -150,7 +150,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         <div className="bg-white p-6 rounded-lg border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-foreground mb-2">GPEDC Principles Compliance</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               Compliance across the five core GPEDC effectiveness principles
             </p>
           </div>
@@ -191,7 +191,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Overall Compliance</p>
+                    <p className="text-body font-medium text-muted-foreground">Overall Compliance</p>
                     <p className="text-2xl font-bold text-foreground">{summary.overall_compliance}%</p>
                   </div>
                   <Shield className="h-6 w-6 text-muted-foreground" />
@@ -204,9 +204,9 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Best Indicator</p>
-                    <p className="text-sm font-bold text-foreground">{summary.best_indicator?.indicatorName}</p>
-                    <p className="text-sm text-muted-foreground">{summary.best_indicator?.compliance_percentage}%</p>
+                    <p className="text-body font-medium text-muted-foreground">Best Indicator</p>
+                    <p className="text-body font-bold text-foreground">{summary.best_indicator?.indicatorName}</p>
+                    <p className="text-body text-muted-foreground">{summary.best_indicator?.compliance_percentage}%</p>
                   </div>
                   <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
                 </div>
@@ -217,9 +217,9 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Needs Focus</p>
-                    <p className="text-sm font-bold text-foreground">{summary.worst_indicator?.indicatorName}</p>
-                    <p className="text-sm text-muted-foreground">{summary.worst_indicator?.compliance_percentage}%</p>
+                    <p className="text-body font-medium text-muted-foreground">Needs Focus</p>
+                    <p className="text-body font-bold text-foreground">{summary.worst_indicator?.indicatorName}</p>
+                    <p className="text-body text-muted-foreground">{summary.worst_indicator?.compliance_percentage}%</p>
                   </div>
                   <AlertCircle className="h-6 w-6 text-muted-foreground" />
                 </div>
@@ -252,7 +252,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{principle.principle}</p>
+                    <p className="text-body font-medium text-foreground">{principle.principle}</p>
                     <p className="text-xl font-bold text-foreground">{principle.compliance}%</p>
                   </div>
                 </div>
@@ -333,8 +333,8 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-foreground">{indicator.indicatorName}</h4>
-                      <p className="text-sm text-muted-foreground mb-2">{indicator.description}</p>
-                      <div className="flex items-center gap-4 text-sm">
+                      <p className="text-body text-muted-foreground mb-2">{indicator.description}</p>
+                      <div className="flex items-center gap-4 text-body">
                         <span className="text-foreground">
                           ✓ {indicator.compliant_count} compliant
                         </span>
@@ -347,7 +347,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-xl font-bold text-foreground">{indicator.compliance_percentage}%</p>
-                      <p className="text-xs text-muted-foreground">Compliance</p>
+                      <p className="text-helper text-muted-foreground">Compliance</p>
                     </div>
                     <Badge 
                       variant={indicator.compliance_percentage >= 80 ? "default" : indicator.compliance_percentage >= 60 ? "secondary" : "destructive"}
@@ -376,7 +376,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
             return (
               <Card key={principle.principle} className="bg-white border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                     <IconComponent 
                       className="h-4 w-4" 
                       style={{ color: PRINCIPLE_COLORS[principle.principleName as keyof typeof PRINCIPLE_COLORS] }}
@@ -406,7 +406,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                     
                     <div className="space-y-1">
                       {principle.indicators.map((ind: any, idx: number) => (
-                        <div key={ind.indicator} className="flex justify-between text-xs">
+                        <div key={ind.indicator} className="flex justify-between text-helper">
                           <span className="text-muted-foreground truncate">{ind.indicatorName}</span>
                           <span className="text-foreground font-medium">{ind.compliance_percentage}%</span>
                         </div>
@@ -429,7 +429,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-body">
             <div>
               <h4 className="font-semibold text-foreground mb-3">Strengths</h4>
               <ul className="space-y-2 text-foreground">
@@ -467,7 +467,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           {summary && (
             <div className="mt-6 p-4 bg-white/50 rounded-lg">
               <h4 className="font-semibold text-foreground mb-2">Overall Assessment</h4>
-              <p className="text-sm text-foreground">
+              <p className="text-body text-foreground">
                 {summary.overall_compliance >= 80 ? 
                   "Excellent GPEDC compliance across all principles. Continue current practices and share best practices with other organizations." :
                   summary.overall_compliance >= 60 ?

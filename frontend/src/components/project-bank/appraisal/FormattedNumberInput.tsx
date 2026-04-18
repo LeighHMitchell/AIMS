@@ -138,7 +138,7 @@ export function FormattedNumberInput({
   return (
     <div className={cn('relative', prefix && 'flex-1')}>
       {prefix && (
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium pointer-events-none">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-body text-muted-foreground font-medium pointer-events-none">
           {prefix}
         </span>
       )}

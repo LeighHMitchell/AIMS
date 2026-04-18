@@ -92,7 +92,7 @@ function KpiTile({
         {value}
       </div>
       {hint && (
-        <div className="text-xs text-muted-foreground">{hint}</div>
+        <div className="text-helper text-muted-foreground">{hint}</div>
       )}
     </div>
   );
@@ -109,7 +109,7 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-end justify-between mb-3">
-      <h3 className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+      <h3 className="inline-flex items-center gap-2 text-body font-semibold text-foreground">
         <Icon className="h-4 w-4 text-muted-foreground" />
         {title}
       </h3>
@@ -134,10 +134,10 @@ function DeepDiveCard({
       className="group flex flex-col items-start text-left p-4 rounded-lg border bg-background hover:border-foreground/30 hover:bg-surface-muted/50 transition-all"
     >
       <div className="flex items-center justify-between w-full mb-1">
-        <span className="text-sm font-semibold">{label}</span>
+        <span className="text-body font-semibold">{label}</span>
         <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
       </div>
-      <p className="text-xs text-muted-foreground leading-relaxed">
+      <p className="text-helper text-muted-foreground leading-relaxed">
         {description}
       </p>
     </button>
@@ -231,7 +231,7 @@ export function ActivityOverviewTab({
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                 Status
               </div>
-              <Badge className={cn("text-sm font-medium", status.className)}>
+              <Badge className={cn("text-body font-medium", status.className)}>
                 {status.label}
               </Badge>
             </div>
@@ -239,14 +239,14 @@ export function ActivityOverviewTab({
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                 Timeline
               </div>
-              <div className="text-sm">{timeline}</div>
+              <div className="text-body">{timeline}</div>
             </div>
             {typeof activity?.reportingOrg?.name === "string" && activity.reportingOrg.name && (
               <div>
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                   Reported by
                 </div>
-                <div className="text-sm font-medium">
+                <div className="text-body font-medium">
                   {activity.reportingOrg.name}
                 </div>
               </div>
@@ -289,7 +289,7 @@ export function ActivityOverviewTab({
           </div>
           {primaryAmount > 0 && financials.totalDisbursement > 0 && (
             <div className="pt-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <div className="flex items-center justify-between text-helper text-muted-foreground mb-1">
                 <span>Disbursement progress</span>
                 <span className="tabular-nums">
                   {Math.min(
@@ -328,7 +328,7 @@ export function ActivityOverviewTab({
               topSectors.length > 0 && (
                 <button
                   onClick={() => onNavigate("sectors")}
-                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  className="text-helper text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                 >
                   Details <ArrowRight className="h-3 w-3" />
                 </button>
@@ -336,16 +336,16 @@ export function ActivityOverviewTab({
             }
           />
           {topSectors.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               No sectors recorded.
             </p>
           ) : (
             <ul className="space-y-2">
               {topSectors.map((s: any, i: number) => (
                 <li key={i} className="flex items-center justify-between gap-2">
-                  <span className="text-sm truncate">{s.name}</span>
+                  <span className="text-body truncate">{s.name}</span>
                   {s.percentage != null && (
-                    <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
+                    <span className="text-helper text-muted-foreground tabular-nums flex-shrink-0">
                       {Math.round(s.percentage)}%
                     </span>
                   )}
@@ -364,7 +364,7 @@ export function ActivityOverviewTab({
               (countries.length > 0 || regions.length > 0) && (
                 <button
                   onClick={() => onNavigate("geography")}
-                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  className="text-helper text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                 >
                   Map <ArrowRight className="h-3 w-3" />
                 </button>
@@ -372,7 +372,7 @@ export function ActivityOverviewTab({
             }
           />
           {countries.length === 0 && regions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               No locations recorded.
             </p>
           ) : (
@@ -406,7 +406,7 @@ export function ActivityOverviewTab({
               sdgCodes.length > 0 && (
                 <button
                   onClick={() => onNavigate("sdg")}
-                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  className="text-helper text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                 >
                   Details <ArrowRight className="h-3 w-3" />
                 </button>
@@ -414,7 +414,7 @@ export function ActivityOverviewTab({
             }
           />
           {sdgCodes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               No SDGs mapped.
             </p>
           ) : (
@@ -437,7 +437,7 @@ export function ActivityOverviewTab({
             action={
               <button
                 onClick={() => onNavigate("partnerships")}
-                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                className="text-helper text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
               >
                 All partners <ArrowRight className="h-3 w-3" />
               </button>
@@ -457,7 +457,7 @@ export function ActivityOverviewTab({
               return (
                 <div
                   key={i}
-                  className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm"
+                  className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-body"
                 >
                   {logo ? (
                     <img
@@ -472,7 +472,7 @@ export function ActivityOverviewTab({
                     {name}
                   </span>
                   {acronym && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       ({acronym})
                     </span>
                   )}
@@ -480,7 +480,7 @@ export function ActivityOverviewTab({
               );
             })}
             {orgs.length > topOrgs.length && (
-              <div className="inline-flex items-center rounded-md border bg-background px-3 py-1.5 text-sm text-muted-foreground">
+              <div className="inline-flex items-center rounded-md border bg-background px-3 py-1.5 text-body text-muted-foreground">
                 +{orgs.length - topOrgs.length} more
               </div>
             )}

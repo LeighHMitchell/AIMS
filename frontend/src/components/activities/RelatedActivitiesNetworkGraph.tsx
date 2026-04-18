@@ -365,7 +365,7 @@ export default function RelatedActivitiesNetworkGraph({
       <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         <div className="text-center">
           <p className="font-medium">No network data available</p>
-          <p className="text-xs mt-2">Add related activities to see the network graph</p>
+          <p className="text-helper mt-2">Add related activities to see the network graph</p>
         </div>
       </div>
     )

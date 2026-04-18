@@ -193,21 +193,21 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <p className="font-semibold text-foreground mb-2">{item.name}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Value</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Value</span>
+              <span className="text-body font-medium text-foreground">
                 {formatCurrency(item.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Percentage</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Percentage</span>
+              <span className="text-body font-medium text-foreground">
                 {percentage}%
               </span>
             </div>
             {item.activityCount > 0 && (
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-foreground">Activities</span>
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-body text-foreground">Activities</span>
+                <span className="text-body font-medium text-foreground">
                   {item.activityCount}
                 </span>
               </div>
@@ -227,7 +227,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[100px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -459,7 +459,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -520,7 +520,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Subnational Allocations
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 States and regions by financial allocation
               </CardDescription>
             </div>
@@ -538,7 +538,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col min-h-0">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows how development funding is distributed across subnational states and regions. Use the metric selector to compare budgets, planned disbursements, commitments, or actual disbursements, and switch between bar and pie chart views.
           </p>
         </CardContent>
@@ -618,7 +618,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
               </Button>
             </div>
             <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
+              <SelectTrigger className="w-[180px] h-8 text-helper">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -635,7 +635,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <div className="mt-4">{renderContent(true)}</div>
 
           {/* Description below chart */}
-          <p className="text-sm text-muted-foreground mt-4">
+          <p className="text-body text-muted-foreground mt-4">
             This chart visualizes how development assistance is distributed across Myanmar's states and regions.
             Understanding subnational allocation patterns helps identify geographic priorities, reveals potential
             gaps in coverage, and supports more equitable distribution of aid resources. Use the metric selector
@@ -669,7 +669,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
             </div>
           </DialogHeader>
 
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-body text-muted-foreground mt-2">
             This table provides precise figures for aid allocations across Myanmar's states and regions.
             The data shows the exact USD value, percentage share, and number of activities for each location.
             Use this detailed breakdown to analyze funding concentration, compare regional investments,

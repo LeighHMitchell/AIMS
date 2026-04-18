@@ -77,7 +77,7 @@ export default function TestEmailChangePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-body font-medium mb-2">
               New Email Address
             </label>
             <Input
@@ -107,13 +107,13 @@ export default function TestEmailChangePage() {
           {result && (
             <div className="mt-4 p-4 bg-muted rounded-lg">
               <h3 className="font-medium mb-2">Test Result:</h3>
-              <pre className="text-sm overflow-auto">
+              <pre className="text-body overflow-auto">
                 {JSON.stringify(result, null, 2)}
               </pre>
             </div>
           )}
 
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             <p><strong>Test User ID:</strong> local-test-user</p>
             <p><strong>Original Email:</strong> test@example.com</p>
             <p><strong>User Role:</strong> super_user</p>

@@ -432,7 +432,7 @@ export default function FAQPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors appearance-none pr-8 min-w-[140px]"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors appearance-none pr-8 min-w-[140px]"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>{category}</option>
@@ -500,7 +500,7 @@ export default function FAQPage() {
 
                           <div className="flex items-center space-x-2 mt-2">
                             <Badge variant="secondary">{faq.category}</Badge>
-                            <div className="flex items-center text-xs text-muted-foreground">
+                            <div className="flex items-center text-helper text-muted-foreground">
                               <Clock className="h-3 w-3 mr-1" />
                               Updated {isClient ? new Date(faq.updated_at).toLocaleDateString() : ''}
                             </div>
@@ -542,7 +542,7 @@ export default function FAQPage() {
                       {isLongAnswer && (
                         <button
                           onClick={() => toggleExpanded(faq.id)}
-                          className="mt-2 text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          className="mt-2 text-body text-muted-foreground hover:text-foreground flex items-center gap-1"
                         >
                           {isExpanded ? (
                             <>
@@ -563,7 +563,7 @@ export default function FAQPage() {
                         <div className="mt-4 pt-4 border-t">
                           <div className="flex flex-wrap gap-2">
                             {faq.tags.map(tag => (
-                              <Badge key={tag} variant="outline" className="text-xs">
+                              <Badge key={tag} variant="outline" className="text-helper">
                                 {tag}
                               </Badge>
                             ))}
@@ -574,7 +574,7 @@ export default function FAQPage() {
                       {/* Follow-up questions thread */}
                       {faq.followUps && faq.followUps.length > 0 && (
                         <div className="mt-4 pt-4 border-t">
-                          <p className="text-xs font-medium text-muted-foreground uppercase mb-3">
+                          <p className="text-helper font-medium text-muted-foreground uppercase mb-3">
                             Follow-up Questions ({faq.followUps.length})
                           </p>
                           <div className="space-y-0">
@@ -597,16 +597,16 @@ export default function FAQPage() {
                                   <div className="pl-9 pb-4">
                                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                                       <div className="flex items-start justify-between gap-2">
-                                        <p className="text-sm text-foreground">{followUp.question}</p>
+                                        <p className="text-body text-foreground">{followUp.question}</p>
                                         <Badge
                                           variant={followUp.status === 'published' ? 'default' : 'secondary'}
-                                          className="text-xs flex-shrink-0"
+                                          className="text-helper flex-shrink-0"
                                         >
                                           {followUp.status === 'pending' ? 'Awaiting answer' :
                                            followUp.status === 'published' ? 'Answered' : followUp.status}
                                         </Badge>
                                       </div>
-                                      <p className="text-xs text-muted-foreground mt-2">
+                                      <p className="text-helper text-muted-foreground mt-2">
                                         Asked by {userName} • {isClient ? new Date(followUp.created_at).toLocaleDateString() : ''}
                                       </p>
                                     </div>
@@ -620,7 +620,7 @@ export default function FAQPage() {
 
                       {/* Follow-up question button */}
                       <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           Need more information?
                         </p>
                         <Button
@@ -646,7 +646,7 @@ export default function FAQPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     Showing {Math.min(startIndex + 1, totalFAQs)} to {Math.min(endIndex, totalFAQs)} of {totalFAQs} FAQs
                   </div>
 
@@ -718,7 +718,7 @@ export default function FAQPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <label className="text-sm text-muted-foreground">Items per page:</label>
+                    <label className="text-body text-muted-foreground">Items per page:</label>
                     <Select
                       value={pageLimit.toString()}
                       onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -747,7 +747,7 @@ export default function FAQPage() {
                 <HelpCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <h3 className="font-medium text-foreground mb-1">Need more help?</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     Can't find what you're looking for? {isSuperUser && 'Create a new FAQ entry or'} contact your system administrator for additional support.
                   </p>
                 </div>
@@ -774,8 +774,8 @@ export default function FAQPage() {
             <div className="space-y-4">
               {/* Original FAQ context */}
               <div className="bg-surface-muted rounded-lg p-3 border">
-                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Related to:</p>
-                <p className="text-sm font-medium text-foreground">{followUpFAQ.question}</p>
+                <p className="text-helper text-muted-foreground uppercase font-medium mb-1">Related to:</p>
+                <p className="text-body font-medium text-foreground">{followUpFAQ.question}</p>
               </div>
 
               {/* Follow-up question input */}
@@ -821,7 +821,7 @@ export default function FAQPage() {
               </div>
 
               {!user && (
-                <p className="text-sm text-amber-600 text-center">
+                <p className="text-body text-amber-600 text-center">
                   Please log in to submit a follow-up question.
                 </p>
               )}

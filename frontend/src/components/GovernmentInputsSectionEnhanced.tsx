@@ -404,7 +404,7 @@ export function GovernmentInputsSectionEnhanced({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium text-foreground">
+                    <div className="text-body font-medium text-foreground">
                       {completedDimensions} of {budgetDimensions.length} completed
                     </div>
                     <Progress value={budgetProgress} className="w-24 h-2 mt-1" />
@@ -428,7 +428,7 @@ export function GovernmentInputsSectionEnhanced({
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <p className="text-body text-muted-foreground mb-3">
                       {getDimensionHelp(dimension.key)}
                     </p>
 
@@ -449,19 +449,19 @@ export function GovernmentInputsSectionEnhanced({
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="Yes" id={`${dimension.key}-yes`} />
-                        <label htmlFor={`${dimension.key}-yes`} className="text-sm font-medium cursor-pointer">
+                        <label htmlFor={`${dimension.key}-yes`} className="text-body font-medium cursor-pointer">
                           Yes
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="Partial" id={`${dimension.key}-partial`} />
-                        <label htmlFor={`${dimension.key}-partial`} className="text-sm font-medium cursor-pointer">
+                        <label htmlFor={`${dimension.key}-partial`} className="text-body font-medium cursor-pointer">
                           Partial
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="No" id={`${dimension.key}-no`} />
-                        <label htmlFor={`${dimension.key}-no`} className="text-sm font-medium cursor-pointer">
+                        <label htmlFor={`${dimension.key}-no`} className="text-body font-medium cursor-pointer">
                           No
                         </label>
                       </div>
@@ -474,9 +474,9 @@ export function GovernmentInputsSectionEnhanced({
                   <div className="flex items-center gap-2 mb-3">
                     <FileText className="h-5 w-5 text-muted-foreground" />
                     <h4 className="font-medium text-foreground">Supporting Documents</h4>
-                    <span className="text-xs bg-muted px-2 py-1 rounded">Optional</span>
+                    <span className="text-helper bg-muted px-2 py-1 rounded">Optional</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-body text-muted-foreground mb-3">
                     Upload documents that support your &quot;Yes&quot; or &quot;Partial&quot; classifications
                   </p>
                   <DocumentDropzone
@@ -519,13 +519,13 @@ export function GovernmentInputsSectionEnhanced({
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="contrib-yes" />
-                      <label htmlFor="contrib-yes" className="text-sm font-medium cursor-pointer">
+                      <label htmlFor="contrib-yes" className="text-body font-medium cursor-pointer">
                         Yes, government contributes
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="contrib-no" />
-                      <label htmlFor="contrib-no" className="text-sm font-medium cursor-pointer">
+                      <label htmlFor="contrib-no" className="text-body font-medium cursor-pointer">
                         No contribution
                       </label>
                     </div>
@@ -544,7 +544,7 @@ export function GovernmentInputsSectionEnhanced({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">Currency</Label>
+                          <Label className="text-body font-medium">Currency</Label>
                           <CurrencySelector
                             value={rgc?.currency || undefined}
                             onValueChange={(value) => updateField("rgcContribution.currency", value)}
@@ -552,7 +552,7 @@ export function GovernmentInputsSectionEnhanced({
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">Value Date</Label>
+                          <Label className="text-body font-medium">Value Date</Label>
                           <Input
                             type="date"
                             value={rgc?.valueDate || ""}
@@ -566,7 +566,7 @@ export function GovernmentInputsSectionEnhanced({
                       {rgc?.currency && rgc.currency !== 'USD' && (
                         <div className="p-3 border rounded-lg bg-white">
                           <div className="flex items-center justify-between mb-2">
-                            <Label className="text-sm font-medium flex items-center gap-2">
+                            <Label className="text-body font-medium flex items-center gap-2">
                               Exchange Rate
                               {!rgc.exchangeRateManual && (
                                 <Button
@@ -582,7 +582,7 @@ export function GovernmentInputsSectionEnhanced({
                               )}
                             </Label>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-helper text-muted-foreground">
                                 {rgc.exchangeRateManual ? 'Manual' : 'API Rate'}
                               </span>
                               <Switch
@@ -619,12 +619,12 @@ export function GovernmentInputsSectionEnhanced({
                             )}
                           </div>
                           {exchangeRate && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               1 {rgc.currency} = {exchangeRate.toFixed(6)} USD
                             </p>
                           )}
                           {rateError && (
-                            <p className="text-xs text-destructive mt-1">{rateError}</p>
+                            <p className="text-helper text-destructive mt-1">{rateError}</p>
                           )}
                         </div>
                       )}
@@ -632,7 +632,7 @@ export function GovernmentInputsSectionEnhanced({
                       {/* Total Amount */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">
+                          <Label className="text-body font-medium">
                             Total Amount {rgc?.currency ? `(${rgc.currency})` : '(Local Currency)'}
                           </Label>
                           <Input
@@ -651,12 +651,12 @@ export function GovernmentInputsSectionEnhanced({
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">USD Equivalent</Label>
+                          <Label className="text-body font-medium">USD Equivalent</Label>
                           <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
                             {computedTotalUSD !== null ? (
                               <>$ {computedTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                             ) : (
-                              <span className="text-muted-foreground font-normal text-sm">
+                              <span className="text-muted-foreground font-normal text-body">
                                 {!rgc?.currency ? 'Select a currency' : !exchangeRate ? 'Set value date for rate' : 'Enter amount'}
                               </span>
                             )}
@@ -677,13 +677,13 @@ export function GovernmentInputsSectionEnhanced({
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="lump_sum" id="dist-lump" />
-                          <label htmlFor="dist-lump" className="text-sm font-medium cursor-pointer">
+                          <label htmlFor="dist-lump" className="text-body font-medium cursor-pointer">
                             Lump Sum
                           </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="annual" id="dist-annual" />
-                          <label htmlFor="dist-annual" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
+                          <label htmlFor="dist-annual" className="text-body font-medium cursor-pointer flex items-center gap-1.5">
                             <SplitSquareHorizontal className="h-3.5 w-3.5" />
                             Annual Breakdown
                           </label>
@@ -725,7 +725,7 @@ export function GovernmentInputsSectionEnhanced({
                         {(!plannedStartDate || !plannedEndDate) && (
                           <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                             <Info className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                            <p className="text-sm text-amber-800">
+                            <p className="text-body text-amber-800">
                               Set planned start and end dates in the Activity Overview section to auto-generate annual breakdown rows. You can still add years manually below.
                             </p>
                           </div>
@@ -734,14 +734,14 @@ export function GovernmentInputsSectionEnhanced({
                         {/* Year table */}
                         {(rgc?.annual?.length ?? 0) > 0 && (
                           <div className="overflow-x-auto border rounded-lg">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-body">
                               <thead className="bg-surface-muted">
                                 <tr className="bg-surface-muted">
-                                  <th className="text-left p-2 font-medium text-xs w-24">Year</th>
-                                  <th className="text-right p-2 font-medium text-xs">
+                                  <th className="text-left p-2 font-medium text-helper w-24">Year</th>
+                                  <th className="text-right p-2 font-medium text-helper">
                                     Amount {rgc?.currency ? `(${rgc.currency})` : '(Local)'}
                                   </th>
-                                  <th className="text-right p-2 font-medium text-xs">USD Equivalent</th>
+                                  <th className="text-right p-2 font-medium text-helper">USD Equivalent</th>
                                   <th className="w-10" />
                                 </tr>
                               </thead>
@@ -753,7 +753,7 @@ export function GovernmentInputsSectionEnhanced({
                                   return (
                                     <tr key={index} className="hover:bg-muted/50">
                                       <td className="p-1.5">
-                                        <span className="text-sm tabular-nums font-medium">{item.year}</span>
+                                        <span className="text-body tabular-nums font-medium">{item.year}</span>
                                       </td>
                                       <td className="p-1.5 text-right">
                                         <Input
@@ -767,11 +767,11 @@ export function GovernmentInputsSectionEnhanced({
                                             newAnnual[index] = { ...item, amountLocal: amtLocal, amountUSD: amtUSD };
                                             updateField("rgcContribution.annual", newAnnual);
                                           }}
-                                          className="h-7 text-sm text-right tabular-nums w-full"
+                                          className="h-7 text-body text-right tabular-nums w-full"
                                         />
                                       </td>
                                       <td className="p-1.5 text-right">
-                                        <span className="text-sm tabular-nums text-green-700 font-medium">
+                                        <span className="text-body tabular-nums text-green-700 font-medium">
                                           {rowUSD ? `$ ${rowUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                                         </span>
                                       </td>
@@ -792,11 +792,11 @@ export function GovernmentInputsSectionEnhanced({
                               </tbody>
                               <tfoot>
                                 <tr className="border-t-2 font-medium bg-muted/30">
-                                  <td className="p-2 text-xs">Total</td>
-                                  <td className="p-2 text-right tabular-nums text-sm">
+                                  <td className="p-2 text-helper">Total</td>
+                                  <td className="p-2 text-right tabular-nums text-body">
                                     {(rgc?.annual || []).reduce((sum, r) => sum + (r.amountLocal || 0), 0).toLocaleString()}
                                   </td>
-                                  <td className="p-2 text-right tabular-nums text-sm text-green-700">
+                                  <td className="p-2 text-right tabular-nums text-body text-green-700">
                                     $ {(rgc?.annual || []).reduce((sum, r) => {
                                       const usd = r.amountLocal && exchangeRate ? Math.round(r.amountLocal * exchangeRate * 100) / 100 : (r.amountUSD || 0);
                                       return sum + usd;
@@ -834,7 +834,7 @@ export function GovernmentInputsSectionEnhanced({
                     {/* Additional Details */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-body font-medium text-foreground mb-2">
                           In-Kind Contributions
                         </label>
                         <Textarea
@@ -845,7 +845,7 @@ export function GovernmentInputsSectionEnhanced({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-body font-medium text-foreground mb-2">
                           Source of Funding
                         </label>
                         <Textarea
@@ -871,7 +871,7 @@ export function GovernmentInputsSectionEnhanced({
                   <ShieldAlert className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <h3 className="text-lg font-semibold">Risk Summary</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body text-muted-foreground">
                       {totalAnswered} of {totalQuestions} questions answered
                     </p>
                   </div>
@@ -879,7 +879,7 @@ export function GovernmentInputsSectionEnhanced({
                 {totalAnswered > 0 && (
                   <Badge
                     variant="outline"
-                    className={cn("text-sm px-3 py-1", getRiskLevel(overallRiskScore).badgeClass)}
+                    className={cn("text-body px-3 py-1", getRiskLevel(overallRiskScore).badgeClass)}
                   >
                     Overall: {getRiskLevel(overallRiskScore).label} Risk
                   </Badge>
@@ -893,13 +893,13 @@ export function GovernmentInputsSectionEnhanced({
                     const level = cat.avgScore > 0 ? getRiskLevel(cat.avgScore) : null;
                     return (
                       <div key={cat.id} className="text-center">
-                        <div className="text-xs text-muted-foreground mb-1">{cat.label.replace(" Risk", "")}</div>
+                        <div className="text-helper text-muted-foreground mb-1">{cat.label.replace(" Risk", "")}</div>
                         {level ? (
-                          <Badge variant="outline" className={cn("text-xs", level.badgeClass)}>
+                          <Badge variant="outline" className={cn("text-helper", level.badgeClass)}>
                             {level.label}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs text-muted-foreground border-border">
+                          <Badge variant="outline" className="text-helper text-muted-foreground border-border">
                             --
                           </Badge>
                         )}
@@ -910,7 +910,7 @@ export function GovernmentInputsSectionEnhanced({
               )}
 
               {totalAnswered === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-2">
+                <p className="text-body text-muted-foreground text-center py-2">
                   Answer the questions below to generate a risk profile for this activity.
                 </p>
               )}
@@ -930,7 +930,7 @@ export function GovernmentInputsSectionEnhanced({
                     const currentScore = riskAssessment[question.id]?.score;
                     return (
                       <div key={question.id} className="p-4 border rounded-lg bg-white">
-                        <p className="text-sm font-medium text-foreground mb-3">{question.text}</p>
+                        <p className="text-body font-medium text-foreground mb-3">{question.text}</p>
                         <RadioGroup
                           value={currentScore?.toString() || ""}
                           onValueChange={(value) =>
@@ -947,7 +947,7 @@ export function GovernmentInputsSectionEnhanced({
                               <label
                                 htmlFor={`${question.id}-${level.value}`}
                                 className={cn(
-                                  "text-sm font-medium cursor-pointer",
+                                  "text-body font-medium cursor-pointer",
                                   currentScore === level.value && level.color.split(" ")[0]
                                 )}
                               >
@@ -994,13 +994,13 @@ export function GovernmentInputsSectionEnhanced({
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="eval-yes" />
-                      <label htmlFor="eval-yes" className="text-sm font-medium cursor-pointer">
+                      <label htmlFor="eval-yes" className="text-body font-medium cursor-pointer">
                         Yes, evaluated
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="eval-no" />
-                      <label htmlFor="eval-no" className="text-sm font-medium cursor-pointer">
+                      <label htmlFor="eval-no" className="text-body font-medium cursor-pointer">
                         Not evaluated
                       </label>
                     </div>
@@ -1015,7 +1015,7 @@ export function GovernmentInputsSectionEnhanced({
                         <FileText className="h-5 w-5 text-muted-foreground" />
                         <span className="font-medium text-foreground">Evaluation Documents</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
+                      <p className="text-body text-muted-foreground mb-3">
                         Upload the government evaluation report(s)
                       </p>
                       <DocumentDropzone
@@ -1040,13 +1040,13 @@ export function GovernmentInputsSectionEnhanced({
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="yes" id="framework-yes" />
-                          <label htmlFor="framework-yes" className="text-sm font-medium cursor-pointer">
+                          <label htmlFor="framework-yes" className="text-body font-medium cursor-pointer">
                             Yes, in national framework
                           </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="no" id="framework-no" />
-                          <label htmlFor="framework-no" className="text-sm font-medium cursor-pointer">
+                          <label htmlFor="framework-no" className="text-body font-medium cursor-pointer">
                             Not in framework
                           </label>
                         </div>
@@ -1055,7 +1055,7 @@ export function GovernmentInputsSectionEnhanced({
 
                     {governmentInputs.evaluationResults?.inNationalFramework && (
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-body font-medium text-foreground mb-2">
                           National Indicator Reference
                         </label>
                         <Input

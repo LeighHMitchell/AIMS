@@ -589,7 +589,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                       <div className="flex items-center gap-2">
                         <Badge 
                           variant={comment.type === 'Question' ? 'default' : 'secondary'}
-                          className="text-xs"
+                          className="text-helper"
                         >
                           {comment.type === 'Question' ? (
                             <HelpCircle className="h-3 w-3 mr-1" />
@@ -599,13 +599,13 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                           {comment.type}
                         </Badge>
                         {comment.status === 'Open' && comment.type === 'Question' && !comment.isArchived && (
-                          <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
+                          <Badge variant="outline" className="text-helper border-yellow-500 text-yellow-700">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Unresolved
                           </Badge>
                         )}
                         {comment.isArchived && (
-                          <Badge variant="outline" className="text-xs border-gray-400 text-muted-foreground">
+                          <Badge variant="outline" className="text-helper border-gray-400 text-muted-foreground">
                             <Archive className="h-3 w-3 mr-1" />
                             Archived
                           </Badge>
@@ -613,7 +613,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                       </div>
                       
                       {/* Top Right: Date/Time */}
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-muted-foreground text-helper">
                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                       </span>
                     </div>
@@ -627,8 +627,8 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                         size="md"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</div>
-                        <Badge variant="outline" className="text-xs mt-1">
+                        <div className="font-medium text-body truncate">{comment.author?.name || 'Unknown User'}</div>
+                        <Badge variant="outline" className="text-helper mt-1">
                           {comment.author?.role || 'user'}
                         </Badge>
                       </div>
@@ -636,13 +636,13 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                   </div>
                   
                   {comment.status === 'Resolved' && !isExpanded && comment.resolvedAt && (
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-body text-muted-foreground">
                       <CheckCircle className="h-3 w-3 inline mr-1 text-[hsl(var(--success-icon))]" />
                       Resolved by {comment.resolvedBy?.name} • {formatDistanceToNow(new Date(comment.resolvedAt), { addSuffix: true })}
                     </div>
                   )}
                   {comment.isArchived && !isExpanded && comment.archivedAt && (
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-body text-muted-foreground">
                       <Archive className="h-3 w-3 inline mr-1 text-muted-foreground" />
                       Archived by {comment.archivedBy?.name} • {formatDistanceToNow(new Date(comment.archivedAt), { addSuffix: true })}
                     </div>
@@ -651,7 +651,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
               </div>
               
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-helper text-muted-foreground">
                   {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                 </span>
                 {comment.status === 'Open' ? (
@@ -666,7 +666,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           <CollapsibleContent>
             <div className="px-4 pb-4">
               <div className="pl-10">
-                <p className="text-sm mb-3 whitespace-pre-wrap">{comment.message}</p>
+                <p className="text-body mb-3 whitespace-pre-wrap">{comment.message}</p>
                 
                 {/* Attachments */}
                 {comment.attachments && comment.attachments.length > 0 && (
@@ -676,7 +676,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                         key={attachment.id}
                         href={attachment.url}
                         download={attachment.filename}
-                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                        className="inline-flex items-center gap-1 text-helper text-blue-600 hover:text-blue-700"
                       >
                         <Paperclip className="h-3 w-3" />
                         {attachment.filename}
@@ -692,9 +692,9 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                     <div className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-green-800">Resolution</p>
-                        <p className="text-sm text-green-700 mt-1">{comment.resolutionNote}</p>
-                        <p className="text-xs text-[hsl(var(--success-icon))] mt-1">
+                        <p className="text-body font-medium text-green-800">Resolution</p>
+                        <p className="text-body text-green-700 mt-1">{comment.resolutionNote}</p>
+                        <p className="text-helper text-[hsl(var(--success-icon))] mt-1">
                           by {comment.resolvedBy?.name} • {format(new Date(comment.resolvedAt), 'MMM d, yyyy h:mm a')}
                         </p>
                       </div>
@@ -706,13 +706,13 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                 {comment.replies && comment.replies.length > 0 && (
                   <div className="mt-3 space-y-2 border-l border-border pl-4">
                     {comment.replies.map(reply => (
-                      <div key={reply.id} className="text-sm">
+                      <div key={reply.id} className="text-body">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium">{reply.author?.name || 'Unknown User'}</span>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-helper">
                             {reply.author?.role || 'user'}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-helper text-muted-foreground">
                             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                           </span>
                         </div>
@@ -801,7 +801,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
                       rows={2}
-                      className="text-sm"
+                      className="text-body"
                     />
                     <div className="flex gap-2">
                       <Button
@@ -923,7 +923,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
               <Button variant="outline" size="sm" onClick={fetchNotifications} className="relative">
                 {unreadCount > 0 ? <Bell className="h-4 w-4 text-orange-500" /> : <BellOff className="h-4 w-4" />}
                 {unreadCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs">
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 text-helper">
                     {unreadCount}
                   </Badge>
                 )}
@@ -974,7 +974,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
           </div>
           
           <div className="flex justify-between items-center">
-            <div className="text-xs text-muted-foreground flex items-center gap-4">
+            <div className="text-helper text-muted-foreground flex items-center gap-4">
               {commentType === 'Question' && (
                 <span className="flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
@@ -1042,7 +1042,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                 <p>No open comments yet</p>
-                <p className="text-sm mt-1">Be the first to start a discussion!</p>
+                <p className="text-body mt-1">Be the first to start a discussion!</p>
               </div>
             ) : (
               sortedComments.map(renderComment)

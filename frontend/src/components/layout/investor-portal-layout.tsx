@@ -22,13 +22,13 @@ export function InvestorPortalLayout({ children }: InvestorPortalLayoutProps) {
             <div className="flex items-center gap-3">
               <Link
                 href="/register"
-                className="inline-flex items-center px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center px-4 py-2 rounded-md bg-primary text-primary-foreground text-body font-medium hover:bg-primary/90 transition-colors"
               >
                 Register Interest
               </Link>
               <Link
                 href="/login"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-body text-muted-foreground hover:text-foreground transition-colors"
               >
                 Sign In
               </Link>
@@ -45,7 +45,7 @@ export function InvestorPortalLayout({ children }: InvestorPortalLayoutProps) {
       {/* Footer */}
       <footer className="border-t bg-card mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-body text-muted-foreground text-center">
             Myanmar Aid Information Management System (AIMS) — Investment Portal
           </p>
         </div>

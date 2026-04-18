@@ -91,7 +91,7 @@ export function ReadinessStageAccordion({
                 Stage {stage.stage_order}: {stage.name}
               </h3>
               {stage.description && (
-                <p className="text-sm text-muted-foreground">{stage.description}</p>
+                <p className="text-body text-muted-foreground">{stage.description}</p>
               )}
             </div>
           </div>
@@ -99,7 +99,7 @@ export function ReadinessStageAccordion({
           <div className="flex items-center gap-4">
             {/* Progress indicator */}
             <div className="hidden md:flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 {progress.completed + progress.not_required} / {progress.total} items
               </div>
               <div className="w-24">
@@ -149,7 +149,7 @@ export function ReadinessStageAccordion({
           {/* Items list */}
           <div className="space-y-3 mt-4">
             {items.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-body text-muted-foreground text-center py-4">
                 No applicable items for this stage based on current configuration.
               </p>
             ) : (

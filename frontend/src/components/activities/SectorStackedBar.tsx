@@ -72,7 +72,7 @@ export default function SectorStackedBar({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white p-2 rounded text-sm pointer-events-none z-50')
+      .attr('class', 'absolute invisible bg-gray-900 text-white p-2 rounded text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     // Draw stacked bars
@@ -95,7 +95,7 @@ export default function SectorStackedBar({
             tooltip.transition().duration(200).style('opacity', 1);
             tooltip.html(`
               <div class="font-semibold">${alloc.dac5_code} - ${alloc.dac5_name}</div>
-              <div class="text-xs opacity-75">DAC3: ${group.dac3_code} - ${group.dac3_name}</div>
+              <div class="text-helper opacity-75">DAC3: ${group.dac3_code} - ${group.dac3_name}</div>
               <div>Allocation: ${alloc.percentage.toFixed(1)}%</div>
             `)
               .style('left', `${event.pageX + 10}px`)

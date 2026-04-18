@@ -71,9 +71,9 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                     const d = payload[0]?.payload
                     return (
                       <div className={TOOLTIP_CLASSES}>
-                        <p className="font-medium text-xs text-foreground">{d?.code}: {d?.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{formatCurrencyShort(d?.value)}</p>
-                        <p className="text-xs text-muted-foreground">{d?.activityCount} activities</p>
+                        <p className="font-medium text-helper text-foreground">{d?.code}: {d?.fullName}</p>
+                        <p className="text-helper text-muted-foreground">{formatCurrencyShort(d?.value)}</p>
+                        <p className="text-helper text-muted-foreground">{d?.activityCount} activities</p>
                       </div>
                     )
                   }
@@ -85,7 +85,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No sub-sector data</div>
+        <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No sub-sector data</div>
       )}
 
       {/* Expandable card list */}
@@ -93,7 +93,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
         <div className="mt-4">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground mb-2"
+            className="flex items-center gap-1 text-helper font-medium text-muted-foreground hover:text-foreground mb-2"
           >
             {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
             All Sub-Sectors ({subSectors.length})
@@ -117,7 +117,7 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                       {s.code}
                     </code>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
+                      <p className="text-body font-medium text-foreground truncate">{s.name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
@@ -125,12 +125,12 @@ export function SubSectorBreakdown({ subSectors, themeColor, compact = false }: 
                             style={{ width: `${progressPct}%`, backgroundColor: '#4c5568' }}
                           />
                         </div>
-                        <span className="text-xs text-muted-foreground flex-shrink-0">{s.activityCount} activities</span>
+                        <span className="text-helper text-muted-foreground flex-shrink-0">{s.activityCount} activities</span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(s.totalValue)}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-body font-semibold text-foreground">{formatCurrencyShort(s.totalValue)}</p>
+                      <p className="text-helper text-muted-foreground">
                         {formatCurrencyShort(s.commitments)} / {formatCurrencyShort(s.disbursements)}
                       </p>
                     </div>

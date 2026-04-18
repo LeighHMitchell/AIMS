@@ -285,7 +285,7 @@ export default function WorkingGroupProfilePage() {
                     <h1 className="text-3xl font-bold text-white">{workingGroup.label}</h1>
                   <div className="flex items-center gap-2 mt-1">
                     <code className="text-xs font-mono bg-white/20 text-white/80 px-1.5 py-0.5 rounded">{workingGroup.code}</code>
-                    <span className="text-sm text-white/70">{workingGroup.status === 'active' ? 'Active' : 'Inactive'}</span>
+                    <span className="text-body text-white/70">{workingGroup.status === 'active' ? 'Active' : 'Inactive'}</span>
                   </div>
                 </div>
               </div>
@@ -305,9 +305,9 @@ export default function WorkingGroupProfilePage() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{workingGroup.code}</code>
-                  <span className="text-sm text-muted-foreground">{workingGroup.status === 'active' ? 'Active' : 'Inactive'}</span>
+                  <span className="text-body text-muted-foreground">{workingGroup.status === 'active' ? 'Active' : 'Inactive'}</span>
                   {workingGroup.sector_code && (
-                    <Badge variant="outline" className="text-xs">Sector {workingGroup.sector_code}</Badge>
+                    <Badge variant="outline" className="text-helper">Sector {workingGroup.sector_code}</Badge>
                   )}
                 </div>
               </div>
@@ -376,19 +376,19 @@ export default function WorkingGroupProfilePage() {
                 {workingGroup.members.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <UserPlus className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-sm text-muted-foreground">No members yet</p>
-                    <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
+                    <p className="text-body text-muted-foreground">No members yet</p>
+                    <p className="text-helper text-muted-foreground mt-1">Add members to this working group to get started</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <thead className="bg-surface-muted">
                         <tr className="border-b border-border">
-                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Name</th>
-                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Role</th>
-                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Organization</th>
-                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Email</th>
-                          <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Joined</th>
+                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Name</th>
+                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Role</th>
+                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Organization</th>
+                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Email</th>
+                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Joined</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -400,7 +400,7 @@ export default function WorkingGroupProfilePage() {
                                   {member.avatar_url ? (
                                     <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                                   ) : (
-                                    <span className="text-xs font-medium text-muted-foreground">
+                                    <span className="text-helper font-medium text-muted-foreground">
                                       {member.person_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                     </span>
                                   )}
@@ -408,13 +408,13 @@ export default function WorkingGroupProfilePage() {
                                 <span className="font-medium text-foreground">{member.person_name}</span>
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 text-sm text-muted-foreground">
+                            <td className="py-2.5 px-3 text-body text-muted-foreground">
                               {getRoleLabel(member.role)}
                             </td>
                             <td className="py-2.5 px-3">
                               <div className="text-foreground">{member.person_organization || '—'}</div>
                               {(member.job_title || member.department) && (
-                                <div className="text-xs text-muted-foreground mt-0.5">
+                                <div className="text-helper text-muted-foreground mt-0.5">
                                   {[member.department, member.job_title].filter(Boolean).join(' · ')}
                                 </div>
                               )}
@@ -458,8 +458,8 @@ export default function WorkingGroupProfilePage() {
                   {workingGroup.sub_groups.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <GitBranch className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground">No sub-working groups yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Create sub-working groups to organize specialized topics</p>
+                      <p className="text-body text-muted-foreground">No sub-working groups yet</p>
+                      <p className="text-helper text-muted-foreground mt-1">Create sub-working groups to organize specialized topics</p>
                     </div>
                   ) : (
                     workingGroup.sub_groups.map((sg) => (
@@ -477,9 +477,9 @@ export default function WorkingGroupProfilePage() {
                             </Badge>
                           </div>
                           {sg.description && (
-                            <p className="text-sm text-muted-foreground mt-1 ml-6 line-clamp-1">{sg.description}</p>
+                            <p className="text-body text-muted-foreground mt-1 ml-6 line-clamp-1">{sg.description}</p>
                           )}
-                          <div className="flex items-center gap-3 mt-1.5 ml-6 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-3 mt-1.5 ml-6 text-helper text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Users className="h-3 w-3" />
                               {sg.member_count || 0} members
@@ -517,8 +517,8 @@ export default function WorkingGroupProfilePage() {
                   {workingGroup.meetings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <Calendar className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground">No meetings scheduled</p>
-                      <p className="text-xs text-muted-foreground mt-1">Schedule meetings to coordinate with working group members</p>
+                      <p className="text-body text-muted-foreground">No meetings scheduled</p>
+                      <p className="text-helper text-muted-foreground mt-1">Schedule meetings to coordinate with working group members</p>
                     </div>
                   ) : (
                     workingGroup.meetings.map((meeting) => (
@@ -531,7 +531,7 @@ export default function WorkingGroupProfilePage() {
                                 {meeting.status}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-4 mt-1 text-body text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3.5 w-3.5" />
                                 {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
@@ -570,8 +570,8 @@ export default function WorkingGroupProfilePage() {
                   {workingGroup.activities.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <FileText className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground">No activities linked</p>
-                      <p className="text-xs text-muted-foreground mt-1">Activities associated with this working group will appear here</p>
+                      <p className="text-body text-muted-foreground">No activities linked</p>
+                      <p className="text-helper text-muted-foreground mt-1">Activities associated with this working group will appear here</p>
                     </div>
                   ) : (
                     workingGroup.activities.map((activity) => (
@@ -583,7 +583,7 @@ export default function WorkingGroupProfilePage() {
                         <div className="flex justify-between items-start">
                           <div>
                             <h4 className="font-medium">{activity.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-body text-muted-foreground mt-1">
                               {activity.iati_id && <span>{activity.iati_id} &middot; </span>}
                               {activity.partner_name}
                             </p>
@@ -621,8 +621,8 @@ export default function WorkingGroupProfilePage() {
                   {workingGroup.documents.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <FileText className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground">No documents uploaded</p>
-                      <p className="text-xs text-muted-foreground mt-1">Upload documents to share with working group members</p>
+                      <p className="text-body text-muted-foreground">No documents uploaded</p>
+                      <p className="text-helper text-muted-foreground mt-1">Upload documents to share with working group members</p>
                     </div>
                   ) : (
                     workingGroup.documents.map((doc) => (
@@ -634,9 +634,9 @@ export default function WorkingGroupProfilePage() {
                               <div>
                                 <h4 className="font-medium">{doc.title}</h4>
                                 {doc.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">{doc.description}</p>
+                                  <p className="text-body text-muted-foreground mt-1">{doc.description}</p>
                                 )}
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-helper text-muted-foreground mt-1">
                                   Uploaded on {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
                                   {doc.uploaded_by_name && ` by ${doc.uploaded_by_name}`}
                                 </p>

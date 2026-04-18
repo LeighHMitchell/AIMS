@@ -103,7 +103,7 @@ export function SEEAssessmentWizard({ transferId }: SEEAssessmentWizardProps) {
                 onClick={() => canClick && goToStage(stage)}
                 disabled={!canClick}
                 className={cn(
-                  'w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2',
+                  'w-full text-left px-3 py-2 rounded-md text-body font-medium transition-colors flex items-center gap-2',
                   isActive
                     ? 'bg-primary text-primary-foreground'
                     : isComplete
@@ -133,7 +133,7 @@ export function SEEAssessmentWizard({ transferId }: SEEAssessmentWizardProps) {
       <div>
         {/* Mobile Stage Indicator */}
         <div className="lg:hidden mb-4">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             Step {currentStageIndex + 1} of {SEE_STAGE_ORDER.length}
           </div>
           <div className="text-lg font-semibold">{SEE_STAGE_LABELS[currentStage]}</div>
@@ -142,7 +142,7 @@ export function SEEAssessmentWizard({ transferId }: SEEAssessmentWizardProps) {
         <Card>
           <CardContent className="p-6">
             {errors._form && (
-              <div className="mb-4 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md p-3">
+              <div className="mb-4 text-body text-destructive bg-destructive/10 border border-destructive/30 rounded-md p-3">
                 {errors._form}
               </div>
             )}

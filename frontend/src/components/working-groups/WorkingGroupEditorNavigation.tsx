@@ -192,7 +192,7 @@ export default function WorkingGroupEditorNavigation({
                           // Active state carried by background fill + text
                           // weight/color. Removed the 3px left-stripe accent
                           // that duplicated those signals (AI-slop tell).
-                          "w-full text-left py-2 px-3 rounded text-sm font-normal transition-all duration-200 ease-in-out",
+                          "w-full text-left py-2 px-3 rounded text-body font-normal transition-all duration-200 ease-in-out",
                           "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
@@ -250,7 +250,7 @@ export default function WorkingGroupEditorNavigation({
               onClick={onDelete}
               disabled={disabled}
               className={cn(
-                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-destructive/100 text-white hover:bg-destructive transition-colors flex items-center justify-center gap-2",
+                "w-full py-2.5 px-4 rounded-md text-body font-medium bg-destructive/100 text-white hover:bg-destructive transition-colors flex items-center justify-center gap-2",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

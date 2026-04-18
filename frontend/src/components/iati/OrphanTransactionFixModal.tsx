@@ -238,7 +238,7 @@ export function OrphanTransactionFixModal({
               </Badge>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body">
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span>{new Date(transaction.transaction_date).toLocaleDateString()}</span>
@@ -293,7 +293,7 @@ export function OrphanTransactionFixModal({
                     <Loader2 className="h-4 w-4 animate-spin" />
                   </div>
                 ) : filteredActivities.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
+                  <div className="p-4 text-center text-body text-muted-foreground">
                     No activities found
                   </div>
                 ) : (
@@ -301,7 +301,7 @@ export function OrphanTransactionFixModal({
                     <SelectItem key={activity.id} value={activity.id}>
                       <div className="flex flex-col">
                         <span className="font-medium">{activity.title}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-helper text-muted-foreground">
                           IATI: {activity.iati_id}
                         </span>
                       </div>
@@ -332,7 +332,7 @@ export function OrphanTransactionFixModal({
                 </>
               )}
             </Button>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-helper text-muted-foreground mt-2">
               This will create a minimal activity with IATI ID: {orphanedTransaction.activityRef}
             </p>
           </div>

@@ -130,7 +130,7 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
   if (!proposal) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p className="text-sm">No unsolicited proposal data found for this project.</p>
+        <p className="text-body">No unsolicited proposal data found for this project.</p>
       </div>
     );
   }
@@ -190,38 +190,38 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <div className="text-xs text-muted-foreground">Proponent</div>
-              <div className="text-sm font-medium">{proposal.proponent_name}</div>
+              <div className="text-helper text-muted-foreground">Proponent</div>
+              <div className="text-body font-medium">{proposal.proponent_name}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Company</div>
-              <div className="text-sm font-medium">{proposal.proponent_company || '—'}</div>
+              <div className="text-helper text-muted-foreground">Company</div>
+              <div className="text-body font-medium">{proposal.proponent_company || '—'}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Contact</div>
-              <div className="text-sm font-medium">{proposal.proponent_contact || '—'}</div>
+              <div className="text-helper text-muted-foreground">Contact</div>
+              <div className="text-body font-medium">{proposal.proponent_contact || '—'}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Proposal Date</div>
-              <div className="text-sm font-medium">{proposal.proposal_date || '—'}</div>
+              <div className="text-helper text-muted-foreground">Proposal Date</div>
+              <div className="text-body font-medium">{proposal.proposal_date || '—'}</div>
             </div>
           </div>
           {proposal.rfp_published_date && (
             <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <div className="text-xs text-muted-foreground">RFP Published</div>
-                <div className="text-sm font-medium">{proposal.rfp_published_date}</div>
+                <div className="text-helper text-muted-foreground">RFP Published</div>
+                <div className="text-body font-medium">{proposal.rfp_published_date}</div>
               </div>
               {proposal.counter_proposal_deadline && (
                 <div>
-                  <div className="text-xs text-muted-foreground">Counter Deadline</div>
-                  <div className="text-sm font-medium">{proposal.counter_proposal_deadline}</div>
+                  <div className="text-helper text-muted-foreground">Counter Deadline</div>
+                  <div className="text-body font-medium">{proposal.counter_proposal_deadline}</div>
                 </div>
               )}
               {proposal.awarded_to && (
                 <div>
-                  <div className="text-xs text-muted-foreground">Awarded To</div>
-                  <div className="text-sm font-medium">{proposal.awarded_to}</div>
+                  <div className="text-helper text-muted-foreground">Awarded To</div>
+                  <div className="text-body font-medium">{proposal.awarded_to}</div>
                 </div>
               )}
             </div>
@@ -241,10 +241,10 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
         </CardHeader>
         <CardContent>
           {bidders.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No bidders yet</p>
+            <p className="text-body text-muted-foreground text-center py-4">No bidders yet</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body">
                 <thead className="bg-surface-muted border-b">
                   <tr>
                     <th className="text-left py-2 px-2 font-medium text-muted-foreground">Company</th>

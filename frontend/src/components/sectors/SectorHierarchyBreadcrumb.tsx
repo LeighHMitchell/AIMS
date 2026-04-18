@@ -49,7 +49,7 @@ export function SectorHierarchyBreadcrumb({ hierarchy }: SectorHierarchyBreadcru
   }
 
   return (
-    <nav className="flex items-center flex-wrap gap-1 text-sm mb-4">
+    <nav className="flex items-center flex-wrap gap-1 text-body mb-4">
       {segments.map((seg, i) => (
         <React.Fragment key={seg.href}>
           {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}

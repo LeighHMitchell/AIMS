@@ -269,7 +269,7 @@ export function EnhancedFinancesSection({
         <TabsContent value="defaults" className="space-y-4">
           {/* Pooled fund aid type guidance */}
           {general?.is_pooled_fund === true && !general?.defaultAidType?.match(/^B0/) && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-body text-amber-900">
               <span className="mt-0.5 shrink-0 text-amber-500">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -302,7 +302,7 @@ export function EnhancedFinancesSection({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Default Aid Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Aid Type
                         <HelpTextTooltip content="How aid is delivered (e.g., grant, loan, scholarship). Applied to new transactions unless overridden." />
                         {fieldCompletion.aidType && (
@@ -324,7 +324,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Currency */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Currency
                         <HelpTextTooltip content="Used for all transactions and budgets in this activity (e.g., USD, EUR, GBP)" />
                         {fieldCompletion.currency && (
@@ -346,7 +346,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Flow Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Flow Type
                         <HelpTextTooltip content="The flow type for this activity" />
                         {fieldCompletion.flowType && (
@@ -368,7 +368,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Tied Status */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Tied Status
                         <HelpTextTooltip content="The tied status for this activity" />
                         {fieldCompletion.tiedStatus && (
@@ -390,7 +390,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Finance Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Finance Type
                         <HelpTextTooltip content="The finance type for this activity" />
                         {fieldCompletion.financeType && (
@@ -411,7 +411,7 @@ export function EnhancedFinancesSection({
 
                     {/* Default Disbursement Channel */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
+                      <label className="text-body font-medium flex items-center gap-2">
                         Default Disbursement Channel
                         <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies." />
                         {fieldCompletion.disbursementChannel && (

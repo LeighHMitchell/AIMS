@@ -165,7 +165,7 @@ export function DocumentCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <h3
-                  className="font-medium text-sm line-clamp-2 cursor-pointer hover:text-primary"
+                  className="font-medium text-body line-clamp-2 cursor-pointer hover:text-primary"
                   onClick={onPreview}
                 >
                   {document.title}
@@ -174,14 +174,14 @@ export function DocumentCard({
               <TooltipContent side="bottom" className="max-w-xs">
                 <p>{document.title}</p>
                 {document.description && (
-                  <p className="text-muted-foreground mt-1 text-xs">{document.description}</p>
+                  <p className="text-muted-foreground mt-1 text-helper">{document.description}</p>
                 )}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           {/* Format and Source Type */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-helper text-muted-foreground">
             <span className={`inline-block font-medium px-2 py-0.5 rounded ${getFormatBadgeClasses(document.format)}`}>
               {getFormatLabel(document.format)}
             </span>
@@ -190,7 +190,7 @@ export function DocumentCard({
 
           {/* Category */}
           {document.categoryCode && (
-            <div className="flex items-start gap-1 text-xs">
+            <div className="flex items-start gap-1 text-helper">
               <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded shrink-0">
                 {document.categoryCode}
               </span>
@@ -204,7 +204,7 @@ export function DocumentCard({
 
           {/* Linked Entities */}
           {document.linkedEntities.length > 1 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 text-helper text-muted-foreground">
               <Link2 className="h-3 w-3" />
               <span>Linked to {document.linkedEntities.length} items</span>
             </div>
@@ -215,7 +215,7 @@ export function DocumentCard({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-helper text-muted-foreground truncate">
                     {document.sourceName}
                   </p>
                 </TooltipTrigger>
@@ -228,13 +228,13 @@ export function DocumentCard({
 
           {/* Added by (Reading Room) */}
           {addedByName && (
-            <div className="text-xs text-muted-foreground italic">
+            <div className="text-helper text-muted-foreground italic">
               Added by {addedByName}
             </div>
           )}
 
           {/* Footer */}
-          <div className="flex flex-col gap-2 text-xs text-muted-foreground pt-2 border-t border-border">
+          <div className="flex flex-col gap-2 text-helper text-muted-foreground pt-2 border-t border-border">
             <span>
               {document.createdAt
                 ? `Uploaded on ${format(new Date(document.createdAt), 'MMMM do yyyy')}`

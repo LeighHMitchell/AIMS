@@ -159,21 +159,21 @@ export function TopLocationsChart() {
           <p className="font-semibold text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">{METRIC_LABELS[metric]}</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">{METRIC_LABELS[metric]}</span>
+              <span className="text-body font-medium text-foreground">
                 {formatCurrency(item.value)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-foreground">Percentage</span>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-body text-foreground">Percentage</span>
+              <span className="text-body font-medium text-foreground">
                 {item.percentage.toFixed(1)}%
               </span>
             </div>
             {item.activityCount > 0 && (
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-foreground">Activities</span>
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-body text-foreground">Activities</span>
+                <span className="text-body font-medium text-foreground">
                   {item.activityCount}
                 </span>
               </div>
@@ -193,7 +193,7 @@ export function TopLocationsChart() {
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[100px]" title={item.name}>
             {item.name}
           </span>
         </div>
@@ -336,7 +336,7 @@ export function TopLocationsChart() {
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -414,13 +414,13 @@ export function TopLocationsChart() {
           <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
             Subnational Allocations
           </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">Myanmar States & Regions</p>
+          <p className="text-helper text-muted-foreground mt-0.5">Myanmar States & Regions</p>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {renderControls(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows the geographic distribution of funding across subnational locations. Use the metric selector to compare budgets, disbursements, or commitments across states and regions, and switch between chart and table views to explore the data.
           </p>
         </CardContent>

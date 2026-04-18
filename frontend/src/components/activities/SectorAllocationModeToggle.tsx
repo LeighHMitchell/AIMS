@@ -128,8 +128,8 @@ export function SectorAllocationModeToggle({
 
           {/* Text overlay */}
           <div className="relative z-10 p-3">
-            <h4 className="text-sm font-semibold">Activity Level</h4>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h4 className="text-body font-semibold">Activity Level</h4>
+            <p className="mt-1 text-helper text-muted-foreground">
               Single breakdown for all transactions
             </p>
           </div>
@@ -160,8 +160,8 @@ export function SectorAllocationModeToggle({
 
           {/* Text overlay */}
           <div className="relative z-10 p-3">
-            <h4 className="text-sm font-semibold">Transaction Level</h4>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h4 className="text-body font-semibold">Transaction Level</h4>
+            <p className="mt-1 text-helper text-muted-foreground">
               Custom breakdown per transaction
             </p>
           </div>

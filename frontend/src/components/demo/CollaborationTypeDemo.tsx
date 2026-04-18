@@ -26,7 +26,7 @@ export function CollaborationTypeDemo() {
           
           {value && (
             <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm">
+              <p className="text-body">
                 <strong>Selected:</strong> Code {value}
               </p>
             </div>
@@ -39,7 +39,7 @@ export function CollaborationTypeDemo() {
           <CardTitle>Features</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-body">
             <li>✅ <strong>Searchable</strong> - Type to filter by code, name, or description</li>
             <li>✅ <strong>Grouped</strong> - Options organized under Bilateral, Multilateral, and Other types</li>
             <li>✅ <strong>Formatted display</strong> - Shows #code followed by name, with description below</li>

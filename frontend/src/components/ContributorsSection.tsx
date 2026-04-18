@@ -284,7 +284,7 @@ export default function ContributorsSection({
         {/* Nominate New Contributor */}
         {permissions.canNominateContributors && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nominate a Contributor</label>
+            <label className="text-body font-medium">Nominate a Contributor</label>
             <div className="flex items-center justify-between p-3 border rounded-lg bg-muted" style={{ minHeight: '68px' }}>
               <div className="flex items-center gap-3 flex-1">
                 <div className="flex-1">
@@ -315,14 +315,14 @@ export default function ContributorsSection({
 
         {/* Contributors List */}
         <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
+          <label className="text-body font-medium flex items-center gap-2">
             Current Contributors
             {contributors.length > 0 && (
               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
             )}
           </label>
           {contributors.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
+            <div className="text-body text-muted-foreground py-4 text-center border rounded-lg">
               No contributors have been nominated yet
             </div>
           ) : (
@@ -372,7 +372,7 @@ export default function ContributorsSection({
                         </p>
                         <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-helper text-muted-foreground">
                         {(() => {
                           const organization = organizations.find(o => o.id === getContributorOrganizationId(contributor));
                           const iatiId = organization?.iati_org_id;

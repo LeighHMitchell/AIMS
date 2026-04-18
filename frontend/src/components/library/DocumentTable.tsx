@@ -171,7 +171,7 @@ export function DocumentTable({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className="text-left text-sm text-foreground hover:text-primary hover:underline"
+                          className="text-left text-body text-foreground hover:text-primary hover:underline"
                           onClick={() => onPreview(doc)}
                         >
                           {doc.title}
@@ -180,7 +180,7 @@ export function DocumentTable({
                       <TooltipContent side="bottom" className="max-w-sm">
                         <p className="font-medium">{doc.title}</p>
                         {doc.description && (
-                          <p className="text-muted-foreground mt-1 text-sm">{doc.description}</p>
+                          <p className="text-muted-foreground mt-1 text-body">{doc.description}</p>
                         )}
                       </TooltipContent>
                     </Tooltip>
@@ -188,7 +188,7 @@ export function DocumentTable({
                 </TableCell>
                 <TableCell>
                   {doc.categoryCode ? (
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       <span className="text-xs font-mono bg-muted dark:bg-gray-800 text-muted-foreground px-1.5 py-0.5 rounded">
                         {doc.categoryCode}
                       </span>
@@ -206,7 +206,7 @@ export function DocumentTable({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            className="text-sm text-foreground hover:text-primary hover:underline text-left"
+                            className="text-body text-foreground hover:text-primary hover:underline text-left"
                             onClick={() => onNavigate(doc)}
                           >
                             {doc.sourceName}
@@ -215,7 +215,7 @@ export function DocumentTable({
                         <TooltipContent>
                           <p>{doc.sourceName}</p>
                           {doc.linkedEntities.length > 1 && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               + {doc.linkedEntities.length - 1} more links
                             </p>
                           )}
@@ -241,7 +241,7 @@ export function DocumentTable({
                                 </span>
                               </div>
                             )}
-                            <span className="text-sm text-foreground">
+                            <span className="text-body text-foreground">
                               {doc.reportingOrgAcronym || doc.reportingOrgName}
                             </span>
                           </div>
@@ -269,12 +269,12 @@ export function DocumentTable({
                   }
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm text-foreground">
+                  <span className="text-body text-foreground">
                     {sourceLabel}
                   </span>
                 </TableCell>
                 {showAddedBy && (
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-body text-muted-foreground">
                     {attributionMap?.get(doc.url) || '-'}
                   </TableCell>
                 )}

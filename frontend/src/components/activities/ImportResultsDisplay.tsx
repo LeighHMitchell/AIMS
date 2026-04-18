@@ -114,7 +114,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Additional Stats */}
         {((section?.totalAmount !== undefined && section.totalAmount > 0) || 
           (section?.totalPercentage !== undefined && section.totalPercentage > 0)) && (
-          <table className="w-full text-sm border border-border rounded">
+          <table className="w-full text-body border border-border rounded">
             <tbody>
               {section?.totalAmount !== undefined && section.totalAmount > 0 && (
                 <tr className="border-b border-border">
@@ -137,9 +137,9 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Success Details - Table Format */}
         {section?.details && section.details.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-foreground mb-1">Successfully Imported ({section.details.length})</div>
+            <div className="text-body font-medium text-foreground mb-1">Successfully Imported ({section.details.length})</div>
             <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-helper">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
@@ -158,7 +158,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
                 </tbody>
               </table>
               {section.details.length > 30 && (
-                <div className="text-xs text-muted-foreground italic px-3 py-2 bg-muted border-t border-border">
+                <div className="text-helper text-muted-foreground italic px-3 py-2 bg-muted border-t border-border">
                   ... and {section.details.length - 30} more
                 </div>
               )}
@@ -169,9 +169,9 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* List Items - Table Format */}
         {section?.list && section.list.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-foreground mb-1">Imported Items ({section.list.length})</div>
+            <div className="text-body font-medium text-foreground mb-1">Imported Items ({section.list.length})</div>
             <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-helper">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
@@ -196,7 +196,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
                 </tbody>
               </table>
               {section.list.length > 30 && (
-                <div className="text-xs text-muted-foreground italic px-3 py-2 bg-muted border-t border-border">
+                <div className="text-helper text-muted-foreground italic px-3 py-2 bg-muted border-t border-border">
                   ... and {section.list.length - 30} more
                 </div>
               )}
@@ -207,9 +207,9 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Failures - Table Format */}
         {section?.failures && section.failures.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-foreground mb-1">Failed ({section.failures.length})</div>
+            <div className="text-body font-medium text-foreground mb-1">Failed ({section.failures.length})</div>
             <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-helper">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
@@ -238,9 +238,9 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Warnings - Table Format */}
         {section?.warnings && section.warnings.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-foreground mb-1">Warnings ({section.warnings.length})</div>
+            <div className="text-body font-medium text-foreground mb-1">Warnings ({section.warnings.length})</div>
             <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-helper">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
@@ -263,9 +263,9 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Matching Details - Table Format */}
         {section?.matchingDetails && section.matchingDetails.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-foreground mb-1">Matching Details ({section.matchingDetails.length})</div>
+            <div className="text-body font-medium text-foreground mb-1">Matching Details ({section.matchingDetails.length})</div>
             <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-helper">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>

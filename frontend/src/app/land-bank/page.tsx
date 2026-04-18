@@ -89,8 +89,8 @@ export default function LandBankDashboard() {
     if (active && payload?.length) {
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-          <p className="font-medium text-foreground text-sm">{payload[0].payload.name}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground text-body">{payload[0].payload.name}</p>
+          <p className="text-body text-muted-foreground">
             <span className="font-semibold">{payload[0].value}</span> parcels
           </p>
         </div>
@@ -158,7 +158,7 @@ export default function LandBankDashboard() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">No data yet</p>
+                    <p className="text-body text-muted-foreground text-center py-8">No data yet</p>
                   )}
                 </CardContent>
               </Card>
@@ -190,7 +190,7 @@ export default function LandBankDashboard() {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">No data yet</p>
+                    <p className="text-body text-muted-foreground text-center py-8">No data yet</p>
                   )}
                 </CardContent>
               </Card>
@@ -212,7 +212,7 @@ export default function LandBankDashboard() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">No data yet</p>
+                    <p className="text-body text-muted-foreground text-center py-8">No data yet</p>
                   )}
                 </CardContent>
               </Card>
@@ -226,7 +226,7 @@ export default function LandBankDashboard() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <thead className="bg-surface-muted">
                         <tr className="border-b bg-surface-muted">
                           <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>

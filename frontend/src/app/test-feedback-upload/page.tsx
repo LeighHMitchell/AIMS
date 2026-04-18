@@ -84,21 +84,21 @@ export default function TestFeedbackUploadPage() {
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-body font-medium mb-2">
                   Select a file to test upload:
                 </label>
                 <input
                   type="file"
                   onChange={handleFileSelect}
                   accept="image/*,.pdf,.txt,.doc,.docx"
-                  className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="block w-full text-body text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-body file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
 
               {selectedFile && (
                 <div className="bg-muted p-4 rounded-lg">
                   <h3 className="font-medium mb-2">Selected File:</h3>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     <p><strong>Name:</strong> {selectedFile.name}</p>
                     <p><strong>Size:</strong> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                     <p><strong>Type:</strong> {selectedFile.type}</p>
@@ -130,7 +130,7 @@ export default function TestFeedbackUploadPage() {
                     <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
                     <h3 className="font-medium text-green-800">Upload Successful!</h3>
                   </div>
-                  <div className="text-sm text-green-700">
+                  <div className="text-body text-green-700">
                     <p><strong>URL:</strong> <a href={uploadResult.url} target="_blank" rel="noopener noreferrer" className="underline">{uploadResult.url}</a></p>
                     <p><strong>Filename:</strong> {uploadResult.filename}</p>
                     <p><strong>Type:</strong> {uploadResult.type}</p>
@@ -145,11 +145,11 @@ export default function TestFeedbackUploadPage() {
                     <XCircle className="h-5 w-5 text-destructive" />
                     <h3 className="font-medium text-red-800">Upload Failed</h3>
                   </div>
-                  <p className="text-sm text-destructive">{uploadError}</p>
+                  <p className="text-body text-destructive">{uploadError}</p>
                 </div>
               )}
 
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 <p><strong>User ID:</strong> {user.id}</p>
                 <p><strong>User Email:</strong> {user.email}</p>
               </div>

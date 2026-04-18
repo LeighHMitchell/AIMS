@@ -272,7 +272,7 @@ export function UserActivityDashboard() {
               <Users className="h-8 w-8 text-muted-foreground" />
               <div>
                 <p className="text-2xl font-bold">{totalUsers}</p>
-                <p className="text-sm text-muted-foreground">Total Users</p>
+                <p className="text-body text-muted-foreground">Total Users</p>
               </div>
             </div>
           </CardContent>
@@ -284,7 +284,7 @@ export function UserActivityDashboard() {
               <Activity className="h-8 w-8 text-muted-foreground" />
               <div>
                 <p className="text-2xl font-bold">{activeToday}</p>
-                <p className="text-sm text-muted-foreground">Active Today</p>
+                <p className="text-body text-muted-foreground">Active Today</p>
               </div>
             </div>
           </CardContent>
@@ -296,7 +296,7 @@ export function UserActivityDashboard() {
               <TrendingUp className="h-8 w-8 text-muted-foreground" />
               <div>
                 <p className="text-2xl font-bold">{activeThisWeek}</p>
-                <p className="text-sm text-muted-foreground">Active This Week</p>
+                <p className="text-body text-muted-foreground">Active This Week</p>
               </div>
             </div>
           </CardContent>
@@ -308,7 +308,7 @@ export function UserActivityDashboard() {
               <UserX className="h-8 w-8 text-muted-foreground" />
               <div>
                 <p className="text-2xl font-bold">{inactiveUsers.length}</p>
-                <p className="text-sm text-muted-foreground">Inactive (30+ days)</p>
+                <p className="text-body text-muted-foreground">Inactive (30+ days)</p>
               </div>
             </div>
           </CardContent>
@@ -320,7 +320,7 @@ export function UserActivityDashboard() {
               <AlertTriangle className="h-8 w-8 text-muted-foreground" />
               <div>
                 <p className="text-2xl font-bold">{failedLogins}</p>
-                <p className="text-sm text-muted-foreground">Failed Logins (24h)</p>
+                <p className="text-body text-muted-foreground">Failed Logins (24h)</p>
               </div>
             </div>
           </CardContent>
@@ -367,7 +367,7 @@ export function UserActivityDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground mb-4">
+              <div className="text-body text-muted-foreground mb-4">
                 Showing {filteredStats.length} of {stats.length} users
               </div>
               <div className="rounded-md border overflow-x-auto">
@@ -398,7 +398,7 @@ export function UserActivityDashboard() {
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8">
                           <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground">No user activity found</p>
+                          <p className="text-body text-muted-foreground">No user activity found</p>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -407,7 +407,7 @@ export function UserActivityDashboard() {
                           <TableCell>
                             <div className="flex flex-col gap-1">
                               <span className="font-medium">{user.userName}</span>
-                              <Badge variant={getRoleBadgeVariant(user.userRole)} className="w-fit text-xs">
+                              <Badge variant={getRoleBadgeVariant(user.userRole)} className="w-fit text-helper">
                                 {getRoleDisplayLabel(user.userRole)}
                               </Badge>
                             </div>
@@ -416,21 +416,21 @@ export function UserActivityDashboard() {
                             {user.organizationName ? (
                               <div className="flex items-center gap-2">
                                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{user.organizationName}</span>
+                                <span className="text-body">{user.organizationName}</span>
                               </div>
                             ) : (
-                              <span className="text-sm text-muted-foreground">-</span>
+                              <span className="text-body text-muted-foreground">-</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right font-medium">{user.totalActions}</TableCell>
                           <TableCell className="text-right">{user.loginCount}</TableCell>
                           <TableCell>
                             {user.lastActivity ? (
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-body text-muted-foreground">
                                 {formatDistanceToNow(new Date(user.lastActivity), { addSuffix: true })}
                               </span>
                             ) : (
-                              <span className="text-sm text-orange-500">Never</span>
+                              <span className="text-body text-orange-500">Never</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -439,7 +439,7 @@ export function UserActivityDashboard() {
                                 .sort(([,a], [,b]) => b - a)
                                 .slice(0, 3)
                                 .map(([action, count]) => (
-                                  <Badge key={action} variant="secondary" className="text-xs">
+                                  <Badge key={action} variant="secondary" className="text-helper">
                                     {action}: {count}
                                   </Badge>
                                 ))}
@@ -493,7 +493,7 @@ export function UserActivityDashboard() {
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-8">
                           <LogIn className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground">No login events found</p>
+                          <p className="text-body text-muted-foreground">No login events found</p>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -520,11 +520,11 @@ export function UserActivityDashboard() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm">
+                            <span className="text-body">
                               {format(new Date(event.createdAt), 'dd MMM yyyy, HH:mm')}
                             </span>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-body text-muted-foreground">
                             {event.ipAddress || '—'}
                           </TableCell>
                         </TableRow>
@@ -581,7 +581,7 @@ export function UserActivityDashboard() {
                         <TableRow key={user.userId}>
                           <TableCell className="font-medium">{user.userName}</TableCell>
                           <TableCell>
-                            <Badge variant={getRoleBadgeVariant(user.userRole)} className="text-xs">
+                            <Badge variant={getRoleBadgeVariant(user.userRole)} className="text-helper">
                               {getRoleDisplayLabel(user.userRole)}
                             </Badge>
                           </TableCell>

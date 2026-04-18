@@ -53,7 +53,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
         <div className="bg-slate-900 text-white p-4 rounded-lg shadow-lg">
           <p className="font-semibold mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex justify-between gap-4 text-sm">
+            <div key={index} className="flex justify-between gap-4 text-body">
               <span style={{ color: entry.color }}>{entry.name}:</span>
               <span className="font-medium">{formatCurrency(entry.value)}</span>
             </div>

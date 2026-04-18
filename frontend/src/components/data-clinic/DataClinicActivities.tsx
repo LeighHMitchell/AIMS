@@ -322,7 +322,7 @@ export function DataClinicActivities() {
     return (
       <div className="flex items-center gap-2">
         {value ? (
-          <span className="text-sm">
+          <span className="text-body">
             {field === 'default_aid_type' && AID_TYPE_LABELS[value] ? 
               `${value} - ${AID_TYPE_LABELS[value]}` : 
               field === 'default_finance_type' && FINANCE_TYPE_LABELS[value] ?
@@ -333,7 +333,7 @@ export function DataClinicActivities() {
             }
           </span>
         ) : (
-          <Badge variant="destructive" className="text-xs">
+          <Badge variant="destructive" className="text-helper">
             <AlertCircle className="h-3 w-3 mr-1" />
             Missing
           </Badge>
@@ -377,7 +377,7 @@ export function DataClinicActivities() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-orange-800 mb-3">
+            <p className="text-body text-orange-800 mb-3">
               The IATI compliance fields are not yet available in your database. 
               Please run the migration to enable full Data Clinic functionality.
             </p>
@@ -386,7 +386,7 @@ export function DataClinicActivities() {
                 psql -h your-host -U your-user -d your-db -f frontend/sql/add_data_clinic_fields.sql
               </p>
             </div>
-            <p className="text-xs text-orange-700 mt-2">
+            <p className="text-helper text-orange-700 mt-2">
               Or run the SQL in your Supabase Dashboard's SQL Editor.
             </p>
           </CardContent>
@@ -406,7 +406,7 @@ export function DataClinicActivities() {
                 className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelectedFilter(gap.field)}
               >
-                <p className="text-sm text-muted-foreground">{gap.label}</p>
+                <p className="text-body text-muted-foreground">{gap.label}</p>
                 <p className="text-2xl font-semibold">{gap.count}</p>
               </div>
             ))}
@@ -464,7 +464,7 @@ export function DataClinicActivities() {
           {isSuperUser && selectedActivities.size > 0 && (
             <div className="mt-4 p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-4">
-                <p className="text-sm font-medium">
+                <p className="text-body font-medium">
                   {selectedActivities.size} activities selected
                 </p>
                 <Select value={bulkEditField} onValueChange={setBulkEditField}>
@@ -502,7 +502,7 @@ export function DataClinicActivities() {
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
                   {isSuperUser && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">
+                    <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">
                       <Checkbox
                         checked={selectedActivities.size === filteredActivities.length && filteredActivities.length > 0}
                         onCheckedChange={(checked) => {
@@ -515,13 +515,13 @@ export function DataClinicActivities() {
                       />
                     </th>
                   )}
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Title</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">IATI ID</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Aid Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Finance Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Flow Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">Sectors</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Title</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">IATI ID</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Aid Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Finance Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Flow Type</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Status</th>
+                  <th className="h-12 px-4 py-3 text-left align-middle text-body font-medium text-muted-foreground">Sectors</th>
                 </tr>
               </thead>
               <tbody>
@@ -567,7 +567,7 @@ export function DataClinicActivities() {
                       <td className="p-4">
                         {activity.iatiIdentifier
                           ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
-                          : <span className="text-sm text-muted-foreground">-</span>
+                          : <span className="text-body text-muted-foreground">-</span>
                         }
                       </td>
                       <td className="p-4">
@@ -584,9 +584,9 @@ export function DataClinicActivities() {
                       </td>
                       <td className="p-4">
                         {activity.sectors && activity.sectors.length > 0 ? (
-                          <span className="text-sm">{activity.sectors.length} sectors</span>
+                          <span className="text-body">{activity.sectors.length} sectors</span>
                         ) : (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>

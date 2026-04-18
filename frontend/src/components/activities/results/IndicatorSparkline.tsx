@@ -63,7 +63,7 @@ export function IndicatorSparkline({
         className={className}
         style={{ width, height }}
       >
-        <div className="h-full flex items-center justify-center text-slate-300 text-xs">
+        <div className="h-full flex items-center justify-center text-slate-300 text-helper">
           —
         </div>
       </div>
@@ -101,7 +101,7 @@ export function IndicatorSparkline({
               if (active && payload && payload.length > 0) {
                 const data = payload[0].payload as SparklineDataPoint;
                 return (
-                  <div className="bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg">
+                  <div className="bg-slate-800 text-white text-helper px-2 py-1 rounded shadow-lg">
                     <div className="font-medium">{data.label}</div>
                     <div>{data.value.toLocaleString()}</div>
                   </div>

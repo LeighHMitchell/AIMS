@@ -58,7 +58,7 @@ export function SuggestedProjectsCard({ parcelId, canLink, onLinked }: Suggested
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-body text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Finding matches...
           </div>
@@ -72,7 +72,7 @@ export function SuggestedProjectsCard({ parcelId, canLink, onLinked }: Suggested
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-1.5">
+        <CardTitle className="text-body flex items-center gap-1.5">
           <Lightbulb className="h-4 w-4" />
           Suggested Projects
         </CardTitle>
@@ -85,8 +85,8 @@ export function SuggestedProjectsCard({ parcelId, canLink, onLinked }: Suggested
                 className="cursor-pointer hover:text-primary transition-colors"
                 onClick={() => router.push(`/project-bank/${project.id}`)}
               >
-                <p className="text-sm font-medium">{project.name}</p>
-                <p className="text-xs text-muted-foreground">{project.project_code}</p>
+                <p className="text-body font-medium">{project.name}</p>
+                <p className="text-helper text-muted-foreground">{project.project_code}</p>
               </div>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {project.match_reasons.map((r, i) => (
@@ -99,7 +99,7 @@ export function SuggestedProjectsCard({ parcelId, canLink, onLinked }: Suggested
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="mt-1.5 h-7 text-xs gap-1"
+                  className="mt-1.5 h-7 text-helper gap-1"
                   onClick={() => handleLink(project.id)}
                   disabled={linkingId === project.id}
                 >

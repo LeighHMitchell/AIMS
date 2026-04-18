@@ -227,7 +227,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
           <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate">{document.fileName || 'External Document'}</p>
-            <p className="text-sm text-muted-foreground truncate">{document.url}</p>
+            <p className="text-body text-muted-foreground truncate">{document.url}</p>
           </div>
         </div>
 
@@ -299,7 +299,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
                 return (
                   <span
                     key={code}
-                    className="inline-flex items-center gap-1 bg-muted rounded px-2 py-1 text-sm"
+                    className="inline-flex items-center gap-1 bg-muted rounded px-2 py-1 text-body"
                   >
                     <span className="font-mono text-xs bg-background px-1 py-0.5 rounded">
                       {code.toUpperCase()}

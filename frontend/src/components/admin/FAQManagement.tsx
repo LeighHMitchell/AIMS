@@ -371,7 +371,7 @@ export function FAQManagement() {
                 <div className="bg-muted border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">Pending</span>
+                    <span className="text-helper font-medium text-muted-foreground">Pending</span>
                   </div>
                   <p className="text-2xl font-bold text-foreground mt-0.5">{stats.pending}</p>
                   <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
@@ -392,7 +392,7 @@ export function FAQManagement() {
                 <div className="bg-muted border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <Pencil className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">In Progress</span>
+                    <span className="text-helper font-medium text-muted-foreground">In Progress</span>
                   </div>
                   <p className="text-2xl font-bold text-foreground mt-0.5">{stats.in_progress}</p>
                   <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
@@ -405,7 +405,7 @@ export function FAQManagement() {
                 <div className="bg-muted border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">Published</span>
+                    <span className="text-helper font-medium text-muted-foreground">Published</span>
                   </div>
                   <p className="text-2xl font-bold text-foreground mt-0.5">{stats.published}</p>
                   <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
@@ -425,7 +425,7 @@ export function FAQManagement() {
                 <div className="bg-muted border border-border rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
                     <Percent className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">Performance</span>
+                    <span className="text-helper font-medium text-muted-foreground">Performance</span>
                   </div>
                   <p className="text-2xl font-bold text-foreground mt-0.5">{stats.responseRate}%</p>
                   <div className="flex flex-col gap-0.5 mt-1 border-t border-border pt-1">
@@ -466,7 +466,7 @@ export function FAQManagement() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-48 flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Status</Label>
+                      <Label className="text-helper text-muted-foreground">Status</Label>
                       <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
                         <SelectTrigger>
                           <SelectValue />
@@ -481,7 +481,7 @@ export function FAQManagement() {
                   </div>
                   {selectedIds.size > 0 && (
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-body text-muted-foreground">
                         {selectedIds.size} selected
                       </span>
                       <Button
@@ -532,7 +532,7 @@ export function FAQManagement() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-48 flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Status</Label>
+                      <Label className="text-helper text-muted-foreground">Status</Label>
                       <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
                         <SelectTrigger>
                           <SelectValue />
@@ -550,7 +550,7 @@ export function FAQManagement() {
                   </div>
                   {selectedIds.size > 0 && (
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-body text-muted-foreground">
                         {selectedIds.size} selected
                       </span>
                       <Button
@@ -600,7 +600,7 @@ export function FAQManagement() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} questions
                 </div>
                 <div className="flex items-center gap-2">
@@ -613,7 +613,7 @@ export function FAQManagement() {
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-                  <span className="text-sm">
+                  <span className="text-body">
                     Page {currentPage} of {totalPages}
                   </span>
                   <Button
@@ -687,7 +687,7 @@ function QuestionTable({
           <div className="py-12 text-center text-muted-foreground">
             <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="font-medium">No questions found</p>
-            <p className="text-sm mt-2">Questions submitted by users will appear here</p>
+            <p className="text-body mt-2">Questions submitted by users will appear here</p>
           </div>
         ) : (
           <Table>
@@ -750,38 +750,38 @@ function QuestionTable({
                     </TableCell>
                     <TableCell>
                       <div className="max-w-[400px]">
-                        <div className="text-sm text-foreground truncate">{question.question}</div>
+                        <div className="text-body text-foreground truncate">{question.question}</div>
                         {question.context && (
-                          <div className="text-xs text-muted-foreground truncate mt-1">
+                          <div className="text-helper text-muted-foreground truncate mt-1">
                             {question.context}
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-foreground">
+                      <div className="text-body text-foreground">
                         <div>{getUserDisplayName(question.user)}</div>
                         {question.user?.email && (
-                          <div className="text-xs text-muted-foreground">{question.user.email}</div>
+                          <div className="text-helper text-muted-foreground">{question.user.email}</div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {question.tags?.slice(0, 3).map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
+                          <Badge key={tag} variant="outline" className="text-helper">
                             {tag}
                           </Badge>
                         ))}
                         {question.tags?.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-helper">
                             +{question.tags.length - 3}
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-helper text-muted-foreground">
                         {formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}
                       </div>
                     </TableCell>
@@ -894,7 +894,7 @@ function QuestionDetailModal({
             <div>
               <Label className="font-medium">Context</Label>
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-2">
-                <p className="text-sm text-blue-800 whitespace-pre-wrap">{question.context}</p>
+                <p className="text-body text-blue-800 whitespace-pre-wrap">{question.context}</p>
               </div>
             </div>
           )}

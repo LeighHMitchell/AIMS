@@ -25,8 +25,8 @@ export function CodePill({ code, className, size = 'sm' }: CodePillProps) {
     <span
       className={cn(
         'inline-flex items-center font-mono bg-muted text-muted-foreground rounded px-1.5 py-0.5 whitespace-nowrap',
-        size === 'sm' && 'text-xs',
-        size === 'md' && 'text-sm',
+        size === 'sm' && 'text-helper',
+        size === 'md' && 'text-body',
         className
       )}
     >

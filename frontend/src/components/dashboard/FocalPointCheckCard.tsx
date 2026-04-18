@@ -186,7 +186,7 @@ export function FocalPointCheckCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Failed to load focal points data: {error}</p>
+          <p className="text-body text-destructive">Failed to load focal points data: {error}</p>
         </CardContent>
       </Card>
     );
@@ -209,7 +209,7 @@ export function FocalPointCheckCard({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-[hsl(var(--success-icon))] mb-3" />
             <p className="text-lg font-medium text-foreground">All activities have focal points!</p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               Great job! All your activities have both government and development partner focal points assigned.
             </p>
           </div>
@@ -226,7 +226,7 @@ export function FocalPointCheckCard({
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-[#7b95a7]" />
               Focal Point Check
-              <span className="text-sm font-normal text-muted-foreground ml-2">
+              <span className="text-body font-normal text-muted-foreground ml-2">
                 ({total} {total === 1 ? 'activity' : 'activities'})
               </span>
             </CardTitle>

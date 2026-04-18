@@ -264,11 +264,11 @@ export function TaskTrackingView({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <CardTitle className="text-base">{task.title}</CardTitle>
-                          <Badge variant="outline" className={cn('text-xs', getPriorityColor(task.priority))}>
+                          <Badge variant="outline" className={cn('text-helper', getPriorityColor(task.priority))}>
                             {getPriorityLabel(task.priority)}
                           </Badge>
                           {isOverdue && pending + inProgress > 0 && (
-                            <Badge variant="destructive" className="text-xs">
+                            <Badge variant="destructive" className="text-helper">
                               <AlertTriangle className="h-3 w-3 mr-1" />
                               Overdue
                             </Badge>
@@ -286,7 +286,7 @@ export function TaskTrackingView({
                     <div className="flex items-center gap-4 shrink-0">
                       {deadline && (
                         <div className={cn(
-                          'flex items-center gap-1 text-sm',
+                          'flex items-center gap-1 text-body',
                           isOverdue && 'text-destructive',
                           isDueSoon && !isOverdue && 'text-amber-600'
                         )}>
@@ -357,7 +357,7 @@ export function TaskTrackingView({
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="bottom" className="max-w-xs">
-                              <div className="text-xs">
+                              <div className="text-helper">
                                 <p className="font-medium mb-1">{task.task_attachments.length} attachment{task.task_attachments.length !== 1 ? 's' : ''}</p>
                                 <ul className="space-y-0.5">
                                   {task.task_attachments.slice(0, 5).map((a: any) => (
@@ -374,25 +374,25 @@ export function TaskTrackingView({
                       )}
                       <div className="flex items-center gap-1">
                         {pending > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1">
+                          <Badge variant="outline" className="text-helper gap-1">
                             <Clock className="h-3 w-3" />
                             {pending}
                           </Badge>
                         )}
                         {inProgress > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 border-blue-200 bg-blue-50 text-blue-700">
+                          <Badge variant="outline" className="text-helper gap-1 border-blue-200 bg-blue-50 text-blue-700">
                             <PlayCircle className="h-3 w-3" />
                             {inProgress}
                           </Badge>
                         )}
                         {completed > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 border-[hsl(var(--success-border))] bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]">
+                          <Badge variant="outline" className="text-helper gap-1 border-[hsl(var(--success-border))] bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]">
                             <CheckCircle2 className="h-3 w-3" />
                             {completed}
                           </Badge>
                         )}
                         {declined > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 border-border bg-muted text-foreground">
+                          <Badge variant="outline" className="text-helper gap-1 border-border bg-muted text-foreground">
                             <XCircle className="h-3 w-3" />
                             {declined}
                           </Badge>
@@ -411,7 +411,7 @@ export function TaskTrackingView({
                             />
                           </div>
                           <span className={cn(
-                            'text-xs font-medium tabular-nums',
+                            'text-helper font-medium tabular-nums',
                             progressPercent === 100 && 'text-[hsl(var(--success-icon))]'
                           )}>
                             {progressPercent}%
@@ -566,14 +566,14 @@ export function TaskTrackingView({
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-7 w-7">
                                       <AvatarImage src={assignee?.avatar_url || undefined} />
-                                      <AvatarFallback className="text-xs">
+                                      <AvatarFallback className="text-helper">
                                         {assigneeName.slice(0, 2).toUpperCase()}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <div className="font-medium text-sm">{assigneeName}</div>
+                                      <div className="font-medium text-body">{assigneeName}</div>
                                       {assignee?.email && (
-                                        <div className="text-xs text-muted-foreground">{assignee.email}</div>
+                                        <div className="text-helper text-muted-foreground">{assignee.email}</div>
                                       )}
                                     </div>
                                   </div>
@@ -582,7 +582,7 @@ export function TaskTrackingView({
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                        <div className="flex items-center gap-1 text-body text-muted-foreground">
                                           {assignment.assignment_type === 'organization' ? (
                                             <>
                                               <Building2 className="h-3.5 w-3.5" />
@@ -613,7 +613,7 @@ export function TaskTrackingView({
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
-                                    <Badge variant="outline" className={cn('text-xs', getStatusColor(assignment.status))}>
+                                    <Badge variant="outline" className={cn('text-helper', getStatusColor(assignment.status))}>
                                       {getStatusLabel(assignment.status)}
                                     </Badge>
                                     {assignmentOverdue && (
@@ -621,12 +621,12 @@ export function TaskTrackingView({
                                     )}
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-sm">
+                                <TableCell className="text-body">
                                   {assignment.created_at
                                     ? formatDistanceToNow(new Date(assignment.created_at), { addSuffix: true })
                                     : '-'}
                                 </TableCell>
-                                <TableCell className="text-sm">
+                                <TableCell className="text-body">
                                   {assignment.completed_at ? (
                                     format(new Date(assignment.completed_at), 'MMM d, yyyy')
                                   ) : assignment.declined_at ? (
@@ -637,7 +637,7 @@ export function TaskTrackingView({
                                     <span className="text-muted-foreground">-</span>
                                   )}
                                 </TableCell>
-                                <TableCell className="text-sm max-w-[200px]">
+                                <TableCell className="text-body max-w-[200px]">
                                   {assignment.completion_note ? (
                                     <span className="truncate block">{assignment.completion_note}</span>
                                   ) : assignment.declined_reason ? (
@@ -655,7 +655,7 @@ export function TaskTrackingView({
                       </Table>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
+                    <p className="text-body text-muted-foreground text-center py-4">
                       No assignees yet
                     </p>
                   )}
@@ -663,7 +663,7 @@ export function TaskTrackingView({
                   {/* Progress Bar */}
                   {assignments.length > 0 && (
                     <div className="mt-4">
-                      <div className="flex items-center justify-between text-sm mb-1">
+                      <div className="flex items-center justify-between text-body mb-1">
                         <span className="text-muted-foreground">Progress</span>
                         <span className="font-medium">
                           {completed} of {assignments.length} completed

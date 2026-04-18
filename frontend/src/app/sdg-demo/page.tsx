@@ -134,7 +134,7 @@ export default function SDGDemoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               SDG icons now appear prominently in the top-right corner of activity banners and in the card content below.
             </p>
           </CardContent>
@@ -148,7 +148,7 @@ export default function SDGDemoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               Activity status now shows proper text labels like "Implementation", "Cancelled", "Suspended" instead of numbers.
             </p>
           </CardContent>
@@ -162,7 +162,7 @@ export default function SDGDemoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               SDG icons are sized appropriately and positioned for maximum visibility without overwhelming the design.
             </p>
           </CardContent>

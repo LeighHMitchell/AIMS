@@ -89,9 +89,9 @@ function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
     <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-body text-muted-foreground">{title}</div>
           <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+          <div className="text-helper text-muted-foreground mt-1">{subtitle}</div>
         </div>
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
@@ -225,7 +225,7 @@ function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode
                   return (
                     <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
                       <p className="font-semibold text-foreground mb-1">{data.period}</p>
-                      <p className="text-sm text-muted-foreground">Cumulative Budget</p>
+                      <p className="text-body text-muted-foreground">Cumulative Budget</p>
                       <p className="text-lg font-bold text-foreground">USD {Number(data.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   );
@@ -1777,7 +1777,7 @@ export default function ActivityBudgetsTab({
           {renderFilters && hideSummaryCards && budgets.length > 0 && !loading && renderFilters(
             <div className="flex items-end gap-3">
               <div className="flex flex-col gap-1">
-                <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <label className="flex items-center gap-1 text-helper font-medium text-muted-foreground">
                   Status
                   <HelpTextTooltip content="IATI budget status: Indicative (1) means the budget is planned but not yet formally approved; Committed (2) means it has been approved or contracted." />
                 </label>
@@ -1803,7 +1803,7 @@ export default function ActivityBudgetsTab({
                 </Select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <label className="flex items-center gap-1 text-helper font-medium text-muted-foreground">
                   Type
                   <HelpTextTooltip content="IATI budget revision type: Original (1) is the initial budget entry; Revised (2) is a subsequent update to that entry." />
                 </label>
@@ -1856,8 +1856,8 @@ export default function ActivityBudgetsTab({
               <div className="space-y-4">
                 {copySourceBudget && (
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm font-medium text-foreground">Copying budget:</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body font-medium text-foreground">Copying budget:</p>
+                    <p className="text-body text-muted-foreground">
                       {copySourceBudget.period_start} to {copySourceBudget.period_end} 
                       ({copySourceBudget.currency} {copySourceBudget.value?.toLocaleString()})
                     </p>
@@ -2015,17 +2015,17 @@ export default function ActivityBudgetsTab({
                           {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '120px' }}>
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '120px' }}>
                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.status}</code>
                         {budget.status === 1 ? 'Indicative' : 'Committed'}
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '110px' }}>
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '110px' }}>
                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.type}</code>
                         {budget.type === 1 ? 'Original' : 'Revised'}
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '160px' }}>
                         <span className="font-medium">
-                          <span className="text-muted-foreground text-xs">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          <span className="text-muted-foreground text-helper">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
@@ -2047,11 +2047,11 @@ export default function ActivityBudgetsTab({
                                       <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                     )}
                                   </span>
-                                  <span className="text-xs text-muted-foreground font-normal">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  <span className="text-helper text-muted-foreground font-normal">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="min-w-[200px]">
-                                <table className="text-xs w-full">
+                                <table className="text-helper w-full">
                                   <tbody>
                                     <tr>
                                       <td className="pr-4 font-medium py-0.5 whitespace-nowrap">Original</td>
@@ -2085,7 +2085,7 @@ export default function ActivityBudgetsTab({
                         ) : (
                           <div className="flex items-center gap-1">
                             {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.error ? (
-                              <span className="text-sm text-destructive">
+                              <span className="text-body text-destructive">
                                 {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].error}
                               </span>
                             ) : (
@@ -2100,7 +2100,7 @@ export default function ActivityBudgetsTab({
                             <CheckCircle className="h-3 w-3 text-[hsl(var(--success-icon))]" aria-label="Saved" />
                         )}
                         {saveStatus[budget.id || `${budget.period_start}-${budget.period_end}`] === 'error' && (
-                            <span className="text-xs text-destructive">Failed</span>
+                            <span className="text-helper text-destructive">Failed</span>
                         )}
                         </div>
                       </TableCell>
@@ -2142,7 +2142,7 @@ export default function ActivityBudgetsTab({
           {/* Pagination Controls */}
           {budgets.length > itemsPerPage && (
             <div className="flex items-center justify-between mt-4 px-2">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedBudgets.length)} of {sortedBudgets.length} budgets
               </div>
               <div className="flex items-center gap-2">
@@ -2256,7 +2256,7 @@ export default function ActivityBudgetsTab({
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "h-8 px-2 gap-1.5 text-xs",
+                      "h-8 px-2 gap-1.5 text-helper",
                       modalLocked ? "text-muted-foreground" : "text-amber-600"
                     )}
                     onClick={() => {
@@ -2289,7 +2289,7 @@ export default function ActivityBudgetsTab({
             <div className="space-y-4 py-4">
               {/* Validation Alert */}
               {validationAlert && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-red-800">
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-body text-red-800">
                   <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                   <span>{validationAlert}</span>
                   <button onClick={() => setValidationAlert(null)} className="ml-auto text-destructive hover:text-destructive">
@@ -2313,7 +2313,7 @@ export default function ActivityBudgetsTab({
                     <PopoverTrigger
                       disabled={isReviseMode}
                       className={cn(
-                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
                         isReviseMode && "bg-muted cursor-not-allowed",
                         fieldErrors.type && "border-destructive",
                         !modalBudget?.type && "text-muted-foreground"
@@ -2346,7 +2346,7 @@ export default function ActivityBudgetsTab({
                             className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                             aria-label="Clear selection"
                           >
-                            <span className="text-xs">×</span>
+                            <span className="text-helper">×</span>
                           </button>
                         )}
                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -2359,7 +2359,7 @@ export default function ActivityBudgetsTab({
                             key={type.code}
                             type="button"
                             className={cn(
-                              "flex w-full items-start gap-2 px-3 py-2 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                              "flex w-full items-start gap-2 px-3 py-2 text-body text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                               modalBudget?.type === Number(type.code) && "bg-accent text-accent-foreground"
                             )}
                             onClick={() => {
@@ -2370,7 +2370,7 @@ export default function ActivityBudgetsTab({
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{type.code}</span>
                             <div className="flex flex-col min-w-0">
                               <span className="font-medium">{type.name}</span>
-                              <span className="text-xs text-muted-foreground leading-snug">{type.description}</span>
+                              <span className="text-helper text-muted-foreground leading-snug">{type.description}</span>
                             </div>
                           </button>
                         ))}
@@ -2378,7 +2378,7 @@ export default function ActivityBudgetsTab({
                     </PopoverContent>
                   </Popover>
                   {fieldErrors.type && (
-                    <p className="text-xs text-destructive">{fieldErrors.type}</p>
+                    <p className="text-helper text-destructive">{fieldErrors.type}</p>
                   )}
                 </div>
 
@@ -2395,7 +2395,7 @@ export default function ActivityBudgetsTab({
                   <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
                     <PopoverTrigger
                       className={cn(
-                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
                         fieldErrors.status && "border-destructive",
                         !modalBudget?.status && "text-muted-foreground"
                       )}
@@ -2427,7 +2427,7 @@ export default function ActivityBudgetsTab({
                             className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                             aria-label="Clear selection"
                           >
-                            <span className="text-xs">×</span>
+                            <span className="text-helper">×</span>
                           </button>
                         )}
                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -2440,7 +2440,7 @@ export default function ActivityBudgetsTab({
                           key={status.code}
                           type="button"
                           className={cn(
-                            "flex w-full items-start gap-2 px-3 py-2 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                            "flex w-full items-start gap-2 px-3 py-2 text-body text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                             modalBudget?.status === Number(status.code) && "bg-accent text-accent-foreground"
                           )}
                           onClick={() => {
@@ -2451,7 +2451,7 @@ export default function ActivityBudgetsTab({
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 shrink-0">{status.code}</span>
                           <div className="flex flex-col min-w-0">
                             <span className="font-medium">{status.name}</span>
-                            <span className="text-xs text-muted-foreground leading-snug">{status.description}</span>
+                            <span className="text-helper text-muted-foreground leading-snug">{status.description}</span>
                           </div>
                         </button>
                       ))}
@@ -2459,7 +2459,7 @@ export default function ActivityBudgetsTab({
                   </PopoverContent>
                 </Popover>
                 {fieldErrors.status && (
-                  <p className="text-xs text-destructive">{fieldErrors.status}</p>
+                  <p className="text-helper text-destructive">{fieldErrors.status}</p>
                 )}
               </div>
               </div>
@@ -2482,7 +2482,7 @@ export default function ActivityBudgetsTab({
                     dropdownId="budget-modal-period-start"
                   />
                   {fieldErrors.period_start && (
-                    <p className="text-xs text-destructive">{fieldErrors.period_start}</p>
+                    <p className="text-helper text-destructive">{fieldErrors.period_start}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -2501,7 +2501,7 @@ export default function ActivityBudgetsTab({
                     dropdownId="budget-modal-period-end"
                   />
                   {fieldErrors.period_end && (
-                    <p className="text-xs text-destructive">{fieldErrors.period_end}</p>
+                    <p className="text-helper text-destructive">{fieldErrors.period_end}</p>
                   )}
                 </div>
               </div>
@@ -2523,7 +2523,7 @@ export default function ActivityBudgetsTab({
                     placeholder="Select currency"
                   />
                   {fieldErrors.currency && (
-                    <p className="text-xs text-destructive">{fieldErrors.currency}</p>
+                    <p className="text-helper text-destructive">{fieldErrors.currency}</p>
                   )}
                 </div>
               </div>
@@ -2574,7 +2574,7 @@ export default function ActivityBudgetsTab({
                     className={fieldErrors.value ? 'border-destructive' : ''}
                   />
                   {fieldErrors.value && (
-                    <p className="text-xs text-destructive">{fieldErrors.value}</p>
+                    <p className="text-helper text-destructive">{fieldErrors.value}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -2593,7 +2593,7 @@ export default function ActivityBudgetsTab({
                     dropdownId="budget-modal-value-date"
                   />
                   {fieldErrors.value_date && (
-                    <p className="text-xs text-destructive">{fieldErrors.value_date}</p>
+                    <p className="text-helper text-destructive">{fieldErrors.value_date}</p>
                   )}
                 </div>
               </div>
@@ -2603,7 +2603,7 @@ export default function ActivityBudgetsTab({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between min-h-[24px]">
-                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      <Label className="flex items-center gap-1.5 text-body font-medium">
                         Exchange Rate
                         <TooltipProvider>
                           <UITooltip>
@@ -2611,14 +2611,14 @@ export default function ActivityBudgetsTab({
                               <Info className="h-3 w-3 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
-                              <p className="text-sm">The exchange rate used to convert the budget value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                              <p className="text-body">The exchange rate used to convert the budget value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
                             </TooltipContent>
                           </UITooltip>
                         </TooltipProvider>
                       </Label>
                       {modalBudget.currency !== 'USD' && (
                         <div className="flex items-center gap-2">
-                          <Label htmlFor="budget_exchange_rate_mode" className={cn("text-xs cursor-pointer", modalExchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
+                          <Label htmlFor="budget_exchange_rate_mode" className={cn("text-helper cursor-pointer", modalExchangeRateManual ? "text-orange-500 font-medium" : "text-muted-foreground")}>
                             {modalExchangeRateManual ? 'Manual' : 'Auto'}
                           </Label>
                           <Switch
@@ -2665,18 +2665,18 @@ export default function ActivityBudgetsTab({
                         </Button>
                       )}
                       {modalExchangeRate != null && modalBudget.currency !== 'USD' && !isLoadingModalRate && (
-                        <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                        <span className="absolute right-10 top-2.5 text-helper text-muted-foreground select-all cursor-text">
                           1 {modalBudget.currency} = {modalExchangeRate.toFixed(6)} USD
                         </span>
                       )}
                     </div>
                     {modalRateError && (
-                      <p className="text-xs text-destructive">{modalRateError}</p>
+                      <p className="text-helper text-destructive">{modalRateError}</p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center min-h-[24px]">
-                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      <Label className="flex items-center gap-1.5 text-body font-medium">
                         USD Value
                         <TooltipProvider>
                           <UITooltip>
@@ -2684,13 +2684,13 @@ export default function ActivityBudgetsTab({
                               <Info className="h-3 w-3 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
-                              <p className="text-sm">The budget value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                              <p className="text-body">The budget value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
                             </TooltipContent>
                           </UITooltip>
                         </TooltipProvider>
                       </Label>
                     </div>
-                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-body">
                       {modalCalculatedUsdValue !== null ? (
                         <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                       ) : (
@@ -2704,7 +2704,7 @@ export default function ActivityBudgetsTab({
               {/* Advanced Fields - Budget Lines */}
               <div
                 onClick={() => setShowAdvancedFields(!showAdvancedFields)}
-                className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                className="flex items-center justify-center gap-2 cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors py-2"
               >
                 <span>Advanced Fields</span>
                 {showAdvancedFields ? (
@@ -2716,15 +2716,15 @@ export default function ActivityBudgetsTab({
 
               {showAdvancedFields && (
                 <div className="space-y-6 pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     These optional fields provide additional IATI-compliant budget breakdown for detailed financial reporting.
                   </p>
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="text-sm font-medium">Budget Lines</Label>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <Label className="text-body font-medium">Budget Lines</Label>
+                        <p className="text-helper text-muted-foreground mt-1">
                           Optional breakdown of budget into line items. Sum of lines does not need to equal total budget.
                         </p>
                       </div>
@@ -2744,7 +2744,7 @@ export default function ActivityBudgetsTab({
                           {modalBudget.budget_lines.map((line, index) => (
                             <div key={index} className="space-y-3 p-3 border rounded-lg bg-card">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-foreground">Line {index + 1}</span>
+                                <span className="text-body font-medium text-foreground">Line {index + 1}</span>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -2840,7 +2840,7 @@ export default function ActivityBudgetsTab({
                           ))}
                           
                           {modalBudget.budget_lines.length > 0 && (
-                            <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                            <div className="text-helper text-muted-foreground mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
                               <strong>Note:</strong> Budget lines are optional. The sum of line items does not need to equal the total budget value.
                             </div>
                           )}

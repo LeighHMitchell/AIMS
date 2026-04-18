@@ -210,7 +210,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-3 p-4 border rounded-lg bg-muted/30">
             <div className="flex items-center justify-between mb-3">
-              <Label className="text-sm font-medium">Select years to display</Label>
+              <Label className="text-body font-medium">Select years to display</Label>
               <Button
                 variant="ghost"
                 size="sm"
@@ -229,7 +229,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                   />
                   <Label
                     htmlFor={`year-${year}`}
-                    className="text-sm cursor-pointer"
+                    className="text-body cursor-pointer"
                   >
                     {year}
                   </Label>
@@ -319,7 +319,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
                     <TableRow key={idx}>
                       <TableCell className="sticky left-0 bg-background z-10 font-medium">
                         {sector.sectorName}
-                        <div className="text-xs text-muted-foreground">{sector.sectorCode}</div>
+                        <div className="text-helper text-muted-foreground">{sector.sectorCode}</div>
                       </TableCell>
                       {selectedYears.map(year => {
                         const planned = sector[`planned_${year}`] || 0;

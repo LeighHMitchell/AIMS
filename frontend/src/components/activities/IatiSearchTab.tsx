@@ -453,7 +453,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
     // Return JSX with grey, smaller currency code
     return (
       <>
-        <span className="text-xs text-muted-foreground">{curr}</span> {formattedValue}
+        <span className="text-helper text-muted-foreground">{curr}</span> {formattedValue}
       </>
     )
   }
@@ -565,7 +565,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-foreground">Import from IATI</h2>
             {selectedActivity && (
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 {selectedActivity.title}
               </p>
             )}
@@ -587,14 +587,14 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
             <CardTitle>Import Instructions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               The activity XML has been successfully fetched from the IATI Datastore.
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-blue-900 mb-2">
+              <p className="text-body font-medium text-blue-900 mb-2">
                 To import this activity:
               </p>
-              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+              <ol className="text-body text-blue-800 space-y-1 list-decimal list-inside">
                 <li>Copy the XML content below</li>
                 <li>Navigate to the "IATI Import" tab</li>
                 <li>Select "XML Snippet" as the import method</li>
@@ -633,7 +633,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground">IATI Search</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-body text-muted-foreground mt-1">
           Search the IATI Datastore for activities by title and import their data into your activity.
         </p>
       </div>
@@ -698,20 +698,20 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                     {/* Results */}
                     <div className="max-h-[300px] overflow-y-auto">
                       {isLoadingOrgs && (
-                        <div className="p-4 text-sm text-center text-muted-foreground">
+                        <div className="p-4 text-body text-center text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
                           Searching IATI Datastore...
                         </div>
                       )}
                       
                       {!isLoadingOrgs && orgSuggestions.length === 0 && orgSearch.length >= 2 && (
-                        <div className="p-4 text-sm text-center text-muted-foreground">
+                        <div className="p-4 text-body text-center text-muted-foreground">
                           No organizations found. Try different search terms.
                         </div>
                       )}
                       
                       {!isLoadingOrgs && orgSuggestions.length === 0 && orgSearch.length < 2 && (
-                        <div className="p-4 text-sm text-center text-muted-foreground">
+                        <div className="p-4 text-body text-center text-muted-foreground">
                           Type at least 2 characters to search
                         </div>
                       )}
@@ -735,7 +735,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                               />
                               <div className="flex flex-col flex-1 min-w-0">
                                 <span className="font-mono text-sm truncate">{org.ref}</span>
-                                <span className="text-xs text-muted-foreground">{org.count.toLocaleString()} activities</span>
+                                <span className="text-helper text-muted-foreground">{org.count.toLocaleString()} activities</span>
                               </div>
                             </div>
                           ))}
@@ -745,7 +745,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   </div>
                 </PopoverContent>
               </Popover>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                 Search by organization name (e.g., USAID) or IATI identifier (e.g., US-GOV-1)
                 </p>
             </div>
@@ -867,7 +867,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                           </div>
                           
                           {/* Essential Info Grid - 3 Columns */}
-                          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs" data-layout="three-column-updated-v2">
+                          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-helper" data-layout="three-column-updated-v2">
                             {/* Column 1: Reported by, Implementing Org, and IATI ID */}
                             <div className="col-span-1 space-y-3">
                               <div>
@@ -1007,7 +1007,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                           e.stopPropagation()
                           toggleExpand(activity.iatiIdentifier)
                         }}
-                        className="mt-3 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        className="mt-3 flex items-center gap-1 text-helper text-muted-foreground hover:text-foreground transition-colors"
                       >
                         {expanded ? (
                           <>
@@ -1026,7 +1026,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                     {/* Expanded View - All data in 3 columns */}
                     {expanded && (
                       <div className="border-t border-border bg-white p-4">
-                        <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
+                        <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-helper">
                           {/* Description spans across all 3 columns with truncation */}
                           {activity.description && (() => {
                             const cleanDescription = htmlToPlainText(activity.description)
@@ -1162,10 +1162,10 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                               {!refDisplay.isValid && (
                                                 <Tooltip>
                                                   <TooltipTrigger asChild>
-                                                    <span className="text-destructive text-xs cursor-help">⚠</span>
+                                                    <span className="text-destructive text-helper cursor-help">⚠</span>
                                                   </TooltipTrigger>
                                                   <TooltipContent>
-                                                    <p className="text-xs">Invalid IATI organization identifier format</p>
+                                                    <p className="text-helper">Invalid IATI organization identifier format</p>
                                                   </TooltipContent>
                                                 </Tooltip>
                                               )}
@@ -1189,7 +1189,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   const sectorName = typeof sector === 'object' && sector.name ? sector.name : null;
                                   const sectorPercentage = typeof sector === 'object' && sector.percentage !== undefined ? sector.percentage : null;
                                   return (
-                                    <div key={idx} className="text-foreground text-xs">
+                                    <div key={idx} className="text-foreground text-helper">
                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {sectorCode}
                                       </code>
@@ -1379,12 +1379,12 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
             <div className="text-center text-muted-foreground">
               <Search className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
               <p className="text-lg font-medium">No search results yet</p>
-              <p className="text-sm mt-1 mb-4">
+              <p className="text-body mt-1 mb-4">
                 Enter an activity title or IATI identifier and click Search to find activities in the IATI Datastore
               </p>
               <div className="max-w-md mx-auto text-left bg-muted rounded-lg p-4 mt-4">
-                <p className="text-xs font-semibold text-foreground mb-2">Search Tips:</p>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                <p className="text-helper font-semibold text-foreground mb-2">Search Tips:</p>
+                <ul className="text-helper text-muted-foreground space-y-1 list-disc list-inside">
                   <li>Search by activity title (e.g., "Technical Assistance on Social Protection")</li>
                   <li>Search by IATI identifier (e.g., "AU-5-INM438")</li>
                   <li>The system automatically detects IATI IDs and searches exactly</li>
@@ -1466,7 +1466,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                 <div key={group.roleCode} className="p-4 border border-border rounded-lg">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
-                      <span className="inline-flex items-center gap-1 bg-muted text-foreground px-2 py-1 rounded text-sm font-medium">
+                      <span className="inline-flex items-center gap-1 bg-muted text-foreground px-2 py-1 rounded text-body font-medium">
                         <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono">
                           {group.roleCode}
                         </span>
@@ -1486,7 +1486,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                           </span>
                         ))}
                       </div>
-                      <p className="text-sm text-muted-foreground">{group.roleDescription}</p>
+                      <p className="text-body text-muted-foreground">{group.roleDescription}</p>
                     </div>
                   </div>
                 </div>
@@ -1497,7 +1497,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
             {selectedActivityForModal && (selectedActivityForModal.collaborationType || selectedActivityForModal.aidType || selectedActivityForModal.financeType || selectedActivityForModal.flowType || selectedActivityForModal.tiedStatus || selectedActivityForModal.hierarchy) && (
               <div className="p-4 border border-border rounded-lg">
                 <h4 className="font-medium text-foreground mb-3">IATI Classification</h4>
-                <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="grid grid-cols-1 gap-2 text-body">
                   {selectedActivityForModal.collaborationType && (
                     <div className="flex items-center gap-2">
                       <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">

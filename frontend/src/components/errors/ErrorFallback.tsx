@@ -125,7 +125,7 @@ export function ErrorFallback({
 
             {showDetails && (
               <div className="mt-3 space-y-3">
-                <div className="bg-muted p-3 rounded text-sm">
+                <div className="bg-muted p-3 rounded text-body">
                   <p className="font-medium text-foreground mb-1">Error Message:</p>
                   <p className="text-foreground font-mono break-all">{error.message}</p>
                 </div>
@@ -135,7 +135,7 @@ export function ErrorFallback({
                     <summary className="font-medium text-foreground cursor-pointer">
                       Stack Trace
                     </summary>
-                    <pre className="mt-2 text-xs text-muted-foreground overflow-auto max-h-32">
+                    <pre className="mt-2 text-helper text-muted-foreground overflow-auto max-h-32">
                       {error.stack}
                     </pre>
                   </details>

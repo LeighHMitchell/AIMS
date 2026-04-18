@@ -198,19 +198,19 @@ export function CurrencyConverterExample() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-          <div className="text-sm text-blue-600">Total Transactions</div>
+          <div className="text-body text-blue-600">Total Transactions</div>
         </div>
         <div className="bg-green-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-green-600">{stats.converted}</div>
-          <div className="text-sm text-green-600">Converted to USD</div>
+          <div className="text-body text-green-600">Converted to USD</div>
         </div>
         <div className="bg-yellow-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-          <div className="text-sm text-yellow-600">Pending Conversion</div>
+          <div className="text-body text-yellow-600">Pending Conversion</div>
         </div>
         <div className="bg-destructive/10 rounded-lg p-4">
           <div className="text-2xl font-bold text-destructive">{stats.unconvertible}</div>
-          <div className="text-sm text-destructive">Unconvertible</div>
+          <div className="text-body text-destructive">Unconvertible</div>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ export function CurrencyConverterExample() {
                 <h3 className="font-medium">
                   {transaction.provider_org_name} → {transaction.receiver_org_name}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Transaction Date: {new Date(transaction.transaction_date).toLocaleDateString()}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export function CurrencyConverterExample() {
 
             {/* Full Display */}
             <div>
-              <h4 className="text-sm font-medium text-foreground mb-2">Full Display Mode:</h4>
+              <h4 className="text-body font-medium text-foreground mb-2">Full Display Mode:</h4>
               <TransactionValueDisplay
                 transaction={transaction}
                 onConvert={handleConvertTransaction}
@@ -268,7 +268,7 @@ export function CurrencyConverterExample() {
 
             {/* Compact Display */}
             <div>
-              <h4 className="text-sm font-medium text-foreground mb-2">Compact Display Mode:</h4>
+              <h4 className="text-body font-medium text-foreground mb-2">Compact Display Mode:</h4>
               <TransactionValueDisplay
                 transaction={transaction}
                 onConvert={handleConvertTransaction}
@@ -301,7 +301,7 @@ export function CurrencyConverterExample() {
       {/* Integration Notes */}
       <div className="bg-muted rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">Integration Notes</h2>
-        <div className="space-y-3 text-sm">
+        <div className="space-y-3 text-body">
           <div>
             <strong>1. Currency Converter Service:</strong> Located at <code>/lib/currency-converter.ts</code>
           </div>

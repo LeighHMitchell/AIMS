@@ -227,7 +227,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
     if (!data || data.length === 0) {
       return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">No data available</p>
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -320,7 +320,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           
           <div className="flex items-center gap-3">
             {groupBy === 'fiscal' && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 Financial Year: July–June
               </div>
             )}
@@ -359,7 +359,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
           <div className="text-center">
             <p className="text-muted-foreground">No humanitarian/development aid data available</p>
-            <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+            <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>
       </div>
@@ -483,7 +483,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
   const renderTable = () => (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-body">
         <thead className="bg-surface-muted">
           <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-medium text-foreground">Period</th>
@@ -553,7 +553,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
         <div className="flex items-center gap-3">
           {groupBy === 'fiscal' && (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-helper text-muted-foreground">
               Financial Year: July–June
             </div>
           )}
@@ -594,7 +594,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       {viewMode === 'table' && renderTable()}
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This chart breaks down total aid spending into humanitarian and development categories over time. Transactions are classified as humanitarian based on the is_humanitarian flag, aid type codes, or keyword matching. Use the period selector to group by calendar year, financial year, or quarter, and switch between area, bar, and table views to explore the data.
       </p>
     </div>

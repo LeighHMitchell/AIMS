@@ -492,7 +492,7 @@ export function ProjectReferencesManagement() {
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <FileCode2 className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">No project references found</p>
-              <p className="text-sm mb-4">
+              <p className="text-body mb-4">
                 {searchQuery
                   ? "Try adjusting your search"
                   : "Add your first project reference to get started"}
@@ -507,7 +507,7 @@ export function ProjectReferencesManagement() {
           ) : (
             <div className="border rounded-lg">
               <div className="max-h-[600px] overflow-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">
@@ -553,7 +553,7 @@ export function ProjectReferencesManagement() {
                         <td className="p-4">
                           <Badge
                             variant="outline"
-                            className={`text-xs ${getTypeBadgeColor(ref.referenceType)}`}
+                            className={`text-helper ${getTypeBadgeColor(ref.referenceType)}`}
                           >
                             {REFERENCE_TYPE_LABELS[ref.referenceType]}
                           </Badge>
@@ -563,10 +563,10 @@ export function ProjectReferencesManagement() {
                             {ref.code}
                           </span>
                         </td>
-                        <td className="p-4 text-sm">
+                        <td className="p-4 text-body">
                           {ref.name || "—"}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                        <td className="p-4 text-body text-muted-foreground">
                           {ref.vocabulary || "—"}
                         </td>
                         <td className="p-4 text-center">
@@ -607,7 +607,7 @@ export function ProjectReferencesManagement() {
           )}
 
           {/* Summary */}
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-body text-muted-foreground">
             Showing {filteredReferences.length} reference
             {filteredReferences.length !== 1 ? "s" : ""}
             {filterType !== "all" && ` (${REFERENCE_TYPE_LABELS[filterType]})`}
@@ -648,7 +648,7 @@ export function ProjectReferencesManagement() {
                   {activities.map((a) => (
                     <button
                       key={a.id}
-                      className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                      className="w-full text-left px-3 py-2 hover:bg-muted text-body"
                       onClick={() => {
                         setFormData({ ...formData, activityId: a.id });
                         setActivitySearch(a.iati_identifier);
@@ -791,7 +791,7 @@ export function ProjectReferencesManagement() {
 
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 Required columns: activity_iati_id, reference_type, code
               </p>
               <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>

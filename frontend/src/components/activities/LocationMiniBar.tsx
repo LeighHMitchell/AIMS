@@ -113,7 +113,7 @@ export function LocationMiniBar({
   // Handle empty state
   if (!locations || locations.length === 0) {
     return (
-      <div className={`flex items-center justify-center text-xs text-muted-foreground ${className}`}>
+      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
         —
       </div>
     )
@@ -206,7 +206,7 @@ export function LocationMiniBar({
                 />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <div className="text-xs flex flex-wrap items-baseline gap-1.5">
+                <div className="text-helper flex flex-wrap items-baseline gap-1.5">
                   <span className="font-medium">{location.displayName}</span>
                   <span className="text-muted-foreground">
                     {displayMode === 'usd' 

@@ -131,7 +131,7 @@ export function AidPredictabilityChart() {
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: entry.color }}
             >
               {`${entry.name === "plannedDisbursements" ? "Planned Disbursements" : "Actual Disbursements"}: ${formatCurrency(entry.value)}`}
@@ -308,10 +308,10 @@ export function AidPredictabilityChart() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-xs font-medium">Year</TableHead>
-            <TableHead className="text-xs font-medium text-right">Planned Disbursements</TableHead>
-            <TableHead className="text-xs font-medium text-right">Actual Disbursements</TableHead>
-            <TableHead className="text-xs font-medium text-right">Variance</TableHead>
+            <TableHead className="text-helper font-medium">Year</TableHead>
+            <TableHead className="text-helper font-medium text-right">Planned Disbursements</TableHead>
+            <TableHead className="text-helper font-medium text-right">Actual Disbursements</TableHead>
+            <TableHead className="text-helper font-medium text-right">Variance</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -319,11 +319,11 @@ export function AidPredictabilityChart() {
             const variance = row.actualDisbursements - row.plannedDisbursements;
             return (
               <TableRow key={row.year}>
-                <TableCell className="text-sm font-medium">{row.year}</TableCell>
-                <TableCell className="text-sm text-right">{formatCurrency(row.plannedDisbursements)}</TableCell>
-                <TableCell className="text-sm text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
+                <TableCell className="text-body font-medium">{row.year}</TableCell>
+                <TableCell className="text-body text-right">{formatCurrency(row.plannedDisbursements)}</TableCell>
+                <TableCell className="text-body text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
                 <TableCell className={cn(
-                  "text-sm text-right font-medium",
+                  "text-body text-right font-medium",
                   variance > 0 ? "text-green-600" : variance < 0 ? "text-destructive" : "text-muted-foreground"
                 )}>
                   {variance > 0 ? "+" : ""}{formatCurrency(variance)}
@@ -470,14 +470,14 @@ export function AidPredictabilityChart() {
           <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
             Aid Predictability
           </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-helper text-muted-foreground mt-0.5">
             Planned vs Actual Disbursements by Year
           </p>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory footer */}
-          <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+          <p className="text-body text-muted-foreground leading-relaxed mt-2">
             Planned disbursements that span multiple years are broken up proportionally across each year based on the number of days in each period. Use the chart type toggles to switch between bar, line, and area visualizations, or expand to view detailed data in table format.
           </p>
           {renderControls(false)}

@@ -904,7 +904,7 @@ export default function CountriesRegionsTab({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {geographyLevel === 'transaction' && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-helper">
               Disabled - Using Transaction Level
             </Badge>
           )}
@@ -928,7 +928,7 @@ export default function CountriesRegionsTab({
           <Lock className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
             <p className="font-medium">You've chosen to report geography at the transaction level</p>
-            <p className="text-sm mt-1">
+            <p className="text-body mt-1">
               Each transaction specifies its own recipient country or region. The allocation form below is disabled.
             </p>
           </AlertDescription>
@@ -995,7 +995,7 @@ export default function CountriesRegionsTab({
                     <Label>Type <RequiredDot /> <HelpTextTooltip content="Choose whether this allocation targets a specific country, a broader region, or a custom geography not covered by IATI vocabularies." /></Label>
                     <Popover open={typeDropdownOpen} onOpenChange={setTypeDropdownOpen}>
                       <PopoverTrigger
-                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
                         disabled={!canEdit}
                       >
                         <span className="truncate">
@@ -1023,7 +1023,7 @@ export default function CountriesRegionsTab({
                               className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                               aria-label="Clear selection"
                             >
-                              <span className="text-xs">×</span>
+                              <span className="text-helper">×</span>
                             </button>
                           )}
                           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -1085,7 +1085,7 @@ export default function CountriesRegionsTab({
                       </TooltipProvider>
                     </div>
                     <div
-                      className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-sm cursor-not-allowed"
+                      className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-body cursor-not-allowed"
                       aria-disabled="true"
                     >
                       {vocabulary ? (
@@ -1107,13 +1107,13 @@ export default function CountriesRegionsTab({
                   <div className="space-y-2">
                     <Label>{selectedType === 'region' ? 'Region' : 'Country'} <RequiredDot /> <HelpTextTooltip content="Select the specific country or region from the chosen vocabulary. The list is filtered to valid codes from the selected vocabulary." /></Label>
                     {selectedType === 'custom' ? (
-                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-body text-muted-foreground">
                         Custom Geography fields below
                       </div>
                     ) : selectedType ? (
                       <Popover open={itemDropdownOpen} onOpenChange={setItemDropdownOpen}>
                         <PopoverTrigger
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
                           disabled={!canEdit}
                         >
                           <span className="truncate">
@@ -1141,7 +1141,7 @@ export default function CountriesRegionsTab({
                                 className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                                 aria-label="Clear selection"
                               >
-                                <span className="text-xs">×</span>
+                                <span className="text-helper">×</span>
                               </button>
                             )}
                             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -1168,7 +1168,7 @@ export default function CountriesRegionsTab({
                                     setItemDropdownOpen(false);
                                   }
                                 }}
-                                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                                 autoFocus
                               />
                               {itemSearchQuery && (
@@ -1178,7 +1178,7 @@ export default function CountriesRegionsTab({
                                   className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                                   aria-label="Clear search"
                                 >
-                                  <span className="text-xs">×</span>
+                                  <span className="text-helper">×</span>
                                 </button>
                               )}
                             </div>
@@ -1191,7 +1191,7 @@ export default function CountriesRegionsTab({
                                   <div className="max-h-[200px] overflow-y-auto">
                                     {hostItem && (
                                       <>
-                                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">Host Country</div>
+                                        <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">Host Country</div>
                                         <CommandGroup>
                                           <CommandItem
                                             key={hostItem.code}
@@ -1213,7 +1213,7 @@ export default function CountriesRegionsTab({
                                         <div className="border-t border-muted my-1" />
                                       </>
                                     )}
-                                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">All Countries</div>
+                                    <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">All Countries</div>
                                     <CommandGroup>
                                       {otherItems.map((item) => (
                                         <CommandItem
@@ -1231,7 +1231,7 @@ export default function CountriesRegionsTab({
                                           <div className="flex flex-col">
                                             <span className="font-medium">{item.name}</span>
                                             {item.description && (
-                                              <span className="text-xs text-muted-foreground">{item.description}</span>
+                                              <span className="text-helper text-muted-foreground">{item.description}</span>
                                             )}
                                           </div>
                                         </CommandItem>
@@ -1257,7 +1257,7 @@ export default function CountriesRegionsTab({
                                       <div className="flex flex-col">
                                         <span className="font-medium">{item.name}</span>
                                         {item.description && (
-                                          <span className="text-xs text-muted-foreground">{item.description}</span>
+                                          <span className="text-helper text-muted-foreground">{item.description}</span>
                                         )}
                                       </div>
                                     </CommandItem>
@@ -1269,7 +1269,7 @@ export default function CountriesRegionsTab({
                         </PopoverContent>
                       </Popover>
                     ) : (
-                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-body text-muted-foreground">
                         Select type first
                       </div>
                     )}
@@ -1293,7 +1293,7 @@ export default function CountriesRegionsTab({
 
                   {/* Narrative field */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Narrative / Description <HelpTextTooltip content="Optional free-text description providing additional context for this allocation, such as the scope or rationale." /></Label>
+                    <Label className="text-body font-medium">Narrative / Description <HelpTextTooltip content="Optional free-text description providing additional context for this allocation, such as the scope or rationale." /></Label>
                     <Input
                       type="text"
                       value={narrative}
@@ -1307,10 +1307,10 @@ export default function CountriesRegionsTab({
                   {/* Custom Geography Fields */}
                   {selectedType === 'custom' && (
                     <div className="space-y-3 pt-2 border-t">
-                      <h4 className="text-sm font-medium text-foreground">Custom Geography Details</h4>
+                      <h4 className="text-body font-medium text-foreground">Custom Geography Details</h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Name <RequiredDot /> <HelpTextTooltip content="Human-readable name for this custom geography (e.g., 'Horn of Africa')." /></Label>
+                          <Label className="text-body font-medium">Name <RequiredDot /> <HelpTextTooltip content="Human-readable name for this custom geography (e.g., 'Horn of Africa')." /></Label>
                           <Input
                             type="text"
                             value={customName}
@@ -1321,7 +1321,7 @@ export default function CountriesRegionsTab({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Code <RequiredDot /> <HelpTextTooltip content="Short code identifier for this custom geography as defined in your own vocabulary (e.g., 'HOA')." /></Label>
+                          <Label className="text-body font-medium">Code <RequiredDot /> <HelpTextTooltip content="Short code identifier for this custom geography as defined in your own vocabulary (e.g., 'HOA')." /></Label>
                           <Input
                             type="text"
                             value={customCode}
@@ -1333,7 +1333,7 @@ export default function CountriesRegionsTab({
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Vocabulary URI <HelpTextTooltip content="Optional URL pointing to the definition of your custom vocabulary so data consumers can resolve the code." /></Label>
+                        <Label className="text-body font-medium">Vocabulary URI <HelpTextTooltip content="Optional URL pointing to the definition of your custom vocabulary so data consumers can resolve the code." /></Label>
                         <Input
                           type="url"
                           value={customVocabularyUri}
@@ -1422,16 +1422,16 @@ export default function CountriesRegionsTab({
                       <TableRow key={countryAllocation.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">CT</Badge>
-                            <span className="text-sm font-medium text-foreground">Country</span>
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">CT</Badge>
+                            <span className="text-body font-medium text-foreground">Country</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
+                          <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
                             {countryAllocation.country?.code}
                           </Badge>
-                            <span className="text-sm font-medium text-foreground">{countryAllocation.country?.name}</span>
+                            <span className="text-body font-medium text-foreground">{countryAllocation.country?.name}</span>
                             {countryAllocation.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
@@ -1439,16 +1439,16 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">A4</Badge>
-                            <span className="text-sm font-medium text-foreground">ISO Country</span>
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">A4</Badge>
+                            <span className="text-body font-medium text-foreground">ISO Country</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium">{countryAllocation.percentage}%</span>
+                            <span className="text-body font-medium">{countryAllocation.percentage}%</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground min-w-48" title={countryAllocation.narrative}>
+                        <TableCell className="text-body text-muted-foreground min-w-48" title={countryAllocation.narrative}>
                           {countryAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
@@ -1486,16 +1486,16 @@ export default function CountriesRegionsTab({
                       <TableRow key={regionAllocation.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">RG</Badge>
-                            <span className="text-sm font-medium text-foreground">Region</span>
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">RG</Badge>
+                            <span className="text-body font-medium text-foreground">Region</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
+                          <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
                             {regionAllocation.region?.code}
                           </Badge>
-                            <span className="text-sm font-medium text-foreground">{regionAllocation.region?.name}</span>
+                            <span className="text-body font-medium text-foreground">{regionAllocation.region?.name}</span>
                             {regionAllocation.id && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                             )}
@@ -1503,16 +1503,16 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">1</Badge>
-                            <span className="text-sm font-medium text-foreground">OECD DAC</span>
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">1</Badge>
+                            <span className="text-body font-medium text-foreground">OECD DAC</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium">{regionAllocation.percentage}%</span>
+                            <span className="text-body font-medium">{regionAllocation.percentage}%</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground min-w-48" title={regionAllocation.narrative}>
+                        <TableCell className="text-body text-muted-foreground min-w-48" title={regionAllocation.narrative}>
                           {regionAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
@@ -1550,16 +1550,16 @@ export default function CountriesRegionsTab({
                       <TableRow key={customAllocation.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">CG</Badge>
-                            <span className="text-sm font-medium text-foreground">Custom</span>
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">CG</Badge>
+                            <span className="text-body font-medium text-foreground">Custom</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
+                            <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">
                               {customAllocation.code}
                             </Badge>
-                            <span className="text-sm font-medium text-foreground">{customAllocation.name}</span>
+                            <span className="text-body font-medium text-foreground">{customAllocation.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1567,12 +1567,12 @@ export default function CountriesRegionsTab({
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-2 cursor-help">
-                                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">99</Badge>
-                                  <span className="text-sm font-medium text-foreground">Custom</span>
+                                  <Badge variant="secondary" className="text-helper bg-muted text-muted-foreground">99</Badge>
+                                  <span className="text-body font-medium text-foreground">Custom</span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="text-sm text-muted-foreground font-normal">
+                                <p className="text-body text-muted-foreground font-normal">
                                   {customAllocation.vocabularyUri ? `Vocabulary URI: ${customAllocation.vocabularyUri}` : 'No vocabulary URI specified'}
                                 </p>
                               </TooltipContent>
@@ -1581,10 +1581,10 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium">{customAllocation.percentage}%</span>
+                            <span className="text-body font-medium">{customAllocation.percentage}%</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground min-w-48" title={customAllocation.narrative}>
+                        <TableCell className="text-body text-muted-foreground min-w-48" title={customAllocation.narrative}>
                           {customAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>

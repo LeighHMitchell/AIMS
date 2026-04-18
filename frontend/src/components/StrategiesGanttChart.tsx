@@ -166,7 +166,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
         <div className="space-y-6">
           {/* Year headers */}
           <div className="relative">
-            <div className="flex justify-between text-sm text-muted-foreground font-medium mb-2">
+            <div className="flex justify-between text-body text-muted-foreground font-medium mb-2">
               {years.map(year => (
                 <span key={year} className="flex-1 text-center">
                   {year}
@@ -186,10 +186,10 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                 <div key={strategy.id} className="relative">
                   <div className="flex items-center gap-4 mb-2">
                     <div className="w-48 flex-shrink-0">
-                      <div className="text-sm font-medium text-foreground truncate">
+                      <div className="text-body font-medium text-foreground truncate">
                         {strategy.title}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-helper text-muted-foreground">
                         <span>{strategy.organization.acronym || strategy.organization.name}</span>
                         {!strategy.public && (
                           <span className="flex items-center gap-1">
@@ -213,7 +213,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                         title={`${strategy.title} (${strategy.startYear} - ${strategy.endYear})`}
                       >
                         <div className="flex items-center justify-between h-full px-2">
-                          <span className={`text-xs font-medium ${colors.text} truncate`}>
+                          <span className={`text-helper font-medium ${colors.text} truncate`}>
                             {strategy.status}
                           </span>
                           
@@ -262,7 +262,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
           {/* Legend */}
           <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center gap-6 text-body">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-200 border-2 border-green-500 rounded"></div>
                   <span>Published</span>
@@ -281,7 +281,7 @@ const StrategiesGanttChart: React.FC<StrategiesGanttChartProps> = ({
                 </div>
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 Hover over bars for more details and actions
               </div>
             </div>

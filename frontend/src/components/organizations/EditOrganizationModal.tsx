@@ -655,7 +655,7 @@ export function EditOrganizationModal({
               <DialogTitle className="text-xl font-semibold">
                 {isCreating ? 'Add New Organization' : 'Edit Organization Profile'}
               </DialogTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {isCreating ? 'Create a new organization profile' : 'Update organization information and details'}
               </p>
             </div>
@@ -687,8 +687,8 @@ export function EditOrganizationModal({
           <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 flex items-start gap-3 mx-6">
             <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-red-800 mb-1">Please fix the validation errors</p>
-              <ul className="text-sm text-destructive space-y-0.5">
+              <p className="text-body font-medium text-red-800 mb-1">Please fix the validation errors</p>
+              <ul className="text-body text-destructive space-y-0.5">
                 {validationErrors.map((error, index) => (
                   <li key={index}>• {error}</li>
                 ))}
@@ -727,7 +727,7 @@ export function EditOrganizationModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Name (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
+                <Label htmlFor="name" className="text-body font-medium">
                   Name <RequiredDot />
                 </Label>
                 <Input
@@ -741,7 +741,7 @@ export function EditOrganizationModal({
 
               {/* Acronym / Short Name (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="acronym" className="text-sm font-medium">
+                <Label htmlFor="acronym" className="text-body font-medium">
                   Acronym / Short Name <RequiredDot />
                 </Label>
                 <Input
@@ -755,7 +755,7 @@ export function EditOrganizationModal({
 
               {/* Location Represented */}
               <div className="space-y-2">
-                <Label htmlFor="country_represented" className="text-sm font-medium">
+                <Label htmlFor="country_represented" className="text-body font-medium">
                   Location Represented <RequiredDot />
                 </Label>
                 <Select
@@ -855,7 +855,7 @@ export function EditOrganizationModal({
                           {/* Institutional Groups */}
                           {hasInstitutionalResults && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
+                              <div className="px-2 py-1.5 text-body font-semibold text-muted-foreground bg-muted">
                                 Institutional Groups
                               </div>
                               {filteredInstitutionalGroups.map((group) => (
@@ -879,7 +879,7 @@ export function EditOrganizationModal({
                           {/* Country Options */}
                           {hasCountryResults && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
+                              <div className="px-2 py-1.5 text-body font-semibold text-muted-foreground bg-muted">
                                 Countries
                               </div>
                               {filteredCountries.map((country) => (
@@ -895,7 +895,7 @@ export function EditOrganizationModal({
 
                           {/* No Results */}
                           {!hasInstitutionalResults && !hasCountryResults && (
-                            <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                            <div className="px-2 py-6 text-center text-body text-muted-foreground">
                               No results found for "{countrySearchTerm}"
                             </div>
                           )}
@@ -904,14 +904,14 @@ export function EditOrganizationModal({
                     })()}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Select a country for bilateral agencies, or an institutional group for multilateral organizations
                 </p>
               </div>
 
               {/* Organisation Type (Required) */}
               <div className="space-y-2">
-                <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium">
+                <Label htmlFor="Organisation_Type_Code" className="text-body font-medium">
                   Organisation Type <RequiredDot />
                 </Label>
                 <Select 
@@ -956,7 +956,7 @@ export function EditOrganizationModal({
 
               {/* Residency Status */}
               <div className="space-y-2">
-                <Label htmlFor="residency_status" className="text-sm font-medium">
+                <Label htmlFor="residency_status" className="text-body font-medium">
                   Residency Status
                 </Label>
                 <Select
@@ -992,7 +992,7 @@ export function EditOrganizationModal({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Whether this organisation is resident within the country
                 </p>
               </div>
@@ -1001,7 +1001,7 @@ export function EditOrganizationModal({
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+              <Label htmlFor="description" className="text-body font-medium">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description || ''}
@@ -1018,7 +1018,7 @@ export function EditOrganizationModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* IATI Organisation Identifier */}
               <div className="space-y-2">
-                <Label htmlFor="iati_org_id_class" className="text-sm font-medium">IATI Organisation Identifier</Label>
+                <Label htmlFor="iati_org_id_class" className="text-body font-medium">IATI Organisation Identifier</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Input
@@ -1046,7 +1046,7 @@ export function EditOrganizationModal({
               {/* Organization UUID (Read-only) */}
               {organization?.id && (
                 <div className="space-y-2">
-                  <Label htmlFor="uuid_class" className="text-sm font-medium">Organization UUID</Label>
+                  <Label htmlFor="uuid_class" className="text-body font-medium">Organization UUID</Label>
                   <div className="flex gap-2">
                     <Input
                       id="uuid_class"
@@ -1062,13 +1062,13 @@ export function EditOrganizationModal({
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">This unique identifier is used internally by the system</p>
+                  <p className="text-helper text-muted-foreground">This unique identifier is used internally by the system</p>
                 </div>
               )}
 
               {/* Default Currency */}
               <div className="space-y-2">
-                <Label htmlFor="default_currency" className="text-sm font-medium">
+                <Label htmlFor="default_currency" className="text-body font-medium">
                   Default Currency
                 </Label>
                 <Select
@@ -1172,7 +1172,7 @@ export function EditOrganizationModal({
 
               {/* Default Language */}
               <div className="space-y-2">
-                <Label htmlFor="default_language" className="text-sm font-medium">
+                <Label htmlFor="default_language" className="text-body font-medium">
                   Default Language
                 </Label>
                 <Select
@@ -1273,7 +1273,7 @@ export function EditOrganizationModal({
           {/* Branding Tab */}
           <TabsContent value="branding" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
             <div className="space-y-6">
-              <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
+              <p className="text-body text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
 
               {/* Logo */}
               <div>
@@ -1303,11 +1303,11 @@ export function EditOrganizationModal({
           <TabsContent value="contact" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
             {/* Contact Information Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Information</h3>
+              <h3 className="text-body font-semibold text-foreground border-b pb-2">Contact Information</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="email" className="text-body font-medium flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     Email
                   </Label>
@@ -1321,7 +1321,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="phone" className="text-body font-medium flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     Phone
                   </Label>
@@ -1334,7 +1334,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="website" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="website" className="text-body font-medium flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     Website
                   </Label>
@@ -1348,7 +1348,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="address" className="text-body font-medium flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     Mailing Address
                   </Label>
@@ -1366,12 +1366,12 @@ export function EditOrganizationModal({
 
             {/* Social Media Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-2">Social Media</h3>
-              <p className="text-sm text-muted-foreground">Add social media profiles for your organization</p>
+              <h3 className="text-body font-semibold text-foreground border-b pb-2">Social Media</h3>
+              <p className="text-body text-muted-foreground">Add social media profiles for your organization</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="social_twitter" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="social_twitter" className="text-body font-medium flex items-center gap-2">
                     <Twitter className="h-4 w-4 text-muted-foreground" />
                     Twitter / X
                   </Label>
@@ -1384,7 +1384,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="social_facebook" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="social_facebook" className="text-body font-medium flex items-center gap-2">
                     <Facebook className="h-4 w-4 text-muted-foreground" />
                     Facebook
                   </Label>
@@ -1397,7 +1397,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="social_linkedin" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="social_linkedin" className="text-body font-medium flex items-center gap-2">
                     <Linkedin className="h-4 w-4 text-muted-foreground" />
                     LinkedIn
                   </Label>
@@ -1410,7 +1410,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="social_instagram" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="social_instagram" className="text-body font-medium flex items-center gap-2">
                     <Instagram className="h-4 w-4 text-muted-foreground" />
                     Instagram
                   </Label>
@@ -1423,7 +1423,7 @@ export function EditOrganizationModal({
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="social_youtube" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="social_youtube" className="text-body font-medium flex items-center gap-2">
                     <Youtube className="h-4 w-4 text-muted-foreground" />
                     YouTube
                   </Label>
@@ -1465,8 +1465,8 @@ export function EditOrganizationModal({
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
               <HelpCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-800 mb-1">About Aliases</p>
-                <p className="text-sm text-blue-700">
+                <p className="text-body font-medium text-blue-800 mb-1">About Aliases</p>
+                <p className="text-body text-blue-700">
                   Aliases help AIMS automatically recognize this organization when importing IATI data, 
                   even if the source uses legacy codes or alternate names. This ensures consistent data 
                   linking across different reporting sources.
@@ -1496,7 +1496,7 @@ export function EditOrganizationModal({
               />
             </div>
 
-            <div className="text-sm text-muted-foreground border-t pt-4">
+            <div className="text-body text-muted-foreground border-t pt-4">
               <p className="font-medium mb-2">How Aliases Work:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>When importing IATI XML, AIMS checks organization references against these aliases</li>
@@ -1514,13 +1514,13 @@ export function EditOrganizationModal({
                   <h3 className="text-base font-semibold text-foreground">Merge Another Organization</h3>
                 </div>
                 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   Merge a duplicate organization into this one. All activities, transactions, and references 
                   will be transferred to this organization, and the duplicate will be deleted.
                 </p>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Search for organization to merge</Label>
+                  <Label className="text-body font-medium">Search for organization to merge</Label>
                   <OrganizationCombobox
                     organizations={allOrganizations}
                     value={mergeSourceOrgId || ''}
@@ -1531,7 +1531,7 @@ export function EditOrganizationModal({
 
                 {/* Loading state */}
                 {loadingMergePreview && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-body text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading impact preview...
                   </div>
@@ -1554,12 +1554,12 @@ export function EditOrganizationModal({
                             </span>
                           )}
                           {mergePreview.sourceOrg.type && (
-                            <span className="text-xs text-amber-700">
+                            <span className="text-helper text-amber-700">
                               {mergePreview.sourceOrg.type}
                             </span>
                           )}
                           {mergePreview.sourceOrg.country && (
-                            <span className="text-xs text-amber-700">
+                            <span className="text-helper text-amber-700">
                               • {mergePreview.sourceOrg.country}
                             </span>
                           )}
@@ -1570,8 +1570,8 @@ export function EditOrganizationModal({
                     <Separator className="bg-amber-200" />
 
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-amber-900">This will reassign:</p>
-                      <ul className="text-sm text-amber-800 space-y-1">
+                      <p className="text-body font-medium text-amber-900">This will reassign:</p>
+                      <ul className="text-body text-amber-800 space-y-1">
                         <li>• {mergePreview.totals.activities} activity reference{mergePreview.totals.activities !== 1 ? 's' : ''}</li>
                         <li>• {mergePreview.totals.transactions} transaction{mergePreview.totals.transactions !== 1 ? 's' : ''}</li>
                         <li>• {mergePreview.totals.plannedDisbursements} planned disbursement{mergePreview.totals.plannedDisbursements !== 1 ? 's' : ''}</li>
@@ -1581,7 +1581,7 @@ export function EditOrganizationModal({
                         )}
                       </ul>
                       {mergePreview.willAddAlias && (
-                        <p className="text-sm text-amber-800 mt-2">
+                        <p className="text-body text-amber-800 mt-2">
                           The IATI ID <span className="font-mono font-medium">{mergePreview.willAddAlias}</span> will be added as an alias.
                         </p>
                       )}
@@ -1608,7 +1608,7 @@ export function EditOrganizationModal({
                   </div>
                 )}
 
-                <div className="bg-muted border border-border rounded-md p-3 text-sm text-muted-foreground">
+                <div className="bg-muted border border-border rounded-md p-3 text-body text-muted-foreground">
                   <p className="font-medium text-foreground mb-1">Note:</p>
                   <p>
                     Merging is permanent and cannot be undone. The source organization will be deleted 
@@ -1656,7 +1656,7 @@ export function EditOrganizationModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Import from IATI</DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Enter an IATI organization identifier to import data automatically
           </p>
         </DialogHeader>
@@ -1669,7 +1669,7 @@ export function EditOrganizationModal({
               placeholder="e.g., DK-CVR-20228799"
               // TODO: Add state for IATI import ID and functionality
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Example: DK-CVR-20228799 (DANIDA), GB-GOV-1 (FCDO)
             </p>
           </div>
@@ -1708,7 +1708,7 @@ export function EditOrganizationModal({
               
               <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 space-y-2">
                 <p className="font-medium text-red-800">This action will:</p>
-                <ul className="text-sm text-destructive space-y-1">
+                <ul className="text-body text-destructive space-y-1">
                   <li>• Transfer all activities, transactions, and references</li>
                   <li>• Add the source IATI ID as an alias</li>
                   <li>• <strong>Permanently delete</strong> the source organization</li>

@@ -318,9 +318,9 @@ export function SectorHierarchyFilter({
           <div className="flex items-center gap-2 truncate">
             <Layers2 className="h-4 w-4 text-muted-foreground shrink-0" />
             {totalSelected === 0 ? (
-              <span className="text-xs">All Sectors</span>
+              <span className="text-helper">All Sectors</span>
             ) : (
-              <span className="text-xs truncate">
+              <span className="text-helper truncate">
                 {getSelectionSummary()}
               </span>
             )}
@@ -361,7 +361,7 @@ export function SectorHierarchyFilter({
           
           {/* Show Only Active Sectors Toggle */}
           <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-            <span className="text-xs font-medium text-muted-foreground">Show only active sectors</span>
+            <span className="text-helper font-medium text-muted-foreground">Show only active sectors</span>
             <Switch 
               checked={showOnlyActiveSectors} 
               onCheckedChange={onShowOnlyActiveSectorsChange}
@@ -458,14 +458,14 @@ export function SectorHierarchyFilter({
           {/* Selection Summary Footer */}
           {totalSelected > 0 && (
             <div className="border-t p-2 bg-muted/50">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center justify-between text-helper text-muted-foreground">
                 <span>
                   {totalSelected} item{totalSelected !== 1 ? 's' : ''} selected
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 text-xs"
+                  className="h-6 text-helper"
                   onClick={handleClear}
                 >
                   Clear all

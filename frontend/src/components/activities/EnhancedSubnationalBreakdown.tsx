@@ -1006,7 +1006,7 @@ export function EnhancedSubnationalBreakdown({
                 </div>
               </div>
 
-              <div className="flex items-center justify-center mt-8 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center mt-8 text-body text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Loading subnational breakdown data...
               </div>
@@ -1029,13 +1029,13 @@ export function EnhancedSubnationalBreakdown({
           <h3 className="text-lg font-semibold">
             Sub-national allocation is currently available for Myanmar only
           </h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          <p className="text-body text-muted-foreground max-w-md mx-auto">
             {otherCountryName
               ? <>This activity is reported for <span className="font-medium text-foreground">{otherCountryName}</span>. We're working to support additional countries.</>
               : <>We're working to support additional countries.</>
             }
           </p>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+          <p className="text-helper text-muted-foreground max-w-md mx-auto">
             Use the <span className="font-medium">Countries &amp; Regions</span> tab to record country-level allocations in the meantime.
           </p>
         </CardContent>
@@ -1141,10 +1141,10 @@ export function EnhancedSubnationalBreakdown({
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="text-left px-3 py-2 font-medium text-sm text-foreground">Administrative Unit</th>
+                      <th className="text-left px-3 py-2 font-medium text-body text-foreground">Administrative Unit</th>
                       <th className="px-3 py-2">
                         <div className="flex items-center justify-end gap-2">
-                          <span className="w-20 text-right font-medium text-sm text-foreground">%</span>
+                          <span className="w-20 text-right font-medium text-body text-foreground">%</span>
                           <span className="w-8"></span>
                         </div>
                       </th>
@@ -1179,7 +1179,7 @@ export function EnhancedSubnationalBreakdown({
                                     }
                                   </button>
                                 )}
-                                <span className="text-sm font-semibold">{item.regionName}</span>
+                                <span className="text-body font-semibold">{item.regionName}</span>
                               </div>
                             </td>
                             <td className="px-3 py-2 text-right">
@@ -1191,11 +1191,11 @@ export function EnhancedSubnationalBreakdown({
                                   step="0.01"
                                   value={item.regionTotal ? parseFloat(item.regionTotal.toFixed(2)) || '' : ''}
                                   onChange={(e) => updateRegionPercentage(item.regionName, parseFloat(e.target.value) || 0)}
-                                  className="w-20 text-right text-sm h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-20 text-right text-body h-10 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="0"
                                   disabled={!canEdit}
                                 />
-                                <span className="text-xs text-muted-foreground w-8 text-left">%</span>
+                                <span className="text-helper text-muted-foreground w-8 text-left">%</span>
                               </div>
                             </td>
                             {canEdit && (
@@ -1227,7 +1227,7 @@ export function EnhancedSubnationalBreakdown({
                         <tr key={entry.id} className={`border-t ${isHighlighted ? 'bg-emerald-50/50' : ''}`}>
                           <td className="px-3 py-2 pl-10">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-normal text-foreground">
+                              <span className="text-body font-normal text-foreground">
                                 {entry.adminUnit.name}
                               </span>
                               {isHighlighted && (
@@ -1247,11 +1247,11 @@ export function EnhancedSubnationalBreakdown({
                                 step="0.01"
                                 value={entry.percentage || ''}
                                 onChange={(e) => updatePercentage(entry.id, parseFloat(e.target.value) || 0)}
-                                className="w-20 text-right text-sm h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-20 text-right text-body h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="0"
                                 disabled={!canEdit}
                               />
-                              <span className="text-xs text-muted-foreground w-8 text-left">%</span>
+                              <span className="text-helper text-muted-foreground w-8 text-left">%</span>
                             </div>
                           </td>
                           {canEdit && (
@@ -1279,15 +1279,15 @@ export function EnhancedSubnationalBreakdown({
                   {hasAnyValues && (
                     <tfoot className="border-t">
                       <tr>
-                        <td className="px-3 py-2 font-semibold text-sm">
+                        <td className="px-3 py-2 font-semibold text-body">
                           Total
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <span className="text-foreground font-semibold text-sm w-20 text-right">
+                            <span className="text-foreground font-semibold text-body w-20 text-right">
                               {totalPercentage.toFixed(2)}
                             </span>
-                            <span className="text-xs text-foreground font-semibold w-8 text-left">%</span>
+                            <span className="text-helper text-foreground font-semibold w-8 text-left">%</span>
                           </div>
                         </td>
                         {canEdit && <td className="px-3 py-2"></td>}
@@ -1309,7 +1309,7 @@ export function EnhancedSubnationalBreakdown({
             {/* Save Status */}
             {entries.length > 0 && saving && (
               <div className="flex justify-end pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Saving...
                 </div>
               </div>

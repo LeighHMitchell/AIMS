@@ -1283,7 +1283,7 @@ const router = useRouter();
             <span className="cursor-help">{children}</span>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
-            <p className="text-sm">{description}</p>
+            <p className="text-body">{description}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -1685,7 +1685,7 @@ const router = useRouter();
       <FilterBar data-tour="activities-filters">
         {/* Status Filter */}
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Status</Label>
+          <Label className="text-helper text-muted-foreground">Status</Label>
           <MultiSelectFilter
             options={[
               { value: "1", label: "Pipeline/identification", code: "1", color: "#94a3b8" },
@@ -1710,7 +1710,7 @@ const router = useRouter();
 
         {/* Validation Filter */}
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Validation</Label>
+          <Label className="text-helper text-muted-foreground">Validation</Label>
           <MultiSelectFilter
             options={[
               { value: "validated", label: "Validated", color: "#22c55e" },
@@ -1732,7 +1732,7 @@ const router = useRouter();
 
         {/* Reported By Filter */}
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Reported by</Label>
+          <Label className="text-helper text-muted-foreground">Reported by</Label>
           <MultiSelectFilter
             options={organizations.map((org) => ({
               value: org.id,
@@ -1754,7 +1754,7 @@ const router = useRouter();
 
         {/* Sector Filter */}
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <Label className="text-helper text-muted-foreground">Sector</Label>
           <SectorHierarchyFilter
             selected={sectorFilter}
             onChange={setSectorFilter}
@@ -1766,7 +1766,7 @@ const router = useRouter();
 
         {/* Aid Type Filter */}
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Aid Type</Label>
+          <Label className="text-helper text-muted-foreground">Aid Type</Label>
           <MultiSelectFilter
             options={Object.entries(AID_TYPE_LABELS).map(([code, label]) => ({
               value: code,
@@ -1788,7 +1788,7 @@ const router = useRouter();
 
         {/* Flow Type Filter */}
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Flow Type</Label>
+          <Label className="text-helper text-muted-foreground">Flow Type</Label>
           <MultiSelectFilter
             options={Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => ({
               value: code,
@@ -1811,7 +1811,7 @@ const router = useRouter();
         {/* Column Selector - Only visible in table view */}
         {viewMode === 'table' && (
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Columns</Label>
+            <Label className="text-helper text-muted-foreground">Columns</Label>
             <ColumnSelector
               columns={activityColumns}
               visibleColumns={visibleColumns}
@@ -2500,7 +2500,7 @@ const router = useRouter();
                       };
                       /* Always render a cell so column count matches header (keeps Actions column aligned) */
                       return actHeaderMap[colId] ?? (
-                        <th key={colId} className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground" />
+                        <th key={colId} className="h-12 px-4 text-left align-middle text-body font-medium text-muted-foreground" />
                       );
                     })}
 
@@ -2540,7 +2540,7 @@ const router = useRouter();
                       {orderedDraggableColumns.map((colId) => {
                         const actCellMap: Record<string, React.ReactNode> = {
                           title: (
-<td key="title" className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
+<td key="title" className="px-4 py-2 text-body text-foreground whitespace-normal break-words leading-tight">
                         <a 
                           href={`/activities/${activity.id}`}
                           className="cursor-pointer block"
@@ -2599,7 +2599,7 @@ const router = useRouter();
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <span className="text-sm">IATI Synced</span>
+                                        <span className="text-body">IATI Synced</span>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -2624,7 +2624,7 @@ const router = useRouter();
                                 </button>
                               </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
-                              <div className="text-xs text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
+                              <div className="text-helper text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
                                 {activity.partnerId && (
                                   <div className="group/pid flex items-center gap-1 flex-shrink-0">
                                     <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate max-w-[200px]">{activity.partnerId}</span>
@@ -2674,12 +2674,12 @@ const router = useRouter();
                       </td>
                           ),
                           activityStatus: (
-<td key="activityStatus" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="activityStatus" className="px-4 py-2 text-body text-foreground text-left">
                         {getActivityStatusLabel(activityStatus)}
                       </td>
                           ),
                           publicationStatus: (
-<td key="publicationStatus" className="px-4 py-2 text-sm text-foreground">
+<td key="publicationStatus" className="px-4 py-2 text-body text-foreground">
                         <div className="flex items-center justify-center">
                           <TooltipProvider>
                             <Tooltip>
@@ -2690,11 +2690,11 @@ const router = useRouter();
                                 <div className="space-y-2 p-1">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <FileCheck className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                                    <span className="text-body"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <ShieldCheck className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                                    <span className="text-body"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     {activity.autoSync && activity.syncStatus === 'live' ? (
@@ -2702,7 +2702,7 @@ const router = useRouter();
                                     ) : (
                                       <Globe className="h-4 w-4" />
                                     )}
-                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                    <span className="text-body"><span className="font-semibold">IATI:</span> {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -2712,7 +2712,7 @@ const router = useRouter();
                       </td>
                           ),
                           reportedBy: (
-<td key="reportedBy" className="px-4 py-2 text-sm text-foreground text-left" style={{textAlign: 'left'}}>
+<td key="reportedBy" className="px-4 py-2 text-body text-foreground text-left" style={{textAlign: 'left'}}>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -2737,7 +2737,7 @@ const router = useRouter();
                                               if (parent) {
                                                 parent.innerHTML = `
                                                   <div class="w-5 h-5 bg-green-100 rounded-sm flex items-center justify-center">
-                                                    <span class="text-[hsl(var(--success-icon))] font-semibold text-xs">O</span>
+                                                    <span class="text-[hsl(var(--success-icon))] font-semibold text-helper">O</span>
                                                   </div>
                                                 `;
                                               }
@@ -2756,7 +2756,7 @@ const router = useRouter();
                               className="max-w-sm p-4 bg-white border border-border shadow-lg"
                               sideOffset={8}
                             >
-                              <div className="text-sm">
+                              <div className="text-body">
                                 <p>
                                   Created by {activity.creatorProfile?.name || activity.createdBy?.name || user?.name || 'Unknown User'}
                                   {(() => {
@@ -2781,14 +2781,14 @@ const router = useRouter();
                       </td>
                           ),
                           totalBudgeted: (
-<td key="totalBudgeted" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+<td key="totalBudgeted" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
+                              <span className="cursor-pointer"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                              <p className="text-sm text-muted-foreground font-normal">
+                              <p className="text-body text-muted-foreground font-normal">
                                 Total budget amount across all budget entries for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
                             </TooltipContent>
@@ -2797,14 +2797,14 @@ const router = useRouter();
                       </td>
                           ),
                           totalPlannedDisbursement: (
-<td key="totalPlannedDisbursement" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+<td key="totalPlannedDisbursement" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
+                              <span className="cursor-pointer"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left whitespace-normal">
-                              <p className="text-sm text-muted-foreground font-normal">
+                              <p className="text-body text-muted-foreground font-normal">
                                 Total value of all planned disbursements for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
                             </TooltipContent>
@@ -2813,12 +2813,12 @@ const router = useRouter();
                       </td>
                           ),
                           lastEdited: (
-<td key="lastEdited" className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
+<td key="lastEdited" className="px-4 py-2 text-body text-foreground whitespace-nowrap text-right">
                         {format(new Date(activity.updatedAt), "dd MMM yyyy")}
                       </td>
                           ),
                           modalityClassification: (
-<td key="modalityClassification" className="px-4 py-2 text-sm text-foreground text-center">
+<td key="modalityClassification" className="px-4 py-2 text-body text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
@@ -2828,23 +2828,23 @@ const router = useRouter();
                               <div className="space-y-2 p-1">
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Handshake className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
+                                  <span className="text-body"><span className="font-semibold">Aid Type:</span> {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <DollarSign className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Default Finance Type:</span> {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : 'Not specified'}</span>
+                                  <span className="text-body"><span className="font-semibold">Default Finance Type:</span> {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Shuffle className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
+                                  <span className="text-body"><span className="font-semibold">Flow Type:</span> {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Link2 className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : 'Not specified'}</span>
+                                  <span className="text-body"><span className="font-semibold">Tied Status:</span> {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : 'Not specified'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Settings className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Default Modality:</span> {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : 'Not specified'}</span>
+                                  <span className="text-body"><span className="font-semibold">Default Modality:</span> {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : 'Not specified'}</span>
                                 </div>
                               </div>
                             </TooltipContent>
@@ -2853,22 +2853,22 @@ const router = useRouter();
                       </td>
                           ),
                           sectorCategories: (
-<td key="sectorCategories" className="px-4 py-2 text-sm text-foreground">
+<td key="sectorCategories" className="px-4 py-2 text-body text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="category" height={14} />
                         </td>
                           ),
                           sectors: (
-<td key="sectors" className="px-4 py-2 text-sm text-foreground">
+<td key="sectors" className="px-4 py-2 text-body text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="sector" height={14} />
                         </td>
                           ),
                           subSectors: (
-<td key="subSectors" className="px-4 py-2 text-sm text-foreground">
+<td key="subSectors" className="px-4 py-2 text-body text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="subsector" height={14} />
                         </td>
                           ),
                           locations: (
-<td key="locations" className="px-4 py-2 text-sm text-foreground">
+<td key="locations" className="px-4 py-2 text-body text-foreground">
                           <LocationMiniBar 
                             locations={activity.locations?.broad_coverage_locations as LocationData[] | undefined}
                             displayMode={locationDisplayMode}
@@ -2878,7 +2878,7 @@ const router = useRouter();
                         </td>
                           ),
                           recipientCountries: (
-<td key="recipientCountries" className="px-4 py-2 text-sm text-foreground">
+<td key="recipientCountries" className="px-4 py-2 text-body text-foreground">
                           <div className="flex flex-col gap-0.5">
                             {activity.recipient_countries && activity.recipient_countries.length > 0 ? (
                               activity.recipient_countries.slice(0, 3).map((rc, idx) => (
@@ -2898,7 +2898,7 @@ const router = useRouter();
                               <span className="text-muted-foreground">—</span>
                             )}
                             {((activity.recipient_countries?.length || 0) > 3 || (activity.recipient_regions?.length || 0) > 3) && (
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-muted-foreground text-helper">
                                 +{Math.max((activity.recipient_countries?.length || 0) - 3, (activity.recipient_regions?.length || 0) - 3)} more
                               </span>
                             )}
@@ -2906,7 +2906,7 @@ const router = useRouter();
                         </td>
                           ),
                           aidType: (
-<td key="aidType" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="aidType" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.default_aid_type ? (
                             <CodelistTooltip
                               type="aid_type"
@@ -2919,7 +2919,7 @@ const router = useRouter();
                         </td>
                           ),
                           defaultFinanceType: (
-<td key="defaultFinanceType" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="defaultFinanceType" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.default_finance_type ? (
                             <CodelistTooltip
                               type="finance_type"
@@ -2932,7 +2932,7 @@ const router = useRouter();
                         </td>
                           ),
                           defaultFlowType: (
-<td key="defaultFlowType" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="defaultFlowType" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.default_flow_type ? (
                             <CodelistTooltip
                               type="flow_type"
@@ -2945,7 +2945,7 @@ const router = useRouter();
                         </td>
                           ),
                           defaultTiedStatus: (
-<td key="defaultTiedStatus" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="defaultTiedStatus" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.default_tied_status ? (
                             <CodelistTooltip
                               type="tied_status"
@@ -2958,12 +2958,12 @@ const router = useRouter();
                         </td>
                           ),
                           defaultModality: (
-<td key="defaultModality" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="defaultModality" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : <span className="text-muted-foreground">—</span>}
                         </td>
                           ),
                           humanitarian: (
-<td key="humanitarian" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="humanitarian" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.humanitarian ? (
                             <span>Humanitarian Activity</span>
                           ) : (
@@ -2972,142 +2972,142 @@ const router = useRouter();
                         </td>
                           ),
                           totalIncomingCommitments: (
-<td key="totalIncomingCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
+<td key="totalIncomingCommitments" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
                         </td>
                           ),
                           totalCommitments: (
-<td key="totalCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}
+<td key="totalCommitments" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}
                         </td>
                           ),
                           totalDisbursements: (
-<td key="totalDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.disbursements || 0)}
+<td key="totalDisbursements" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.disbursements || 0)}
                         </td>
                           ),
                           totalExpenditures: (
-<td key="totalExpenditures" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.expenditures || 0)}
+<td key="totalExpenditures" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.expenditures || 0)}
                         </td>
                           ),
                           totalInterestRepayment: (
-<td key="totalInterestRepayment" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.interestRepayment || 0)}
+<td key="totalInterestRepayment" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.interestRepayment || 0)}
                         </td>
                           ),
                           totalLoanRepayment: (
-<td key="totalLoanRepayment" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.loanRepayment || 0)}
+<td key="totalLoanRepayment" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.loanRepayment || 0)}
                         </td>
                           ),
                           totalReimbursement: (
-<td key="totalReimbursement" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.reimbursement || 0)}
+<td key="totalReimbursement" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.reimbursement || 0)}
                         </td>
                           ),
                           totalPurchaseOfEquity: (
-<td key="totalPurchaseOfEquity" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
+<td key="totalPurchaseOfEquity" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
                         </td>
                           ),
                           totalSaleOfEquity: (
-<td key="totalSaleOfEquity" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
+<td key="totalSaleOfEquity" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
                         </td>
                           ),
                           totalCreditGuarantee: (
-<td key="totalCreditGuarantee" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
+<td key="totalCreditGuarantee" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
                         </td>
                           ),
                           totalIncomingFunds: (
-<td key="totalIncomingFunds" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingFunds || 0)}
+<td key="totalIncomingFunds" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingFunds || 0)}
                         </td>
                           ),
                           totalCommitmentCancellation: (
-<td key="totalCommitmentCancellation" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
+<td key="totalCommitmentCancellation" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
                         </td>
                           ),
                           totalOutgoingPledge: (
-<td key="totalOutgoingPledge" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
+<td key="totalOutgoingPledge" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
                         </td>
                           ),
                           totalIncomingPledge: (
-<td key="totalIncomingPledge" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingPledge || 0)}
+<td key="totalIncomingPledge" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingPledge || 0)}
                         </td>
                           ),
                           flowTypeODATotal: (
-<td key="flowTypeODATotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
+<td key="flowTypeODATotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
                         </td>
                           ),
                           flowTypeOOFTotal: (
-<td key="flowTypeOOFTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
+<td key="flowTypeOOFTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
                         </td>
                           ),
                           flowTypeNonExportOOFTotal: (
-<td key="flowTypeNonExportOOFTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
+<td key="flowTypeNonExportOOFTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
                         </td>
                           ),
                           flowTypeExportCreditsTotal: (
-<td key="flowTypeExportCreditsTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
+<td key="flowTypeExportCreditsTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
                         </td>
                           ),
                           flowTypePrivateGrantsTotal: (
-<td key="flowTypePrivateGrantsTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
+<td key="flowTypePrivateGrantsTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
                         </td>
                           ),
                           flowTypePrivateMarketTotal: (
-<td key="flowTypePrivateMarketTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
+<td key="flowTypePrivateMarketTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
                         </td>
                           ),
                           flowTypePrivateFDITotal: (
-<td key="flowTypePrivateFDITotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
+<td key="flowTypePrivateFDITotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
                         </td>
                           ),
                           flowTypeOtherPrivateTotal: (
-<td key="flowTypeOtherPrivateTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
+<td key="flowTypeOtherPrivateTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
                         </td>
                           ),
                           flowTypeNonFlowTotal: (
-<td key="flowTypeNonFlowTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
+<td key="flowTypeNonFlowTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
                         </td>
                           ),
                           flowTypeOtherTotal: (
-<td key="flowTypeOtherTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
-                          <span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
+<td key="flowTypeOtherTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
+                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
                         </td>
                           ),
                           isPublished: (
-<td key="isPublished" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="isPublished" className="px-4 py-2 text-body text-foreground text-left">
                           {publicationStatus === 'published' ? 'Yes' : 'No'}
                         </td>
                           ),
                           isValidated: (
-<td key="isValidated" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="isValidated" className="px-4 py-2 text-body text-foreground text-left">
                           {submissionStatus === 'validated' ? 'Yes' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}
                         </td>
                           ),
                           iatiSyncStatus: (
-<td key="iatiSyncStatus" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="iatiSyncStatus" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}
                         </td>
                           ),
                           fundingOrganisations: (
-<td key="fundingOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="fundingOrganisations" className="px-4 py-2 text-body text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.fundingOrgs || []}
                             maxDisplay={3}
@@ -3118,7 +3118,7 @@ const router = useRouter();
                         </td>
                           ),
                           extendingOrganisations: (
-<td key="extendingOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="extendingOrganisations" className="px-4 py-2 text-body text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.extendingOrgs || []}
                             maxDisplay={3}
@@ -3129,7 +3129,7 @@ const router = useRouter();
                         </td>
                           ),
                           implementingOrganisations: (
-<td key="implementingOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="implementingOrganisations" className="px-4 py-2 text-body text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.implementingOrgs || []}
                             maxDisplay={3}
@@ -3140,7 +3140,7 @@ const router = useRouter();
                         </td>
                           ),
                           accountableOrganisations: (
-<td key="accountableOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="accountableOrganisations" className="px-4 py-2 text-body text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.accountableOrgs || []}
                             maxDisplay={3}
@@ -3151,7 +3151,7 @@ const router = useRouter();
                         </td>
                           ),
                           sdgs: (
-<td key="sdgs" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="sdgs" className="px-4 py-2 text-body text-foreground text-left">
                           <SDGAvatarGroup
                             sdgMappings={activity.sdgMappings || []}
                             maxDisplay={3}
@@ -3160,7 +3160,7 @@ const router = useRouter();
                         </td>
                           ),
                           policyMarkers: (
-<td key="policyMarkers" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="policyMarkers" className="px-4 py-2 text-body text-foreground text-left">
                           <PolicyMarkerAvatarGroup
                             policyMarkers={activity.policyMarkers || []}
                             maxDisplay={3}
@@ -3169,12 +3169,12 @@ const router = useRouter();
                         </td>
                           ),
                           createdByName: (
-<td key="createdByName" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="createdByName" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.creatorProfile?.name || '—'}
                         </td>
                           ),
                           createdAt: (
-<td key="createdAt" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="createdAt" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.createdAt ? (
                             <span title={new Date(activity.createdAt).toLocaleString()}>
                               {new Date(activity.createdAt).toLocaleDateString('en-GB', {
@@ -3193,12 +3193,12 @@ const router = useRouter();
                         </td>
                           ),
                           createdByDepartment: (
-<td key="createdByDepartment" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="createdByDepartment" className="px-4 py-2 text-body text-foreground text-left">
                           {activity.creatorProfile?.department || '—'}
                         </td>
                           ),
                           importedFromIrt: (
-<td key="importedFromIrt" className="px-4 py-2 text-sm text-foreground text-center">
+<td key="importedFromIrt" className="px-4 py-2 text-body text-foreground text-center">
                           {activity.createdVia === 'import' ? (
                             <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800">
                               <DatabaseZap className="h-3 w-3 mr-1" />
@@ -3212,7 +3212,7 @@ const router = useRouter();
                         </td>
                           ),
                           origin: (
-<td key="origin" className="px-4 py-2 text-sm text-foreground text-center">
+<td key="origin" className="px-4 py-2 text-body text-foreground text-center">
                           {(activity as any).origin === 'projectbank' ? (
                             <Badge variant="teal">
                               Project Bank
@@ -3225,7 +3225,7 @@ const router = useRouter();
                         </td>
                           ),
                           budgetStatus: (
-<td key="budgetStatus" className="px-4 py-2 text-sm text-foreground text-center">
+<td key="budgetStatus" className="px-4 py-2 text-body text-foreground text-center">
                           {(() => {
                             const status = activity.budgetStatus || 'unknown';
                             const statusLabel = getBudgetStatusLabel(status);
@@ -3242,7 +3242,7 @@ const router = useRouter();
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs bg-white border shadow-lg p-2">
-                                    <p className="text-sm">
+                                    <p className="text-body">
                                       {status === 'on_budget' && 'This activity is fully reflected in the government budget.'}
                                       {status === 'off_budget' && 'This activity is not included in the government budget.'}
                                       {status === 'partial' && `${activity.onBudgetPercentage || 0}% of this activity is reflected in the government budget.`}
@@ -3256,7 +3256,7 @@ const router = useRouter();
                         </td>
                           ),
                           capitalSpendPercent: (
-<td key="capitalSpendPercent" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="capitalSpendPercent" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3268,7 +3268,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Percentage of activity budget allocated to capital investment (infrastructure, equipment, fixed assets).
                                 </p>
                               </TooltipContent>
@@ -3277,19 +3277,19 @@ const router = useRouter();
                         </td>
                           ),
                           capitalSpendTotalBudget: (
-<td key="capitalSpendTotalBudget" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="capitalSpendTotalBudget" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Capital spend portion of Total Budget (Total Budget × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3298,19 +3298,19 @@ const router = useRouter();
                         </td>
                           ),
                           capitalSpendPlannedDisbursements: (
-<td key="capitalSpendPlannedDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="capitalSpendPlannedDisbursements" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Capital spend portion of Planned Disbursements (Planned Disbursements × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3319,19 +3319,19 @@ const router = useRouter();
                         </td>
                           ),
                           capitalSpendCommitments: (
-<td key="capitalSpendCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="capitalSpendCommitments" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.commitments || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.commitments || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Capital spend portion of Commitments (Commitments × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3340,19 +3340,19 @@ const router = useRouter();
                         </td>
                           ),
                           capitalSpendDisbursements: (
-<td key="capitalSpendDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="capitalSpendDisbursements" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) * (activity.capitalSpendPercentage / 100))}</>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body text-muted-foreground">
                                   Capital spend portion of Disbursements (Disbursements × Capital Spend %).
                                 </p>
                               </TooltipContent>
@@ -3361,7 +3361,7 @@ const router = useRouter();
                         </td>
                           ),
                           voteScore: (
-<td key="voteScore" className="px-4 py-2 text-sm text-center">
+<td key="voteScore" className="px-4 py-2 text-body text-center">
                           <div className="flex items-center justify-center gap-1">
                             <span className={`font-medium ${(activity.vote_score || 0) > 0 ? 'text-primary' : (activity.vote_score || 0) < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                               {(activity.vote_score || 0) > 0 ? '+' : ''}{activity.vote_score || 0}
@@ -3370,7 +3370,7 @@ const router = useRouter();
                         </td>
                           ),
                           upvotes: (
-<td key="upvotes" className="px-4 py-2 text-sm text-center">
+<td key="upvotes" className="px-4 py-2 text-body text-center">
                           <div className="flex items-center justify-center gap-1">
                             <ChevronUp className="h-4 w-4 text-primary" />
                             <span className={(activity.upvote_count || 0) > 0 ? 'font-medium text-primary' : 'text-muted-foreground'}>
@@ -3380,7 +3380,7 @@ const router = useRouter();
                         </td>
                           ),
                           downvotes: (
-<td key="downvotes" className="px-4 py-2 text-sm text-center">
+<td key="downvotes" className="px-4 py-2 text-body text-center">
                           <div className="flex items-center justify-center gap-1">
                             <ChevronDown className="h-4 w-4 text-destructive" />
                             <span className={(activity.downvote_count || 0) > 0 ? 'font-medium text-destructive' : 'text-muted-foreground'}>
@@ -3390,7 +3390,7 @@ const router = useRouter();
                         </td>
                           ),
                           descriptionGeneral: (
-<td key="descriptionGeneral" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="descriptionGeneral" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_general);
                             return (
@@ -3402,8 +3402,8 @@ const router = useRouter();
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – General</p>
-                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
+                                        <p className="font-medium text-helper text-muted-foreground mb-2">Activity Description – General</p>
+                                        <SafeHtml html={truncated.full} level="rich" className="text-body" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3414,7 +3414,7 @@ const router = useRouter();
                         </td>
                           ),
                           descriptionObjectives: (
-<td key="descriptionObjectives" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="descriptionObjectives" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_objectives);
                             return (
@@ -3426,8 +3426,8 @@ const router = useRouter();
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Objectives</p>
-                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
+                                        <p className="font-medium text-helper text-muted-foreground mb-2">Activity Description – Objectives</p>
+                                        <SafeHtml html={truncated.full} level="rich" className="text-body" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3438,7 +3438,7 @@ const router = useRouter();
                         </td>
                           ),
                           descriptionTargetGroups: (
-<td key="descriptionTargetGroups" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="descriptionTargetGroups" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_target_groups);
                             return (
@@ -3450,8 +3450,8 @@ const router = useRouter();
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Target Groups</p>
-                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
+                                        <p className="font-medium text-helper text-muted-foreground mb-2">Activity Description – Target Groups</p>
+                                        <SafeHtml html={truncated.full} level="rich" className="text-body" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3462,7 +3462,7 @@ const router = useRouter();
                         </td>
                           ),
                           descriptionOther: (
-<td key="descriptionOther" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="descriptionOther" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_other);
                             return (
@@ -3474,8 +3474,8 @@ const router = useRouter();
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Other</p>
-                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
+                                        <p className="font-medium text-helper text-muted-foreground mb-2">Activity Description – Other</p>
+                                        <SafeHtml html={truncated.full} level="rich" className="text-body" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3486,7 +3486,7 @@ const router = useRouter();
                         </td>
                           ),
                           timeElapsed: (
-<td key="timeElapsed" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="timeElapsed" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const percent = calculateTimeElapsedPercent(activity);
                             if (percent === null) return <span className="text-muted-foreground">—</span>;
@@ -3499,11 +3499,11 @@ const router = useRouter();
                                         value={percent} 
                                         className="h-2 w-20"
                                       />
-                                      <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
+                                      <span className="text-helper text-muted-foreground">{percent.toFixed(0)}%</span>
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="p-0 bg-white border shadow-lg">
-                                    <table className="text-sm">
+                                    <table className="text-body">
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Start</td>
@@ -3527,7 +3527,7 @@ const router = useRouter();
                         </td>
                           ),
                           committedSpentPercent: (
-<td key="committedSpentPercent" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="committedSpentPercent" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const percent = calculateCommittedSpentPercent(activity);
                             if (percent === null) return <span className="text-muted-foreground">—</span>;
@@ -3540,19 +3540,19 @@ const router = useRouter();
                                         value={percent} 
                                         className="h-2 w-20"
                                       />
-                                      <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
+                                      <span className="text-helper text-muted-foreground">{percent.toFixed(0)}%</span>
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="p-0 bg-white border shadow-lg">
-                                    <table className="text-sm">
+                                    <table className="text-body">
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Committed</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}</td>
                                         </tr>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
                                         </tr>
                                         <tr>
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
@@ -3568,7 +3568,7 @@ const router = useRouter();
                         </td>
                           ),
                           budgetSpentPercent: (
-<td key="budgetSpentPercent" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="budgetSpentPercent" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const percent = calculateBudgetSpentPercent(activity);
                             if (percent === null) return <span className="text-muted-foreground">—</span>;
@@ -3581,19 +3581,19 @@ const router = useRouter();
                                         value={percent}
                                         className="h-2 w-20"
                                       />
-                                      <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
+                                      <span className="text-helper text-muted-foreground">{percent.toFixed(0)}%</span>
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="p-0 bg-white border shadow-lg">
-                                    <table className="text-sm">
+                                    <table className="text-body">
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Budget</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</td>
                                         </tr>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-xs text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
                                         </tr>
                                         <tr>
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
@@ -3609,7 +3609,7 @@ const router = useRouter();
                         </td>
                           ),
                           budgetShare: (
-<td key="budgetShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="budgetShare" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3621,7 +3621,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground font-normal">
+                                <p className="text-body text-muted-foreground font-normal">
                                   Activity budget: USD {formatCurrency((activity as any).totalBudget || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalBudget || 0)}
                                 </p>
@@ -3631,7 +3631,7 @@ const router = useRouter();
                         </td>
                           ),
                           plannedDisbursementShare: (
-<td key="plannedDisbursementShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="plannedDisbursementShare" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3643,7 +3643,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground font-normal">
+                                <p className="text-body text-muted-foreground font-normal">
                                   Activity planned disbursements: USD {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalPlannedDisbursements || 0)}
                                 </p>
@@ -3653,7 +3653,7 @@ const router = useRouter();
                         </td>
                           ),
                           commitmentShare: (
-<td key="commitmentShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="commitmentShare" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3665,7 +3665,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground font-normal">
+                                <p className="text-body text-muted-foreground font-normal">
                                   Activity commitments: USD {formatCurrency(activity.commitments || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalCommitments || 0)}
                                 </p>
@@ -3675,7 +3675,7 @@ const router = useRouter();
                         </td>
                           ),
                           disbursementShare: (
-<td key="disbursementShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+<td key="disbursementShare" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3687,7 +3687,7 @@ const router = useRouter();
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
-                                <p className="text-sm text-muted-foreground font-normal">
+                                <p className="text-body text-muted-foreground font-normal">
                                   Activity disbursements: USD {formatCurrency(activity.disbursements || 0)}<br/>
                                   System total: USD {formatCurrency(systemTotals?.totalDisbursements || 0)}
                                 </p>
@@ -3697,7 +3697,7 @@ const router = useRouter();
                         </td>
                           ),
                           totalExpectedLength: (
-<td key="totalExpectedLength" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="totalExpectedLength" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const duration = calculateDurationDetailed(
                               activity.plannedStartDate,
@@ -3711,7 +3711,7 @@ const router = useRouter();
                                     <span className="cursor-pointer">{formatDurationHuman(duration)}</span>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-white border shadow-lg p-2">
-                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days</p>
+                                    <p className="text-body font-medium">{duration.totalDays.toLocaleString()} days</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -3720,7 +3720,7 @@ const router = useRouter();
                         </td>
                           ),
                           implementationToDate: (
-<td key="implementationToDate" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="implementationToDate" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const duration = calculateImplementationToDate(activity.actualStartDate);
                             const percent = calculateImplementationPercent(activity.actualStartDate, activity.plannedEndDate);
@@ -3732,13 +3732,13 @@ const router = useRouter();
                                     <div className="cursor-pointer">
                                       <span>{formatDurationHuman(duration)}</span>
                                       {percent !== null && (
-                                        <span className="text-xs text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
+                                        <span className="text-helper text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
                                       )}
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-white border shadow-lg p-2">
-                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days</p>
-                                    {percent !== null && <p className="text-sm text-muted-foreground">{percent.toFixed(1)}% of planned duration</p>}
+                                    <p className="text-body font-medium">{duration.totalDays.toLocaleString()} days</p>
+                                    {percent !== null && <p className="text-body text-muted-foreground">{percent.toFixed(1)}% of planned duration</p>}
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -3747,7 +3747,7 @@ const router = useRouter();
                         </td>
                           ),
                           remainingDuration: (
-<td key="remainingDuration" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="remainingDuration" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const duration = calculateRemainingDuration(activity.plannedEndDate);
                             const percent = calculateRemainingPercent(activity.plannedStartDate, activity.plannedEndDate);
@@ -3760,13 +3760,13 @@ const router = useRouter();
                                     <div className={`cursor-pointer ${isOverdue ? 'text-destructive font-medium' : ''}`}>
                                       <span>{isOverdue ? 'Overdue' : formatDurationHuman(duration)}</span>
                                       {percent !== null && !isOverdue && (
-                                        <span className="text-xs text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
+                                        <span className="text-helper text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
                                       )}
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-white border shadow-lg p-2">
-                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days remaining</p>
-                                    {percent !== null && <p className="text-sm text-muted-foreground">{percent.toFixed(1)}% of planned duration</p>}
+                                    <p className="text-body font-medium">{duration.totalDays.toLocaleString()} days remaining</p>
+                                    {percent !== null && <p className="text-body text-muted-foreground">{percent.toFixed(1)}% of planned duration</p>}
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -3775,7 +3775,7 @@ const router = useRouter();
                         </td>
                           ),
                           actualLength: (
-<td key="actualLength" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="actualLength" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const duration = calculateDurationDetailed(
                               activity.actualStartDate,
@@ -3789,7 +3789,7 @@ const router = useRouter();
                                     <span className="cursor-pointer">{formatDurationHuman(duration)}</span>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-white border shadow-lg p-2">
-                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days</p>
+                                    <p className="text-body font-medium">{duration.totalDays.toLocaleString()} days</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -3798,7 +3798,7 @@ const router = useRouter();
                         </td>
                           ),
                           durationBand: (
-<td key="durationBand" className="px-4 py-2 text-sm text-foreground text-left">
+<td key="durationBand" className="px-4 py-2 text-body text-foreground text-left">
                           {(() => {
                             const duration = calculateDurationDetailed(
                               activity.plannedStartDate,
@@ -3816,7 +3816,7 @@ const router = useRouter();
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-white border shadow-lg p-2">
-                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} total days</p>
+                                    <p className="text-body font-medium">{duration.totalDays.toLocaleString()} total days</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -3825,29 +3825,29 @@ const router = useRouter();
                         </td>
                           ),
                           plannedStartDate: (
-<td key="plannedStartDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+<td key="plannedStartDate" className="px-4 py-2 text-body text-foreground text-left whitespace-nowrap">
                           {activity.plannedStartDate ? formatDateLong(activity.plannedStartDate) : <span className="text-muted-foreground">—</span>}
                         </td>
                           ),
                           plannedEndDate: (
-<td key="plannedEndDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+<td key="plannedEndDate" className="px-4 py-2 text-body text-foreground text-left whitespace-nowrap">
                           {activity.plannedEndDate ? formatDateLong(activity.plannedEndDate) : <span className="text-muted-foreground">—</span>}
                         </td>
                           ),
                           actualStartDate: (
-<td key="actualStartDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+<td key="actualStartDate" className="px-4 py-2 text-body text-foreground text-left whitespace-nowrap">
                           {activity.actualStartDate ? formatDateLong(activity.actualStartDate) : <span className="text-muted-foreground">—</span>}
                         </td>
                           ),
                           actualEndDate: (
-<td key="actualEndDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+<td key="actualEndDate" className="px-4 py-2 text-body text-foreground text-left whitespace-nowrap">
                           {activity.actualEndDate ? formatDateLong(activity.actualEndDate) : <span className="text-muted-foreground">—</span>}
                         </td>
                           ),
                         };
                         /* Always render a cell so column count matches header (keeps Actions column aligned) */
                         return actCellMap[colId] ?? (
-                          <td key={colId} className="px-4 py-2 text-sm text-foreground" />
+                          <td key={colId} className="px-4 py-2 text-body text-foreground" />
                         );
                       })}
 
@@ -3914,7 +3914,7 @@ const router = useRouter();
       {!isShowingAll && totalActivities > 0 && (
         <div className="bg-card rounded-lg border border-border shadow-sm p-4" data-tour="activities-pagination">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities
             </div>
               
@@ -3998,7 +3998,7 @@ const router = useRouter();
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Items per page:</label>
+                <label className="text-body text-muted-foreground">Items per page:</label>
                 <Select 
                   value={pageLimit.toString()} 
                   onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -4073,7 +4073,7 @@ const router = useRouter();
           onClick={(e) => e.stopPropagation()}
         >
           <div
-            className="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+            className="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-body outline-none hover:bg-accent hover:text-accent-foreground"
             onClick={() => {
               window.open(`/activities/${contextMenu.activityId}`, '_blank');
               setContextMenu(null);

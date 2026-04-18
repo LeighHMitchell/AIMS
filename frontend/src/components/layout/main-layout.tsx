@@ -88,7 +88,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
                 <span className="text-xl font-bold whitespace-nowrap">
                   æther
                 </span>
-                <span className="text-sm font-medium text-muted-foreground ml-2">
+                <span className="text-body font-medium text-muted-foreground ml-2">
                   MYANMAR
                 </span>
               </div>
@@ -127,7 +127,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         {/* Visitor Banner */}
         {isVisitor && (
           <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between">
-            <p className="text-sm text-amber-800">
+            <p className="text-body text-amber-800">
               You are browsing as a visitor. Sign up for full access to create and manage activities.
             </p>
             <div className="flex items-center gap-2">

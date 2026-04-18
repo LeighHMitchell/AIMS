@@ -132,12 +132,12 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Globe className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-2xl font-bold text-foreground">{geographicData.totalCountries}</p>
-              <p className="text-sm text-muted-foreground">Countries</p>
+              <p className="text-body text-muted-foreground">Countries</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Activity className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-2xl font-bold text-foreground">{geographicData.totalActivities}</p>
-              <p className="text-sm text-muted-foreground">Total Activities</p>
+              <p className="text-body text-muted-foreground">Total Activities</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Building2 className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
@@ -150,7 +150,7 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
                 )}
                 <p className="text-lg font-bold text-foreground">{geographicData.primaryCountry}</p>
               </div>
-              <p className="text-sm text-muted-foreground">Primary Country</p>
+              <p className="text-body text-muted-foreground">Primary Country</p>
             </div>
           </div>
 
@@ -171,14 +171,14 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
                         )}
                         <h5 className="font-medium text-foreground">{countryData.country}</h5>
                         {index === 0 && countryData.country === geographicData.primaryCountry && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-helper">
                             Primary
                           </Badge>
                         )}
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-semibold text-foreground">{countryData.activityCount}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-helper text-muted-foreground">
                           {countryData.activityCount === 1 ? 'Activity' : 'Activities'}
                         </p>
                       </div>
@@ -187,13 +187,13 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
                     {/* Roles */}
                     {countryData.roles.size > 0 && (
                       <div className="mb-2">
-                        <p className="text-xs text-muted-foreground mb-1">Roles:</p>
+                        <p className="text-helper text-muted-foreground mb-1">Roles:</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(countryData.roles).map((role: string) => (
                             <Badge 
                               key={role} 
                               variant="outline" 
-                              className={`text-xs ${getRoleColor(role)}`}
+                              className={`text-helper ${getRoleColor(role)}`}
                             >
                               {role.charAt(0).toUpperCase() + role.slice(1)}
                             </Badge>
@@ -211,7 +211,7 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
                             <Badge 
                               key={status} 
                               variant="outline" 
-                              className={`text-xs ${getStatusColor(status)}`}
+                              className={`text-helper ${getStatusColor(status)}`}
                             >
                               {status.charAt(0).toUpperCase() + status.slice(1)}
                             </Badge>
@@ -227,7 +227,7 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
             <div className="text-center py-8 text-muted-foreground">
               <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No geographic data available</p>
-              <p className="text-sm">Add location information to activities to see geographic footprint</p>
+              <p className="text-body">Add location information to activities to see geographic footprint</p>
             </div>
           )}
         </div>

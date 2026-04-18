@@ -178,7 +178,7 @@ export default function TransactionDemoPage() {
           <CardTitle className="text-2xl font-bold">
             IATI Transaction Table Demo
           </CardTitle>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-body text-muted-foreground mt-2">
             Professional, compact transaction table displaying 8 key IATI-compliant data fields
           </p>
         </CardHeader>
@@ -198,12 +198,12 @@ export default function TransactionDemoPage() {
       <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-body font-medium">
               Transaction Types
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Icons represent different transaction types like Disbursement, 
               Expenditure, and Commitments
             </p>
@@ -212,12 +212,12 @@ export default function TransactionDemoPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-body font-medium">
               Status Pills
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Green "A" = Actual transaction<br />
               Grey "D" = Draft transaction
             </p>
@@ -226,12 +226,12 @@ export default function TransactionDemoPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-body font-medium">
               Aid/Flow/Finance Types
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Hover over badges to see full descriptions with IATI codes
             </p>
           </CardContent>
@@ -239,12 +239,12 @@ export default function TransactionDemoPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-body font-medium">
               Provider → Receiver
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Organization flow displayed in one line with hover tooltips for full names
             </p>
           </CardContent>

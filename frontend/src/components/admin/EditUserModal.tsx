@@ -475,7 +475,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 onValueChange={handleOrganizationChange}
                 placeholder="Select or search for an organization"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Select the organization this user belongs to. This determines their access and reporting scope.
               </p>
             </div>

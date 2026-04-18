@@ -24,14 +24,14 @@ export default function ActivitiesSection({ activities }: ActivitiesSectionProps
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-foreground">Linked Activities</h2>
-        <p className="text-sm text-muted-foreground mt-1">Activities associated with this working group</p>
+        <p className="text-body text-muted-foreground mt-1">Activities associated with this working group</p>
       </div>
 
       {activities.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
           <FileText className="h-12 w-12 text-gray-300 mb-3" />
-          <p className="text-sm text-muted-foreground">No activities linked</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground">No activities linked</p>
+          <p className="text-helper text-muted-foreground mt-1">
             Activities can be linked to this working group from the activity editor
           </p>
         </div>
@@ -46,7 +46,7 @@ export default function ActivitiesSection({ activities }: ActivitiesSectionProps
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h4 className="font-medium">{activity.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-body text-muted-foreground mt-1">
                     {activity.iati_id && <span>{activity.iati_id} &middot; </span>}
                     {activity.partner_name}
                   </p>

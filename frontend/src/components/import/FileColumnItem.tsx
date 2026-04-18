@@ -65,16 +65,16 @@ export function FileColumnItem({
           )}
           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm truncate">{column.name}</div>
+            <div className="font-medium text-body truncate">{column.name}</div>
             {column.sampleValues.length > 0 && (
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-helper text-muted-foreground mt-1">
                 Sample: {column.sampleValues.filter(v => v).slice(0, 2).join(', ')}
                 {column.sampleValues.filter(v => v).length > 2 && '...'}
               </div>
             )}
           </div>
           {isMapped && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-helper">
               Mapped
             </Badge>
           )}

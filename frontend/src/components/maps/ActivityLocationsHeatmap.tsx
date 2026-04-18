@@ -208,7 +208,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="2D View"
-          className="h-8 px-2.5 text-xs"
+          className="h-8 px-2.5 text-helper"
         >
           <Mountain className="h-3.5 w-3.5 mr-1" />
           2D
@@ -219,7 +219,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="3D View"
-          className="h-8 px-2.5 text-xs"
+          className="h-8 px-2.5 text-helper"
         >
           <Mountain className="h-3.5 w-3.5 mr-1" />
           3D
@@ -432,7 +432,7 @@ export default function ActivityLocationsHeatmap({
         {/* Controls toolbar — outside the map */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           {/* Map tile style selector */}
-          <MapStyleSelect value={mapStyle} onChange={handleStyleChange} triggerClassName="w-44 h-8 text-xs" />
+          <MapStyleSelect value={mapStyle} onChange={handleStyleChange} triggerClassName="w-44 h-8 text-helper" />
 
           {/* View mode toggle (markers / heatmap) */}
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-0.5">

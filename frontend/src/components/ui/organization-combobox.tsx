@@ -172,12 +172,12 @@ export function OrganizationCombobox({
         
         {/* Dot separator */}
         {orgTypeCode && orgTypeText && (
-          <span className="text-xs text-muted-foreground">·</span>
+          <span className="text-helper text-muted-foreground">·</span>
         )}
         
         {/* Organization Type Text */}
         {orgTypeText && (
-          <span className="text-xs text-muted-foreground hover:text-muted-foreground">
+          <span className="text-helper text-muted-foreground hover:text-muted-foreground">
             {orgTypeText}
           </span>
         )}
@@ -263,7 +263,7 @@ export function OrganizationCombobox({
                   {/* Organization details - two line layout */}
                   <div className="min-w-0 flex-1">
                     {/* Line 1: Name, acronym, and IATI ID */}
-                    <div className="flex items-center gap-1.5 font-medium text-sm text-foreground">
+                    <div className="flex items-center gap-1.5 font-medium text-body text-foreground">
                       <span className="truncate">{selected.name}{selected.acronym && selected.acronym !== selected.name ? ` (${selected.acronym})` : ''}</span>
                       <span className="font-mono bg-muted px-1 py-0.5 rounded text-[10px] text-muted-foreground whitespace-nowrap shrink-0 font-normal">
                         {iatiRef || `ID: ${selected.id.substring(0, 8)}`}
@@ -271,7 +271,7 @@ export function OrganizationCombobox({
                     </div>
 
                     {/* Line 2: Type and Country with flag */}
-                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground overflow-hidden">
+                    <div className="flex items-center gap-1.5 mt-0.5 text-helper text-muted-foreground overflow-hidden">
                       {/* Organization Type */}
                       {(orgTypeCode || orgTypeName) && (
                         <>
@@ -314,7 +314,7 @@ export function OrganizationCombobox({
                   <span className="truncate font-medium text-base text-yellow-600 leading-relaxed">
                     {fallbackRef}
                   </span>
-                  <span className="text-sm text-yellow-500 truncate mt-1 leading-relaxed">
+                  <span className="text-body text-yellow-500 truncate mt-1 leading-relaxed">
                     Organization not found in list
                   </span>
                 </span>
@@ -358,14 +358,14 @@ export function OrganizationCombobox({
             <input
               ref={searchInputRef}
               placeholder="Search organizations by name, acronym, or IATI ID..."
-              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="max-h-[300px] overflow-y-auto">
             {search && filteredOrgs.length === 0 && (
-              <div className="py-6 text-center text-sm text-muted-foreground">No organization found.</div>
+              <div className="py-6 text-center text-body text-muted-foreground">No organization found.</div>
             )}
             {filteredOrgs.map(org => {
               const iatiRef = org.iati_org_id || org.iati_identifier
@@ -412,7 +412,7 @@ export function OrganizationCombobox({
                     {/* Organization details - two line layout */}
                     <div className="min-w-0 flex-1">
                       {/* Line 1: Name, acronym, and IATI ID */}
-                      <div className="flex items-center gap-2 font-medium text-foreground text-sm">
+                      <div className="flex items-center gap-2 font-medium text-foreground text-body">
                         <span className="truncate">{org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}</span>
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 font-normal">
                           {iatiRef || `ID: ${org.id.substring(0, 8)}...`}
@@ -428,7 +428,7 @@ export function OrganizationCombobox({
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{orgTypeCode}</span>
                             )}
                             {orgTypeName && (
-                              <span className="text-xs text-muted-foreground truncate">{orgTypeName}</span>
+                              <span className="text-helper text-muted-foreground truncate">{orgTypeName}</span>
                             )}
                           </>
                         )}
@@ -437,7 +437,7 @@ export function OrganizationCombobox({
                         {org.country && (
                           <>
                             {(orgTypeCode || orgTypeName) && <span className="text-gray-300 shrink-0">·</span>}
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 whitespace-nowrap">
+                            <span className="flex items-center gap-1 text-helper text-muted-foreground shrink-0 whitespace-nowrap">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               {getCountryCode(org.country) && (
                                 <img

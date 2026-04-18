@@ -245,7 +245,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto p-1 text-xs text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100"
+              className="h-auto p-1 text-helper text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100"
               onClick={(e) => {
                 e.preventDefault();
                 markAllAsRead();
@@ -259,11 +259,11 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         <DropdownMenuSeparator />
 
         {loading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
+          <div className="py-8 text-center text-body text-muted-foreground">
             <LoadingText>Loading notifications...</LoadingText>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
+          <div className="py-8 text-center text-body text-muted-foreground">
             No notifications
           </div>
         ) : (
@@ -281,15 +281,15 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      'text-sm break-words',
+                      'text-body break-words',
                       !notification.is_read && 'font-medium'
                     )}>
                       {notification.title}
                     </p>
-                    <p className="text-xs text-muted-foreground break-words">
+                    <p className="text-helper text-muted-foreground break-words">
                       {notification.message}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-helper text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                     </p>
                   </div>
@@ -304,7 +304,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="text-center text-sm text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100 cursor-pointer justify-center"
+          className="text-center text-body text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100 cursor-pointer justify-center"
           onClick={() => {
             router.push('/dashboard?tab=notifications');
             setOpen(false);

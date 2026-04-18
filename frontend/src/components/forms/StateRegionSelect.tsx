@@ -76,7 +76,7 @@ export function StateRegionSelect({
           {selectedValues.map((stateId) => {
             const state = myanmarData.states.find(s => s.id === stateId);
             return state ? (
-              <Badge key={stateId} variant="secondary" className="text-xs">
+              <Badge key={stateId} variant="secondary" className="text-helper">
                 {state.name}
                 <button
                   onClick={(e) => handleRemove(stateId, e)}
@@ -104,7 +104,7 @@ export function StateRegionSelect({
         aria-haspopup="listbox"
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-muted",
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-white px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-muted",
           selectedValues.length === 0 && "text-muted-foreground"
         )}
       >
@@ -130,7 +130,7 @@ export function StateRegionSelect({
                 />
                 <div className="flex-1">
                   <div className="font-medium">{state.name}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-helper text-muted-foreground">
                     {state.type === 'state' ? 'State' : 'Region'} • {state.code}
                   </div>
                 </div>

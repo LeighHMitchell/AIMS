@@ -267,7 +267,7 @@ export function EditTaskModal({
                       <SelectItem value="14">14 days before</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  <span className="text-body text-muted-foreground whitespace-nowrap">
                     {format(new Date(deadline.getTime() - reminderDays * 24 * 60 * 60 * 1000), 'EEEE do MMMM yyyy')}
                   </span>
                 </div>
@@ -291,10 +291,10 @@ export function EditTaskModal({
           {/* Delete Confirmation */}
           {showDeleteConfirm && onDelete && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 space-y-2">
-              <p className="text-sm text-destructive font-medium">
+              <p className="text-body text-destructive font-medium">
                 Are you sure you want to delete this task?
               </p>
-              <p className="text-sm text-destructive">
+              <p className="text-body text-destructive">
                 This will remove the task and all its assignments. This action cannot be undone.
               </p>
               <div className="flex gap-2">

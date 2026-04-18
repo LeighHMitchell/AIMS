@@ -214,10 +214,10 @@ export default function SectorAllocationForm({
         <div className="flex items-start space-x-2">
           <Info className="w-5 h-5 text-blue-800 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-blue-800">
+            <p className="text-body font-medium text-blue-800">
               For better granularity and aggregation, please report activities at the sub-sector level (DAC 5 codes).
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-helper text-muted-foreground mt-1">
               Aggregated to DAC 3 automatically. Sub-sector level ensures higher reporting quality.
             </p>
           </div>
@@ -230,7 +230,7 @@ export default function SectorAllocationForm({
         <div className="space-y-4">
           {/* Search input */}
           <div className="relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label className="block text-body font-medium text-foreground mb-1">
               Add Sub-sector
             </label>
             <div className="relative">
@@ -254,8 +254,8 @@ export default function SectorAllocationForm({
                     onClick={() => addAllocation(result)}
                     className="w-full text-left px-4 py-3 hover:bg-muted border-b border-border last:border-b-0"
                   >
-                    <div className="font-medium text-sm">{result.dac5_code} – {result.dac5_name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="font-medium text-body">{result.dac5_code} – {result.dac5_name}</div>
+                    <div className="text-helper text-muted-foreground mt-0.5">
                       DAC 3: {result.dac3_code} – {result.dac3_name}
                     </div>
                   </button>
@@ -284,10 +284,10 @@ export default function SectorAllocationForm({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-medium text-sm">
+                      <div className="font-medium text-body">
                         {allocation.dac5_code} – {allocation.dac5_name}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                      <div className="text-helper text-muted-foreground mt-0.5">
                         DAC 3: {allocation.dac3_code} – {allocation.dac3_name}
                       </div>
                     </div>
@@ -300,7 +300,7 @@ export default function SectorAllocationForm({
                   </div>
                   
                   <div className="mt-3 flex items-center space-x-2">
-                    <label className="text-sm font-medium text-foreground">Percentage:</label>
+                    <label className="text-body font-medium text-foreground">Percentage:</label>
                     <input
                       type="number"
                       min="0"
@@ -309,9 +309,9 @@ export default function SectorAllocationForm({
                       value={allocation.percentage}
                       onChange={(e) => updateAllocationPercentage(allocation.id!, parseFloat(e.target.value) || 0)}
                       onFocus={() => setActiveAllocationId(allocation.id!)}
-                      className="w-24 px-2 py-1 border border-input rounded-md text-sm focus:ring-blue-800 focus:border-blue-800"
+                      className="w-24 px-2 py-1 border border-input rounded-md text-body focus:ring-blue-800 focus:border-blue-800"
                     />
-                    <span className="text-sm text-muted-foreground">%</span>
+                    <span className="text-body text-muted-foreground">%</span>
                   </div>
                 </div>
               ))
@@ -323,7 +323,7 @@ export default function SectorAllocationForm({
             <button
               onClick={handleAutoBalance}
               disabled={localAllocations.length === 0}
-              className="text-sm px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-body px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Auto-balance
             </button>
@@ -335,7 +335,7 @@ export default function SectorAllocationForm({
                 onChange={handleCSVImport}
                 className="hidden"
               />
-              <span className="inline-flex items-center text-sm px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80">
+              <span className="inline-flex items-center text-body px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80">
                 <Upload className="h-4 w-4 mr-1" />
                 Import CSV
               </span>
@@ -343,7 +343,7 @@ export default function SectorAllocationForm({
             
             <button
               onClick={() => setShowCopyDialog(true)}
-              className="text-sm px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80"
+              className="text-body px-3 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80"
             >
               <Copy className="h-4 w-4 inline mr-1" />
               Copy from template
@@ -355,7 +355,7 @@ export default function SectorAllocationForm({
             <div className="bg-muted border border-input rounded-md p-3">
               <div className="flex items-start">
                 <AlertCircle className="h-5 w-5 text-blue-800 mt-0.5 mr-2" />
-                <div className="text-sm text-blue-800">
+                <div className="text-body text-blue-800">
                   {validation.errors.map((error, index) => (
                     <p key={index}>{error}</p>
                   ))}
@@ -371,7 +371,7 @@ export default function SectorAllocationForm({
           }`}>
             Total: {validation.totalPercentage}%
             {validation.remainingPercentage !== 0 && (
-              <span className="text-sm font-normal ml-2">
+              <span className="text-body font-normal ml-2">
                 ({validation.remainingPercentage > 0 ? 'Remaining' : 'Excess'}: {Math.abs(validation.remainingPercentage)}%)
               </span>
             )}
@@ -418,7 +418,7 @@ export default function SectorAllocationForm({
               )
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                <p className="text-sm">Add sectors to see visualization</p>
+                <p className="text-body">Add sectors to see visualization</p>
               </div>
             )}
           </div>

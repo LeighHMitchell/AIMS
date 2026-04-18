@@ -129,7 +129,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Activity Sectors</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 Assign OECD DAC sector codes and allocations
               </p>
             </div>
@@ -145,7 +145,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
           {/* Info about advanced sector management */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
             <PieChart className="h-4 w-4 text-blue-600 mt-0.5" />
-            <div className="text-sm flex-1">
+            <div className="text-body flex-1">
               <p className="font-medium text-blue-900">Advanced Sector Management Available</p>
               <p className="text-blue-700">
                 After saving this activity, you can access advanced sector allocation features including visualizations and batch management.
@@ -157,7 +157,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
           {totalPercentage !== 0 && totalPercentage !== 100 && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-              <div className="text-sm">
+              <div className="text-body">
                 <p className="font-medium text-amber-900">Percentage allocation is {totalPercentage}%</p>
                 <p className="text-amber-700">Total sector allocation should equal 100%</p>
               </div>
@@ -168,7 +168,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
           {broadSectorWarning.shouldShow && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-              <div className="text-sm">
+              <div className="text-body">
                 <p className="font-medium text-amber-900">Consider using more specific sector codes</p>
                 <p className="text-amber-700">
                   You've selected {broadSectorWarning.broadSectors.length === 1 ? 'a broad/residual sector code' : 'broad/residual sector codes'}:{' '}
@@ -177,7 +177,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                 <p className="text-amber-700 mt-1">
                   These are high-level or residual classifications. Selecting more specific 5-digit DAC sector codes improves reporting quality, analysis, and comparability.
                 </p>
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-helper text-amber-600 mt-1">
                   You can continue with this selection if a more specific code is not applicable.
                 </p>
               </div>
@@ -205,7 +205,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                           {sector.type}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{sector.name}</p>
+                      <p className="text-body text-muted-foreground">{sector.name}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1">
@@ -217,7 +217,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                           min="0"
                           max="100"
                         />
-                        <span className="text-sm">%</span>
+                        <span className="text-body">%</span>
                       </div>
                       <Button
                         variant="ghost"
@@ -239,7 +239,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
               <h4 className="font-medium mb-3">Add New Sector</h4>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Sector Code</label>
+                  <label className="text-body font-medium mb-1 block">Sector Code</label>
                   <Select value={newSector.code} onValueChange={(value) => setNewSector({ ...newSector, code: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a sector" />
@@ -251,7 +251,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                             <div>
                               <span className="font-medium">{sector.code}</span> - {sector.name}
                             </div>
-                            <span className="text-xs text-muted-foreground">{sector.category}</span>
+                            <span className="text-helper text-muted-foreground">{sector.category}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -259,7 +259,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Percentage Allocation</label>
+                  <label className="text-body font-medium mb-1 block">Percentage Allocation</label>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -270,7 +270,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
                       max="100"
                       className="w-32"
                     />
-                    <span className="text-sm">%</span>
+                    <span className="text-body">%</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -292,7 +292,7 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
           {sectors.length > 0 && (
             <div className="mt-4 pt-4 border-t">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Total Allocation:</span>
+                <span className="text-body font-medium">Total Allocation:</span>
                 <span className={`text-sm font-bold ${totalPercentage === 100 ? 'text-[hsl(var(--success-icon))]' : 'text-amber-600'}`}>
                   {totalPercentage}%
                 </span>

@@ -237,10 +237,10 @@ export function YearlyTotalsBarChart({
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{formatYearLabel(label)}</p>
+            <p className="font-semibold text-foreground text-body">{formatYearLabel(label)}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 {nonZeroPayload.map((entry: any, index: number) => {
                   const typeConfig = TRANSACTION_TYPE_CONFIG[entry.dataKey]
@@ -280,7 +280,7 @@ export function YearlyTotalsBarChart({
     if (active && payload && payload.length && payload[0].value > 0) {
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg px-3 py-2">
-          <p className="font-semibold text-foreground text-sm">{formatYearLabel(label)}</p>
+          <p className="font-semibold text-foreground text-body">{formatYearLabel(label)}</p>
           <p className="font-bold text-foreground text-lg">{formatTooltipValue(payload[0].value)}</p>
         </div>
       )
@@ -305,7 +305,7 @@ export function YearlyTotalsBarChart({
                 className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {typeConfig?.label || entry.value}
               </span>
             </li>
@@ -327,7 +327,7 @@ export function YearlyTotalsBarChart({
 
       return (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <thead className="bg-surface-muted">
               <tr className="border-b border-border">
                 <th className="text-left py-3 px-4 font-medium text-foreground bg-muted">Year</th>
@@ -388,7 +388,7 @@ export function YearlyTotalsBarChart({
     
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <thead className="bg-surface-muted">
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-medium text-foreground bg-muted">Year</th>
@@ -666,7 +666,7 @@ export function YearlyTotalsBarChart({
       <div className="flex gap-1 rounded-lg p-1 bg-muted">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-helper">
               <CalendarIcon className="h-4 w-4" />
               {displayLabel}
               <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -676,7 +676,7 @@ export function YearlyTotalsBarChart({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="p-3 w-auto">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-foreground">Select Year Range</span>
+              <span className="text-helper font-medium text-foreground">Select Year Range</span>
               <div className="flex gap-1">
                 <button
                   onClick={selectAllYears}
@@ -815,7 +815,7 @@ export function YearlyTotalsBarChart({
               </>
             ) : (
               <div className="flex items-center justify-center text-muted-foreground" style={{ height }}>
-                <p className="text-sm">No data available</p>
+                <p className="text-body">No data available</p>
               </div>
             )}
           </CardContent>
@@ -855,7 +855,7 @@ export function YearlyTotalsBarChart({
               </>
             ) : (
               <div className="flex items-center justify-center text-muted-foreground h-[500px]">
-                <p className="text-sm">No data available</p>
+                <p className="text-body">No data available</p>
               </div>
             )}
           </div>

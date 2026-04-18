@@ -411,7 +411,7 @@ export default function LocationsTab({
           <p className="text-muted-foreground mb-2 max-w-xl mx-auto">
             Add locations to specify where your activity takes place or where beneficiaries are located.
           </p>
-          <p className="text-xs text-muted-foreground mb-6 max-w-xl mx-auto">
+          <p className="text-helper text-muted-foreground mb-6 max-w-xl mx-auto">
             For broader coverage (an entire country or region), use the Countries &amp; Regions tab instead.
           </p>
           {canEdit && (
@@ -477,13 +477,13 @@ export default function LocationsTab({
                   <TableRow key={location.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm">{location.location_name || 'Unnamed Location'}</span>
+                        <span className="text-body">{location.location_name || 'Unnamed Location'}</span>
                         {location.id && (
                           <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success-icon))] flex-shrink-0" />
                         )}
                       </div>
                       {location.latitude && location.longitude && (
-                        <div className="group/coords flex items-center gap-1 text-xs text-muted-foreground mt-0.5 w-fit">
+                        <div className="group/coords flex items-center gap-1 text-helper text-muted-foreground mt-0.5 w-fit">
                           <span>
                             {Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}
                           </span>
@@ -504,15 +504,15 @@ export default function LocationsTab({
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       <div>{formatAddress()}</div>
                       {location.location_description && (
-                        <div className="text-sm mt-0.5 whitespace-normal break-words">
+                        <div className="text-body mt-0.5 whitespace-normal break-words">
                           {location.location_description}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm max-w-[300px]">
+                    <TableCell className="text-body max-w-[300px]">
                       <div className="flex items-start gap-1.5">
                         <Tooltip>
                           <TooltipTrigger asChild>

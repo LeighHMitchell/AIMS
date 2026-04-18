@@ -226,7 +226,7 @@ export default function SectorSunburstVisualization({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute invisible bg-gray-900 text-white p-3 rounded-lg shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute invisible bg-gray-900 text-white p-3 rounded-lg shadow-lg text-body pointer-events-none z-50')
       .style('opacity', 0);
 
     // Helper function to create arc path
@@ -461,7 +461,7 @@ export default function SectorSunburstVisualization({
       <Card className={`p-8 ${className}`}>
         <div className="text-center">
           <div className="text-lg font-medium text-muted-foreground mb-2">No Sector Allocations</div>
-          <div className="text-sm text-muted-foreground">Add sector allocations to see the visualization</div>
+          <div className="text-body text-muted-foreground">Add sector allocations to see the visualization</div>
         </div>
       </Card>
     );

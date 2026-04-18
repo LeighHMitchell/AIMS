@@ -114,7 +114,7 @@ export function SelectIATI({
     <div className={cn('space-y-2', className)}>
       {/* Label */}
       {label && (
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <label className="text-body font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
           {label}
           {required && <RequiredDot />}
         </label>
@@ -123,7 +123,7 @@ export function SelectIATI({
       <Popover open={isOpen} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors',
+            'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors',
             !selectedOption && 'text-muted-foreground',
             error && 'border-destructive focus:ring-red-500'
           )}
@@ -192,7 +192,7 @@ export function SelectIATI({
                     setSearchQuery('');
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -211,7 +211,7 @@ export function SelectIATI({
               {Object.entries(groupedOptions).map(([groupName, options]) => (
                 <CommandGroup key={groupName}>
                   {!hideGroupLabels && (
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                    <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground bg-muted/50">
                       {groupName}
                     </div>
                   )}
@@ -236,12 +236,12 @@ export function SelectIATI({
                           )}
                         </div>
                         {option.description && (
-                          <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                          <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                             {option.description}
                           </div>
                         )}
                         {option.url && (
-                          <div className="text-xs text-blue-600 mt-1 underline">
+                          <div className="text-helper text-blue-600 mt-1 underline">
                             <a href={option.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                               {option.url}
                             </a>
@@ -255,10 +255,10 @@ export function SelectIATI({
 
               {Object.keys(groupedOptions).length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No options found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms
                   </div>
                 </div>
@@ -270,14 +270,14 @@ export function SelectIATI({
 
       {/* Helper text */}
       {helperText && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-helper text-muted-foreground">
           {helperText}
         </p>
       )}
 
       {/* Error message */}
       {error && (
-        <div className="flex items-center gap-1 text-xs text-destructive">
+        <div className="flex items-center gap-1 text-helper text-destructive">
           <AlertCircle className="h-3 w-3" />
           <span>{error}</span>
         </div>

@@ -38,15 +38,15 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
   return (
     <div>
       <div className="overflow-x-auto border rounded-lg">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <thead className="bg-surface-muted">
             <tr className="bg-surface-muted">
-              <th className="text-left p-2 font-medium text-xs w-[130px]">Category</th>
-              <th className="text-left p-2 font-medium text-xs">Description</th>
-              <th className="text-left p-2 font-medium text-xs w-[100px]">Likelihood</th>
-              <th className="text-left p-2 font-medium text-xs w-[100px]">Impact</th>
-              <th className="text-left p-2 font-medium text-xs">Mitigation</th>
-              <th className="text-left p-2 font-medium text-xs w-[120px]">Owner</th>
+              <th className="text-left p-2 font-medium text-helper w-[130px]">Category</th>
+              <th className="text-left p-2 font-medium text-helper">Description</th>
+              <th className="text-left p-2 font-medium text-helper w-[100px]">Likelihood</th>
+              <th className="text-left p-2 font-medium text-helper w-[100px]">Impact</th>
+              <th className="text-left p-2 font-medium text-helper">Mitigation</th>
+              <th className="text-left p-2 font-medium text-helper w-[120px]">Owner</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -57,7 +57,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                   <select
                     value={row.category}
                     onChange={e => updateRow(idx, 'category', e.target.value)}
-                    className="h-7 text-xs border rounded px-1.5 bg-background w-full"
+                    className="h-7 text-helper border rounded px-1.5 bg-background w-full"
                     disabled={disabled}
                   >
                     <option value="">Select...</option>
@@ -68,7 +68,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                   <Input
                     value={row.description}
                     onChange={e => updateRow(idx, 'description', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     placeholder="Risk description..."
                     disabled={disabled}
                   />
@@ -77,7 +77,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                   <select
                     value={row.likelihood}
                     onChange={e => updateRow(idx, 'likelihood', e.target.value)}
-                    className="h-7 text-xs border rounded px-1.5 bg-background w-full"
+                    className="h-7 text-helper border rounded px-1.5 bg-background w-full"
                     disabled={disabled}
                   >
                     <option value="">—</option>
@@ -90,7 +90,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                   <select
                     value={row.impact}
                     onChange={e => updateRow(idx, 'impact', e.target.value)}
-                    className="h-7 text-xs border rounded px-1.5 bg-background w-full"
+                    className="h-7 text-helper border rounded px-1.5 bg-background w-full"
                     disabled={disabled}
                   >
                     <option value="">—</option>
@@ -103,7 +103,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                   <Input
                     value={row.mitigation}
                     onChange={e => updateRow(idx, 'mitigation', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     placeholder="Mitigation strategy..."
                     disabled={disabled}
                   />
@@ -112,7 +112,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
                   <Input
                     value={row.owner}
                     onChange={e => updateRow(idx, 'owner', e.target.value)}
-                    className="h-7 text-sm"
+                    className="h-7 text-body"
                     placeholder="Owner"
                     disabled={disabled}
                   />
@@ -128,7 +128,7 @@ export function FS2RiskRegisterTable({ rows, onChange, disabled }: FS2RiskRegist
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-4 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="p-4 text-center text-body text-muted-foreground">
                   No risks added yet. Click "Add Risk" to begin.
                 </td>
               </tr>

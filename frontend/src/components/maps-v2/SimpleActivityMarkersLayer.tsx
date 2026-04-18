@@ -68,7 +68,7 @@ function SimpleLocationMarker({
 
   const infoContent = (
     <div className="p-2.5">
-      <div className="font-semibold text-xs text-foreground mb-1.5">
+      <div className="font-semibold text-helper text-foreground mb-1.5">
         {location.location_name || 'Unnamed Location'}
       </div>
       <div className="text-[10px] space-y-1">

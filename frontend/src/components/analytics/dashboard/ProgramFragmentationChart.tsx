@@ -102,7 +102,7 @@ export function ProgramFragmentationChart({
         <div className="h-64 flex items-center justify-center text-muted-foreground">
           <div className="text-center">
             <p>No national priorities data available.</p>
-            <p className="text-sm mt-1">
+            <p className="text-body mt-1">
               Add national priorities in Admin &gt; Chart of Accounts &gt; National Priorities,
               then link them to activities.
             </p>
@@ -116,7 +116,7 @@ export function ProgramFragmentationChart({
       <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
         {/* Measure Dropdown */}
         <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
-          <SelectTrigger className="w-[140px] h-9 text-sm bg-white">
+          <SelectTrigger className="w-[140px] h-9 text-body bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -127,7 +127,7 @@ export function ProgramFragmentationChart({
 
         {/* Dimension Dropdown - National Priority levels */}
         <Select defaultValue="pillars">
-          <SelectTrigger className="w-[240px] h-9 text-sm bg-white">
+          <SelectTrigger className="w-[240px] h-9 text-body bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -148,7 +148,7 @@ export function ProgramFragmentationChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This heatmap shows how each donor distributes their funding across national priority programs. Darker cells indicate a higher share of a donor's total funding allocated to that program. Use swap axes to view from the program perspective.
       </p>
     </div>

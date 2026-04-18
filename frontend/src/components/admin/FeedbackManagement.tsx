@@ -532,7 +532,7 @@ export function FeedbackManagement() {
             <div className="flex items-center gap-3">
               {selectedIds.size > 0 && (
                 <>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-body text-muted-foreground">
                     {selectedIds.size} selected
                   </span>
                   <Button
@@ -566,7 +566,7 @@ export function FeedbackManagement() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <div>
-              <label className="text-sm font-medium mb-2 block">Filter by Status</label>
+              <label className="text-body font-medium mb-2 block">Filter by Status</label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
@@ -588,7 +588,7 @@ export function FeedbackManagement() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Filter by Category</label>
+              <label className="text-body font-medium mb-2 block">Filter by Category</label>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
                 <SelectTrigger>
                   <SelectValue placeholder="All categories" />
@@ -610,7 +610,7 @@ export function FeedbackManagement() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Filter by Priority</label>
+              <label className="text-body font-medium mb-2 block">Filter by Priority</label>
               <Select value={filterPriority} onValueChange={setFilterPriority}>
                 <SelectTrigger>
                   <SelectValue placeholder="All priorities" />
@@ -632,7 +632,7 @@ export function FeedbackManagement() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Filter by Feature</label>
+              <label className="text-body font-medium mb-2 block">Filter by Feature</label>
               <Select value={filterFeature} onValueChange={setFilterFeature}>
                 <SelectTrigger>
                   <SelectValue placeholder="All features" />
@@ -648,7 +648,7 @@ export function FeedbackManagement() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">View</label>
+              <label className="text-body font-medium mb-2 block">View</label>
               <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
                   variant="ghost"
@@ -693,7 +693,7 @@ export function FeedbackManagement() {
             <div className="py-8 text-center text-muted-foreground">
               <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p>No feedback found</p>
-              <p className="text-sm mt-2">
+              <p className="text-body mt-2">
                 {showArchived ? 'No archived feedback' : 'Feedback submitted by users will appear here'}
               </p>
             </div>
@@ -802,16 +802,16 @@ export function FeedbackManagement() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="max-w-[300px]">
-                              <div className="text-sm text-foreground truncate">
+                              <div className="text-body text-foreground truncate">
                                 {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
                               </div>
-                              <div className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                              <div className="text-helper text-muted-foreground line-clamp-2 mt-1">
                                 {item.message}
                               </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-border bg-white shadow-lg">
-                            <div className="text-sm text-muted-foreground font-normal space-y-2">
+                            <div className="text-body text-muted-foreground font-normal space-y-2">
                               <div>
                                 <span className="font-medium">Subject:</span> {item.subject || `${categoryInfo.name} from ${getUserDisplayName(item.user)}`}
                               </div>
@@ -823,7 +823,7 @@ export function FeedbackManagement() {
                         </Tooltip>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-foreground">
+                        <div className="text-body text-foreground">
                           {item.feature ? (
                             <div className="max-w-[200px]">
                               <div className="truncate">
@@ -831,15 +831,15 @@ export function FeedbackManagement() {
                               </div>
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground">Not specified</span>
+                            <span className="text-helper text-muted-foreground">Not specified</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-foreground">
+                        <div className="text-body text-foreground">
                           <div>{getUserDisplayName(item.user)}</div>
                           {item.user?.email && item.user.email !== getUserDisplayName(item.user) && (
-                            <div className="text-xs text-muted-foreground">{item.user.email}</div>
+                            <div className="text-helper text-muted-foreground">{item.user.email}</div>
                           )}
                         </div>
                       </TableCell>
@@ -906,7 +906,7 @@ export function FeedbackManagement() {
                               ) : (
                                 <div className="flex items-center gap-2">
                                   <FileText className="h-8 w-8 text-muted-foreground" />
-                                  <span className="text-xs text-muted-foreground">{item.attachment_filename}</span>
+                                  <span className="text-helper text-muted-foreground">{item.attachment_filename}</span>
                                 </div>
                               )}
                             </div>
@@ -916,13 +916,13 @@ export function FeedbackManagement() {
                         })()}
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-body text-muted-foreground">
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </div>
                       </TableCell>
                       {showArchived && (
                         <TableCell>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-body text-muted-foreground">
                             {item.archived_at 
                               ? formatDistanceToNow(new Date(item.archived_at), { addSuffix: true })
                               : '-'}
@@ -988,7 +988,7 @@ export function FeedbackManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} feedback items
               </div>
               
@@ -1060,7 +1060,7 @@ export function FeedbackManagement() {
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Items per page:</label>
+                <label className="text-body text-muted-foreground">Items per page:</label>
                 <Select value={pageSize.toString()} onValueChange={(value) => {
                   setPageSize(parseInt(value));
                   setCurrentPage(1);
@@ -1194,7 +1194,7 @@ function FeedbackDetailModal({
               <div className="border border-border rounded-lg p-4">
                 {feedback.attachment_type?.startsWith('image/') ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-body text-muted-foreground">
                       <Image className="h-4 w-4" />
                       <span className="break-all">{feedback.attachment_filename}</span>
                       {feedback.attachment_size && (
@@ -1222,7 +1222,7 @@ function FeedbackDetailModal({
                           }}
                         />
                       </button>
-                      <p className="text-xs text-muted-foreground text-center mt-2">Click image to view full size</p>
+                      <p className="text-helper text-muted-foreground text-center mt-2">Click image to view full size</p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
                       <a href={feedback.attachment_url || '#'} target="_blank" rel="noopener noreferrer">
@@ -1239,9 +1239,9 @@ function FeedbackDetailModal({
                         return <AttachmentIcon className="h-5 w-5 text-muted-foreground" />;
                       })()}
                       <div>
-                        <p className="text-sm font-medium break-all">{feedback.attachment_filename}</p>
+                        <p className="text-body font-medium break-all">{feedback.attachment_filename}</p>
                         {feedback.attachment_size && (
-                          <p className="text-xs text-muted-foreground">{formatFileSize(feedback.attachment_size)}</p>
+                          <p className="text-helper text-muted-foreground">{formatFileSize(feedback.attachment_size)}</p>
                         )}
                       </div>
                     </div>
@@ -1259,7 +1259,7 @@ function FeedbackDetailModal({
 
           {/* Feature Assignment */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Assign to Feature</label>
+            <label className="text-body font-medium mb-2 block">Assign to Feature</label>
             <Popover open={featurePopoverOpen} onOpenChange={setFeaturePopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -1280,7 +1280,7 @@ function FeedbackDetailModal({
                     <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                     <input
                       placeholder="Search features..."
-                      className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-0 focus:ring-0"
+                      className="flex h-11 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-0 focus:ring-0"
                       value={featureSearchQuery}
                       onChange={(e) => setFeatureSearchQuery(e.target.value)}
                       autoFocus
@@ -1335,14 +1335,14 @@ function FeedbackDetailModal({
                             />
                             <div className="flex flex-col">
                               <span className="font-medium">{feat.name}</span>
-                              <span className="text-xs text-muted-foreground">{feat.description}</span>
+                              <span className="text-helper text-muted-foreground">{feat.description}</span>
                             </div>
                           </CommandItem>
                         ))}
                       </CommandGroup>
                     ))}
                     {filteredFeatures.length === 0 && (
-                      <div className="py-6 text-center text-sm text-muted-foreground">
+                      <div className="py-6 text-center text-body text-muted-foreground">
                         No features found matching "{featureSearchQuery}"
                       </div>
                     )}
@@ -1355,7 +1355,7 @@ function FeedbackDetailModal({
           {/* Status and Priority */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Status</label>
+              <label className="text-body font-medium mb-2 block">Status</label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue />
@@ -1377,7 +1377,7 @@ function FeedbackDetailModal({
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Priority</label>
+              <label className="text-body font-medium mb-2 block">Priority</label>
               <Select value={priority} onValueChange={setPriority}>
                 <SelectTrigger>
                   <SelectValue />
@@ -1401,7 +1401,7 @@ function FeedbackDetailModal({
 
           {/* Admin Notes */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Admin Notes</label>
+            <label className="text-body font-medium mb-2 block">Admin Notes</label>
             <Textarea
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}

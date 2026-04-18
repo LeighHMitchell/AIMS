@@ -180,10 +180,10 @@ export function FundingSourceBreakdown({
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{entry.name}</p>
+            <p className="font-semibold text-foreground text-body">{entry.name}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border last:border-b-0">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
@@ -281,7 +281,7 @@ export function FundingSourceBreakdown({
               </PieChart>
             </ResponsiveContainer>
             <div className="space-y-3">
-              <p className="font-semibold text-foreground text-sm">Detailed Breakdown</p>
+              <p className="font-semibold text-foreground text-body">Detailed Breakdown</p>
               <div className="space-y-2">
                 {fundingSourceData.map((source, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -290,11 +290,11 @@ export function FundingSourceBreakdown({
                         className="w-4 h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                       />
-                      <span className="text-sm font-medium text-foreground">{source.name}</span>
+                      <span className="text-body font-medium text-foreground">{source.name}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-foreground">{formatCurrency(source.value)}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-body font-bold text-foreground">{formatCurrency(source.value)}</p>
+                      <p className="text-helper text-muted-foreground">
                         {((source.value / fundingSourceData.reduce((sum, s) => sum + s.value, 0)) * 100).toFixed(1)}%
                       </p>
                     </div>
@@ -308,13 +308,13 @@ export function FundingSourceBreakdown({
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No funding source data available</p>
-              <p className="text-xs mt-2">Add participating organizations or transactions to see funding breakdown</p>
+              <p className="text-helper mt-2">Add participating organizations or transactions to see funding breakdown</p>
             </div>
           </div>
         )}
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows the distribution of funding across provider organisations, revealing which donors or funding sources contribute the most. The donut chart gives a visual overview of relative shares, while the detailed breakdown on the right lists each source with exact amounts and percentages. Sources beyond the top seven are grouped as Others.
         </p>
       </CardContent>

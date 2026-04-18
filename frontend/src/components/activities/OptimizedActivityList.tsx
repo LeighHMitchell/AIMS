@@ -242,7 +242,7 @@ export function OptimizedActivityList({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body text-muted-foreground">
         {searchResults ? (
           `Found ${searchResults.total} activities`
         ) : (
@@ -253,7 +253,7 @@ export function OptimizedActivityList({
 
       {/* Error Display */}
       {searchError && (
-        <div className="text-destructive text-sm p-2 bg-destructive/10 rounded">
+        <div className="text-destructive text-body p-2 bg-destructive/10 rounded">
           {searchError}
         </div>
       )}

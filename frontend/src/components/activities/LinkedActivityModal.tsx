@@ -49,19 +49,19 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
         </div>
         
         <div className="mb-6">
-          <p className="text-sm text-muted-foreground mb-2">
+          <p className="text-body text-muted-foreground mb-2">
             You are linking to:
           </p>
           <div className="p-3 bg-muted rounded border">
-            <h4 className="font-medium text-sm">{activity.title}</h4>
-            <p className="text-xs text-muted-foreground mt-1">
+            <h4 className="font-medium text-body">{activity.title}</h4>
+            <p className="text-helper text-muted-foreground mt-1">
               IATI ID: {activity.iati_id || 'N/A'}
             </p>
           </div>
         </div>
         
         <div className="mb-6">
-          <label className="block text-sm font-medium text-foreground mb-3">
+          <label className="block text-body font-medium text-foreground mb-3">
             Select Relationship Type <RequiredDot />
           </label>
           <div className="space-y-2">
@@ -83,8 +83,8 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
                   className="sr-only"
                 />
                 <div>
-                  <div className="font-medium text-sm">{type.label}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{type.description}</div>
+                  <div className="font-medium text-body">{type.label}</div>
+                  <div className="text-helper text-muted-foreground mt-1">{type.description}</div>
                 </div>
               </label>
             ))}

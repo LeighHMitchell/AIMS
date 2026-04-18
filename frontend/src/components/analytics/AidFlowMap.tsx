@@ -255,7 +255,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             <button
               onClick={() => setViewMode('transaction')}
               className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
+                "inline-flex items-center gap-2 px-4 py-2 rounded-md text-body font-medium transition-all",
                 viewMode === 'transaction'
                   ? "bg-white text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -267,7 +267,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             <button
               onClick={() => setViewMode('activity')}
               className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
+                "inline-flex items-center gap-2 px-4 py-2 rounded-md text-body font-medium transition-all",
                 viewMode === 'activity'
                   ? "bg-white text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -283,7 +283,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 p-4 bg-muted rounded-lg border">
           {/* Search */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Search Organization</label>
+            <label className="text-body font-medium text-foreground">Search Organization</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -298,7 +298,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           
           {/* Time Period */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Time Period</label>
+            <label className="text-body font-medium text-foreground">Time Period</label>
             <Select value={selectedTimePeriod} onValueChange={handlePresetSelect}>
               <SelectTrigger className="w-full h-10 bg-white">
                 <SelectValue />
@@ -316,7 +316,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           {/* Transaction Type - only show in transaction view */}
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Transaction Type</label>
+              <label className="text-body font-medium text-foreground">Transaction Type</label>
               <MultiSelect
                 options={TRANSACTION_TYPE_OPTIONS}
                 selected={stagedTransactionTypes}
@@ -339,15 +339,15 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
                     <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                       {option.value}
                     </code>
-                    <span className="text-sm">{option.label}</span>
+                    <span className="text-body">{option.label}</span>
                   </span>
                 )}
               />
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Relationship Types</label>
-              <div className="w-full h-10 px-3 flex items-center text-sm text-muted-foreground bg-white border rounded-md">
+              <label className="text-body font-medium text-foreground">Relationship Types</label>
+              <div className="w-full h-10 px-3 flex items-center text-body text-muted-foreground bg-white border rounded-md">
                 All relationship types
               </div>
             </div>
@@ -356,7 +356,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
           {/* Transaction Status - only show in transaction view */}
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Transaction Status</label>
+              <label className="text-body font-medium text-foreground">Transaction Status</label>
               <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
                 <SelectTrigger className="w-full h-10 bg-white">
                   <SelectValue />
@@ -370,8 +370,8 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Activity Status</label>
-              <div className="w-full h-10 px-3 flex items-center text-sm text-muted-foreground bg-white border rounded-md">
+              <label className="text-body font-medium text-foreground">Activity Status</label>
+              <div className="w-full h-10 px-3 flex items-center text-body text-muted-foreground bg-white border rounded-md">
                 All statuses
               </div>
             </div>
@@ -404,8 +404,8 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
                 <div className="flex items-start gap-3">
                   <Info className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-amber-800 font-medium">No activity relationships defined</p>
-                    <p className="text-sm text-amber-700 mt-1">
+                    <p className="text-body text-amber-800 font-medium">No activity relationships defined</p>
+                    <p className="text-body text-amber-700 mt-1">
                       Showing all published activities. To see connections between activities, 
                       create relationships in the Activity Profile by linking parent, child, sibling, 
                       co-funded, or third-party activities.

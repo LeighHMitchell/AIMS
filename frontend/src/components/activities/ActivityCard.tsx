@@ -269,7 +269,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               {activity.acronym && <span className="ml-1">({activity.acronym})</span>}
             </Link>
           </h2>
-          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             {(activity.created_by_org_acronym || activity.created_by_org_name) && (
               <>
                 <span className="flex items-center gap-1">
@@ -307,7 +307,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 {activity.partner_id}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground">Not reported</span>
+              <span className="text-helper text-muted-foreground">Not reported</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -317,7 +317,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 {activity.iati_id}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground">Not reported</span>
+              <span className="text-helper text-muted-foreground">Not reported</span>
             )}
           </div>
         </div>
@@ -327,7 +327,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           {activity.activity_status && (() => {
             const { label, className: statusCls } = getActivityStatusDisplay(activity.activity_status);
             return (
-              <Badge className={`text-xs font-medium leading-tight ${statusCls}`}>
+              <Badge className={`text-helper font-medium leading-tight ${statusCls}`}>
                 {label}
               </Badge>
             );
@@ -340,7 +340,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           {activity.submission_status && (
             <Badge
               variant={submissionColors[activity.submission_status as keyof typeof submissionColors] || 'secondary'}
-              className="text-xs font-medium leading-tight"
+              className="text-helper font-medium leading-tight"
             >
               {activity.submission_status === 'pending_validation' ? 'Pending Validation' :
                activity.submission_status === 'validated' ? 'Validated' :
@@ -350,7 +350,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           {activity.publication_status && (
             <Badge
               variant={activity.publication_status === 'published' ? 'success' : 'secondary'}
-              className="text-xs font-medium leading-tight"
+              className="text-helper font-medium leading-tight"
             >
               {activity.publication_status === 'published' ? 'Published' : 'Unpublished'}
             </Badge>
@@ -367,12 +367,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
         {/* Activity Details */}
         <div className="bg-muted/50 rounded-lg p-4 mb-3">
-          <h4 className="text-sm font-medium text-foreground mb-3">Activity Details</h4>
+          <h4 className="text-body font-medium text-foreground mb-3">Activity Details</h4>
           <div className="space-y-2">
             {(activity.created_by_org_acronym || activity.created_by_org_name) && (
               <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-border">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reported by</span>
-                <span className="text-sm text-foreground font-medium text-right">
+                <span className="text-body text-foreground font-medium text-right">
                   {activity.created_by_org_name}
                   {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
                     <span> ({activity.created_by_org_acronym})</span>
@@ -387,41 +387,41 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Budgeted</span>
-                  <span className="text-sm text-foreground">{formatCurrency(activity.totalBudget || 0)}</span>
+                  <span className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-border">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Disbursed</span>
-                  <span className="text-sm text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</span>
+                  <span className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</span>
                 </div>
               </>
             )}
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Aid Type</span>
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Finance Type</span>
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {activity.default_finance_type ? (FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Flow Type</span>
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Tied Status</span>
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Modality</span>
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 {activity.default_aid_modality ? (MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality) : 'Not reported'}
               </span>
             </div>
@@ -429,7 +429,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         </div>
 
         {/* Dates */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+        <div className="flex items-center gap-1 text-helper text-muted-foreground mb-2">
           <Calendar className="w-3 h-3 flex-shrink-0" />
           <span className="truncate">
             {activity.planned_start_date || activity.planned_end_date ? (
@@ -449,7 +449,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
         {/* Last Updated */}
         {activity.updated_at && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-helper text-muted-foreground">
             <Clock className="w-3 h-3 flex-shrink-0" />
             <span>Updated {formatRelativeTime(activity.updated_at)}</span>
           </div>

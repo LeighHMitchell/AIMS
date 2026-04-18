@@ -66,14 +66,14 @@ function DualMetricCard({
               onClick={onTitleClick}
             >
               <Icon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">{title}</span>
+              <span className="text-body font-medium text-muted-foreground">{title}</span>
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
                 <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <p className="text-sm">{helpText}</p>
+                <p className="text-body">{helpText}</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -90,12 +90,12 @@ function DualMetricCard({
                   <p className="text-2xl font-bold text-foreground">
                     {leftMetric.value.toLocaleString()}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">{leftMetric.label}</p>
+                  <p className="text-helper text-muted-foreground mt-1">{leftMetric.label}</p>
                 </div>
               </TooltipTrigger>
               {leftMetric.tooltip && (
                 <TooltipContent>
-                  <p className="text-sm">{leftMetric.tooltip}</p>
+                  <p className="text-body">{leftMetric.tooltip}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -110,12 +110,12 @@ function DualMetricCard({
                   <p className="text-2xl font-bold text-foreground">
                     {rightMetric.value.toLocaleString()}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">{rightMetric.label}</p>
+                  <p className="text-helper text-muted-foreground mt-1">{rightMetric.label}</p>
                 </div>
               </TooltipTrigger>
               {rightMetric.tooltip && (
                 <TooltipContent>
-                  <p className="text-sm">{rightMetric.tooltip}</p>
+                  <p className="text-body">{rightMetric.tooltip}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -176,7 +176,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
-        <p className="text-sm text-destructive">Failed to load dashboard statistics: {error}</p>
+        <p className="text-body text-destructive">Failed to load dashboard statistics: {error}</p>
       </div>
     );
   }
@@ -210,21 +210,21 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Budgets</span>
+                  <span className="text-body font-medium text-muted-foreground">Budgets</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-sm">Budget records across all your organisation&apos;s activities.</p>
+                    <p className="text-body">Budget records across all your organisation&apos;s activities.</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <p className="text-3xl font-bold text-foreground">
                 {(stats?.orgBudgetCount ?? 0).toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Your Organisation</p>
+              <p className="text-helper text-muted-foreground mt-1">Your Organisation</p>
             </CardContent>
           </Card>
         </TooltipProvider>
@@ -256,13 +256,13 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Activities</span>
+                <span className="text-body font-medium text-muted-foreground">Activities</span>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-sm">Overview of your organisation&apos;s activities by publication status, validation status, and activity lifecycle stage.</p>
+                    <p className="text-body">Overview of your organisation&apos;s activities by publication status, validation status, and activity lifecycle stage.</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -274,19 +274,19 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.publishedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Published</p>
+                          <p className="text-helper text-muted-foreground mt-1">Published</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities that have been published and are publicly visible</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities that have been published and are publicly visible</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.draftCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Draft</p>
+                          <p className="text-helper text-muted-foreground mt-1">Draft</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities still in draft form, not yet published</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities still in draft form, not yet published</p></TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -298,28 +298,28 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.pendingValidationCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Pending</p>
+                          <p className="text-helper text-muted-foreground mt-1">Pending</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities submitted and awaiting government review</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities submitted and awaiting government review</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.validatedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Validated</p>
+                          <p className="text-helper text-muted-foreground mt-1">Validated</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities reviewed and approved by the government</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities reviewed and approved by the government</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.rejectedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Rejected</p>
+                          <p className="text-helper text-muted-foreground mt-1">Rejected</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities that were reviewed and rejected by the government</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities that were reviewed and rejected by the government</p></TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -331,28 +331,28 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.pipelineCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Pipeline</p>
+                          <p className="text-helper text-muted-foreground mt-1">Pipeline</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities in the pipeline/planning stage</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities in the pipeline/planning stage</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{((stats?.implementationCount ?? 0) + (stats?.finalisationCount ?? 0)).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Active</p>
+                          <p className="text-helper text-muted-foreground mt-1">Active</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities in implementation or finalisation stage</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities in implementation or finalisation stage</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="cursor-default">
                           <p className="text-2xl font-bold text-foreground">{(stats?.closedCount ?? 0).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Closed</p>
+                          <p className="text-helper text-muted-foreground mt-1">Closed</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-sm">Activities that have been closed</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities that have been closed</p></TooltipContent>
                     </Tooltip>
                   </div>
                 </div>

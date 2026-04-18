@@ -168,7 +168,7 @@ export default function LocationPicker({
               <button
                 key={result.place_id}
                 type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b last:border-b-0"
+                className="w-full text-left px-3 py-2 text-body hover:bg-muted border-b last:border-b-0"
                 onClick={() => selectResult(result)}
               >
                 <span className="line-clamp-2">{result.display_name}</span>
@@ -180,7 +180,7 @@ export default function LocationPicker({
 
       {/* Coordinates display */}
       {latitude !== null && longitude !== null && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-helper text-muted-foreground">
           <MapPin className="h-3 w-3" />
           <span>{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
           <button
@@ -218,7 +218,7 @@ export default function LocationPicker({
           )}
         </Map>
       </div>
-      <p className="text-xs text-muted-foreground">Click the map or drag the pin to set a precise location</p>
+      <p className="text-helper text-muted-foreground">Click the map or drag the pin to set a precise location</p>
     </div>
   )
 }

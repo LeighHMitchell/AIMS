@@ -85,7 +85,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: IntakeReviewProject) => (
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{p.name}</p>
+          <p className="text-body font-medium truncate">{p.name}</p>
           <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
         </div>
       </div>
@@ -97,7 +97,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: IntakeReviewProject) => (
       <div>
         <span>{p.nominating_ministry}</span>
-        {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
+        {p.implementing_agency && <p className="text-helper text-muted-foreground">{p.implementing_agency}</p>}
       </div>
     ),
   },
@@ -107,7 +107,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: IntakeReviewProject) => (
       <div>
         <span>{p.sector}</span>
-        {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
+        {p.sub_sector && <p className="text-helper text-muted-foreground">{p.sub_sector}</p>}
       </div>
     ),
   },
@@ -124,7 +124,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   {
     key: "updated_at",
     label: "Submitted",
-    render: (p: IntakeReviewProject) => <span className="text-xs">{new Date(p.updated_at).toLocaleDateString()}</span>,
+    render: (p: IntakeReviewProject) => <span className="text-helper">{new Date(p.updated_at).toLocaleDateString()}</span>,
   },
 ]
 
@@ -149,13 +149,13 @@ function IntakeKanbanCard({ project, onClick }: { project: IntakeReviewProject; 
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium truncate">{project.name}</p>
+              <p className="text-body font-medium truncate">{project.name}</p>
               <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
         </div>
-        <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <div className="mt-2 space-y-0.5 text-helper text-muted-foreground">
           <div>
             <span>{project.nominating_ministry}</span>
             {project.implementing_agency && (
@@ -171,11 +171,11 @@ function IntakeKanbanCard({ project, onClick }: { project: IntakeReviewProject; 
         </div>
         {costParts && (
           <div className="mt-1.5">
-            <span className="text-xs font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
+            <span className="text-helper font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
           </div>
         )}
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             {new Date(project.updated_at).toLocaleDateString()}
           </span>
           {project.reviewer_name && (
@@ -307,7 +307,7 @@ export function IntakeReviewTab() {
         {/* Filter bar with view toggle */}
         <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-            <Label className="text-xs text-muted-foreground">Search</Label>
+            <Label className="text-helper text-muted-foreground">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search projects..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-9" />
@@ -330,7 +330,7 @@ export function IntakeReviewTab() {
         </FilterBar>
         <div className="text-center py-12 text-muted-foreground">
           <Inbox className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-          <p className="text-sm">No projects awaiting intake review</p>
+          <p className="text-body">No projects awaiting intake review</p>
         </div>
       </>
     )
@@ -343,7 +343,7 @@ export function IntakeReviewTab() {
       {/* Filters + View Toggle */}
       <FilterBar>
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-          <Label className="text-xs text-muted-foreground">Search</Label>
+          <Label className="text-helper text-muted-foreground">Search</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -355,7 +355,7 @@ export function IntakeReviewTab() {
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <Label className="text-helper text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
@@ -374,7 +374,7 @@ export function IntakeReviewTab() {
           </Select>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Label className="text-helper text-muted-foreground">Region</Label>
           <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[160px] h-9">
               <SelectValue placeholder="All" />
@@ -429,14 +429,14 @@ export function IntakeReviewTab() {
             return (
               <div key={col.key} className="flex-1 min-w-[280px]">
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-sm font-semibold">{col.title}</h3>
+                  <h3 className="text-body font-semibold">{col.title}</h3>
                   <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                     {kanbanColumns[col.key].length}
                   </span>
                 </div>
                 <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
                   {filtered.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
+                    <p className="text-helper text-muted-foreground text-center py-8">No projects</p>
                   ) : (
                     filtered.map(p => (
                       <IntakeKanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
@@ -503,26 +503,26 @@ export function IntakeReviewTab() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-0.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sector</p>
-                    <p className="text-sm font-medium text-foreground truncate">{p.sector}</p>
-                    {p.sub_sector && <p className="text-xs text-muted-foreground truncate">{p.sub_sector}</p>}
+                    <p className="text-body font-medium text-foreground truncate">{p.sector}</p>
+                    {p.sub_sector && <p className="text-helper text-muted-foreground truncate">{p.sub_sector}</p>}
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Region</p>
-                    <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                    <div className="flex items-center gap-1 text-body font-medium text-foreground">
                       <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
                       <span className="truncate">{p.region || "—"}</span>
                     </div>
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Estimated Amount</p>
-                    <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                    <div className="flex items-center gap-1 text-body font-medium text-foreground">
                       <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
                       <span>{fmtCost(p.estimated_cost, p.currency) || "—"}</span>
                     </div>
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Submitted</p>
-                    <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                    <div className="flex items-center gap-1 text-body font-medium text-foreground">
                       <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                       <span>{new Date(p.updated_at).toLocaleDateString()}</span>
                     </div>
@@ -583,7 +583,7 @@ export function IntakeReviewTab() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
+                      <p className="text-body font-medium truncate">{p.name}</p>
                       <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(p.project_code) }}
@@ -605,7 +605,7 @@ export function IntakeReviewTab() {
                     {PROJECT_STAGE_LABELS[p.project_stage]}
                   </span>
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="mt-1 flex items-center gap-3 text-helper text-muted-foreground">
                   <span>{p.nominating_ministry}</span>
                   {p.implementing_agency && (
                     <>
@@ -668,19 +668,19 @@ export function IntakeReviewTab() {
 
             <div className="p-6 space-y-6">
               {/* Project info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-body">
                 <div>
                   <span className="text-muted-foreground">Ministry</span>
                   <p className="font-medium">{selectedProject.nominating_ministry}</p>
                   {selectedProject.implementing_agency && (
-                    <p className="text-xs text-muted-foreground">{selectedProject.implementing_agency}</p>
+                    <p className="text-helper text-muted-foreground">{selectedProject.implementing_agency}</p>
                   )}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Sector</span>
                   <p className="font-medium">{selectedProject.sector}</p>
                   {selectedProject.sub_sector && (
-                    <p className="text-xs text-muted-foreground">{selectedProject.sub_sector}</p>
+                    <p className="text-helper text-muted-foreground">{selectedProject.sub_sector}</p>
                   )}
                 </div>
                 <div>
@@ -707,8 +707,8 @@ export function IntakeReviewTab() {
 
               {selectedProject.description && (
                 <div>
-                  <span className="text-xs text-muted-foreground font-semibold uppercase">Description</span>
-                  <p className="text-sm mt-1 whitespace-pre-wrap">{selectedProject.description}</p>
+                  <span className="text-helper text-muted-foreground font-semibold uppercase">Description</span>
+                  <p className="text-body mt-1 whitespace-pre-wrap">{selectedProject.description}</p>
                 </div>
               )}
 
@@ -734,13 +734,13 @@ export function IntakeReviewTab() {
               {/* Claim for Review — pending projects */}
               {selectedProject.project_stage === "intake_submitted" && (
                 <div className="border-t border-border pt-6 space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     This project is pending review. Claim it to begin desk review.
                   </p>
                   {error && (
                     <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                      <p className="text-sm text-destructive">{error}</p>
+                      <p className="text-body text-destructive">{error}</p>
                     </div>
                   )}
                   <Button
@@ -773,19 +773,19 @@ export function IntakeReviewTab() {
               {/* Review Form — desk review (claimed) or senior review (desk_screened) */}
               {(selectedProject.project_stage === "intake_desk_claimed" || selectedProject.project_stage === "intake_desk_screened") && (
                 <div className="border-t border-border pt-6 space-y-4">
-                  <h3 className="text-sm font-semibold">
+                  <h3 className="text-body font-semibold">
                     {selectedProject.project_stage === "intake_desk_claimed" ? "Desk Review" : "Senior Review"}
                   </h3>
 
                   {error && (
                     <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                      <p className="text-sm text-destructive">{error}</p>
+                      <p className="text-body text-destructive">{error}</p>
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <Label className="text-sm">Decision</Label>
+                    <Label className="text-body">Decision</Label>
                     <ReviewDecisionCards
                       options={getDecisionCards(selectedProject)}
                       selected={decision}
@@ -794,7 +794,7 @@ export function IntakeReviewTab() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm">
+                    <Label className="text-body">
                       Comments
                       {(decision === "returned" || decision === "returned_to_desk" || decision === "rejected") && (
                         <RequiredDot />

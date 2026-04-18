@@ -139,7 +139,7 @@ export function Top10TotalFinancialValueChart({
         <div className="text-center">
           <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">No financial data available</p>
-          <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
+          <p className="text-body text-muted-foreground mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )
@@ -194,7 +194,7 @@ export function Top10TotalFinancialValueChart({
       </ResponsiveContainer>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+      <p className="text-body text-muted-foreground leading-relaxed mt-4">
         This chart ranks the top 10 organisations by total financial value, combining all transaction types within the selected date range. The horizontal bars make it easy to compare relative scale across organisations. Hover over any bar to see the exact USD amount.
       </p>
     </div>

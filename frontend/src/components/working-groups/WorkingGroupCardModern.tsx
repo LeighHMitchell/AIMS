@@ -98,7 +98,7 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
         </div>
 
         {workingGroup.description && (
-          <p className="text-sm line-clamp-3 mb-4 text-muted-foreground">
+          <p className="text-body line-clamp-3 mb-4 text-muted-foreground">
             {workingGroup.description}
           </p>
         )}
@@ -107,21 +107,21 @@ const WorkingGroupCardModern: React.FC<WorkingGroupCardProps> = ({
           <div className="grid grid-cols-3 gap-3 flex-1">
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Members</p>
-              <div className="flex items-center gap-1.5 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-1.5 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <Users className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{workingGroup.member_count ?? workingGroup.members?.length ?? 0}</span>
               </div>
             </div>
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Meetings</p>
-              <div className="flex items-center gap-1.5 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-1.5 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <Calendar className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{workingGroup.meetings?.length || 0}</span>
               </div>
             </div>
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Activities</p>
-              <div className="flex items-center gap-1.5 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-1.5 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <FileText className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{workingGroup.activities?.length || 0}</span>
               </div>

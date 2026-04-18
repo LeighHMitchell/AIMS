@@ -155,7 +155,7 @@ export function AddressSearch({
     <div className={cn("space-y-4", className)}>
       {/* Address Search */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-foreground">
+        <Label className="text-body font-medium text-foreground">
           Search Address
         </Label>
         <div className="address-search-container relative">
@@ -187,7 +187,7 @@ export function AddressSearch({
                 >
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">
+                    <p className="text-body text-foreground truncate">
                       {result.display_name}
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export function AddressSearch({
         
         {/* Address Line 1 */}
         <div>
-          <Label htmlFor="addressLine1" className="text-sm text-muted-foreground">
+          <Label htmlFor="addressLine1" className="text-body text-muted-foreground">
             Address Line 1
           </Label>
           <Input
@@ -221,7 +221,7 @@ export function AddressSearch({
 
         {/* Address Line 2 */}
         <div>
-          <Label htmlFor="addressLine2" className="text-sm text-muted-foreground">
+          <Label htmlFor="addressLine2" className="text-body text-muted-foreground">
             Address Line 2
           </Label>
           <Input
@@ -238,7 +238,7 @@ export function AddressSearch({
         {/* City and State */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="city" className="text-sm text-muted-foreground">
+            <Label htmlFor="city" className="text-body text-muted-foreground">
               City
             </Label>
             <Input
@@ -252,7 +252,7 @@ export function AddressSearch({
             />
           </div>
           <div>
-            <Label htmlFor="state" className="text-sm text-muted-foreground">
+            <Label htmlFor="state" className="text-body text-muted-foreground">
               State/Province
             </Label>
             <Input
@@ -270,7 +270,7 @@ export function AddressSearch({
         {/* Country and Postal Code */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="country" className="text-sm text-muted-foreground">
+            <Label htmlFor="country" className="text-body text-muted-foreground">
               Country
             </Label>
             <Input
@@ -284,7 +284,7 @@ export function AddressSearch({
             />
           </div>
           <div>
-            <Label htmlFor="postalCode" className="text-sm text-muted-foreground">
+            <Label htmlFor="postalCode" className="text-body text-muted-foreground">
               Postal Code
             </Label>
             <Input

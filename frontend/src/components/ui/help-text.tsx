@@ -20,7 +20,7 @@ export function HelpText({ title, content, className, iconClassName }: HelpTextP
           <button
             type="button"
             className={cn(
-              "inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors",
+              "inline-flex items-center gap-1.5 text-body text-muted-foreground hover:text-foreground transition-colors",
               className
             )}
           >
@@ -33,9 +33,9 @@ export function HelpText({ title, content, className, iconClassName }: HelpTextP
           sideOffset={8}
         >
           <div className="space-y-2">
-            <h4 className="font-medium text-foreground text-sm">{title}</h4>
+            <h4 className="font-medium text-foreground text-body">{title}</h4>
             {Array.isArray(content) ? (
-              <ul className="text-sm text-foreground space-y-1.5">
+              <ul className="text-body text-foreground space-y-1.5">
                 {content.map((item, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-muted-foreground mt-0.5">•</span>
@@ -44,7 +44,7 @@ export function HelpText({ title, content, className, iconClassName }: HelpTextP
                 ))}
               </ul>
             ) : (
-              <div className="text-sm text-foreground">{content}</div>
+              <div className="text-body text-foreground">{content}</div>
             )}
           </div>
         </TooltipContent>

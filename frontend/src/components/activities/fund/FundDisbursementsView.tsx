@@ -102,7 +102,7 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p className="text-lg">No child activities linked yet</p>
-        <p className="text-sm mt-1">Link child activities using parent/child relationships in the Linked Activities tab, then record disbursement transactions.</p>
+        <p className="text-body mt-1">Link child activities using parent/child relationships in the Linked Activities tab, then record disbursement transactions.</p>
       </div>
     )
   }
@@ -121,15 +121,15 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-helper">
             {data.children.length} child activit{data.children.length !== 1 ? 'ies' : 'y'}
           </Badge>
           {data.totals.committed > 0 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-helper">
               Committed: {formatUSD(data.totals.committed)}
             </Badge>
           )}
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-helper">
             Disbursed: {formatUSD(data.totals.disbursed)}
           </Badge>
         </div>
@@ -222,10 +222,10 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
                       {child.planned > 0 ? `$${child.planned.toLocaleString()}` : '-'}
                     </TableCell>
                   )}
-                  <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                  <TableCell className="text-helper text-muted-foreground max-w-[150px] truncate">
                     {child.sectors.join(', ') || '-'}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                  <TableCell className="text-helper text-muted-foreground max-w-[150px] truncate">
                     {child.regions.join(', ') || '-'}
                   </TableCell>
                 </TableRow>

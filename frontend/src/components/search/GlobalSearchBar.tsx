@@ -441,7 +441,7 @@ export function GlobalSearchBar({
   // Size-based styles
   const inputHeight = size === "large" ? "h-14" : "h-10"
   const iconSize = size === "large" ? "h-5 w-5" : "h-4 w-4"
-  const inputTextSize = size === "large" ? "text-base" : "text-sm"
+  const inputTextSize = size === "large" ? "text-base" : "text-body"
   const popoverWidth = size === "large" ? "w-full max-w-2xl" : "w-[500px]"
   
   // Render the search input (used in both modes)
@@ -510,13 +510,13 @@ export function GlobalSearchBar({
                   <Command className="border border-border rounded-lg bg-popover shadow-lg">
                     <CommandList className="max-h-80 overflow-y-auto">
                       {(loading || isSearching) && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="p-4 text-center text-body text-muted-foreground">
                           Searching...
                         </div>
                       )}
 
                       {!loading && !isSearching && error && (
-                        <div className="p-4 text-center text-sm text-destructive">
+                        <div className="p-4 text-center text-body text-destructive">
                           {error}
                         </div>
                       )}
@@ -531,7 +531,7 @@ export function GlobalSearchBar({
                           {/* Show suggestions if available */}
                           {suggestions.length > 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border">
+                              <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
                                 Suggestions
                               </div>
                               {suggestions.map((suggestion) => (
@@ -553,7 +553,7 @@ export function GlobalSearchBar({
                           {/* Show popular searches if available */}
                           {popularSearches.length > 0 && suggestions.length === 0 && (
                             <CommandGroup>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border">
+                              <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
                                 Popular Searches
                               </div>
                               {popularSearches.map((search, idx) => (
@@ -567,7 +567,7 @@ export function GlobalSearchBar({
                                       <Search className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-sm truncate text-foreground">
+                                      <div className="font-medium text-body truncate text-foreground">
                                         {search}
                                       </div>
                                     </div>
@@ -588,7 +588,7 @@ export function GlobalSearchBar({
 
                             return (
                               <CommandGroup key={type}>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border">
+                                <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
                                   {resultTypeLabels[type]}
                                 </div>
                                 {typeResults.map((result) => (
@@ -611,7 +611,7 @@ export function GlobalSearchBar({
                       )}
 
                       {!loading && query.length > 0 && query.length < 1 && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="p-4 text-center text-body text-muted-foreground">
                           Start typing to search
                         </div>
                       )}

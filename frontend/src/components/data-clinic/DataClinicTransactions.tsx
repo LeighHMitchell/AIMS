@@ -337,7 +337,7 @@ export function DataClinicTransactions() {
     return (
       <div className="flex items-center gap-2">
         {value ? (
-          <span className="text-sm">
+          <span className="text-body">
             {field === 'transactionType' && TRANSACTION_TYPE_LABELS[value] ? 
               TRANSACTION_TYPE_LABELS[value] : 
               field === 'financeType' && FINANCE_TYPE_LABELS[value] ?
@@ -350,7 +350,7 @@ export function DataClinicTransactions() {
             }
           </span>
         ) : (
-          <Badge variant="destructive" className="text-xs">
+          <Badge variant="destructive" className="text-helper">
             <AlertCircle className="h-3 w-3 mr-1" />
             Missing
           </Badge>
@@ -398,7 +398,7 @@ export function DataClinicTransactions() {
                 className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelectedFilter(gap.field)}
               >
-                <p className="text-sm text-muted-foreground">{gap.label}</p>
+                <p className="text-body text-muted-foreground">{gap.label}</p>
                 <p className="text-2xl font-semibold">{gap.count}</p>
               </div>
             ))}
@@ -450,7 +450,7 @@ export function DataClinicTransactions() {
           {isSuperUser && selectedTransactions.size > 0 && (
             <div className="mt-4 p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-4">
-                <p className="text-sm font-medium">
+                <p className="text-body font-medium">
                   {selectedTransactions.size} transactions selected
                 </p>
                 <Select value={bulkEditField} onValueChange={setBulkEditField}>
@@ -501,13 +501,13 @@ export function DataClinicTransactions() {
                       />
                     </th>
                   )}
-                  <th className="p-4 text-left text-sm font-medium">Activity</th>
-                  <th className="p-4 text-left text-sm font-medium">Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Date</th>
-                  <th className="p-4 text-left text-sm font-medium">Value</th>
-                  <th className="p-4 text-left text-sm font-medium">Finance Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Aid Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Organization</th>
+                  <th className="p-4 text-left text-body font-medium">Activity</th>
+                  <th className="p-4 text-left text-body font-medium">Type</th>
+                  <th className="p-4 text-left text-body font-medium">Date</th>
+                  <th className="p-4 text-left text-body font-medium">Value</th>
+                  <th className="p-4 text-left text-body font-medium">Finance Type</th>
+                  <th className="p-4 text-left text-body font-medium">Aid Type</th>
+                  <th className="p-4 text-left text-body font-medium">Organization</th>
                 </tr>
               </thead>
               <tbody>
@@ -556,7 +556,7 @@ export function DataClinicTransactions() {
                       <td className="p-4">
                         {transaction.transactionDate ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-sm">
+                            <span className="text-body">
                               {format(new Date(transaction.transactionDate), 'MMM d, yyyy')}
                             </span>
                             {isFutureDisbursement(transaction) && (
@@ -573,7 +573,7 @@ export function DataClinicTransactions() {
                             )}
                           </div>
                         ) : (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>
@@ -581,14 +581,14 @@ export function DataClinicTransactions() {
                       </td>
                       <td className="p-4">
                         {transaction.value && transaction.currency ? (
-                          <span className="text-sm font-medium">
+                          <span className="text-body font-medium">
                             {new Intl.NumberFormat('en-US', {
                               style: 'currency',
                               currency: transaction.currency
                             }).format(transaction.value)}
                           </span>
                         ) : (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>
@@ -604,13 +604,13 @@ export function DataClinicTransactions() {
                         {transaction.organizationName || 
                          transaction.providerOrgName || 
                          transaction.receiverOrgName ? (
-                          <span className="text-sm">
+                          <span className="text-body">
                             {transaction.organizationName || 
                              transaction.providerOrgName || 
                              transaction.receiverOrgName}
                           </span>
                         ) : (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-helper">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>

@@ -252,7 +252,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
         <div className="flex items-center justify-between px-4 py-3 bg-muted border-b">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-body font-medium text-foreground">
               Date Revision History
             </span>
           </div>
@@ -293,10 +293,10 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-body text-destructive">{error}</p>
               <button
                 onClick={fetchHistory}
-                className="mt-2 text-xs text-blue-600 hover:underline"
+                className="mt-2 text-helper text-blue-600 hover:underline"
               >
                 Try again
               </button>
@@ -322,12 +322,12 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                         ) : (
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         )}
-                        <span className="text-sm font-medium text-foreground">
+                        <span className="text-body font-medium text-foreground">
                           {field.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-helper text-muted-foreground">
                           {formatDateValue(currentValue)}
                         </span>
                         {history.length > 0 && (
@@ -342,7 +342,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                         {history.length === 0 ? (
                           <div className="py-3 text-center">
                             <Clock className="h-5 w-5 text-slate-300 mx-auto mb-1" />
-                            <p className="text-xs text-muted-foreground">No revisions recorded</p>
+                            <p className="text-helper text-muted-foreground">No revisions recorded</p>
                           </div>
                         ) : (
                           <div className="space-y-2">
@@ -352,24 +352,24 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                 className="p-2 bg-white rounded border border-border"
                               >
                                 <div className="flex items-center gap-2 mb-1.5">
-                                  <span className="text-xs font-medium text-muted-foreground">
+                                  <span className="text-helper font-medium text-muted-foreground">
                                     Revision {history.length - index}
                                   </span>
                                 </div>
                                 
                                 {/* Date change visualization */}
-                                <div className="flex items-center gap-2 text-sm mb-2">
-                                  <span className="text-muted-foreground line-through text-xs">
+                                <div className="flex items-center gap-2 text-body mb-2">
+                                  <span className="text-muted-foreground line-through text-helper">
                                     {formatDateValue(change.oldValue)}
                                   </span>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                  <span className="text-foreground font-medium text-xs">
+                                  <span className="text-foreground font-medium text-helper">
                                     {formatDateValue(change.newValue)}
                                   </span>
                                 </div>
 
                                 {/* Metadata */}
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-3 text-helper text-muted-foreground">
                                   <div className="flex items-center gap-1">
                                     <User className="h-3 w-3" />
                                     <span>{change.userName}</span>
@@ -403,12 +403,12 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">
+                      <span className="text-body font-medium text-foreground">
                         Additional Dates
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-helper text-muted-foreground">
                         {customDates.length} date{customDates.length !== 1 ? 's' : ''}
                       </span>
                       {customDatesHistory.length > 0 && (
@@ -423,12 +423,12 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                       {/* Current Custom Dates */}
                       {customDates.length > 0 && (
                         <div className="mb-3">
-                          <div className="text-xs text-muted-foreground font-medium mb-1.5">Current Values</div>
+                          <div className="text-helper text-muted-foreground font-medium mb-1.5">Current Values</div>
                           <div className="space-y-1">
                             {customDates.map((customDate, index) => (
                               <div 
                                 key={index}
-                                className="flex items-center justify-between text-xs p-1.5 bg-white rounded border border-border"
+                                className="flex items-center justify-between text-helper p-1.5 bg-white rounded border border-border"
                               >
                                 <span className="text-foreground font-medium">{customDate.label}</span>
                                 <div className="flex items-center gap-2">
@@ -449,18 +449,18 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                       {customDatesHistory.length === 0 ? (
                         <div className="py-3 text-center">
                           <Clock className="h-5 w-5 text-slate-300 mx-auto mb-1" />
-                          <p className="text-xs text-muted-foreground">No revisions recorded</p>
+                          <p className="text-helper text-muted-foreground">No revisions recorded</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="text-xs text-muted-foreground font-medium mb-1.5">Revision History</div>
+                          <div className="text-helper text-muted-foreground font-medium mb-1.5">Revision History</div>
                           {customDatesHistory.map((change, changeIndex) => (
                             <div 
                               key={change.id} 
                               className="p-2 bg-white rounded border border-border"
                             >
                               <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-xs font-medium text-muted-foreground">
+                                <span className="text-helper font-medium text-muted-foreground">
                                   Revision {customDatesHistory.length - changeIndex}
                                 </span>
                               </div>
@@ -468,7 +468,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                               {/* Diff visualization */}
                               <div className="space-y-1 mb-2">
                                 {change.diff.map((diffItem, diffIndex) => (
-                                  <div key={diffIndex} className="flex items-start gap-2 text-xs">
+                                  <div key={diffIndex} className="flex items-start gap-2 text-helper">
                                     {diffItem.type === 'added' && (
                                       <>
                                         <Plus className="h-3 w-3 text-[hsl(var(--success-icon))] mt-0.5 flex-shrink-0" />
@@ -499,12 +499,12 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
                                   </div>
                                 ))}
                                 {change.diff.length === 0 && (
-                                  <span className="text-xs text-muted-foreground italic">No changes detected</span>
+                                  <span className="text-helper text-muted-foreground italic">No changes detected</span>
                                 )}
                               </div>
 
                               {/* Metadata */}
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-3 text-helper text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <User className="h-3 w-3" />
                                   <span>{change.userName}</span>

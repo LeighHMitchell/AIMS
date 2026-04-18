@@ -96,7 +96,7 @@ export function EmailChangeConfirmDialog({
           {/* Warning */}
           <div className="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-orange-800">
+            <div className="text-body text-orange-800">
               <p className="font-medium mb-1">Important Notice</p>
               <p>Changing the email will update both the user's login credentials and profile. The user will need to use the new email address to log in.</p>
             </div>
@@ -104,8 +104,8 @@ export function EmailChangeConfirmDialog({
 
           {/* Current Email */}
           <div>
-            <Label className="text-sm font-medium text-muted-foreground">Current Email</Label>
-            <div className="mt-1 p-2 bg-muted rounded-md text-sm">
+            <Label className="text-body font-medium text-muted-foreground">Current Email</Label>
+            <div className="mt-1 p-2 bg-muted rounded-md text-body">
               {currentEmail}
             </div>
           </div>
@@ -127,7 +127,7 @@ export function EmailChangeConfirmDialog({
               className={errors.newEmail ? "border-destructive" : ""}
             />
             {errors.newEmail && (
-              <p className="text-xs text-destructive mt-1">{errors.newEmail}</p>
+              <p className="text-helper text-destructive mt-1">{errors.newEmail}</p>
             )}
           </div>
 
@@ -148,7 +148,7 @@ export function EmailChangeConfirmDialog({
               className={errors.confirmEmail ? "border-destructive" : ""}
             />
             {errors.confirmEmail && (
-              <p className="text-xs text-destructive mt-1">{errors.confirmEmail}</p>
+              <p className="text-helper text-destructive mt-1">{errors.confirmEmail}</p>
             )}
           </div>
         </div>

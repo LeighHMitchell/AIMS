@@ -86,7 +86,7 @@ function CommentInput({
 
   if (!currentUser) {
     return (
-      <div className={cn("rounded-xl border bg-muted/50 p-4 text-center text-sm text-muted-foreground", className)}>
+      <div className={cn("rounded-xl border bg-muted/50 p-4 text-center text-body text-muted-foreground", className)}>
         Sign in to join the discussion
       </div>
     );
@@ -118,7 +118,7 @@ function CommentInput({
               onKeyDown={handleKeyDown}
               autoFocus={autoFocus}
               disabled={isSubmitting}
-              className="min-h-[60px] border-none bg-transparent p-0 resize-none focus-visible:ring-0 placeholder:text-muted-foreground/70 text-sm"
+              className="min-h-[60px] border-none bg-transparent p-0 resize-none focus-visible:ring-0 placeholder:text-muted-foreground/70 text-body"
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ function CommentInput({
               size="sm"
               type="button"
               onClick={onCancel}
-              className="text-xs h-8"
+              className="text-helper h-8"
               disabled={isSubmitting}
             >
               Cancel
@@ -144,7 +144,7 @@ function CommentInput({
             disabled={!content.trim() || isSubmitting}
             size="sm"
             type="button"
-            className="gap-2 transition-all h-8 text-xs"
+            className="gap-2 transition-all h-8 text-helper"
           >
             {isSubmitting ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -272,15 +272,15 @@ function CommentItem({
           {/* Header */}
           <header className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-body font-semibold text-foreground">
                 {comment.user.name}
               </span>
               {comment.user.role && (
-                <Badge variant={getRoleBadgeVariant(comment.user.role)} className="text-xs">
+                <Badge variant={getRoleBadgeVariant(comment.user.role)} className="text-helper">
                   {getRoleDisplayLabel(comment.user.role)}
                 </Badge>
               )}
-              <time className="text-xs text-muted-foreground">
+              <time className="text-helper text-muted-foreground">
                 {formatCommentTimestamp(comment.timestamp)}
               </time>
             </div>
@@ -315,7 +315,7 @@ function CommentItem({
           </header>
 
           {/* Content */}
-          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+          <p className="text-body text-foreground/90 leading-relaxed whitespace-pre-wrap">
             {comment.content}
           </p>
 
@@ -326,7 +326,7 @@ function CommentItem({
               type="button"
               disabled={!currentUser || isLiking}
               className={cn(
-                "flex items-center gap-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded disabled:opacity-50",
+                "flex items-center gap-1.5 text-helper font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded disabled:opacity-50",
                 isLiked
                   ? "text-destructive"
                   : "text-muted-foreground hover:text-foreground"
@@ -342,7 +342,7 @@ function CommentItem({
                 onClick={() => setActiveReplyId(isReplying ? null : comment.id)}
                 type="button"
                 className={cn(
-                  "flex items-center gap-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded",
+                  "flex items-center gap-1.5 text-helper font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded",
                   isReplying
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -402,7 +402,7 @@ function CommentItem({
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             type="button"
-            className="ml-12 text-xs font-medium text-primary hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+            className="ml-12 text-helper font-medium text-primary hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
           >
             {isExpanded ? (
               <div className="h-[1px] w-4 bg-primary/50 mr-1" />
@@ -640,7 +640,7 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
         <h2 className="text-xl font-semibold tracking-tight">
           Discussion
           {comments.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
+            <span className="ml-2 text-body font-normal text-muted-foreground">
               ({comments.length})
             </span>
           )}
@@ -652,7 +652,7 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
             type="button"
             onClick={() => setSortBy("newest")}
             className={cn(
-              "text-xs",
+              "text-helper",
               sortBy === "newest" ? "text-foreground" : "text-muted-foreground"
             )}
           >
@@ -664,7 +664,7 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
             type="button"
             onClick={() => setSortBy("top")}
             className={cn(
-              "text-xs",
+              "text-helper",
               sortBy === "top" ? "text-foreground" : "text-muted-foreground"
             )}
           >

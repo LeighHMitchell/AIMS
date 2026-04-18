@@ -146,7 +146,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           {/* Step 1: Name & Title */}
           <Onboarding.Step step={0} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Title</label>
+              <label className="mb-1.5 block text-body font-medium">Title</label>
               <ChoiceGroup
                 options={TITLE_OPTIONS as any}
                 value={form.title}
@@ -155,32 +155,32 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-sm font-medium">
+                <label className="mb-1.5 block text-body font-medium">
                   First Name <RequiredDot />
                 </label>
                 <input
                   type="text"
                   value={form.firstName}
                   onChange={(e) => updateField("firstName", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-body shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   placeholder="First name"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">
+                <label className="mb-1.5 block text-body font-medium">
                   Last Name <RequiredDot />
                 </label>
                 <input
                   type="text"
                   value={form.lastName}
                   onChange={(e) => updateField("lastName", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-body shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   placeholder="Last name"
                 />
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Gender</label>
+              <label className="mb-1.5 block text-body font-medium">Gender</label>
               <ChoiceGroup
                 options={GENDER_OPTIONS as any}
                 value={form.gender}
@@ -192,7 +192,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           {/* Step 2: Organization & Role */}
           <Onboarding.Step step={1} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">
+              <label className="mb-1.5 block text-body font-medium">
                 Organization <RequiredDot />
               </label>
               <OrganizationSearchableSelect
@@ -204,22 +204,22 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Department</label>
+              <label className="mb-1.5 block text-body font-medium">Department</label>
               <input
                 type="text"
                 value={form.department}
                 onChange={(e) => updateField("department", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-body shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="e.g. Aid Coordination"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Position</label>
+              <label className="mb-1.5 block text-body font-medium">Position</label>
               <input
                 type="text"
                 value={form.position}
                 onChange={(e) => updateField("position", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-body shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="e.g. Program Manager"
               />
             </div>
@@ -228,21 +228,21 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           {/* Step 3: Contact & Photo */}
           <Onboarding.Step step={2} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Primary Phone</label>
+              <label className="mb-1.5 block text-body font-medium">Primary Phone</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-body shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="+95 9 xxx xxx xxx"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Preferred Language</label>
+              <label className="mb-1.5 block text-body font-medium">Preferred Language</label>
               <select
                 value={form.preferredLanguage}
                 onChange={(e) => updateField("preferredLanguage", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-body shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {LANGUAGE_OPTIONS.map((lang) => (
                   <option key={lang.code} value={lang.code}>
@@ -252,7 +252,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Profile Picture</label>
+              <label className="mb-1.5 block text-body font-medium">Profile Picture</label>
               <ProfilePhotoUpload
                 currentPhoto={form.profilePicture}
                 onPhotoChange={(photoUrl: string) => updateField("profilePicture", photoUrl)}
@@ -265,7 +265,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           </Onboarding.Step>
 
           {error && (
-            <p className="mt-2 text-sm text-destructive">{error}</p>
+            <p className="mt-2 text-body text-destructive">{error}</p>
           )}
 
           <StepNavigation

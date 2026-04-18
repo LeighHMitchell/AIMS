@@ -74,7 +74,7 @@ export function FieldSaveStatus({
           title={error?.message}
         />
         {error?.message && (
-          <span className="text-xs text-destructive">{error.message}</span>
+          <span className="text-helper text-destructive">{error.message}</span>
         )}
       </div>
     );

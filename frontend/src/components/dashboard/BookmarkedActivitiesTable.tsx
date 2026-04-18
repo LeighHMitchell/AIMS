@@ -196,7 +196,7 @@ export function BookmarkedActivitiesTable() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Failed to load bookmarked activities: {error}</p>
+          <p className="text-body text-destructive">Failed to load bookmarked activities: {error}</p>
         </CardContent>
       </Card>
     );
@@ -253,8 +253,8 @@ export function BookmarkedActivitiesTable() {
         {activities.length === 0 ? (
           <div className="text-center py-12">
             <Bookmark className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground mb-2">No bookmarked activities</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-body text-muted-foreground mb-2">No bookmarked activities</p>
+            <p className="text-helper text-muted-foreground">
               Bookmark activities from the activity profile or activity cards to see them here.
             </p>
           </div>
@@ -314,7 +314,7 @@ export function BookmarkedActivitiesTable() {
                 >
                   <TableCell>
                     <div>
-                      <p className="text-sm text-foreground" title={activity.title_narrative}>
+                      <p className="text-body text-foreground" title={activity.title_narrative}>
                         {activity.title_narrative}
                         {activity.acronym && (
                           <span> ({activity.acronym})</span>
@@ -339,7 +339,7 @@ export function BookmarkedActivitiesTable() {
                           }}
                         />
                       )}
-                      <span className="text-sm text-foreground">
+                      <span className="text-body text-foreground">
                         {activity.reporting_org_name || activity.created_by_org_name || '-'}
                         {(activity.reporting_org_acronym || activity.created_by_org_acronym) && (
                           <> ({activity.reporting_org_acronym || activity.created_by_org_acronym})</>
@@ -348,7 +348,7 @@ export function BookmarkedActivitiesTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs text-muted-foreground" title={format(new Date(activity.updated_at), 'PPpp')}>
+                    <span className="text-helper text-muted-foreground" title={format(new Date(activity.updated_at), 'PPpp')}>
                       {formatDistanceToNow(new Date(activity.updated_at), { addSuffix: true })}
                     </span>
                   </TableCell>

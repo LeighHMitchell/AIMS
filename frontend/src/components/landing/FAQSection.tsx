@@ -105,7 +105,7 @@ export function FAQSection() {
                           <motion.p
                             initial={{ y: -10 }}
                             animate={{ y: 0 }}
-                            className="text-sm text-muted-foreground md:text-base leading-relaxed"
+                            className="text-body text-muted-foreground md:text-base leading-relaxed"
                           >
                             {faq.answer}
                           </motion.p>

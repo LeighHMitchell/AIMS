@@ -272,7 +272,7 @@ export default function BulkImportWizard() {
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Cancel Import
                 </Button>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   {state.batchStatus?.status === 'completed' || state.batchStatus?.status === 'failed' ? (
                     <Button onClick={goNext}>
                       View Results

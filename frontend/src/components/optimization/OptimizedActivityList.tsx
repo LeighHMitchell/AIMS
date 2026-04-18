@@ -53,15 +53,15 @@ const ActivityItem = memo(({ activity, style, onClick }: {
           {activity.title}
         </h3>
         {activity.partnerId && (
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             {activity.partnerId}
           </p>
         )}
         <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             {activity.created_by_org_acronym || activity.created_by_org_name}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             {new Date(activity.updatedAt).toLocaleDateString()}
           </span>
         </div>
@@ -175,7 +175,7 @@ export const PerformanceMetrics = memo(({
   }
 
   return (
-    <div className="text-xs text-muted-foreground p-2 bg-muted rounded border">
+    <div className="text-helper text-muted-foreground p-2 bg-muted rounded border">
       <div>Last query: {metrics.lastQueryTime}ms</div>
       <div>Average: {Math.round(metrics.averageQueryTime)}ms</div>
     </div>

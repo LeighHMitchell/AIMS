@@ -116,12 +116,12 @@ function TreeNode({
         </button>
 
         {/* Level label */}
-        <span className="w-[80px] flex-shrink-0 text-sm text-foreground">
+        <span className="w-[80px] flex-shrink-0 text-body text-foreground">
           {levelLabels[node.level - 1] || `Level ${node.level}`}
         </span>
 
         {/* Code + Name */}
-        <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+        <span className="text-body text-foreground flex-1 min-w-0 truncate">
           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
             {node.code}
           </span>
@@ -129,12 +129,12 @@ function TreeNode({
         </span>
 
         {/* Description */}
-        <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+        <span className="text-body text-foreground flex-1 min-w-0 truncate">
           {node.description || ""}
         </span>
 
         {/* Status */}
-        <span className="w-[60px] flex-shrink-0 text-sm text-foreground">
+        <span className="w-[60px] flex-shrink-0 text-body text-foreground">
           {node.isActive ? "Active" : "Inactive"}
         </span>
 
@@ -482,11 +482,11 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-semibold flex items-center gap-2">
+            <h3 className="text-body font-semibold flex items-center gap-2">
               <Target className="h-4 w-4" />
               Strategic Objectives
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-helper text-muted-foreground mt-0.5">
               {levelLabels[0]}s, {levelLabels[1].toLowerCase()}s, and {levelLabels[2].toLowerCase()}s within this plan
             </p>
           </div>
@@ -523,7 +523,7 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
                 checked={showInactive}
                 onCheckedChange={setShowInactive}
               />
-              <Label htmlFor="show-inactive" className="text-sm">
+              <Label htmlFor="show-inactive" className="text-body">
                 Show Inactive
               </Label>
             </div>
@@ -531,7 +531,7 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
           </div>
 
           {/* Header Row */}
-          <div className="flex items-center gap-4 py-2 px-3 bg-muted/50 border-b font-medium text-sm">
+          <div className="flex items-center gap-4 py-2 px-3 bg-muted/50 border-b font-medium text-body">
             <span className="w-5" /> {/* Expand button spacer */}
             <span className="w-[80px]">Type</span>
             <span className="flex-1">Name</span>
@@ -546,7 +546,7 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
               <div className="py-12 text-center text-muted-foreground">
                 <FolderTree className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No national priorities found</p>
-                <p className="text-sm mt-1">
+                <p className="text-body mt-1">
                   {searchQuery
                     ? "Try a different search term"
                     : "Click \"Add Priority\" to create one"}

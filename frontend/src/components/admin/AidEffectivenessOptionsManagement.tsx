@@ -139,7 +139,7 @@ function FlexibleDateInput({
       <Label>{label}</Label>
       <div className="flex items-center gap-2 mb-1">
         <Select value={precision} onValueChange={(v) => { onPrecisionChange(v as DatePrecision); onDateChange(""); }}>
-          <SelectTrigger className="w-[140px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -450,7 +450,7 @@ export function AidEffectivenessOptionsManagement() {
 
       {/* Header with Add button */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {filteredOptions.length} option{filteredOptions.length !== 1 ? 's' : ''} in this category
         </p>
         <Button onClick={handleAdd} size="sm" className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export function AidEffectivenessOptionsManagement() {
           <div className="text-center py-8 text-muted-foreground">
             <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No options defined for this category yet.</p>
-            <p className="text-sm">Click &quot;Add Option&quot; to create one.</p>
+            <p className="text-body">Click &quot;Add Option&quot; to create one.</p>
           </div>
         ) : (
           filteredOptions.map((option) => (
@@ -491,7 +491,7 @@ export function AidEffectivenessOptionsManagement() {
                   )}
                 </div>
                 {option.description && (
-                  <p className="text-sm text-muted-foreground mt-0.5 truncate">
+                  <p className="text-body text-muted-foreground mt-0.5 truncate">
                     {option.description}
                   </p>
                 )}
@@ -591,7 +591,7 @@ export function AidEffectivenessOptionsManagement() {
                 {formMinistries.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {formMinistries.map((m) => (
-                      <Badge key={m.id} variant="secondary" className="text-xs gap-1 pr-1">
+                      <Badge key={m.id} variant="secondary" className="text-helper gap-1 pr-1">
                         {m.name} ({m.code})
                         <button
                           type="button"
@@ -666,7 +666,7 @@ export function AidEffectivenessOptionsManagement() {
                 checked={formIsActive}
                 onCheckedChange={(checked) => setFormIsActive(checked === true)}
               />
-              <Label htmlFor="opt-active" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="opt-active" className="text-body font-normal cursor-pointer">
                 Active (visible in activity forms)
               </Label>
             </div>

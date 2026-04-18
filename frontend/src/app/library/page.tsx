@@ -432,7 +432,7 @@ export default function LibraryPage() {
                 <BookOpen className="h-4 w-4" />
                 Reading Room
                 {readingRoomBookmarks.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 flex items-center justify-center text-xs">
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 flex items-center justify-center text-helper">
                     {readingRoomBookmarks.length}
                   </Badge>
                 )}
@@ -442,7 +442,7 @@ export default function LibraryPage() {
               <Bookmark className="h-4 w-4" />
               My Library
               {personalBookmarks.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 flex items-center justify-center text-xs">
+                <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 flex items-center justify-center text-helper">
                   {personalBookmarks.length}
                 </Badge>
               )}
@@ -517,7 +517,7 @@ export default function LibraryPage() {
               </div>
 
               {/* Results Summary */}
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-body text-muted-foreground">
                 <div>
                   {loading ? (
                     <Skeleton className="h-5 w-32" />
@@ -637,7 +637,7 @@ export default function LibraryPage() {
               {pagination.total > 0 && (
                 <div className="bg-white rounded-lg border border-border shadow-sm p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-body text-muted-foreground">
                       Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} documents
                     </div>
 
@@ -710,7 +710,7 @@ export default function LibraryPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <label className="text-sm text-muted-foreground">Items per page:</label>
+                      <label className="text-body text-muted-foreground">Items per page:</label>
                       <Select
                         value={pagination.limit.toString()}
                         onValueChange={(value) => {

@@ -90,7 +90,7 @@ export default function SkeletonDemoPage() {
 
                   <div>
                     <h3 className="font-semibold mb-2">Usage Example:</h3>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-body">
 {`import { ActivityProfileSkeleton } from '@/components/skeletons'
 
 // In your component
@@ -112,7 +112,7 @@ return <ActualContent />`}
                   <div className="absolute top-4 right-4 z-10">
                     <Card className="bg-yellow-50 border-yellow-200">
                       <CardContent className="p-3">
-                        <p className="text-sm text-yellow-800">Loading simulation active (3s)</p>
+                        <p className="text-body text-yellow-800">Loading simulation active (3s)</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -138,7 +138,7 @@ return <ActualContent />`}
                   <div className="absolute top-4 right-4 z-10">
                     <Card className="bg-yellow-50 border-yellow-200">
                       <CardContent className="p-3">
-                        <p className="text-sm text-yellow-800">Loading simulation active (3s)</p>
+                        <p className="text-body text-yellow-800">Loading simulation active (3s)</p>
                       </CardContent>
                     </Card>
                   </div>

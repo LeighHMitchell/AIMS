@@ -46,7 +46,7 @@ export function ActivityMetadataPanel({
 
   return (
     <div className={`bg-muted border border-border rounded-lg p-4 space-y-3 ${className}`}>
-      <h3 className="text-sm font-medium text-foreground mb-3">Activity Identifiers</h3>
+      <h3 className="text-body font-medium text-foreground mb-3">Activity Identifiers</h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* System UUID */}
@@ -54,7 +54,7 @@ export function ActivityMetadataPanel({
           <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-foreground mb-1">System UUID</div>
+                <div className="text-helper font-medium text-foreground mb-1">System UUID</div>
                 <div className="text-sm text-muted-foreground font-mono break-all" title={systemUUID}>
                   {systemUUID}
                 </div>
@@ -89,8 +89,8 @@ export function ActivityMetadataPanel({
           <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-foreground mb-1">Activity Partner ID</div>
-                <div className="text-sm text-muted-foreground break-all" title={activityPartnerID}>
+                <div className="text-helper font-medium text-foreground mb-1">Activity Partner ID</div>
+                <div className="text-body text-muted-foreground break-all" title={activityPartnerID}>
                   {activityPartnerID}
                 </div>
               </div>
@@ -124,8 +124,8 @@ export function ActivityMetadataPanel({
           <div className="bg-white rounded-md p-3 border border-border group hover:border-border transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-foreground mb-1">IATI Identifier</div>
-                <div className="text-sm text-muted-foreground break-all" title={iatiIdentifier}>
+                <div className="text-helper font-medium text-foreground mb-1">IATI Identifier</div>
+                <div className="text-body text-muted-foreground break-all" title={iatiIdentifier}>
                   {iatiIdentifier}
                 </div>
               </div>

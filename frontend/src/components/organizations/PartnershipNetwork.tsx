@@ -131,12 +131,12 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Users className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-2xl font-bold text-foreground">{partnershipData.totalPartners}</p>
-              <p className="text-sm text-muted-foreground">Partner Organizations</p>
+              <p className="text-body text-muted-foreground">Partner Organizations</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Activity className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-2xl font-bold text-foreground">{partnershipData.totalCollaborations}</p>
-              <p className="text-sm text-muted-foreground">Total Collaborations</p>
+              <p className="text-body text-muted-foreground">Total Collaborations</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg border border-border">
               <Building2 className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
@@ -145,7 +145,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                   ? Math.round(partnershipData.totalCollaborations / partnershipData.partnerships.length * 10) / 10
                   : 0}
               </p>
-              <p className="text-sm text-muted-foreground">Avg. Collaborations</p>
+              <p className="text-body text-muted-foreground">Avg. Collaborations</p>
             </div>
           </div>
 
@@ -174,11 +174,11 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                               )}
                             </h5>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-helper">
                                 {partnership.organization.organisation_type}
                               </Badge>
                               {partnership.organization.country && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-helper text-muted-foreground">
                                   {partnership.organization.country}
                                 </span>
                               )}
@@ -189,7 +189,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                           <p className="text-lg font-semibold text-foreground">
                             {partnership.collaborationCount}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             {partnership.collaborationCount === 1 ? 'Collaboration' : 'Collaborations'}
                           </p>
                         </div>
@@ -197,13 +197,13 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
 
                       {/* Relationship Types */}
                       <div className="mb-3">
-                        <p className="text-xs text-muted-foreground mb-1">Partnership Types:</p>
+                        <p className="text-helper text-muted-foreground mb-1">Partnership Types:</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(partnership.relationshipTypes).map(type => (
                             <Badge 
                               key={type} 
                               variant="outline" 
-                              className={`text-xs ${getRelationshipColor(type)}`}
+                              className={`text-helper ${getRelationshipColor(type)}`}
                             >
                               {type.charAt(0).toUpperCase() + type.slice(1)}
                             </Badge>
@@ -216,18 +216,18 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
                         <p className="text-xs text-muted-foreground mb-2">Recent Collaborations:</p>
                         <div className="space-y-1">
                           {partnership.sharedActivities.slice(0, 3).map(activity => (
-                            <div key={activity.id} className="flex items-center gap-2 text-xs">
+                            <div key={activity.id} className="flex items-center gap-2 text-helper">
                               <div className="w-2 h-2 rounded-full bg-slate-400" />
                               <span className="flex-1 truncate" title={activity.title}>
                                 {activity.title}
                               </span>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-helper">
                                 {activity.partnerRole}
                               </Badge>
                             </div>
                           ))}
                           {partnership.sharedActivities.length > 3 && (
-                            <p className="text-xs text-muted-foreground italic">
+                            <p className="text-helper text-muted-foreground italic">
                               +{partnership.sharedActivities.length - 3} more activities
                             </p>
                           )}
@@ -242,7 +242,7 @@ export const PartnershipNetwork: React.FC<PartnershipNetworkProps> = ({
             <div className="text-center py-8 text-muted-foreground">
               <Network className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No partnerships found</p>
-              <p className="text-sm">Partner organizations will appear here when activities include multiple organizations</p>
+              <p className="text-body">Partner organizations will appear here when activities include multiple organizations</p>
             </div>
           )}
         </div>

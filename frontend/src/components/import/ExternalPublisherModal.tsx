@@ -1050,7 +1050,7 @@ export function ExternalPublisherModal({
             <Card className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">
+                  <h3 className="text-body font-medium text-muted-foreground">
                     {iatiImportStrings['summary.yourOrg']}
                   </h3>
                   <Tooltip>
@@ -1067,12 +1067,12 @@ export function ExternalPublisherModal({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" align="center">
-                      <p className="text-xs">{iatiImportStrings['summary.yourOrg.help']}</p>
+                      <p className="text-helper">{iatiImportStrings['summary.yourOrg.help']}</p>
                     </TooltipContent>
                   </Tooltip>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-semibold">{userOrgName || 'Unknown Organisation'}</p>
+                <p className="text-body font-semibold">{userOrgName || 'Unknown Organisation'}</p>
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                   {userPublisherRefs.length > 0 ? userPublisherRefs[0] : 'No Ref'}
                 </span>
@@ -1084,7 +1084,7 @@ export function ExternalPublisherModal({
             <Card className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">
+                  <h3 className="text-body font-medium text-muted-foreground">
                     {iatiImportStrings['summary.reportingOrg']}
                   </h3>
                   <Tooltip>
@@ -1101,12 +1101,12 @@ export function ExternalPublisherModal({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" align="center">
-                      <p className="text-xs">{iatiImportStrings['summary.reportingOrg.help']}</p>
+                      <p className="text-helper">{iatiImportStrings['summary.reportingOrg.help']}</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
+                  <p className="text-body font-semibold">{meta.reportingOrgName || 'Unknown Organisation'}</p>
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{meta.reportingOrgRef}</span>
                 </div>
               </div>
@@ -1157,13 +1157,13 @@ export function ExternalPublisherModal({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="top" align="center" className="max-w-sm">
-                        <p className="text-xs">
+                        <p className="text-helper">
                           {iatiImportStrings['option.merge.tooltip']}
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     {iatiImportStrings['option.merge.help']}
                   </p>
                 </div>
@@ -1193,13 +1193,13 @@ export function ExternalPublisherModal({
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top" align="center" className="max-w-sm">
-                          <p className="text-xs">
+                          <p className="text-helper">
                             {iatiImportStrings['option.reportingOrg.tooltip']}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </Label>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body text-muted-foreground">
                       {iatiImportStrings['option.reportingOrg.help']}
                     </p>
                   </div>
@@ -1211,7 +1211,7 @@ export function ExternalPublisherModal({
         </div>
 
         {/* Footnote */}
-        <div className="text-xs text-muted-foreground p-3">
+        <div className="text-helper text-muted-foreground p-3">
           <Info className="h-3 w-3 inline mr-1" />
           {iatiImportStrings.footnote}
         </div>
@@ -1256,7 +1256,7 @@ export function ExternalPublisherModal({
           {duplicatesToReplace.map((duplicate, index) => (
             <Card key={index} className="p-4">
               <div className="space-y-1">
-                <p className="font-medium text-sm">{duplicate.existingTitle}</p>
+                <p className="font-medium text-body">{duplicate.existingTitle}</p>
                 <p className="text-xs font-mono text-muted-foreground">{duplicate.iatiIdentifier}</p>
               </div>
             </Card>

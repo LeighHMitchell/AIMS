@@ -212,7 +212,7 @@ export function OrganizationComments({
       {allowContextSwitch && (
         <div className="flex items-center gap-4 pb-4 border-b">
           <div className="flex-1">
-            <label className="text-sm font-medium text-foreground mb-2 block">Comment Context</label>
+            <label className="text-body font-medium text-foreground mb-2 block">Comment Context</label>
             <Select
               value={selectedContextSection}
               onValueChange={setSelectedContextSection}
@@ -307,26 +307,26 @@ export function OrganizationComments({
                       />
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{comment.author.name}</span>
-                          <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-xs">
+                          <span className="font-medium text-body">{comment.author.name}</span>
+                          <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-helper">
                             {getRoleDisplayLabel(comment.author.role)}
                           </Badge>
-                          <Badge variant={comment.type === 'Question' ? 'default' : 'outline'} className="text-xs">
+                          <Badge variant={comment.type === 'Question' ? 'default' : 'outline'} className="text-helper">
                             {comment.type}
                           </Badge>
                           {comment.status === 'Resolved' && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-helper">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Resolved
                             </Badge>
                           )}
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-helper text-muted-foreground">
                             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-sm text-foreground">{comment.message}</p>
+                        <p className="text-body text-foreground">{comment.message}</p>
                         {comment.contextSection && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             Context: {ORGANIZATION_SECTIONS.find(s => s.value === comment.contextSection)?.label}
                             {comment.contextField && ` • ${comment.contextField}`}
                           </div>
@@ -345,12 +345,12 @@ export function OrganizationComments({
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-medium text-xs">{reply.author.name}</span>
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="font-medium text-helper">{reply.author.name}</span>
+                                    <span className="text-helper text-muted-foreground">
                                       {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-foreground mt-1">{reply.message}</p>
+                                  <p className="text-helper text-foreground mt-1">{reply.message}</p>
                                 </div>
                               </div>
                             ))}
@@ -365,7 +365,7 @@ export function OrganizationComments({
                               value={replyContent}
                               onChange={(e) => setReplyContent(e.target.value)}
                               rows={2}
-                              className="text-sm"
+                              className="text-body"
                             />
                             <div className="flex gap-2">
                               <Button

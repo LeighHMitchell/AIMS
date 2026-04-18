@@ -99,13 +99,13 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground">{data.indicatorName}</p>
-          <p className="text-sm text-foreground">
+          <p className="text-body text-foreground">
             Yes: {data.yes_count} ({data.yes_percentage}%)
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             No: {data.no_count} ({100 - data.yes_percentage}%)
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-helper text-muted-foreground mt-1">
             Total activities: {data.total_activities}
           </p>
         </div>
@@ -120,7 +120,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground">{data.range} Indicators</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             {data.count} activities ({data.percentage}%)
           </p>
         </div>
@@ -150,9 +150,9 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Most Adopted</p>
+                  <p className="text-body font-medium text-muted-foreground">Most Adopted</p>
                   <p className="text-lg font-bold text-foreground">{summary.most_adopted?.indicatorName}</p>
-                  <p className="text-sm text-muted-foreground">{summary.most_adopted?.yes_percentage}% compliance</p>
+                  <p className="text-body text-muted-foreground">{summary.most_adopted?.yes_percentage}% compliance</p>
                 </div>
                 <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -163,9 +163,9 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Least Adopted</p>
+                  <p className="text-body font-medium text-muted-foreground">Least Adopted</p>
                   <p className="text-lg font-bold text-foreground">{summary.least_adopted?.indicatorName}</p>
-                  <p className="text-sm text-muted-foreground">{summary.least_adopted?.yes_percentage}% compliance</p>
+                  <p className="text-body text-muted-foreground">{summary.least_adopted?.yes_percentage}% compliance</p>
                 </div>
                 <XCircle className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -176,9 +176,9 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Average Compliance</p>
+                  <p className="text-body font-medium text-muted-foreground">Average Compliance</p>
                   <p className="text-lg font-bold text-foreground">{summary.avg_yes_percentage}%</p>
-                  <p className="text-sm text-muted-foreground">Across all indicators</p>
+                  <p className="text-body text-muted-foreground">Across all indicators</p>
                 </div>
                 <Target className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -281,7 +281,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
               <div key={indicator.indicator} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div className="flex-1">
                   <h4 className="font-medium text-foreground">{indicator.indicatorName}</h4>
-                  <div className="flex items-center gap-4 mt-2 text-sm">
+                  <div className="flex items-center gap-4 mt-2 text-body">
                     <div className="flex items-center gap-1 text-foreground">
                       <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                       <span>{indicator.yes_count} Yes ({indicator.yes_percentage}%)</span>

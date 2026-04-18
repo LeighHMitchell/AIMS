@@ -224,7 +224,7 @@ export function ProfilePhotoUpload({
 
       {!disabled && (
         <div className="text-center space-y-2">
-          <Label className="text-sm font-medium">Profile Photo</Label>
+          <Label className="text-body font-medium">Profile Photo</Label>
           <div className="flex flex-col gap-2">
             <Button
               type="button"
@@ -246,7 +246,7 @@ export function ProfilePhotoUpload({
                 </>
               )}
             </Button>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Drag & drop or click to upload
               <br />
               Max 5MB • JPEG, PNG, GIF, WebP

@@ -73,25 +73,25 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <h4 className="font-medium text-foreground text-sm mb-1">
+                <h4 className="font-medium text-foreground text-body mb-1">
                   {notification.title}
                 </h4>
                 {(() => {
                   const parsed = parseDescription(notification.description)
                   if (parsed.isKeyValue) {
                     return (
-                      <div className="text-sm text-muted-foreground mb-2 space-y-0.5">
+                      <div className="text-body text-muted-foreground mb-2 space-y-0.5">
                         {parsed.items.map((item, idx) => (
                           <div key={idx} className="flex gap-2">
-                            <span className="text-muted-foreground font-medium min-w-[100px] text-xs">{item.key}:</span>
-                            <span className="text-foreground text-xs">{item.value}</span>
+                            <span className="text-muted-foreground font-medium min-w-[100px] text-helper">{item.key}:</span>
+                            <span className="text-foreground text-helper">{item.value}</span>
                           </div>
                         ))}
                       </div>
                     )
                   }
                   return (
-                    <p className="text-xs text-muted-foreground mb-2">
+                    <p className="text-helper text-muted-foreground mb-2">
                       {notification.description}
                     </p>
                   )
@@ -152,7 +152,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                 {notification.activityId && (
                   <Link
                     href={`/activities/${notification.activityId}`}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    className="inline-flex items-center gap-1 text-helper text-muted-foreground hover:text-foreground transition-colors"
                   >
                     View Activity
                     <ExternalLink className="h-3 w-3" />
@@ -161,7 +161,7 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                 {!notification.activityId && notification.link && (
                   <Link
                     href={notification.link}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    className="inline-flex items-center gap-1 text-helper text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {notification.link.includes('/tasks') ? 'View Task' :
                      notification.link.includes('/admin') ? 'View in Admin' :
@@ -170,16 +170,16 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                   </Link>
                 )}
                 {notification.isRead ? (
-                  <Badge variant="outline" className="text-xs h-5">
+                  <Badge variant="outline" className="text-helper h-5">
                     Read
                   </Badge>
                 ) : (
-                  <Badge variant="default" className="text-xs h-5">
+                  <Badge variant="default" className="text-helper h-5">
                     New
                   </Badge>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground">{timeAgo}</span>
+              <span className="text-helper text-muted-foreground">{timeAgo}</span>
             </div>
           </div>
         </div>

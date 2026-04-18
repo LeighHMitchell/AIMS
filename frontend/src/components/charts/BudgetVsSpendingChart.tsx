@@ -113,7 +113,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
-              className="text-sm"
+              className="text-body"
               style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}
             >
               <span style={{ color: entry.color }}>■</span> {`${entry.name}: ${formatTooltipValue(entry.value)}`}
@@ -121,7 +121,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
           ))}
           {payload.length >= 3 && (
             <div className="border-t border-slate-600 pt-2 mt-2">
-              <p className="text-sm font-medium" style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}>
+              <p className="text-body font-medium" style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}>
                 Execution Rate: {payload[0]?.payload?.budget > 0
                   ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1)
                   : 0}%
@@ -158,7 +158,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
         <div className="text-center text-muted-foreground">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No data available</p>
-          <p className="text-sm">Try adjusting your filters to see results.</p>
+          <p className="text-body">Try adjusting your filters to see results.</p>
         </div>
       </div>
     );
@@ -170,19 +170,19 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
       <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.budget }}></div>
-          <span className="text-sm font-medium text-foreground">Budget</span>
+          <span className="text-body font-medium text-foreground">Budget</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.disbursements }}></div>
-          <span className="text-sm font-medium text-foreground">Disbursements</span>
+          <span className="text-body font-medium text-foreground">Disbursements</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.expenditures }}></div>
-          <span className="text-sm font-medium text-foreground">Expenditures</span>
+          <span className="text-body font-medium text-foreground">Expenditures</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.totalSpending }}></div>
-          <span className="text-sm font-medium text-foreground">Total Spending</span>
+          <span className="text-body font-medium text-foreground">Total Spending</span>
         </div>
       </div>
 
@@ -251,7 +251,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
       </ResponsiveContainer>
 
       {/* Mobile-friendly chart info */}
-      <div className="mt-4 text-sm text-muted-foreground">
+      <div className="mt-4 text-body text-muted-foreground">
         <p>
           <strong>Period:</strong> {filters.timePeriod === 'year' ? 'Calendar Year' : 'Financial Quarter'} | 
           <strong> Currency:</strong> {currency} | 

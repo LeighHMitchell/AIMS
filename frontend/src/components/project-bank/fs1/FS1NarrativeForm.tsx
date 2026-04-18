@@ -91,7 +91,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
       <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
         <CheckCircle2 className="h-8 w-8 text-[hsl(var(--success-icon))] mx-auto mb-3" />
         <h3 className="text-lg font-semibold text-green-800">FS-1 Narrative Submitted</h3>
-        <p className="text-sm text-green-700 mt-1">
+        <p className="text-body text-green-700 mt-1">
           Your narrative has been submitted for desk review. You will be notified of the outcome.
         </p>
       </div>
@@ -106,7 +106,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
           <h3 className="text-lg font-semibold">
             {isResubmission ? "Resubmit FS-1 Narrative" : "FS-1 Preliminary Screening Narrative"}
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Complete all five sections below. Each section requires at least {MIN_CHARS} characters.
           </p>
         </div>
@@ -114,7 +114,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
 
       {isResubmission && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm text-amber-800">
+          <p className="text-body text-amber-800">
             Your previous submission was returned for revision. Please address the reviewer&apos;s feedback and resubmit.
           </p>
         </div>
@@ -123,7 +123,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
       {error && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-body text-destructive">{error}</p>
         </div>
       )}
 
@@ -133,13 +133,13 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
         return (
           <div key={section.key} className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">{section.label}</Label>
+              <Label className="text-body font-medium">{section.label}</Label>
               <span className={`text-xs ${isValid ? "text-[hsl(var(--success-icon))]" : "text-muted-foreground"}`}>
                 {charCount} / {MIN_CHARS} min
                 {isValid && <CheckCircle2 className="inline h-3 w-3 ml-1" />}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">{section.prompt}</p>
+            <p className="text-helper text-muted-foreground">{section.prompt}</p>
             <Textarea
               value={values[section.key]}
               onChange={e => setValues(prev => ({ ...prev, [section.key]: e.target.value }))}

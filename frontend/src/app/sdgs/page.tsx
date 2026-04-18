@@ -147,7 +147,7 @@ export default function SDGListingPage() {
           {viewMode === 'list' && (
             <Card>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="bg-surface-muted">
                     <tr className="border-b bg-muted/50">
                       <th className="text-left font-medium text-muted-foreground px-4 py-3 w-16"></th>
@@ -188,7 +188,7 @@ export default function SDGListingPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           {sdg.activityCount > 0 ? (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-helper">
                               {sdg.activityCount}
                             </Badge>
                           ) : (

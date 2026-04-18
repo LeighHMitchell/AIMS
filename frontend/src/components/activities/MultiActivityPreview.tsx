@@ -167,16 +167,16 @@ export function MultiActivityPreview({
       {/* Statistics Bar */}
       <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
         <div className="flex gap-6">
-          <div className="text-sm">
+          <div className="text-body">
             <span className="font-medium">Total:</span> {stats.total}
           </div>
-          <div className="text-sm text-[hsl(var(--success-icon))]">
+          <div className="text-body text-[hsl(var(--success-icon))]">
             <span className="font-medium">New:</span> {stats.newCount}
           </div>
-          <div className="text-sm text-blue-600">
+          <div className="text-body text-blue-600">
             <span className="font-medium">Existing:</span> {stats.existingCount}
           </div>
-          <div className="text-sm text-purple-600">
+          <div className="text-body text-purple-600">
             <span className="font-medium">Selected:</span> {selectedIndices.size}
           </div>
         </div>
@@ -236,7 +236,7 @@ export function MultiActivityPreview({
 
       {/* Import Mode Selection */}
       <div className="p-4 bg-muted rounded-lg">
-        <Label className="text-sm font-medium mb-2 block">Import Mode</Label>
+        <Label className="text-body font-medium mb-2 block">Import Mode</Label>
         <RadioGroup value={importMode} onValueChange={handleImportModeChange as any}>
           <div className="flex items-center space-x-2 mb-2">
             <RadioGroupItem value="update_current" id="update_current" disabled={selectedIndices.size !== 1} />
@@ -295,21 +295,21 @@ export function MultiActivityPreview({
                         {/* Header */}
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm truncate">
+                            <h3 className="font-medium text-body truncate">
                               {activity.title}
                             </h3>
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-helper text-muted-foreground truncate">
                               {activity.iatiIdentifier}
                             </p>
                           </div>
                           <div className="flex gap-1 shrink-0">
                             {isExisting ? (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-helper">
                                 <AlertCircle className="h-3 w-3 mr-1" />
                                 Already Exists
                               </Badge>
                             ) : (
-                              <Badge variant="default" className="text-xs">
+                              <Badge variant="default" className="text-helper">
                                 <Plus className="h-3 w-3 mr-1" />
                                 New
                               </Badge>
@@ -318,7 +318,7 @@ export function MultiActivityPreview({
                         </div>
 
                         {/* Metadata Grid */}
-                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-2">
+                        <div className="grid grid-cols-2 gap-2 text-helper text-muted-foreground mb-2">
                           <div className="flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
                             <span className="truncate">{activity.reportingOrg.name}</span>
@@ -340,7 +340,7 @@ export function MultiActivityPreview({
                         </div>
 
                         {activity.status && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             Status: {getStatusText(activity.status)}
                           </div>
                         )}
@@ -349,7 +349,7 @@ export function MultiActivityPreview({
                         {activity.description && (
                           <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(activity.index)}>
                             <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 text-xs mt-2">
+                              <Button variant="ghost" size="sm" className="h-6 text-helper mt-2">
                                 {isExpanded ? (
                                   <>
                                     <ChevronUp className="h-3 w-3 mr-1" />
@@ -364,7 +364,7 @@ export function MultiActivityPreview({
                               </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-2">
-                              <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                              <div className="text-helper text-muted-foreground p-2 bg-muted rounded">
                                 <p className="font-medium mb-1">Description:</p>
                                 <p className="whitespace-pre-wrap">{activity.description}</p>
                                 {isExisting && existingInfo && (

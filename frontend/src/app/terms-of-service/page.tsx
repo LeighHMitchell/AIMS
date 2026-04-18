@@ -51,7 +51,7 @@ export default function TermsOfServicePage() {
           <p className="text-lg text-muted-foreground mb-8">
             Aid Information Management System (AIMS)
           </p>
-          <p className="text-sm text-muted-foreground mb-12">
+          <p className="text-body text-muted-foreground mb-12">
             Last updated: {currentDate}
           </p>
 

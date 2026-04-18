@@ -86,13 +86,13 @@ export function IATISyncStatusIndicator({
   const sizeClasses = {
     sm: {
       icon: 'h-3 w-3',
-      text: 'text-xs',
+      text: 'text-helper',
       padding: 'px-1.5 py-0.5',
       gap: 'gap-1'
     },
     md: {
       icon: 'h-4 w-4',
-      text: 'text-sm',
+      text: 'text-body',
       padding: 'px-2 py-1',
       gap: 'gap-1.5'
     },
@@ -126,7 +126,7 @@ export function IATISyncStatusIndicator({
           {indicator}
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-sm">{config.description}</p>
+          <p className="text-body">{config.description}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -196,7 +196,7 @@ export function IATISyncStatusBadge({
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-xs">{getTooltipText()}</p>
+          <p className="text-helper">{getTooltipText()}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

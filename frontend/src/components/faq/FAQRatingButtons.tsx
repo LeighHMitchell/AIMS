@@ -123,7 +123,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-body text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         <LoadingText>Loading...</LoadingText>
       </div>
@@ -132,7 +132,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-body text-muted-foreground">{label}</p>
       <div className="flex items-center gap-3">
         {/* Thumbs Up */}
         <Button
@@ -173,7 +173,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
           </PopoverTrigger>
           <PopoverContent className="w-80">
             <div className="space-y-3">
-              <p className="text-sm font-medium">Share your feedback</p>
+              <p className="text-body font-medium">Share your feedback</p>
               <div className="flex gap-2 justify-center">
                 <Button
                   variant="outline"
@@ -224,7 +224,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
       </div>
 
       {!user && (
-        <p className="text-xs text-muted-foreground">Log in to rate this FAQ</p>
+        <p className="text-helper text-muted-foreground">Log in to rate this FAQ</p>
       )}
     </div>
   );

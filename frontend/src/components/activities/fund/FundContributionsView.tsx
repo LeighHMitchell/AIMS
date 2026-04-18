@@ -95,7 +95,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p className="text-lg">No contributions recorded yet</p>
-        <p className="text-sm mt-1">Add incoming transactions (Incoming Funds, Incoming Commitments, or Incoming Pledges) to see contributions here.</p>
+        <p className="text-body mt-1">Add incoming transactions (Incoming Funds, Incoming Commitments, or Incoming Pledges) to see contributions here.</p>
       </div>
     )
   }
@@ -135,7 +135,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-helper">
             {data.donors.length} donor{data.donors.length !== 1 ? 's' : ''} &middot; {data.transactionCount} transaction{data.transactionCount !== 1 ? 's' : ''}
           </Badge>
         </div>

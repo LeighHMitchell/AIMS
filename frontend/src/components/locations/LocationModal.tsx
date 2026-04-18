@@ -74,7 +74,7 @@ import { apiFetch } from '@/lib/api-fetch';
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-96 items-center justify-center bg-muted text-sm text-muted-foreground">
+    <div className="flex h-96 items-center justify-center bg-muted text-body text-muted-foreground">
       Loading map...
     </div>
   ),
@@ -1186,7 +1186,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           }
                         }
                       }}
-                      className="h-8 px-2.5 text-xs"
+                      className="h-8 px-2.5 text-helper"
                       title="Toggle 3D View"
                     >
                       <Mountain className="h-3.5 w-3.5 mr-1" />
@@ -1212,7 +1212,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     displayLongitude={watchedLongitude}
                   />
 
-                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-xs text-muted-foreground">
+                  <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-helper text-muted-foreground">
                     Click on the map to set coordinates
                   </div>
                 </div>
@@ -1223,7 +1223,7 @@ const autoPopulateIatiFields = useCallback((params: {
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-4">
-                  <Label className="text-sm font-medium">Search Locations</Label>
+                  <Label className="text-body font-medium">Search Locations</Label>
                   
                   {/* Search Input */}
                   <div className="relative">
@@ -1239,7 +1239,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     {searchResults.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-96 overflow-auto z-50">
                         {/* Result count header */}
-                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-xs text-muted-foreground font-medium">
+                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-helper text-muted-foreground font-medium">
                           Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
                         </div>
                         
@@ -1253,7 +1253,7 @@ const autoPopulateIatiFields = useCallback((params: {
                             <div className="font-medium text-foreground truncate">
                               {result.name || result.display_name}
                             </div>
-                            <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <div className="text-body text-muted-foreground mt-1 line-clamp-2">
                               {result.display_name}
                             </div>
                           </button>
@@ -1263,19 +1263,19 @@ const autoPopulateIatiFields = useCallback((params: {
                   </div>
 
                   {isSearching && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-body text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Searching...
                     </div>
                   )}
                   
                   {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded border border-border">
+                    <div className="text-body text-muted-foreground bg-muted p-3 rounded border border-border">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <div>
                           <div className="font-medium">No results found</div>
-                          <div className="text-xs mt-1">
+                          <div className="text-helper mt-1">
                             Try searching with different terms (e.g., city name, street name, address)
                           </div>
                         </div>
@@ -1427,7 +1427,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     </div>
                   </div>
                   {validationErrors.coordinates && (
-                    <p className="text-sm text-destructive">{validationErrors.coordinates}</p>
+                    <p className="text-body text-destructive">{validationErrors.coordinates}</p>
                   )}
 
                   {/* Coverage Scope (Coverage only) */}

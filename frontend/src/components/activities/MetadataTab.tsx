@@ -460,7 +460,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
 
       {/* Metadata Table */}
       <div className="border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <tbody className="divide-y divide-border">
             {/* Title */}
             <tr>
@@ -619,7 +619,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                     disabled={organizationsLoading}
                   />
                   {(metadata.created_by_org_name || metadata.created_by_org_acronym) && (
-                    <div className="mt-2 text-xs text-muted-foreground">
+                    <div className="mt-2 text-helper text-muted-foreground">
                       {metadata.created_by_org_name}
                       {metadata.created_by_org_acronym && metadata.created_by_org_name !== metadata.created_by_org_acronym && (
                         <span> ({metadata.created_by_org_acronym})</span>
@@ -637,8 +637,8 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       <div className="border rounded-lg overflow-hidden">
         <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
           <History className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Activity Log</span>
-          <span className="text-xs text-muted-foreground">({stats.totalLogs} entries)</span>
+          <span className="text-body font-medium text-foreground">Activity Log</span>
+          <span className="text-helper text-muted-foreground">({stats.totalLogs} entries)</span>
         </div>
         {logs.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
@@ -663,15 +663,15 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                   {/* Content */}
                   <div className="flex-1 min-w-0 pb-4">
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-body font-medium text-foreground">
                         {getActionDescription(log)}
                       </p>
-                      <time className="text-xs text-muted-foreground whitespace-nowrap">
+                      <time className="text-helper text-muted-foreground whitespace-nowrap">
                         {format(new Date(log.created_at), 'MMM d, yyyy')}
                       </time>
                     </div>
                     {log.details.metadata?.fieldChanged && showTechnical && (
-                      <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="mt-1 text-helper text-muted-foreground">
                         <span className="font-medium">Field:</span> {humanizeFieldName(log.details.metadata.fieldChanged)}
                         {log.details.metadata.oldValue && log.details.metadata.newValue && (
                           <div className="mt-1 font-mono">
@@ -682,7 +682,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                         )}
                       </div>
                     )}
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="text-helper text-muted-foreground mt-0.5">
                       {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
                     </div>
                   </div>

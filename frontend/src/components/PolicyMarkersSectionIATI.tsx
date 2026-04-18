@@ -242,11 +242,11 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-1">
                 {MARKER_TYPE_ICONS[marker.marker_type]}
-                <h4 className="font-medium text-sm">{marker.name}</h4>
+                <h4 className="font-medium text-body">{marker.name}</h4>
                 
                 {/* IATI Standard Badge */}
                 {marker.is_iati_standard && (
-                  <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+                  <Badge variant="outline" className="text-helper border-green-400 text-green-700">
                     <Globe className="h-3 w-3 mr-1" />
                     IATI {marker.iati_code}
                   </Badge>
@@ -254,16 +254,16 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               </div>
               
               {/* Vocabulary Badge - moved to the right */}
-              <Badge variant="outline" className="text-xs border-gray-400 text-muted-foreground">
+              <Badge variant="outline" className="text-helper border-gray-400 text-muted-foreground">
                 {VOCABULARY_LABELS[marker.vocabulary as keyof typeof VOCABULARY_LABELS] || `Vocab ${marker.vocabulary}`}
               </Badge>
             </div>
             
-            <p className="text-xs text-muted-foreground mb-3">{marker.description}</p>
+            <p className="text-helper text-muted-foreground mb-3">{marker.description}</p>
             
             {/* Significance Selection */}
             <div className="mb-3">
-              <Label className="text-xs font-medium mb-1 block">Significance Level</Label>
+              <Label className="text-helper font-medium mb-1 block">Significance Level</Label>
               <PolicyMarkerScoreSelectIATI
                 value={significance}
                 onValueChange={(value) => updateMarkerSignificance(marker.id, value as 0 | 1 | 2 | 3 | 4)}
@@ -276,7 +276,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
               <div className="mb-3">
                 <button
                   onClick={() => toggleCardExpansion(marker.id)}
-                  className="flex items-center gap-1 text-xs font-medium text-foreground hover:text-foreground mb-2"
+                  className="flex items-center gap-1 text-helper font-medium text-foreground hover:text-foreground mb-2"
                 >
                   {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                   Rationale
@@ -287,7 +287,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
                     value={rationale}
                     onChange={(e) => updateMarkerRationale(marker.id, e.target.value)}
                     placeholder="Explain why this marker applies and its significance level..."
-                    className="text-xs"
+                    className="text-helper"
                     rows={3}
                   />
                 )}
@@ -333,7 +333,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
           <h3 className="text-lg font-semibold">IATI Policy Markers</h3>
           <HelpText content={HELP_CONTENT} />
         </div>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           {selectedCount} of {totalMarkers} markers selected
         </div>
       </div>
@@ -354,7 +354,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
                   <span className="sm:hidden">{label.split(' ')[0]}</span>
                 </div>
                 {selectedInType > 0 && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
+                  <Badge variant="secondary" className="ml-2 text-helper">
                     {selectedInType}
                   </Badge>
                 )}

@@ -244,16 +244,16 @@ export function DocumentUploadZone({
       >
         <input {...getInputProps()} />
         {uploading ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 text-body text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Uploading...
           </div>
         ) : (
           <div className="space-y-1">
             <Upload className="h-5 w-5 mx-auto text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {isDragActive ? 'Drop files here' : 'Drag files here or click to upload'}
             </p>
-            <p className="text-xs text-muted-foreground">PDF, Excel, Word, CSV, images (max 50 MB)</p>
+            <p className="text-helper text-muted-foreground">PDF, Excel, Word, CSV, images (max 50 MB)</p>
           </div>
         )}
       </div>
@@ -269,8 +269,8 @@ export function DocumentUploadZone({
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="h-4 w-4 text-amber-600 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-sm truncate">{pf.file.name}</div>
-                  <div className="text-xs text-amber-600 flex items-center gap-1">
+                  <div className="text-body truncate">{pf.file.name}</div>
+                  <div className="text-helper text-amber-600 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     Pending upload
                     {' · '}
@@ -304,8 +304,8 @@ export function DocumentUploadZone({
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-sm truncate">{doc.file_name}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-body truncate">{doc.file_name}</div>
+                  <div className="text-helper text-muted-foreground">
                     {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                     {doc.file_size && ` · ${formatFileSize(doc.file_size)}`}
                   </div>
@@ -327,17 +327,17 @@ export function DocumentUploadZone({
                   </PopoverTrigger>
                   <PopoverContent className="w-72 p-3 space-y-3" align="end">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground">File Name</label>
+                      <label className="text-helper font-medium text-muted-foreground">File Name</label>
                       <Input
                         value={editFileName}
                         onChange={e => setEditFileName(e.target.value)}
-                        className="mt-1 h-8 text-sm"
+                        className="mt-1 h-8 text-body"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground">Document Type</label>
+                      <label className="text-helper font-medium text-muted-foreground">Document Type</label>
                       <Select value={editDocType} onValueChange={v => setEditDocType(v as DocumentType)}>
-                        <SelectTrigger className="mt-1 h-8 text-sm">
+                        <SelectTrigger className="mt-1 h-8 text-body">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

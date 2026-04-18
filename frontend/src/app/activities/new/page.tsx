@@ -1342,7 +1342,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   isSaving={savingIdentifierIndex === index}
                   isSaved={savingIdentifierIndex !== index && !!identifier.code}
                   hasValue={!!identifier.code}
-                  className="text-sm font-medium text-foreground"
+                  className="text-body font-medium text-foreground"
                 >
                   {identifier.label || `Other Identifier ${index + 1}`}
                 </LabelSaveIndicator>
@@ -1370,11 +1370,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="text-sm text-foreground truncate pr-2">{identifier.code || ''}</div>
+                        <div className="text-body text-foreground truncate pr-2">{identifier.code || ''}</div>
                       </TooltipTrigger>
                       {(identifier.type || identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
                         <TooltipContent side="bottom" align="start" className="max-w-xs">
-                          <div className="space-y-1 text-xs">
+                          <div className="space-y-1 text-helper">
                             {(identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
                               <div className="flex items-center gap-1.5">
                                 {identifier.ownerOrg?.ref && <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{identifier.ownerOrg.ref}</span>}
@@ -1476,7 +1476,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogHeader>
           <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Label/Name
                 <HelpTextTooltip>A short, human-readable label for this identifier, such as "CRS ID" or "Internal Reference". This helps distinguish between multiple identifiers at a glance.</HelpTextTooltip>
               </label>
@@ -1488,7 +1488,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Identifier Code <RequiredDot />
                 <HelpTextTooltip>The actual identifier value assigned to this activity by the owner organisation. For example, a CRS number or an internal project code.</HelpTextTooltip>
               </label>
@@ -1500,13 +1500,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Identifier Type
                 <HelpTextTooltip>The IATI classification for this identifier. Common types include internal activity identifiers (A1), CRS activity identifiers (A2), and previous activity identifiers (A3).</HelpTextTooltip>
               </label>
               <Popover open={showIdentifierTypeDropdown} onOpenChange={setShowIdentifierTypeDropdown}>
                 <PopoverTrigger
-                  className="relative flex h-10 w-full items-center rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted/50"
+                  className="relative flex h-10 w-full items-center rounded-md border border-input bg-card px-3 py-2 text-body ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted/50"
                 >
                   {otherIdentifierForm.type ? (
                     <span className="flex items-center gap-2 text-left">
@@ -1543,7 +1543,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </Popover>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Owner Organisation <RequiredDot />
                 <HelpTextTooltip>The organisation that originally assigned or owns this identifier. Selecting an organisation will automatically fill in the Organisation Ref field.</HelpTextTooltip>
               </label>
@@ -1637,7 +1637,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
           </LabelSaveIndicator>
           {general.is_pooled_fund === true && (
-            <span className="text-xs text-muted-foreground font-normal">
+            <span className="text-helper text-muted-foreground font-normal">
               — shown as fund manager on the Pooled funds page
             </span>
           )}
@@ -1742,7 +1742,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
                 hasValue={!!general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== ''}
                 isFocused={isDescriptionObjectivesFocused}
-                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
+                className={`text-body font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
                 <div className="flex items-center gap-2">
                   Activity Description - Objectives
@@ -1769,7 +1769,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: false }))}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-helper text-muted-foreground hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1814,7 +1814,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
                 hasValue={!!general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== ''}
                 isFocused={isDescriptionTargetGroupsFocused}
-                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
+                className={`text-body font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
                 <div className="flex items-center gap-2">
                   Activity Description - Target Groups
@@ -1840,7 +1840,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: false }))}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-helper text-muted-foreground hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1885,7 +1885,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
                 hasValue={!!general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== ''}
                 isFocused={isDescriptionOtherFocused}
-                className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
+                className={`text-body font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
               >
                 <div className="flex items-center gap-2">
                   Activity Description - Other
@@ -1911,7 +1911,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: false }))}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-helper text-muted-foreground hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1965,10 +1965,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setVisibleDescriptionFields(prev => ({ ...prev, objectives: true }));
                       setShowAddDetailPopover(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    className="w-full text-left px-3 py-2 text-body rounded hover:bg-muted"
                   >
                     <div className="font-medium">Objectives</div>
-                    <div className="text-xs text-muted-foreground">What the activity aims to achieve</div>
+                    <div className="text-helper text-muted-foreground">What the activity aims to achieve</div>
                   </button>
                 )}
                 {!visibleDescriptionFields.targetGroups && (
@@ -1978,10 +1978,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: true }));
                       setShowAddDetailPopover(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    className="w-full text-left px-3 py-2 text-body rounded hover:bg-muted"
                   >
                     <div className="font-medium">Target groups</div>
-                    <div className="text-xs text-muted-foreground">Who benefits from the activity</div>
+                    <div className="text-helper text-muted-foreground">Who benefits from the activity</div>
                   </button>
                 )}
                 {!visibleDescriptionFields.other && (
@@ -1991,10 +1991,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setVisibleDescriptionFields(prev => ({ ...prev, other: true }));
                       setShowAddDetailPopover(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    className="w-full text-left px-3 py-2 text-body rounded hover:bg-muted"
                   >
                     <div className="font-medium">Other</div>
-                    <div className="text-xs text-muted-foreground">Context, background, anything else</div>
+                    <div className="text-helper text-muted-foreground">Context, background, anything else</div>
                   </button>
                 )}
               </PopoverContent>
@@ -2238,7 +2238,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       {/* Date Fields */}
       <div className="space-y-4" data-tour="editor-dates">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Activity Dates</h3>
+          <h3 className="text-body font-semibold text-foreground">Activity Dates</h3>
           <HelpTextTooltip>
             The Actual Start Date field becomes available once the activity status is set to Implementation or beyond. The Actual End Date field becomes available once the status is set to Completion, Post-completion, or if the activity is marked as Cancelled or Suspended.
           </HelpTextTooltip>
@@ -2303,7 +2303,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.plannedStartDescription?.trim()}
                         isFocused={isPlannedStartDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2319,7 +2319,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsPlannedStartDescriptionFocused(false)}
                         placeholder="e.g., 'Government approval received on this date'"
                         disabled={fieldLockStatus.isLocked}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2391,7 +2391,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.plannedEndDescription?.trim()}
                         isFocused={isPlannedEndDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2407,7 +2407,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsPlannedEndDescriptionFocused(false)}
                         placeholder="Add context about this date"
                         disabled={fieldLockStatus.isLocked}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2479,7 +2479,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={actualStartDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.actualStartDescription?.trim()}
                         isFocused={isActualStartDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2495,7 +2495,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsActualStartDescriptionFocused(false)}
                         placeholder="Add context about this date"
                         disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2567,7 +2567,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
                         hasValue={!!general.actualEndDescription?.trim()}
                         isFocused={isActualEndDescriptionFocused}
-                        className="text-xs text-muted-foreground"
+                        className="text-helper text-muted-foreground"
                       >
                         Date Context
                       </LabelSaveIndicator>
@@ -2583,7 +2583,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         onBlur={() => setIsActualEndDescriptionFocused(false)}
                         placeholder="Add context about this date"
                         disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[60px] text-body"
                       />
                     </div>
                   </PopoverContent>
@@ -2601,7 +2601,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         {/* Other Activity Dates Section */}
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">Other Activity Dates</h3>
+            <h3 className="text-body font-semibold text-foreground">Other Activity Dates</h3>
             <HelpTextTooltip>
               Additional custom dates for this activity, such as government approval dates or milestone dates.
             </HelpTextTooltip>
@@ -2617,12 +2617,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       isSaving={savingCustomDateIndex === index}
                       isSaved={savingCustomDateIndex !== index && !!customDate.date}
                       hasValue={!!customDate.date}
-                      className="text-sm font-medium text-foreground"
+                      className="text-body font-medium text-foreground"
                     >
                       {customDate.label || `Activity Date ${index + 1}`}
                     </LabelSaveIndicator>
                     {customDate.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{customDate.description}</p>
+                      <p className="text-helper text-muted-foreground mt-0.5">{customDate.description}</p>
                     )}
                   </div>
                   <div className="relative">
@@ -2715,7 +2715,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Date Type/Label</label>
+              <label className="text-body font-medium text-foreground">Date Type/Label</label>
               <Input
                 type="text"
                 value={activityDateForm.label}
@@ -2724,7 +2724,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Date</label>
+              <label className="text-body font-medium text-foreground">Date</label>
               <DatePicker
                 value={activityDateForm.date}
                 onChange={(value) => setActivityDateForm(prev => ({ ...prev, date: value }))}
@@ -2732,7 +2732,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-body font-medium text-foreground">
                 Description/Context
               </label>
               <Textarea
@@ -5587,7 +5587,7 @@ function NewActivityPageContent() {
           {/* Activity Metadata Summary - Only show when editing */}
           {isEditing && general.id && (
             <div className="bg-card p-4">
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-body">
                 <div className="mb-3">
                     <span className="group/title inline">
                       <Link
@@ -5612,7 +5612,7 @@ function NewActivityPageContent() {
                       </button>
                     </span>
                     {/* Activity Identifier and IATI ID */}
-                    <div className="mt-2 flex items-center gap-1.5 flex-wrap text-xs">
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap text-helper">
                       {(general.otherIdentifier || general.partner_id) && (
                         <span className="group/actid inline-flex items-center gap-0.5">
                           <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
@@ -5682,12 +5682,12 @@ function NewActivityPageContent() {
                         })()}
                       </span>
                       {general.validatedByName && general.submissionStatus === 'validated' && (
-                        <span className="text-xs text-muted-foreground">by {general.validatedByName}</span>
+                        <span className="text-helper text-muted-foreground">by {general.validatedByName}</span>
                       )}
                     </div>
                   )}
                   {showActivityMetadata && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-helper text-muted-foreground mt-2">
                       Created by {general.createdBy?.name || user?.name || "Unknown User"}
                       {(() => {
                         const jobTitle = (general.createdBy as any)?.jobTitle || (general.createdBy as any)?.title || user?.jobTitle || (user as any)?.title;
@@ -5712,7 +5712,7 @@ function NewActivityPageContent() {
                   )}
                   <button
                     onClick={() => setShowActivityMetadata(!showActivityMetadata)}
-                    className="text-xs text-muted-foreground hover:text-foreground mt-2"
+                    className="text-helper text-muted-foreground hover:text-foreground mt-2"
                   >
                     {showActivityMetadata ? 'Show less' : 'Show more'}
                   </button>
@@ -5743,7 +5743,7 @@ function NewActivityPageContent() {
                 {/* Reject Button - shown next to Published toggle for Tier 1 validators */}
                 {canValidate && general.submissionStatus === 'submitted' && (
                   <button
-                    className="text-white px-4 py-2 rounded-lg transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md hover:opacity-90"
+                    className="text-white px-4 py-2 rounded-lg transition font-medium text-body disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md hover:opacity-90"
                     style={{ backgroundColor: '#dc2625' }}
                     type="button"
                     onClick={handleReject}
@@ -5983,7 +5983,7 @@ function NewActivityPageContent() {
                 {/* Validation Actions for Tier 1 Users */}
                 {canValidate && general.submissionStatus === 'submitted' && (
                     <button
-                      className="bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                      className="bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-body disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                       type="button"
                       onClick={handleApprove}
                       disabled={submitting}
@@ -5996,7 +5996,7 @@ function NewActivityPageContent() {
                 {/* Submit for Validation - For Tier 2 users with draft activities */}
                 {canSubmit && general.submissionStatus === 'draft' && general.id && (
                   <button
-                    className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                    className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-body disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                     type="button"
                     onClick={handleSubmitForValidation}
                     disabled={submitting}
@@ -6012,7 +6012,7 @@ function NewActivityPageContent() {
                 <button
                   type="button"
                   onClick={() => setShowShortcutCheatsheet(true)}
-                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded"
+                  className="flex items-center gap-2 text-helper text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded"
                   title="Show keyboard shortcuts"
                 >
                   <Keyboard className="h-3.5 w-3.5" />
@@ -6152,7 +6152,7 @@ function NewActivityPageContent() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h4 className="font-semibold">{match.activity.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-body text-muted-foreground mt-1">
                         {match.activity.description}
                       </p>
                     </div>
@@ -6160,7 +6160,7 @@ function NewActivityPageContent() {
                       {Math.round(match.score * 100)}% match
                     </Badge>
                   </div>
-                  <div className="text-sm text-muted-foreground space-y-1">
+                  <div className="text-body text-muted-foreground space-y-1">
                     {match.matchReasons.map((reason, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <CheckCircle className="h-3 w-3" />
@@ -6218,7 +6218,7 @@ function NewActivityPageContent() {
           <div className="py-4">
             <ul className="list-disc pl-6 space-y-1">
               {missingRequiredFields.map((field) => (
-                <li key={field} className="text-sm text-foreground">{field}</li>
+                <li key={field} className="text-body text-foreground">{field}</li>
               ))}
             </ul>
           </div>

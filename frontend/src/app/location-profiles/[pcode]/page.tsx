@@ -450,9 +450,9 @@ export default function LocationProfileDetailPage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                                  <p className="font-medium text-helper text-foreground mb-1">{payload[0]?.payload?.year}</p>
                                   {payload.map((entry: any, i: number) => (
-                                    <p key={i} className="text-xs text-muted-foreground">
+                                    <p key={i} className="text-helper text-muted-foreground">
                                       {entry.name}: {formatCurrencyShort(entry.value)}
                                     </p>
                                   ))}
@@ -468,7 +468,7 @@ export default function LocationProfileDetailPage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No data</div>
                 )}
             </MiniChartCard>
 
@@ -488,8 +488,8 @@ export default function LocationProfileDetailPage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground">{payload[0]?.name}</p>
-                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
+                                  <p className="font-medium text-helper text-foreground">{payload[0]?.name}</p>
+                                  <p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
                                 </div>
                               )
                             }
@@ -500,7 +500,7 @@ export default function LocationProfileDetailPage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No data</div>
                 )}
             </MiniChartCard>
 
@@ -525,8 +525,8 @@ export default function LocationProfileDetailPage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
-                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p>
+                                  <p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p>
+                                  <p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p>
                                 </div>
                               )
                             }
@@ -538,7 +538,7 @@ export default function LocationProfileDetailPage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No donor data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No donor data</div>
                 )}
             </MiniChartCard>
 
@@ -563,8 +563,8 @@ export default function LocationProfileDetailPage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
-                                  <p className="text-xs text-muted-foreground">{payload[0]?.value} activities</p>
+                                  <p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p>
+                                  <p className="text-helper text-muted-foreground">{payload[0]?.value} activities</p>
                                 </div>
                               )
                             }
@@ -576,7 +576,7 @@ export default function LocationProfileDetailPage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No township data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No township data</div>
                 )}
             </MiniChartCard>
           </div>
@@ -588,13 +588,13 @@ export default function LocationProfileDetailPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">
+                  <CardTitle className="text-body">
                     Activity Locations in {region.name}
                   </CardTitle>
                   <select
                     value={mapStatusFilter}
                     onChange={e => setMapStatusFilter(e.target.value)}
-                    className="text-xs border rounded px-2 py-1 bg-background text-foreground"
+                    className="text-helper border rounded px-2 py-1 bg-background text-foreground"
                   >
                     <option value="all">All Statuses</option>
                     <option value="1">Pipeline</option>
@@ -619,14 +619,14 @@ export default function LocationProfileDetailPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">Townships in {region.name}</CardTitle>
+                  <CardTitle className="text-body">Townships in {region.name}</CardTitle>
                   <div className="relative w-64">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       placeholder="Search townships..."
                       value={townshipSearch}
                       onChange={e => setTownshipSearch(e.target.value)}
-                      className="pl-8 h-8 text-sm"
+                      className="pl-8 h-8 text-body"
                     />
                   </div>
                 </div>
@@ -635,7 +635,7 @@ export default function LocationProfileDetailPage() {
                 {filteredTownships.length > 0 ? (
                   <div className="space-y-1">
                     {/* Table header */}
-                    <div className="grid grid-cols-12 gap-4 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+                    <div className="grid grid-cols-12 gap-4 px-3 py-2 text-helper font-medium text-muted-foreground border-b border-border">
                       <div className="col-span-5">Township</div>
                       <div className="col-span-2 text-right">Activities</div>
                       <div className="col-span-2 text-right">Committed</div>
@@ -647,19 +647,19 @@ export default function LocationProfileDetailPage() {
                         className="grid grid-cols-12 gap-4 px-3 py-2.5 rounded-md hover:bg-muted/50 transition-colors"
                       >
                         <div className="col-span-5 flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">{township.name}</span>
+                          <span className="text-body font-medium text-foreground">{township.name}</span>
                           <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{township.ts_pcode}</code>
                         </div>
-                        <div className="col-span-2 text-right text-sm text-foreground">
+                        <div className="col-span-2 text-right text-body text-foreground">
                           {township.activityCount}
                         </div>
                         <div className="col-span-2 text-right">
                           <span className="text-[10px] text-muted-foreground">USD </span>
-                          <span className="text-sm text-foreground">{formatAmountShort(township.commitments)}</span>
+                          <span className="text-body text-foreground">{formatAmountShort(township.commitments)}</span>
                         </div>
                         <div className="col-span-3 text-right">
                           <span className="text-[10px] text-muted-foreground">USD </span>
-                          <span className="text-sm text-foreground">{formatAmountShort(township.disbursements)}</span>
+                          <span className="text-body text-foreground">{formatAmountShort(township.disbursements)}</span>
                         </div>
                       </div>
                     ))}
@@ -667,10 +667,10 @@ export default function LocationProfileDetailPage() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">
+                    <p className="text-body">
                       {townshipSearch ? 'No townships match your search' : 'No township-level data available'}
                     </p>
-                    <p className="text-xs mt-1">Township data comes from activity location assignments and subnational breakdowns</p>
+                    <p className="text-helper mt-1">Township data comes from activity location assignments and subnational breakdowns</p>
                   </div>
                 )}
               </CardContent>
@@ -680,7 +680,7 @@ export default function LocationProfileDetailPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">Financial Trends by Year</CardTitle>
+                  <CardTitle className="text-body">Financial Trends by Year</CardTitle>
                   <div className="flex items-center border border-border rounded-md">
                     {([
                       { key: 'area' as const, icon: AreaChartIcon, title: 'Area chart' },
@@ -718,9 +718,9 @@ export default function LocationProfileDetailPage() {
                         if (active && payload?.length) {
                           return (
                             <div className={TOOLTIP_CLASSES}>
-                              <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                              <p className="font-medium text-helper text-foreground mb-1">{payload[0]?.payload?.year}</p>
                               {payload.map((entry: any, i: number) => (
-                                <p key={i} className="text-xs text-muted-foreground">{entry.name}: {formatCurrencyShort(entry.value)}</p>
+                                <p key={i} className="text-helper text-muted-foreground">{entry.name}: {formatCurrencyShort(entry.value)}</p>
                               ))}
                             </div>
                           )
@@ -730,7 +730,7 @@ export default function LocationProfileDetailPage() {
                       const legend = (
                         <div className="flex items-center justify-center gap-4 mt-2">
                           {series.map(s => (
-                            <button key={s.key} onClick={() => toggleSeries(s.key)} className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ opacity: hiddenSeries.has(s.key) ? 0.35 : 1 }}>
+                            <button key={s.key} onClick={() => toggleSeries(s.key)} className="flex items-center gap-1.5 text-helper cursor-pointer" style={{ opacity: hiddenSeries.has(s.key) ? 0.35 : 1 }}>
                               <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.color }} />
                               <span className="text-muted-foreground">{s.name}</span>
                             </button>
@@ -781,7 +781,7 @@ export default function LocationProfileDetailPage() {
                 ) : (
                   <div className="h-48 flex items-center justify-center text-muted-foreground">
                     <TrendingUp className="h-8 w-8 mr-2 opacity-50" />
-                    <p className="text-sm">No financial trend data available</p>
+                    <p className="text-body">No financial trend data available</p>
                   </div>
                 )}
               </CardContent>
@@ -791,9 +791,9 @@ export default function LocationProfileDetailPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-sm">Activities ({filteredActivities.length})</CardTitle>
+                  <CardTitle className="text-body">Activities ({filteredActivities.length})</CardTitle>
                   <div className="flex items-center gap-2">
-                    <select value={activityStatusFilter} onChange={e => setActivityStatusFilter(e.target.value)} className="text-xs border rounded px-2 py-1 bg-background text-foreground">
+                    <select value={activityStatusFilter} onChange={e => setActivityStatusFilter(e.target.value)} className="text-helper border rounded px-2 py-1 bg-background text-foreground">
                       <option value="all">All Statuses</option>
                       <option value="1">Pipeline</option>
                       <option value="2">Implementation</option>
@@ -801,7 +801,7 @@ export default function LocationProfileDetailPage() {
                       <option value="4">Closed</option>
                       <option value="5">Cancelled</option>
                     </select>
-                    <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-xs border rounded px-2 py-1 bg-background text-foreground">
+                    <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-helper border rounded px-2 py-1 bg-background text-foreground">
                       <option value="value">Sort: Total Value</option>
                       <option value="committed">Sort: Committed</option>
                       <option value="disbursed">Sort: Disbursed</option>
@@ -812,15 +812,15 @@ export default function LocationProfileDetailPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-body">
                     <thead className="bg-surface-muted">
                       <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Activity</th>
-                        <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
-                        <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Reporting Org</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Committed</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Disbursed</th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Total</th>
+                        <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Activity</th>
+                        <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Status</th>
+                        <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Reporting Org</th>
+                        <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Committed</th>
+                        <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Disbursed</th>
+                        <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -836,19 +836,19 @@ export default function LocationProfileDetailPage() {
                               </div>
                             </Link>
                           </td>
-                          <td className="py-2 px-3 text-xs text-foreground">
+                          <td className="py-2 px-3 text-helper text-foreground">
                             {getStatusLabel(activity.activity_status)}
                           </td>
                           <td className="py-2 px-3">
                             {activity.reportingOrgName ? (
                               <div>
-                                <p className="text-xs text-foreground truncate max-w-[150px]">{activity.reportingOrgAcronym || activity.reportingOrgName}</p>
+                                <p className="text-helper text-foreground truncate max-w-[150px]">{activity.reportingOrgAcronym || activity.reportingOrgName}</p>
                                 {activity.reportingOrgType && (
                                   <p className="text-[10px] text-muted-foreground">{getOrgTypeLabel(activity.reportingOrgType)}</p>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
+                              <span className="text-helper text-muted-foreground">-</span>
                             )}
                           </td>
                           <td className="py-2 px-3 text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.commitments)}</span></td>
@@ -861,12 +861,12 @@ export default function LocationProfileDetailPage() {
                 </div>
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between px-3 py-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-helper text-muted-foreground">
                       Showing {((activityPage - 1) * itemsPerPage) + 1}-{Math.min(activityPage * itemsPerPage, filteredActivities.length)} of {filteredActivities.length}
                     </p>
                     <div className="flex items-center gap-1">
                       <Button variant="outline" size="sm" disabled={activityPage === 1} onClick={() => setActivityPage(p => p - 1)}>Prev</Button>
-                      <span className="text-xs text-muted-foreground px-2">{activityPage} / {totalPages}</span>
+                      <span className="text-helper text-muted-foreground px-2">{activityPage} / {totalPages}</span>
                       <Button variant="outline" size="sm" disabled={activityPage === totalPages} onClick={() => setActivityPage(p => p + 1)}>Next</Button>
                     </div>
                   </div>
@@ -877,19 +877,19 @@ export default function LocationProfileDetailPage() {
             {/* ======== Organizations ======== */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Organizations ({organizations.length})</CardTitle>
+                <CardTitle className="text-body">Organizations ({organizations.length})</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {organizations.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body">
                       <thead className="bg-surface-muted">
                         <tr className="border-b border-border bg-muted/50">
-                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Organization</th>
-                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Role</th>
-                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Activities</th>
-                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Committed</th>
-                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Disbursed</th>
+                          <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Organization</th>
+                          <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Role</th>
+                          <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Activities</th>
+                          <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Committed</th>
+                          <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Disbursed</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -921,7 +921,7 @@ export default function LocationProfileDetailPage() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No organization data available</p>
+                    <p className="text-body">No organization data available</p>
                   </div>
                 )}
               </CardContent>

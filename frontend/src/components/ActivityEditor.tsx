@@ -148,14 +148,14 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
         {/* Header */}
         <div className="border-b border-border pb-4">
           <h1 className="text-2xl font-bold text-foreground">Activity Editor</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-1">
             All changes are saved automatically
           </p>
         </div>
 
         {/* Activity Title */}
         <div className="space-y-2">
-          <label htmlFor="title" className="block text-sm font-medium text-foreground">
+          <label htmlFor="title" className="block text-body font-medium text-foreground">
             Activity Title *
           </label>
           <input
@@ -169,13 +169,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-muted disabled:cursor-not-allowed"
           />
           {saving.title && (
-            <p className="text-xs text-blue-600">Saving...</p>
+            <p className="text-helper text-blue-600">Saving...</p>
           )}
         </div>
 
         {/* Activity Description */}
         <div className="space-y-2">
-          <label htmlFor="description" className="block text-sm font-medium text-foreground">
+          <label htmlFor="description" className="block text-body font-medium text-foreground">
             Activity Description
           </label>
           <textarea
@@ -189,13 +189,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-muted disabled:cursor-not-allowed resize-none"
           />
           {saving.description && (
-            <p className="text-xs text-blue-600">Saving...</p>
+            <p className="text-helper text-blue-600">Saving...</p>
           )}
         </div>
 
         {/* Activity Status */}
         <div className="space-y-2">
-          <label htmlFor="activity_status" className="block text-sm font-medium text-foreground">
+          <label htmlFor="activity_status" className="block text-body font-medium text-foreground">
             Activity Status
           </label>
           <select
@@ -216,13 +216,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             ))}
           </select>
           {saving.activity_status && (
-            <p className="text-xs text-blue-600">Saving...</p>
+            <p className="text-helper text-blue-600">Saving...</p>
           )}
         </div>
 
         {/* Collaboration Type */}
         <div className="space-y-2">
-          <label htmlFor="collaboration_type" className="block text-sm font-medium text-foreground">
+          <label htmlFor="collaboration_type" className="block text-body font-medium text-foreground">
             Collaboration Type
           </label>
           <select
@@ -243,7 +243,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             ))}
           </select>
           {saving.collaboration_type && (
-            <p className="text-xs text-blue-600">Saving...</p>
+            <p className="text-helper text-blue-600">Saving...</p>
           )}
         </div>
 
@@ -254,7 +254,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Planned Start Date */}
             <div className="space-y-2">
-              <label htmlFor="planned_start_date" className="block text-sm font-medium text-foreground">
+              <label htmlFor="planned_start_date" className="block text-body font-medium text-foreground">
                 Planned Start Date
               </label>
               <div className="flex items-center gap-2">
@@ -276,13 +276,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 />
               </div>
               {saving.planned_start_date && (
-                <p className="text-xs text-blue-600">Saving...</p>
+                <p className="text-helper text-blue-600">Saving...</p>
               )}
             </div>
 
             {/* Planned End Date */}
             <div className="space-y-2">
-              <label htmlFor="planned_end_date" className="block text-sm font-medium text-foreground">
+              <label htmlFor="planned_end_date" className="block text-body font-medium text-foreground">
                 Planned End Date
               </label>
               <div className="flex items-center gap-2">
@@ -304,13 +304,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 />
               </div>
               {saving.planned_end_date && (
-                <p className="text-xs text-blue-600">Saving...</p>
+                <p className="text-helper text-blue-600">Saving...</p>
               )}
             </div>
 
             {/* Actual Start Date */}
             <div className="space-y-2">
-              <label htmlFor="actual_start_date" className="block text-sm font-medium text-foreground">
+              <label htmlFor="actual_start_date" className="block text-body font-medium text-foreground">
                 Actual Start Date
               </label>
               <div className="flex items-center gap-2">
@@ -332,13 +332,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 />
               </div>
               {saving.actual_start_date && (
-                <p className="text-xs text-blue-600">Saving...</p>
+                <p className="text-helper text-blue-600">Saving...</p>
               )}
             </div>
 
             {/* Actual End Date */}
             <div className="space-y-2">
-              <label htmlFor="actual_end_date" className="block text-sm font-medium text-foreground">
+              <label htmlFor="actual_end_date" className="block text-body font-medium text-foreground">
                 Actual End Date
               </label>
               <div className="flex items-center gap-2">
@@ -360,7 +360,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
                 />
               </div>
               {saving.actual_end_date && (
-                <p className="text-xs text-blue-600">Saving...</p>
+                <p className="text-helper text-blue-600">Saving...</p>
               )}
             </div>
           </div>
@@ -369,11 +369,11 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
         {/* Footer */}
         <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Changes are automatically saved when you finish editing each field.
             </p>
             <CommentsDrawer activityId={activityId}>
-              <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-foreground bg-white border border-input rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button className="inline-flex items-center gap-2 px-3 py-2 text-body font-medium text-foreground bg-white border border-input rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 💬 Comments
               </button>
             </CommentsDrawer>

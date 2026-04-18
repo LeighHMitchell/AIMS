@@ -298,7 +298,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
         <div className="text-center">
           <Wrench className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <p className="text-lg font-medium">No Policy Markers Selected</p>
-          <p className="text-sm">Add policy markers in the Activity Editor to see analytics here.</p>
+          <p className="text-body">Add policy markers in the Activity Editor to see analytics here.</p>
         </div>
       </div>
     );
@@ -383,7 +383,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                               </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-md">
-                              <p className="text-sm">
+                              <p className="text-body">
                                 {getSignificanceExplanation(
                                   marker.policy_marker_details?.iati_code,
                                   marker.policy_marker_details?.name,
@@ -395,7 +395,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                         </TooltipProvider>
                       </TableCell>
                       <TableCell className="max-w-md">
-                        <p className="text-sm text-muted-foreground line-clamp-2">
+                        <p className="text-body text-muted-foreground line-clamp-2">
                           {marker.rationale || <span className="italic text-muted-foreground">No rationale provided</span>}
                         </p>
                       </TableCell>

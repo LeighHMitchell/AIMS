@@ -470,7 +470,7 @@ export function PlannedActualDisbursementBySector({
         <div className="bg-surface-muted px-4 py-3 border-b border-border">
           {/* Hierarchical sector info */}
           {parentInfo && groupByLevel !== '1' && (
-            <div className="mb-2 text-xs text-muted-foreground">
+            <div className="mb-2 text-helper text-muted-foreground">
               <span className="font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground mr-1.5">{parentInfo.categoryCode}</span>
               <span>{parentInfo.categoryName}</span>
               {groupByLevel === '5' && (
@@ -486,11 +486,11 @@ export function PlannedActualDisbursementBySector({
             <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
               {sectorCode}
             </span>
-            <span className="font-semibold text-sm">{fullName}</span>
+            <span className="font-semibold text-body">{fullName}</span>
           </div>
         </div>
         <div className="p-4">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <tbody>
             {payload.map((entry, index) => (
               <tr key={index} className={(entry.name as string || '').includes('Planned Disbursements') ? 'border-b' : ''}>
@@ -663,7 +663,7 @@ export function PlannedActualDisbursementBySector({
       return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
-      return <div className="h-full flex items-center justify-center text-destructive"><p className="text-sm">{error}</p></div>
+      return <div className="h-full flex items-center justify-center text-destructive"><p className="text-body">{error}</p></div>
     }
     return (
       <div ref={chartRef} className="bg-card h-full">
@@ -811,7 +811,7 @@ export function PlannedActualDisbursementBySector({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-foreground">Select Year Range</span>
+                          <span className="text-helper font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
@@ -861,7 +861,7 @@ export function PlannedActualDisbursementBySector({
                   </div>
                   {/* Date Range Indicator */}
                   {localDateRange?.from && localDateRange?.to && (
-                    <span className="text-xs text-muted-foreground text-center">
+                    <span className="text-helper text-muted-foreground text-center">
                       {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                     </span>
                   )}
@@ -1117,7 +1117,7 @@ export function PlannedActualDisbursementBySector({
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart compares budgets, planned disbursements, commitments, and actual disbursements by sector.
           Toggle metrics on or off using the legend above, and switch between Sector Category, Sector, or Sub-sector groupings to view data at different DAC code levels.
           Compare planned versus actual figures to identify funding gaps or over-delivery across sectors.

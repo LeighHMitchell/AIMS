@@ -119,7 +119,7 @@ export function DateRevisionHistory({
         <div className="flex items-center justify-between px-3 py-2 bg-muted border-b">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-body font-medium text-foreground">
               {DATE_FIELD_LABELS[dateField]} History
             </span>
           </div>
@@ -136,14 +136,14 @@ export function DateRevisionHistory({
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-border border-t-foreground"></div>
-              <span className="ml-2 text-sm text-muted-foreground">Loading history...</span>
+              <span className="ml-2 text-body text-muted-foreground">Loading history...</span>
             </div>
           ) : error ? (
             <div className="px-3 py-4 text-center">
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-body text-destructive">{error}</p>
               <button
                 onClick={fetchHistory}
-                className="mt-2 text-xs text-blue-600 hover:underline"
+                className="mt-2 text-helper text-blue-600 hover:underline"
               >
                 Try again
               </button>
@@ -151,8 +151,8 @@ export function DateRevisionHistory({
           ) : history.length === 0 ? (
             <div className="px-3 py-6 text-center">
               <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No revisions recorded</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground">No revisions recorded</p>
+              <p className="text-helper text-muted-foreground mt-1">
                 Changes to this date will appear here
               </p>
             </div>
@@ -160,11 +160,11 @@ export function DateRevisionHistory({
             <div className="divide-y divide-border">
               {/* Current value */}
               <div className="px-3 py-2.5 bg-blue-50/50">
-                <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium mb-1">
+                <div className="flex items-center gap-1.5 text-helper text-blue-600 font-medium mb-1">
                   <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                   Current Value
                 </div>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-body font-medium text-foreground">
                   {formatDateValue(currentValue)}
                 </p>
               </div>
@@ -173,13 +173,13 @@ export function DateRevisionHistory({
               {history.map((change, index) => (
                 <div key={change.id} className="px-3 py-2.5 hover:bg-muted/50">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs font-medium text-muted-foreground">
+                    <span className="text-helper font-medium text-muted-foreground">
                       Revision {history.length - index}
                     </span>
                   </div>
                   
                   {/* Date change visualization */}
-                  <div className="flex items-center gap-2 text-sm mb-2">
+                  <div className="flex items-center gap-2 text-body mb-2">
                     <span className="text-muted-foreground line-through">
                       {formatDateValue(change.oldValue)}
                     </span>
@@ -190,7 +190,7 @@ export function DateRevisionHistory({
                   </div>
 
                   {/* Metadata */}
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 text-helper text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
                       <span>{change.userName}</span>

@@ -96,7 +96,7 @@ function DocumentTypeFilter({ value, onValueChange }: DocumentTypeFilterProps) {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
         )}
       >
         <span className="truncate">
@@ -110,7 +110,7 @@ function DocumentTypeFilter({ value, onValueChange }: DocumentTypeFilterProps) {
             <button
               key={option.value}
               className={cn(
-                "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                "w-full text-left px-2 py-2 rounded-md text-body hover:bg-accent hover:text-accent-foreground transition-colors",
                 value === option.value && "bg-blue-100 text-blue-900"
               )}
               onClick={() => {
@@ -159,7 +159,7 @@ function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilter
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
         )}
       >
         <span className="truncate">
@@ -193,7 +193,7 @@ function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilter
               <button
                 key={option.code}
                 className={cn(
-                  "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                  "w-full text-left px-2 py-2 rounded-md text-body hover:bg-accent hover:text-accent-foreground transition-colors",
                   value === option.code && "bg-blue-100 text-blue-900"
                 )}
                 onClick={() => {
@@ -211,7 +211,7 @@ function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilter
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{option.name}</div>
                     {option.description && (
-                      <div className="text-xs text-muted-foreground truncate">{option.description}</div>
+                      <div className="text-helper text-muted-foreground truncate">{option.description}</div>
                     )}
                   </div>
                 </div>
@@ -724,7 +724,7 @@ export function DocumentsAndImagesTabInline({
                     <Upload className="w-5 h-5" />
                     Choose Files to Upload
                   </Button>
-                  <p className="text-sm text-muted-foreground mt-4">
+                  <p className="text-body text-muted-foreground mt-4">
                     Supports: Images (PNG, JPG, GIF), PDFs, Word docs, Excel files, CSV
                   </p>
                   <input
@@ -743,14 +743,14 @@ export function DocumentsAndImagesTabInline({
           {/* Uploading Files */}
           {uploadingFiles.length > 0 && (
             <div className="space-y-2 mt-6">
-              <h4 className="text-sm font-medium text-foreground">Uploading Files</h4>
+              <h4 className="text-body font-medium text-foreground">Uploading Files</h4>
               {uploadingFiles.map(upload => (
                 <div key={upload.id} className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium truncate flex-1">
+                    <span className="text-body font-medium truncate flex-1">
                       {upload.file.name}
                     </span>
-                    <span className="text-xs text-muted-foreground ml-2">
+                    <span className="text-helper text-muted-foreground ml-2">
                       {upload.status === 'uploading' && `${Math.round(upload.progress)}%`}
                       {upload.status === 'success' && 'Complete'}
                       {upload.status === 'error' && 'Failed'}
@@ -870,7 +870,7 @@ export function DocumentsAndImagesTabInline({
                                             {doc.title[0]?.text || 'Untitled Document'}
                                           </div>
                                           {doc.description?.[0]?.text && (
-                                            <div className="text-sm text-muted-foreground truncate">
+                                            <div className="text-body text-muted-foreground truncate">
                                               {doc.description[0].text}
                                             </div>
                                           )}
@@ -882,7 +882,7 @@ export function DocumentsAndImagesTabInline({
                                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                               {doc.categoryCode}
                                             </span>
-                                            <span className="text-sm">
+                                            <span className="text-body">
                                               {DOCUMENT_CATEGORIES.find(cat => cat.code === doc.categoryCode)?.name || doc.categoryCode}
                                             </span>
                                           </div>
@@ -894,7 +894,7 @@ export function DocumentsAndImagesTabInline({
                                             {doc.languageCodes.map(code => {
                                               const lang = (customLanguages || COMMON_LANGUAGES).find(l => l.code === code);
                                               return (
-                                                <span key={code} className="text-xs text-sm">
+                                                <span key={code} className="text-helper text-body">
                                                   <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{code.toUpperCase()}</span>
                                                   {lang && <span className="ml-1 text-foreground">{lang.name}</span>}
                                                 </span>
@@ -905,7 +905,7 @@ export function DocumentsAndImagesTabInline({
                                       </TableCell>
                                       <TableCell>
                                         {doc.documentDate && (
-                                          <span className="text-sm text-muted-foreground">
+                                          <span className="text-body text-muted-foreground">
                                             {new Date(doc.documentDate).toLocaleDateString()}
                                           </span>
                                         )}
@@ -947,7 +947,7 @@ export function DocumentsAndImagesTabInline({
                             {/* Pagination for Uploaded Files */}
                             {uploadedDocs.length > itemsPerPage && (
                               <div className="flex items-center justify-between px-2">
-                                <div className="text-sm text-foreground">
+                                <div className="text-body text-foreground">
                                   Showing {startIndex + 1} to {Math.min(endIndex, uploadedDocs.length)} of {uploadedDocs.length} uploaded files
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -967,7 +967,7 @@ export function DocumentsAndImagesTabInline({
                                   >
                                     <ChevronLeft className="h-4 w-4" />
                                   </Button>
-                                  <span className="text-sm text-foreground">
+                                  <span className="text-body text-foreground">
                                     Page {currentPage} of {Math.ceil(uploadedDocs.length / itemsPerPage)}
                                   </span>
                                   <Button

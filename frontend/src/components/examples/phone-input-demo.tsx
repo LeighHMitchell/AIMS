@@ -22,7 +22,7 @@ export function PhoneInputDemo() {
             />
         </div>
         
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           <p><strong>Current value:</strong> {phoneValue}</p>
           <div className="mt-2 space-y-1">
             <p><strong>Features:</strong></p>

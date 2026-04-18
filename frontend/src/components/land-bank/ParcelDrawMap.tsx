@@ -256,7 +256,7 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
       </LandBankMapShell>
 
       {geometry && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-helper text-muted-foreground">
           Geometry type: {geometry.type}
         </p>
       )}

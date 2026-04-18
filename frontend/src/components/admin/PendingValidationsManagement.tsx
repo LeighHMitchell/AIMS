@@ -106,7 +106,7 @@ const getStatusBadge = (status: string | null) => {
     '6': 'Suspended',
   };
   return (
-    <Badge className={cn('text-xs', statusColors[status || ''] || 'bg-muted text-foreground')}>
+    <Badge className={cn('text-helper', statusColors[status || ''] || 'bg-muted text-foreground')}>
       {statusLabels[status || ''] || status || 'Unknown'}
     </Badge>
   );
@@ -155,7 +155,7 @@ const ActivityRow: React.FC<{
       <TableCell>
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm truncate max-w-[150px]">{activity.organization || '-'}</span>
+          <span className="text-body truncate max-w-[150px]">{activity.organization || '-'}</span>
         </div>
       </TableCell>
       <TableCell>
@@ -175,7 +175,7 @@ const ActivityRow: React.FC<{
                   disabled={isValidating}
                   aria-label="Validate activity"
                 />
-                <Label className="text-xs text-muted-foreground">
+                <Label className="text-helper text-muted-foreground">
                   {localValidated ? 'Validated' : 'Pending'}
                 </Label>
               </div>
@@ -231,17 +231,17 @@ const TransactionRow: React.FC<{
         {transaction.activity_iati_id || '-'}
       </TableCell>
       <TableCell className="max-w-[200px]">
-        <div className="truncate text-sm">{transaction.activity_title || 'Untitled'}</div>
+        <div className="truncate text-body">{transaction.activity_title || 'Untitled'}</div>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-helper">
           {getTransactionTypeLabel(transaction.transaction_type)}
         </Badge>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm truncate max-w-[120px]">{transaction.organization || '-'}</span>
+          <span className="text-body truncate max-w-[120px]">{transaction.organization || '-'}</span>
         </div>
       </TableCell>
       <TableCell>
@@ -261,7 +261,7 @@ const TransactionRow: React.FC<{
                   disabled={isValidating}
                   aria-label="Validate transaction"
                 />
-                <Label className="text-xs text-muted-foreground">
+                <Label className="text-helper text-muted-foreground">
                   {localValidated ? 'Validated' : 'Pending'}
                 </Label>
               </div>
@@ -453,7 +453,7 @@ export function PendingValidationsManagement() {
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <CheckCircle className="h-12 w-12 text-[hsl(var(--success-icon))] mb-4" />
                 <p className="text-lg font-medium">All caught up!</p>
-                <p className="text-sm">No activities pending validation</p>
+                <p className="text-body">No activities pending validation</p>
               </div>
             ) : (
               <div className="border rounded-lg overflow-hidden">
@@ -496,7 +496,7 @@ export function PendingValidationsManagement() {
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <CheckCircle className="h-12 w-12 text-[hsl(var(--success-icon))] mb-4" />
                 <p className="text-lg font-medium">All caught up!</p>
-                <p className="text-sm">No transactions pending validation</p>
+                <p className="text-body">No transactions pending validation</p>
               </div>
             ) : (
               <div className="border rounded-lg overflow-hidden">

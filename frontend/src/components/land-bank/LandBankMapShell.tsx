@@ -201,7 +201,7 @@ function Map3DController({
           className="bg-white shadow-md border-input h-9 px-2.5"
         >
           <MapIcon className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">2D</span>
+          <span className="text-helper">2D</span>
         </Button>
       ) : (
         <Button
@@ -212,7 +212,7 @@ function Map3DController({
           className="bg-white shadow-md border-input h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">3D</span>
+          <span className="text-helper">3D</span>
         </Button>
       )}
 

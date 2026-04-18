@@ -219,7 +219,7 @@ export function IATIOrgImportFieldsTable({
             checked={showConflictsOnly}
             onCheckedChange={setShowConflictsOnly}
           />
-          <label className="text-sm text-muted-foreground">Show conflicts only</label>
+          <label className="text-body text-muted-foreground">Show conflicts only</label>
         </div>
         {onSelectAll && (
           <Button variant="outline" size="sm" onClick={onSelectAll}>
@@ -329,7 +329,7 @@ export function IATIOrgImportFieldsTable({
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-body text-muted-foreground">
                                     {formatValue(field.currentValue, field)}
                                   </span>
                                   {field.currentValue && (

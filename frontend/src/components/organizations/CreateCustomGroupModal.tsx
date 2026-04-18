@@ -313,7 +313,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                   role="combobox"
                   aria-expanded={searchOpen}
                   className={cn(
-                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50",
                     selectedOrgs.length === 0 && "text-muted-foreground"
                   )}
                 >
@@ -336,7 +336,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                 </div>
                 <ScrollArea className="h-[300px] p-1">
                   {filteredOrganizations.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="p-4 text-center text-body text-muted-foreground">
                       No organization found.
                     </div>
                   ) : (
@@ -372,7 +372,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                               {getOrganizationDisplay(org)}
                             </div>
                             {org.iati_org_id && (
-                              <div className="text-xs text-muted-foreground truncate">
+                              <div className="text-helper text-muted-foreground truncate">
                                 IATI: <span className="font-mono bg-muted px-1 py-0.5 rounded">{org.iati_org_id}</span>
                               </div>
                             )}
@@ -388,12 +388,12 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
             {/* Display selected organizations */}
             {selectedOrgs.length > 0 && (
               <div className="mt-3 space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-body font-medium text-muted-foreground">
                   Selected Organizations ({selectedOrgs.length}):
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {getSelectedOrgDisplayList().map((orgDisplay, index) => (
-                    <Badge key={selectedOrgs[index]} variant="secondary" className="text-xs">
+                    <Badge key={selectedOrgs[index]} variant="secondary" className="text-helper">
                       {orgDisplay}
                       <button
                         type="button"
@@ -439,10 +439,10 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                   >
                     <input {...logoDropzone.getInputProps()} />
                     <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 text-helper text-muted-foreground">
                       Drop logo here
                     </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF</p>
+                    <p className="text-helper text-muted-foreground">PNG, JPG, GIF</p>
                   </div>
                 )}
               </div>
@@ -476,10 +476,10 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                   >
                     <input {...bannerDropzone.getInputProps()} />
                     <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="mt-2 text-body text-muted-foreground">
                       Drop banner image here or click to browse
                     </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                    <p className="text-helper text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
                   </div>
                 )}
               </div>
@@ -544,7 +544,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
               <Label htmlFor="is_public" className="text-base">
                 Public Group
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 Public groups are visible to all users
               </p>
             </div>

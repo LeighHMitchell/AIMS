@@ -471,10 +471,10 @@ export default function BudgetMappingTab({
             <CardContent>
               {/* Show activity sectors */}
               <div className="mb-4 p-3 bg-muted rounded-lg">
-                <h4 className="text-sm font-medium text-foreground mb-2">Activity Sectors:</h4>
+                <h4 className="text-body font-medium text-foreground mb-2">Activity Sectors:</h4>
                 <div className="flex flex-wrap gap-2">
                   {suggestions.sectors.map((sector, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
+                    <Badge key={idx} variant="secondary" className="text-helper">
                       <span className="font-mono mr-1">{sector.code}</span>
                       {sector.name} ({sector.percentage}%)
                     </Badge>
@@ -501,7 +501,7 @@ export default function BudgetMappingTab({
                           const typeSuggestions = suggestions.suggestionsByType[type] || [];
                           return typeSuggestions.map((suggestion, idx) => (
                             <TableRow key={`${type}-${idx}`} className="hover:bg-muted/30">
-                              <TableCell className="text-sm text-muted-foreground">
+                              <TableCell className="text-body text-muted-foreground">
                                 {CLASSIFICATION_TYPE_LABELS[type]}
                               </TableCell>
                               <TableCell>
@@ -545,15 +545,15 @@ export default function BudgetMappingTab({
                       <div className="flex items-start gap-2">
                         <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground">
+                          <p className="text-body font-medium text-muted-foreground">
                             Some sectors don't have complete mappings
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-helper text-muted-foreground mt-1">
                             Configure mappings in Admin → Sector Mappings to auto-fill these:
                           </p>
                           <div className="mt-2 flex flex-wrap gap-1">
                             {suggestions.unmappedSectors.map((sector, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
+                              <Badge key={idx} variant="outline" className="text-helper">
                                 {sector.code} - missing: {sector.missingTypes.map(t => CLASSIFICATION_TYPE_LABELS[t]).join(', ')}
                               </Badge>
                             ))}
@@ -565,7 +565,7 @@ export default function BudgetMappingTab({
 
                   {/* Apply button */}
                   <div className="mt-4 flex items-center justify-between border-t pt-4">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body text-muted-foreground">
                       {suggestions.existingMappings.hasAuto
                         ? 'Auto-mapped items already exist. Apply to update them.'
                         : 'Click to create budget mappings from these suggestions.'}
@@ -602,10 +602,10 @@ export default function BudgetMappingTab({
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Info className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm">
+                  <p className="text-body">
                     No sector mappings configured for the assigned sectors.
                   </p>
-                  <p className="text-xs mt-1">
+                  <p className="text-helper mt-1">
                     Configure mappings in Admin → Sector Mappings to enable auto-suggestions.
                   </p>
                 </div>
@@ -617,8 +617,8 @@ export default function BudgetMappingTab({
             <CardContent>
               <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
                 <Sparkles className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm">{suggestions.message}</p>
-                <p className="text-xs mt-1">
+                <p className="text-body">{suggestions.message}</p>
+                <p className="text-helper mt-1">
                   Go to the Sectors tab to add sector allocations for this activity.
                 </p>
               </div>
@@ -658,7 +658,7 @@ export default function BudgetMappingTab({
               <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-medium text-red-900">Error</h3>
-                <p className="text-sm text-destructive mt-1">{error}</p>
+                <p className="text-body text-destructive mt-1">{error}</p>
               </div>
             </div>
           )}
@@ -673,7 +673,7 @@ export default function BudgetMappingTab({
               <h3 className="text-lg font-medium mb-2">No budget mappings</h3>
               <p className="text-muted-foreground mb-4">Map activity sectors to government budget classifications.</p>
               {hasSuggestions ? (
-                <p className="text-sm text-amber-600 mb-4">
+                <p className="text-body text-amber-600 mb-4">
                   Use the suggestions above to auto-create mappings from sectors.
                 </p>
               ) : null}
@@ -683,7 +683,7 @@ export default function BudgetMappingTab({
                   Add Budget Mapping Manually
                 </Button>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   All available vocabularies have been used
                 </p>
               )}
@@ -728,10 +728,10 @@ export default function BudgetMappingTab({
 
                       return (
                         <TableRow key={`${cbi.id}-${index}`} className={isAutoMapped ? "bg-muted/30" : ""}>
-                          <TableCell className="text-sm text-foreground">
+                          <TableCell className="text-body text-foreground">
                             {getVocabularyName(cbi.vocabulary)}
                           </TableCell>
-                          <TableCell className="text-sm text-foreground">
+                          <TableCell className="text-body text-foreground">
                             {classification
                               ? CLASSIFICATION_TYPE_LABELS[classification.classificationType]
                               : '-'}
@@ -741,7 +741,7 @@ export default function BudgetMappingTab({
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {item.code}
                               </span>
-                              <span className="text-sm font-medium whitespace-nowrap">
+                              <span className="text-body font-medium whitespace-nowrap">
                                 {classification?.name || '-'}
                               </span>
                               {isAutoMapped && (
@@ -752,16 +752,16 @@ export default function BudgetMappingTab({
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm">{item.percentage}%</TableCell>
+                          <TableCell className="text-body">{item.percentage}%</TableCell>
                           {totalBudgetUSD != null && totalBudgetUSD > 0 && (
-                            <TableCell className="text-sm text-right font-medium">
+                            <TableCell className="text-body text-right font-medium">
                               {calculateUSDValue(item.percentage) !== null
                                 ? <><span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-1.5">USD</span>{formatUSD(calculateUSDValue(item.percentage)!)}</>
                                 : '-'}
                             </TableCell>
                           )}
                           <TableCell>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-body text-muted-foreground">
                               {getPrimaryDescription(item.description)}
                             </div>
                           </TableCell>

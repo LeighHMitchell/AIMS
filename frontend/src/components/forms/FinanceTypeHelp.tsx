@@ -145,14 +145,14 @@ export function FinanceTypeHelp({
     <div className="space-y-2">
       <p className="font-semibold">Default Finance Type</p>
       <p>This sets the default financial instrument for transactions in this activity. Common types include:</p>
-      <ul className="text-xs space-y-1 mt-2">
+      <ul className="text-helper space-y-1 mt-2">
         <li><strong>110</strong> - Standard grant (no repayment required)</li>
         <li><strong>410</strong> - Aid loan (concessional loan)</li>
         <li><strong>421</strong> - Reimbursable grant (conditional repayment)</li>
         <li><strong>700</strong> - Foreign direct investment</li>
         <li><strong>1100</strong> - Guarantees/insurance</li>
       </ul>
-      <p className="text-xs mt-2 text-muted-foreground">
+      <p className="text-helper mt-2 text-muted-foreground">
         Individual transactions can override this default if needed.
       </p>
     </div>
@@ -171,8 +171,8 @@ export function FinanceTypeHelp({
           {typeInfo ? (
             <div className="space-y-2">
               <p className="font-semibold">{typeInfo.label}</p>
-              <p className="text-sm">{typeInfo.description}</p>
-              <p className="text-xs text-muted-foreground">IATI Code: {financeType}</p>
+              <p className="text-body">{typeInfo.description}</p>
+              <p className="text-helper text-muted-foreground">IATI Code: {financeType}</p>
             </div>
           ) : defaultMessage}
         </TooltipContent>

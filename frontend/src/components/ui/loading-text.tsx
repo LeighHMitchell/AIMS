@@ -16,7 +16,7 @@ export function LoadingText({
 }: LoadingTextProps) {
   return (
     <TextShimmer 
-      className={cn('text-sm', className)} 
+      className={cn('text-body', className)} 
       duration={duration}
     >
       {children}

@@ -47,7 +47,7 @@ export function SectorTimeSeriesLine({
       if (filteredPayload.length === 0) return null
 
       return (
-        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md text-sm">
+        <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md text-body">
           <div className="bg-surface-muted px-4 py-2 border-b border-border">
             <p className="font-semibold text-foreground">Year: {label}</p>
             <p className="text-muted-foreground">

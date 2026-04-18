@@ -211,8 +211,8 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
       {documents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
           <FileText className="h-12 w-12 text-gray-300 mb-3" />
-          <p className="text-sm text-muted-foreground">No documents uploaded</p>
-          <p className="text-xs text-muted-foreground mt-1">Upload documents to share with working group members</p>
+          <p className="text-body text-muted-foreground">No documents uploaded</p>
+          <p className="text-helper text-muted-foreground mt-1">Upload documents to share with working group members</p>
           <Button onClick={() => setShowUploadDialog(true)} variant="outline" className="mt-4 gap-2">
             <Upload className="h-4 w-4" />
             Upload First Document
@@ -229,13 +229,13 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                     <div>
                       <h4 className="font-medium">{doc.title}</h4>
                       {doc.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{doc.description}</p>
+                        <p className="text-body text-muted-foreground mt-1">{doc.description}</p>
                       )}
                       <div className="flex items-center gap-3 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           {getDocTypeLabel(doc.document_type)}
                         </Badge>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-helper text-muted-foreground">
                           Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
                         </p>
                       </div>

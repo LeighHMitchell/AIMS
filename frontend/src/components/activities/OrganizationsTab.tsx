@@ -226,13 +226,13 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground mb-4">
+          <div className="text-body text-muted-foreground mb-4">
             Manage organizations that participate in this activity, including funding, implementing, and other partner roles.
           </div>
 
           {/* Add Organization Form */}
           <div className="border border-border rounded-lg p-4 bg-muted">
-            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+            <h3 className="text-body font-medium text-foreground mb-3 flex items-center gap-2">
               Add Organisation
               <HelpTextTooltip>
                 Pick an organisation and choose its role. You can add the same
@@ -251,9 +251,9 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
               </div>
               <div>
                 <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium text-muted-foreground">Role</span>
+                  <span className="text-helper font-medium text-muted-foreground">Role</span>
                   <HelpTextTooltip>
-                    <div className="text-xs space-y-1">
+                    <div className="text-helper space-y-1">
                       <p><strong>Funding:</strong> Provides the money for the activity.</p>
                       <p><strong>Implementing:</strong> Delivers the activity on the ground.</p>
                       <p><strong>Extending:</strong> Passes funds through to the implementer.</p>
@@ -264,7 +264,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                  className="w-full px-3 py-2 border border-input rounded-md text-body"
                 >
                   {Object.entries(ROLE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -298,7 +298,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                 className="h-32 mx-auto mb-4 opacity-50"
               />
               <p className="text-lg font-medium mb-2 text-foreground">No organisations added yet</p>
-              <p className="text-sm">Select an organisation above and choose its role (funder, implementer, etc.) to get started.</p>
+              <p className="text-body">Select an organisation above and choose its role (funder, implementer, etc.) to get started.</p>
             </div>
           </CardContent>
         </Card>
@@ -329,7 +329,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                           )}
                         </div>
                         {org.organization?.iati_org_id && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-helper text-muted-foreground">
                             IATI ID: {org.organization.iati_org_id}
                           </div>
                         )}

@@ -65,7 +65,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
       <TooltipProvider>
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-body">
               <thead className="bg-surface-muted">
                 <tr className="bg-muted">
                   <th className="text-left p-2 border-b border-border font-medium">
@@ -165,19 +165,19 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="text-xs font-medium text-muted-foreground cursor-help block leading-tight whitespace-normal">
+                        <span className="text-helper font-medium text-muted-foreground cursor-help block leading-tight whitespace-normal">
                           {getColumnLabel(col)}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="top">
                         <p className="font-medium">{col.name}</p>
                         {col.code && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Code: {col.code}
                           </p>
                         )}
                         {col.total !== undefined && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Total: {formatCurrency(col.total)}
                           </p>
                         )}
@@ -189,7 +189,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                 <th 
                   className="border-b border-border p-1 align-bottom text-center"
                 >
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-helper font-bold text-foreground">
                     Totals
                   </span>
                 </th>
@@ -222,14 +222,14 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                         <TooltipContent>
                           <p className="font-medium">{row.name}</p>
                           {row.country && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-helper text-muted-foreground">
                               {row.country}
                             </p>
                           )}
-                          <p className="text-xs mt-1">
+                          <p className="text-helper mt-1">
                             Total: {formatCurrency(row.total)}
                           </p>
-                          <p className="text-xs">
+                          <p className="text-helper">
                             Share: {formatPercent(rowShareOfTotal)} of total
                           </p>
                         </TooltipContent>
@@ -267,8 +267,8 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="font-medium">{swapAxes ? col.name : row.name}</p>
-                                <p className="text-xs">{swapAxes ? row.name : col.name}</p>
-                                <div className="mt-1 text-xs space-y-0.5">
+                                <p className="text-helper">{swapAxes ? row.name : col.name}</p>
+                                <div className="mt-1 text-helper space-y-0.5">
                                   <p>Value: {formatCurrency(cell.value)}</p>
                                   <p>
                                     Column share: {formatPercent(percentage)}
@@ -304,10 +304,10 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-medium">{row.name}</p>
-                          <p className="text-xs mt-1">
+                          <p className="text-helper mt-1">
                             Total: {formatCurrency(row.total)}
                           </p>
-                          <p className="text-xs">
+                          <p className="text-helper">
                             {formatPercent(rowShareOfTotal)} of all funding
                           </p>
                         </TooltipContent>
@@ -319,7 +319,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
               {/* Totals row */}
               <tr className="bg-muted font-medium">
                 <td 
-                  className="sticky left-0 bg-muted z-10 px-2 py-1 text-xs font-bold text-foreground border-t border-border"
+                  className="sticky left-0 bg-muted z-10 px-2 py-1 text-helper font-bold text-foreground border-t border-border"
                   style={{ width: 100 }}
                 >
                   Totals
@@ -348,12 +348,12 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
 
         {/* Legend - horizontal bar at bottom */}
         <div className="flex items-center gap-2 pt-2">
-          <span className="text-xs font-medium text-muted-foreground mr-2">LEGENDS</span>
+          <span className="text-helper font-medium text-muted-foreground mr-2">LEGENDS</span>
           <div className="flex items-center">
             {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
               <div
                 key={i}
-                className="flex items-center justify-center px-3 py-1.5 text-xs font-medium first:rounded-l last:rounded-r"
+                className="flex items-center justify-center px-3 py-1.5 text-helper font-medium first:rounded-l last:rounded-r"
                 style={{
                   backgroundColor: scale.color,
                   color: getTextColorForBackground(scale.color),
@@ -367,7 +367,7 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
         </div>
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           This heatmap visualizes how funding is distributed between donors and categories. Each cell shows the percentage share, with colour intensity indicating concentration. The totals column shows each row's share of overall funding, helping identify dominant donors or categories.
         </p>
       </div>

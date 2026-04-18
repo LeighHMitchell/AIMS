@@ -377,26 +377,26 @@ export default function FocalPointsTab({
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-foreground">{displayName}</span>
+              <span className="text-body font-medium text-foreground">{displayName}</span>
               {isCurrentUserFocalPoint(focalPoint) && (
-                <Badge variant="secondary" className="text-xs bg-muted">You</Badge>
+                <Badge variant="secondary" className="text-helper bg-muted">You</Badge>
               )}
               {getStatusBadge(focalPoint.status)}
             </div>
             {(focalPoint.job_title || focalPoint.department) && (
-              <div className="text-xs text-muted-foreground mt-0.5">
+              <div className="text-helper text-muted-foreground mt-0.5">
                 {[focalPoint.job_title, focalPoint.department].filter(Boolean).join(' · ')}
               </div>
             )}
             {orgDisplay && (
-              <div className="text-xs text-muted-foreground">{orgDisplay}</div>
+              <div className="text-helper text-muted-foreground">{orgDisplay}</div>
             )}
           </div>
         </div>
 
         {/* Bottom: Assigned info + Actions */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-helper text-muted-foreground">
             {focalPoint.assigned_by_name && (
               <span>Assigned by {focalPoint.assigned_by_name}</span>
             )}
@@ -469,7 +469,7 @@ export default function FocalPointsTab({
               <h3 className="font-semibold text-yellow-800 mb-1">
                 Pending {typeLabel} Handoff
               </h3>
-              <p className="text-sm text-yellow-700 mb-4">
+              <p className="text-body text-yellow-700 mb-4">
                 {pendingHandoff.handed_off_by_name || 'Someone'} wants to hand off 
                 the {typeLabel} role to you for this activity.
               </p>
@@ -563,7 +563,7 @@ export default function FocalPointsTab({
                     can be handed off to another person at any time.
                   </HelpTextTooltip>
                 </CardTitle>
-                <CardDescription className="text-xs mt-1.5">
+                <CardDescription className="text-helper mt-1.5">
                   Government officials responsible for reviewing, endorsing, and approving this activity.
                 </CardDescription>
               </div>
@@ -580,7 +580,7 @@ export default function FocalPointsTab({
               <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-key-ornate.webp" alt="No government focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="text-base font-medium">No government focal points</p>
-                <p className="text-sm text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
+                <p className="text-body text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -608,7 +608,7 @@ export default function FocalPointsTab({
                     notifications about activity changes.
                   </HelpTextTooltip>
                 </CardTitle>
-                <CardDescription className="text-xs mt-1.5">
+                <CardDescription className="text-helper mt-1.5">
                   Main contacts responsible for updating and managing the activity information.
                 </CardDescription>
               </div>
@@ -625,7 +625,7 @@ export default function FocalPointsTab({
               <div className="py-8 text-center border-2 border-dashed border-border rounded-lg">
                 <img src="/images/empty-key-modern.webp" alt="No development partner focal points" className="h-32 mx-auto mb-4 opacity-50" />
                 <p className="text-base font-medium">No development partner focal points</p>
-                <p className="text-sm text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
+                <p className="text-body text-muted-foreground mt-1">Use the Assign button to add your first focal point.</p>
               </div>
             ) : (
               <div className="space-y-3">

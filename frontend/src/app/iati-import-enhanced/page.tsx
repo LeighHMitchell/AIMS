@@ -542,7 +542,7 @@ export default function IATIImportEnhancedPage() {
                       }`}>
                         {step.label}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
+                      <p className="text-helper text-muted-foreground mt-1">{step.description}</p>
                     </div>
                   </div>
                 </React.Fragment>

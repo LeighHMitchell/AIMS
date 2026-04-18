@@ -137,13 +137,13 @@ export function DebugPanel() {
   return (
     <div className="fixed bottom-0 right-0 w-96 h-96 bg-white border-l border-t border-input shadow-xl rounded-tl-lg z-50">
       <div className="flex items-center justify-between p-3 border-b bg-muted">
-        <h3 className="font-semibold text-sm">Debug Console</h3>
+        <h3 className="font-semibold text-body">Debug Console</h3>
         <div className="flex gap-2">
           <Button
             size="sm"
             variant="ghost"
             onClick={clearLogs}
-            className="text-xs"
+            className="text-helper"
           >
             Clear
           </Button>
@@ -151,7 +151,7 @@ export function DebugPanel() {
             size="sm"
             variant="ghost"
             onClick={copyLogs}
-            className="text-xs"
+            className="text-helper"
           >
             {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </Button>

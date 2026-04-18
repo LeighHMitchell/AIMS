@@ -122,7 +122,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {visibleSuggestions.length > 0
             ? `${visibleSuggestions.length} potential child activit${visibleSuggestions.length !== 1 ? 'ies' : 'y'} found`
             : 'No suggestions found'}
@@ -137,7 +137,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
         <div className="text-center py-12 text-muted-foreground">
           <Sparkles className="h-8 w-8 mx-auto mb-2" />
           <p className="text-lg">No suggestions available</p>
-          <p className="text-sm mt-1">The system looks for activities with transaction references to this fund, activities where this fund's organisation is a funding partner, and activities with similar titles.</p>
+          <p className="text-body mt-1">The system looks for activities with transaction references to this fund, activities where this fund's organisation is a funding partner, and activities with similar titles.</p>
         </div>
       )}
 
@@ -159,7 +159,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
                       {suggestion.title}
                     </Link>
                     {suggestion.status && (
-                      <Badge variant="outline" className="text-xs shrink-0">{suggestion.status}</Badge>
+                      <Badge variant="outline" className="text-helper shrink-0">{suggestion.status}</Badge>
                     )}
                     <Badge className={`text-xs shrink-0 ${confidenceColor}`}>
                       {suggestion.confidence}% match
@@ -168,14 +168,14 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
 
                   <div className="flex flex-wrap gap-1 mt-2">
                     {suggestion.reasons.map((reason, i) => (
-                      <Badge key={i} variant="outline" className="text-xs text-muted-foreground">
+                      <Badge key={i} variant="outline" className="text-helper text-muted-foreground">
                         {reason}
                       </Badge>
                     ))}
                   </div>
 
                   {suggestion.financialAmount > 0 && (
-                    <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1 mt-2 text-helper text-muted-foreground">
                       <DollarSign className="h-3 w-3" />
                       {formatUSD(suggestion.financialAmount)} in linked transactions
                     </div>

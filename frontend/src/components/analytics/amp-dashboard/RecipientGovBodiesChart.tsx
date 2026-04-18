@@ -107,10 +107,10 @@ export function RecipientGovBodiesChart({
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground mb-1">{item.name}</p>
           <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-body font-medium text-foreground">
               {formatCurrency(item.value)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               {formatPercent(item.value, grandTotal)}
             </p>
           </div>
@@ -209,7 +209,7 @@ export function RecipientGovBodiesChart({
       {chartData.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between text-xs"
+          className="flex items-center justify-between text-helper"
         >
           <div className="flex items-center gap-2">
             <div
@@ -286,7 +286,7 @@ export function RecipientGovBodiesChart({
           {viewMode === "table" && renderTable()}
         </div>
         {/* Explanatory footer */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-2 px-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-2 px-4">
           This chart breaks down disbursements received by government bodies and recipient organizations. Toggle between bar, pie, and table views to see the distribution of funds across different recipient entities.
         </p>
         {renderControls(false)}

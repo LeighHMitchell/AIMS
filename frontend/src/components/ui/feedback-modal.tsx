@@ -400,10 +400,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     <Upload className={`mx-auto h-8 w-8 ${isDragOver ? 'text-blue-500' : 'text-muted-foreground'}`} />
                     <div>
                       <label htmlFor="file-upload" className="cursor-pointer">
-                        <span className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                        <span className="text-body font-medium text-blue-600 hover:text-blue-500">
                           Click to upload
                         </span>
-                        <span className="text-sm text-muted-foreground"> or drag and drop</span>
+                        <span className="text-body text-muted-foreground"> or drag and drop</span>
                       </label>
                       <input
                         id="file-upload"
@@ -414,7 +414,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         disabled={isSubmitting || isUploading}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-helper text-muted-foreground">
                       Images, PDFs, or documents up to 10MB
                     </p>
                   </div>
@@ -428,8 +428,8 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         return <IconComponent className="h-5 w-5 text-muted-foreground" />;
                       })()}
                       <div>
-                        <p className="text-sm font-medium">{selectedFile.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
+                        <p className="text-body font-medium">{selectedFile.name}</p>
+                        <p className="text-helper text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
                       </div>
                     </div>
                     <Button

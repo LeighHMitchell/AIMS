@@ -150,14 +150,14 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground mb-1">{item.name}</p>
           <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-body font-medium text-foreground">
               {formatCurrency(item.value)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               {formatPercent(item.value, grandTotal)}
             </p>
             {item.activityCount > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 {item.activityCount} activities
               </p>
             )}
@@ -259,7 +259,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
       {chartData.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between text-xs"
+          className="flex items-center justify-between text-helper"
         >
           <div className="flex items-center gap-2">
             <div
@@ -306,7 +306,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -375,7 +375,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Recipient Government Bodies
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Government bodies receiving funds
               </CardDescription>
             </div>
@@ -393,7 +393,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows recipient government bodies -- the government entities that receive development funding. Use the metric selector to switch between budgets, planned disbursements, commitments, and disbursements to see how funds are distributed across government institutions.
           </p>
         </CardContent>

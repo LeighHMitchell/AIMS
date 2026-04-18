@@ -71,9 +71,9 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
 
       return (
         <div className="bg-slate-900 text-white p-4 rounded-lg shadow-lg max-w-xs">
-          <p className="font-semibold mb-2 text-sm">{sector?.name || label}</p>
+          <p className="font-semibold mb-2 text-body">{sector?.name || label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex justify-between gap-4 text-xs">
+            <div key={index} className="flex justify-between gap-4 text-helper">
               <span style={{ color: entry.color }}>{entry.name}:</span>
               <span className="font-medium">
                 {entry.name === 'Projects' ? entry.value : formatCurrency(entry.value)}

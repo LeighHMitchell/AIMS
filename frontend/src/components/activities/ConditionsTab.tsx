@@ -93,7 +93,7 @@ function ConditionTypeSelect({
           <button
             type="button"
             className={cn(
-              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
               !selectedOption && "text-muted-foreground"
             )}
             disabled={disabled}
@@ -127,7 +127,7 @@ function ConditionTypeSelect({
                   }
                 }}
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </span>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -152,7 +152,7 @@ function ConditionTypeSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -169,7 +169,7 @@ function ConditionTypeSelect({
                     }
                   }}
                 >
-                  <span className="text-xs">×</span>
+                  <span className="text-helper">×</span>
                 </span>
               )}
             </div>
@@ -190,7 +190,7 @@ function ConditionTypeSelect({
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                         <span className="font-medium text-foreground">{option.name}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                      <div className="text-body text-muted-foreground mt-1.5 leading-relaxed">
                         {option.description}
                       </div>
                     </div>
@@ -199,10 +199,10 @@ function ConditionTypeSelect({
               </CommandGroup>
               {filteredOptions.length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-body text-muted-foreground">
                     No condition types found.
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-helper text-muted-foreground mt-1">
                     Try adjusting your search terms
                   </div>
                 </div>
@@ -399,7 +399,7 @@ export function ConditionsTab({
                 <Label htmlFor="conditions-attached" className="text-base font-medium text-foreground">
                   Are conditions attached to this activity?
                 </Label>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-body text-muted-foreground mt-1">
                   Toggle whether the conditions listed below apply to this activity
                 </p>
               </div>
@@ -412,7 +412,7 @@ export function ConditionsTab({
                 />
               )}
               {readOnly && (
-                <span className="ml-4 text-sm font-medium text-foreground">
+                <span className="ml-4 text-body font-medium text-foreground">
                   {areConditionsAttached ? 'Yes' : 'No'}
                 </span>
               )}
@@ -436,7 +436,7 @@ export function ConditionsTab({
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="condition-type" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="condition-type" className="text-body font-medium flex items-center gap-2">
                 Condition Type <RequiredDot />
                 <HelpTextTooltip>
                   Select the type of condition based on IATI standard
@@ -450,7 +450,7 @@ export function ConditionsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="condition-narrative" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="condition-narrative" className="text-body font-medium flex items-center gap-2">
                 Description <RequiredDot />
               </Label>
               <Textarea
@@ -571,7 +571,7 @@ export function ConditionsTab({
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
                         <span className="text-lg font-bold text-foreground">{index + 1}.</span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-muted text-foreground border border-gray-400">
+                        <span className="inline-flex items-center px-3 py-1 rounded-md text-body font-medium bg-muted text-foreground border border-gray-400">
                           {CONDITION_TYPE_LABELS[condition.type]}
                         </span>
                       </div>

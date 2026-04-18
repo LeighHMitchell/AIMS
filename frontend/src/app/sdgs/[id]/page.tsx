@@ -362,9 +362,9 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                                  <p className="font-medium text-helper text-foreground mb-1">{payload[0]?.payload?.year}</p>
                                   {payload.map((entry: any, i: number) => (
-                                    <p key={i} className="text-xs text-muted-foreground">
+                                    <p key={i} className="text-helper text-muted-foreground">
                                       {entry.name}: {formatCurrencyShort(entry.value)}
                                     </p>
                                   ))}
@@ -380,7 +380,7 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No data</div>
                 )}
             </MiniChartCard>
 
@@ -401,8 +401,8 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.targetId}: {payload[0]?.payload?.targetText}</p>
-                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
+                                  <p className="font-medium text-helper text-foreground">{payload[0]?.payload?.targetId}: {payload[0]?.payload?.targetText}</p>
+                                  <p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
                                 </div>
                               )
                             }
@@ -414,7 +414,7 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No target data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No target data</div>
                 )}
             </MiniChartCard>
 
@@ -439,8 +439,8 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
-                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p>
+                                  <p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p>
+                                  <p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p>
                                 </div>
                               )
                             }
@@ -452,7 +452,7 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No donor data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No donor data</div>
                 )}
             </MiniChartCard>
 
@@ -477,8 +477,8 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
-                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
+                                  <p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p>
+                                  <p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
                                 </div>
                               )
                             }
@@ -490,7 +490,7 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No geo data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-helper">No geo data</div>
                 )}
             </MiniChartCard>
           </div>
@@ -500,13 +500,13 @@ export default function SDGProfilePage() {
 
             {/* ======== Target Coverage ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-sm font-medium">Target Coverage</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-body font-medium">Target Coverage</CardTitle></CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {targetBreakdown.filter(t => t.targetId !== 'general').map(target => (
                     <span
                       key={target.targetId}
-                      className="text-xs font-medium px-2 py-1 rounded"
+                      className="text-helper font-medium px-2 py-1 rounded"
                       style={target.totalValue > 0 ? {
                         backgroundColor: `${sdg.color}20`,
                         color: sdg.color,
@@ -521,7 +521,7 @@ export default function SDGProfilePage() {
                     </span>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mb-6">
+                <p className="text-helper text-muted-foreground mb-6">
                   {targetBreakdown.filter(t => t.totalValue > 0 && t.targetId !== 'general').length} of {targetBreakdown.filter(t => t.targetId !== 'general').length} targets funded
                 </p>
                 <SDGTargetBreakdown targets={targetBreakdown} sdgColor={sdg.color} />
@@ -531,7 +531,7 @@ export default function SDGProfilePage() {
             {/* ======== Financials ======== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
-                <CardHeader><CardTitle className="text-sm font-medium">Financial Trends</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-body font-medium">Financial Trends</CardTitle></CardHeader>
                 <CardContent>
                   {transactionsByYear.length > 0 ? (
                     <div className="h-72">
@@ -554,9 +554,9 @@ export default function SDGProfilePage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className={TOOLTIP_CLASSES}>
-                                    <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                                    <p className="font-medium text-helper text-foreground mb-1">{payload[0]?.payload?.year}</p>
                                     {payload.map((entry: any, i: number) => (
-                                      <p key={i} className="text-xs text-muted-foreground">
+                                      <p key={i} className="text-helper text-muted-foreground">
                                         <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: entry.stroke || entry.fill }} />
                                         {entry.name}: {formatCurrencyShort(entry.value)}
                                       </p>
@@ -574,13 +574,13 @@ export default function SDGProfilePage() {
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No time-series data available</div>
+                    <div className="h-72 flex items-center justify-center text-muted-foreground text-body">No time-series data available</div>
                   )}
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-sm font-medium">Transaction Type Breakdown</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-body font-medium">Transaction Type Breakdown</CardTitle></CardHeader>
                 <CardContent>
                   {transactionsByType.length > 0 ? (
                     <div className="h-72">
@@ -596,7 +596,7 @@ export default function SDGProfilePage() {
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No transaction data</div>
+                    <div className="h-72 flex items-center justify-center text-muted-foreground text-body">No transaction data</div>
                   )}
                 </CardContent>
               </Card>
@@ -604,7 +604,7 @@ export default function SDGProfilePage() {
 
             {/* ======== Donors ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-sm font-medium">Donor Landscape</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-body font-medium">Donor Landscape</CardTitle></CardHeader>
               <CardContent>
                 <SDGDonorRankings donors={donorRankings} sdgColor={sdg.color} />
               </CardContent>
@@ -614,7 +614,7 @@ export default function SDGProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-sm font-medium">Activities</CardTitle>
+                  <CardTitle className="text-body font-medium">Activities</CardTitle>
                   <div className="flex items-center gap-2">
                     {[
                       { key: 'all', label: 'All', count: activities.length },
@@ -625,7 +625,7 @@ export default function SDGProfilePage() {
                       <button
                         key={f.key}
                         onClick={() => setActivityStatusFilter(f.key)}
-                        className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
+                        className={`text-helper px-2.5 py-1 rounded-md transition-colors ${
                           activityStatusFilter === f.key
                             ? 'text-white'
                             : 'bg-muted text-muted-foreground hover:bg-muted'
@@ -638,7 +638,7 @@ export default function SDGProfilePage() {
                     <select
                       value={activitySort}
                       onChange={e => setActivitySort(e.target.value)}
-                      className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground"
+                      className="text-helper border border-border rounded-md px-2 py-1 text-muted-foreground"
                     >
                       <option value="value">Sort by Value</option>
                       <option value="committed">Sort by Committed</option>
@@ -653,7 +653,7 @@ export default function SDGProfilePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground mb-3">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
+                <p className="text-helper text-muted-foreground mb-3">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
 
                 {activityView === 'card' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -666,12 +666,12 @@ export default function SDGProfilePage() {
                               <ExternalLink className="h-3 w-3 text-muted-foreground" />
                             </div>
                             <div className="flex items-start gap-1.5 mb-1">
-                              <h3 className="font-medium text-sm text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
+                              <h3 className="font-medium text-body text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
                               {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
                             </div>
                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                              <div><p className="text-xs text-muted-foreground font-normal">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
-                              <div><p className="text-xs text-muted-foreground font-normal">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
+                              <div><p className="text-helper text-muted-foreground font-normal">Committed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
+                              <div><p className="text-helper text-muted-foreground font-normal">Disbursed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
                             </div>
                             {activity.commitments > 0 && (
                               <div className="w-full bg-muted rounded-full h-1 mt-2">
@@ -685,7 +685,7 @@ export default function SDGProfilePage() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
+                    <table className="w-full text-helper">
                       <thead className="bg-surface-muted">
                         <tr className="border-b border-border bg-muted">
                           <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Activity</th>
@@ -717,8 +717,8 @@ export default function SDGProfilePage() {
                                 </div>
                               </td>
                               <td className="py-2 px-3 text-muted-foreground">{getStatusLabel(activity.activity_status)}</td>
-                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.commitments)} <span className="text-xs text-muted-foreground font-normal">USD</span></td>
-                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.disbursements)} <span className="text-xs text-muted-foreground font-normal">USD</span></td>
+                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.commitments)} <span className="text-helper text-muted-foreground font-normal">USD</span></td>
+                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.disbursements)} <span className="text-helper text-muted-foreground font-normal">USD</span></td>
                               <td className="py-2 px-3 text-right text-muted-foreground">{pct}{pct !== '—' ? '%' : ''}</td>
                             </tr>
                           )
@@ -730,9 +730,9 @@ export default function SDGProfilePage() {
 
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-4">
-                    <Button variant="outline" size="sm" disabled={activityPage <= 1} onClick={() => setActivityPage(p => p - 1)} className="text-xs h-7">Previous</Button>
-                    <span className="text-xs text-muted-foreground">Page {activityPage} of {totalPages}</span>
-                    <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-xs h-7">Next</Button>
+                    <Button variant="outline" size="sm" disabled={activityPage <= 1} onClick={() => setActivityPage(p => p - 1)} className="text-helper h-7">Previous</Button>
+                    <span className="text-helper text-muted-foreground">Page {activityPage} of {totalPages}</span>
+                    <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-helper h-7">Next</Button>
                   </div>
                 )}
               </CardContent>
@@ -742,14 +742,14 @@ export default function SDGProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-sm font-medium">Organizations</CardTitle>
+                  <CardTitle className="text-body font-medium">Organizations</CardTitle>
                   <div className="flex items-center gap-2">
                     {['all', 'funding', 'implementing', 'accountable'].map(role => (
-                      <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
+                      <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-helper px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: '#4c5568' } : undefined}>
                         {role === 'all' ? 'All' : role}
                       </button>
                     ))}
-                    <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground">
+                    <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-helper border border-border rounded-md px-2 py-1 text-muted-foreground">
                       <option value="value">Sort by Value</option>
                       <option value="activities">Sort by Activities</option>
                       <option value="name">Sort by Name</option>
@@ -758,7 +758,7 @@ export default function SDGProfilePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground mb-3">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
+                <p className="text-helper text-muted-foreground mb-3">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
                 {filteredOrgs.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredOrgs.map(org => (
@@ -769,16 +769,16 @@ export default function SDGProfilePage() {
                               {org.logo ? (
                                 <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
                               ) : (
-                                <div className="w-10 h-10 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: '#4c5568' }}>
+                                <div className="w-10 h-10 rounded flex items-center justify-center text-white text-helper font-bold flex-shrink-0" style={{ backgroundColor: '#4c5568' }}>
                                   {(org.acronym || org.name).substring(0, 2).toUpperCase()}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-sm text-foreground truncate">{org.name}</h3>
-                                {org.acronym && <p className="text-xs text-muted-foreground font-normal">{org.acronym}</p>}
+                                <h3 className="font-medium text-body text-foreground truncate">{org.name}</h3>
+                                {org.acronym && <p className="text-helper text-muted-foreground font-normal">{org.acronym}</p>}
                                 <div className="flex items-center gap-3 mt-1.5">
-                                  <span className="text-xs font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
-                                  <span className="text-xs text-muted-foreground font-normal">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
+                                  <span className="text-helper font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
+                                  <span className="text-helper text-muted-foreground font-normal">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
                                 </div>
                                 {org.contributionTypes.length > 0 && (
                                   <div className="flex gap-1 mt-1">
@@ -795,14 +795,14 @@ export default function SDGProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm text-center py-8">No organizations found</p>
+                  <p className="text-muted-foreground text-body text-center py-8">No organizations found</p>
                 )}
               </CardContent>
             </Card>
 
             {/* ======== Geography ======== */}
             <Card>
-              <CardHeader><CardTitle className="text-sm font-medium">Activity Locations</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-body font-medium">Activity Locations</CardTitle></CardHeader>
               <CardContent>
                 <SDGGeographyMap locations={geographicDistribution} sdgColor={sdg.color} />
               </CardContent>
@@ -812,8 +812,8 @@ export default function SDGProfilePage() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">Country Rankings</CardTitle>
-                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
+                    <CardTitle className="text-body font-medium">Country Rankings</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-helper h-7" onClick={() => {
                       const exportData = geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value }))
                       exportChartToCSV(exportData, `SDG ${sdg.id} Countries`)
                     }}>
@@ -828,14 +828,14 @@ export default function SDGProfilePage() {
                         <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={(v) => formatCurrency(v)} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={35} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
-                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-helper text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-helper text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
                         ) : null} />
                         <Bar dataKey="value" fill="#4c5568" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
+                    <table className="w-full text-helper">
                       <thead className="bg-surface-muted">
                         <tr className="border-b border-border">
                           <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>

@@ -304,7 +304,7 @@ export function DataClinicFinancialDates() {
         </div>
 
         {/* Legend */}
-        <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center gap-4 text-body text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-12 h-6 bg-blue-500 rounded opacity-80"></div>
             <span>Transaction period range</span>

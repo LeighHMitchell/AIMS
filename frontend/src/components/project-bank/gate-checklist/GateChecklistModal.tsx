@@ -112,7 +112,7 @@ export function GateChecklistModal({
                         disabled
                         className="pointer-events-none"
                       />
-                      <span className="text-sm">{item.label}</span>
+                      <span className="text-body">{item.label}</span>
                     </div>
                     <div className="ml-6">
                       <GateDocumentUploadItem
@@ -133,7 +133,7 @@ export function GateChecklistModal({
                     checked={checks[item.key] || false}
                     onCheckedChange={(v) => handleToggle(item.key, v === true)}
                   />
-                  <span className="text-sm">{item.label}</span>
+                  <span className="text-body">{item.label}</span>
                 </label>
               )
             })}
@@ -141,7 +141,7 @@ export function GateChecklistModal({
 
           {/* Progress bar */}
           <div className="space-y-1.5 pt-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-helper text-muted-foreground">
               <span>{checkedCount} / {totalCount} requirements met</span>
               {allChecked && <span className="text-[hsl(var(--success-icon))] font-medium">All complete</span>}
             </div>

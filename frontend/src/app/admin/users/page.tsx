@@ -775,7 +775,7 @@ export default function UserManagement() {
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-12 w-12 flex-shrink-0">
                                     <AvatarImage src={user.profilePicture} alt={user.name} />
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-body">
                                       {user.firstName && user.lastName 
                                         ? `${user.firstName[0]}${user.middleName ? user.middleName[0] : ''}${user.lastName[0]}`.toUpperCase().slice(0, 2)
                                         : user.name 
@@ -790,12 +790,12 @@ export default function UserManagement() {
                                         ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
                                         : user.name}
                                     </div>
-                                    <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                                    <div className="text-body text-muted-foreground truncate">{user.email}</div>
                                     {user.jobTitle && (
-                                      <div className="text-sm text-muted-foreground truncate">{user.jobTitle}</div>
+                                      <div className="text-body text-muted-foreground truncate">{user.jobTitle}</div>
                                     )}
                                     {user.department && (
-                                      <div className="text-xs text-muted-foreground truncate">{user.department}</div>
+                                      <div className="text-helper text-muted-foreground truncate">{user.department}</div>
                                     )}
                                   </div>
                                 </div>
@@ -810,7 +810,7 @@ export default function UserManagement() {
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span className="truncate flex-1">{user.organization.name}</span>
                                     {(user as any).isOrganizationOrphaned && (
-                                      <Badge variant="destructive" className="text-xs flex-shrink-0">
+                                      <Badge variant="destructive" className="text-helper flex-shrink-0">
                                         <AlertCircle className="h-3 w-3 mr-1" />
                                         Deleted
                                       </Badge>
@@ -823,11 +823,11 @@ export default function UserManagement() {
                                   </Badge>
                                 )}
                               </td>
-                              <td className="p-4 text-sm text-muted-foreground w-48">
+                              <td className="p-4 text-body text-muted-foreground w-48">
                                 {user.lastLogin ? (
                                   <div>
                                     <div className="truncate">{format(new Date(user.lastLogin), "MMM d, yyyy")}</div>
-                                    <div className="truncate text-xs">{format(new Date(user.lastLogin), "h:mm a")}</div>
+                                    <div className="truncate text-helper">{format(new Date(user.lastLogin), "h:mm a")}</div>
                                   </div>
                                 ) : (
                                   <div className="truncate">Never</div>
@@ -1168,7 +1168,7 @@ function UserEditor({
                   variant="outline"
                   size="sm"
                   onClick={handleEmailChangeClick}
-                  className="text-orange-600 hover:text-orange-700 text-xs px-2 py-1 ml-auto"
+                  className="text-orange-600 hover:text-orange-700 text-helper px-2 py-1 ml-auto"
                 >
                   Change Email
                 </Button>
@@ -1183,7 +1183,7 @@ function UserEditor({
               disabled={!!user.id}
             />
             {user.id && currentUser?.role !== 'super_user' && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 Email cannot be changed for existing users
               </p>
             )}
@@ -1284,7 +1284,7 @@ function UserEditor({
               className="w-full"
             />
             {!formData.organizationId && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-helper text-muted-foreground mt-1">
                 No organization selected (Orphan user)
               </p>
             )}

@@ -186,7 +186,7 @@ export function OptimizedOrganizationList({
               {organization.name}
             </h3>
             {organization.acronym && (
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body text-muted-foreground mt-1">
                 {organization.acronym}
               </p>
             )}
@@ -194,7 +194,7 @@ export function OptimizedOrganizationList({
           
           <div className="flex items-center gap-2 ml-4">
             {organization.organization_type && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-helper">
                 {organization.organization_type}
               </Badge>
             )}
@@ -202,7 +202,7 @@ export function OptimizedOrganizationList({
         </div>
 
         {/* IATI Identifier and Country */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 text-body text-muted-foreground">
           {organization.iati_identifier && (
             <div className="flex items-center gap-1">
               <Globe className="w-4 h-4" />
@@ -222,13 +222,13 @@ export function OptimizedOrganizationList({
 
         {/* Description */}
         {organization.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-body text-muted-foreground line-clamp-2">
             {organization.description}
           </p>
         )}
 
         {/* Additional Info */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-helper text-muted-foreground">
           <div className="flex items-center gap-4">
             {organization.registration_agency && (
               <span>Reg: {organization.registration_agency}</span>
@@ -307,7 +307,7 @@ export function OptimizedOrganizationList({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body text-muted-foreground">
         {searchResults ? (
           `Found ${searchResults.total} organizations`
         ) : (
@@ -318,7 +318,7 @@ export function OptimizedOrganizationList({
 
       {/* Error Display */}
       {searchError && (
-        <div className="text-destructive text-sm p-2 bg-destructive/10 rounded">
+        <div className="text-destructive text-body p-2 bg-destructive/10 rounded">
           {searchError}
         </div>
       )}

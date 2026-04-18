@@ -173,7 +173,7 @@ export default function OrganizationFundingEnvelopeTab({
           <HelpCircle className="h-4 w-4" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed">
+      <TooltipContent side="top" className="max-w-sm text-helper leading-relaxed">
         {FIELD_HELP_TEXTS[helpKey]}
       </TooltipContent>
     </Tooltip>
@@ -516,7 +516,7 @@ export default function OrganizationFundingEnvelopeTab({
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">Funding Envelopes</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-body text-muted-foreground mt-1">
                     Record past, current, and future organisation-level funding declarations
                   </p>
                 </div>
@@ -590,9 +590,9 @@ export default function OrganizationFundingEnvelopeTab({
                 </div>
               ) : sortedEnvelopes.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <p className="text-sm mb-2">No funding envelope entries yet.</p>
+                  <p className="text-body mb-2">No funding envelope entries yet.</p>
                   {!readOnly && (
-                    <p className="text-sm">Click &quot;Add Entry&quot; to add a funding declaration.</p>
+                    <p className="text-body">Click &quot;Add Entry&quot; to add a funding declaration.</p>
                   )}
                 </div>
               ) : (
@@ -629,7 +629,7 @@ export default function OrganizationFundingEnvelopeTab({
                                   {formatCurrency(envelope.amount, envelope.currency)}
                                 </div>
                               </TableCell>
-                              <TableCell className="text-sm">
+                              <TableCell className="text-body">
                                 {envelope.value_date ? (
                                   new Date(envelope.value_date).toLocaleDateString('en-GB', {
                                     day: '2-digit',
@@ -854,7 +854,7 @@ export default function OrganizationFundingEnvelopeTab({
                       </SelectContent>
                     </Select>
                     {fieldErrors.year_start && (
-                      <p className="text-sm text-destructive">{fieldErrors.year_start}</p>
+                      <p className="text-body text-destructive">{fieldErrors.year_start}</p>
                     )}
                   </div>
 
@@ -885,7 +885,7 @@ export default function OrganizationFundingEnvelopeTab({
                         </SelectContent>
                       </Select>
                       {fieldErrors.year_end && (
-                        <p className="text-sm text-destructive">{fieldErrors.year_end}</p>
+                        <p className="text-body text-destructive">{fieldErrors.year_end}</p>
                       )}
                     </div>
                   ) : (
@@ -912,7 +912,7 @@ export default function OrganizationFundingEnvelopeTab({
                       placeholder="0"
                     />
                     {fieldErrors.amount && (
-                      <p className="text-sm text-destructive">{fieldErrors.amount}</p>
+                      <p className="text-body text-destructive">{fieldErrors.amount}</p>
                     )}
                   </div>
 
@@ -948,7 +948,7 @@ export default function OrganizationFundingEnvelopeTab({
                       </SelectContent>
                     </Select>
                     {fieldErrors.currency && (
-                      <p className="text-sm text-destructive">{fieldErrors.currency}</p>
+                      <p className="text-body text-destructive">{fieldErrors.currency}</p>
                     )}
                   </div>
 
@@ -971,7 +971,7 @@ export default function OrganizationFundingEnvelopeTab({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between min-h-[24px]">
-                        <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        <Label className="flex items-center gap-1.5 text-body font-medium">
                           Exchange Rate
                           <TooltipProvider>
                             <Tooltip>
@@ -979,14 +979,14 @@ export default function OrganizationFundingEnvelopeTab({
                                 <Info className="h-3 w-3 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="text-sm">The exchange rate used to convert the funding envelope value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                                <p className="text-body">The exchange rate used to convert the funding envelope value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </Label>
                         {editingEnvelope.currency !== 'USD' && (
                           <div className="flex items-center gap-2">
-                            <Label htmlFor="envelope_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                            <Label htmlFor="envelope_exchange_rate_mode" className="text-helper text-muted-foreground cursor-pointer">
                               {modalExchangeRateManual ? 'Manual' : 'Auto'}
                             </Label>
                             <Switch
@@ -1032,18 +1032,18 @@ export default function OrganizationFundingEnvelopeTab({
                           </Button>
                         )}
                         {modalExchangeRate != null && editingEnvelope.currency !== 'USD' && !isLoadingModalRate && (
-                          <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                          <span className="absolute right-10 top-2.5 text-helper text-muted-foreground select-all cursor-text">
                             1 {editingEnvelope.currency} = {modalExchangeRate.toFixed(6)} USD
                           </span>
                         )}
                       </div>
                       {modalRateError && (
-                        <p className="text-xs text-destructive">{modalRateError}</p>
+                        <p className="text-helper text-destructive">{modalRateError}</p>
                       )}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center min-h-[24px]">
-                        <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        <Label className="flex items-center gap-1.5 text-body font-medium">
                           USD Value
                           <TooltipProvider>
                             <Tooltip>
@@ -1051,13 +1051,13 @@ export default function OrganizationFundingEnvelopeTab({
                                 <Info className="h-3 w-3 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="text-sm">The funding envelope value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                                <p className="text-body">The funding envelope value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </Label>
                       </div>
-                      <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                      <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-body">
                         {modalCalculatedUsdValue !== null ? (
                           <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                         ) : (
@@ -1108,7 +1108,7 @@ export default function OrganizationFundingEnvelopeTab({
                       <SelectTrigger className="h-auto min-h-[40px]">
                         <span className="text-left py-1">
                           <span className="block">{selectedRole?.label}</span>
-                          <span className="block text-xs text-muted-foreground">{selectedRole?.description}</span>
+                          <span className="block text-helper text-muted-foreground">{selectedRole?.description}</span>
                         </span>
                       </SelectTrigger>
                       <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -1116,14 +1116,14 @@ export default function OrganizationFundingEnvelopeTab({
                           <SelectItem key={role.value} value={role.value} className="py-2">
                             <div className="text-left">
                               <div className="font-medium">{role.label}</div>
-                              <div className="text-xs text-muted-foreground">{role.description}</div>
+                              <div className="text-helper text-muted-foreground">{role.description}</div>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {fieldErrors.organization_role && (
-                      <p className="text-sm text-destructive">{fieldErrors.organization_role}</p>
+                      <p className="text-body text-destructive">{fieldErrors.organization_role}</p>
                     )}
                   </div>
                 </div>
@@ -1143,7 +1143,7 @@ export default function OrganizationFundingEnvelopeTab({
                       <SelectTrigger className="h-auto min-h-[40px]">
                         <span className="text-left py-1">
                           <span className="block">{selectedStatus?.label}</span>
-                          <span className="block text-xs text-muted-foreground">{selectedStatus?.description}</span>
+                          <span className="block text-helper text-muted-foreground">{selectedStatus?.description}</span>
                         </span>
                       </SelectTrigger>
                       <SelectContent className="w-[var(--radix-select-trigger-width)]">
@@ -1151,14 +1151,14 @@ export default function OrganizationFundingEnvelopeTab({
                           <SelectItem key={status.value} value={status.value} className="py-2">
                             <div className="text-left">
                               <div className="font-medium">{status.label}</div>
-                              <div className="text-xs text-muted-foreground">{status.description}</div>
+                              <div className="text-helper text-muted-foreground">{status.description}</div>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {fieldErrors.status && (
-                      <p className="text-sm text-destructive">{fieldErrors.status}</p>
+                      <p className="text-body text-destructive">{fieldErrors.status}</p>
                     )}
                   </div>
 
@@ -1209,7 +1209,7 @@ export default function OrganizationFundingEnvelopeTab({
                               <Badge
                                 key={flag}
                                 variant="secondary"
-                                className="flex items-center gap-1 pr-1 text-xs"
+                                className="flex items-center gap-1 pr-1 text-helper"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   toggleFundingTypeFlag(flag)
@@ -1235,7 +1235,7 @@ export default function OrganizationFundingEnvelopeTab({
                             >
                               <div className="flex items-center gap-2">
                                 <div className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-input'}`}>
-                                  {isSelected && <span className="text-white text-xs">✓</span>}
+                                  {isSelected && <span className="text-white text-helper">✓</span>}
                                 </div>
                                 <span>{flag.label}</span>
                               </div>

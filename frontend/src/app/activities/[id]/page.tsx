@@ -1374,14 +1374,14 @@ export default function ActivityDetailPage() {
   // Helper function to render label with help tooltip
   const LabelWithHelp = ({ label, helpText }: { label: string; helpText: string }) => (
     <div className="flex items-center gap-1">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-helper font-medium text-muted-foreground">{label}</p>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
             <HelpCircle className="h-3 w-3 text-muted-foreground hover:text-muted-foreground cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <div className="text-sm whitespace-pre-line">{helpText}</div>
+            <div className="text-body whitespace-pre-line">{helpText}</div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -1398,7 +1398,7 @@ export default function ActivityDetailPage() {
     const isClosed = ['completed', 'cancelled', 'suspended', '4', '5', '6'].includes(activityStatus);
 
     return (
-      <div className="space-y-2 text-sm">
+      <div className="space-y-2 text-body">
         {activity.plannedStartDate && (
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 text-muted-foreground" />
@@ -1516,7 +1516,7 @@ export default function ActivityDetailPage() {
                   <span className="text-3xl font-semibold tabular-nums text-foreground tracking-tight">
                     {implementationVsPlanPercent}%
                   </span>
-                  <span className="text-xs text-muted-foreground">of budget spent</span>
+                  <span className="text-helper text-muted-foreground">of budget spent</span>
                 </div>
                 <div className="mt-2 w-full bg-muted rounded-full h-1.5">
                   <div
@@ -1538,25 +1538,25 @@ export default function ActivityDetailPage() {
               <div className="flex-1 flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4">
                 <div>
                   <p className="text-[11px] text-muted-foreground mb-0.5">Budgeted</p>
-                  <p className="text-sm font-semibold tabular-nums text-foreground">${formatCompactNumber(totalBudgeted)}</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(totalBudgeted)}</p>
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground mb-0.5">Committed</p>
-                  <p className="text-sm font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalCommitment)}</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalCommitment)}</p>
                 </div>
                 <div className="h-8 w-px bg-border hidden sm:block" />
                 <div>
                   <p className="text-[11px] text-muted-foreground mb-0.5">Disbursed</p>
-                  <p className="text-sm font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalDisbursement)}</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalDisbursement)}</p>
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground mb-0.5">Expended</p>
-                  <p className="text-sm font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalExpenditure)}</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalExpenditure)}</p>
                 </div>
                 <div className="h-8 w-px bg-border hidden sm:block" />
                 <div>
                   <p className="text-[11px] text-muted-foreground mb-0.5">Total Spent</p>
-                  <p className="text-sm font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalDisbursement + financials.totalExpenditure)}</p>
+                  <p className="text-body font-semibold tabular-nums text-foreground">${formatCompactNumber(financials.totalDisbursement + financials.totalExpenditure)}</p>
                 </div>
               </div>
             </div>
@@ -1568,7 +1568,7 @@ export default function ActivityDetailPage() {
             <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-xs font-semibold text-foreground">Budget by Year</CardTitle>
+                  <CardTitle className="text-helper font-semibold text-foreground">Budget by Year</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
                   />
@@ -1643,7 +1643,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetData.length === 0) {
                     return (
-                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-helper">
                         <p>No budget data</p>
                 </div>
                     )
@@ -1652,7 +1652,7 @@ export default function ActivityDetailPage() {
                   if (budgetYearView === 'table') {
                     return (
                       <div className="flex-1 min-h-24 overflow-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -1711,7 +1711,7 @@ export default function ActivityDetailPage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                    <table className="text-xs w-full border-collapse">
+                                    <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -1753,7 +1753,7 @@ export default function ActivityDetailPage() {
             <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-xs font-semibold text-foreground">Planned vs Actual</CardTitle>
+                  <CardTitle className="text-helper font-semibold text-foreground">Planned vs Actual</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
                     side="top"
@@ -1887,7 +1887,7 @@ export default function ActivityDetailPage() {
 
                   if (chartData.length === 0) {
                     return (
-                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-helper">
                         <p>No financial data</p>
                 </div>
                     )
@@ -1896,7 +1896,7 @@ export default function ActivityDetailPage() {
                   if (disbursementProgressView === 'table') {
                     return (
                       <div className="flex-1 min-h-24 overflow-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -1965,7 +1965,7 @@ export default function ActivityDetailPage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                    <table className="text-xs w-full border-collapse">
+                                    <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -2032,7 +2032,7 @@ export default function ActivityDetailPage() {
             {/* Finance Type Breakdown */}
             <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="text-xs font-semibold text-foreground">Finance Types</CardTitle>
+                <CardTitle className="text-helper font-semibold text-foreground">Finance Types</CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <FinanceTypeDonut 
@@ -2087,7 +2087,7 @@ export default function ActivityDetailPage() {
                             type="button"
                             onClick={() => handleTabChange(g.tabs[0].value)}
                             className={cn(
-                              "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                              "px-4 py-2.5 text-body font-medium transition-colors border-b-2 -mb-px",
                               isActive
                                 ? "border-foreground text-foreground"
                                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -2157,7 +2157,7 @@ export default function ActivityDetailPage() {
                           {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-foreground">Budgets</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {budgets !== undefined && budgets.length === 0 ? 'No budgets recorded' : 'Activity budget allocations by period'}
                             </p>
                           </div>
@@ -2209,7 +2209,7 @@ export default function ActivityDetailPage() {
                           {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-foreground">Planned Disbursements</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'No planned disbursements recorded' : 'Scheduled future disbursements'}
                             </p>
                           </div>
@@ -2261,7 +2261,7 @@ export default function ActivityDetailPage() {
                           {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-foreground">Transactions</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-helper text-muted-foreground mt-1">
                               {activity.transactions !== undefined && activity.transactions.length === 0 ? 'No transactions recorded' : 'Commitments, disbursements, and expenditures'}
                             </p>
                           </div>
@@ -2376,7 +2376,7 @@ export default function ActivityDetailPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('group')}
-                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'group' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                                    className={cn("h-7 text-helper px-3", sectorBarGroupingMode === 'group' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sector Category
                                   </Button>
@@ -2384,7 +2384,7 @@ export default function ActivityDetailPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('category')}
-                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'category' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                                    className={cn("h-7 text-helper px-3", sectorBarGroupingMode === 'category' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sector
                                   </Button>
@@ -2392,7 +2392,7 @@ export default function ActivityDetailPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('sector')}
-                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'sector' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                                    className={cn("h-7 text-helper px-3", sectorBarGroupingMode === 'sector' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sub Sector
                                   </Button>
@@ -2766,12 +2766,12 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-body text-muted-foreground">
                                     Reporting
                                   </span>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-body text-muted-foreground">
                                     {reportingOrg.organisation_type
                                       ? getOrganizationTypeName(reportingOrg.organisation_type)
                                       : <span className="text-muted-foreground">Not set</span>
@@ -2780,9 +2780,9 @@ export default function ActivityDetailPage() {
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
                                   {reportingOrg.country ? (
-                                    <span className="text-sm text-muted-foreground">{reportingOrg.country}</span>
+                                    <span className="text-body text-muted-foreground">{reportingOrg.country}</span>
                                   ) : (
-                                    <span className="text-muted-foreground text-sm">—</span>
+                                    <span className="text-muted-foreground text-body">—</span>
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -2898,12 +2898,12 @@ export default function ActivityDetailPage() {
                                     </div>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <span className="text-sm text-muted-foreground">
+                                    <span className="text-body text-muted-foreground">
                                       {getOrganizationRoleName(org.iati_role_code || getRoleCodeFromType(org.role_type))}
                                     </span>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <span className="text-sm text-muted-foreground">
+                                    <span className="text-body text-muted-foreground">
                                       {org.org_type || org.organization?.Organisation_Type_Code
                                         ? getOrganizationTypeName(org.org_type || org.organization?.Organisation_Type_Code || '')
                                         : <span className="text-muted-foreground">Not set</span>
@@ -2912,9 +2912,9 @@ export default function ActivityDetailPage() {
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
                                     {org.organization?.country ? (
-                                      <span className="text-sm text-muted-foreground">{org.organization.country}</span>
+                                      <span className="text-body text-muted-foreground">{org.organization.country}</span>
                                     ) : (
-                                      <span className="text-muted-foreground text-sm">—</span>
+                                      <span className="text-muted-foreground text-body">—</span>
                                     )}
                                   </TableCell>
                                 </TableRow>
@@ -3055,7 +3055,7 @@ export default function ActivityDetailPage() {
                                 }}
                               >
                                 <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
-                                <span className={`text-sm font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
+                                <span className={`text-body font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
                                   {label}
                                 </span>
                               </div>
@@ -3573,15 +3573,15 @@ export default function ActivityDetailPage() {
                                         <TableCell className="font-medium">
                                           {location.location_name || 'Unnamed Location'}
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm">
+                                        <TableCell className="text-muted-foreground text-body">
                                           {location.latitude && location.longitude 
                                             ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
                                             : 'N/A'}
                                         </TableCell>
-                                        <TableCell className="text-sm">
+                                        <TableCell className="text-body">
                                           {formatAddress()}
                                         </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                        <TableCell className="text-body text-muted-foreground max-w-[200px] truncate">
                                           {location.location_description || location.description || '-'}
                                         </TableCell>
                                       </TableRow>
@@ -3670,7 +3670,7 @@ export default function ActivityDetailPage() {
                         {/* Detailed SDG Explanations and Targets */}
                         {sdgMappings.some(m => m.notes || (m.sdgTarget || m.sdg_target)) && (
                           <div className="mt-8 pt-6 border-t border-border">
-                            <h4 className="text-sm font-semibold text-foreground mb-4">SDG Alignment Details</h4>
+                            <h4 className="text-body font-semibold text-foreground mb-4">SDG Alignment Details</h4>
                             <div className="grid gap-4">
                               {(() => {
                                 // Group mappings by goal
@@ -3710,13 +3710,13 @@ export default function ActivityDetailPage() {
                                             Goal {goal.id}: {goal.name}
                                           </h5>
                                           {data.notes && (
-                                            <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+                                            <p className="mt-1 text-body text-muted-foreground whitespace-pre-wrap">
                                               {data.notes}
                                             </p>
                                           )}
                                           {data.targets.length > 0 && (
                                             <div className="mt-2">
-                                              <p className="text-xs font-medium text-muted-foreground mb-1">Specific Targets:</p>
+                                              <p className="text-helper font-medium text-muted-foreground mb-1">Specific Targets:</p>
                                               <div className="flex flex-wrap gap-1.5">
                                                 {data.targets.map((targetId: string) => {
                                                   const target = SDG_TARGETS.find(t => t.id === targetId);
@@ -3724,12 +3724,12 @@ export default function ActivityDetailPage() {
                                                     <TooltipProvider key={targetId}>
                                                       <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                          <Badge variant="secondary" className="text-xs cursor-help">
+                                                          <Badge variant="secondary" className="text-helper cursor-help">
                                                             {targetId}
                                                           </Badge>
                                                         </TooltipTrigger>
                                                         <TooltipContent className="max-w-sm">
-                                                          <p className="text-sm">{target?.description || targetId}</p>
+                                                          <p className="text-body">{target?.description || targetId}</p>
                                                         </TooltipContent>
                                                       </Tooltip>
                                                     </TooltipProvider>

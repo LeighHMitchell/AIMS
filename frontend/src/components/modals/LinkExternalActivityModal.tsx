@@ -119,7 +119,7 @@ export function LinkExternalActivityModal({
               onChange={(e) => setExternalIatiId(e.target.value)}
               className="border-input focus:border-gray-500"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               The unique IATI identifier of the related activity
             </p>
           </div>
@@ -134,7 +134,7 @@ export function LinkExternalActivityModal({
               onChange={(e) => setExternalTitle(e.target.value)}
               className="border-input focus:border-gray-500"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Optional title to help identify this activity
             </p>
           </div>

@@ -410,41 +410,41 @@ export default function AidFlowNetworkGraph({
       <div className="absolute top-2 left-2 z-10 bg-white/90 backdrop-blur p-3 rounded-lg border">
         <div className="flex items-center gap-2 mb-2">
           <Network className="h-4 w-4" />
-          <span className="text-sm font-medium">Organization Types</span>
+          <span className="text-body font-medium">Organization Types</span>
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4c5568' }}></div>
-            <span className="text-xs">Donor</span>
+            <span className="text-helper">Donor</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7b95a7' }}></div>
-            <span className="text-xs">Recipient</span>
+            <span className="text-helper">Recipient</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#dc2625' }}></div>
-            <span className="text-xs">Implementer</span>
+            <span className="text-helper">Implementer</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#cfd0d5' }}></div>
-            <span className="text-xs">Sector</span>
+            <span className="text-helper">Sector</span>
           </div>
         </div>
         
         <div className="mt-3 pt-3 border-t">
-          <span className="text-sm font-medium">Flow Types</span>
+          <span className="text-body font-medium">Flow Types</span>
           <div className="space-y-1 mt-2">
             <div className="flex items-center gap-2">
               <div className="w-4 h-0.5" style={{ backgroundColor: '#7b95a7' }}></div>
-              <span className="text-xs">Commitment</span>
+              <span className="text-helper">Commitment</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
-              <span className="text-xs">Disbursement</span>
+              <span className="text-helper">Disbursement</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
-              <span className="text-xs">Expenditure</span>
+              <span className="text-helper">Expenditure</span>
             </div>
           </div>
         </div>
@@ -462,7 +462,7 @@ export default function AidFlowNetworkGraph({
         >
           {tooltip.type === 'node' && tooltip.node && (
             <>
-              <div className="font-semibold text-sm">{tooltip.node.name}</div>
+              <div className="font-semibold text-body">{tooltip.node.name}</div>
               <div className="flex items-center gap-2 mt-1">
                 <span 
                   className="w-2 h-2 rounded-full" 
@@ -472,26 +472,26 @@ export default function AidFlowNetworkGraph({
                                     tooltip.node.type === 'implementer' ? '#dc2625' : '#cfd0d5' 
                   }}
                 />
-                <span className="text-xs text-slate-300 capitalize">{tooltip.node.type}</span>
+                <span className="text-helper text-slate-300 capitalize">{tooltip.node.type}</span>
               </div>
               {tooltip.node.sector && (
-                <div className="text-xs text-muted-foreground mt-1">Sector: {tooltip.node.sector}</div>
+                <div className="text-helper text-muted-foreground mt-1">Sector: {tooltip.node.sector}</div>
               )}
               <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
                 {tooltip.node.totalIn !== undefined && tooltip.node.totalIn > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-helper">
                     <span className="text-green-400">↓ Inflow:</span>
                     <span className="font-medium">{formatCurrency(tooltip.node.totalIn)}</span>
                   </div>
                 )}
                 {tooltip.node.totalOut !== undefined && tooltip.node.totalOut > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-helper">
                     <span className="text-blue-400">↑ Outflow:</span>
                     <span className="font-medium">{formatCurrency(tooltip.node.totalOut)}</span>
                   </div>
                 )}
                 {(tooltip.node.totalIn || 0) > 0 && (tooltip.node.totalOut || 0) > 0 && (
-                  <div className="flex justify-between text-xs pt-1 border-t border-slate-700">
+                  <div className="flex justify-between text-helper pt-1 border-t border-slate-700">
                     <span className="text-muted-foreground">Net Flow:</span>
                     <span className={`font-medium ${((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-destructive'}`}>
                       {formatCurrency((tooltip.node.totalIn || 0) - (tooltip.node.totalOut || 0))}
@@ -504,7 +504,7 @@ export default function AidFlowNetworkGraph({
           
           {tooltip.type === 'link' && tooltip.link && (
             <>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-body">
                 <span className="font-medium truncate max-w-[100px]">
                   {tooltip.sourceNode?.name || 'Unknown'}
                 </span>
@@ -514,12 +514,12 @@ export default function AidFlowNetworkGraph({
                 </span>
               </div>
               <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-helper">
                   <span className="text-muted-foreground">Amount:</span>
                   <span className="font-semibold text-white">{formatCurrency(tooltip.link.value)}</span>
                 </div>
                 {tooltip.link.flowType && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-helper">
                     <span className="text-muted-foreground">Flow Type:</span>
                     <span 
                       className="capitalize font-medium"
@@ -533,13 +533,13 @@ export default function AidFlowNetworkGraph({
                   </div>
                 )}
                 {tooltip.link.transactionType && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-helper">
                     <span className="text-muted-foreground">Transaction Type:</span>
                     <span className="text-slate-300">{getTransactionTypeName(tooltip.link.transactionType)}</span>
                   </div>
                 )}
                 {tooltip.link.aidType && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-helper">
                     <span className="text-muted-foreground">Aid Type:</span>
                     <span className="text-slate-300">{tooltip.link.aidType}</span>
                   </div>
@@ -571,7 +571,7 @@ export default function AidFlowNetworkGraph({
             <X className="h-4 w-4" />
           </button>
           
-          <div className="font-semibold text-sm pr-6">{selectedNode.name}</div>
+          <div className="font-semibold text-body pr-6">{selectedNode.name}</div>
           <div className="flex items-center gap-2 mt-1">
             <span 
               className="w-2 h-2 rounded-full" 
@@ -581,26 +581,26 @@ export default function AidFlowNetworkGraph({
                                 selectedNode.type === 'implementer' ? '#dc2625' : '#cfd0d5' 
               }}
             />
-            <span className="text-xs text-slate-300 capitalize">{selectedNode.type}</span>
+            <span className="text-helper text-slate-300 capitalize">{selectedNode.type}</span>
           </div>
           {selectedNode.sector && (
-            <div className="text-xs text-muted-foreground mt-1">Sector: {selectedNode.sector}</div>
+            <div className="text-helper text-muted-foreground mt-1">Sector: {selectedNode.sector}</div>
           )}
           <div className="mt-2 pt-2 border-t border-slate-700 space-y-1">
             {selectedNode.totalIn !== undefined && selectedNode.totalIn > 0 && (
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-helper">
                 <span className="text-green-400">Total Inflow:</span>
                 <span className="font-medium">{formatCurrency(selectedNode.totalIn)}</span>
               </div>
             )}
             {selectedNode.totalOut !== undefined && selectedNode.totalOut > 0 && (
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-helper">
                 <span className="text-blue-400">Total Outflow:</span>
                 <span className="font-medium">{formatCurrency(selectedNode.totalOut)}</span>
               </div>
             )}
             {(selectedNode.totalIn || 0) > 0 && (selectedNode.totalOut || 0) > 0 && (
-              <div className="flex justify-between text-xs pt-1 border-t border-slate-700">
+              <div className="flex justify-between text-helper pt-1 border-t border-slate-700">
                 <span className="text-muted-foreground">Net Flow:</span>
                 <span className={`font-medium ${((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0)) >= 0 ? 'text-green-400' : 'text-destructive'}`}>
                   {formatCurrency((selectedNode.totalIn || 0) - (selectedNode.totalOut || 0))}
@@ -615,7 +615,7 @@ export default function AidFlowNetworkGraph({
       <svg ref={svgRef} className="w-full h-full"></svg>
 
       {/* Help Text */}
-      <div className="absolute bottom-2 left-2 flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="absolute bottom-2 left-2 flex items-center gap-2 text-helper text-muted-foreground">
         <Info className="h-3 w-3" />
         <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
       </div>

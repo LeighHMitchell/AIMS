@@ -115,7 +115,7 @@ export function SDGGeographyMap({ locations, sdgColor }: SDGGeographyMapProps) {
         <div className="text-center">
           <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="font-medium text-muted-foreground">No geographic data</p>
-          <p className="text-sm text-muted-foreground">No countries with funding data found for this SDG</p>
+          <p className="text-body text-muted-foreground">No countries with funding data found for this SDG</p>
         </div>
       </div>
     )
@@ -125,7 +125,7 @@ export function SDGGeographyMap({ locations, sdgColor }: SDGGeographyMapProps) {
     <div className="h-[400px] w-full relative rounded-lg overflow-hidden border border-border">
       <div className="absolute top-3 left-3 z-20">
         <div className="bg-card/90 backdrop-blur px-3 py-1.5 rounded-md border border-border shadow-md">
-          <span className="text-xs font-medium text-foreground">
+          <span className="text-helper font-medium text-foreground">
             {validLocations.length} countr{validLocations.length !== 1 ? 'ies' : 'y'}
           </span>
         </div>

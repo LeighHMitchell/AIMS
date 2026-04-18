@@ -214,7 +214,7 @@ export function MapCodesModal({
 
           {/* Progress Summary */}
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <span className="text-sm font-medium">
+            <span className="text-body font-medium">
               Mapped: {mappedCodesCount} / {totalUnmappedCodes}
             </span>
             {allCodesMapped && (
@@ -259,7 +259,7 @@ export function MapCodesModal({
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Map to:</span>
+                              <span className="text-body font-medium">Map to:</span>
                               
                               {!isManual && systemCodes.length > 0 ? (
                                 <Select 

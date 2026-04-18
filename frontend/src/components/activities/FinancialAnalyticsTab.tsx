@@ -349,7 +349,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute bg-card border border-border rounded-lg shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-card border border-border rounded-lg shadow-lg text-body pointer-events-none z-50')
       .style('opacity', 0)
 
     // Prepare data - show top 8 providers and receivers
@@ -519,10 +519,10 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
           const receiverLabel = formatOrgLabel(flow.receiver, recvNode?.displayName)
           tooltip.html(`
             <div class="bg-muted px-3 py-2 border-b border-border rounded-t-lg">
-              <div class="font-semibold text-foreground text-sm">${providerLabel} → ${receiverLabel}</div>
+              <div class="font-semibold text-foreground text-body">${providerLabel} → ${receiverLabel}</div>
             </div>
             <div class="p-2">
-              <table class="w-full text-sm">
+              <table class="w-full text-body">
                 <tbody>
                   <tr class="border-b border-border last:border-b-0">
                     <td class="py-1.5 pr-4 text-foreground font-medium">Amount</td>
@@ -568,11 +568,11 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
         const nameLabel = formatOrgLabel(d.name, d.displayName !== d.name ? d.displayName : undefined)
         tooltip.html(`
           <div class="bg-muted px-3 py-2 border-b border-border rounded-t-lg">
-            <div class="font-semibold text-foreground text-sm">${nameLabel}</div>
-            <div class="text-xs text-muted-foreground mt-0.5">${d.type === 'provider' ? 'Provider' : 'Receiver'}</div>
+            <div class="font-semibold text-foreground text-body">${nameLabel}</div>
+            <div class="text-helper text-muted-foreground mt-0.5">${d.type === 'provider' ? 'Provider' : 'Receiver'}</div>
           </div>
           <div class="p-2">
-            <table class="w-full text-sm">
+            <table class="w-full text-body">
               <tbody>
                 <tr class="border-b border-border last:border-b-0">
                   <td class="py-1.5 pr-4 text-foreground font-medium">Amount</td>
@@ -646,7 +646,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
       <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
           <div className="text-lg font-medium">No funding source data available</div>
-          <div className="text-sm mt-1">Add transactions or planned disbursements to see the flow</div>
+          <div className="text-body mt-1">Add transactions or planned disbursements to see the flow</div>
         </div>
       </div>
     )
@@ -656,7 +656,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
     <div className="w-full funding-source-chart py-4">
       <svg ref={svgRef} className="w-full" style={{ height: `${containerSize.height}px`, display: 'block' }} />
       <div className="border-t border-border pt-4 mt-4">
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-helper text-muted-foreground text-center">
           Flow width represents the funding amount from each provider to each receiver
           {data.providers.length > 8 && ` (showing top 8 of ${data.providers.length} providers)`}
         </p>
@@ -1171,16 +1171,16 @@ export default function FinancialAnalyticsTab({
 
     return (
       <div className="flex items-center gap-2 flex-wrap">
-        {label && <span className="text-xs font-medium text-muted-foreground">{label}</span>}
+        {label && <span className="text-helper font-medium text-muted-foreground">{label}</span>}
         <Select value={value} onValueChange={(val) => onChange(val as TimePeriod)}>
-          <SelectTrigger className="h-8 px-3 border rounded-lg text-sm font-medium bg-card">
+          <SelectTrigger className="h-8 px-3 border rounded-lg text-body font-medium bg-card">
             <SelectValue placeholder="Select period">
               {selectedPeriod?.label || 'All Time'}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {periods.map(period => (
-              <SelectItem key={period.value} value={period.value} className="text-sm">
+              <SelectItem key={period.value} value={period.value} className="text-body">
                 {period.label}
               </SelectItem>
             ))}
@@ -1204,7 +1204,7 @@ export default function FinancialAnalyticsTab({
           variant={value === 'year' ? 'default' : 'outline'}
           size="sm"
           onClick={() => onChange('year')}
-          className={`h-7 px-3 text-xs ${
+          className={`h-7 px-3 text-helper ${
             value === 'year' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
               : 'bg-card text-muted-foreground border-border hover:bg-muted/50'
@@ -1216,7 +1216,7 @@ export default function FinancialAnalyticsTab({
           variant={value === 'month' ? 'default' : 'outline'}
           size="sm"
           onClick={() => onChange('month')}
-          className={`h-7 px-3 text-xs ${
+          className={`h-7 px-3 text-helper ${
             value === 'month' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
               : 'bg-card text-muted-foreground border-border hover:bg-muted/50'
@@ -1599,10 +1599,10 @@ export default function FinancialAnalyticsTab({
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{fullDate}</p>
+            <p className="font-semibold text-foreground text-body">{fullDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 {nonZeroPayload.map((entry: any, index: number) => (
                   <tr key={index} className="border-b border-border last:border-b-0">
@@ -2456,7 +2456,7 @@ export default function FinancialAnalyticsTab({
               {/* Allocation Method Toggle */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 bg-muted">
-                  <Label htmlFor="allocation-toggle-overview" className="text-sm text-foreground cursor-pointer">
+                  <Label htmlFor="allocation-toggle-overview" className="text-body text-foreground cursor-pointer">
                     {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
                   </Label>
                   <Switch
@@ -2582,7 +2582,7 @@ export default function FinancialAnalyticsTab({
                 </div>
               ) : overviewChartType === 'table' ? (
                 <div className="overflow-auto h-[500px] border border-border rounded-lg">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-body">
                     <thead className="sticky top-0 bg-surface-muted z-10">
                       <tr className="border-b border-border">
                         <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Period</th>
@@ -3062,7 +3062,7 @@ export default function FinancialAnalyticsTab({
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No cumulative overview data available</p>
-                <p className="text-xs mt-2">Add transactions, planned disbursements, or budgets to see this chart</p>
+                <p className="text-helper mt-2">Add transactions, planned disbursements, or budgets to see this chart</p>
               </div>
             </div>
           )}
@@ -3205,7 +3205,7 @@ export default function FinancialAnalyticsTab({
               </div>
             ) : budgetChartType === 'table' ? (
               <div className="overflow-auto h-[500px] border border-border rounded-lg">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Period</th>
@@ -3344,7 +3344,7 @@ export default function FinancialAnalyticsTab({
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No budget vs actual data available</p>
-                <p className="text-xs mt-2">Add budgets and transactions to see this chart</p>
+                <p className="text-helper mt-2">Add budgets and transactions to see this chart</p>
               </div>
             </div>
           )}
@@ -3387,7 +3387,7 @@ export default function FinancialAnalyticsTab({
                     variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('1')}
-                    className={cn("h-8 text-xs px-2", fundingTransactionType === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                    className={cn("h-8 text-helper px-2", fundingTransactionType === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Incoming
                   </Button>
@@ -3395,7 +3395,7 @@ export default function FinancialAnalyticsTab({
                     variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('2')}
-                    className={cn("h-8 text-xs px-2", fundingTransactionType === '2' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                    className={cn("h-8 text-helper px-2", fundingTransactionType === '2' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Commitment
                   </Button>
@@ -3403,7 +3403,7 @@ export default function FinancialAnalyticsTab({
                     variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('3')}
-                    className={cn("h-8 text-xs px-2", fundingTransactionType === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                    className={cn("h-8 text-helper px-2", fundingTransactionType === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Disbursement
                   </Button>
@@ -3411,7 +3411,7 @@ export default function FinancialAnalyticsTab({
                     variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('4')}
-                    className={cn("h-8 text-xs px-2", fundingTransactionType === '4' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
+                    className={cn("h-8 text-helper px-2", fundingTransactionType === '4' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Expenditure
                   </Button>
@@ -3467,7 +3467,7 @@ export default function FinancialAnalyticsTab({
           {filteredFundingSourceData.providers && filteredFundingSourceData.providers.length > 0 ? (
             fundingChartType === 'table' ? (
               <div className="overflow-auto h-[500px] border border-border rounded-lg">
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10">
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-medium text-foreground bg-card">Provider</th>
@@ -3519,7 +3519,7 @@ export default function FinancialAnalyticsTab({
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No funding source data available</p>
-                <p className="text-xs mt-2">Add participating organizations or transactions to see funding breakdown</p>
+                <p className="text-helper mt-2">Add participating organizations or transactions to see funding breakdown</p>
               </div>
             </div>
           )}

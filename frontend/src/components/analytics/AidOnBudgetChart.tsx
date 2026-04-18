@@ -470,7 +470,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
           <div className="flex flex-col items-center justify-center h-[700px] text-center">
             <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
-            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <p className="text-body text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
@@ -503,9 +503,9 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
                 border: '1px solid #cfd0d5'
               }}
             >
-              <div className="font-semibold text-sm" style={{ color: '#4c5568' }}>{tooltip.content.title}</div>
-              <div className="text-sm" style={{ color: '#4c5568' }}>{tooltip.content.value}</div>
-              <div className="text-xs" style={{ color: '#7b95a7' }}>{tooltip.content.percentage}</div>
+              <div className="font-semibold text-body" style={{ color: '#4c5568' }}>{tooltip.content.title}</div>
+              <div className="text-body" style={{ color: '#4c5568' }}>{tooltip.content.value}</div>
+              <div className="text-helper" style={{ color: '#7b95a7' }}>{tooltip.content.percentage}</div>
             </div>
           )}
         </div>

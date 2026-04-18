@@ -134,12 +134,12 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
           >
             <input {...getInputProps()} />
             <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-body text-muted-foreground mb-2">
               {isDragActive
                 ? 'Drop the XML file here...'
                 : 'Drag & drop your IATI XML file here, or click to select'}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-helper text-muted-foreground">
               Supports IATI 2.x format • Maximum file size: 50MB
             </p>
           </div>
@@ -149,8 +149,8 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
               <div className="flex items-center space-x-3">
                 <FileText className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                  <p className="text-body font-medium text-foreground">{file.name}</p>
+                  <p className="text-helper text-muted-foreground">{formatFileSize(file.size)}</p>
                 </div>
               </div>
               {!isProcessing && (
@@ -167,7 +167,7 @@ export function XMLUploadCard({ onFileSelect, isProcessing = false }: XMLUploadC
 
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-helper text-muted-foreground">
                   <span>Reading file...</span>
                   <span>{Math.round(uploadProgress)}%</span>
                 </div>

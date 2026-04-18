@@ -154,13 +154,13 @@ export function BudgetStatusField({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <h3 className="text-body font-semibold text-foreground flex items-center gap-2">
           Budget Status
           <HelpTextTooltip>
-            <p className="text-sm">
+            <p className="text-body">
               Set whether this activity is reflected in the government budget.
             </p>
-            <ul className="text-xs mt-2 space-y-1">
+            <ul className="text-helper mt-2 space-y-1">
               <li>
                 <strong>On Budget:</strong> Fully included in government budget
               </li>
@@ -243,13 +243,13 @@ export function BudgetStatusField({
             />
             <span className="text-muted-foreground">%</span>
             {percentageError && (
-              <div className="flex items-center gap-1 text-destructive text-xs">
+              <div className="flex items-center gap-1 text-destructive text-helper">
                 <AlertTriangle className="h-3 w-3" />
                 {percentageError}
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             Percentage of activity funding that is included in the government budget
           </p>
         </div>
@@ -273,7 +273,7 @@ export function BudgetStatusField({
           className="bg-white resize-none"
           disabled={disabled}
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-helper text-muted-foreground">
           Document reasons for the budget status determination
         </p>
       </div>

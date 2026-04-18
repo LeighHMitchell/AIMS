@@ -17,7 +17,7 @@ export function MSDPAlignmentBadge({ goalName, goalCode, secondaryCount = 0 }: M
         {goalCode ? `${goalCode} — ` : ""}{goalName}
       </Badge>
       {secondaryCount > 0 && (
-        <span className="text-xs text-muted-foreground">+{secondaryCount} more</span>
+        <span className="text-helper text-muted-foreground">+{secondaryCount} more</span>
       )}
     </div>
   )

@@ -58,7 +58,7 @@ const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItemProps
         data-state={isSelected ? "on" : "off"}
         onClick={() => context.onValueChange?.(value)}
         className={cn(
-          "inline-flex items-center justify-center rounded-sm text-sm font-medium transition-all",
+          "inline-flex items-center justify-center rounded-sm text-body font-medium transition-all",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "disabled:pointer-events-none disabled:opacity-50",
           "hover:bg-muted/80 hover:text-foreground",

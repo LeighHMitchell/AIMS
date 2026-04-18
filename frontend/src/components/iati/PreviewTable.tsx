@@ -343,8 +343,8 @@ export function PreviewTable({
                 <AlertDescription className="mt-1">
                   These transactions will be skipped during import because their referenced activities don't exist in the database or current import file.
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-sm font-medium">View Details</summary>
-                    <ul className="mt-2 space-y-1 text-sm">
+                    <summary className="cursor-pointer text-body font-medium">View Details</summary>
+                    <ul className="mt-2 space-y-1 text-body">
                       {Array.from(new Set(orphanTransactions.map(o => o.activityRef))).map(ref => (
                         <li key={ref} className="flex items-center space-x-2">
                           <span className="text-yellow-600">•</span>
@@ -375,22 +375,22 @@ export function PreviewTable({
           {/* Summary Stats */}
           <div className="grid grid-cols-4 gap-4">
             <div className="flex items-center justify-between p-3 border rounded-lg">
-              <span className="text-sm font-medium">Activities</span>
+              <span className="text-body font-medium">Activities</span>
               <Badge variant="secondary">{activities.length}</Badge>
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
-              <span className="text-sm font-medium">Transactions</span>
+              <span className="text-body font-medium">Transactions</span>
               <Badge variant="secondary">{(transactions || []).length}</Badge>
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
-              <span className="text-sm font-medium">Issues</span>
+              <span className="text-body font-medium">Issues</span>
               <Badge variant="destructive">
                 {(activities || []).filter(a => a._hasIssues).length + 
                  (transactions || []).filter(t => t._hasIssues).length}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
-              <span className="text-sm font-medium">Total Value</span>
+              <span className="text-body font-medium">Total Value</span>
               <Badge variant="default">
                 {formatCurrency(
                   (transactions || []).reduce((sum, t) => sum + (t.value || 0), 0),
@@ -423,7 +423,7 @@ export function PreviewTable({
 
             <TabsContent value="activities" className="space-y-2">
               <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   {filteredActivities.length} activities found
                 </p>
                 <div className="flex space-x-2">
@@ -477,7 +477,7 @@ export function PreviewTable({
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             {activity._isNew && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-helper">
                                 New
                               </Badge>
                             )}
@@ -491,13 +491,13 @@ export function PreviewTable({
                         <TableCell className="font-mono text-sm">
                           {activity.iati_id}
                         </TableCell>
-                        <TableCell className="max-w-[300px] truncate text-sm text-foreground">
+                        <TableCell className="max-w-[300px] truncate text-body text-foreground">
                           {activity.title}
                         </TableCell>
-                        <TableCell className="text-sm text-foreground">
+                        <TableCell className="text-body text-foreground">
                           {formatDate(activity.planned_start_date || activity.actual_start_date)}
                         </TableCell>
-                        <TableCell className="text-sm text-foreground">
+                        <TableCell className="text-body text-foreground">
                           {formatDate(activity.planned_end_date || activity.actual_end_date)}
                         </TableCell>
                         <TableCell>
@@ -519,7 +519,7 @@ export function PreviewTable({
 
             <TabsContent value="transactions" className="space-y-2">
               <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   {filteredTransactions.length} transactions found
                 </p>
                 <div className="flex space-x-2">
@@ -592,7 +592,7 @@ export function PreviewTable({
                               </span>
                             )}
                             {transaction.activity_id && (
-                              <Badge variant="outline" className="text-xs bg-green-50">
+                              <Badge variant="outline" className="text-helper bg-green-50">
                                 Assigned
                               </Badge>
                             )}
@@ -609,16 +609,16 @@ export function PreviewTable({
                             {getTransactionTypeLabel(transaction.transaction_type)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-foreground">
+                        <TableCell className="text-body text-foreground">
                           {formatDate(transaction.transaction_date)}
                         </TableCell>
                         <TableCell className="font-mono">
                           {formatCurrency(transaction.value, transaction.currency)}
                         </TableCell>
-                        <TableCell className="max-w-[150px] truncate text-sm text-foreground">
+                        <TableCell className="max-w-[150px] truncate text-body text-foreground">
                           {transaction.provider_org_name || '-'}
                         </TableCell>
-                        <TableCell className="max-w-[150px] truncate text-sm text-foreground">
+                        <TableCell className="max-w-[150px] truncate text-body text-foreground">
                           {transaction.receiver_org_name || '-'}
                         </TableCell>
                         <TableCell>

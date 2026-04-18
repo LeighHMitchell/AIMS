@@ -41,7 +41,7 @@ export function InvestorFilterBar({
   return (
     <FilterBar className="flex-wrap">
       <div className="flex flex-col gap-1 flex-1 min-w-[180px] max-w-sm">
-        <Label className="text-xs text-muted-foreground">Search</Label>
+        <Label className="text-helper text-muted-foreground">Search</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -54,7 +54,7 @@ export function InvestorFilterBar({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Region</Label>
+        <Label className="text-helper text-muted-foreground">Region</Label>
         <Select value={regionFilter} onValueChange={onRegionChange}>
           <SelectTrigger className="w-[150px] h-9">
             <SelectValue placeholder="All" />
@@ -69,7 +69,7 @@ export function InvestorFilterBar({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Classification</Label>
+        <Label className="text-helper text-muted-foreground">Classification</Label>
         <Select value={classificationFilter} onValueChange={onClassificationChange}>
           <SelectTrigger className="w-[160px] h-9">
             <SelectValue placeholder="All" />
@@ -84,7 +84,7 @@ export function InvestorFilterBar({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Asset Type</Label>
+        <Label className="text-helper text-muted-foreground">Asset Type</Label>
         <Select value={assetTypeFilter} onValueChange={onAssetTypeChange}>
           <SelectTrigger className="w-[160px] h-9">
             <SelectValue placeholder="All" />

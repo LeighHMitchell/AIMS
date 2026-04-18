@@ -498,7 +498,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   e.stopPropagation();
                   toggleTextExpansion(cellId);
                 }}
-                className="ml-2 text-xs inline-flex items-center gap-1"
+                className="ml-2 text-helper inline-flex items-center gap-1"
                 style={{ color: '#135667' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#0f4552'}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#135667'}
@@ -515,7 +515,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   e.stopPropagation();
                   toggleTextExpansion(cellId);
                 }}
-                className="ml-2 text-xs inline-flex items-center gap-1"
+                className="ml-2 text-helper inline-flex items-center gap-1"
                 style={{ color: '#135667' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#0f4552'}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#135667'}
@@ -546,7 +546,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 e.stopPropagation();
                 toggleTextExpansion(cellId);
               }}
-              className="ml-2 text-xs flex items-center gap-1"
+              className="ml-2 text-helper flex items-center gap-1"
               style={{ color: '#135667' }}
               onMouseEnter={(e) => e.currentTarget.style.color = '#0f4552'}
               onMouseLeave={(e) => e.currentTarget.style.color = '#135667'}
@@ -563,7 +563,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 e.stopPropagation();
                 toggleTextExpansion(cellId);
               }}
-              className="ml-2 text-xs flex items-center gap-1"
+              className="ml-2 text-helper flex items-center gap-1"
               style={{ color: '#135667' }}
               onMouseEnter={(e) => e.currentTarget.style.color = '#0f4552'}
               onMouseLeave={(e) => e.currentTarget.style.color = '#135667'}
@@ -592,15 +592,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           return (
             <span key={index} className="inline-flex items-center gap-1">
               {index > 0 && <span className="text-muted-foreground">|</span>}
-              <span className="text-xs text-muted-foreground">{key}:</span>
+              <span className="text-helper text-muted-foreground">{key}:</span>
               {isDate ? (
-                <span className="text-xs">{formatDateDisplay(valueStr)}</span>
+                <span className="text-helper">{formatDateDisplay(valueStr)}</span>
               ) : isCodeValue ? (
                 <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                   {valueStr}
                 </code>
               ) : (
-                <span className="text-xs">{valueStr}</span>
+                <span className="text-helper">{valueStr}</span>
               )}
             </span>
           );
@@ -662,7 +662,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             {type && (
               <div className="flex items-center gap-1">
                 <Tag className="h-3 w-3 text-muted-foreground" />
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-helper">
                   {type}
                 </Badge>
               </div>
@@ -672,28 +672,28 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             {(data['Start'] || data['End'] || data['Period Start'] || data['Period End']) && (
               <div className="space-y-1">
                 {(data['Start'] || data['Period Start']) && (
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-helper">
                     <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground font-medium">Start:</span>
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       {formatDateDisplay(data['Start'] || data['Period Start'] || '')}
                     </span>
                   </div>
                 )}
                 {(data['End'] || data['Period End']) && (
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-helper">
                     <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground font-medium">End:</span>
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       {formatDateDisplay(data['End'] || data['Period End'] || '')}
                     </span>
                   </div>
                 )}
                 {data['Value Date'] && (
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-helper">
                     <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground font-medium">Value Date:</span>
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       {formatDateDisplay(data['Value Date'])}
                     </span>
                   </div>
@@ -702,11 +702,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             )}
             
             {/* Other fields */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-helper">
               {data['Status'] && (
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-helper">
                     {data['Status']}
                   </Badge>
                 </div>
@@ -755,7 +755,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     
     return (
       <div className="group relative">
-        <div className="grid grid-cols-3 gap-6 text-xs">
+        <div className="grid grid-cols-3 gap-6 text-helper">
           {columns.map((column, colIndex) => (
             <div key={colIndex} className="space-y-1.5">
               {column.map((part, partIndex) => {
@@ -774,13 +774,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                       <span className="text-muted-foreground font-medium min-w-[100px] flex-shrink-0 tabular-nums">{key}:</span>
                       <span className="ml-4 flex-1">
                         {isDate ? (
-                          <span className="text-xs text-foreground">{formatDateDisplay(value)}</span>
+                          <span className="text-helper text-foreground">{formatDateDisplay(value)}</span>
                         ) : isCodeValue ? (
                           <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {value}
                           </code>
                         ) : (
-                          <span className="text-xs text-foreground">{value}</span>
+                          <span className="text-helper text-foreground">{value}</span>
                         )}
                       </span>
                     </div>
@@ -790,7 +790,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 // Plain text without colon
                 const isCode = detectCodePattern(part);
                 return (
-                  <div key={partIndex} className="text-xs text-foreground">
+                  <div key={partIndex} className="text-helper text-foreground">
                     {isCode ? (
                       <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {part}
@@ -830,9 +830,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       // Show date with narrative inline (if exists) in smaller gray font
       return (
         <div className="flex items-baseline gap-2">
-          <span className="text-sm text-foreground">{formatDateDisplay(dateValue)}</span>
+          <span className="text-body text-foreground">{formatDateDisplay(dateValue)}</span>
           {narratives.length > 0 && narratives[0].text && (
-            <span className="text-xs text-muted-foreground">{narratives[0].text}</span>
+            <span className="text-helper text-muted-foreground">{narratives[0].text}</span>
           )}
         </div>
       );
@@ -862,8 +862,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
             return (
               <div key={idx} className="flex items-baseline gap-2">
-                <span className="text-sm text-foreground">{typeLabel}</span>
-                <span className="text-xs text-muted-foreground">{narrativeText}</span>
+                <span className="text-body text-foreground">{typeLabel}</span>
+                <span className="text-helper text-muted-foreground">{narrativeText}</span>
               </div>
             );
           })}
@@ -894,7 +894,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const percentage = sector.percentage !== undefined && sector.percentage !== null ? sector.percentage : '';
               
               return (
-                <div key={idx} className="flex items-center gap-2 flex-wrap text-xs">
+                <div key={idx} className="flex items-center gap-2 flex-wrap text-helper">
                   {sectorCode && (
                     <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                       {sectorCode}
@@ -915,7 +915,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 size="sm"
                 variant="outline"
                 onClick={() => onSectorRefinement(value)}
-                className="mt-2 text-xs"
+                className="mt-2 text-helper"
               >
                 <Settings className="h-3 w-3 mr-1" />
                 {has3DigitDacCodes ? 'Map to Subsectors' : 'Edit Sector Mapping'}
@@ -935,7 +935,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const docTitle = doc.title || doc.title?.[0]?.text || 'Untitled';
               
               return (
-                <div key={idx} className="text-xs text-foreground">
+                <div key={idx} className="text-helper text-foreground">
                   {docTitle}
                 </div>
               );
@@ -956,7 +956,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
         
         return (
-          <span className="text-sm text-foreground">{docTitle}</span>
+          <span className="text-body text-foreground">{docTitle}</span>
         );
       }
     }
@@ -973,7 +973,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           return <span className="text-muted-foreground italic">—</span>;
         }
         
-        return <span className="text-sm text-foreground">{countryNames}</span>;
+        return <span className="text-body text-foreground">{countryNames}</span>;
       }
     }
 
@@ -983,8 +983,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         return (
           <div className="flex flex-col gap-1">
             {field.fssData.forecasts.map((f: any, idx: number) => (
-              <span key={idx} className="text-sm text-foreground">
-                {f.year} · <span className="text-xs text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
+              <span key={idx} className="text-body text-foreground">
+                {f.year} · <span className="text-helper text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
               </span>
             ))}
           </div>
@@ -994,8 +994,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         return (
           <div className="flex flex-col gap-1">
             {value.forecasts.map((f: any, idx: number) => (
-              <span key={idx} className="text-sm text-foreground">
-                {f.year} · <span className="text-xs text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
+              <span key={idx} className="text-body text-foreground">
+                {f.year} · <span className="text-helper text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
               </span>
             ))}
           </div>
@@ -1015,7 +1015,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
         
         return (
-          <div className="flex flex-col gap-1 text-xs">
+          <div className="flex flex-col gap-1 text-helper">
             {orgName && (
               <div className="text-foreground font-medium">{orgName}</div>
             )}
@@ -1048,7 +1048,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         if (roleLabel) parts.push({ type: 'role', content: roleLabel });
         
         return (
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 text-helper">
             {parts.map((part, index) => (
               <React.Fragment key={index}>
                 {index > 0 && <span className="text-muted-foreground">•</span>}
@@ -1080,7 +1080,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
 
         return (
-          <span className="text-sm">
+          <span className="text-body">
             {relationshipType && <span className="text-foreground">{relationshipType}</span>}
             {relationshipType && ref && <span className="mx-2 text-muted-foreground">•</span>}
             {ref && (
@@ -1144,7 +1144,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       }
 
       return (
-        <div className="flex flex-col gap-0.5 text-sm">
+        <div className="flex flex-col gap-0.5 text-body">
           {/* Vocabulary not shown in collapsed view - only in expanded view */}
           {code && (
             <div className="flex items-start gap-2">
@@ -1184,7 +1184,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
         
         return (
-          <span className="text-xs text-foreground">
+          <span className="text-helper text-foreground">
             {parts.join(' • ')}
           </span>
         );
@@ -1213,7 +1213,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               {locationCode}
             </span>
           )}
-          <span className="text-sm font-medium text-foreground">
+          <span className="text-body font-medium text-foreground">
             {locationName}
           </span>
           {coordinates && (
@@ -1237,7 +1237,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         return <span className="text-muted-foreground italic">—</span>;
       }
       
-      return <span className="text-sm text-foreground">{narrativeText}</span>;
+      return <span className="text-body text-foreground">{narrativeText}</span>;
     }
     
     // Special handling for Tags field - render as badges
@@ -1341,7 +1341,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                         itemData.vocabulary === '99' ? 'Reporting Organisation' : '');
 
       return (
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-body">
           <span className="text-muted-foreground">{vocabLabel}</span>
           <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
             {budgetItem.code}
@@ -1366,7 +1366,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const identifierCode = value.code || '';
       if (identifierCode) {
         return (
-          <span className="text-sm">
+          <span className="text-body">
             <code className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
               {identifierCode}
             </code>
@@ -1416,9 +1416,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       
       // Always show something for transaction objects, even if values are missing
       return (
-        <span className="text-sm">
+        <span className="text-body">
           {currency && (
-            <span className="text-xs text-muted-foreground">{currency}</span>
+            <span className="text-helper text-muted-foreground">{currency}</span>
           )}
           {amount !== undefined && (
             <span className={currency ? "ml-2" : ""}>{typeof amount === 'number' ? amount.toLocaleString() : amount}</span>
@@ -1442,8 +1442,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       // For importValue objects (budgets, planned disbursements), show currency and value
       if (value.value !== undefined && value.currency) {
         return (
-          <span className="text-sm">
-            <span className="text-xs text-muted-foreground">{value.currency}</span>
+          <span className="text-body">
+            <span className="text-helper text-muted-foreground">{value.currency}</span>
             <span className="ml-2">{value.value?.toLocaleString()}</span>
           </span>
         );
@@ -1474,16 +1474,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           // Has both currency and value
           const formattedValue = typeof amount === 'number' ? amount.toLocaleString() : String(amount);
           return (
-            <span className="text-sm">
-              <span className="text-xs text-muted-foreground">{currency}</span>
+            <span className="text-body">
+              <span className="text-helper text-muted-foreground">{currency}</span>
               <span className="ml-2">{formattedValue}</span>
             </span>
           );
         } else if (value.transaction_type !== undefined || value.transaction_date !== undefined || value.transaction_type_name !== undefined) {
           // Transaction object with currency but no value - show just currency
           return (
-            <span className="text-sm">
-              <span className="text-xs text-muted-foreground">{currency}</span>
+            <span className="text-body">
+              <span className="text-helper text-muted-foreground">{currency}</span>
             </span>
           );
         }
@@ -1503,8 +1503,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           const currency = currencyMatch[1];
           const value = currencyMatch[2].trim();
           return (
-            <span className="text-sm">
-              <span className="text-xs text-muted-foreground">{currency}</span>
+            <span className="text-body">
+              <span className="text-helper text-muted-foreground">{currency}</span>
               <span className="ml-2">{value}</span>
             </span>
           );
@@ -1530,14 +1530,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const value = currencyMatch[1].trim();
               const currency = currencyMatch[2];
               return (
-                <span className="text-sm text-foreground">
-                  <span className="text-xs text-muted-foreground">{currency}</span> {value}
+                <span className="text-body text-foreground">
+                  <span className="text-helper text-muted-foreground">{currency}</span> {value}
                 </span>
               );
             }
             // If no currency pattern, display as-is
             return (
-              <span className="text-sm text-foreground">
+              <span className="text-body text-foreground">
                 <span className="text-muted-foreground">{amountStr}</span>
               </span>
           );
@@ -1552,14 +1552,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             const value = currencyMatch[1].trim();
             const currency = currencyMatch[2];
             return (
-              <span className="text-sm">
-                <span className="text-xs text-muted-foreground">{currency}</span>
+              <span className="text-body">
+                <span className="text-helper text-muted-foreground">{currency}</span>
                 <span className="ml-2">{value}</span>
               </span>
             );
           }
           // If no currency pattern, display as-is
-          return <span className="text-sm">{amountStr}</span>;
+          return <span className="text-body">{amountStr}</span>;
         }
       }
       
@@ -1578,7 +1578,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       if (isDateField || isDateText) {
         // Format the date nicely
         const formattedDate = formatDateDisplay(text);
-        return <span className="text-sm">{formattedDate}</span>;
+        return <span className="text-body">{formattedDate}</span>;
       }
       
       if (isCode) {
@@ -1590,7 +1590,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         if (isCurrencyCode) {
           // Style currency like in budget card - gray text, no code tag
           return (
-            <span className="text-xs text-muted-foreground">{text}</span>
+            <span className="text-helper text-muted-foreground">{text}</span>
           );
         }
         
@@ -1656,8 +1656,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         const currency = currencyMatch[1];
         const value = currencyMatch[2].trim();
         return (
-          <span className="text-sm">
-            <span className="text-xs text-muted-foreground">{currency}</span>
+          <span className="text-body">
+            <span className="text-helper text-muted-foreground">{currency}</span>
             <span className="ml-2">{value}</span>
           </span>
         );
@@ -1666,8 +1666,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       // Check if text is a standalone currency code (3 uppercase letters)
       if (/^[A-Z]{3}$/.test(text)) {
         return (
-          <span className="text-sm">
-            <span className="text-xs text-muted-foreground">{text}</span>
+          <span className="text-body">
+            <span className="text-helper text-muted-foreground">{text}</span>
           </span>
         );
       }
@@ -2291,7 +2291,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             checked={showConflictsOnly}
             onCheckedChange={setShowConflictsOnly}
           />
-          <label htmlFor="conflicts-only" className="text-sm font-medium cursor-pointer">
+          <label htmlFor="conflicts-only" className="text-body font-medium cursor-pointer">
             Conflicts only
           </label>
         </div>
@@ -2301,7 +2301,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             checked={showMissingOnly}
             onCheckedChange={setShowMissingOnly}
           />
-          <label htmlFor="missing-only" className="text-sm font-medium cursor-pointer">
+          <label htmlFor="missing-only" className="text-body font-medium cursor-pointer">
             Missing only
           </label>
         </div>
@@ -2316,7 +2316,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body text-muted-foreground">
         Showing {totalCount} field{totalCount !== 1 ? 's' : ''} ({selectedCount} selected)
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
@@ -2422,8 +2422,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                     <TableRow className="bg-muted hover:bg-muted sticky top-0 z-10">
                       <TableCell colSpan={6} className="py-2 px-4 border-b-2 border-border">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-sm text-foreground">{sectionGroup.sectionName}</h3>
-                          <span className="text-xs text-muted-foreground">
+                          <h3 className="font-semibold text-body text-foreground">{sectionGroup.sectionName}</h3>
+                          <span className="text-helper text-muted-foreground">
                             {sectionGroup.fields.length} field{sectionGroup.fields.length !== 1 ? 's' : ''}
                           </span>
                         </div>
@@ -2438,8 +2438,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                           <TableRow className="bg-muted hover:bg-muted/50">
                             <TableCell colSpan={6} className="py-1.5 px-4 pl-8 border-b border-border">
                               <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-xs text-foreground">{categoryName}</h4>
-                                <span className="text-xs text-muted-foreground">
+                                <h4 className="font-medium text-helper text-foreground">{categoryName}</h4>
+                                <span className="text-helper text-muted-foreground">
                                   {categoryFields.length} field{categoryFields.length !== 1 ? 's' : ''}
                                 </span>
                               </div>
@@ -2485,13 +2485,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                             )}
                           </button>
                         </TableCell>
-                        <TableCell className="text-sm text-foreground">
+                        <TableCell className="text-body text-foreground">
                           {field.fieldName}
                         </TableCell>
                         <TableCell className={`text-sm text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
                           {renderValue(field.importValue, rowId, 'import', field.fieldName, field)}
                         </TableCell>
-                        <TableCell className={`text-sm text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
+                        <TableCell className={`text-body text-foreground break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
                           {renderValue(field.currentValue, rowId, 'current', field.fieldName, field)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -2531,7 +2531,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Recipient Country Details
                                     </div>
@@ -2540,7 +2540,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all bg-muted p-2 rounded">
 {xmlSnippet}
                                         </pre>
@@ -2548,8 +2548,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
@@ -2573,9 +2573,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
@@ -2596,7 +2596,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2613,7 +2613,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Recipient Region Details
                                     </div>
@@ -2622,7 +2622,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all bg-muted p-2 rounded">
 {xmlSnippet}
                                         </pre>
@@ -2630,8 +2630,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
@@ -2659,9 +2659,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
@@ -2686,7 +2686,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2722,7 +2722,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       {field.fieldName} Details
                                     </div>
@@ -2731,7 +2731,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet || '—'}
                                         </pre>
@@ -2739,9 +2739,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {importData.length > 0 ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {importData.map((item: any, idx: number) => (
                                                 <React.Fragment key={idx}>
@@ -2778,15 +2778,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No import value</div>
+                                          <div className="text-helper text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {currentData.length > 0 ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {currentData.map((item: any, idx: number) => (
                                                 <React.Fragment key={idx}>
@@ -2823,7 +2823,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2859,7 +2859,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
                                       Forward Spending Survey Details
                                     </div>
@@ -2868,7 +2868,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet || '—'}
                                         </pre>
@@ -2876,13 +2876,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {fssData ? (
                                           <div className="space-y-4">
                                             {/* FSS Attributes Table */}
                                             <div>
-                                              <div className="text-xs font-semibold text-foreground mb-2">FSS Attributes</div>
-                                              <table className="w-full text-xs">
+                                              <div className="text-helper font-semibold text-foreground mb-2">FSS Attributes</div>
+                                              <table className="w-full text-helper">
                                                 <tbody>
                                                   {fssData.extractionDate && (
                                                     <tr className="border-b border-border align-top">
@@ -2922,8 +2922,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             {/* Forecast Tables */}
                                             {fssData.forecasts && fssData.forecasts.length > 0 && fssData.forecasts.map((f: any, idx: number) => (
                                               <div key={idx}>
-                                                <div className="text-xs font-semibold text-foreground mb-2">Forecast</div>
-                                                <table className="w-full text-xs">
+                                                <div className="text-helper font-semibold text-foreground mb-2">Forecast</div>
+                                                <table className="w-full text-helper">
                                                   <tbody>
                                                     <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Year</td>
@@ -2958,19 +2958,19 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No import value</div>
+                                          <div className="text-helper text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {currentFss ? (
                                           <div className="space-y-4">
                                             {/* FSS Attributes Table */}
                                             <div>
-                                              <div className="text-xs font-semibold text-foreground mb-2">FSS Attributes</div>
-                                              <table className="w-full text-xs">
+                                              <div className="text-helper font-semibold text-foreground mb-2">FSS Attributes</div>
+                                              <table className="w-full text-helper">
                                                 <tbody>
                                                   {currentFss.extractionDate && (
                                                     <tr className="border-b border-border align-top">
@@ -3010,8 +3010,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             {/* Forecast Tables */}
                                             {currentFss.forecasts && currentFss.forecasts.length > 0 && currentFss.forecasts.map((f: any, idx: number) => (
                                               <div key={idx}>
-                                                <div className="text-xs font-semibold text-foreground mb-2">Forecast</div>
-                                                <table className="w-full text-xs">
+                                                <div className="text-helper font-semibold text-foreground mb-2">Forecast</div>
+                                                <table className="w-full text-helper">
                                                   <tbody>
                                                     <tr className="border-b border-border align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-muted-foreground">Year</td>
@@ -3046,7 +3046,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -3087,13 +3087,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 // Helper to render scope details as table
                                 const renderScopeTable = (scope: any) => {
                                   if (!scope) {
-                                    return <div className="text-xs text-muted-foreground italic">No value</div>;
+                                    return <div className="text-helper text-muted-foreground italic">No value</div>;
                                   }
                                   
                                   const narrativeText = scope.narratives?.map((n: any) => n.text || n.narrative || '').filter(Boolean).join('; ') || scope.code || '—';
                                   
                                   return (
-                                    <table className="w-full text-xs">
+                                    <table className="w-full text-helper">
                                       <tbody>
                                         <tr className="border-b border-border align-top">
                                           <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
@@ -3122,7 +3122,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <AlertCircle className="h-4 w-4" />
                                       Humanitarian Scope Details
                                     </div>
@@ -3131,7 +3131,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet || '—'}
                                         </pre>
@@ -3139,13 +3139,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {renderScopeTable(importScope)}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {renderScopeTable(currentScope)}
                                       </div>
                                     </div>
@@ -3167,7 +3167,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                   return (
                                     <div className="mb-6 border-b border-border pb-6">
-                                      <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                      <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
                                         Participating Organization Details
                                       </div>
@@ -3176,7 +3176,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                         {/* Column 1: Raw XML */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                          <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                           <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
@@ -3184,8 +3184,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                         {/* Column 2: Import Value */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                          <table className="w-full text-xs">
+                                          <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {orgData.name && (
                                                 <tr className="border-b border-border align-top">
@@ -3266,9 +3266,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                         {/* Column 3: Current Value */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                          <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                           {field.currentValue ? (
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {field.currentValue.name && (
                                                   <tr className="border-b border-border align-top">
@@ -3310,7 +3310,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               </tbody>
                                             </table>
                                           ) : (
-                                            <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                            <div className="text-helper text-muted-foreground italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -3331,7 +3331,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                   return (
                                     <div className="mb-6 border-b border-border pb-6">
-                                      <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                      <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                         <ExternalLink className="h-4 w-4" />
                                         Related Activity Details
                                       </div>
@@ -3340,7 +3340,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                         {/* Column 1: Raw XML */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                          <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                           <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
@@ -3348,8 +3348,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                         {/* Column 2: Import Value */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                          <table className="w-full text-xs">
+                                          <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {relatedActivityData.ref && (
                                                 <tr className="border-b border-border align-top">
@@ -3380,9 +3380,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                         {/* Column 3: Current Value */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                          <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                           {field.currentValue ? (
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {field.currentValue.ref && (
                                                   <tr className="border-b border-border align-top">
@@ -3410,7 +3410,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               </tbody>
                                             </table>
                                           ) : (
-                                            <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                            <div className="text-helper text-muted-foreground italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -3450,7 +3450,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                   return (
                                     <div className="mb-6 border-b border-border pb-6">
-                                      <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                      <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
                                         Contact Details
                                       </div>
@@ -3459,7 +3459,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                         {/* Column 1: Raw XML */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                          <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                           <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
@@ -3467,8 +3467,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                         {/* Column 2: Import Value */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                          <table className="w-full text-xs">
+                                          <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {contactData.type && (
                                                 <tr className="border-b border-border align-top">
@@ -3538,9 +3538,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                         {/* Column 3: Current Value */}
                                         <div className="bg-muted rounded-md p-3 border border-border">
-                                          <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                          <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                           {field.currentValue ? (
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {field.currentValue.type && (
                                                   <tr className="border-b border-border align-top">
@@ -3607,7 +3607,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               </tbody>
                                             </table>
                                           ) : (
-                                            <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                            <div className="text-helper text-muted-foreground italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -3668,7 +3668,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <FileText className="h-4 w-4" />
                                       Document Details
                                     </div>
@@ -3677,7 +3677,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -3685,11 +3685,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         <div className="space-y-3">
                                           {field.documentData.map((doc: any, docIndex: number) => (
                                             <div key={docIndex} className="border-b border-border pb-2 last:border-b-0">
-                                              <table className="w-full text-xs">
+                                              <table className="w-full text-helper">
                                                 <tbody>
                                                   <tr className="align-top">
                                                     <td className="py-1 pr-2 font-medium text-muted-foreground">Title:</td>
@@ -3712,7 +3712,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1 pr-2 font-medium text-muted-foreground">URL:</td>
                                                       <td className="py-1 text-foreground break-all">
-                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-xs break-all">
+                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-helper break-all">
                                                           {doc.url}
                                                         </a>
                                                       </td>
@@ -3737,13 +3737,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <div className="space-y-3">
                                             {/* Handle both array (Document Links plural) and object (Document Link 1, 2, etc.) */}
                                             {(Array.isArray(field.currentValue) ? field.currentValue : [field.currentValue]).map((doc: any, docIndex: number) => (
                                               <div key={docIndex} className="border-b border-border pb-2 last:border-b-0">
-                                                <table className="w-full text-xs">
+                                                <table className="w-full text-helper">
                                                   <tbody>
                                                     <tr className="align-top">
                                                       <td className="py-1 pr-2 font-medium text-muted-foreground">Title:</td>
@@ -3766,7 +3766,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       <tr className="align-top">
                                                         <td className="py-1 pr-2 font-medium text-muted-foreground">URL:</td>
                                                         <td className="py-1 text-foreground break-all">
-                                                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-xs break-all">
+                                                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-helper break-all">
                                                             {doc.url}
                                                           </a>
                                                         </td>
@@ -3788,7 +3788,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing documents</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing documents</div>
                                         )}
                                       </div>
                                     </div>
@@ -3859,7 +3859,7 @@ ${importTags.map((tag: any) => {
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Tag Details
                                     </div>
@@ -3868,7 +3868,7 @@ ${importTags.map((tag: any) => {
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -3876,10 +3876,10 @@ ${importTags.map((tag: any) => {
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {importTags.length > 0 ? (
                                           <>
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {importTags.map((tag: any, idx: number) => (
                                                   <React.Fragment key={idx}>
@@ -3918,18 +3918,18 @@ ${importTags.map((tag: any) => {
                                                 ))}
                                               </tbody>
                                             </table>
-                                            <div className="mt-2 text-xs text-muted-foreground italic">
+                                            <div className="mt-2 text-helper text-muted-foreground italic">
                                               Note: Grayed-out fields are recognized but not currently imported by the system
                                             </div>
                                           </>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No tags to import</div>
+                                          <div className="text-helper text-muted-foreground italic">No tags to import</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {(() => {
                                           // Find matching existing tag based on import tag's vocabulary and code
                                           const importTag = importTags[0]; // The tag being imported for this row
@@ -3940,7 +3940,7 @@ ${importTags.map((tag: any) => {
                                           
                                           if (matchingTag) {
                                             return (
-                                              <table className="w-full text-xs">
+                                              <table className="w-full text-helper">
                                                 <tbody>
                                                   {matchingTag.vocabulary && (
                                                     <tr className="border-b border-border align-top">
@@ -3977,7 +3977,7 @@ ${importTags.map((tag: any) => {
                                               </table>
                                             );
                                           } else {
-                                            return <div className="text-xs text-muted-foreground italic">No matching existing tag</div>;
+                                            return <div className="text-helper text-muted-foreground italic">No matching existing tag</div>;
                                           }
                                         })()}
                                       </div>
@@ -4004,7 +4004,7 @@ ${importTags.map((tag: any) => {
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Location Details
                                     </div>
@@ -4013,7 +4013,7 @@ ${importTags.map((tag: any) => {
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -4021,8 +4021,8 @@ ${importTags.map((tag: any) => {
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             {loc.name && (
                                               <tr className="border-b border-border align-top">
@@ -4082,9 +4082,9 @@ ${importTags.map((tag: any) => {
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {field.currentValue.name && (
                                                 <tr className="border-b border-border align-top">
@@ -4125,7 +4125,7 @@ ${importTags.map((tag: any) => {
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -4183,7 +4183,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
                                       {itemLabel} Details
                                     </div>
@@ -4192,7 +4192,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -4200,10 +4200,10 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {field.itemType === 'countryBudgetItems' ? (
                                           // Special display for country budget items - show each mapping as a complete row
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {item.budget_items && item.budget_items.map((bi: any, biIdx: number) => (
                                                 <React.Fragment key={biIdx}>
@@ -4249,7 +4249,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                         ) : (
                                           // Transaction-specific display: Amount, Transaction Date, Value Date, Type, Provider Org, Receiver Org
                                           field.itemType === 'transaction' ? (
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {item.value !== undefined && item.currency && (
                                                   <tr className="border-b border-border align-top">
@@ -4327,7 +4327,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             </table>
                                           ) : (
                                             // Regular display for budgets, planned disbursements
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                           <tbody>
                                             {item.value !== undefined && item.currency && (
                                               <tr className="border-b border-border align-top">
@@ -4455,11 +4455,11 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           // Country Budget Items-specific display
                                           field.itemType === 'countryBudgetItems' && field.currentValue.budget_items ? (
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {field.currentValue.budget_items && field.currentValue.budget_items.map((bi: any, biIdx: number) => (
                                                   <React.Fragment key={biIdx}>
@@ -4506,7 +4506,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           ) :
                                           // Transaction-specific display: Amount, Transaction Date, Value Date, Type, Provider Org, Receiver Org
                                           field.itemType === 'transaction' ? (
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {(field.currentValue.value !== undefined || field.currentValue.currency) && (
                                                   <tr className="border-b border-border align-top">
@@ -4593,7 +4593,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             </table>
                                           ) : (
                                             // Regular display for budgets, planned disbursements
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {field.currentValue.value !== undefined && field.currentValue.currency && (
                                                 <tr className="border-b border-border align-top">
@@ -4717,7 +4717,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           </table>
                                           )
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -4774,7 +4774,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Policy Marker Details
                                     </div>
@@ -4783,7 +4783,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -4791,8 +4791,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
@@ -4831,9 +4831,9 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {field.currentValue.vocabulary && (
                                                 <tr className="border-b border-border align-top">
@@ -4871,7 +4871,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -4914,7 +4914,7 @@ ${narrativeLines}
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <AlertCircle className="h-4 w-4" />
                                       Conditions Details
                                     </div>
@@ -4923,7 +4923,7 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -4931,8 +4931,8 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Conditions:</td>
@@ -4992,7 +4992,7 @@ ${narrativeLines}
                                           const narratives = condition.narrative || {};
                                           return Object.keys(narratives).some(lang => lang && lang !== 'en');
                                         }) && (
-                                          <div className="mt-2 text-xs text-muted-foreground italic">
+                                          <div className="mt-2 text-helper text-muted-foreground italic">
                                             Note: Grayed-out languages are recognized but not currently imported by the system
                                           </div>
                                         )}
@@ -5000,9 +5000,9 @@ ${narrativeLines}
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentConditionsData ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Conditions:</td>
@@ -5051,7 +5051,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing conditions</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing conditions</div>
                                         )}
                                       </div>
                                     </div>
@@ -5067,7 +5067,7 @@ ${narrativeLines}
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
                                       {sectionTitle}
                                     </div>
@@ -5076,7 +5076,7 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -5084,8 +5084,8 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             {crsData.channel_code && (
                                               <tr className="border-b border-border align-top">
@@ -5197,9 +5197,9 @@ ${narrativeLines}
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentCrsData ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {field.currentCrsData.channel_code && (
                                                 <tr className="border-b border-border align-top">
@@ -5308,7 +5308,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No CRS data saved</div>
+                                          <div className="text-helper text-muted-foreground italic">No CRS data saved</div>
                                         )}
                                       </div>
                                     </div>
@@ -5325,7 +5325,7 @@ ${narrativeLines}
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Other Identifier Details
                                     </div>
@@ -5334,7 +5334,7 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -5342,8 +5342,8 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
+                                        <table className="w-full text-helper">
                                           <tbody>
                                             <tr className="border-b border-border align-top">
                                               <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Code:</td>
@@ -5360,7 +5360,7 @@ ${narrativeLines}
                                                   {identifier.type || '—'}
                                                 </code>
                                                 {identifier.name && (
-                                                  <span className="text-xs text-muted-foreground ml-2">{identifier.name}</span>
+                                                  <span className="text-helper text-muted-foreground ml-2">{identifier.name}</span>
                                                 )}
                                               </td>
                                             </tr>
@@ -5386,9 +5386,9 @@ ${narrativeLines}
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {field.currentValue ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               <tr className="border-b border-border align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Code:</td>
@@ -5405,7 +5405,7 @@ ${narrativeLines}
                                                     {field.currentValue.type || '—'}
                                                   </code>
                                                   {field.currentValue.name && (
-                                                    <span className="text-xs text-muted-foreground ml-2">{field.currentValue.name}</span>
+                                                    <span className="text-helper text-muted-foreground ml-2">{field.currentValue.name}</span>
                                                   )}
                                                 </td>
                                               </tr>
@@ -5428,7 +5428,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -5463,15 +5463,15 @@ ${narrativeLines}
                                           </Tooltip>
                                         </TooltipProvider>
                                       </div>
-                                      <p className="text-xs text-amber-700 mt-1.5">
+                                      <p className="text-helper text-amber-700 mt-1.5">
                                         These sectors use vocabulary 99 (reporting organization&apos;s custom codes) and cannot be automatically mapped to standard DAC sector codes. They are shown for reference only.
                                       </p>
-                                      <p className="text-xs text-amber-600 mt-1 italic">
+                                      <p className="text-helper text-amber-600 mt-1 italic">
                                         Tip: To include these sectors, manually select equivalent DAC sectors in the Sectors tab after import.
                                       </p>
                                     </div>
 
-                                    <div className="text-sm font-semibold mb-3 text-amber-900 flex items-center gap-2">
+                                    <div className="text-body font-semibold mb-3 text-amber-900 flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Non-DAC Sectors ({field.nonDacSectors.length})
                                     </div>
@@ -5480,7 +5480,7 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-amber-50/50 rounded-md p-3 border border-amber-200">
-                                        <div className="text-xs font-semibold text-amber-800 mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-amber-800 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
@@ -5488,7 +5488,7 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-amber-50/50 rounded-md p-3 border border-amber-200">
-                                        <div className="text-xs font-semibold text-amber-800 mb-2">Import Value ({field.nonDacSectors.length})</div>
+                                        <div className="text-helper font-semibold text-amber-800 mb-2">Import Value ({field.nonDacSectors.length})</div>
                                         <div className="space-y-2">
                                           {field.nonDacSectors.map((sector: any, idx: number) => (
                                             <div key={idx} className="border-b border-amber-100 pb-2 last:border-b-0">
@@ -5499,16 +5499,16 @@ ${narrativeLines}
                                                   </code>
                                                 )}
                                                 {sector.name && (
-                                                  <span className="text-xs text-foreground">{sector.name}</span>
+                                                  <span className="text-helper text-foreground">{sector.name}</span>
                                                 )}
                                                 {sector.vocabulary && (
-                                                  <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
+                                                  <Badge variant="outline" className="text-helper border-amber-300 text-amber-700">
                                                     vocab {sector.vocabulary}
                                                   </Badge>
                                                 )}
                                               </div>
                                               {(sector.vocabularyUri || sector['vocabulary-uri']) && (
-                                                <div className="text-xs text-amber-600 mt-1 truncate">
+                                                <div className="text-helper text-amber-600 mt-1 truncate">
                                                   URI: {sector.vocabularyUri || sector['vocabulary-uri']}
                                                 </div>
                                               )}
@@ -5519,7 +5519,7 @@ ${narrativeLines}
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-amber-50/50 rounded-md p-3 border border-amber-200">
-                                        <div className="text-xs font-semibold text-amber-800 mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-amber-800 mb-2">Current Value</div>
                                         {field.currentValue && Array.isArray(field.currentValue) && field.currentValue.length > 0 ? (
                                           <div className="space-y-2">
                                             {field.currentValue.map((sector: any, idx: number) => (
@@ -5531,14 +5531,14 @@ ${narrativeLines}
                                                     </code>
                                                   )}
                                                   {sector.name && (
-                                                    <span className="text-xs text-foreground">{sector.name}</span>
+                                                    <span className="text-helper text-foreground">{sector.name}</span>
                                                   )}
                                                 </div>
                                               </div>
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-amber-600 italic">No existing sectors</div>
+                                          <div className="text-helper text-amber-600 italic">No existing sectors</div>
                                         )}
                                       </div>
                                     </div>
@@ -5572,7 +5572,7 @@ ${narrativeLines}
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground">
+                                    <div className="text-body font-semibold mb-3 text-foreground">
                                       Activity Scope Details
                                     </div>
 
@@ -5580,13 +5580,13 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         {xmlSnippet ? (
                                           <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">
+                                          <div className="text-helper text-muted-foreground italic">
                                             See IATI Path below for XML structure
                                           </div>
                                         )}
@@ -5594,9 +5594,9 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {importCode ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
@@ -5612,15 +5612,15 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No import value</div>
+                                          <div className="text-helper text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {currentCode ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
@@ -5636,7 +5636,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -5726,7 +5726,7 @@ ${narrativeLines}
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground">
+                                    <div className="text-body font-semibold mb-3 text-foreground">
                                       Field Details
                                     </div>
 
@@ -5734,13 +5734,13 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         {xmlSnippet ? (
                                           <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">
+                                          <div className="text-helper text-muted-foreground italic">
                                             See IATI Path below for XML structure
                                           </div>
                                         )}
@@ -5748,9 +5748,9 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {(dateType || isoDate || allXmlNarratives.length > 0) ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {/* Show date type (grayed out - redundant with field name) */}
                                               {dateType && (
@@ -5793,7 +5793,7 @@ ${narrativeLines}
                                               {(dateType || allXmlNarratives.length > 1) && (
                                                 <tr>
                                                   <td colSpan={2} className="pt-2">
-                                                    <div className="text-xs text-muted-foreground italic">
+                                                    <div className="text-helper text-muted-foreground italic">
                                                       Note: Grayed out items are {dateType && allXmlNarratives.length > 1 ? 'redundant or ' : dateType ? 'redundant' : ''}not imported by default
                                                     </div>
                                                   </td>
@@ -5802,15 +5802,15 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No import value</div>
+                                          <div className="text-helper text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {currentIsoDate ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {/* Show iso-date */}
                                               <tr className="align-top">
@@ -5824,7 +5824,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -5959,7 +5959,7 @@ ${narrativeLines}
 
                                 return (
                                   <div className="mb-6 border-b border-border pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-foreground">
+                                    <div className="text-body font-semibold mb-3 text-foreground">
                                       {field.fieldName} Details
                                     </div>
 
@@ -5967,13 +5967,13 @@ ${narrativeLines}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                         {xmlSnippet ? (
                                           <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">
+                                          <div className="text-helper text-muted-foreground italic">
                                             See IATI Path below for XML structure
                                           </div>
                                         )}
@@ -5981,10 +5981,10 @@ ${narrativeLines}
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                         {displayNarratives.length > 0 || (isDescription && descriptionType) ? (
                                           <div className="space-y-2">
-                                            <table className="w-full text-xs">
+                                            <table className="w-full text-helper">
                                               <tbody>
                                                 {/* Show description type for description fields */}
                                                 {isDescription && descriptionType && (
@@ -6012,21 +6012,21 @@ ${narrativeLines}
                                               </tbody>
                                             </table>
                                             {displayNarratives.some(n => !n.isImported) && (
-                                              <div className="text-xs text-muted-foreground italic mt-2 pt-2 border-t border-border">
+                                              <div className="text-helper text-muted-foreground italic mt-2 pt-2 border-t border-border">
                                                 Note: Grayed-out languages are recognized but not currently imported by the system
                                               </div>
                                             )}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No import value</div>
+                                          <div className="text-helper text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-muted rounded-md p-3 border border-border">
-                                        <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                        <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                         {currentNarratives.length > 0 || (isDescription && currentDescriptionType) ? (
-                                          <table className="w-full text-xs">
+                                          <table className="w-full text-helper">
                                             <tbody>
                                               {/* Show description type for description fields */}
                                               {isDescription && currentDescriptionType && (
@@ -6054,7 +6054,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
+                                          <div className="text-helper text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -6083,7 +6083,7 @@ ${narrativeLines}
                               // Helper function to render result details
                               const renderResultDetails = (resultData: any) => {
                                 if (!resultData) {
-                                  return <div className="text-xs text-muted-foreground italic">No value</div>;
+                                  return <div className="text-helper text-muted-foreground italic">No value</div>;
                                 }
 
                                 const rows: Array<{ label: string; value: string }> = [];
@@ -6164,11 +6164,11 @@ ${narrativeLines}
                                 }
 
                                 if (rows.length === 0) {
-                                  return <div className="text-xs text-muted-foreground italic">No value</div>;
+                                  return <div className="text-helper text-muted-foreground italic">No value</div>;
                                 }
 
                                 return (
-                                  <table className="w-full text-xs">
+                                  <table className="w-full text-helper">
                                     <tbody>
                                       {rows.map((row, idx) => (
                                         <tr key={idx} className={`align-top ${idx < rows.length - 1 ? 'border-b border-border' : ''}`}>
@@ -6197,13 +6197,13 @@ ${narrativeLines}
                                 }
 
                                 if (value === undefined || value === null || value === '') {
-                                  return <div className="text-xs text-muted-foreground italic">No value</div>;
+                                  return <div className="text-helper text-muted-foreground italic">No value</div>;
                                 }
 
                                 // If it's a simple string or number, show as single row
                                 if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
                                   return (
-                                    <table className="w-full text-xs">
+                                    <table className="w-full text-helper">
                                       <tbody>
                                         <tr className="align-top">
                                           <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
@@ -6226,7 +6226,7 @@ ${narrativeLines}
                                 if (typeof value === 'object' && !Array.isArray(value)) {
                                   const entries = Object.entries(value).filter(([k, v]) => v !== null && v !== undefined && v !== '');
                                   if (entries.length === 0) {
-                                    return <div className="text-xs text-muted-foreground italic">No value</div>;
+                                    return <div className="text-helper text-muted-foreground italic">No value</div>;
                                   }
 
                                   // Check if this is a code/name pair - if so, display on same line
@@ -6238,7 +6238,7 @@ ${narrativeLines}
                                     const name = entries.find(([k]) => k.toLowerCase() === 'name')?.[1];
 
                                     return (
-                                      <table className="w-full text-xs">
+                                      <table className="w-full text-helper">
                                         <tbody>
                                           <tr className="align-top">
                                             <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
@@ -6255,7 +6255,7 @@ ${narrativeLines}
                                   }
 
                                   return (
-                                    <table className="w-full text-xs">
+                                    <table className="w-full text-helper">
                                       <tbody>
                                         {entries.map(([key, val], idx) => {
                                           // Special handling for narratives array
@@ -6321,7 +6321,7 @@ ${narrativeLines}
 
                                 // For arrays or other complex types, fall back to renderValue
                                 return (
-                                  <div className="text-sm text-foreground break-words">
+                                  <div className="text-body text-foreground break-words">
                                     {renderValue(value, `${rowId}-default-fallback`, 'import', fieldName, field)}
                                   </div>
                                 );
@@ -6329,7 +6329,7 @@ ${narrativeLines}
 
                               return (
                                 <div className="mb-6 border-b border-border pb-6">
-                                  <div className="text-sm font-semibold mb-3 text-foreground">
+                                  <div className="text-body font-semibold mb-3 text-foreground">
                                     Field Details
                                   </div>
 
@@ -6337,13 +6337,13 @@ ${narrativeLines}
                                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                     {/* Column 1: Raw XML */}
                                     <div className="bg-muted rounded-md p-3 border border-border">
-                                      <div className="text-xs font-semibold text-foreground mb-2">Raw XML</div>
+                                      <div className="text-helper font-semibold text-foreground mb-2">Raw XML</div>
                                       {xmlSnippet ? (
                                         <pre className="text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
                                       ) : (
-                                        <div className="text-xs text-muted-foreground italic">
+                                        <div className="text-helper text-muted-foreground italic">
                                           See IATI Path below for XML structure
                                         </div>
                                       )}
@@ -6351,13 +6351,13 @@ ${narrativeLines}
 
                                     {/* Column 2: Import Value */}
                                     <div className="bg-muted rounded-md p-3 border border-border">
-                                      <div className="text-xs font-semibold text-foreground mb-2">Import Value</div>
+                                      <div className="text-helper font-semibold text-foreground mb-2">Import Value</div>
                                       {renderValueInTable(field.importValue, field.fieldName, false)}
                                     </div>
 
                                     {/* Column 3: Current Value */}
                                     <div className="bg-muted rounded-md p-3 border border-border">
-                                      <div className="text-xs font-semibold text-foreground mb-2">Current Value</div>
+                                      <div className="text-helper font-semibold text-foreground mb-2">Current Value</div>
                                       {renderValueInTable(field.currentValue, field.fieldName, true)}
                                     </div>
                                   </div>
@@ -6366,7 +6366,7 @@ ${narrativeLines}
                             })()}
 
                             {/* Field metadata */}
-                            <div className="mt-4 text-sm flex items-center gap-2">
+                            <div className="mt-4 text-body flex items-center gap-2">
                               <span className="font-semibold">IATI Standard Reference:</span>
                               <a
                                 href={`https://iatistandard.org/en/iati-standard/203/activity-standard/iati-activities/iati-activity/${field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '').replace(/\[@[^\]]+\]/g, '').replace(/\/narrative$/, '')}/`}
@@ -6431,10 +6431,10 @@ ${narrativeLines}
                       <TableCell className="font-medium w-[30%]">
                         {field.fieldName}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground break-words w-[35%]">
+                      <TableCell className="text-body text-foreground break-words w-[35%]">
                         {renderValue(field.currentValue, rowId, 'current', field.fieldName, field)}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground break-words w-[35%]">
+                      <TableCell className="text-body text-foreground break-words w-[35%]">
                         {renderValue(field.importValue, rowId, 'import', field.fieldName, field)}
                       </TableCell>
                       <TableCell className="text-center">
@@ -6458,7 +6458,7 @@ ${narrativeLines}
                       <TableRow>
                         <TableCell colSpan={6} className="bg-muted p-4">
                           {/* Field metadata */}
-                          <div className="mt-4 text-sm flex items-center gap-2">
+                          <div className="mt-4 text-body flex items-center gap-2">
                             <span className="font-semibold">IATI Standard Reference:</span>
                             <code className="text-xs font-mono text-foreground bg-white px-2 py-1 rounded border">
                               {field.iatiPath}

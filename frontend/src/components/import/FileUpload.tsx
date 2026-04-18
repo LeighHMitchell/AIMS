@@ -89,12 +89,12 @@ export function FileUpload({
           
           <div>
             <h3 className="font-semibold text-lg">Upload your file</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-body text-muted-foreground mt-1">
               Drag and drop your CSV or Excel file here, or click to browse
             </p>
           </div>
           
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-helper text-muted-foreground">
             <Upload className="h-4 w-4" />
             <span>Supported formats: CSV, XLS, XLSX (Max 10MB)</span>
           </div>

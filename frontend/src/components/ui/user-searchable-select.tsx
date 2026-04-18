@@ -102,7 +102,7 @@ export function UserSearchableSelect({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
               "flex-1"
             )}
           >
@@ -158,11 +158,11 @@ export function UserSearchableSelect({
                   />
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="font-medium truncate">{user.name}</span>
-                    <span className="text-sm text-muted-foreground truncate">
+                    <span className="text-body text-muted-foreground truncate">
                       {user.email}
                     </span>
                     {user.organization && (
-                      <span className="text-xs text-muted-foreground truncate">
+                      <span className="text-helper text-muted-foreground truncate">
                         {user.organization}
                       </span>
                     )}

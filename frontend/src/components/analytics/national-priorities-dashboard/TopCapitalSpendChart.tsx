@@ -211,13 +211,13 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-xs">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm break-words">{item.title}</p>
+            <p className="font-semibold text-foreground text-body break-words">{item.title}</p>
             {item.iatiIdentifier && (
               <p className="text-xs text-muted-foreground mt-0.5 font-mono bg-muted px-1.5 py-0.5 rounded inline-block">{item.iatiIdentifier}</p>
             )}
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border">
                   <td className="py-1 pr-4 text-foreground font-medium">Capital Spend %</td>
@@ -409,7 +409,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -463,7 +463,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
       <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-xs">
+        <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -487,7 +487,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Top Activities by Capital Spend
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Ranked by capital spend value
               </CardDescription>
             </div>
@@ -505,7 +505,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart ranks the top activities by their capital spend value. Each bar shows the absolute capital expenditure amount, calculated by applying the activity's capital spend percentage to its base financial value. Use the metric and time range selectors to adjust the view.
           </p>
         </CardContent>

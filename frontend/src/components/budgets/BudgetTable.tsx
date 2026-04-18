@@ -143,14 +143,14 @@ export function BudgetTable({
         maximumFractionDigits: 0,
       }).format(value);
 
-      return <><span className="text-muted-foreground text-xs">{safeCurrency}</span> {formattedValue}</>;
+      return <><span className="text-muted-foreground text-helper">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[BudgetTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return <><span className="text-xs text-muted-foreground font-normal">USD</span> {formattedValue}</>;
+      return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
     }
   };
 
@@ -361,7 +361,7 @@ export function BudgetTable({
                           }
                         }}
                       >
-                        <span className="text-sm">{activityTitle}</span>
+                        <span className="text-body">{activityTitle}</span>
                         {budget.activity?.iati_identifier && (
                           <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
                             {budget.activity.iati_identifier}
@@ -408,7 +408,7 @@ export function BudgetTable({
                           name={budget.activity.reporting_org.name}
                           size="sm"
                         />
-                        <span className="text-sm whitespace-nowrap">
+                        <span className="text-body whitespace-nowrap">
                           {budget.activity.reporting_org.acronym || budget.activity.reporting_org.name || '—'}
                         </span>
                       </div>
@@ -428,12 +428,12 @@ export function BudgetTable({
                   </TableCell>
                 ),
                 type: (
-                  <TableCell key="type" className="py-3 px-4 whitespace-nowrap text-sm">
+                  <TableCell key="type" className="py-3 px-4 whitespace-nowrap text-body">
                     {getBudgetTypeLabel(budget.type)}
                   </TableCell>
                 ),
                 status: (
-                  <TableCell key="status" className="py-3 px-4 whitespace-nowrap text-sm">
+                  <TableCell key="status" className="py-3 px-4 whitespace-nowrap text-body">
                     {getBudgetStatusLabel(budget.status)}
                   </TableCell>
                 ),
@@ -450,7 +450,7 @@ export function BudgetTable({
                 valueUsd: (
                   <TableCell key="valueUsd" className="py-3 px-4 text-right whitespace-nowrap">
                     {budget.value_usd != null ? (
-                      <span className="text-sm">
+                      <span className="text-body">
                         {formatCurrency(budget.value_usd, 'USD')}
                       </span>
                     ) : (
@@ -531,7 +531,7 @@ export function BudgetTable({
                               </div>
 
                               {/* Period */}
-                              <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2 mb-3 text-body text-muted-foreground">
                                 <span>{formatDate(budget.period_start)}</span>
                                 <span>→</span>
                                 <span>{formatDate(budget.period_end)}</span>
@@ -543,7 +543,7 @@ export function BudgetTable({
                               </div>
 
                               {budget.value_usd != null && (
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-body text-muted-foreground">
                                   USD: {formatCurrency(budget.value_usd, 'USD')}
                                 </div>
                               )}
@@ -554,7 +554,7 @@ export function BudgetTable({
                               <div className="bg-white rounded-lg border border-border p-4">
                                 <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Activity</h3>
                                 <div className="space-y-1">
-                                  <p className="font-medium text-sm">{activityTitle}</p>
+                                  <p className="font-medium text-body">{activityTitle}</p>
                                   {budget.activity.iati_identifier && (
                                     <p className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded inline-block">
                                       {budget.activity.iati_identifier}
@@ -572,23 +572,23 @@ export function BudgetTable({
                               <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Budget Details</h3>
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-muted-foreground">Value Date</span>
-                                  <span className="text-sm font-medium">{formatDate(budget.value_date)}</span>
+                                  <span className="text-helper text-muted-foreground">Value Date</span>
+                                  <span className="text-body font-medium">{formatDate(budget.value_date)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-muted-foreground">Currency</span>
-                                  <span className="text-sm font-medium">{budget.currency || 'USD'}</span>
+                                  <span className="text-helper text-muted-foreground">Currency</span>
+                                  <span className="text-body font-medium">{budget.currency || 'USD'}</span>
                                 </div>
                                 {budget.created_at && (
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">Created</span>
-                                    <span className="text-sm font-medium">{format(new Date(budget.created_at), 'dd MMM yyyy, HH:mm')}</span>
+                                    <span className="text-helper text-muted-foreground">Created</span>
+                                    <span className="text-body font-medium">{format(new Date(budget.created_at), 'dd MMM yyyy, HH:mm')}</span>
                                   </div>
                                 )}
                                 {budget.updated_at && (
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">Last Updated</span>
-                                    <span className="text-sm font-medium">{format(new Date(budget.updated_at), 'dd MMM yyyy, HH:mm')}</span>
+                                    <span className="text-helper text-muted-foreground">Last Updated</span>
+                                    <span className="text-body font-medium">{format(new Date(budget.updated_at), 'dd MMM yyyy, HH:mm')}</span>
                                   </div>
                                 )}
                               </div>

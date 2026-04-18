@@ -355,7 +355,7 @@ export function SavedReportsManager({
           >
             <TooltipProvider delayDuration={300}>
               {isLoading ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">
+                <div className="p-8 text-center text-body text-muted-foreground">
                   Loading reports...
                 </div>
               ) : (
@@ -364,13 +364,13 @@ export function SavedReportsManager({
                   <div className="flex-[3] p-4">
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b">
                       <Star className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-semibold text-sm">Report Templates</h3>
-                      <span className="text-xs text-muted-foreground">({templateReports.length})</span>
+                      <h3 className="font-semibold text-body">Report Templates</h3>
+                      <span className="text-helper text-muted-foreground">({templateReports.length})</span>
                     </div>
                     <ScrollArea className="h-[380px]">
                       <div className="pt-4 pr-4">
                       {templateReports.length === 0 ? (
-                        <div className="text-sm text-muted-foreground text-center py-8">
+                        <div className="text-body text-muted-foreground text-center py-8">
                           No templates available
                         </div>
                       ) : (
@@ -397,15 +397,15 @@ export function SavedReportsManager({
                   <div className="flex-[2] p-4">
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-semibold text-sm">My Saved Reports</h3>
-                      <span className="text-xs text-muted-foreground">({userReports.length})</span>
+                      <h3 className="font-semibold text-body">My Saved Reports</h3>
+                      <span className="text-helper text-muted-foreground">({userReports.length})</span>
                     </div>
                     <ScrollArea className="h-[380px]">
                       <div className="pt-4 pr-4">
                       {userReports.length === 0 ? (
-                        <div className="text-sm text-muted-foreground text-center py-8">
+                        <div className="text-body text-muted-foreground text-center py-8">
                           <p>No saved reports yet</p>
-                          <p className="text-xs mt-1">Configure your pivot table and click &quot;Save Report&quot;</p>
+                          <p className="text-helper mt-1">Configure your pivot table and click &quot;Save Report&quot;</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-4">
@@ -480,7 +480,7 @@ export function SavedReportsManager({
                 checked={isPublic}
                 onCheckedChange={(checked) => setIsPublic(checked === true)}
               />
-              <Label htmlFor="is-public" className="text-sm font-normal">
+              <Label htmlFor="is-public" className="text-body font-normal">
                 Share with all users (public)
               </Label>
             </div>
@@ -492,7 +492,7 @@ export function SavedReportsManager({
                   checked={isTemplate}
                   onCheckedChange={(checked) => setIsTemplate(checked === true)}
                 />
-                <Label htmlFor="is-template" className="text-sm font-normal">
+                <Label htmlFor="is-template" className="text-body font-normal">
                   Save as template (admin only)
                 </Label>
               </div>
@@ -550,11 +550,11 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
 
       {/* Content */}
       <div className="pr-4">
-        <div className="font-medium text-sm leading-tight line-clamp-2 mb-1">
+        <div className="font-medium text-body leading-tight line-clamp-2 mb-1">
           {report.name}
         </div>
         {report.description && (
-          <div className="text-xs text-muted-foreground line-clamp-2 mb-2">
+          <div className="text-helper text-muted-foreground line-clamp-2 mb-2">
             {report.description}
           </div>
         )}
@@ -607,9 +607,9 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
         <div className="space-y-1">
           <p className="font-semibold">{report.name}</p>
           {report.description && (
-            <p className="text-xs text-muted-foreground">{report.description}</p>
+            <p className="text-helper text-muted-foreground">{report.description}</p>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-helper text-muted-foreground">
             Last updated: {new Date(report.updated_at).toLocaleDateString()}
           </p>
         </div>

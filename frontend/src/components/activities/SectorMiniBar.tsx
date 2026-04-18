@@ -165,7 +165,7 @@ export function SectorMiniBar({
   // Handle empty state
   if (!sectors || sectors.length === 0) {
     return (
-      <div className={`flex items-center justify-center text-xs text-muted-foreground ${className}`}>
+      <div className={`flex items-center justify-center text-helper text-muted-foreground ${className}`}>
         —
       </div>
     )
@@ -247,7 +247,7 @@ export function SectorMiniBar({
                 />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <div className="text-xs">
+                <div className="text-helper">
                   <div className="font-medium">{sector.code} {displayName.replace(/^\d+\s*[-–]\s*/, '')}</div>
                   <div className="text-muted-foreground">{percentage}%</div>
                 </div>

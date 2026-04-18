@@ -198,7 +198,7 @@ export function AssignTransactionsModal({
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
                   <Users className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">Bulk assign all unassigned to:</span>
+                  <span className="text-body font-medium">Bulk assign all unassigned to:</span>
                   <Select value={bulkActivityId} onValueChange={setBulkActivityId}>
                     <SelectTrigger className="w-[300px]">
                       <SelectValue placeholder="Select an activity" />
@@ -237,7 +237,7 @@ export function AssignTransactionsModal({
                             <Badge variant="outline">
                               {getTransactionTypeLabel(tx.transaction_type)}
                             </Badge>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-body text-muted-foreground">
                               {tx.transaction_date}
                             </span>
                             <span className="font-mono text-sm">
@@ -245,11 +245,11 @@ export function AssignTransactionsModal({
                             </span>
                           </div>
                           {tx.description && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-body text-muted-foreground">
                               {tx.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-2 text-body">
                             <AlertTriangle className="h-3 w-3 text-yellow-600" />
                             <span className="text-yellow-600">
                               References missing activity: 
@@ -264,7 +264,7 @@ export function AssignTransactionsModal({
 
                       {/* Assignment Dropdown */}
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Assign to:</span>
+                        <span className="text-body font-medium">Assign to:</span>
                         <Select 
                           value={assignments[index] || ''} 
                           onValueChange={(value) => handleAssignment(index, value)}
@@ -290,7 +290,7 @@ export function AssignTransactionsModal({
 
           {/* Progress Summary */}
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <span className="text-sm font-medium">
+            <span className="text-body font-medium">
               Assigned: {Object.keys(assignments).length} / {unlinkedTransactions.length}
             </span>
             {allAssigned && (

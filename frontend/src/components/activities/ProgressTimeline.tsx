@@ -149,7 +149,7 @@ export function ProgressTimeline({
   if (segments.length === 0) {
     return (
       <div className={cn("p-4 bg-muted rounded-lg", className)}>
-        <p className="text-sm text-muted-foreground text-center">
+        <p className="text-body text-muted-foreground text-center">
           No periods available for timeline visualization
         </p>
       </div>
@@ -161,8 +161,8 @@ export function ProgressTimeline({
       <div className={cn("space-y-4", className)}>
         {/* Timeline Header */}
         <div className="flex items-center justify-between">
-          <h5 className="text-sm font-medium">Progress Timeline</h5>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <h5 className="text-body font-medium">Progress Timeline</h5>
+          <div className="flex items-center gap-4 text-helper text-muted-foreground">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span>On track (≥85%)</span>
@@ -203,13 +203,13 @@ export function ProgressTimeline({
                     {new Date(segment.period.period_start).toLocaleDateString()} - {' '}
                     {new Date(segment.period.period_end).toLocaleDateString()}
                   </div>
-                  <div className="text-sm">
+                  <div className="text-body">
                     <div>Target: {formatValue(segment.period.target_value)}</div>
                     <div>Actual: {formatValue(segment.period.actual_value)}</div>
                     <div>Achievement: {Math.round(segment.achievementRate)}%</div>
                   </div>
                   {segment.period.facet && segment.period.facet !== 'Total' && (
-                    <div className="text-xs text-gray-300">
+                    <div className="text-helper text-gray-300">
                       Facet: {segment.period.facet}
                     </div>
                   )}
@@ -224,7 +224,7 @@ export function ProgressTimeline({
           {segments.map((segment, index) => (
             <div 
               key={segment.period.id}
-              className="flex items-center justify-between p-2 bg-white border border-border rounded text-xs"
+              className="flex items-center justify-between p-2 bg-white border border-border rounded text-helper"
             >
               <div className="flex items-center gap-2">
                 {getStatusIcon(segment.status)}
@@ -247,7 +247,7 @@ export function ProgressTimeline({
                 <Badge 
                   variant={segment.status === 'green' ? 'default' : 'secondary'}
                   className={cn(
-                    "text-xs",
+                    "text-helper",
                     segment.status === 'green' && "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]",
                     segment.status === 'yellow' && "bg-yellow-100 text-yellow-700",
                     segment.status === 'red' && "bg-destructive/10 text-destructive",
@@ -263,7 +263,7 @@ export function ProgressTimeline({
 
         {/* Overall Progress Bar */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-body">
             <span className="font-medium">Overall Progress</span>
             <span className="text-muted-foreground">
               {indicator.latestActual ? formatValue(indicator.latestActual) : '0'} / {' '}
@@ -279,7 +279,7 @@ export function ProgressTimeline({
               indicator.status?.color === 'red' && "[&>div]:bg-destructive"
             )}
           />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-helper text-muted-foreground">
             <span>0%</span>
             <span className="font-medium">
               {indicator.status?.percentage || 0}% ({indicator.status?.label || 'No progress'})

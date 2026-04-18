@@ -1343,7 +1343,7 @@ export default function OrganizationProfilePage() {
                           >
                             {organization.alias_refs && organization.alias_refs.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Legacy Codes:</p>
+                                <p className="text-helper font-medium text-muted-foreground mb-1">Legacy Codes:</p>
                                 <div className="flex flex-wrap gap-1">
                                   {organization.alias_refs.map((ref, idx) => (
                                     <code key={idx} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-mono border border-blue-200">
@@ -1404,7 +1404,7 @@ export default function OrganizationProfilePage() {
                                 style={{ width: '16px', height: '12px' }}
                               />
                             )}
-                            <span className="text-xs">{organization.country}</span>
+                            <span className="text-helper">{organization.country}</span>
                           </Badge>
                         )}
                         <Badge className={getTypeColor(organization.organisation_type)}>
@@ -1430,7 +1430,7 @@ export default function OrganizationProfilePage() {
                       {/* Activity Stats Bar */}
                       {activities.length > 0 && (
                         <div className="mb-3">
-                        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm">
+                        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-body">
                           {(() => {
                             // Calculate most recent transaction date
                             const allTransactionDates = activities
@@ -1488,7 +1488,7 @@ export default function OrganizationProfilePage() {
                           {organization.description.length > 700 && (
                             <button
                               onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                              className="flex items-center gap-1 text-muted-foreground hover:text-foreground mt-2 text-sm font-medium transition-colors"
+                              className="flex items-center gap-1 text-muted-foreground hover:text-foreground mt-2 text-body font-medium transition-colors"
                             >
                               {isDescriptionExpanded ? (
                                 <>
@@ -1517,14 +1517,14 @@ export default function OrganizationProfilePage() {
                       {/* Contact Information - Always Visible */}
                       {(organization.website || organization.email || organization.phone || organization.address) && (
                         <>
-                          <p className="text-xs font-semibold text-foreground">Contact</p>
+                          <p className="text-helper font-semibold text-foreground">Contact</p>
                           <div className="space-y-2">
                             {organization.website && (
                               <a
                                 href={organization.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                className="flex items-center gap-2 text-helper text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Globe className="h-3 w-3 flex-shrink-0" />
                                 <span className="truncate">Website</span>
@@ -1534,7 +1534,7 @@ export default function OrganizationProfilePage() {
                             {organization.email && (
                               <a
                                 href={`mailto:${organization.email}`}
-                                className="flex items-start gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                className="flex items-start gap-2 text-helper text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Mail className="h-3 w-3 flex-shrink-0 mt-0.5" />
                                 <span className="break-all">{organization.email}</span>
@@ -1543,14 +1543,14 @@ export default function OrganizationProfilePage() {
                             {organization.phone && (
                               <a
                                 href={`tel:${organization.phone}`}
-                                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                className="flex items-center gap-2 text-helper text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Phone className="h-3 w-3 flex-shrink-0" />
                                 <span>{organization.phone}</span>
                               </a>
                             )}
                             {organization.address && (
-                              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-start gap-2 text-helper text-muted-foreground">
                                 <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
                                 <span>{organization.address}</span>
                               </div>
@@ -1683,9 +1683,9 @@ export default function OrganizationProfilePage() {
           <div className="flex flex-wrap lg:flex-nowrap gap-4 mb-8">
             {/* Activities */}
             <div className="flex-1 min-w-0 bg-card border border-border rounded-lg p-3">
-              <p className="text-xs font-medium text-muted-foreground truncate">Activities</p>
-              <p className="text-2xl font-bold text-foreground">{totals.activeActivities} <span className="text-sm font-normal text-muted-foreground">Active</span></p>
-              <div className="text-xs text-muted-foreground">
+              <p className="text-helper font-medium text-muted-foreground truncate">Activities</p>
+              <p className="text-2xl font-bold text-foreground">{totals.activeActivities} <span className="text-body font-normal text-muted-foreground">Active</span></p>
+              <div className="text-helper text-muted-foreground">
                 <p>{totals.pipelineActivities || 0} Pipeline/Identification</p>
                 <p>{totals.closedActivities || 0} Closed/Suspended</p>
               </div>
@@ -1693,11 +1693,11 @@ export default function OrganizationProfilePage() {
 
             {/* Total Committed */}
             <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-muted-foreground truncate">Total Committed</p>
+              <p className="text-helper font-medium text-muted-foreground truncate">Total Committed</p>
               <p className="text-3xl font-bold text-foreground">
                 {formatCurrencyShort(totals.totalPortfolioValue)}
               </p>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.commitmentChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1712,11 +1712,11 @@ export default function OrganizationProfilePage() {
 
             {/* Total Disbursed */}
             <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-muted-foreground truncate">Total Disbursed</p>
+              <p className="text-helper font-medium text-muted-foreground truncate">Total Disbursed</p>
               <p className="text-3xl font-bold text-foreground">
                 {formatCurrencyShort(totals.totalDisbursements)}
               </p>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.disbursementChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1731,7 +1731,7 @@ export default function OrganizationProfilePage() {
 
             {/* % Disbursed - calculated from totals */}
             <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-muted-foreground truncate">% Disbursed</p>
+              <p className="text-helper font-medium text-muted-foreground truncate">% Disbursed</p>
               <p className="text-3xl font-bold text-foreground">
                 {(() => {
                   const committed = totals.totalPortfolioValue || 0
@@ -1740,7 +1740,7 @@ export default function OrganizationProfilePage() {
                   return ((disbursed / committed) * 100).toFixed(1)
                 })()}%
               </p>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.disbursedPercentChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1755,11 +1755,11 @@ export default function OrganizationProfilePage() {
 
             {/* Total Expended */}
             <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-muted-foreground truncate">Total Expended</p>
+              <p className="text-helper font-medium text-muted-foreground truncate">Total Expended</p>
               <p className="text-3xl font-bold text-foreground">
                 {formatCurrencyShort(totals.totalExpenditures)}
               </p>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.expenditureChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1777,11 +1777,11 @@ export default function OrganizationProfilePage() {
               roleMetrics.isFundingOrg ? (
                 <>
                   <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-muted-foreground truncate">Implementing Partners</p>
+                    <p className="text-helper font-medium text-muted-foreground truncate">Implementing Partners</p>
                     <p className="text-3xl font-bold text-foreground">
                       {roleMetrics.uniqueImplementingPartners || 0}
                     </p>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-helper text-muted-foreground">
                       <p>Across {yoyStats.activitiesCount} activities</p>
                     </div>
                   </div>
@@ -1789,19 +1789,19 @@ export default function OrganizationProfilePage() {
               ) : (
                 <>
                   <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-muted-foreground truncate">Inbound Funding</p>
+                    <p className="text-helper font-medium text-muted-foreground truncate">Inbound Funding</p>
                     <p className="text-3xl font-bold text-foreground">
                       {formatCurrencyShort(roleMetrics.totalInboundFunding || 0)}
                     </p>
                   </div>
                   <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-muted-foreground truncate">Donors</p>
+                    <p className="text-helper font-medium text-muted-foreground truncate">Donors</p>
                     <p className="text-3xl font-bold text-foreground">
                       {roleMetrics.uniqueDonors || 0}
                     </p>
                   </div>
                   <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-muted-foreground truncate">Avg. Activity</p>
+                    <p className="text-helper font-medium text-muted-foreground truncate">Avg. Activity</p>
                     <p className="text-3xl font-bold text-foreground">
                       {formatCurrencyShort(roleMetrics.averageActivitySize || 0)}
                     </p>
@@ -1816,7 +1816,7 @@ export default function OrganizationProfilePage() {
             {/* Active Projects Timeline Chart */}
             <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-foreground">Projects Timeline</CardTitle>
+                <CardTitle className="text-helper font-semibold text-foreground">Projects Timeline</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -1853,7 +1853,7 @@ export default function OrganizationProfilePage() {
                   if (timelineView === 'table') {
                     return (
                       <div className="h-36 overflow-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -1980,7 +1980,7 @@ export default function OrganizationProfilePage() {
                               transform: 'translateX(-50%)'
                             }}
                           >
-                            <table className="text-xs w-full border-collapse">
+                            <table className="text-helper w-full border-collapse">
                               <thead className="bg-surface-muted">
                                 <tr className="bg-surface-muted border-b border-border">
                                   <th className="text-left px-3 py-2 text-muted-foreground font-medium">{hoveredPoint.year}</th>
@@ -2005,7 +2005,7 @@ export default function OrganizationProfilePage() {
             {/* Budget by Year Chart */}
             <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-foreground">Budget by Year</CardTitle>
+                <CardTitle className="text-helper font-semibold text-foreground">Budget by Year</CardTitle>
                 <div className="flex gap-1">
                   {budgetView === 'chart' && (
                     <Button
@@ -2046,7 +2046,7 @@ export default function OrganizationProfilePage() {
                 {budgetsByYear.length > 0 ? (
                     budgetView === 'table' ? (
                     <div className="h-36 overflow-auto">
-                      <table className="w-full text-xs">
+                      <table className="w-full text-helper">
                         <thead className="bg-surface-muted">
                           <tr className="border-b border-border">
                             <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -2097,7 +2097,7 @@ export default function OrganizationProfilePage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                    <table className="text-xs w-full border-collapse">
+                                    <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-surface-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -2144,7 +2144,7 @@ export default function OrganizationProfilePage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                    <table className="text-xs w-full border-collapse">
+                                    <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-surface-muted border-b border-border">
                                           <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -2175,7 +2175,7 @@ export default function OrganizationProfilePage() {
                   </div>
                   )
                 ) : (
-                  <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
+                  <div className="h-24 flex items-center justify-center text-muted-foreground text-helper">
                     <p>No data</p>
                   </div>
                 )}
@@ -2186,7 +2186,7 @@ export default function OrganizationProfilePage() {
             <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-xs font-semibold text-foreground">Budget vs Actuals</CardTitle>
+                  <CardTitle className="text-helper font-semibold text-foreground">Budget vs Actuals</CardTitle>
                   <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2257,7 +2257,7 @@ export default function OrganizationProfilePage() {
                   return chartData.length > 0 ? (
                     budgetVsActualsView === 'table' ? (
                       <div className="h-36 overflow-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
                               <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
@@ -2312,7 +2312,7 @@ export default function OrganizationProfilePage() {
                                 if (active && payload && payload.length) {
                                   return (
                                     <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                      <table className="text-xs w-full border-collapse">
+                                      <table className="text-helper w-full border-collapse">
                                         <thead className="bg-surface-muted">
                                           <tr className="bg-surface-muted border-b border-border">
                                             <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -2386,7 +2386,7 @@ export default function OrganizationProfilePage() {
                                 if (active && payload && payload.length) {
                                   return (
                                     <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
-                                      <table className="text-xs w-full border-collapse">
+                                      <table className="text-helper w-full border-collapse">
                                         <thead className="bg-surface-muted">
                                           <tr className="bg-surface-muted border-b border-border">
                                             <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
@@ -2431,7 +2431,7 @@ export default function OrganizationProfilePage() {
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <div className="h-40 flex items-center justify-center text-muted-foreground text-xs">
+                    <div className="h-40 flex items-center justify-center text-muted-foreground text-helper">
                       <p>No data</p>
                     </div>
                   )
@@ -2443,7 +2443,7 @@ export default function OrganizationProfilePage() {
             <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-xs font-semibold text-foreground">Aid Modality Composition</CardTitle>
+                  <CardTitle className="text-helper font-semibold text-foreground">Aid Modality Composition</CardTitle>
                   <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2476,7 +2476,7 @@ export default function OrganizationProfilePage() {
                 {modalityComposition.length > 0 ? (
                   modalityView === 'table' ? (
                     <div className="h-24 overflow-auto">
-                      <table className="w-full text-xs">
+                      <table className="w-full text-helper">
                         <thead className="bg-surface-muted">
                           <tr className="border-b border-border">
                             <th className="text-left py-1 text-muted-foreground font-medium">Finance Type</th>
@@ -2535,7 +2535,7 @@ export default function OrganizationProfilePage() {
                                     {/* Hover tooltip */}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                                       <div className="bg-card border border-border rounded shadow-lg overflow-hidden whitespace-nowrap">
-                                        <table className="text-xs border-collapse">
+                                        <table className="text-helper border-collapse">
                                           <thead className="bg-surface-muted">
                                             <tr className="bg-surface-muted border-b border-border">
                                               <th colSpan={2} className="text-left px-3 py-2 text-muted-foreground font-medium">{item.name}</th>
@@ -2565,7 +2565,7 @@ export default function OrganizationProfilePage() {
                             {/* Legend */}
                             <div className="flex flex-wrap gap-2 mt-2">
                               {modalityCompositionByValue.map((item) => (
-                                <div key={item.name} className="flex items-center gap-1 text-xs">
+                                <div key={item.name} className="flex items-center gap-1 text-helper">
                                   <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }} />
                                   <span className="text-muted-foreground truncate">{item.name}</span>
                                 </div>
@@ -2577,7 +2577,7 @@ export default function OrganizationProfilePage() {
                     </div>
                   )
                 ) : (
-                  <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
+                  <div className="h-24 flex items-center justify-center text-muted-foreground text-helper">
                     <p>No finance type data</p>
                   </div>
                 )}
@@ -2897,14 +2897,14 @@ export default function OrganizationProfilePage() {
                                     </div>
                                     {/* Activity description */}
                                     {activity.description && (
-                                      <p className="text-xs text-muted-foreground line-clamp-4 mt-1">
+                                      <p className="text-helper text-muted-foreground line-clamp-4 mt-1">
                                         {activity.description}
                                       </p>
                                     )}
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <span className="text-sm text-foreground">
+                                  <span className="text-body text-foreground">
                                     {getActivityStatusLabel(activity.activity_status)}
                                   </span>
                                 </TableCell>
@@ -3070,7 +3070,7 @@ export default function OrganizationProfilePage() {
                   <Card className="border-border">
                     <CardHeader>
                       <CardTitle className="text-foreground">Sector Financial Trends</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <p className="text-body text-muted-foreground mt-2">
                         Disbursements by sector over time
                       </p>
                     </CardHeader>
@@ -3089,7 +3089,7 @@ export default function OrganizationProfilePage() {
                   <Card className="border-border">
                     <CardHeader>
                       <CardTitle className="text-foreground">Sector Distribution</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <p className="text-body text-muted-foreground mt-2">
                         Aggregated sector allocations across all activities ({sectorAllocations.length} unique sectors)
                       </p>
                     </CardHeader>
@@ -3120,7 +3120,7 @@ export default function OrganizationProfilePage() {
                       <div className="text-center py-12">
                         <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No sector data available</p>
-                        <p className="text-xs text-muted-foreground mt-2">Activities need sector allocations to display visualization</p>
+                        <p className="text-helper text-muted-foreground mt-2">Activities need sector allocations to display visualization</p>
                       </div>
                     )}
                   </CardContent>
@@ -3133,7 +3133,7 @@ export default function OrganizationProfilePage() {
                   <Card className="border-border">
                     <CardHeader>
                       <CardTitle className="text-foreground">Sustainable Development Goals</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <p className="text-body text-muted-foreground mt-2">
                         SDG coverage and concentration across organization activities
                       </p>
                     </CardHeader>
@@ -3261,7 +3261,7 @@ export default function OrganizationProfilePage() {
                               <Users className="h-5 w-5" />
                               Partnership Analysis
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-body text-muted-foreground">
                               Interactive pivot table showing partnership patterns across {activitiesWithPartnerData.length} activities
                             </p>
                           </CardHeader>
@@ -3269,7 +3269,7 @@ export default function OrganizationProfilePage() {
                             {/* Pivot Controls */}
                             <div className="flex items-end gap-4 flex-wrap mb-4">
                               <div className="space-y-2">
-                                <Label htmlFor="pivotRows" className="text-xs text-muted-foreground">Rows</Label>
+                                <Label htmlFor="pivotRows" className="text-helper text-muted-foreground">Rows</Label>
                                 <Select value={pivotRowDimension} onValueChange={(v) => setPivotRowDimension(v as any)}>
                                   <SelectTrigger id="pivotRows" className="min-w-[180px]">
                                     <SelectValue />
@@ -3283,7 +3283,7 @@ export default function OrganizationProfilePage() {
                                 </Select>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="pivotColumns" className="text-xs text-muted-foreground">Columns</Label>
+                                <Label htmlFor="pivotColumns" className="text-helper text-muted-foreground">Columns</Label>
                                 <Select value={pivotColumnDimension} onValueChange={(v) => setPivotColumnDimension(v as any)}>
                                   <SelectTrigger id="pivotColumns" className="min-w-[180px]">
                                     <SelectValue />
@@ -3296,7 +3296,7 @@ export default function OrganizationProfilePage() {
                                 </Select>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="pivotValues" className="text-xs text-muted-foreground">Values</Label>
+                                <Label htmlFor="pivotValues" className="text-helper text-muted-foreground">Values</Label>
                                 <Select value={pivotValueMetric} onValueChange={(v) => setPivotValueMetric(v as any)}>
                                   <SelectTrigger id="pivotValues" className="min-w-[180px]">
                                     <SelectValue />
@@ -3480,7 +3480,7 @@ export default function OrganizationProfilePage() {
                                             {col}
                                           </TableHead>
                                         ))}
-                                        <TableHead className="text-sm font-medium text-foreground py-3 px-4 text-center whitespace-nowrap bg-surface-muted min-w-[80px] border-l border-border">
+                                        <TableHead className="text-body font-medium text-foreground py-3 px-4 text-center whitespace-nowrap bg-surface-muted min-w-[80px] border-l border-border">
                                           Total
                                         </TableHead>
                                       </TableRow>
@@ -3551,7 +3551,7 @@ export default function OrganizationProfilePage() {
                                   <Building2 className="h-5 w-5" />
                                   Organizational Network
                                 </CardTitle>
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-body text-muted-foreground mt-1">
                                   Interactive network showing organizational relationships and roles across all activities
                                 </p>
                               </div>
@@ -3585,7 +3585,7 @@ export default function OrganizationProfilePage() {
                                     }}
                                   >
                                     <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
-                                    <span className={`text-sm font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
+                                    <span className={`text-body font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
                                       {label}
                                     </span>
                                   </div>
@@ -3854,7 +3854,7 @@ export default function OrganizationProfilePage() {
                           <MapPin className="h-5 w-5" />
                           Activity Locations
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-body text-muted-foreground">
                           Map showing all locations where this organization has reported activities
                         </p>
                       </CardHeader>
@@ -3951,7 +3951,7 @@ export default function OrganizationProfilePage() {
                                     {fullName}
                                   </h3>
                                   {jobLine && (
-                                    <p className="text-sm text-muted-foreground break-words">{jobLine}</p>
+                                    <p className="text-body text-muted-foreground break-words">{jobLine}</p>
                                   )}
                                   {organization && (
                                     <div className="flex items-center gap-2 mt-1">
@@ -3968,7 +3968,7 @@ export default function OrganizationProfilePage() {
                                           </span>
                                         </div>
                                       )}
-                                      <span className="text-sm text-muted-foreground">
+                                      <span className="text-body text-muted-foreground">
                                         {organization.name}
                                         {organization.acronym && ` (${organization.acronym})`}
                                       </span>
@@ -3983,7 +3983,7 @@ export default function OrganizationProfilePage() {
                                     <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <a
                                       href={`mailto:${contact.email}`}
-                                      className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
+                                      className="text-body text-foreground hover:text-blue-600 transition-colors truncate"
                                     >
                                       {contact.email}
                                     </a>
@@ -3993,7 +3993,7 @@ export default function OrganizationProfilePage() {
                                 {(contact.phone || contact.phoneNumber) && (
                                   <div className="flex items-center space-x-2">
                                     <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                    <span className="text-sm text-foreground">
+                                    <span className="text-body text-foreground">
                                       {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
                                     </span>
                                   </div>
@@ -4006,7 +4006,7 @@ export default function OrganizationProfilePage() {
                                       href={contact.website}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
+                                      className="text-body text-foreground hover:text-blue-600 transition-colors truncate"
                                     >
                                       {contact.website.replace(/^https?:\/\//, '')}
                                     </a>
@@ -4028,12 +4028,12 @@ export default function OrganizationProfilePage() {
                         <table className="w-full">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
-                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Organization</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
+                              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Contact</th>
+                              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Role</th>
+                              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Organization</th>
+                              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Email</th>
+                              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Phone</th>
+                              <th className="text-left py-3 px-4 text-body font-medium text-muted-foreground">Type</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -4058,15 +4058,15 @@ export default function OrganizationProfilePage() {
                                         size="md"
                                       />
                                       <div>
-                                        <p className="text-sm font-medium text-foreground">{fullName}</p>
+                                        <p className="text-body font-medium text-foreground">{fullName}</p>
                                         {contact.isPrimary && (
-                                          <span className="text-xs text-blue-600">Primary Contact</span>
+                                          <span className="text-helper text-blue-600">Primary Contact</span>
                                         )}
                                       </div>
                                     </div>
                                   </td>
                                   <td className="py-3 px-4">
-                                    <p className="text-sm text-foreground">{jobLine || '—'}</p>
+                                    <p className="text-body text-foreground">{jobLine || '—'}</p>
                                   </td>
                                   <td className="py-3 px-4">
                                     {organization ? (
@@ -4084,28 +4084,28 @@ export default function OrganizationProfilePage() {
                                             </span>
                                           </div>
                                         )}
-                                        <span className="text-sm text-muted-foreground">
+                                        <span className="text-body text-muted-foreground">
                                           {organization.acronym || organization.name}
                                         </span>
                                       </div>
                                     ) : (
-                                      <span className="text-sm text-muted-foreground">—</span>
+                                      <span className="text-body text-muted-foreground">—</span>
                                     )}
                                   </td>
                                   <td className="py-3 px-4">
                                     {contact.email ? (
                                       <a
                                         href={`mailto:${contact.email}`}
-                                        className="text-sm text-foreground hover:text-blue-600"
+                                        className="text-body text-foreground hover:text-blue-600"
                                       >
                                         {contact.email}
                                       </a>
                                     ) : (
-                                      <span className="text-sm text-muted-foreground">—</span>
+                                      <span className="text-body text-muted-foreground">—</span>
                                     )}
                                   </td>
                                   <td className="py-3 px-4">
-                                    <span className="text-sm text-foreground">
+                                    <span className="text-body text-foreground">
                                       {contact.phone || contact.phoneNumber
                                         ? `${contact.countryCode ? contact.countryCode + ' ' : ''}${contact.phoneNumber || contact.phone}`
                                         : '—'}
@@ -4134,19 +4134,19 @@ export default function OrganizationProfilePage() {
                       <CardTitle className="text-foreground">Documents</CardTitle>
                       {(organizationDocuments.length > 0 || activityDocuments.length > 0) && (
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-body text-muted-foreground">
                             {organizationDocuments.length + activityDocuments.reduce((sum, a) => sum + a.documents.length, 0)} document{(organizationDocuments.length + activityDocuments.reduce((sum, a) => sum + a.documents.length, 0)) !== 1 ? 's' : ''}
                           </span>
                           <div className="flex border rounded-md">
                             <button
                               onClick={() => setDocumentsViewMode('card')}
-                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'card' ? 'bg-foreground text-white' : 'bg-card text-muted-foreground hover:bg-muted/50'} rounded-l-md transition-colors`}
+                              className={`px-3 py-1.5 text-body ${documentsViewMode === 'card' ? 'bg-foreground text-white' : 'bg-card text-muted-foreground hover:bg-muted/50'} rounded-l-md transition-colors`}
                             >
                               <LayoutGrid className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => setDocumentsViewMode('table')}
-                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'table' ? 'bg-foreground text-white' : 'bg-card text-muted-foreground hover:bg-muted/50'} rounded-r-md transition-colors`}
+                              className={`px-3 py-1.5 text-body ${documentsViewMode === 'table' ? 'bg-foreground text-white' : 'bg-card text-muted-foreground hover:bg-muted/50'} rounded-r-md transition-colors`}
                             >
                               <TableIcon className="h-4 w-4" />
                             </button>
@@ -4162,7 +4162,7 @@ export default function OrganizationProfilePage() {
                           {/* Organization Documents - Card View */}
                           {organizationDocuments.length > 0 && (
                             <div>
-                              <h3 className="text-sm font-semibold text-foreground mb-3">Organisation Documents</h3>
+                              <h3 className="text-body font-semibold text-foreground mb-3">Organisation Documents</h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {organizationDocuments.map((doc, index) => (
                                   <div key={doc.id || index} className="border border-border rounded-lg hover:border-border hover:shadow-sm transition-all overflow-hidden">
@@ -4185,7 +4185,7 @@ export default function OrganizationProfilePage() {
                                     {/* Document Info */}
                                     <div className="p-4">
                                       <div className="flex items-start justify-between mb-2">
-                                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
+                                        <Badge variant="outline" className="text-helper bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
                                         {doc.url && (
                                           <a
                                             href={doc.url}
@@ -4197,18 +4197,18 @@ export default function OrganizationProfilePage() {
                                           </a>
                                         )}
                                       </div>
-                                      <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
+                                      <h4 className="text-body font-medium text-foreground line-clamp-2 mb-1">
                                         {doc.title || doc.filename || 'Untitled Document'}
                                       </h4>
                                       {doc.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{doc.description}</p>
+                                        <p className="text-helper text-muted-foreground line-clamp-2 mb-2">{doc.description}</p>
                                       )}
                                       <div className="flex items-center gap-2 flex-wrap">
                                         {doc.format && (
-                                          <Badge variant="secondary" className="text-xs">{doc.format}</Badge>
+                                          <Badge variant="secondary" className="text-helper">{doc.format}</Badge>
                                         )}
                                         {doc.document_date && (
-                                          <span className="text-xs text-muted-foreground">{doc.document_date}</span>
+                                          <span className="text-helper text-muted-foreground">{doc.document_date}</span>
                                         )}
                                       </div>
                                     </div>
@@ -4221,7 +4221,7 @@ export default function OrganizationProfilePage() {
                           {/* Activity Documents - Card View */}
                           {activityDocuments.map((activityDoc) => (
                             <div key={activityDoc.activityId}>
-                              <h3 className="text-sm font-semibold text-foreground mb-3">
+                              <h3 className="text-body font-semibold text-foreground mb-3">
                                 From Activity: {activityDoc.activityTitle}
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -4246,7 +4246,7 @@ export default function OrganizationProfilePage() {
                                     {/* Document Info */}
                                     <div className="p-4">
                                       <div className="flex items-start justify-between mb-2">
-                                        <Badge variant="outline" className="text-xs">Activity</Badge>
+                                        <Badge variant="outline" className="text-helper">Activity</Badge>
                                         {doc.url && (
                                           <a
                                             href={doc.url}
@@ -4258,11 +4258,11 @@ export default function OrganizationProfilePage() {
                                           </a>
                                         )}
                                       </div>
-                                      <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
+                                      <h4 className="text-body font-medium text-foreground line-clamp-2 mb-1">
                                         {doc.title || doc.filename || 'Untitled Document'}
                                       </h4>
                                       {doc.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-2">{doc.description}</p>
+                                        <p className="text-helper text-muted-foreground line-clamp-2">{doc.description}</p>
                                       )}
                                     </div>
                                   </div>
@@ -4293,28 +4293,28 @@ export default function OrganizationProfilePage() {
                                     <div className="flex items-center gap-2">
                                       <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
                                       <div>
-                                        <div className="text-sm font-medium text-foreground">{doc.title || 'Untitled Document'}</div>
+                                        <div className="text-body font-medium text-foreground">{doc.title || 'Untitled Document'}</div>
                                         {doc.description && (
-                                          <div className="text-xs text-muted-foreground truncate max-w-xs">{doc.description}</div>
+                                          <div className="text-helper text-muted-foreground truncate max-w-xs">{doc.description}</div>
                                         )}
                                       </div>
                                     </div>
                                   </td>
                                   <td className="py-3 px-4">
-                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
+                                    <Badge variant="outline" className="text-helper bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
                                   </td>
-                                  <td className="py-3 px-4 text-sm text-muted-foreground">-</td>
+                                  <td className="py-3 px-4 text-body text-muted-foreground">-</td>
                                   <td className="py-3 px-4">
-                                    {doc.format && <Badge variant="secondary" className="text-xs">{doc.format}</Badge>}
+                                    {doc.format && <Badge variant="secondary" className="text-helper">{doc.format}</Badge>}
                                   </td>
-                                  <td className="py-3 px-4 text-sm text-muted-foreground">{doc.document_date || '-'}</td>
+                                  <td className="py-3 px-4 text-body text-muted-foreground">{doc.document_date || '-'}</td>
                                   <td className="py-3 px-4 text-right">
                                     {doc.url && (
                                       <a
                                         href={doc.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                                        className="inline-flex items-center gap-1 text-body text-blue-600 hover:text-blue-800"
                                       >
                                         Open <ExternalLink className="h-3 w-3" />
                                       </a>
@@ -4331,28 +4331,28 @@ export default function OrganizationProfilePage() {
                                       <div className="flex items-center gap-2">
                                         <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                         <div>
-                                          <div className="text-sm font-medium text-foreground">{doc.title || doc.filename || 'Untitled Document'}</div>
+                                          <div className="text-body font-medium text-foreground">{doc.title || doc.filename || 'Untitled Document'}</div>
                                           {doc.description && (
-                                            <div className="text-xs text-muted-foreground truncate max-w-xs">{doc.description}</div>
+                                            <div className="text-helper text-muted-foreground truncate max-w-xs">{doc.description}</div>
                                           )}
                                         </div>
                                       </div>
                                     </td>
                                     <td className="py-3 px-4">
-                                      <Badge variant="outline" className="text-xs">Activity</Badge>
+                                      <Badge variant="outline" className="text-helper">Activity</Badge>
                                     </td>
-                                    <td className="py-3 px-4 text-sm text-muted-foreground truncate max-w-xs">{activityDoc.activityTitle}</td>
+                                    <td className="py-3 px-4 text-body text-muted-foreground truncate max-w-xs">{activityDoc.activityTitle}</td>
                                     <td className="py-3 px-4">
-                                      {doc.format && <Badge variant="secondary" className="text-xs">{doc.format}</Badge>}
+                                      {doc.format && <Badge variant="secondary" className="text-helper">{doc.format}</Badge>}
                                     </td>
-                                    <td className="py-3 px-4 text-sm text-muted-foreground">{doc.document_date || '-'}</td>
+                                    <td className="py-3 px-4 text-body text-muted-foreground">{doc.document_date || '-'}</td>
                                     <td className="py-3 px-4 text-right">
                                       {doc.url && (
                                         <a
                                           href={doc.url}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                                          className="inline-flex items-center gap-1 text-body text-blue-600 hover:text-blue-800"
                                         >
                                           Open <ExternalLink className="h-3 w-3" />
                                         </a>

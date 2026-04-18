@@ -195,7 +195,7 @@ function ChartHelpIcon({ text }: { text: string }) {
           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
-          <p className="text-sm">{text}</p>
+          <p className="text-body">{text}</p>
         </TooltipContent>
       </UITooltip>
     </TooltipProvider>
@@ -283,7 +283,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
-        <p className="text-sm text-destructive">Failed to load visualization data: {error}</p>
+        <p className="text-body text-destructive">Failed to load visualization data: {error}</p>
       </div>
     );
   }
@@ -309,7 +309,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               Total Budgets
               <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
@@ -327,15 +327,15 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-xs py-1 h-auto">Year</TableHead>
-                          <TableHead className="text-xs py-1 h-auto text-right">Amount (USD)</TableHead>
+                          <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.budgetTrend.map((point) => (
                           <TableRow key={point.year}>
-                            <TableCell className="text-xs py-1">{point.year}</TableCell>
-                            <TableCell className="text-xs py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                            <TableCell className="text-helper py-1">{point.year}</TableCell>
+                            <TableCell className="text-helper py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -351,7 +351,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-border rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
@@ -382,7 +382,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-border rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
@@ -409,7 +409,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   </ResponsiveContainer>
                 )
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No budget data
                 </div>
               )}
@@ -428,7 +428,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <CalendarClock className="h-4 w-4 text-muted-foreground" />
               Planned Disbursements
               <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
@@ -446,15 +446,15 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-xs py-1 h-auto">Year</TableHead>
-                          <TableHead className="text-xs py-1 h-auto text-right">Amount (USD)</TableHead>
+                          <TableHead className="text-helper py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-helper py-1 h-auto text-right">Amount (USD)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.plannedBudgetTrend.map((point) => (
                           <TableRow key={point.year}>
-                            <TableCell className="text-xs py-1">{point.year}</TableCell>
-                            <TableCell className="text-xs py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                            <TableCell className="text-helper py-1">{point.year}</TableCell>
+                            <TableCell className="text-helper py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -470,7 +470,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-border rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
@@ -501,7 +501,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             if (active && payload && payload.length) {
                               const point = payload[0].payload as BudgetTrendPoint;
                               return (
-                                <div className="bg-white border border-border rounded shadow-lg text-xs p-0 overflow-hidden">
+                                <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                                   <table className="border-collapse">
                                     <thead className="bg-surface-muted">
                                       <tr className="bg-surface-muted">
@@ -528,7 +528,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   </ResponsiveContainer>
                 )
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No planned data
                 </div>
               )}
@@ -547,7 +547,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
               Transactions by Type
               <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
@@ -573,7 +573,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         if (active && payload && payload.length) {
                           const dataPoint = data.transactionTrend.find(t => t.month === label);
                           return (
-                            <div className="bg-white border border-border rounded shadow-lg text-xs p-0 overflow-hidden">
+                            <div className="bg-white border border-border rounded shadow-lg text-helper p-0 overflow-hidden">
                               <table className="border-collapse">
                                 <thead className="bg-surface-muted">
                                   <tr className="bg-surface-muted">
@@ -621,25 +621,25 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-xs py-1 h-auto">Year</TableHead>
+                              <TableHead className="text-helper py-1 h-auto">Year</TableHead>
                               {uniqueTypes.map(type => (
-                                <TableHead key={type} className="text-xs py-1 h-auto text-right">
+                                <TableHead key={type} className="text-helper py-1 h-auto text-right">
                                   {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                                 </TableHead>
                               ))}
-                              <TableHead className="text-xs py-1 h-auto text-right">Total</TableHead>
+                              <TableHead className="text-helper py-1 h-auto text-right">Total</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {data.transactionTrend.map((point) => (
                               <TableRow key={point.month}>
-                                <TableCell className="text-xs py-1">{point.month}</TableCell>
+                                <TableCell className="text-helper py-1">{point.month}</TableCell>
                                 {uniqueTypes.map(type => (
-                                  <TableCell key={type} className="text-xs py-1 text-right">
+                                  <TableCell key={type} className="text-helper py-1 text-right">
                                     {formatCurrency(point.typeAmounts?.[type] || 0)}
                                   </TableCell>
                                 ))}
-                                <TableCell className="text-xs py-1 text-right font-medium">{formatCurrency(point.amount)}</TableCell>
+                                <TableCell className="text-helper py-1 text-right font-medium">{formatCurrency(point.amount)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -693,7 +693,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   );
                 })()
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No transaction data
                 </div>
               )}
@@ -712,7 +712,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
               Sectors
               <ChartHelpIcon text="Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Hover for financial details including budgets, planned disbursements, and actual disbursements in USD." />
@@ -741,7 +741,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                 <div className="h-full cursor-default transition-opacity hover:opacity-80" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                               </TooltipTrigger>
                               <TooltipContent side="top" className="p-0 overflow-hidden max-w-[220px]">
-                                <div className="bg-white text-xs">
+                                <div className="bg-white text-helper">
                                   <div className="px-3 py-1.5 bg-surface-muted font-semibold text-foreground border-b border-border flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
                                   <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground">Planned Disb.</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
                                   <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground">Share</span><span className="font-medium">{pct.toFixed(1)}%</span></div>
@@ -756,7 +756,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   );
                 })()
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                <div className="h-full flex items-center justify-center text-muted-foreground text-body">
                   No sector data
                 </div>
               )}
@@ -800,7 +800,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-border rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -832,7 +832,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-border rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -895,7 +895,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-border rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -927,7 +927,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                     if (active && payload && payload.length) {
                       const point = payload[0].payload as BudgetTrendPoint;
                       return (
-                        <div className="bg-white border border-border rounded shadow-lg text-sm p-0 overflow-hidden">
+                        <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                           <table className="border-collapse">
                             <thead className="bg-surface-muted">
                               <tr className="bg-surface-muted">
@@ -973,7 +973,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                 if (active && payload && payload.length && data?.transactionTrend) {
                   const dataPoint = data.transactionTrend.find(t => t.month === label);
                   return (
-                    <div className="bg-white border border-border rounded shadow-lg text-sm p-0 overflow-hidden">
+                    <div className="bg-white border border-border rounded shadow-lg text-body p-0 overflow-hidden">
                       <table className="border-collapse w-full">
                         <thead className="bg-surface-muted">
                           <tr className="bg-surface-muted">
@@ -1132,7 +1132,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                             />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="p-0 overflow-hidden">
-                            <div className="bg-white text-sm">
+                            <div className="bg-white text-body">
                               <div className="px-3 py-2 bg-surface-muted font-semibold text-foreground border-b border-border">
                                 {sector.name} ({sector.code})
                               </div>
@@ -1165,7 +1165,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   {/* Legend */}
                   <div className="space-y-1.5">
                     {sectors.map((sector, index) => (
-                      <div key={sector.code} className="flex items-center gap-2 text-sm">
+                      <div key={sector.code} className="flex items-center gap-2 text-body">
                         <div
                           className="w-3 h-3 rounded-sm shrink-0"
                           style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }}

@@ -15,7 +15,7 @@ export function MobileGate({ children }: { children: React.ReactNode }) {
             <p className="text-lg font-medium text-foreground">
               Move to your computer
             </p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-body text-muted-foreground leading-relaxed">
               This tool needs your full attention (and works best on bigger screens)
             </p>
           </div>

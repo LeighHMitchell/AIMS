@@ -11,7 +11,7 @@ const Alert = React.forwardRef<
     ref={ref}
     role="alert"
     className={cn(
-      "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+      "relative w-full rounded-lg border px-4 py-3 text-body [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
       {
         "bg-background text-foreground": variant === "default",
         "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive": variant === "destructive",
@@ -41,7 +41,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn("text-body [&_p]:leading-relaxed", className)}
     {...props}
   />
 ))

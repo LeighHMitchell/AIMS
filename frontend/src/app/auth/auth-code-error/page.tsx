@@ -21,7 +21,7 @@ export default function AuthCodeErrorPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             The authentication process was interrupted or failed. Please try signing in again.
           </p>
           

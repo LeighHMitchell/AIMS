@@ -14,8 +14,8 @@ export function FundingGapBar({ totalCost, totalCommitted, fundingGap }: Funding
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium">Funding Progress</span>
-        <span className="text-sm text-muted-foreground">{pct}% secured</span>
+        <span className="text-body font-medium">Funding Progress</span>
+        <span className="text-body text-muted-foreground">{pct}% secured</span>
       </div>
       <div className="w-full h-4 rounded-full overflow-hidden mb-2" style={{ backgroundColor: '#cfd0d5' }}>
         <div
@@ -23,7 +23,7 @@ export function FundingGapBar({ totalCost, totalCommitted, fundingGap }: Funding
           style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: '#7b95a7' }}
         />
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex justify-between text-helper text-muted-foreground">
         <span>Secured: <span style={{ color: '#7b95a7' }}>{formatCurrency(totalCommitted)}</span></span>
         <span>Gap: <span style={{ color: '#dc2625' }}>{formatCurrency(fundingGap)}</span></span>
         <span>Total: <span style={{ color: '#4c5568' }}>{formatCurrency(totalCost)}</span></span>

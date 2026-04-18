@@ -127,7 +127,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
               </button>
             </span>
           </h2>
-          <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
+          <div className="flex items-center gap-2 text-helper" style={{ color: colors.paleSlate }}>
             {(organization.country_represented || organization.country) && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
@@ -150,7 +150,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       <div className="relative flex-1 p-5 flex flex-col bg-card">
         <div className="flex-1">
           {organization.description && (
-            <p className="text-sm line-clamp-2 mb-4" style={{ color: colors.coolSteel }}>
+            <p className="text-body line-clamp-2 mb-4" style={{ color: colors.coolSteel }}>
               {organization.description}
             </p>
           )}
@@ -160,7 +160,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Activities
               </p>
-              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <Activity className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{organization.activeProjects || 0}</span>
               </div>
@@ -169,7 +169,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Total Budgeted
               </p>
-              <div className="flex items-center gap-2 font-medium text-sm" style={{ color: colors.blueSlate }}>
+              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
                 <span>{formatCurrency(organization.totalBudgeted)}</span>
               </div>

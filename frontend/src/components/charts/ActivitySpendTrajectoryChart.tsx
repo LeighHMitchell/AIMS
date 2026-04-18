@@ -276,10 +276,10 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{formattedDate}</p>
+            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
@@ -341,7 +341,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
             <div className="text-center">
               <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium">No total budget reported for this activity.</p>
-              <p className="text-sm mt-2 text-muted-foreground">
+              <p className="text-body mt-2 text-muted-foreground">
                 Add budget data to view the spend trajectory chart.
               </p>
             </div>
@@ -413,7 +413,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
                 variant={timeRange === range.key ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTimeRange(range.key)}
-                className="text-xs px-2 py-1 h-7"
+                className="text-helper px-2 py-1 h-7"
               >
                 {range.label}
               </Button>
@@ -424,7 +424,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       <CardContent>
         {noDisbursements && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm text-amber-700">
+            <p className="text-body text-amber-700">
               No disbursements reported to date. Only the perfect spend trajectory is shown.
             </p>
           </div>

@@ -409,7 +409,7 @@ export default function PlannedDisbursementsPage() {
         <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Search</Label>
+              <Label className="text-helper text-muted-foreground">Search</Label>
               <Input
                 placeholder="Search planned disbursements..."
                 value={searchQuery}
@@ -420,7 +420,7 @@ export default function PlannedDisbursementsPage() {
 
             {/* Filters */}
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Type</Label>
+                <Label className="text-helper text-muted-foreground">Type</Label>
                 <MultiSelectFilter
                   options={[
                     { value: "1", label: "Original", code: "1", color: "#3b82f6" },
@@ -437,7 +437,7 @@ export default function PlannedDisbursementsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Organisation</Label>
+                <Label className="text-helper text-muted-foreground">Organisation</Label>
                 <MultiSelectFilter
                   options={organizations.map((org) => ({
                     value: org.id,
@@ -462,7 +462,7 @@ export default function PlannedDisbursementsPage() {
 
             {/* Column Selector */}
             <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Columns</Label>
+              <Label className="text-helper text-muted-foreground">Columns</Label>
               <PlannedDisbursementColumnSelector
                 visibleColumns={visibleColumns}
                 onColumnsChange={setVisibleColumns}
@@ -534,7 +534,7 @@ export default function PlannedDisbursementsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalDisbursements)} to {Math.min(endIndex, totalDisbursements)} of {totalDisbursements} planned disbursements
                 </div>
 
@@ -612,7 +612,7 @@ export default function PlannedDisbursementsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground">Items per page:</label>
+                  <label className="text-body text-muted-foreground">Items per page:</label>
                   <Select
                     value={pageLimit.toString()}
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

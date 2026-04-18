@@ -90,7 +90,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       return (
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground">{data.systemName}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Usage: {data.usage_count} of {data.total_activities} activities ({data.usage_percentage}%)
           </p>
         </div>
@@ -114,7 +114,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
         <div className="text-center">
           <Building2 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
           <p>No government systems data available</p>
-          <p className="text-sm">Try adjusting your filters</p>
+          <p className="text-body">Try adjusting your filters</p>
         </div>
       </div>
     )
@@ -129,9 +129,9 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Highest Usage</p>
+                  <p className="text-body font-medium text-muted-foreground">Highest Usage</p>
                   <p className="text-lg font-bold text-foreground">{summary.highest_usage?.systemName}</p>
-                  <p className="text-sm text-muted-foreground">{summary.highest_usage?.usage_percentage}% adoption</p>
+                  <p className="text-body text-muted-foreground">{summary.highest_usage?.usage_percentage}% adoption</p>
                 </div>
                 <TrendingUp className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -142,9 +142,9 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Lowest Usage</p>
+                  <p className="text-body font-medium text-muted-foreground">Lowest Usage</p>
                   <p className="text-lg font-bold text-foreground">{summary.lowest_usage?.systemName}</p>
-                  <p className="text-sm text-muted-foreground">{summary.lowest_usage?.usage_percentage}% adoption</p>
+                  <p className="text-body text-muted-foreground">{summary.lowest_usage?.usage_percentage}% adoption</p>
                 </div>
                 <TrendingDown className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -155,9 +155,9 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Average Usage</p>
+                  <p className="text-body font-medium text-muted-foreground">Average Usage</p>
                   <p className="text-lg font-bold text-foreground">{summary.average_usage}%</p>
-                  <p className="text-sm text-muted-foreground">Across all systems</p>
+                  <p className="text-body text-muted-foreground">Across all systems</p>
                 </div>
                 <Building2 className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -170,7 +170,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       <div className="bg-white p-6 rounded-lg border border-border">
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-foreground mb-2">Government Systems Usage</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Percentage of activities using each government system
           </p>
         </div>
@@ -213,7 +213,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
         {data.map((system) => (
           <Card key={system.system} className="bg-white border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <CardTitle className="text-body font-medium text-foreground flex items-center gap-2">
                 <Building2 className="h-4 w-4" style={{ color: SYSTEM_COLORS[system.system as keyof typeof SYSTEM_COLORS] }} />
                 {system.systemName}
               </CardTitle>
@@ -238,7 +238,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
                   }}
                 />
                 
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   {system.usage_count} of {system.total_activities} activities
                 </p>
               </div>
@@ -256,7 +256,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-body">
             <div>
               <h4 className="font-semibold text-foreground mb-2">Strong Performance</h4>
               <ul className="space-y-1 text-foreground">

@@ -139,7 +139,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Top Donor Agencies
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">By reporting organization</p>
+                <p className="text-helper text-muted-foreground mt-0.5">By reporting organization</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <TopDonorAgenciesChart
@@ -154,7 +154,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Top Donor Groups
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Grouped by country</p>
+                <p className="text-helper text-muted-foreground mt-0.5">Grouped by country</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <TopDonorGroupsChart
@@ -169,7 +169,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Top Sectors
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">DAC 3-digit categories</p>
+                <p className="text-helper text-muted-foreground mt-0.5">DAC 3-digit categories</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <TopSectorsChart
@@ -186,7 +186,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Implementing Agencies
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Organizations with implementing role</p>
+                <p className="text-helper text-muted-foreground mt-0.5">Organizations with implementing role</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <ImplementingAgenciesChart
@@ -201,7 +201,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Executing Agencies
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Organizations managing budgets on behalf of funders</p>
+                <p className="text-helper text-muted-foreground mt-0.5">Organizations managing budgets on behalf of funders</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <ExecutingAgenciesChart
@@ -222,7 +222,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
                   Aid Predictability
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Planned vs Actual Disbursements by Year</p>
+                <p className="text-helper text-muted-foreground mt-0.5">Planned vs Actual Disbursements by Year</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <AidPredictabilityChart />

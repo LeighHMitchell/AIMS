@@ -633,7 +633,7 @@ const TruncatedText: React.FC<{ text: string; maxLines: number; className?: stri
       {isTruncated && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-blue-600 hover:text-blue-800 text-sm mt-1"
+          className="text-blue-600 hover:text-blue-800 text-body mt-1"
         >
           {isExpanded ? 'Show less' : 'Show more'}
         </button>
@@ -720,7 +720,7 @@ const ImageUpload: React.FC<{
   if (preview) {
     return (
       <div className="space-y-2">
-        <Label className="text-sm font-medium">{label}</Label>
+        <Label className="text-body font-medium">{label}</Label>
         <div className={`relative ${containerClass} rounded-lg overflow-hidden group border ${bgColor}`}>
           <img
             src={preview}
@@ -741,7 +741,7 @@ const ImageUpload: React.FC<{
             </Button>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-helper text-muted-foreground text-center">
           Recommended size: {recommendedSize}
         </p>
       </div>
@@ -750,7 +750,7 @@ const ImageUpload: React.FC<{
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-body font-medium">{label}</Label>
       <div
         {...getRootProps()}
         className={`
@@ -762,14 +762,14 @@ const ImageUpload: React.FC<{
         <input {...getInputProps()} />
         <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
           <ImageIcon className={`${iconSize} mb-2`} />
-          <p className="text-sm font-medium">
+          <p className="text-body font-medium">
             {isDragActive ? `Drop ${label.toLowerCase()}` : `Drag & drop`}
           </p>
-          <p className="text-xs mt-1">or click to upload</p>
-          <p className="text-xs mt-2 text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
+          <p className="text-helper mt-1">or click to upload</p>
+          <p className="text-helper mt-2 text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground text-center">
+      <p className="text-helper text-muted-foreground text-center">
         Recommended size: {recommendedSize}
       </p>
     </div>
@@ -828,7 +828,7 @@ const DeleteConfirmationModal: React.FC<{
         
         <div className="space-y-4">
           <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
-            <p className="text-sm text-red-800">
+            <p className="text-body text-red-800">
               <strong>Warning:</strong> This action cannot be undone. This will permanently delete the organization 
               <strong> {organization.displayName}</strong> and remove all associated data.
             </p>
@@ -846,7 +846,7 @@ const DeleteConfirmationModal: React.FC<{
               className={confirmationText && !isConfirmationValid ? 'border-destructive' : ''}
             />
             {confirmationText && !isConfirmationValid && (
-              <p className="text-sm text-destructive">
+              <p className="text-body text-destructive">
                 Text does not match. Please type exactly: <strong>{requiredText}</strong>
               </p>
             )}
@@ -1037,17 +1037,17 @@ const OrganizationCard: React.FC<{
 
           {/* Description - condensed to 2 lines */}
           {organization.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
+            <p className="text-body text-muted-foreground line-clamp-2">
               {organization.description}
             </p>
           )}
 
           {/* Statistics Section - Compact horizontal layout */}
-          <div className="flex items-center justify-between text-sm border-t border-border pt-3 mt-auto">
+          <div className="flex items-center justify-between text-body border-t border-border pt-3 mt-auto">
             <div className="flex items-center gap-1">
               <Activity className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground font-medium">{organization.activeProjects || 0}</span>
-              <span className="text-muted-foreground text-xs">activities</span>
+              <span className="text-muted-foreground text-helper">activities</span>
             </div>
             <div className="flex items-center gap-1">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -1085,11 +1085,11 @@ const OrganizationListView: React.FC<{
             >
               {/* Organization Name + Acronym + IATI ID */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground truncate">
+                <h3 className="text-body font-semibold text-foreground truncate">
                   {org.name}
                 </h3>
                 {org.acronym && (
-                  <span className="text-sm font-semibold text-foreground flex-shrink-0">
+                  <span className="text-body font-semibold text-foreground flex-shrink-0">
                     ({org.acronym})
                   </span>
                 )}
@@ -1115,7 +1115,7 @@ const OrganizationListView: React.FC<{
 
               {/* Location */}
               <div className="flex-shrink-0 min-w-[120px]">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-body text-muted-foreground">
                   {(org.country_represented || org.country) === 'United Nations' ? (
                     <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-3.5 w-5 object-cover rounded-sm" />
                   ) : (org.country_represented || org.country) === 'European Union Institutions' ? (
@@ -1761,7 +1761,7 @@ function OrganizationsPageContent() {
           {/* Active Filters Display - Only show for organizations */}
           {activeFilter !== 'custom_groups' && activeTagFilters.size > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground">Active filters:</span>
+              <span className="text-body text-muted-foreground">Active filters:</span>
               {Array.from(activeTagFilters).map(filter => (
                 <Badge 
                   key={filter}
@@ -1777,7 +1777,7 @@ function OrganizationsPageContent() {
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="text-xs"
+                className="text-helper"
               >
                 Clear all
               </Button>
@@ -1787,11 +1787,11 @@ function OrganizationsPageContent() {
           {/* Results counter */}
           {activeFilter === 'custom_groups' ? (
             loadingCustomGroups ? (
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-body text-muted-foreground">
                 <Skeleton className="h-4 w-32" />
               </div>
             ) : (
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-body text-muted-foreground">
                 <span>
                   Showing {customGroups.length} custom group{customGroups.length !== 1 ? 's' : ''}
                 </span>
@@ -1799,12 +1799,12 @@ function OrganizationsPageContent() {
             )
           ) : (
             loading ? (
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-body text-muted-foreground">
                 <Skeleton className="h-4 w-48" />
                 <Skeleton className="h-4 w-24" />
               </div>
             ) : (
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-body text-muted-foreground">
                 <span>
                   Showing {startIndex + 1}-{Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} organizations
                 </span>
@@ -1820,7 +1820,7 @@ function OrganizationsPageContent() {
         <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
             {IATI_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="text-xs data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <TabsTrigger key={tab.value} value={tab.value} className="text-helper data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -1927,7 +1927,7 @@ function OrganizationsPageContent() {
                                   <span>{group.name}</span>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-muted-foreground text-sm">
+                              <TableCell className="text-muted-foreground text-body">
                                 {group.description ? (
                                   <span className="line-clamp-2">{group.description}</span>
                                 ) : (
@@ -1939,12 +1939,12 @@ function OrganizationsPageContent() {
                               </TableCell>
                               <TableCell className="text-center">
                                 {group.is_public ? (
-                                  <span className="inline-flex items-center text-xs text-green-700">
+                                  <span className="inline-flex items-center text-helper text-green-700">
                                     <Globe className="h-3 w-3 mr-1" />
                                     Public
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center text-xs text-muted-foreground">
+                                  <span className="inline-flex items-center text-helper text-muted-foreground">
                                     <Lock className="h-3 w-3 mr-1" />
                                     Private
                                   </span>
@@ -2005,8 +2005,8 @@ function OrganizationsPageContent() {
               ) : (
                 <div className="text-center py-12">
                   <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-sm font-medium text-foreground">No custom groups yet</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <h3 className="mt-2 text-body font-medium text-foreground">No custom groups yet</h3>
+                  <p className="mt-1 text-body text-muted-foreground">
                     Create custom groups to organize partners by specific criteria
                   </p>
                   <Button

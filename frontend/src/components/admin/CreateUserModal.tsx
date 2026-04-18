@@ -351,14 +351,14 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm font-medium">User</Label>
-                <p className="text-sm text-muted-foreground">{createdUser.user.name}</p>
+                <Label className="text-body font-medium">User</Label>
+                <p className="text-body text-muted-foreground">{createdUser.user.name}</p>
               </div>
               
               <div>
-                <Label className="text-sm font-medium">Email</Label>
+                <Label className="text-body font-medium">Email</Label>
                 <div className="flex items-center gap-2 mt-1">
-                  <code className="bg-muted px-2 py-1 rounded text-sm flex-1">
+                  <code className="bg-muted px-2 py-1 rounded text-body flex-1">
                     {createdUser.user.email}
                   </code>
                   <Button
@@ -372,7 +372,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Temporary Password</Label>
+                <Label className="text-body font-medium">Temporary Password</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="bg-muted px-2 py-1 rounded text-sm flex-1 font-mono">
                     {createdUser.password}
@@ -388,8 +388,8 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Role</Label>
-                <p className="text-sm text-muted-foreground">
+                <Label className="text-body font-medium">Role</Label>
+                <p className="text-body text-muted-foreground">
                   {ROLE_LABELS[createdUser.user.role as keyof typeof ROLE_LABELS]}
                 </p>
               </div>

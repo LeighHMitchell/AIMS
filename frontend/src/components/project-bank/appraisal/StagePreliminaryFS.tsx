@@ -34,14 +34,14 @@ function CharacterSuggestion({ value, min = 200 }: { value: string | null | unde
   const remaining = min - len;
   if (remaining <= 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--success-icon))]">
+      <span className="inline-flex items-center gap-1 text-helper text-[hsl(var(--success-icon))]">
         <CheckCircle className="h-3.5 w-3.5" />
         {len} characters
       </span>
     );
   }
   return (
-    <span className="text-xs text-muted-foreground">
+    <span className="text-helper text-muted-foreground">
       {remaining} more character{remaining !== 1 ? 's' : ''} suggested
     </span>
   );
@@ -119,7 +119,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">Preliminary Feasibility Study</h3>
-        <p className="text-sm text-muted-foreground">Technical assessment, revenue projections, environmental screening, and financial analysis.</p>
+        <p className="text-body text-muted-foreground">Technical assessment, revenue projections, environmental screening, and financial analysis.</p>
       </div>
 
       {/* Timeline fields */}
@@ -140,7 +140,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               className="w-16"
               disabled={isLocked}
             />
-            <span className="text-xs text-muted-foreground">years</span>
+            <span className="text-helper text-muted-foreground">years</span>
             <Input
               type="number"
               min={0}
@@ -154,7 +154,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               className="w-16"
               disabled={isLocked}
             />
-            <span className="text-xs text-muted-foreground">months</span>
+            <span className="text-helper text-muted-foreground">months</span>
           </div>
         </div>
         <div>
@@ -173,7 +173,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               className="w-16"
               disabled={isLocked}
             />
-            <span className="text-xs text-muted-foreground">years</span>
+            <span className="text-helper text-muted-foreground">years</span>
             <Input
               type="number"
               min={0}
@@ -187,7 +187,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               className="w-16"
               disabled={isLocked}
             />
-            <span className="text-xs text-muted-foreground">months</span>
+            <span className="text-helper text-muted-foreground">months</span>
           </div>
         </div>
         <div>
@@ -206,7 +206,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               readOnly
               className="w-16 bg-muted/50"
             />
-            <span className="text-xs text-muted-foreground">years</span>
+            <span className="text-helper text-muted-foreground">years</span>
             <Input
               type="number"
               value={(() => {
@@ -220,7 +220,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               readOnly
               className="w-16 bg-muted/50"
             />
-            <span className="text-xs text-muted-foreground">months</span>
+            <span className="text-helper text-muted-foreground">months</span>
           </div>
         </div>
       </div>
@@ -250,8 +250,8 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               </div>
             )}
             <div className="relative z-10 p-3">
-              <h4 className="text-sm font-semibold">Individual</h4>
-              <p className="mt-1 text-xs text-muted-foreground">The study was conducted by an individual consultant or specialist</p>
+              <h4 className="text-body font-semibold">Individual</h4>
+              <p className="mt-1 text-helper text-muted-foreground">The study was conducted by an individual consultant or specialist</p>
             </div>
           </button>
           <button
@@ -273,8 +273,8 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               </div>
             )}
             <div className="relative z-10 p-3">
-              <h4 className="text-sm font-semibold">Company / Firm</h4>
-              <p className="mt-1 text-xs text-muted-foreground">The study was conducted by a consulting firm or organisation</p>
+              <h4 className="text-body font-semibold">Company / Firm</h4>
+              <p className="mt-1 text-helper text-muted-foreground">The study was conducted by a consulting firm or organisation</p>
             </div>
           </button>
         </div>
@@ -282,34 +282,34 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
         {/* Individual details */}
         {formData.fs_conductor_type === 'individual' && (
           <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-            <h5 className="text-sm font-medium">Individual Details</h5>
+            <h5 className="text-body font-medium">Individual Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">First Name</Label>
+                <Label className="text-helper text-muted-foreground">First Name</Label>
                 <Input value={formData.fs_conductor_individual_first_name || ''} onChange={e => updateField('fs_conductor_individual_first_name', e.target.value)} placeholder="First name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Last Name</Label>
+                <Label className="text-helper text-muted-foreground">Last Name</Label>
                 <Input value={formData.fs_conductor_individual_last_name || ''} onChange={e => updateField('fs_conductor_individual_last_name', e.target.value)} placeholder="Last name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Title</Label>
+                <Label className="text-helper text-muted-foreground">Title</Label>
                 <Input value={formData.fs_conductor_individual_job_title || ''} onChange={e => updateField('fs_conductor_individual_job_title', e.target.value)} placeholder="e.g. Senior Infrastructure Consultant" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Associated Company</Label>
+                <Label className="text-helper text-muted-foreground">Associated Company</Label>
                 <Input value={formData.fs_conductor_individual_company || ''} onChange={e => updateField('fs_conductor_individual_company', e.target.value)} placeholder="Company or organisation name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Address</Label>
+                <Label className="text-helper text-muted-foreground">Address</Label>
                 <Input value={formData.fs_conductor_individual_address || ''} onChange={e => updateField('fs_conductor_individual_address', e.target.value)} placeholder="Address" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Label className="text-helper text-muted-foreground">Email</Label>
                 <Input type="email" value={formData.fs_conductor_individual_email || ''} onChange={e => updateField('fs_conductor_individual_email', e.target.value)} placeholder="email@example.com" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Phone</Label>
+                <Label className="text-helper text-muted-foreground">Phone</Label>
                 <Input value={formData.fs_conductor_individual_phone || ''} onChange={e => updateField('fs_conductor_individual_phone', e.target.value)} placeholder="+95..." disabled={isLocked} />
               </div>
             </div>
@@ -319,38 +319,38 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
         {/* Company details */}
         {formData.fs_conductor_type === 'company' && (
           <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-            <h5 className="text-sm font-medium">Company Details</h5>
+            <h5 className="text-body font-medium">Company Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
-                <Label className="text-xs text-muted-foreground">Company Name</Label>
+                <Label className="text-helper text-muted-foreground">Company Name</Label>
                 <Input value={formData.fs_conductor_company_name || ''} onChange={e => updateField('fs_conductor_company_name', e.target.value)} placeholder="Company or firm name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Contact Person First Name</Label>
+                <Label className="text-helper text-muted-foreground">Contact Person First Name</Label>
                 <Input value={formData.fs_conductor_contact_person_first_name || ''} onChange={e => updateField('fs_conductor_contact_person_first_name', e.target.value)} placeholder="First name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Contact Person Last Name</Label>
+                <Label className="text-helper text-muted-foreground">Contact Person Last Name</Label>
                 <Input value={formData.fs_conductor_contact_person_last_name || ''} onChange={e => updateField('fs_conductor_contact_person_last_name', e.target.value)} placeholder="Last name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Contact Person Title</Label>
+                <Label className="text-helper text-muted-foreground">Contact Person Title</Label>
                 <Input value={formData.fs_conductor_contact_person_title || ''} onChange={e => updateField('fs_conductor_contact_person_title', e.target.value)} placeholder="e.g. Project Manager" disabled={isLocked} />
               </div>
               <div className="md:col-span-2">
-                <Label className="text-xs text-muted-foreground">Address</Label>
+                <Label className="text-helper text-muted-foreground">Address</Label>
                 <Input value={formData.fs_conductor_company_address || ''} onChange={e => updateField('fs_conductor_company_address', e.target.value)} placeholder="Office address" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Label className="text-helper text-muted-foreground">Email</Label>
                 <Input type="email" value={formData.fs_conductor_company_email || ''} onChange={e => updateField('fs_conductor_company_email', e.target.value)} placeholder="info@company.com" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Phone</Label>
+                <Label className="text-helper text-muted-foreground">Phone</Label>
                 <Input value={formData.fs_conductor_company_phone || ''} onChange={e => updateField('fs_conductor_company_phone', e.target.value)} placeholder="+95..." disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Website</Label>
+                <Label className="text-helper text-muted-foreground">Website</Label>
                 <Input value={formData.fs_conductor_company_website || ''} onChange={e => updateField('fs_conductor_company_website', e.target.value)} placeholder="https://www.example.com" disabled={isLocked} />
               </div>
             </div>
@@ -398,7 +398,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
         return (
           <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-            <div className="text-sm text-amber-800">
+            <div className="text-body text-amber-800">
               <p className="font-medium">Please complete required fields before continuing:</p>
               <ul className="mt-1 space-y-0.5">
                 {fieldErrors.map(k => (
@@ -410,7 +410,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                     >
                       {errors[k]}
                     </button>
-                    <span className="text-amber-600 text-xs ml-1">({errorTabMap[k]!.label} tab)</span>
+                    <span className="text-amber-600 text-helper ml-1">({errorTabMap[k]!.label} tab)</span>
                   </li>
                 ))}
               </ul>
@@ -550,7 +550,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                         )}
                       >
                         {option}
-                        {selected && <span className="text-xs leading-none">×</span>}
+                        {selected && <span className="text-helper leading-none">×</span>}
                       </button>
                     );
                   })}
@@ -616,7 +616,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                           <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{l.code}</span>
                           <span>{l.label}</span>
                         </span>
-                        <p className="text-xs text-muted-foreground mt-0.5 ml-7">{l.description}</p>
+                        <p className="text-helper text-muted-foreground mt-0.5 ml-7">{l.description}</p>
                       </div>
                     </SelectItem>
                   ))}
@@ -635,7 +635,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                           <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{l.code}</span>
                           <span>{l.label}</span>
                         </span>
-                        <p className="text-xs text-muted-foreground mt-0.5 ml-7">{l.description}</p>
+                        <p className="text-helper text-muted-foreground mt-0.5 ml-7">{l.description}</p>
                       </div>
                     </SelectItem>
                   ))}
@@ -744,7 +744,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
 
         {/* MSDP Alignment Tab */}
         <TabsContent value="msdp" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-body text-muted-foreground mb-4">
             Review and update the MSDP alignment for this project. If the project design has evolved since intake, you can revise the alignment here. MSDP-aligned projects with a FIRR below 10% may still qualify for economic analysis.
           </p>
           <StageMSDPScreening wizard={wizard} />
@@ -777,11 +777,11 @@ export function ViabilityDecisionSidebar({ wizard }: { wizard: UseAppraisalWizar
   return (
     <div className="p-4 rounded-lg border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20">
       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Viability Decision</div>
-      <div className="text-sm font-bold mb-1 text-foreground">
+      <div className="text-body font-bold mb-1 text-foreground">
         {routing.label}
       </div>
-      <div className="text-sm text-muted-foreground">{routing.description}</div>
-      <div className="text-xs text-muted-foreground mt-2 italic">{routing.nextSteps}</div>
+      <div className="text-body text-muted-foreground">{routing.description}</div>
+      <div className="text-helper text-muted-foreground mt-2 italic">{routing.nextSteps}</div>
     </div>
   );
 }

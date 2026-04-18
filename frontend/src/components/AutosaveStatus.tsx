@@ -104,7 +104,7 @@ export function AutosaveStatus({
       
       {/* Save count indicator */}
       {saveCount > 0 && (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-helper text-muted-foreground">
           ({saveCount} saves)
         </span>
       )}
@@ -112,7 +112,7 @@ export function AutosaveStatus({
       {/* Error details on hover */}
       {lastError && (
         <span 
-          className="text-xs text-destructive cursor-help" 
+          className="text-helper text-destructive cursor-help" 
           title={lastError.message}
         >
           ⚠️
@@ -134,7 +134,7 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-blue-600">
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span className="text-xs">Saving</span>
+        <span className="text-helper">Saving</span>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-destructive" title={lastError.message}>
         <AlertCircle className="h-3 w-3" />
-        <span className="text-xs">Error</span>
+        <span className="text-helper">Error</span>
       </div>
     );
   }
@@ -152,7 +152,7 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-orange-600">
         <Clock className="h-3 w-3" />
-        <span className="text-xs">Unsaved</span>
+        <span className="text-helper">Unsaved</span>
       </div>
     );
   }
@@ -161,7 +161,7 @@ export function AutosaveStatusCompact({
     return (
       <div className="flex items-center gap-1 text-[hsl(var(--success-icon))]">
         <CheckCircle className="h-3 w-3" />
-        <span className="text-xs">Saved</span>
+        <span className="text-helper">Saved</span>
       </div>
     );
   }
@@ -169,7 +169,7 @@ export function AutosaveStatusCompact({
   return (
     <div className="flex items-center gap-1 text-muted-foreground">
       <Save className="h-3 w-3" />
-      <span className="text-xs">Draft</span>
+      <span className="text-helper">Draft</span>
     </div>
   );
 }

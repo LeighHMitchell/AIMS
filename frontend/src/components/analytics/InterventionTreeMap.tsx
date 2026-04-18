@@ -176,7 +176,7 @@ function ExpandableTextarea({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="text-xs resize-none pr-8 transition-all duration-200"
+        className="text-helper resize-none pr-8 transition-all duration-200"
         style={{
           height: isExpanded ? expandedHeight : baseHeight,
           minHeight: baseHeight,
@@ -678,7 +678,7 @@ export function InterventionTreeMap() {
     <div ref={containerRef} className="relative w-full">
       {/* Breadcrumbs and Zoom Controls */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-body text-muted-foreground">
           {breadcrumbs.map((crumb, idx) => (
             <React.Fragment key={idx}>
               {idx > 0 && <span className="text-muted-foreground">/</span>}
@@ -722,7 +722,7 @@ export function InterventionTreeMap() {
       </div>
 
       {/* Legend - Direction-based */}
-      <div className="flex flex-wrap items-center gap-4 mb-4 text-xs">
+      <div className="flex flex-wrap items-center gap-4 mb-4 text-helper">
         <span className="text-muted-foreground font-medium">Direction:</span>
         {DIRECTION_LEVELS.map((level) => (
           <div key={level} className="flex items-center gap-1">
@@ -746,7 +746,7 @@ export function InterventionTreeMap() {
       {/* Tooltip */}
       {tooltip.show && tooltip.content && (
         <div
-          className="absolute pointer-events-none z-50 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm max-w-sm transition-opacity duration-150"
+          className="absolute pointer-events-none z-50 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-body max-w-sm transition-opacity duration-150"
           style={{
             left: Math.min(tooltip.x + 15, dimensions.width - 280),
             top: Math.max(tooltip.y - 120, 10),
@@ -771,7 +771,7 @@ export function InterventionTreeMap() {
               </span>
             </div>
             <div className="mt-2 pt-2 border-t border-slate-700">
-              <span className="text-slate-300 text-xs leading-relaxed">
+              <span className="text-slate-300 text-helper leading-relaxed">
                 {tooltip.content.description}
               </span>
             </div>
@@ -780,7 +780,7 @@ export function InterventionTreeMap() {
       )}
 
       {/* Instructions */}
-      <p className="text-xs text-muted-foreground mt-3 text-center">
+      <p className="text-helper text-muted-foreground mt-3 text-center">
         Click on a category to zoom in. Use the breadcrumbs or Zoom Out button to navigate back.
       </p>
 
@@ -816,14 +816,14 @@ export function InterventionTreeMap() {
                         value={row.violenceType}
                         onValueChange={(value) => updateRow(row.id, "violenceType", value)}
                       >
-                        <SelectTrigger className="h-auto min-h-[40px] text-xs text-left justify-start">
+                        <SelectTrigger className="h-auto min-h-[40px] text-helper text-left justify-start">
                           <SelectValue>
                             <span className="whitespace-normal text-left leading-tight">{row.violenceType}</span>
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {VIOLENCE_TYPES.map((type) => (
-                            <SelectItem key={type} value={type} className="text-xs">
+                            <SelectItem key={type} value={type} className="text-helper">
                               {type}
                             </SelectItem>
                           ))}
@@ -836,7 +836,7 @@ export function InterventionTreeMap() {
                         value={row.interventionType}
                         onValueChange={(value) => updateRow(row.id, "interventionType", value)}
                       >
-                        <SelectTrigger className="h-auto min-h-[40px] text-xs text-left justify-start">
+                        <SelectTrigger className="h-auto min-h-[40px] text-helper text-left justify-start">
                           <SelectValue>
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
                               {row.interventionType}
@@ -845,7 +845,7 @@ export function InterventionTreeMap() {
                         </SelectTrigger>
                         <SelectContent align="start">
                           {INTERVENTION_TYPES.map((type) => (
-                            <SelectItem key={type} value={type} className="text-xs">
+                            <SelectItem key={type} value={type} className="text-helper">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
                                 {type}
                               </span>
@@ -869,7 +869,7 @@ export function InterventionTreeMap() {
                         type="number"
                         value={row.sampleSize}
                         onChange={(e) => updateRow(row.id, "sampleSize", parseInt(e.target.value) || 0)}
-                        className="h-10 text-xs w-20"
+                        className="h-10 text-helper w-20"
                         min={1}
                       />
                     </TableCell>
@@ -879,7 +879,7 @@ export function InterventionTreeMap() {
                         value={row.direction}
                         onValueChange={(value) => updateRow(row.id, "direction", value)}
                       >
-                        <SelectTrigger className="h-10 text-xs">
+                        <SelectTrigger className="h-10 text-helper">
                           <SelectValue>
                             <div className="flex items-center gap-2">
                               <div
@@ -892,7 +892,7 @@ export function InterventionTreeMap() {
                         </SelectTrigger>
                         <SelectContent>
                           {DIRECTION_LEVELS.map((level) => (
-                            <SelectItem key={level} value={level} className="text-xs">
+                            <SelectItem key={level} value={level} className="text-helper">
                               <div className="flex items-center gap-2">
                                 <div
                                   className="w-3 h-3 rounded"
@@ -931,13 +931,13 @@ export function InterventionTreeMap() {
             </Table>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-helper text-muted-foreground mt-2">
           Edit the table above to update the tree map visualization. The &quot;Sample Size&quot; column determines the size of each intervention block.
         </p>
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-body text-muted-foreground leading-relaxed">
         This tree map visualises intervention areas as nested blocks, where the size of each block reflects the sample size or value of that intervention. Click on any parent block to zoom in and explore sub-categories, and use the breadcrumb trail to navigate back. The editable table below allows you to adjust the data directly and see changes reflected in the visualisation in real time.
       </p>
     </div>

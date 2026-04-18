@@ -259,7 +259,7 @@ export function EnhancedImageUpload({
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-body font-medium">{label}</Label>
 
       {preview ? (
         <div className="space-y-3">
@@ -308,7 +308,7 @@ export function EnhancedImageUpload({
             {isRepositioning && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                 <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                  <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <p className="text-body font-medium text-foreground flex items-center gap-2">
                     <Move className="h-4 w-4" />
                     Drag up or down to reposition
                   </p>
@@ -320,7 +320,7 @@ export function EnhancedImageUpload({
             {isZooming && (
               <div className="absolute inset-x-0 bottom-0 flex justify-center pb-2 pointer-events-none">
                 <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
-                  <p className="text-xs font-medium text-white flex items-center gap-2">
+                  <p className="text-helper font-medium text-white flex items-center gap-2">
                     <ZoomIn className="h-3 w-3" />
                     Drag up/down to zoom
                   </p>
@@ -433,18 +433,18 @@ export function EnhancedImageUpload({
           {isProcessing ? (
             <>
               <Upload className="h-8 w-8 text-muted-foreground animate-pulse" />
-              <p className="text-sm text-muted-foreground mt-2"><LoadingText>Uploading...</LoadingText></p>
+              <p className="text-body text-muted-foreground mt-2"><LoadingText>Uploading...</LoadingText></p>
             </>
           ) : isDragActive ? (
             <>
               <Upload className="h-8 w-8 text-primary" />
-              <p className="text-sm text-primary mt-2">Drop image here</p>
+              <p className="text-body text-primary mt-2">Drop image here</p>
             </>
           ) : (
             <>
               <ImageIcon className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mt-2 text-center">Drag & drop or click to upload</p>
-              <p className="text-xs text-muted-foreground mt-1 text-center">{recommendedSize} (auto-compressed)</p>
+              <p className="text-body text-muted-foreground mt-2 text-center">Drag & drop or click to upload</p>
+              <p className="text-helper text-muted-foreground mt-1 text-center">{recommendedSize} (auto-compressed)</p>
             </>
           )}
         </div>

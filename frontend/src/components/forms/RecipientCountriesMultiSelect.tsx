@@ -245,7 +245,7 @@ export function RecipientCountriesMultiSelect({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           className={cn(
-            "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedCountries.length && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -253,7 +253,7 @@ export function RecipientCountriesMultiSelect({
           <div className="flex-1 flex flex-wrap gap-1 items-center">
             {selectedCountries.length > 0 ? (
               selectedCountries.map(country => (
-                <Badge key={country.code} variant="secondary" className="text-xs">
+                <Badge key={country.code} variant="secondary" className="text-helper">
                   {country.name}
                   <button
                     type="button"
@@ -288,15 +288,15 @@ export function RecipientCountriesMultiSelect({
             <div className="p-2">
               {filteredOptions.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
-                  <p className="text-sm">No countries found.</p>
-                  <p className="text-xs">Try adjusting your search terms</p>
+                  <p className="text-body">No countries found.</p>
+                  <p className="text-helper">Try adjusting your search terms</p>
                 </div>
               ) : (
                 filteredOptions.map((country) => (
                   <div
                     key={country.code}
                     className={cn(
-                      "flex items-center space-x-2 px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer",
+                      "flex items-center space-x-2 px-2 py-2 rounded-md text-body hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer",
                       value.includes(country.code) && "bg-blue-50"
                     )}
                     onClick={() => handleToggleCountry(country.code)}

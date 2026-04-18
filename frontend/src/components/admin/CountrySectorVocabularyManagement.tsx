@@ -552,7 +552,7 @@ export function CountrySectorVocabularyManagement() {
         {/* Vocabulary Selection */}
         <div className="flex items-center gap-4">
           <div className="flex-1">
-            <Label className="text-sm font-medium mb-2 block">Select Vocabulary</Label>
+            <Label className="text-body font-medium mb-2 block">Select Vocabulary</Label>
             <Select
               value={selectedVocabulary?.id || ""}
               onValueChange={(id) => {
@@ -573,11 +573,11 @@ export function CountrySectorVocabularyManagement() {
                       </span>
                       <span>{vocab.name}</span>
                       {vocab.is_default && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-helper">
                           Default
                         </Badge>
                       )}
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-muted-foreground text-helper">
                         ({vocab.sector_count || 0} sectors)
                       </span>
                     </div>
@@ -655,7 +655,7 @@ export function CountrySectorVocabularyManagement() {
                     : "No sectors yet. Click 'Add Sector' to create one."}
                 </div>
               ) : (
-                <table className="w-full text-sm">
+                <table className="w-full text-body">
                   <thead className="sticky top-0 bg-surface-muted z-10 border-b">
                     <tr>
                       <th className="h-10 px-4 text-left font-medium text-muted-foreground w-[200px]">
@@ -684,7 +684,7 @@ export function CountrySectorVocabularyManagement() {
                           <div>
                             <div className="font-medium">{sector.name}</div>
                             {sector.description && (
-                              <div className="text-xs text-muted-foreground truncate max-w-[300px]">
+                              <div className="text-helper text-muted-foreground truncate max-w-[300px]">
                                 {sector.description}
                               </div>
                             )}
@@ -698,11 +698,11 @@ export function CountrySectorVocabularyManagement() {
                                   <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0">
                                     {m.dac_sector_code}
                                   </span>
-                                  <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                                  <span className="text-helper text-muted-foreground truncate max-w-[180px]">
                                     {m.dac_sector_name || dacSectors.find(d => d.code === m.dac_sector_code)?.name || ""}
                                   </span>
                                   {sector.dac_mappings!.length > 1 && (
-                                    <span className="text-xs text-muted-foreground shrink-0">
+                                    <span className="text-helper text-muted-foreground shrink-0">
                                       ({m.percentage}%)
                                     </span>
                                   )}
@@ -710,7 +710,7 @@ export function CountrySectorVocabularyManagement() {
                               ))}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs italic">
+                            <span className="text-muted-foreground text-helper italic">
                               Not mapped
                             </span>
                           )}
@@ -785,14 +785,14 @@ export function CountrySectorVocabularyManagement() {
                       <SelectItem key={opt.value} value={opt.value}>
                         <div>
                           <div className="font-medium">{opt.label}</div>
-                          <div className="text-xs text-muted-foreground">{opt.description}</div>
+                          <div className="text-helper text-muted-foreground">{opt.description}</div>
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {vocabForm.vocabularyType === "sector" && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-helper text-muted-foreground">
                     Sector vocabularies appear in the "Country Sectors" column of the Mappings table
                   </p>
                 )}
@@ -849,7 +849,7 @@ export function CountrySectorVocabularyManagement() {
                   value={vocabForm.vocabularyUri}
                   onChange={(e) => setVocabForm({ ...vocabForm, vocabularyUri: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Required for IATI compliance when using vocabulary codes 98 or 99
                 </p>
               </div>
@@ -985,7 +985,7 @@ export function CountrySectorVocabularyManagement() {
                         <span className="font-mono text-xs bg-background px-1.5 py-0.5 rounded border">
                           {s.code}
                         </span>
-                        <span className="flex-1 text-sm">{s.name}</span>
+                        <span className="flex-1 text-body">{s.name}</span>
                         <Input
                           type="number"
                           min={1}
@@ -994,9 +994,9 @@ export function CountrySectorVocabularyManagement() {
                           onChange={(e) =>
                             updateDacMappingPercentage(s.code, parseInt(e.target.value) || 0)
                           }
-                          className="w-20 h-8 text-sm"
+                          className="w-20 h-8 text-body"
                         />
-                        <span className="text-sm text-muted-foreground">%</span>
+                        <span className="text-body text-muted-foreground">%</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1007,7 +1007,7 @@ export function CountrySectorVocabularyManagement() {
                         </Button>
                       </div>
                     ))}
-                    <div className="text-xs text-muted-foreground text-right">
+                    <div className="text-helper text-muted-foreground text-right">
                       Total: {selectedDacSectors.reduce((sum, s) => sum + s.percentage, 0)}%
                       {selectedDacSectors.length > 0 &&
                         Math.abs(
@@ -1037,7 +1037,7 @@ export function CountrySectorVocabularyManagement() {
                   </div>
                   <div className="max-h-[200px] overflow-auto">
                     {filteredDacSectors.length === 0 ? (
-                      <div className="p-4 text-center text-muted-foreground text-sm">
+                      <div className="p-4 text-center text-muted-foreground text-body">
                         No DAC sectors found
                       </div>
                     ) : (
@@ -1055,8 +1055,8 @@ export function CountrySectorVocabularyManagement() {
                               {dac.code}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm truncate">{dac.name}</div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-body truncate">{dac.name}</div>
+                              <div className="text-helper text-muted-foreground">
                                 {dac.categoryName}
                               </div>
                             </div>
@@ -1068,7 +1068,7 @@ export function CountrySectorVocabularyManagement() {
                       })
                     )}
                     {filteredDacSectors.length > 50 && (
-                      <div className="p-2 text-center text-xs text-muted-foreground bg-muted/30">
+                      <div className="p-2 text-center text-helper text-muted-foreground bg-muted/30">
                         Showing 50 of {filteredDacSectors.length} results. Type to filter.
                       </div>
                     )}

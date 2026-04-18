@@ -492,7 +492,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Failed to load map: {error}</p>
+          <p className="text-body text-destructive">Failed to load map: {error}</p>
         </CardContent>
       </Card>
     );
@@ -507,7 +507,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
         </CardTitle>
         <div className="flex items-center gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[340px] text-xs h-10">
+              <SelectTrigger className="w-[340px] text-helper h-10">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -533,7 +533,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               activityCounts={sectorActivityCounts}
               showOnlyActiveSectors={showOnlyActiveSectors}
               onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-              className="w-[240px] h-10 text-xs"
+              className="w-[240px] h-10 text-helper"
             />
 
             <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[200px] h-10" />
@@ -574,16 +574,16 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               className="h-10 px-6 inline-flex items-center gap-2"
             >
               <Mountain className="h-4 w-4 shrink-0" />
-              <span className="text-sm font-medium">{is3D ? '2D' : '3D'}</span>
+              <span className="text-body font-medium">{is3D ? '2D' : '3D'}</span>
             </Button>
 
             <div className="ml-auto">
               <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
                 <TabsList>
-                  <TabsTrigger value="map" className="text-xs px-3">
+                  <TabsTrigger value="map" className="text-helper px-3">
                     Map View
                   </TabsTrigger>
-                  <TabsTrigger value="subnational" className="text-xs px-3">
+                  <TabsTrigger value="subnational" className="text-helper px-3">
                     Sub-national
                   </TabsTrigger>
                 </TabsList>
@@ -599,8 +599,8 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               <div className="h-[700px] flex items-center justify-center bg-muted rounded-lg">
                 <div className="text-center">
                   <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No locations recorded</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-body text-muted-foreground">No locations recorded</p>
+                  <p className="text-helper text-muted-foreground mt-1">
                     Add locations to your activities to see them here
                   </p>
                 </div>
@@ -662,7 +662,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
           {/* Sub-national Breakdown Tab */}
           <TabsContent value="subnational" className="space-y-4">
             <div className="space-y-6">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Sub-national breakdown showing activity distribution across states and regions from activity breakdown data.
               </div>
 
@@ -671,7 +671,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                   <div className="h-[700px] w-full bg-muted rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                      <div className="text-sm text-muted-foreground">Loading sub-national breakdown data...</div>
+                      <div className="text-body text-muted-foreground">Loading sub-national breakdown data...</div>
                     </div>
                   </div>
                 </div>
@@ -840,7 +840,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                                 {isExpanded && hasActivities && (
                                   <TableRow className="bg-muted/30">
                                     <TableCell colSpan={5} className="p-4">
-                                      <div className="text-sm">
+                                      <div className="text-body">
                                         <div className="font-medium mb-2">Activities in {region}:</div>
                                         <ul className="space-y-1 text-muted-foreground">
                                           {activities.map((activity) => (
@@ -874,7 +874,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                   <p className="text-muted-foreground mb-4">
                     No activities with sub-national breakdown information found for this organization.
                   </p>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-helper text-muted-foreground">
                     Sub-national breakdowns are configured in individual activity editors.
                   </div>
                 </div>

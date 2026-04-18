@@ -326,13 +326,13 @@ export default function SDGAlignmentSection({
       {isSaving && (
         <div className="flex items-center justify-end gap-1.5 text-amber-600">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Saving...</span>
+          <span className="text-body">Saving...</span>
         </div>
       )}
 
       {/* SDG Selection Grid - Full Width with Larger Icons */}
       <div className="space-y-3">
-        <div className="text-sm font-medium text-muted-foreground">
+        <div className="text-body font-medium text-muted-foreground">
           Click to select SDGs
         </div>
         <div>
@@ -409,7 +409,7 @@ export default function SDGAlignmentSection({
                             alt={`SDG ${goalId}`}
                             className="w-10 h-10 rounded flex-shrink-0"
                           />
-                          <span className="text-sm">
+                          <span className="text-body">
                             Goal {goalId}: {goal.name}
                             {isGoalSaved(goalId) && (
                               <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))] inline-block ml-1.5 align-text-bottom" />
@@ -418,7 +418,7 @@ export default function SDGAlignmentSection({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm flex items-center gap-1.5">
+                        <span className="text-body flex items-center gap-1.5">
                           <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{alignmentOption?.code || '1'}</span>
                           {alignmentOption?.label || 'Primary'}
                         </span>
@@ -432,7 +432,7 @@ export default function SDGAlignmentSection({
                                 <TooltipProvider key={m.sdgTarget}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-sm cursor-default">
+                                      <span className="text-body cursor-default">
                                         {m.sdgTarget}
                                       </span>
                                     </TooltipTrigger>
@@ -445,11 +445,11 @@ export default function SDGAlignmentSection({
                             })}
                           </div>
                         ) : (
-                          <span className="text-sm">None</span>
+                          <span className="text-body">None</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm block break-words">
+                        <span className="text-body block break-words">
                           {goalMapping?.notes || '—'}
                         </span>
                       </TableCell>
@@ -515,7 +515,7 @@ export default function SDGAlignmentSection({
               <div className="space-y-5 pt-2">
                 {/* Alignment Strength */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="text-body font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Alignment Strength
                     <TooltipProvider>
                       <Tooltip>
@@ -552,7 +552,7 @@ export default function SDGAlignmentSection({
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                             <span>{option.label}</span>
-                            <span className="text-muted-foreground text-xs">- {option.description}</span>
+                            <span className="text-muted-foreground text-helper">- {option.description}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -562,7 +562,7 @@ export default function SDGAlignmentSection({
 
                 {/* Specific Targets */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="text-body font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Specific Targets
                     <TooltipProvider>
                       <Tooltip>
@@ -657,8 +657,8 @@ export default function SDGAlignmentSection({
                                         <Check className="mr-2 h-4 w-4 flex-shrink-0" />
                                       )}
                                       <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm">Target {target.id}</div>
-                                        <div className="text-xs text-muted-foreground mt-0.5">
+                                        <div className="font-medium text-body">Target {target.id}</div>
+                                        <div className="text-helper text-muted-foreground mt-0.5">
                                           {target.description}
                                         </div>
                                       </div>
@@ -681,7 +681,7 @@ export default function SDGAlignmentSection({
                         return target ? (
                           <div
                             key={target.id}
-                            className="flex items-start justify-between gap-2 p-2.5 bg-muted rounded-md text-sm"
+                            className="flex items-start justify-between gap-2 p-2.5 bg-muted rounded-md text-body"
                           >
                             <div className="flex items-start gap-2 min-w-0 flex-1">
                               <div className="min-w-0">
@@ -708,7 +708,7 @@ export default function SDGAlignmentSection({
 
                 {/* Notes */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="text-body font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     How does this activity contribute?
                     <TooltipProvider>
                       <Tooltip>

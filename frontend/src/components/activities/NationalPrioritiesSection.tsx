@@ -377,16 +377,16 @@ export function NationalPrioritiesSection({
                 <TableBody>
                   {allocations.map((allocation) => (
                     <TableRow key={allocation.id}>
-                      <TableCell className="text-sm whitespace-normal align-top">
+                      <TableCell className="text-body whitespace-normal align-top">
                         {allocation.nationalPriority?.planName || "—"}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-body">
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
                           {allocation.nationalPriority?.code}
                         </span>
                         {allocation.nationalPriority?.name}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-body">
                         <span className="flex items-center gap-2">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                             {allocation.significance === "principal" ? "1" : "2"}
@@ -394,7 +394,7 @@ export function NationalPrioritiesSection({
                           {ALIGNMENT_SIGNIFICANCE_LABELS[allocation.significance]}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm whitespace-normal align-top">
+                      <TableCell className="text-body whitespace-normal align-top">
                         {allocation.rationale || "—"}
                       </TableCell>
                       <TableCell className="text-right">
@@ -455,8 +455,8 @@ export function NationalPrioritiesSection({
               // Read-only plan + priority display in edit mode
               <div className="space-y-2">
                 <Label>Plan & Priority</Label>
-                <div className="p-3 border rounded-md bg-muted/30 text-sm">
-                  <div className="text-muted-foreground text-xs mb-1">
+                <div className="p-3 border rounded-md bg-muted/30 text-body">
+                  <div className="text-muted-foreground text-helper mb-1">
                     {editingAllocation.nationalPriority?.planName || "—"}
                   </div>
                   <div className="flex items-center gap-2">
@@ -531,7 +531,7 @@ export function NationalPrioritiesSection({
                         </SelectGroup>
                       ))}
                       {unallocatedPriorities.length === 0 && (
-                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                        <div className="px-2 py-4 text-center text-body text-muted-foreground">
                           All priorities from this plan are already allocated
                         </div>
                       )}
@@ -566,7 +566,7 @@ export function NationalPrioritiesSection({
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">1</span>
                         <span className="font-medium">Principal</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.principal}</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.principal}</p>
                     </div>
                   </SelectItem>
                   <SelectItem value="significant" className="py-3">
@@ -575,7 +575,7 @@ export function NationalPrioritiesSection({
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">2</span>
                         <span className="font-medium">Significant</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.significant}</p>
+                      <p className="text-helper text-muted-foreground mt-1 ml-7">{ALIGNMENT_SIGNIFICANCE_DESCRIPTIONS.significant}</p>
                     </div>
                   </SelectItem>
                 </SelectContent>

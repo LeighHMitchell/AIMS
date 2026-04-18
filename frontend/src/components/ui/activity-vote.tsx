@@ -64,13 +64,13 @@ export function ActivityVote({
     sm: {
       button: 'w-6 h-6',
       icon: 'h-4 w-4',
-      score: 'text-xs min-w-[24px]',
+      score: 'text-helper min-w-[24px]',
       gap: 'gap-0.5'
     },
     default: {
       button: 'w-8 h-8',
       icon: 'h-5 w-5',
-      score: 'text-sm min-w-[32px]',
+      score: 'text-body min-w-[32px]',
       gap: 'gap-1'
     },
     lg: {
@@ -171,7 +171,7 @@ export function ActivityVote({
           </TooltipTrigger>
           <TooltipContent side={isHorizontal ? 'top' : 'right'}>
             <p>{userId ? 'Upvote this activity' : 'Log in to vote'}</p>
-            {showCounts && <p className="text-xs text-muted-foreground">{upvoteCount} upvotes</p>}
+            {showCounts && <p className="text-helper text-muted-foreground">{upvoteCount} upvotes</p>}
           </TooltipContent>
         </Tooltip>
 
@@ -227,7 +227,7 @@ export function ActivityVote({
           </TooltipTrigger>
           <TooltipContent side={isHorizontal ? 'bottom' : 'right'}>
             <p>{userId ? 'Downvote this activity' : 'Log in to vote'}</p>
-            {showCounts && <p className="text-xs text-muted-foreground">{downvoteCount} downvotes</p>}
+            {showCounts && <p className="text-helper text-muted-foreground">{downvoteCount} downvotes</p>}
           </TooltipContent>
         </Tooltip>
 

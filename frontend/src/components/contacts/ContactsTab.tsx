@@ -486,7 +486,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
               {!readOnly && contactsView === 'table' && (
                 selectMode ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-body text-muted-foreground">
                       {selectedContactIds.size} selected
                     </span>
                     <Button
@@ -539,7 +539,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
           <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
             <img src="/images/empty-cardholder.webp" alt="No contacts" className="h-32 mx-auto mb-4 opacity-50" />
             <h3 className="text-base font-medium mb-2">No contacts</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {!readOnly ? 'Use the search above to add your first contact.' : 'No contacts have been added to this activity yet.'}
             </p>
           </div>
@@ -605,17 +605,17 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                           {contact.profilePhoto && (
                             <AvatarImage src={contact.profilePhoto} alt={fullName} />
                           )}
-                          <AvatarFallback className="bg-muted text-xs">
+                          <AvatarFallback className="bg-muted text-helper">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">{fullName || 'Unknown Contact'}</span>
+                        <span className="text-body">{fullName || 'Unknown Contact'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {contact.jobTitle || contact.position || '-'}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {orgDisplay ? (
                         <div className="flex items-center gap-2">
                           <OrganizationLogo
@@ -627,7 +627,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                         </div>
                       ) : '-'}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       {contact.email ? (
                         <div className="flex items-center gap-1 group/email">
                           <span>{contact.email}</span>

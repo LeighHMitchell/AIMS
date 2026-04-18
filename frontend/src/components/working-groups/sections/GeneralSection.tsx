@@ -148,7 +148,7 @@ export default function GeneralSection({
   return (
     <div className="w-full space-y-6">
       {workingGroup?.parent_id && parentLabel && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-lg text-body">
           <span className="text-muted-foreground">Creating sub-working group under</span>
           <span className="font-medium text-foreground">{parentLabel}</span>
         </div>
@@ -195,8 +195,8 @@ export default function GeneralSection({
                 onClick={() => bannerInputRef.current?.click()}
               >
                 <ImageIcon className="h-6 w-6 text-muted-foreground mb-1" />
-                <p className="text-sm text-muted-foreground">Click or drag image to upload</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Max size: 5MB</p>
+                <p className="text-body text-muted-foreground">Click or drag image to upload</p>
+                <p className="text-helper text-muted-foreground mt-0.5">Max size: 5MB</p>
               </div>
             )}
             <input
@@ -379,7 +379,7 @@ export default function GeneralSection({
             <HelpTextTooltip size="sm" text="Toggle whether this working group is currently active. Inactive groups are hidden from default views but data is preserved." />
           </div>
           <div className="flex items-center justify-between border rounded-md h-10 px-3">
-            <span className="text-sm text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+            <span className="text-body text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
             <Switch
               checked={isActive}
               onCheckedChange={(checked) => {

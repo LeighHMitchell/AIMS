@@ -190,9 +190,9 @@ export function FundingByModalityChart() {
                     className="w-3 h-3 rounded-sm" 
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-sm text-foreground">{entry.name}</span>
+                  <span className="text-body text-foreground">{entry.name}</span>
                 </div>
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-body font-medium text-foreground">
                   {formatCurrency(entry.value)}
                 </span>
               </div>
@@ -200,8 +200,8 @@ export function FundingByModalityChart() {
           </div>
           <div className="border-t mt-2 pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-foreground">Total</span>
-              <span className="text-sm font-bold text-foreground">
+              <span className="text-body font-semibold text-foreground">Total</span>
+              <span className="text-body font-bold text-foreground">
                 {formatCurrency(yearTotal)}
               </span>
             </div>
@@ -220,7 +220,7 @@ export function FundingByModalityChart() {
             className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
             style={{ backgroundColor: MODALITY_COLORS[modality] }}
           />
-          <span className={cn("text-xs text-muted-foreground", expanded ? "" : "truncate max-w-[80px]")} title={modality}>
+          <span className={cn("text-helper text-muted-foreground", expanded ? "" : "truncate max-w-[80px]")} title={modality}>
             {modality}
           </span>
         </div>
@@ -445,7 +445,7 @@ export function FundingByModalityChart() {
       <div className="flex items-center gap-2">
         {/* Transaction type dropdown */}
         <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectTrigger className="w-[160px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -577,7 +577,7 @@ export function FundingByModalityChart() {
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Funding Over Time
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 By aid modality type
               </CardDescription>
             </div>
@@ -595,7 +595,7 @@ export function FundingByModalityChart() {
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart breaks down funding over time by aid modality (grant, loan, technical assistance, etc.). Use the stacked view to see total volumes and the grouped view to compare modalities side by side. Switch between bar, line, and area chart types for different perspectives.
           </p>
         </CardContent>

@@ -130,7 +130,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: FS2ReviewProject) => (
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{p.name}</p>
+          <p className="text-body font-medium truncate">{p.name}</p>
           <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
         </div>
       </div>
@@ -142,7 +142,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: FS2ReviewProject) => (
       <div>
         <span>{p.nominating_ministry}</span>
-        {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
+        {p.implementing_agency && <p className="text-helper text-muted-foreground">{p.implementing_agency}</p>}
       </div>
     ),
   },
@@ -152,7 +152,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     render: (p: FS2ReviewProject) => (
       <div>
         <span>{p.sector}</span>
-        {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
+        {p.sub_sector && <p className="text-helper text-muted-foreground">{p.sub_sector}</p>}
       </div>
     ),
   },
@@ -206,13 +206,13 @@ function FS2KanbanCard({ project, onClick }: { project: FS2ReviewProject; onClic
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium truncate">{project.name}</p>
+              <p className="text-body font-medium truncate">{project.name}</p>
               <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
         </div>
-        <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <div className="mt-2 space-y-0.5 text-helper text-muted-foreground">
           <div>
             <span>{project.nominating_ministry}</span>
             {project.implementing_agency && (
@@ -228,11 +228,11 @@ function FS2KanbanCard({ project, onClick }: { project: FS2ReviewProject; onClic
         </div>
         {costParts && (
           <div className="mt-1.5">
-            <span className="text-xs font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
+            <span className="text-helper font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
           </div>
         )}
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-helper text-muted-foreground">
             {new Date(project.updated_at).toLocaleDateString()}
           </span>
           {project.reviewer_name && (
@@ -388,7 +388,7 @@ export function FS2ReviewTab() {
       {/* Filters + View Toggle */}
       <FilterBar>
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
-          <Label className="text-xs text-muted-foreground">Search</Label>
+          <Label className="text-helper text-muted-foreground">Search</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -400,7 +400,7 @@ export function FS2ReviewTab() {
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <Label className="text-helper text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
@@ -419,7 +419,7 @@ export function FS2ReviewTab() {
           </Select>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Label className="text-helper text-muted-foreground">Region</Label>
           <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[160px] h-9">
               <SelectValue placeholder="All" />
@@ -458,14 +458,14 @@ export function FS2ReviewTab() {
             return (
               <div key={col.key} className="flex-1 min-w-[280px]">
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-sm font-semibold">{col.title}</h3>
+                  <h3 className="text-body font-semibold">{col.title}</h3>
                   <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                     {kanbanColumns[col.key].length}
                   </span>
                 </div>
                 <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
                   {filtered.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
+                    <p className="text-helper text-muted-foreground text-center py-8">No projects</p>
                   ) : (
                     filtered.map(p => (
                       <FS2KanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
@@ -505,19 +505,19 @@ export function FS2ReviewTab() {
 
             <div className="p-6 space-y-6">
               {/* Project info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-body">
                 <div>
                   <span className="text-muted-foreground">Ministry</span>
                   <p className="font-medium">{selectedProject.nominating_ministry}</p>
                   {selectedProject.implementing_agency && (
-                    <p className="text-xs text-muted-foreground">{selectedProject.implementing_agency}</p>
+                    <p className="text-helper text-muted-foreground">{selectedProject.implementing_agency}</p>
                   )}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Sector</span>
                   <p className="font-medium">{selectedProject.sector}</p>
                   {selectedProject.sub_sector && (
-                    <p className="text-xs text-muted-foreground">{selectedProject.sub_sector}</p>
+                    <p className="text-helper text-muted-foreground">{selectedProject.sub_sector}</p>
                   )}
                 </div>
                 <div>
@@ -552,14 +552,14 @@ export function FS2ReviewTab() {
               {error && (
                 <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-body text-destructive">{error}</p>
                 </div>
               )}
 
               {/* Claim for Review — pending projects */}
               {selectedProject.project_stage === "fs2_completed" && (
                 <div className="border-t border-border pt-6 space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     This study is complete and pending review. Claim it to begin desk review.
                   </p>
                   <Button
@@ -592,10 +592,10 @@ export function FS2ReviewTab() {
               {/* Desk Review form (fs2_desk_claimed) */}
               {selectedProject.project_stage === "fs2_desk_claimed" && (
                 <div className="border-t border-border pt-6 space-y-4">
-                  <h3 className="text-sm font-semibold">Desk Review</h3>
+                  <h3 className="text-body font-semibold">Desk Review</h3>
 
                   <div className="space-y-2">
-                    <Label className="text-sm">Decision</Label>
+                    <Label className="text-body">Decision</Label>
                     <ReviewDecisionCards
                       options={DESK_REVIEW_DECISIONS}
                       selected={reviewDecision}
@@ -604,7 +604,7 @@ export function FS2ReviewTab() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm">
+                    <Label className="text-body">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
                         <RequiredDot />
@@ -635,10 +635,10 @@ export function FS2ReviewTab() {
               {/* Step 2: Senior Review form (fs2_desk_reviewed) */}
               {selectedProject.project_stage === "fs2_desk_reviewed" && (
                 <div className="border-t border-border pt-6 space-y-4">
-                  <h3 className="text-sm font-semibold">Senior Review</h3>
+                  <h3 className="text-body font-semibold">Senior Review</h3>
 
                   <div className="space-y-2">
-                    <Label className="text-sm">Decision</Label>
+                    <Label className="text-body">Decision</Label>
                     <ReviewDecisionCards
                       options={SENIOR_REVIEW_DECISIONS}
                       selected={reviewDecision}
@@ -647,7 +647,7 @@ export function FS2ReviewTab() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm">
+                    <Label className="text-body">
                       Comments
                       {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
                         <RequiredDot />
@@ -688,25 +688,25 @@ export function FS2ReviewTab() {
 
                 return (
                   <div className="border-t border-border pt-6 space-y-4">
-                    <h3 className="text-sm font-semibold">Category Decision</h3>
+                    <h3 className="text-body font-semibold">Category Decision</h3>
 
                     {/* System recommendation banner */}
                     {recommendation ? (
                       <div className="rounded-lg border border-[#5f7f7a]/20 bg-[#f6f5f3] px-4 py-3">
-                        <p className="text-sm text-foreground">
+                        <p className="text-body text-foreground">
                           <span className="font-semibold">System Recommendation: {CATEGORY_LABELS[recommendation]}</span>
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-helper text-muted-foreground mt-1">
                           Based on FIRR {selectedProject.firr ?? "—"}%, EIRR {selectedProject.eirr ?? "—"}%,
                           NDP-aligned: {selectedProject.ndp_aligned ? "Yes" : "No"}, Sector: {selectedProject.sector}
                         </p>
                       </div>
                     ) : (
                       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-                        <p className="text-sm text-amber-800">
+                        <p className="text-body text-amber-800">
                           <span className="font-semibold">No system recommendation available</span>
                         </p>
-                        <p className="text-xs text-amber-700 mt-1">
+                        <p className="text-helper text-amber-700 mt-1">
                           FIRR: {selectedProject.firr ?? "not set"}, EIRR: {selectedProject.eirr ?? "not set"},
                           NDP-aligned: {selectedProject.ndp_aligned ? "Yes" : "No"}
                           — ensure financial analysis is completed for an automated recommendation.
@@ -715,7 +715,7 @@ export function FS2ReviewTab() {
                     )}
 
                     <div className="space-y-2">
-                      <Label className="text-sm">Category</Label>
+                      <Label className="text-body">Category</Label>
                       <ReviewDecisionCards
                         options={CATEGORY_DECISIONS}
                         selected={categoryDecision}
@@ -727,10 +727,10 @@ export function FS2ReviewTab() {
                     {/* Rationale — required when overriding, optional otherwise */}
                     {isOverride ? (
                       <div className="space-y-2">
-                        <Label className="text-sm">
+                        <Label className="text-body">
                           Rationale for Override <RequiredDot />
                         </Label>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-helper text-muted-foreground">
                           You are selecting a different category than the system recommendation. Please explain why.
                         </p>
                         <Textarea
@@ -742,7 +742,7 @@ export function FS2ReviewTab() {
                       </div>
                     ) : categoryDecision ? (
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Rationale (optional)</Label>
+                        <Label className="text-body text-muted-foreground">Rationale (optional)</Label>
                         <Textarea
                           value={rationale}
                           onChange={e => setRationale(e.target.value)}

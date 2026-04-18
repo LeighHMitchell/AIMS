@@ -91,7 +91,7 @@ function SiteTypeIcon({ siteType }: { siteType: string }) {
 // Badge for location type
 function LocationTypeBadge({ type }: { type: string }) {
   return (
-    <Badge variant="outline" className="text-xs">
+    <Badge variant="outline" className="text-helper">
       {type === 'site' ? 'Site' : 'Coverage'}
     </Badge>
   );
@@ -191,7 +191,7 @@ export default function LocationCard({
 
               {/* 2. Location Description */}
               {(location.location_description || location.description) && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   {(() => {
                     const desc = location.location_description || location.description || '';
                     return showFullDescription || desc.length <= 100 ? (
@@ -223,21 +223,21 @@ export default function LocationCard({
 
               {/* 3. Activity Description */}
               {location.activity_location_description && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body text-muted-foreground">
                   <span>{location.activity_location_description}</span>
                 </div>
               )}
 
               {/* 4. Coordinates */}
               {location.latitude && location.longitude && (
-                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                <div className="text-body text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3 w-3 flex-shrink-0" />
                   <span>{formatCoordinates(location.latitude, location.longitude)}</span>
                 </div>
               )}
 
               {/* 5. Address */}
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 {formatAddress() === 'No address' ? (
                   <span className="text-muted-foreground italic">No address</span>
                 ) : (

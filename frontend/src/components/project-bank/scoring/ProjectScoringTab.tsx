@@ -154,7 +154,7 @@ export function ProjectScoringTab({ projectId }: ProjectScoringTabProps) {
               <Card key={stage}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">{STAGE_LABELS[stage]}</CardTitle>
+                    <CardTitle className="text-body">{STAGE_LABELS[stage]}</CardTitle>
                     {stage === latestScore?.stage && (
                       <Badge variant="outline" className="text-[10px]">Latest</Badge>
                     )}
@@ -168,7 +168,7 @@ export function ProjectScoringTab({ projectId }: ProjectScoringTabProps) {
                     >
                       {composite.toFixed(0)}
                     </div>
-                    <div className="text-xs text-muted-foreground mb-2">out of 100</div>
+                    <div className="text-helper text-muted-foreground mb-2">out of 100</div>
 
                     <div className="w-full max-w-[200px]">
                       <ResponsiveContainer width="100%" height={160}>
@@ -230,7 +230,7 @@ export function ProjectScoringTab({ projectId }: ProjectScoringTabProps) {
         <Card>
           <CardContent className="py-8">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-3">No score has been calculated yet.</p>
+              <p className="text-body text-muted-foreground mb-3">No score has been calculated yet.</p>
               <Button onClick={handleRecalculate} disabled={recalculating}>
                 {recalculating ? 'Calculating...' : 'Calculate Score Now'}
               </Button>
@@ -325,7 +325,7 @@ function DimensionCard({
           ) : (
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="text-sm font-medium">{DIMENSION_LABELS[dimension]}</span>
+          <span className="text-body font-medium">{DIMENSION_LABELS[dimension]}</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-24 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#e2e8f0' }}>
@@ -337,10 +337,10 @@ function DimensionCard({
               }}
             />
           </div>
-          <span className="text-sm font-bold w-10 text-right" style={{ color: getScoreColor(normalized) }}>
+          <span className="text-body font-bold w-10 text-right" style={{ color: getScoreColor(normalized) }}>
             {normalized.toFixed(0)}
           </span>
-          <span className="text-xs text-muted-foreground w-8">
+          <span className="text-helper text-muted-foreground w-8">
             ({result.raw_score}/{result.max_score})
           </span>
         </div>
@@ -350,7 +350,7 @@ function DimensionCard({
         <div className="px-4 pb-3 border-t bg-muted/20">
           <table className="w-full mt-2">
             <thead className="bg-surface-muted">
-              <tr className="text-xs text-muted-foreground">
+              <tr className="text-helper text-muted-foreground">
                 <th className="text-left font-medium py-1">Criterion</th>
                 <th className="text-right font-medium py-1 w-16">Earned</th>
                 <th className="text-right font-medium py-1 w-16">Max</th>
@@ -362,9 +362,9 @@ function DimensionCard({
                 const pct = sub.max > 0 ? Math.round((sub.earned / sub.max) * 100) : 0
                 return (
                   <tr key={sub.key} className="border-t border-border/50">
-                    <td className="py-1.5 text-xs">{sub.label}</td>
-                    <td className="py-1.5 text-xs text-right font-medium">{sub.earned}</td>
-                    <td className="py-1.5 text-xs text-right text-muted-foreground">{sub.max}</td>
+                    <td className="py-1.5 text-helper">{sub.label}</td>
+                    <td className="py-1.5 text-helper text-right font-medium">{sub.earned}</td>
+                    <td className="py-1.5 text-helper text-right text-muted-foreground">{sub.max}</td>
                     <td className="py-1.5">
                       <div className="flex items-center gap-1.5 justify-end">
                         <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#e2e8f0' }}>

@@ -109,7 +109,7 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
   if (loading) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-sm">Project Scores</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-body">Project Scores</CardTitle></CardHeader>
         <CardContent>
           <div className="flex justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -124,7 +124,7 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm">Project Scores</CardTitle>
+            <CardTitle className="text-body">Project Scores</CardTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -144,7 +144,7 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
         <CardContent>
           <div className="flex items-center justify-center gap-2 py-4">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Calculating scores...</span>
+            <span className="text-helper text-muted-foreground">Calculating scores...</span>
           </div>
         </CardContent>
       </Card>
@@ -162,7 +162,7 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
           <Card key={stage}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">{STAGE_TITLES[stage]} Score</CardTitle>
+                <CardTitle className="text-body">{STAGE_TITLES[stage]} Score</CardTitle>
                 {stage === scoredStages[scoredStages.length - 1] && (
                   <Button
                     variant="ghost"
@@ -202,13 +202,13 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold" style={{ color }}>
+                    <span className="text-body font-bold" style={{ color }}>
                       {compositeScore.toFixed(0)}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium">Weighted Total</div>
+                  <div className="text-helper font-medium">Weighted Total</div>
                   <p className="text-[10px] text-muted-foreground mt-0.5">across all 5 dimensions</p>
                 </div>
               </div>
@@ -253,7 +253,7 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
         <Button
           variant="ghost"
           size="sm"
-          className="w-full text-xs"
+          className="w-full text-helper"
           onClick={onViewDetails}
         >
           View Details

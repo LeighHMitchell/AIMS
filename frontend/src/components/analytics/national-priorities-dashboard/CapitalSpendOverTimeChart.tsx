@@ -240,10 +240,10 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-surface-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{label}</p>
+            <p className="font-semibold text-foreground text-body">{label}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border">
                   <td className="py-1 pr-3">
@@ -253,7 +253,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
                     </div>
                   </td>
                   <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(capitalValue)}</td>
-                  <td className="py-1 text-right text-xs text-muted-foreground pl-2">{capitalPct}%</td>
+                  <td className="py-1 text-right text-helper text-muted-foreground pl-2">{capitalPct}%</td>
                 </tr>
                 <tr className="border-b border-border">
                   <td className="py-1 pr-3">
@@ -263,7 +263,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
                     </div>
                   </td>
                   <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(nonCapitalValue)}</td>
-                  <td className="py-1 text-right text-xs text-muted-foreground pl-2">{nonCapitalPct}%</td>
+                  <td className="py-1 text-right text-helper text-muted-foreground pl-2">{nonCapitalPct}%</td>
                 </tr>
                 <tr>
                   <td className="py-1 pr-3 text-foreground font-medium">Total</td>
@@ -505,14 +505,14 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: CAPITAL_COLORS.capital }}
           />
-          <span className="text-xs text-muted-foreground">Capital ({formatCurrencyUSD(totals.capitalSpend)})</span>
+          <span className="text-helper text-muted-foreground">Capital ({formatCurrencyUSD(totals.capitalSpend)})</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: nonCapitalColor }}
           />
-          <span className="text-xs text-muted-foreground">Non-Capital ({formatCurrencyUSD(totals.nonCapitalSpend)})</span>
+          <span className="text-helper text-muted-foreground">Non-Capital ({formatCurrencyUSD(totals.nonCapitalSpend)})</span>
         </div>
       </div>
     );
@@ -551,7 +551,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       {/* Left side controls */}
       <div className="flex items-center gap-2">
         <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectTrigger className="w-[160px] h-8 text-helper">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -659,7 +659,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
   const renderTimeRangeFilter = () => (
     <div className="mb-4">
       <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRangeType)}>
-        <SelectTrigger className="w-[140px] h-8 text-xs">
+        <SelectTrigger className="w-[140px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -685,7 +685,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Capital vs Non-Capital Spend
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Yearly breakdown of spending types
               </CardDescription>
             </div>
@@ -703,7 +703,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart tracks capital vs non-capital spending over time. Capital spend refers to expenditure on physical assets like infrastructure and equipment, while non-capital covers operational and programmatic costs. Use the stacked and grouped views to compare proportions and absolute values.
           </p>
         </CardContent>

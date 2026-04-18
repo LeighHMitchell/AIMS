@@ -52,7 +52,7 @@ export function DocumentLanguagesSelect({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-body ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedOption && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -64,7 +64,7 @@ export function DocumentLanguagesSelect({
                   {selectedOptions.map((option) => (
                     <span key={option.code} className="inline-flex items-center gap-1">
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code.toUpperCase()}</span>
-                      <span className="text-sm font-medium">{option.name}</span>
+                      <span className="text-body font-medium">{option.name}</span>
                     </span>
                   ))}
                 </span>
@@ -95,7 +95,7 @@ export function DocumentLanguagesSelect({
                 className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
                 aria-label="Clear selection"
               >
-                <span className="text-xs">×</span>
+                <span className="text-helper">×</span>
               </button>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -118,15 +118,15 @@ export function DocumentLanguagesSelect({
             <div className="p-2">
               {filteredOptions.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
-                  <p className="text-sm">No languages found.</p>
-                  <p className="text-xs">Try adjusting your search terms</p>
+                  <p className="text-body">No languages found.</p>
+                  <p className="text-helper">Try adjusting your search terms</p>
                 </div>
               ) : (
                 filteredOptions.map((language) => (
                   <button
                     key={language.code}
                     className={cn(
-                      "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                      "w-full text-left px-2 py-2 rounded-md text-body hover:bg-accent hover:text-accent-foreground transition-colors",
                       multiple 
                         ? (selectedValues as string[]).includes(language.code) && "bg-blue-100 text-blue-900"
                         : value === language.code && "bg-blue-100 text-blue-900"
@@ -151,7 +151,7 @@ export function DocumentLanguagesSelect({
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{language.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">ISO 639-1: {language.code}</div>
+                        <div className="text-helper text-muted-foreground truncate">ISO 639-1: {language.code}</div>
                       </div>
                     </div>
                   </button>

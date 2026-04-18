@@ -341,7 +341,7 @@ export function DocumentFormEnhanced({
           <div className="space-y-6 pb-8">
             {/* Link Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <h3 className="text-body font-medium mb-3 flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 Link Information
               </h3>
@@ -361,25 +361,25 @@ export function DocumentFormEnhanced({
                       className="mt-1"
                     />
                     {urlMetadata.error && (
-                      <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
+                      <p className="text-helper text-amber-600 mt-1">{urlMetadata.error}</p>
                     )}
                     {urlMetadata.size && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-helper text-muted-foreground mt-1">
                         File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     )}
                     {thumbnailLoading && (
-                      <p className="text-xs text-blue-600 mt-1">
+                      <p className="text-helper text-blue-600 mt-1">
                         Generating thumbnail from PDF...
                       </p>
                     )}
                     {thumbnailError && (
-                      <p className="text-xs text-amber-600 mt-1">
+                      <p className="text-helper text-amber-600 mt-1">
                         Thumbnail: {thumbnailError}
                       </p>
                     )}
                     {formData.thumbnailUrl && !thumbnailLoading && (
-                      <p className="text-xs text-[hsl(var(--success-icon))] mt-1">
+                      <p className="text-helper text-[hsl(var(--success-icon))] mt-1">
                         ✓ Thumbnail generated successfully
                       </p>
                     )}
@@ -400,7 +400,7 @@ export function DocumentFormEnhanced({
                           {formData.format ? (
                             <div>
                               <div className="font-medium">{FILE_FORMATS[formData.format] || 'Unknown'}</div>
-                              <div className="text-xs text-muted-foreground">{formData.format}</div>
+                              <div className="text-helper text-muted-foreground">{formData.format}</div>
                             </div>
                           ) : (
                             "Select format..."
@@ -431,7 +431,7 @@ export function DocumentFormEnhanced({
                                 />
                                 <div className="flex-1">
                                   <div className="font-medium">{label}</div>
-                                  <div className="text-sm text-muted-foreground">{mime}</div>
+                                  <div className="text-body text-muted-foreground">{mime}</div>
                                 </div>
                               </CommandItem>
                             ))}
@@ -448,7 +448,7 @@ export function DocumentFormEnhanced({
             
             {/* Metadata Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <h3 className="text-body font-medium mb-3 flex items-center gap-2">
                 <Info className="w-4 h-4" />
                 Metadata
               </h3>
@@ -464,7 +464,7 @@ export function DocumentFormEnhanced({
                     className="w-full mt-1"
                   />
                   <div className="mt-2">
-                    <Label className="text-xs text-muted-foreground">Title Language</Label>
+                    <Label className="text-helper text-muted-foreground">Title Language</Label>
                     <Popover open={titleLangOpen} onOpenChange={setTitleLangOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -519,7 +519,7 @@ export function DocumentFormEnhanced({
                     rows={3}
                   />
                   <div className="mt-2">
-                    <Label className="text-xs text-muted-foreground">Description Language</Label>
+                    <Label className="text-helper text-muted-foreground">Description Language</Label>
                     <Popover open={descLangOpen} onOpenChange={setDescLangOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -576,7 +576,7 @@ export function DocumentFormEnhanced({
                               <Badge
                                 key={categoryCode}
                                 variant="secondary"
-                                className="text-xs"
+                                className="text-helper"
                               >
                                 {category?.name || categoryCode}
                                 <button
@@ -592,7 +592,7 @@ export function DocumentFormEnhanced({
                             );
                           })
                         ) : (
-                          <span className="text-muted-foreground text-sm">Select categories...</span>
+                          <span className="text-muted-foreground text-body">Select categories...</span>
                         )}
                       </div>
                       <Button
@@ -648,7 +648,7 @@ export function DocumentFormEnhanced({
                                     <span className="ml-2 text-muted-foreground w-8">{cat.code}</span>
                                     <div className="ml-4 flex-1">
                                       <div className="font-medium">{cat.name}</div>
-                                      <div className="text-sm text-muted-foreground">{cat.description}</div>
+                                      <div className="text-body text-muted-foreground">{cat.description}</div>
                                     </div>
                                   </CommandItem>
                                 );
@@ -714,7 +714,7 @@ export function DocumentFormEnhanced({
                   {formData.languageCodes && formData.languageCodes.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {formData.languageCodes.map(code => (
-                        <Badge key={code} variant="secondary" className="text-xs">
+                        <Badge key={code} variant="secondary" className="text-helper">
                           {LANGUAGES_WITH_NAMES.find(l => l.code === code)?.name || code}
                         </Badge>
                       ))}
@@ -743,7 +743,7 @@ export function DocumentFormEnhanced({
             
             {/* Geography Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3">Geography</h3>
+              <h3 className="text-body font-medium mb-3">Geography</h3>
               
               <div className="space-y-4">
                 {/* Recipient Countries */}
@@ -788,8 +788,8 @@ export function DocumentFormEnhanced({
             {/* Validation Errors */}
             {showValidation && !validation.ok && validation.issues && validation.issues.length > 0 && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-sm font-medium text-amber-800 mb-1">Validation Issues</p>
-                <ul className="text-xs text-amber-700 space-y-1">
+                <p className="text-body font-medium text-amber-800 mb-1">Validation Issues</p>
+                <ul className="text-helper text-amber-700 space-y-1">
                   {validation.issues.map((issue, i) => (
                     <li key={i}>• {issue.message}</li>
                   ))}

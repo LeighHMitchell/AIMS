@@ -114,7 +114,7 @@ export function GoogleLoginCard({ redirectTo = '/' }: { redirectTo?: string }) {
       <CardContent className="space-y-4">
         <GmailLogin redirectTo={redirectTo} />
         
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-body text-muted-foreground">
           <p>By signing in, you agree to our terms of service</p>
         </div>
       </CardContent>

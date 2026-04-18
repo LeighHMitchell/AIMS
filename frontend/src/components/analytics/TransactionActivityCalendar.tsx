@@ -224,7 +224,7 @@ export function TransactionActivityCalendar({
         <TransactionCalendarHeatmap transactions={transactions} stats={stats} />
 
         {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+        <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This calendar heatmap displays daily transaction activity across the selected time period. Each cell represents a single day, with colour intensity indicating transaction volume. Hover over individual days to see the number of transactions and total value, helping you identify seasonal patterns, reporting cycles, and periods of unusual activity.
         </p>
       </CardContent>

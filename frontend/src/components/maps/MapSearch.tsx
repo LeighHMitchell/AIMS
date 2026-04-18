@@ -171,7 +171,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                   setOpen(true)
                 }
               }}
-              className="pl-9 pr-9 bg-white shadow-md border-input h-9 text-xs"
+              className="pl-9 pr-9 bg-white shadow-md border-input h-9 text-helper"
             />
             {loading && (
               <Loader2 className="absolute right-2.5 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
@@ -198,7 +198,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       >
         <Command shouldFilter={false}>
           {error && (
-            <div className="px-4 py-3 text-sm text-destructive">
+            <div className="px-4 py-3 text-body text-destructive">
               {error}
             </div>
           )}
@@ -218,10 +218,10 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                 >
                   <MapPin className="mr-2 h-4 w-4 text-blue-600 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
+                    <div className="text-body font-medium truncate">
                       {result.display_name.split(',')[0]}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
+                    <div className="text-helper text-muted-foreground truncate">
                       {result.display_name}
                     </div>
                   </div>

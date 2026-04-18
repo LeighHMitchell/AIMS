@@ -116,12 +116,12 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
 
   const getTemplateTypeBadge = (template: TaskTemplate) => {
     if (template.is_system_template) {
-      return <Badge variant="secondary" className="text-xs">System</Badge>;
+      return <Badge variant="secondary" className="text-helper">System</Badge>;
     }
     if (template.created_by_org_id) {
-      return <Badge variant="outline" className="text-xs">Organization</Badge>;
+      return <Badge variant="outline" className="text-helper">Organization</Badge>;
     }
-    return <Badge variant="outline" className="text-xs text-muted-foreground">Personal</Badge>;
+    return <Badge variant="outline" className="text-helper text-muted-foreground">Personal</Badge>;
   };
 
   if (error) {
@@ -144,7 +144,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Task Templates</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Reusable task blueprints for common workflows
           </p>
         </div>
@@ -188,7 +188,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                 <h4 className="font-medium">No templates found</h4>
-                <p className="text-sm text-muted-foreground text-center mt-1">
+                <p className="text-body text-muted-foreground text-center mt-1">
                   {searchQuery
                     ? 'Try a different search term'
                     : 'Create a task and save it as a template to get started'}
@@ -204,11 +204,11 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
                       <div className="flex items-start gap-2 flex-1 min-w-0">
                         {getTemplateIcon(template)}
                         <div className="min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">
+                          <CardTitle className="text-body font-medium truncate">
                             {template.name}
                           </CardTitle>
                           {template.description && (
-                            <CardDescription className="text-xs line-clamp-2 mt-1">
+                            <CardDescription className="text-helper line-clamp-2 mt-1">
                               {template.description}
                             </CardDescription>
                           )}
@@ -254,19 +254,19 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
                       {template.default_priority && (
                         <Badge
                           variant="outline"
-                          className={cn('text-xs', getPriorityColor(template.default_priority))}
+                          className={cn('text-helper', getPriorityColor(template.default_priority))}
                         >
                           {getPriorityLabel(template.default_priority)}
                         </Badge>
                       )}
                       {template.default_task_type && (
-                        <Badge variant="outline" className="text-xs capitalize">
+                        <Badge variant="outline" className="text-helper capitalize">
                           {template.default_task_type}
                         </Badge>
                       )}
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-helper text-muted-foreground">
                         {template.created_at &&
                           `Created ${formatDistanceToNow(new Date(template.created_at), { addSuffix: true })}`}
                       </span>

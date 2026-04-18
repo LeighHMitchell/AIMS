@@ -117,13 +117,13 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         return (
           <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
             <div className="bg-surface-muted px-3 py-2 border-b border-border">
-              <p className="font-semibold text-foreground text-sm">
+              <p className="font-semibold text-foreground text-body">
                 {item.title}{item.acronym ? ` (${item.acronym})` : ''}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">{orgDisplay}</p>
+              <p className="text-helper text-muted-foreground mt-0.5">{orgDisplay}</p>
             </div>
             <div className="p-2">
-              <table className="w-full text-xs">
+              <table className="w-full text-helper">
                 <tbody>
                   <tr>
                     <td className="py-0.5 text-muted-foreground">Upvotes</td>
@@ -174,8 +174,8 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
     return (
       <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground">
         <TrendingUp className="h-8 w-8 text-slate-300 mb-2" />
-        <p className="text-sm">No voted activities yet</p>
-        <p className="text-xs text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
+        <p className="text-body">No voted activities yet</p>
+        <p className="text-helper text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
       </div>
     )
   }
@@ -328,8 +328,8 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         {hasNoData ? (
           <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground min-h-[300px]">
             <TrendingUp className="h-8 w-8 text-slate-300 mb-2" />
-            <p className="text-sm">No voted activities yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
+            <p className="text-body">No voted activities yet</p>
+            <p className="text-helper text-muted-foreground mt-1">Activities will appear here when users vote on them</p>
           </div>
         ) : (
           viewMode === 'score' ? renderScoreChart() : renderPyramidChart()
@@ -338,7 +338,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
 
       {/* Legend - show below chart for pyramid view when expanded and has data */}
       {!compact && viewMode === 'pyramid' && !hasNoData && (
-        <div className="flex items-center justify-center gap-6 text-xs mt-3">
+        <div className="flex items-center justify-center gap-6 text-helper mt-3">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.primaryScarlet }} />
             <span className="text-muted-foreground">Downvotes</span>
@@ -352,7 +352,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
 
       {/* Explanatory text */}
       {!compact && !hasNoData && (
-        <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+        <p className="mt-4 text-body text-muted-foreground leading-relaxed">
           This chart displays the top 10 activities ranked by community voting. The Net Score view shows overall sentiment (upvotes minus downvotes), while the Pyramid view separates upvotes and downvotes to reveal controversial activities versus those with clear consensus.
           Use this to identify which interventions the community considers most effective and to inform resource allocation decisions.
         </p>

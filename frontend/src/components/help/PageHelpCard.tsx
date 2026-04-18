@@ -86,28 +86,28 @@ export function PageHelpCard({
       <div className="px-4 py-3 border-b bg-surface-muted rounded-t-md">
         <div className="flex items-center gap-2">
           <HelpCircle className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">{pageTitle}</h3>
+          <h3 className="text-body font-semibold">{pageTitle}</h3>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">About this page</p>
+        <p className="text-helper text-muted-foreground mt-0.5">About this page</p>
       </div>
 
       {/* Body: scrollable list */}
       <div className="flex-1 overflow-y-auto px-1 py-2">
         {loading && (
-          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center py-8 text-body text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
             Loading…
           </div>
         )}
 
         {error && !loading && (
-          <div className="px-3 py-4 text-sm text-destructive">
+          <div className="px-3 py-4 text-body text-destructive">
             Couldn’t load help: {error}
           </div>
         )}
 
         {!loading && !error && items.length === 0 && (
-          <div className="px-3 py-6 text-sm text-muted-foreground text-center">
+          <div className="px-3 py-6 text-body text-muted-foreground text-center">
             No help content yet for this page. Have a question? Ask below.
           </div>
         )}
@@ -131,7 +131,7 @@ export function PageHelpCard({
                           expanded && 'rotate-180'
                         )}
                       />
-                      <span className="text-sm font-medium leading-snug">{item.question}</span>
+                      <span className="text-body font-medium leading-snug">{item.question}</span>
                     </button>
                     {isSuperUser && (
                       <Link
@@ -145,7 +145,7 @@ export function PageHelpCard({
                     )}
                   </div>
                   {expanded && (
-                    <div className="px-3 pb-3 pl-9 text-sm text-muted-foreground">
+                    <div className="px-3 pb-3 pl-9 text-body text-muted-foreground">
                       <HelpMarkdown source={item.answer} />
                     </div>
                   )}
@@ -159,7 +159,7 @@ export function PageHelpCard({
       {/* Footer: Ask a question */}
       <div className="border-t px-3 py-3 bg-surface-muted/50 rounded-b-md">
         <form onSubmit={handleQuickSubmit} className="space-y-2">
-          <label className="block text-xs font-medium text-muted-foreground">
+          <label className="block text-helper font-medium text-muted-foreground">
             Ask about this page
           </label>
           <Textarea
@@ -167,7 +167,7 @@ export function PageHelpCard({
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Type your question…"
             rows={2}
-            className="resize-none text-sm"
+            className="resize-none text-body"
             maxLength={1000}
             disabled={submitting}
           />
@@ -175,7 +175,7 @@ export function PageHelpCard({
             <button
               type="button"
               onClick={() => setFullFormOpen(true)}
-              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              className="text-helper text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
             >
               Open full form <ExternalLink className="h-3 w-3" />
             </button>

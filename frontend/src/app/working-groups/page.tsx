@@ -285,14 +285,14 @@ export default function WorkingGroupsPage() {
                 <Users className="h-4 w-4 mr-2" />
                 <div>
                   <p className="font-medium">Working Group</p>
-                  <p className="text-xs text-muted-foreground">Top-level working group</p>
+                  <p className="text-helper text-muted-foreground">Top-level working group</p>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push('/working-groups/new?group_type=sub_working_group')}>
                 <GitBranch className="h-4 w-4 mr-2" />
                 <div>
                   <p className="font-medium">Sub-Working Group</p>
-                  <p className="text-xs text-muted-foreground">Nested under a parent group</p>
+                  <p className="text-helper text-muted-foreground">Nested under a parent group</p>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -387,7 +387,7 @@ export default function WorkingGroupsPage() {
             {/* Expand/Collapse All */}
             {Array.from(subGroupsMap.values()).some(arr => arr.length > 0) && (
               <div className="px-4 py-2 border-b flex justify-end">
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground" onClick={toggleExpandAll}>
+                <Button variant="ghost" size="sm" className="gap-1.5 text-helper text-muted-foreground" onClick={toggleExpandAll}>
                   <ChevronsUpDown className="h-3.5 w-3.5" />
                   {topLevelGroups.filter(wg => (subGroupsMap.get(wg.id)?.length || 0) > 0).every(wg => expandedGroups.has(wg.id)) ? 'Collapse All' : 'Expand All'}
                 </Button>
@@ -440,14 +440,14 @@ export default function WorkingGroupsPage() {
                         </TableCell>
                         <TableCell>
                           {wg.group_type ? (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-helper">
                               {GROUP_TYPE_LABELS[wg.group_type] || wg.group_type}
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span className="text-muted-foreground text-body">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-body text-muted-foreground">
                           {wg.status ? wg.status.charAt(0).toUpperCase() + wg.status.slice(1) : '-'}
                         </TableCell>
                         <TableCell className="text-right">{wg.member_count || 0}</TableCell>
@@ -500,14 +500,14 @@ export default function WorkingGroupsPage() {
                           </TableCell>
                           <TableCell>
                             {sg.group_type ? (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-helper">
                                 {GROUP_TYPE_LABELS[sg.group_type] || sg.group_type}
                               </Badge>
                             ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                              <span className="text-muted-foreground text-body">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-body text-muted-foreground">
                             {sg.status ? sg.status.charAt(0).toUpperCase() + sg.status.slice(1) : '-'}
                           </TableCell>
                           <TableCell className="text-right">{sg.member_count || 0}</TableCell>
@@ -561,14 +561,14 @@ export default function WorkingGroupsPage() {
                     </TableCell>
                     <TableCell>
                       {sg.group_type ? (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           {GROUP_TYPE_LABELS[sg.group_type] || sg.group_type}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
+                        <span className="text-muted-foreground text-body">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-body text-muted-foreground">
                       {sg.status ? sg.status.charAt(0).toUpperCase() + sg.status.slice(1) : '-'}
                     </TableCell>
                     <TableCell className="text-right">{sg.member_count || 0}</TableCell>
@@ -610,7 +610,7 @@ export default function WorkingGroupsPage() {
         {totalItems > 0 && totalPages > 1 && (
           <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-body text-muted-foreground">
                 Showing {Math.min(startIndex + 1, totalItems)} to {Math.min(endIndex, totalItems)} of {totalItems} working groups
               </div>
 
@@ -681,7 +681,7 @@ export default function WorkingGroupsPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">Items per page:</label>
+                <label className="text-body text-muted-foreground">Items per page:</label>
                 <Select
                   value={pageLimit.toString()}
                   onValueChange={(value) => { setPageLimit(Number(value)); setCurrentPage(1); }}

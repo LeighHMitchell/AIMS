@@ -43,7 +43,7 @@ export function CopyableIdentifier({ value, label }: CopyableIdentifierProps) {
         )}
       </Button>
       {label && (
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-helper text-muted-foreground">{label}</span>
       )}
     </div>
   )

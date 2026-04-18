@@ -35,7 +35,7 @@ const colors = {
 
 const sizeVariants = {
   sm: {
-    container: "h-9 px-3 gap-1.5 text-xs",
+    container: "h-9 px-3 gap-1.5 text-helper",
     icon: "w-3.5 h-3.5",
     avatar: "w-4 h-4",
     avatarStack: "-space-x-1",
@@ -43,7 +43,7 @@ const sizeVariants = {
     popupAvatar: "w-6 h-6",
   },
   default: {
-    container: "h-10 px-4 gap-2 text-sm",
+    container: "h-10 px-4 gap-2 text-body",
     icon: "w-4 h-4",
     avatar: "w-5 h-5",
     avatarStack: "-space-x-1.5",
@@ -51,7 +51,7 @@ const sizeVariants = {
     popupAvatar: "w-7 h-7",
   },
   lg: {
-    container: "h-11 px-4 gap-2 text-sm",
+    container: "h-11 px-4 gap-2 text-body",
     icon: "w-[18px] h-[18px]",
     avatar: "w-6 h-6",
     avatarStack: "-space-x-2",
@@ -229,7 +229,7 @@ export function NativeLikesCounter({
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-xs font-medium text-muted-foreground">Liked by</span>
+              <span className="text-helper font-medium text-muted-foreground">Liked by</span>
               <span className="text-xs font-mono text-muted-foreground/60">{localCount.toLocaleString()}</span>
             </div>
 
@@ -253,7 +253,7 @@ export function NativeLikesCounter({
                         {user.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-xs text-foreground/80 group-hover:text-foreground transition-colors truncate">
+                    <span className="text-helper text-foreground/80 group-hover:text-foreground transition-colors truncate">
                       {user.name}
                     </span>
                   </motion.div>
@@ -275,12 +275,12 @@ export function NativeLikesCounter({
                       handleLoadMore()
                     }}
                     disabled={isLoadingMore}
-                    className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 text-helper text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
                     {isLoadingMore ? (
                       <>
                         <Loader2 className="w-3 h-3 animate-spin" />
-                        <LoadingText className="text-xs">Loading...</LoadingText>
+                        <LoadingText className="text-helper">Loading...</LoadingText>
                       </>
                     ) : (
                       <span>Load more {totalRemaining > 0 && `(${totalRemaining.toLocaleString()} more)`}</span>
@@ -288,7 +288,7 @@ export function NativeLikesCounter({
                   </button>
                 ) : totalRemaining > 0 ? (
                   <div className="flex items-center justify-center py-1">
-                    <span className="text-xs text-muted-foreground/60">+{totalRemaining.toLocaleString()} others</span>
+                    <span className="text-helper text-muted-foreground/60">+{totalRemaining.toLocaleString()} others</span>
                   </div>
                 ) : null}
               </motion.div>

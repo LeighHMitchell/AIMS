@@ -74,7 +74,7 @@ function ReportingOrgLine({ org, recipientCountries }: { org?: ReportingOrg | nu
   const country = getFirstRecipientCountry(recipientCountries);
 
   return (
-    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-xs text-muted-foreground">
+    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-helper text-muted-foreground">
       {org.logo && (
         <img
           src={org.logo}
@@ -211,7 +211,7 @@ export function ActivityCombobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'w-full justify-between font-normal h-auto min-h-[60px] px-3 py-3 text-sm border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal transition-colors',
+              'w-full justify-between font-normal h-auto min-h-[60px] px-3 py-3 text-body border-input hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:text-foreground whitespace-normal transition-colors',
               !value && 'text-muted-foreground',
               className
             )}
@@ -221,7 +221,7 @@ export function ActivityCombobox({
             {selectedActivity ? (
               <>
                 <div className="flex-1 min-w-0 text-left break-words">
-                  <span className="text-sm">
+                  <span className="text-body">
                     {getActivityTitle(selectedActivity)}
                     {selectedActivity.acronym && (
                       <span className="ml-1">
@@ -274,14 +274,14 @@ export function ActivityCombobox({
             <input
               ref={searchInputRef}
               placeholder="Search activities by title, IATI ID, or acronym..."
-              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-body outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="max-h-[300px] overflow-y-auto">
             {activities.length === 0 && (
-              <div className="py-6 text-center text-sm text-muted-foreground">
+              <div className="py-6 text-center text-body text-muted-foreground">
                 {loading ? 'Searching...' : searchQuery ? 'No activities found.' : 'Loading...'}
               </div>
             )}
@@ -303,7 +303,7 @@ export function ActivityCombobox({
                   )}
                 >
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm">
+                    <span className="text-body">
                       {title}
                       {activity.acronym && (
                         <span className="ml-1">

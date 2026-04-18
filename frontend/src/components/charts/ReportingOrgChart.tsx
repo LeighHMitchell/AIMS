@@ -171,7 +171,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
         <div className="text-center text-muted-foreground">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No data available</p>
-          <p className="text-sm">Try adjusting your filters to see results.</p>
+          <p className="text-body">Try adjusting your filters to see results.</p>
         </div>
       </div>
     );
@@ -253,19 +253,19 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-muted-foreground">
+                <TableCell className="py-3 px-3 text-body text-muted-foreground">
                   {org.org_type || '—'}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right text-foreground">
+                <TableCell className="py-3 px-3 text-body text-right text-foreground">
                   {formatCurrency(org.budget)}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right text-foreground">
+                <TableCell className="py-3 px-3 text-body text-right text-foreground">
                   {formatCurrency(org.disbursements)}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right text-foreground">
+                <TableCell className="py-3 px-3 text-body text-right text-foreground">
                   {formatCurrency(org.expenditures)}
                 </TableCell>
-                <TableCell className="py-3 px-3 text-sm text-right font-medium text-foreground">
+                <TableCell className="py-3 px-3 text-body text-right font-medium text-foreground">
                   {formatCurrency(org.totalSpending)}
                 </TableCell>
               </TableRow>
@@ -275,7 +275,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
       </div>
 
       {/* Table info */}
-      <div className="mt-4 text-sm text-muted-foreground">
+      <div className="mt-4 text-body text-muted-foreground">
         <p>
           <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organizations by total budget |
           <strong> Currency:</strong> {currency} |

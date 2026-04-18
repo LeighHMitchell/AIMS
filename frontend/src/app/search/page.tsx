@@ -223,7 +223,7 @@ function SearchPageContent() {
           {/* Searchable content badges - shown when no query */}
           {!query && (
             <div className="mt-6 text-center">
-              <p className="text-muted-foreground text-sm mb-3">Search across</p>
+              <p className="text-muted-foreground text-body mb-3">Search across</p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <Badge variant="outline">Activities</Badge>
                 <Badge variant="outline">Organisations</Badge>
@@ -237,7 +237,7 @@ function SearchPageContent() {
           
           {/* Results Summary - shown when there's a query */}
           {query && (
-            <div className="mt-4 text-sm text-muted-foreground">
+            <div className="mt-4 text-body text-muted-foreground">
               {loading ? (
                 <span>Searching...</span>
               ) : (

@@ -655,7 +655,7 @@ export default function ForwardSpendingSurveyTab({
           </div>
 
           {savingFss && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-body text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
             </div>
@@ -852,7 +852,7 @@ export default function ForwardSpendingSurveyTab({
                   </SelectContent>
                 </Select>
                 {fieldErrors.forecast_year && (
-                  <p className="text-sm text-destructive">{fieldErrors.forecast_year}</p>
+                  <p className="text-body text-destructive">{fieldErrors.forecast_year}</p>
                 )}
               </div>
 
@@ -870,7 +870,7 @@ export default function ForwardSpendingSurveyTab({
                   placeholder="0.00"
                 />
                 {fieldErrors.amount && (
-                  <p className="text-sm text-destructive">{fieldErrors.amount}</p>
+                  <p className="text-body text-destructive">{fieldErrors.amount}</p>
                 )}
               </div>
             </div>
@@ -896,7 +896,7 @@ export default function ForwardSpendingSurveyTab({
                   </SelectContent>
                 </Select>
                 {fieldErrors.currency && (
-                  <p className="text-sm text-destructive">{fieldErrors.currency}</p>
+                  <p className="text-body text-destructive">{fieldErrors.currency}</p>
                 )}
               </div>
 
@@ -911,7 +911,7 @@ export default function ForwardSpendingSurveyTab({
                   onChange={(e) => updateForecastField('value_date', e.target.value)}
                 />
                 {fieldErrors.value_date && (
-                  <p className="text-sm text-destructive">{fieldErrors.value_date}</p>
+                  <p className="text-body text-destructive">{fieldErrors.value_date}</p>
                 )}
               </div>
             </div>
@@ -921,7 +921,7 @@ export default function ForwardSpendingSurveyTab({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between min-h-[24px]">
-                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    <Label className="flex items-center gap-1.5 text-body font-medium">
                       Exchange Rate
                       <TooltipProvider>
                         <UITooltip>
@@ -929,14 +929,14 @@ export default function ForwardSpendingSurveyTab({
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p className="text-sm">The exchange rate used to convert the forecast value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
+                            <p className="text-body">The exchange rate used to convert the forecast value to USD. Automatically fetched from historical rates based on the value date. Toggle the switch to enter a manual rate instead.</p>
                           </TooltipContent>
                         </UITooltip>
                       </TooltipProvider>
                     </Label>
                     {modalForecast.currency !== 'USD' && (
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="fss_exchange_rate_mode" className="text-xs text-muted-foreground cursor-pointer">
+                        <Label htmlFor="fss_exchange_rate_mode" className="text-helper text-muted-foreground cursor-pointer">
                           {modalExchangeRateManual ? 'Manual' : 'Auto'}
                         </Label>
                         <Switch
@@ -982,18 +982,18 @@ export default function ForwardSpendingSurveyTab({
                       </Button>
                     )}
                     {modalExchangeRate != null && modalForecast.currency !== 'USD' && !isLoadingModalRate && (
-                      <span className="absolute right-10 top-2.5 text-xs text-muted-foreground select-all cursor-text">
+                      <span className="absolute right-10 top-2.5 text-helper text-muted-foreground select-all cursor-text">
                         1 {modalForecast.currency} = {modalExchangeRate.toFixed(6)} USD
                       </span>
                     )}
                   </div>
                   {modalRateError && (
-                    <p className="text-xs text-destructive">{modalRateError}</p>
+                    <p className="text-helper text-destructive">{modalRateError}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
-                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    <Label className="flex items-center gap-1.5 text-body font-medium">
                       USD Value
                       <TooltipProvider>
                         <UITooltip>
@@ -1001,13 +1001,13 @@ export default function ForwardSpendingSurveyTab({
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p className="text-sm">The forecast value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
+                            <p className="text-body">The forecast value converted to US Dollars using the exchange rate shown. This is calculated automatically from the original value and exchange rate.</p>
                           </TooltipContent>
                         </UITooltip>
                       </TooltipProvider>
                     </Label>
                   </div>
-                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-sm">
+                  <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-body">
                     {modalCalculatedUsdValue !== null ? (
                       <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                     ) : (

@@ -33,12 +33,12 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
     <div className="grid gap-6 md:grid-cols-2">
       {/* Response Time Overview */}
       <div className="space-y-4">
-        <h4 className="text-sm font-medium">Response Time Overview</h4>
+        <h4 className="text-body font-medium">Response Time Overview</h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-lg border p-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span className="text-sm">Average</span>
+              <span className="text-body">Average</span>
             </div>
             <p className="mt-1 text-2xl font-bold">
               {formatResponseTime(summary.avg_response_time)}
@@ -47,7 +47,7 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
           <div className="rounded-lg border p-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span className="text-sm">Median</span>
+              <span className="text-body">Median</span>
             </div>
             <p className="mt-1 text-2xl font-bold">
               {formatResponseTime(summary.median_response_time)}
@@ -57,7 +57,7 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
 
         {/* On-time vs Late */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-body">
             <span>On-Time Completion</span>
             <span className="font-medium text-foreground">{summary.on_time_rate}%</span>
           </div>
@@ -71,7 +71,7 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
               style={{ width: `${100 - summary.on_time_rate}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="flex justify-between text-helper text-muted-foreground">
             <span>On time</span>
             <span>Late</span>
           </div>
@@ -80,7 +80,7 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
 
       {/* By Priority */}
       <div className="space-y-4">
-        <h4 className="text-sm font-medium">Completion by Priority</h4>
+        <h4 className="text-body font-medium">Completion by Priority</h4>
         <div className="space-y-3">
           {byPriority.map((item) => {
             const colors: Record<string, { bar: string; text: string }> = {
@@ -92,7 +92,7 @@ export function ResponseTimeMetrics({ byType, byPriority, summary }: ResponseTim
 
             return (
               <div key={item.priority} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-body">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className={color.text}>
                       {getPriorityLabel(item.priority)}

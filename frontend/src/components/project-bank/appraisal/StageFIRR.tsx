@@ -44,9 +44,9 @@ function ComparisonTooltip({ active, payload, label }: any) {
           <div key={index} className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }} />
-              <span className="text-sm text-foreground">{entry.name}</span>
+              <span className="text-body text-foreground">{entry.name}</span>
             </div>
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-body font-medium text-foreground">
               {Math.abs(entry.value).toLocaleString('en-US')}
             </span>
           </div>
@@ -160,10 +160,10 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-1">Financial Analysis</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Refine the cost estimates. The Financial Internal Rate of Return (FIRR) is calculated in real-time from your refined figures.
         </p>
-        <div className="mt-3 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground space-y-1.5">
+        <div className="mt-3 p-3 bg-muted/50 rounded-lg text-helper text-muted-foreground space-y-1.5">
           <p className="font-medium text-foreground">How is the FIRR calculated?</p>
           <p>The FIRR is the discount rate at which the project's net present value (NPV) equals zero. For the calculation to work, your cash flows must include:</p>
           <ul className="list-disc ml-4 space-y-0.5">
@@ -208,14 +208,14 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
             const label = key === 'capex' ? 'Total CAPEX' : key === 'opex' ? 'Total OPEX' : 'Total Revenue';
             return (
               <div key={key} className="p-3 bg-muted/50 rounded-lg">
-                <div className="text-xs text-muted-foreground">{label}</div>
+                <div className="text-helper text-muted-foreground">{label}</div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-muted-foreground line-through">{formatCurrency(pVal)}</span>
+                  <span className="text-body text-muted-foreground line-through">{formatCurrency(pVal)}</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-sm font-semibold">{formatCurrency(rVal)}</span>
+                  <span className="text-body font-semibold">{formatCurrency(rVal)}</span>
                 </div>
                 {pVal > 0 && diff !== 0 && (
-                  <div className={cn('text-xs mt-0.5', diff > 0 ? (key === 'revenue' ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : (key === 'revenue' ? 'text-destructive' : 'text-[hsl(var(--success-icon))]'))}>
+                  <div className={cn('text-helper mt-0.5', diff > 0 ? (key === 'revenue' ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : (key === 'revenue' ? 'text-destructive' : 'text-[hsl(var(--success-icon))]'))}>
                     {diff > 0 ? '+' : ''}{pctChange.toFixed(1)}% from preliminary
                   </div>
                 )}
@@ -235,7 +235,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
               variant="outline"
               size="sm"
               onClick={() => updateField('firr_cost_table_data', [...preliminaryData])}
-              className="gap-1.5 text-xs"
+              className="gap-1.5 text-helper"
             >
               <Copy className="h-3 w-3" /> Reset to preliminary
             </Button>
@@ -253,28 +253,28 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
       {firrResult && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">FIRR <HelpTooltip text="Financial Internal Rate of Return — the discount rate at which NPV equals zero. Calculated from your refined figures." /></div>
+            <div className="text-helper text-muted-foreground">FIRR <HelpTooltip text="Financial Internal Rate of Return — the discount rate at which NPV equals zero. Calculated from your refined figures." /></div>
             <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {firrResult.firr !== null ? `${firrResult.firr.toFixed(1)}%` : 'N/A'}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-helper text-muted-foreground mt-1">
               {firrResult.firr !== null && firrResult.firr >= 10 ? 'Commercially viable' : 'Below threshold'}
             </div>
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10% — positive means the project adds value." /></div>
+            <div className="text-helper text-muted-foreground">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10% — positive means the project adds value." /></div>
             <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {formatCurrency(firrResult.npv_at_10)}
             </div>
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">Payback Year <HelpTooltip text="The year cumulative net cash flows become positive." /></div>
+            <div className="text-helper text-muted-foreground">Payback Year <HelpTooltip text="The year cumulative net cash flows become positive." /></div>
             <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {firrResult.payback_year || '—'}
             </div>
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">Total Investment <HelpTooltip text="Sum of all CAPEX and OPEX over the project life." /></div>
+            <div className="text-helper text-muted-foreground">Total Investment <HelpTooltip text="Sum of all CAPEX and OPEX over the project life." /></div>
             <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {formatCurrency(firrResult.total_investment)}
             </div>
@@ -330,25 +330,25 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
           <Label className="mb-2 block">Sensitivity Analysis <HelpTooltip text="Shows how FIRR changes under different cost and revenue scenarios." /></Label>
 
           <div className="overflow-x-auto border rounded-lg">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead className="bg-surface-muted">
                 <tr className="bg-surface-muted">
-                  <th className="text-left p-2 font-medium text-xs">Scenario</th>
-                  <th className="text-right p-2 font-medium text-xs">FIRR <HelpTooltip text="Financial Internal Rate of Return under this scenario." /></th>
-                  <th className="text-right p-2 font-medium text-xs">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10% under this scenario." /></th>
+                  <th className="text-left p-2 font-medium text-helper">Scenario</th>
+                  <th className="text-right p-2 font-medium text-helper">FIRR <HelpTooltip text="Financial Internal Rate of Return under this scenario." /></th>
+                  <th className="text-right p-2 font-medium text-helper">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10% under this scenario." /></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {sensitivityResults.map((s, i) => (
                   <tr key={i} className={i === 0 ? 'font-medium' : ''}>
-                    <td className="p-2 text-sm">
+                    <td className="p-2 text-body">
                       {s.label}
                       <HelpTooltip text={SENSITIVITY_SCENARIOS[i].tooltip} />
                     </td>
-                    <td className={cn('p-2 text-right tabular-nums text-sm', s.firr !== null && s.firr >= 10 ? 'text-[hsl(var(--success-icon))]' : 'text-amber-600')}>
+                    <td className={cn('p-2 text-right tabular-nums text-body', s.firr !== null && s.firr >= 10 ? 'text-[hsl(var(--success-icon))]' : 'text-amber-600')}>
                       {s.firr !== null ? `${s.firr.toFixed(1)}%` : 'N/A'}
                     </td>
-                    <td className={cn('p-2 text-right tabular-nums text-sm', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
+                    <td className={cn('p-2 text-right tabular-nums text-body', s.npv >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive')}>
                       {formatCurrency(s.npv)}
                     </td>
                   </tr>

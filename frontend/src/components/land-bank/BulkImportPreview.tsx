@@ -72,7 +72,7 @@ export function BulkImportPreview({ rows }: BulkImportPreviewProps) {
   return (
     <div>
       <div className="flex items-center gap-4 mb-3">
-        <span className="text-sm text-muted-foreground">
+        <span className="text-body text-muted-foreground">
           {rows.length} parcels found
         </span>
         <Badge variant="success">{validCount} valid</Badge>
@@ -81,7 +81,7 @@ export function BulkImportPreview({ rows }: BulkImportPreviewProps) {
 
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-body">
             <thead className="bg-surface-muted">
               <tr className="border-b bg-surface-muted">
                 <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8">#</th>
@@ -119,7 +119,7 @@ export function BulkImportPreview({ rows }: BulkImportPreviewProps) {
                     ) : (
                       <span className="flex items-center gap-1">
                         <AlertTriangle className="h-4 w-4 text-destructive" />
-                        <span className="text-xs text-destructive">{row.errors.join("; ")}</span>
+                        <span className="text-helper text-destructive">{row.errors.join("; ")}</span>
                       </span>
                     )}
                   </td>

@@ -314,7 +314,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                 className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-sm text-foreground">{entry.value}</span>
+              <span className="text-body text-foreground">{entry.value}</span>
             </li>
           )
         })}
@@ -337,7 +337,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-md">
           <div className="bg-surface-muted px-4 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">
+            <p className="font-semibold text-foreground text-body">
               <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs mr-1.5">
                 {dataPoint.code}
               </code>
@@ -345,7 +345,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
             </p>
           </div>
           <div className="overflow-y-auto max-h-[300px]">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 {nonZeroPayload.map((entry: any, index: number) => (
                   <tr key={index} className="border-b border-border last:border-b-0">
@@ -472,7 +472,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
     if (!data || data.length === 0) {
       return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
-          <p className="text-sm">No data available</p>
+          <p className="text-body">No data available</p>
         </div>
       )
     }
@@ -517,7 +517,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
               <p className="text-muted-foreground font-medium">No data available</p>
-              <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters</p>
+              <p className="text-body text-muted-foreground mt-2">Try adjusting your filters</p>
             </div>
           </div>
         </CardContent>
@@ -889,13 +889,13 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                         <TableCell className="text-right">
                           <div>
                             <div className="font-medium">{formatCurrency(item.plannedDisbursements)}</div>
-                            <div className="text-xs text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
+                            <div className="text-helper text-muted-foreground">{item.plannedPercentage.toFixed(1)}%</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div>
                             <div className="font-semibold" style={{ color: CHART_BAR_COLORS.actual }}>{formatCurrency(item.actualDisbursements)}</div>
-                            <div className="text-xs text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
+                            <div className="text-helper text-muted-foreground">{item.actualPercentage.toFixed(1)}%</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">

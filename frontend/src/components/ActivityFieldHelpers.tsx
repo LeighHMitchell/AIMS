@@ -212,7 +212,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">Completion Rating</h3>
+            <h3 className="text-body font-semibold text-foreground">Completion Rating</h3>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-lg font-bold ${status.color}`}>{completionPercentage}%</span>
@@ -233,7 +233,7 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">Data quality</span>
+            <span className="text-helper text-muted-foreground">Data quality</span>
             <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
@@ -251,11 +251,11 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
           <div className="space-y-4">
             {/* Completion Summary */}
             <div className="bg-muted rounded-md p-3">
-              <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+              <h4 className="text-body font-medium text-foreground mb-2 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />
                 How to Improve Your Rating
               </h4>
-              <p className="text-xs text-muted-foreground mb-2">
+              <p className="text-helper text-muted-foreground mb-2">
                 Complete missing fields to improve your activity's data quality and visibility.
               </p>
             </div>
@@ -265,12 +265,12 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
-                  <h4 className="text-sm font-semibold text-foreground">Required Fields</h4>
+                  <h4 className="text-body font-semibold text-foreground">Required Fields</h4>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">These fields are essential for publishing your activity:</p>
+                <p className="text-helper text-muted-foreground mb-2">These fields are essential for publishing your activity:</p>
                 <ul className="space-y-1">
                   {missingFields.required.map((field, idx) => (
-                    <li key={idx} className="text-xs text-foreground flex items-start gap-2 pl-4">
+                    <li key={idx} className="text-helper text-foreground flex items-start gap-2 pl-4">
                       <span className="text-muted-foreground mt-1">•</span>
                       <span>{field}</span>
                     </li>
@@ -284,12 +284,12 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 bg-muted0 rounded-full"></div>
-                  <h4 className="text-sm font-semibold text-foreground">Recommended Fields</h4>
+                  <h4 className="text-body font-semibold text-foreground">Recommended Fields</h4>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">Adding these will improve data quality and discoverability:</p>
+                <p className="text-helper text-muted-foreground mb-2">Adding these will improve data quality and discoverability:</p>
                 <ul className="space-y-1">
                   {missingFields.recommended.map((field, idx) => (
-                    <li key={idx} className="text-xs text-foreground flex items-start gap-2 pl-4">
+                    <li key={idx} className="text-helper text-foreground flex items-start gap-2 pl-4">
                       <span className="text-muted-foreground mt-1">•</span>
                       <span>{field}</span>
                     </li>
@@ -303,9 +303,9 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
               <div className="bg-muted border border-input rounded-md p-3">
                 <div className="flex items-center gap-2 text-foreground">
                   <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Perfect Score!</span>
+                  <span className="text-body font-medium">Perfect Score!</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-helper text-muted-foreground mt-1">
                   Your activity has excellent data quality. All required and recommended fields are complete.
                 </p>
               </div>
@@ -316,9 +316,9 @@ export const ActivityCompletionRating: React.FC<ActivityCompletionRatingProps> =
               <div className="bg-muted border border-input rounded-md p-3">
                 <div className="flex items-center gap-2 text-foreground mb-1">
                   <Clock className="w-4 h-4" />
-                  <span className="text-sm font-medium">Quick Tips</span>
+                  <span className="text-body font-medium">Quick Tips</span>
                 </div>
-                <ul className="text-xs text-muted-foreground space-y-1">
+                <ul className="text-helper text-muted-foreground space-y-1">
                   <li>• Focus on required fields first to enable publishing</li>
                   <li>• Add descriptions and target groups for better context</li>
                   <li>• Include financial data in the Finances tab</li>

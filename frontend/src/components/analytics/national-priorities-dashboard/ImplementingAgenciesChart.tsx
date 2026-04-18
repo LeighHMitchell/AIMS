@@ -163,14 +163,14 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
         <div className="bg-white p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground mb-1">{item.name}</p>
           {item.acronym !== item.name && (
-            <p className="text-xs text-muted-foreground mb-1">{item.acronym}</p>
+            <p className="text-helper text-muted-foreground mb-1">{item.acronym}</p>
           )}
           <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-body font-medium text-foreground">
               {formatCurrency(item.value)}
             </p>
             {item.activityCount > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 {item.activityCount} activities
               </p>
             )}
@@ -322,7 +322,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: item.fill }}
           />
-          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={item.name}>
+          <span className="text-helper text-muted-foreground truncate max-w-[80px]" title={item.name}>
             {item.acronym}
           </span>
         </div>
@@ -360,7 +360,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[160px] h-8 text-helper">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -430,7 +430,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
               <CardTitle className="text-base font-medium text-foreground truncate">
                 Implementing Agencies
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <CardDescription className="text-helper text-muted-foreground line-clamp-1 mt-0.5">
                 Organizations with implementing role
               </CardDescription>
             </div>
@@ -448,7 +448,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
           {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             This chart shows implementing agencies -- organizations responsible for the physical delivery of assistance on the ground. Compare their relative financial shares to understand which organizations carry out the most implementation work.
           </p>
         </CardContent>

@@ -149,11 +149,11 @@ export const IconUpload: React.FC<IconUploadProps> = ({
         <input {...getInputProps()} />
         <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
           <ImageIcon className="h-16 w-16 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium">
+          <p className="text-body font-medium">
             {isDragActive ? "Drop the icon here" : "Drag & drop an icon here"}
           </p>
-          <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-muted-foreground text-center">PNG, JPG, GIF up to 5MB (auto-compressed)</p>
+          <p className="text-helper mt-1">or click to select</p>
+          <p className="text-helper mt-2 text-muted-foreground text-center">PNG, JPG, GIF up to 5MB (auto-compressed)</p>
         </div>
       </div>
 

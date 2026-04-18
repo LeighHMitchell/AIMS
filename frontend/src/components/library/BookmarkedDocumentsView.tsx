@@ -180,7 +180,7 @@ export function BookmarkedDocumentsView({
     <div className="space-y-4">
       {/* Controls bar */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           {total} document{total !== 1 ? 's' : ''}
         </div>
         <div className="flex items-center gap-2">
@@ -271,7 +271,7 @@ export function BookmarkedDocumentsView({
       {totalPages > 1 && (
         <div className="bg-white rounded-lg border border-border shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
             </div>
             <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ export function BookmarkedDocumentsView({
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-body text-muted-foreground">
                 Page {page} of {totalPages}
               </span>
               <Button

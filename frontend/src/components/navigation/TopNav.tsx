@@ -124,14 +124,14 @@ export function TopNav({ user, onLogout }: TopNavProps) {
               <Link href="/login">
                 <button
                   onClick={onLogout}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-sm font-medium text-neutral-700 transition-colors"
+                  className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-body font-medium text-neutral-700 transition-colors"
                 >
                   <LogIn className="h-4 w-4" />
                   Sign In
                 </button>
               </Link>
               <Link href="/register">
-                <button className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-neutral-900 hover:bg-black text-sm font-medium text-white transition-colors">
+                <button className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-neutral-900 hover:bg-black text-body font-medium text-white transition-colors">
                   <UserPlus className="h-4 w-4" />
                   Create Account
                 </button>
@@ -150,7 +150,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                     name={getFullName(user)}
                     size="md"
                   />
-                  <span className="text-sm font-medium text-neutral-700">{getFullName(user)}</span>
+                  <span className="text-body font-medium text-neutral-700">{getFullName(user)}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[280px] p-2">
@@ -164,9 +164,9 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                       size="lg"
                     />
                     <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight truncate">{getFullName(user)}</p>
-                      <p className="text-xs leading-tight text-neutral-500 truncate">{user.email}</p>
-                      <p className="text-xs leading-tight text-neutral-400 truncate">
+                      <p className="text-body font-medium leading-tight truncate">{getFullName(user)}</p>
+                      <p className="text-helper leading-tight text-neutral-500 truncate">{user.email}</p>
+                      <p className="text-helper leading-tight text-neutral-400 truncate">
                         {user.organization?.name || user.organisation || 'No Organization'}
                       </p>
                     </div>

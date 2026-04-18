@@ -205,7 +205,7 @@ export function AutosaveFormWrapper({
                     clearError();
                     forceSave();
                   }}
-                  className="ml-4 px-3 py-1 bg-destructive text-white text-sm rounded hover:bg-destructive"
+                  className="ml-4 px-3 py-1 bg-destructive text-white text-body rounded hover:bg-destructive"
                 >
                   Retry
                 </button>

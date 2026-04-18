@@ -176,7 +176,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
           {error && (
-            <div className="flex items-center gap-2 p-4 text-sm text-destructive bg-destructive/10 rounded-lg">
+            <div className="flex items-center gap-2 p-4 text-body text-destructive bg-destructive/10 rounded-lg">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>
@@ -235,7 +235,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                         {selectedId === activity.id && (
                           <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
                         )}
-                        <h3 className="font-medium text-sm truncate">
+                        <h3 className="font-medium text-body truncate">
                           {activity.title}
                         </h3>
                       </div>
@@ -246,10 +246,10 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 text-helper text-muted-foreground">
                         <Badge 
                           variant="secondary" 
-                          className={`text-xs ${getStatusColor(activity.status)}`}
+                          className={`text-helper ${getStatusColor(activity.status)}`}
                         >
                           {activity.status}
                         </Badge>
@@ -262,7 +262,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                         )}
 
                         {activity.reportingOrgRef && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-helper">
                             {activity.reportingOrgRef}
                           </Badge>
                         )}

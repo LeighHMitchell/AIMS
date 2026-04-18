@@ -301,7 +301,7 @@ export function DocumentCardInline({
                 {isEditing ? (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="title-0" className="text-sm font-medium">Title <RequiredDot /></Label>
+                      <Label htmlFor="title-0" className="text-body font-medium">Title <RequiredDot /></Label>
                       <Input
                         id="title-0"
                         value={formData.title[0]?.text || ''}
@@ -311,7 +311,7 @@ export function DocumentCardInline({
                       />
                     </div>
                     <div>
-                      <Label htmlFor="url" className="text-sm font-medium">URL <RequiredDot /></Label>
+                      <Label htmlFor="url" className="text-body font-medium">URL <RequiredDot /></Label>
                       <Input
                         id="url"
                         type="url"
@@ -322,10 +322,10 @@ export function DocumentCardInline({
                         className="mt-1 h-10"
                       />
                       {urlMetadata.error && (
-                        <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
+                        <p className="text-helper text-amber-600 mt-1">{urlMetadata.error}</p>
                       )}
                       {urlMetadata.size && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-helper text-muted-foreground mt-1">
                           File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       )}
@@ -337,7 +337,7 @@ export function DocumentCardInline({
                       {primaryTitle?.text || 'Untitled Document'}
                     </h3>
                     {primaryDescription && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-body text-muted-foreground mt-1 line-clamp-2">
                         {primaryDescription.text}
                       </p>
                     )}
@@ -354,7 +354,7 @@ export function DocumentCardInline({
                         <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <div className="text-sm">
+                        <div className="text-body">
                           {validation.issues && validation.issues.length > 0 ? (
                             validation.issues.map((issue, i) => (
                               <div key={i}>{issue.message}</div>
@@ -389,7 +389,7 @@ export function DocumentCardInline({
             {/* Basic Badges - Always visible when not editing */}
             {!isEditing && (
               <div className="flex flex-wrap gap-2 mt-3">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-helper">
                   {getFormatLabel(formData.format)}
                 </Badge>
                 
@@ -397,14 +397,14 @@ export function DocumentCardInline({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-helper">
                           {category.name}
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
                         <div className="max-w-xs">
                           <p className="font-medium">{category.name} ({category.code})</p>
-                          <p className="text-sm">{category.description}</p>
+                          <p className="text-body">{category.description}</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -412,21 +412,21 @@ export function DocumentCardInline({
                 )}
                 
                 {formData.languageCodes && formData.languageCodes.length > 0 && (
-                  <Badge variant="outline" className="text-xs gap-1">
+                  <Badge variant="outline" className="text-helper gap-1">
                     <Languages className="w-3 h-3" />
                     {getLanguageNames(formData.languageCodes).join(', ')}
                   </Badge>
                 )}
                 
                 {formData.documentDate && (
-                  <Badge variant="outline" className="text-xs gap-1">
+                  <Badge variant="outline" className="text-helper gap-1">
                     <Calendar className="w-3 h-3" />
                     {format(new Date(formData.documentDate), 'MMM d, yyyy')}
                   </Badge>
                 )}
                 
                 {(formData.recipientCountries?.length || formData.recipientRegion) && (
-                  <Badge variant="outline" className="text-xs gap-1">
+                  <Badge variant="outline" className="text-helper gap-1">
                     <MapPin className="w-3 h-3" />
                     {formData.recipientCountries?.length
                       ? `${formData.recipientCountries.length} countries`
@@ -447,7 +447,7 @@ export function DocumentCardInline({
               <div className="grid grid-cols-2 gap-4">
                 {/* Format Selection */}
                 <div>
-                  <Label className="text-sm font-medium">
+                  <Label className="text-body font-medium">
                     Format (MIME Type)
                   </Label>
                   <DocumentFormatSelect
@@ -461,7 +461,7 @@ export function DocumentCardInline({
                 {/* Additional Titles */}
                 {formData.title.length > 1 && (
                   <div>
-                    <Label className="text-sm font-medium">Additional Titles</Label>
+                    <Label className="text-body font-medium">Additional Titles</Label>
                     <div className="space-y-2 mt-2">
                       {formData.title.slice(1).map((narrative, index) => (
                         <div key={index + 1} className="flex gap-2">
@@ -513,7 +513,7 @@ export function DocumentCardInline({
 
                 {/* Description Field */}
                 <div className="col-span-2">
-                  <Label className="text-sm font-medium">
+                  <Label className="text-body font-medium">
                     Description {isImage && '(Caption)'}
                   </Label>
                   {(formData.description || []).length === 0 ? (
@@ -589,7 +589,7 @@ export function DocumentCardInline({
 
                 {/* Category */}
                 <div>
-                  <Label className="text-sm font-medium">Document Category</Label>
+                  <Label className="text-body font-medium">Document Category</Label>
                   <DocumentCategorySelect
                     value={formData.categoryCode || ''}
                     onValueChange={(value) => setFormData(prev => ({ 
@@ -603,7 +603,7 @@ export function DocumentCardInline({
 
                 {/* Languages */}
                 <div>
-                  <Label className="text-sm font-medium">Document Languages</Label>
+                  <Label className="text-body font-medium">Document Languages</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {COMMON_LANGUAGES.slice(0, 10).map(lang => (
                       <Badge
@@ -620,7 +620,7 @@ export function DocumentCardInline({
 
                 {/* Document Date */}
                 <div>
-                  <Label htmlFor="documentDate" className="text-sm font-medium">Document Date</Label>
+                  <Label htmlFor="documentDate" className="text-body font-medium">Document Date</Label>
                   <Input
                     id="documentDate"
                     type="date"
@@ -635,7 +635,7 @@ export function DocumentCardInline({
 
                 {/* Recipient Countries */}
                 <div>
-                  <Label className="text-sm font-medium">Recipient Countries</Label>
+                  <Label className="text-body font-medium">Recipient Countries</Label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       value={countryInput}
@@ -673,8 +673,8 @@ export function DocumentCardInline({
                 {/* Validation Errors */}
                 {showValidation && !validation.ok && validation.issues && validation.issues.length > 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm font-medium text-amber-800 mb-1">Validation Issues</p>
-                    <ul className="text-xs text-amber-700 space-y-1">
+                    <p className="text-body font-medium text-amber-800 mb-1">Validation Issues</p>
+                    <ul className="text-helper text-amber-700 space-y-1">
                       {validation.issues.map((issue, i) => (
                         <li key={i}>• {issue.message}</li>
                       ))}
@@ -705,24 +705,24 @@ export function DocumentCardInline({
             ) : (
               <div className="space-y-4">
                 {/* Extended metadata display */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-body">
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground">URL</Label>
+                    <Label className="text-helper font-medium text-muted-foreground">URL</Label>
                     <p className="truncate">{formData.url}</p>
                   </div>
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground">Format</Label>
+                    <Label className="text-helper font-medium text-muted-foreground">Format</Label>
                     <p>{getFormatLabel(formData.format)}</p>
                   </div>
                   {formData.documentDate && (
                     <div>
-                      <Label className="text-xs font-medium text-muted-foreground">Date</Label>
+                      <Label className="text-helper font-medium text-muted-foreground">Date</Label>
                       <p>{format(new Date(formData.documentDate), 'MMM d, yyyy')}</p>
                     </div>
                   )}
                   {category && (
                     <div>
-                      <Label className="text-xs font-medium text-muted-foreground">Category</Label>
+                      <Label className="text-helper font-medium text-muted-foreground">Category</Label>
                       <p>{category.name}</p>
                     </div>
                   )}
@@ -730,10 +730,10 @@ export function DocumentCardInline({
 
                 {primaryDescription && (
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground">
+                    <Label className="text-helper font-medium text-muted-foreground">
                       {isImage ? 'Caption' : 'Description'}
                     </Label>
-                    <p className="text-sm text-foreground mt-1">{primaryDescription.text}</p>
+                    <p className="text-body text-foreground mt-1">{primaryDescription.text}</p>
                   </div>
                 )}
               </div>
@@ -748,7 +748,7 @@ export function DocumentCardInline({
               size="sm"
               variant="ghost"
               onClick={handleEdit}
-              className="text-xs gap-1"
+              className="text-helper gap-1"
             >
               <Pencil className="w-3 h-3 text-muted-foreground" />
               Edit
@@ -758,7 +758,7 @@ export function DocumentCardInline({
               size="sm"
               variant="ghost"
               onClick={handleOpen}
-              className="text-xs gap-1"
+              className="text-helper gap-1"
             >
               <ExternalLink className="w-3 h-3" />
               Open
@@ -768,7 +768,7 @@ export function DocumentCardInline({
               size="sm"
               variant="ghost"
               onClick={() => onDelete(formData.url)}
-              className="text-xs gap-1 text-destructive hover:text-destructive"
+              className="text-helper gap-1 text-destructive hover:text-destructive"
             >
               <Trash2 className="w-3 h-3 text-destructive" />
               Delete

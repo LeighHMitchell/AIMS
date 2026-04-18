@@ -152,10 +152,10 @@ export function FieldPreviewTooltip({
     >
       {/* Header */}
       <div className="px-3 py-2 border-b border-border">
-        <div className="font-medium text-sm text-foreground truncate">
+        <div className="font-medium text-body text-foreground truncate">
           {stats.fieldName}
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-2 text-helper text-muted-foreground mt-0.5">
           <span className="flex items-center gap-1">
             <DataTypeIcon dataType={stats.dataType} />
             {getDataTypeLabel(stats.dataType)}
@@ -169,12 +169,12 @@ export function FieldPreviewTooltip({
       <div className="p-3 space-y-2">
         {stats.topValues.length > 0 ? (
           <>
-            <div className="text-xs text-muted-foreground font-medium mb-2">
+            <div className="text-helper text-muted-foreground font-medium mb-2">
               Top values
             </div>
             <div className="space-y-1.5">
               {stats.topValues.map((item, index) => (
-                <div key={index} className="flex items-center gap-2 text-xs">
+                <div key={index} className="flex items-center gap-2 text-helper">
                   <div className="flex-1 truncate text-foreground" title={item.value}>
                     {formatValueForDisplay(item.value, stats.dataType)}
                   </div>
@@ -187,7 +187,7 @@ export function FieldPreviewTooltip({
             </div>
           </>
         ) : (
-          <div className="text-xs text-muted-foreground text-center py-2">
+          <div className="text-helper text-muted-foreground text-center py-2">
             No non-empty values
           </div>
         )}
@@ -195,16 +195,16 @@ export function FieldPreviewTooltip({
         {/* Footer stats */}
         <div className="pt-2 mt-2 border-t border-border space-y-1">
           {remainingCount > 0 && (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-helper text-muted-foreground">
               +{remainingCount.toLocaleString()} more values...
             </div>
           )}
           {stats.nullCount > 0 && (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-helper text-muted-foreground">
               ({stats.nullCount.toLocaleString()} empty values)
             </div>
           )}
-          <div className="text-xs text-muted-foreground">
+          <div className="text-helper text-muted-foreground">
             Total: {stats.totalCount.toLocaleString()} records
           </div>
         </div>

@@ -389,10 +389,10 @@ export function OrganizationSpendTrajectoryChart({
       return (
         <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="bg-muted px-3 py-2 border-b border-border">
-            <p className="font-semibold text-foreground text-sm">{formattedDate}</p>
+            <p className="font-semibold text-foreground text-body">{formattedDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <tbody>
                 <tr className="border-b border-border">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
@@ -438,7 +438,7 @@ export function OrganizationSpendTrajectoryChart({
     if (error || !data || displayData.length === 0) {
       return (
         <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-          <p className="text-sm">{error || 'No data available'}</p>
+          <p className="text-body">{error || 'No data available'}</p>
         </div>
       )
     }
@@ -562,7 +562,7 @@ export function OrganizationSpendTrajectoryChart({
             <div className="text-center">
               <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p className="font-medium">No activities with budget data found.</p>
-              <p className="text-sm mt-2 text-muted-foreground">
+              <p className="text-body mt-2 text-muted-foreground">
                 Add budget data to activities to view the spend trajectory.
               </p>
             </div>
@@ -804,7 +804,7 @@ export function OrganizationSpendTrajectoryChart({
           )}
         </div>
 
-        <div className="text-xs text-muted-foreground mt-4 space-y-1">
+        <div className="text-helper text-muted-foreground mt-4 space-y-1">
           <p>
             Compares <strong>actual cumulative disbursements</strong> (red) against an <strong>even-spend budget baseline</strong> (grey dashed).
             The striped area shows the gap between actual spend and baseline.

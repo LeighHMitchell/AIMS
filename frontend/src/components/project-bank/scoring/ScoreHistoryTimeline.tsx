@@ -29,7 +29,7 @@ interface ScoreHistoryTimelineProps {
 export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
   if (scores.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4">
+      <p className="text-body text-muted-foreground py-4">
         No score history yet. Scores are calculated when a project is submitted or reviewed.
       </p>
     )
@@ -45,7 +45,7 @@ export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
           <div key={score.id} className="flex items-start gap-4 relative">
             {/* Date column */}
             <div className="w-[52px] text-right flex-shrink-0 pt-1">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-helper text-muted-foreground">
                 {new Date(score.calculated_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -68,7 +68,7 @@ export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
                   <span className={`text-lg font-bold ${getScoreColor(Number(score.composite_score))}`}>
                     {Number(score.composite_score).toFixed(1)}
                   </span>
-                  <span className="text-xs text-muted-foreground">/100</span>
+                  <span className="text-helper text-muted-foreground">/100</span>
                   <Badge variant="outline" className={`text-[10px] ${STAGE_COLORS[score.stage]}`}>
                     {STAGE_LABELS[score.stage]}
                   </Badge>

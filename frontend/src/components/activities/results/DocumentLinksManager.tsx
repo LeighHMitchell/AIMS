@@ -117,7 +117,7 @@ export function DocumentLinksManager({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+        <Label className="text-body font-medium text-foreground flex items-center gap-2">
           <FileText className="h-4 w-4" />
           Document Links {linkType && `(${linkType})`}
         </Label>
@@ -126,7 +126,7 @@ export function DocumentLinksManager({
             size="sm"
             variant="outline"
             onClick={() => setShowAddForm(true)}
-            className="text-xs"
+            className="text-helper"
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Document
@@ -138,7 +138,7 @@ export function DocumentLinksManager({
       {showAddForm && !readOnly && (
         <form onSubmit={handleSubmit} className="bg-muted p-4 rounded border space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-foreground">Add Document Link</h4>
+            <h4 className="text-body font-medium text-foreground">Add Document Link</h4>
             <Button
               type="button"
               variant="ghost"
@@ -150,79 +150,79 @@ export function DocumentLinksManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">URL <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">URL <RequiredDot /></Label>
             <Input
               type="url"
               value={formData.url}
               onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
               placeholder="https://example.com/document.pdf"
               required
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Title <RequiredDot /></Label>
+            <Label className="text-helper text-foreground">Title <RequiredDot /></Label>
             <Input
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Document title"
               required
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-foreground">Description</Label>
+            <Label className="text-helper text-foreground">Description</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Brief description of the document"
               rows={2}
-              className="text-sm"
+              className="text-body"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label className="text-xs text-foreground">Format</Label>
+              <Label className="text-helper text-foreground">Format</Label>
               <Input
                 value={formData.format}
                 onChange={(e) => setFormData(prev => ({ ...prev, format: e.target.value }))}
                 placeholder="application/pdf"
-                className="text-sm"
+                className="text-body"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-foreground">Category Code</Label>
+              <Label className="text-helper text-foreground">Category Code</Label>
               <Input
                 value={formData.category_code}
                 onChange={(e) => setFormData(prev => ({ ...prev, category_code: e.target.value }))}
                 placeholder="A01"
-                className="text-sm"
+                className="text-body"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label className="text-xs text-foreground">Language</Label>
+              <Label className="text-helper text-foreground">Language</Label>
               <Input
                 value={formData.language_code}
                 onChange={(e) => setFormData(prev => ({ ...prev, language_code: e.target.value }))}
                 placeholder="en"
-                className="text-sm"
+                className="text-body"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-foreground">Document Date</Label>
+              <Label className="text-helper text-foreground">Document Date</Label>
               <Input
                 type="date"
                 value={formData.document_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, document_date: e.target.value }))}
-                className="text-sm"
+                className="text-body"
               />
             </div>
           </div>
@@ -252,7 +252,7 @@ export function DocumentLinksManager({
       {filteredDocuments.length > 0 && (
         <div className="space-y-2">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="flex items-start justify-between bg-white p-3 rounded border text-sm">
+            <div key={doc.id} className="flex items-start justify-between bg-white p-3 rounded border text-body">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -262,7 +262,7 @@ export function DocumentLinksManager({
                 </div>
                 
                 {doc.description && (
-                  <p className="text-xs text-muted-foreground ml-6 mb-2">
+                  <p className="text-helper text-muted-foreground ml-6 mb-2">
                     {typeof doc.description === 'string' ? doc.description : doc.description[defaultLanguage] || ''}
                   </p>
                 )}
@@ -272,7 +272,7 @@ export function DocumentLinksManager({
                     href={doc.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    className="text-helper text-blue-600 hover:text-blue-800 flex items-center gap-1"
                   >
                     <ExternalLink className="h-3 w-3" />
                     Open Link
@@ -289,14 +289,14 @@ export function DocumentLinksManager({
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {doc.category_code}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-helper text-muted-foreground">
                         - {getCategoryName(doc.category_code)}
                       </span>
                     </div>
                   )}
                   
                   {doc.document_date && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-helper text-muted-foreground">
                       {new Date(doc.document_date).toLocaleDateString()}
                     </span>
                   )}
@@ -319,7 +319,7 @@ export function DocumentLinksManager({
       )}
 
       {filteredDocuments.length === 0 && !showAddForm && (
-        <p className="text-xs text-muted-foreground italic">No documents attached</p>
+        <p className="text-helper text-muted-foreground italic">No documents attached</p>
       )}
       <ConfirmDialog />
     </div>

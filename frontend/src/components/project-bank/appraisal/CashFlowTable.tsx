@@ -151,13 +151,13 @@ export function CashFlowTable({
 
       {quickEntry && !readOnly && (
         <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-2">
-          <p className="text-xs text-foreground font-medium">
+          <p className="text-helper text-foreground font-medium">
             Enter totals — they will be distributed across years automatically.
           </p>
           <div className="grid grid-cols-3 gap-3">
             {columns.map(col => (
               <div key={col}>
-                <label className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
+                <label className="text-helper text-muted-foreground mb-0.5 flex items-center gap-1">
                   Total {COLUMN_LABELS[col]}
                   {COLUMN_HELP[col] && <HelpTooltip text={COLUMN_HELP[col]} />}
                 </label>
@@ -165,7 +165,7 @@ export function CashFlowTable({
                   value={quickTotals[col as keyof typeof quickTotals]}
                   onChange={v => setQuickTotals(prev => ({ ...prev, [col]: v }))}
                   placeholder="0"
-                  className="h-8 text-sm"
+                  className="h-8 text-body"
                 />
                 <div className="flex gap-0.5 mt-1.5">
                   {(['construction', 'operational', 'all'] as const).map(period => (
@@ -194,14 +194,14 @@ export function CashFlowTable({
       )}
 
       <div className="overflow-x-auto border rounded-lg">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <thead className="bg-surface-muted">
             <tr className="bg-surface-muted">
-              <th className="text-left p-2 font-medium text-xs w-20">Year</th>
+              <th className="text-left p-2 font-medium text-helper w-20">Year</th>
               {columns.map(col => {
                 const colHasData = !readOnly && rows.some(r => (r[col as keyof CostTableRow] as number) > 0);
                 return (
-                  <th key={col} className="text-right p-2 font-medium text-xs">
+                  <th key={col} className="text-right p-2 font-medium text-helper">
                     <span className="inline-flex items-center justify-end gap-1">
                       {COLUMN_LABELS[col]}
                       {COLUMN_HELP[col] && <HelpTooltip text={COLUMN_HELP[col]} />}
@@ -220,7 +220,7 @@ export function CashFlowTable({
                 );
               })}
               {showNet && (
-                <th className="text-right p-2 font-medium text-xs">
+                <th className="text-right p-2 font-medium text-helper">
                   <span className="inline-flex items-center justify-end gap-1">
                     Net
                     <HelpTooltip text="Net cash flow = Revenue minus CAPEX minus OPEX. A positive value means the project generates more income than it costs in that year." />
@@ -236,12 +236,12 @@ export function CashFlowTable({
               return (
                 <tr key={idx} className="hover:bg-muted/50">
                   <td className="p-1.5">
-                    <span className="text-sm tabular-nums">{row.year}</span>
+                    <span className="text-body tabular-nums">{row.year}</span>
                   </td>
                   {columns.map(col => (
                     <td key={col} className="p-1.5 text-right">
                       {readOnly ? (
-                        <span className="tabular-nums text-sm">{formatNum(row[col as keyof CostTableRow] as number)}</span>
+                        <span className="tabular-nums text-body">{formatNum(row[col as keyof CostTableRow] as number)}</span>
                       ) : (
                         <FormattedNumberInput
                           value={(row[col as keyof CostTableRow] as number) || null}
@@ -251,14 +251,14 @@ export function CashFlowTable({
                             onChange(updated);
                           }}
                           placeholder="0"
-                          className="h-7 text-sm text-right tabular-nums"
+                          className="h-7 text-body text-right tabular-nums"
                         />
                       )}
                     </td>
                   ))}
                   {showNet && (
                     <td className={cn(
-                      'p-1.5 text-right tabular-nums text-sm font-medium',
+                      'p-1.5 text-right tabular-nums text-body font-medium',
                       net >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
                     )}>
                       {formatNum(net)}
@@ -281,15 +281,15 @@ export function CashFlowTable({
           {showTotals && rows.length > 0 && (
             <tfoot>
               <tr className="border-t-2 font-medium bg-muted/30">
-                <td className="p-2 text-xs">Total</td>
+                <td className="p-2 text-helper">Total</td>
                 {columns.map(col => (
-                  <td key={col} className="p-2 text-right tabular-nums text-sm">
+                  <td key={col} className="p-2 text-right tabular-nums text-body">
                     {formatNum(totals[col as keyof typeof totals])}
                   </td>
                 ))}
                 {showNet && (
                   <td className={cn(
-                    'p-2 tabular-nums text-sm font-medium',
+                    'p-2 tabular-nums text-body font-medium',
                     totals.revenue - totals.capex - totals.opex >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive',
                   )} style={{ textAlign: 'right' }}>
                     {formatNum(totals.revenue - totals.capex - totals.opex)}
@@ -328,7 +328,7 @@ export function CashFlowTable({
             <button
               type="button"
               onClick={() => setTableExpanded(!tableExpanded)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1.5"
+              className="flex items-center gap-2 text-body text-muted-foreground hover:text-foreground transition-colors py-1.5"
             >
               <ChevronDown className={cn('h-4 w-4 transition-transform', tableExpanded && 'rotate-180')} />
               <span>{tableExpanded ? 'Hide' : 'Show'} detailed table ({rows.length} years)</span>
@@ -371,10 +371,10 @@ function CashFlowTooltip({ active, payload, label }: any) {
                 className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: entry.dataKey === 'Net' ? (entry.value >= 0 ? '#5f7f7a' : '#dc2625') : entry.color }}
               />
-              <span className="text-sm text-foreground">{entry.name}</span>
+              <span className="text-body text-foreground">{entry.name}</span>
             </div>
             <span className={cn(
-              'text-sm font-medium',
+              'text-body font-medium',
               entry.dataKey === 'Net' ? (entry.value >= 0 ? 'text-[hsl(var(--success-icon))]' : 'text-destructive') : 'text-foreground',
             )}>
               {Math.abs(entry.value).toLocaleString('en-US')}
@@ -483,7 +483,7 @@ function CashFlowChart({
               type="button"
               onClick={() => handleLegendClick(entry.dataKey)}
               className={cn(
-                'flex items-center gap-1.5 text-xs transition-opacity',
+                'flex items-center gap-1.5 text-helper transition-opacity',
                 hidden ? 'opacity-30' : 'opacity-100',
               )}
             >

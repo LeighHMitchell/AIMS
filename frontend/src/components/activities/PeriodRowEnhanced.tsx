@@ -161,12 +161,12 @@ export function PeriodRowEnhanced({
     return (
       <div className="grid grid-cols-6 gap-2 items-center px-3 py-2 bg-muted rounded-lg border border-input">
         {/* Facet */}
-        <div className="text-xs font-medium">
+        <div className="text-helper font-medium">
           {period.facet}
         </div>
 
         {/* Start Value (Baseline) - Read only */}
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           {indicator.baseline ? formatValue(indicator.baseline.value, indicator.measure) : '—'}
         </div>
 
@@ -183,7 +183,7 @@ export function PeriodRowEnhanced({
                 target_value: value === '' ? undefined : parseFloat(value) 
               }));
             }}
-            className="h-7 text-xs"
+            className="h-7 text-helper"
             placeholder="Target"
           />
           <Input
@@ -191,7 +191,7 @@ export function PeriodRowEnhanced({
             onChange={(e) => 
               setEditForm(prev => ({ ...prev, target_comment: e.target.value }))
             }
-            className="h-6 text-xs"
+            className="h-6 text-helper"
             placeholder="Comment"
           />
         </div>
@@ -209,7 +209,7 @@ export function PeriodRowEnhanced({
                 actual_value: value === '' ? undefined : parseFloat(value) 
               }));
             }}
-            className="h-7 text-xs"
+            className="h-7 text-helper"
             placeholder="Current"
           />
           <Input
@@ -217,13 +217,13 @@ export function PeriodRowEnhanced({
             onChange={(e) => 
               setEditForm(prev => ({ ...prev, actual_comment: e.target.value }))
             }
-            className="h-6 text-xs"
+            className="h-6 text-helper"
             placeholder="Comment"
           />
         </div>
 
         {/* Achievement % - Auto calculated */}
-        <div className="text-xs">
+        <div className="text-helper">
           {editForm.target_value && editForm.actual_value 
             ? `${Math.round((editForm.actual_value / editForm.target_value) * 100)}%`
             : '—'
@@ -264,12 +264,12 @@ export function PeriodRowEnhanced({
       status.color === 'gray' && "bg-muted border border-border"
     )}>
       {/* Facet */}
-      <div className="text-xs font-medium">
+      <div className="text-helper font-medium">
         {period.facet}
       </div>
 
       {/* Start Value (Baseline) */}
-      <div className="text-xs">
+      <div className="text-helper">
         <div className="font-medium text-foreground">
           {indicator.baseline ? formatValue(indicator.baseline.value, indicator.measure) : '—'}
         </div>
@@ -279,7 +279,7 @@ export function PeriodRowEnhanced({
       </div>
 
       {/* Target */}
-      <div className="text-xs">
+      <div className="text-helper">
         <div className="font-medium text-foreground">
           {formatValue(period.target_value, indicator.measure)}
         </div>
@@ -291,7 +291,7 @@ export function PeriodRowEnhanced({
       </div>
 
       {/* Current */}
-      <div className="text-xs">
+      <div className="text-helper">
         <div className="font-medium text-foreground flex items-center gap-1">
           {formatValue(period.actual_value, indicator.measure)}
           {progress && (
@@ -312,7 +312,7 @@ export function PeriodRowEnhanced({
         {progress && (
           <HelpTextTooltip>
             <div className={cn(
-              "text-xs",
+              "text-helper",
               progress.isPositive ? "text-foreground" : "text-muted-foreground"
             )}>
               {progress.isPositive ? '+' : ''}{progress.percentChange.toFixed(1)}% from baseline
@@ -334,7 +334,7 @@ export function PeriodRowEnhanced({
               )
             })}
             <span className={cn(
-              "text-xs font-medium",
+              "text-helper font-medium",
               status.color === 'gray-900' && "text-foreground",
               status.color === 'gray-600' && "text-foreground",
               status.color === 'gray-500' && "text-muted-foreground",
@@ -354,7 +354,7 @@ export function PeriodRowEnhanced({
           )}
         />
         <span className={cn(
-          "text-xs",
+          "text-helper",
           status.color === 'gray-900' && "text-foreground",
           status.color === 'gray-600' && "text-muted-foreground",
           status.color === 'gray-500' && "text-muted-foreground",
@@ -366,7 +366,7 @@ export function PeriodRowEnhanced({
 
       {/* Period */}
       <div className="flex items-center justify-between">
-        <div className="text-xs">
+        <div className="text-helper">
           <div className="font-medium text-foreground">
             {formatDateRange()}
           </div>

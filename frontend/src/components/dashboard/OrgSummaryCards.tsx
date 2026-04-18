@@ -49,7 +49,7 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
-        <p className="text-sm text-destructive">Failed to load dashboard statistics: {error}</p>
+        <p className="text-body text-destructive">Failed to load dashboard statistics: {error}</p>
       </div>
     );
   }
@@ -102,14 +102,14 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
           onClick={card.onClick}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-body font-medium text-muted-foreground">
               {card.title}
             </CardTitle>
             <card.icon className={`h-4 w-4 ${card.color}`} />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">{card.value}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-helper text-muted-foreground mt-1">
               {card.description}
             </p>
           </CardContent>

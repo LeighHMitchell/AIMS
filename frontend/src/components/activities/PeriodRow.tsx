@@ -140,13 +140,13 @@ export function PeriodRow({
           <Input
             value={editForm.facet}
             onChange={(e) => setEditForm(prev => ({ ...prev, facet: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-8 text-helper"
             placeholder="Total"
           />
         </div>
 
         {/* Baseline (read-only) */}
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           {indicator.baseline ? formatValue(indicator.baseline.value, indicator.measure) : '—'}
         </div>
 
@@ -160,7 +160,7 @@ export function PeriodRow({
               ...prev, 
               target_value: parseFloat(e.target.value) || undefined 
             }))}
-            className="h-8 text-xs"
+            className="h-8 text-helper"
             placeholder="0"
           />
         </div>
@@ -175,13 +175,13 @@ export function PeriodRow({
               ...prev, 
               actual_value: parseFloat(e.target.value) || undefined 
             }))}
-            className="h-8 text-xs"
+            className="h-8 text-helper"
             placeholder="0"
           />
         </div>
 
         {/* Percentage (calculated) */}
-        <div className="text-xs">
+        <div className="text-helper">
           {editForm.target_value && editForm.actual_value 
             ? `${Math.round((editForm.actual_value / editForm.target_value) * 100)}%`
             : '—'
@@ -221,17 +221,17 @@ export function PeriodRow({
       status.color === 'gray' && "bg-muted border border-border"
     )}>
       {/* Facet */}
-      <div className="text-xs font-medium">
+      <div className="text-helper font-medium">
         {period.facet}
       </div>
 
       {/* Baseline */}
-      <div className="text-xs text-muted-foreground">
+      <div className="text-helper text-muted-foreground">
         {indicator.baseline ? formatValue(indicator.baseline.value, indicator.measure) : '—'}
       </div>
 
       {/* Target */}
-      <div className="text-xs">
+      <div className="text-helper">
         <div className="font-medium">
           {formatValue(period.target_value, indicator.measure)}
         </div>
@@ -243,7 +243,7 @@ export function PeriodRow({
       </div>
 
       {/* Actual */}
-      <div className="text-xs">
+      <div className="text-helper">
         <div className="font-medium">
           {formatValue(period.actual_value, indicator.measure)}
         </div>
@@ -264,7 +264,7 @@ export function PeriodRow({
           status.color === 'gray' && "text-muted-foreground"
         )} />
         <span className={cn(
-          "text-xs font-medium",
+          "text-helper font-medium",
           status.color === 'green' && "text-green-700",
           status.color === 'yellow' && "text-yellow-700",
           status.color === 'red' && "text-destructive",
@@ -276,7 +276,7 @@ export function PeriodRow({
 
       {/* Period & Actions */}
       <div className="flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-helper text-muted-foreground">
           {formatDateRange(period.period_start, period.period_end)}
         </div>
         

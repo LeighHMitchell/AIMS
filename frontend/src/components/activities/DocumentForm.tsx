@@ -231,7 +231,7 @@ export function DocumentForm({
           <div className="space-y-6 pr-4">
             {/* Link Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <h3 className="text-body font-medium mb-3 flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 Link Information
               </h3>
@@ -248,7 +248,7 @@ export function DocumentForm({
                             <HelpCircle className="w-3 h-3 text-muted-foreground" />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="text-sm">
+                        <PopoverContent className="text-body">
                           The document URL must use HTTPS and be publicly accessible.
                         </PopoverContent>
                       </Popover>
@@ -263,10 +263,10 @@ export function DocumentForm({
                       className="mt-1"
                     />
                     {urlMetadata.error && (
-                      <p className="text-xs text-amber-600 mt-1">{urlMetadata.error}</p>
+                      <p className="text-helper text-amber-600 mt-1">{urlMetadata.error}</p>
                     )}
                     {urlMetadata.size && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-helper text-muted-foreground mt-1">
                         File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     )}
@@ -289,7 +289,7 @@ export function DocumentForm({
                         <SelectItem key={mime} value={mime}>
                           <div>
                             <div className="font-medium">{label}</div>
-                            <div className="text-xs text-muted-foreground">{mime}</div>
+                            <div className="text-helper text-muted-foreground">{mime}</div>
                           </div>
                         </SelectItem>
                       ))}
@@ -303,7 +303,7 @@ export function DocumentForm({
             
             {/* Metadata Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <h3 className="text-body font-medium mb-3 flex items-center gap-2">
                 <Info className="w-4 h-4" />
                 Metadata
               </h3>
@@ -476,7 +476,7 @@ export function DocumentForm({
             
             {/* Geography Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3">Geography</h3>
+              <h3 className="text-body font-medium mb-3">Geography</h3>
               
               <div className="space-y-4">
                 {/* Recipient Countries */}
@@ -576,8 +576,8 @@ export function DocumentForm({
             {/* Validation Errors */}
             {showValidation && !validation.ok && validation.issues && validation.issues.length > 0 && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-sm font-medium text-amber-800 mb-1">Validation Issues</p>
-                <ul className="text-xs text-amber-700 space-y-1">
+                <p className="text-body font-medium text-amber-800 mb-1">Validation Issues</p>
+                <ul className="text-helper text-amber-700 space-y-1">
                   {validation.issues.map((issue, i) => (
                     <li key={i}>• {issue.message}</li>
                   ))}

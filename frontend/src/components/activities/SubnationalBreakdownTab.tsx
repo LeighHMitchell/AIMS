@@ -571,15 +571,15 @@ export function SubnationalBreakdownTab({
           {/* Show all regions in read-only mode when nationwide is selected */}
           {isNationwide && (
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-foreground">Nationwide Distribution (Equal across all locations)</h4>
+              <h4 className="text-body font-medium text-foreground">Nationwide Distribution (Equal across all locations)</h4>
               <div className="border rounded-lg overflow-hidden">
                 <div className="max-h-96 overflow-y-auto p-4 space-y-2">
                   {Object.entries(breakdowns)
                     .sort(([a], [b]) => a.localeCompare(b))
                     .map(([regionName, percentage]) => (
                       <div key={regionName} className="flex items-center justify-between p-2 bg-muted rounded">
-                        <span className="text-sm font-medium">{regionName}</span>
-                        <span className="text-sm text-muted-foreground">{percentage.toFixed(2)}%</span>
+                        <span className="text-body font-medium">{regionName}</span>
+                        <span className="text-body text-muted-foreground">{percentage.toFixed(2)}%</span>
                       </div>
                     ))}
                 </div>

@@ -158,13 +158,13 @@ function SidebarStep({
       <div className="flex flex-col">
         <span
           className={cn(
-            'text-sm font-medium transition-colors duration-300',
+            'text-body font-medium transition-colors duration-300',
             isCurrent || isCompleted ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
           {step.name}
         </span>
-        <span className="text-xs text-muted-foreground/70">{step.description}</span>
+        <span className="text-helper text-muted-foreground/70">{step.description}</span>
       </div>
     </div>
   );
@@ -185,10 +185,10 @@ function ReviewItem({
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-border/30 bg-background/60 p-3 transition-colors hover:bg-background/80">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dt className="text-body text-muted-foreground">{label}</dt>
       <dd
         className={cn(
-          'text-sm font-medium text-right max-w-[200px] truncate',
+          'text-body font-medium text-right max-w-[200px] truncate',
           isEmpty ? 'text-muted-foreground/50 italic' : 'text-foreground'
         )}
       >
@@ -418,7 +418,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
       toast.success(
         <div className="flex flex-col gap-2">
           <div className="font-semibold">Activity created successfully!</div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-body text-muted-foreground">
             You can view it in your portfolio or continue editing.
           </div>
           <Button
@@ -528,7 +528,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold">Quick Add Activity</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     Create a new activity with essential information
                   </p>
                 </div>
@@ -571,7 +571,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                       <h3 className="text-xl font-semibold text-foreground">
                         {STEPS[currentStep - 1].name}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body text-muted-foreground">
                         {currentStep === 1 && 'Enter the basic information for your activity'}
                         {currentStep === 2 && 'Set the location and timeline'}
                         {currentStep === 3 && 'Configure default financial settings'}
@@ -599,12 +599,12 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             autoFocus
                           />
                           {validationErrors.title && (
-                            <p className="text-xs text-destructive flex items-center gap-1">
+                            <p className="text-helper text-destructive flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" />
                               {validationErrors.title}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             This will be the main identifier for your activity.
                           </p>
                         </div>
@@ -620,7 +620,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             rows={3}
                             className="bg-background/60"
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             A short overview of what the activity aims to achieve.
                           </p>
                         </div>
@@ -638,7 +638,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             dropdownId="quick-add-status"
                             error={validationErrors.activityStatus}
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Current stage of the activity lifecycle
                           </p>
                         </div>
@@ -661,7 +661,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             dropdownId="quick-add-country"
                             error={validationErrors.countryCode}
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Primary country where the activity takes place
                           </p>
                         </div>
@@ -693,7 +693,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                               )}
                             />
                             {validationErrors.plannedEndDate && (
-                              <p className="text-xs text-destructive flex items-center gap-1">
+                              <p className="text-helper text-destructive flex items-center gap-1">
                                 <AlertCircle className="h-3 w-3" />
                                 {validationErrors.plannedEndDate}
                               </p>
@@ -716,7 +716,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             disabled={isCreating}
                             dropdownId="quick-add-currency"
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Default currency for financial transactions
                           </p>
                         </div>
@@ -731,7 +731,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             disabled={isCreating}
                             dropdownId="quick-add-aid-type"
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Type of aid being provided
                           </p>
                         </div>
@@ -746,7 +746,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             disabled={isCreating}
                             dropdownId="quick-add-finance-type"
                           />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-helper text-muted-foreground">
                             Classification of financing mechanism (e.g., grant, loan)
                           </p>
                         </div>
@@ -812,7 +812,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                         {/* Organization Info */}
                         {(user?.organisation || user?.organization?.name) && (
                           <Alert className="border-primary/20 bg-primary/5">
-                            <AlertDescription className="text-sm">
+                            <AlertDescription className="text-body">
                               <strong>Reporting Organization:</strong>{' '}
                               {user.organization?.name || user.organisation}
                               {user.organization?.acronym && ` (${user.organization.acronym})`}

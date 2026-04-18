@@ -188,7 +188,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Failed to load bookmarked organizations: {error}</p>
+          <p className="text-body text-destructive">Failed to load bookmarked organizations: {error}</p>
         </CardContent>
       </Card>
     );
@@ -245,8 +245,8 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
         {organizations.length === 0 ? (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground mb-2">No bookmarked organizations</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-body text-muted-foreground mb-2">No bookmarked organizations</p>
+            <p className="text-helper text-muted-foreground">
               Bookmark organizations from the organization profile or organization cards to see them here.
             </p>
           </div>
@@ -334,7 +334,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                         </div>
                       )}
                       <div>
-                        <p className="text-sm text-foreground" title={organization.name}>
+                        <p className="text-body text-foreground" title={organization.name}>
                           {organization.name}
                           {organization.acronym && (
                             <span> ({organization.acronym})</span>
@@ -344,22 +344,22 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       {organization.organisation_type_name || organization.organisation_type || '-'}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       {organization.country_represented || organization.country || '-'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="text-sm text-foreground">
+                    <span className="text-body text-foreground">
                       {organization.activeProjects || 0}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs text-muted-foreground" title={format(new Date(organization.updated_at), 'PPpp')}>
+                    <span className="text-helper text-muted-foreground" title={format(new Date(organization.updated_at), 'PPpp')}>
                       {formatDistanceToNow(new Date(organization.updated_at), { addSuffix: true })}
                     </span>
                   </TableCell>
