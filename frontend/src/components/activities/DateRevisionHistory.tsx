@@ -135,7 +135,7 @@ export function DateRevisionHistory({
         <div className="max-h-64 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-border border-t-foreground"></div>
               <span className="ml-2 text-sm text-muted-foreground">Loading history...</span>
             </div>
           ) : error ? (

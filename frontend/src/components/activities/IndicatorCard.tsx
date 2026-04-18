@@ -114,7 +114,7 @@ export function IndicatorCard({
 
   // Handle deleting indicator
   const handleDeleteIndicator = async () => {
-    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this indicator?', description: 'This will also delete all its periods and baseline data. This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteIndicator(indicator.id);
       if (success) {
         onUpdate?.();

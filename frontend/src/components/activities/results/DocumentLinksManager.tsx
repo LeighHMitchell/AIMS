@@ -79,7 +79,7 @@ export function DocumentLinksManager({
   };
 
   const handleDelete = async (documentId: string) => {
-    if (await confirm({ title: 'Delete document link?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete document link?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteDocumentLink(entityType, entityId, documentId);
       if (success) {
         onUpdate();

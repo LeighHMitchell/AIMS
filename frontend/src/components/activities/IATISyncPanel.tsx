@@ -485,39 +485,30 @@ export function IATISyncPanel({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-semibold text-foreground">IATI Link</CardTitle>
-              <HelpTextTooltip content="This tab controls synchronisation with the IATI Registry and Datastore. Enabling sync ensures that updates made to the activity in this system are reflected in your published IATI file, maintaining consistency between internal records and the official public dataset.">
-                <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
-              </HelpTextTooltip>
-            </div>
-            <CardDescription>
-              Synchronize this activity with the IATI Datastore to ensure data consistency
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Sync Status Banner */}
-            <div className={`flex items-center justify-between p-3 rounded-lg border ${syncBanner.bg}`}>
-              <div className="flex items-center gap-2">
-                {syncBanner.icon}
-                <span className={`text-sm font-medium ${syncBanner.text}`}>
-                  {syncBanner.label}
-                </span>
-                {syncBanner.detail && (
-                  <span className="text-xs text-muted-foreground">({syncBanner.detail})</span>
-                )}
-              </div>
-              <Badge variant={syncStatusDisplay.variant} className="flex items-center gap-1">
-                {syncStatusDisplay.icon}
-                {syncStatusDisplay.text}
-              </Badge>
-            </div>
-
-            {/* IATI Identifier Input */}
+      {/* Plain instruction line — matches Excel / XML Import below-header pattern. */}
+      <p className="text-sm text-muted-foreground">
+        Sync this activity with the IATI Datastore so your published record and your internal
+        record stay consistent. Enable auto-sync to keep updates flowing automatically.
+      </p>
+      <div className="space-y-4">
+            {/* IATI Identifier + inline sync status — single grouped block, no separate chip bar. */}
             <div className="space-y-2">
-              <Label htmlFor="iati-identifier">IATI Identifier</Label>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label htmlFor="iati-identifier">IATI Identifier</Label>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    {syncBanner.icon}
+                    <span className={`font-medium ${syncBanner.text}`}>{syncBanner.label}</span>
+                    {syncBanner.detail && (
+                      <span className="text-muted-foreground">({syncBanner.detail})</span>
+                    )}
+                  </span>
+                  <Badge variant={syncStatusDisplay.variant} className="flex items-center gap-1">
+                    {syncStatusDisplay.icon}
+                    {syncStatusDisplay.text}
+                  </Badge>
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Input
                   id="iati-identifier"
@@ -621,8 +612,7 @@ export function IATISyncPanel({
                 </CollapsibleContent>
               </Collapsible>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
       {/* Sync History */}
       <Card>

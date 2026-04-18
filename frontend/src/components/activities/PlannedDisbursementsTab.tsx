@@ -2671,21 +2671,30 @@ export default function PlannedDisbursementsTab({
       <Sheet open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <SheetContent side="bottom" className="max-w-md mx-auto">
           <SheetHeader>
-            <SheetTitle>Delete Planned Disbursement</SheetTitle>
+            <SheetTitle>Delete this planned disbursement?</SheetTitle>
             <SheetDescription>
-              Are you sure you want to delete this planned disbursement? This action cannot be undone.
+              {(() => {
+                const d = disbursements.find(x => x.id === deleteConfirmId);
+                if (!d) return "This planned disbursement will be permanently deleted. This can't be undone.";
+                const amount = d.amount != null ? `${d.currency || ''} ${Number(d.amount).toLocaleString()}`.trim() : null;
+                const period = d.period_start && d.period_end ? `${d.period_start} → ${d.period_end}` : null;
+                const details = [amount, period].filter(Boolean).join(' • ');
+                return details
+                  ? `This disbursement (${details}) will be permanently deleted. This can't be undone.`
+                  : "This planned disbursement will be permanently deleted. This can't be undone.";
+              })()}
             </SheetDescription>
           </SheetHeader>
           <SheetFooter className="flex-row gap-2 mt-4">
             <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="flex-1">
-              Cancel
+              Keep
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               className="flex-1"
             >
-              Delete Disbursement
+              Delete disbursement
             </Button>
           </SheetFooter>
         </SheetContent>

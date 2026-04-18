@@ -62,7 +62,7 @@ export function PeriodRow({
 
   // Handle deleting period
   const handleDeletePeriod = async () => {
-    if (await confirm({ title: 'Delete this period?', description: 'This action cannot be undone. The period and all its data will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this period?', description: 'This can’t be undone. The period and all its data will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deletePeriod(period.id);
       if (success) {
         onUpdate?.();

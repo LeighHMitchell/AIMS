@@ -11,12 +11,15 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button';
 
 interface ConfirmOptions {
   title: string;
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** When true, the confirm button uses the destructive (red) variant. */
+  destructive?: boolean;
 }
 
 export function useConfirmDialog() {
@@ -47,6 +50,11 @@ export function useConfirmDialog() {
     resolveRef.current = null;
   }, []);
 
+  // Auto-detect destructive intent from the title if not explicitly set.
+  // Any dialog whose title contains "delete" or "remove" is treated as destructive
+  // (red confirm button) unless the caller opts out with destructive: false.
+  const isDestructive = options.destructive ?? /\b(delete|remove)\b/i.test(options.title);
+
   const ConfirmDialog = useCallback(() => (
     <AlertDialog open={open} onOpenChange={(v) => { if (!v) handleCancel(); }}>
       <AlertDialogContent>
@@ -58,13 +66,16 @@ export function useConfirmDialog() {
           <AlertDialogCancel onClick={handleCancel}>
             {options.cancelLabel || 'Cancel'}
           </AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm}>
+          <AlertDialogAction
+            onClick={handleConfirm}
+            className={isDestructive ? buttonVariants({ variant: 'destructive' }) : undefined}
+          >
             {options.confirmLabel || 'Confirm'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  ), [open, options, handleConfirm, handleCancel]);
+  ), [open, options, handleConfirm, handleCancel, isDestructive]);
 
   return { confirm, ConfirmDialog };
 }

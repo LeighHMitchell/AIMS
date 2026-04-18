@@ -93,13 +93,18 @@ export default function ActivityEditorNavigation({
       ]
     },
     {
-      title: "Strategic Alignment",
+      title: "Alignment",
       sections: [
         { id: "national_plans", label: "Plan Alignment" },
         { id: "sdg", label: "SDG Alignment" },
-        { id: "tags", label: "Tags" },
-        { id: "working_groups", label: "Working Groups" },
         { id: "policy_markers", label: "Policy Markers" }
+      ]
+    },
+    {
+      title: "Classification",
+      sections: [
+        { id: "tags", label: "Tags" },
+        { id: "working_groups", label: "Working Groups" }
       ]
     },
     {
@@ -172,7 +177,8 @@ export default function ActivityEditorNavigation({
                 // Add subtle visual indicator for linked scrollable groups
                 (group.title === "Activity Overview" || group.title === "Locations" ||
                  group.title === "Stakeholders" ||
-                 group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
+                 group.title === "Funding & Delivery" || group.title === "Alignment" ||
+                 group.title === "Classification" ||
                  group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-border pl-1"
               )}>
                 {group.sections.map((section) => {

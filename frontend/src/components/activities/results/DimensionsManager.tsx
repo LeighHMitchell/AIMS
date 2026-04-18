@@ -70,7 +70,7 @@ export function DimensionsManager({
   };
 
   const handleDelete = async (dimensionId: string) => {
-    if (await confirm({ title: 'Delete this dimension?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this dimension?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteDimension(entityType, entityId, dimensionId);
       if (success) {
         onUpdate();

@@ -192,7 +192,7 @@ export default function ForwardSpendingSurveyTab({
 
   // Delete FSS
   const deleteFss = async () => {
-    if (!(await confirm({ title: 'Delete Forward Spending Survey?', description: 'This will remove all forecasts. This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete Forward Spending Survey?', description: 'This will remove all forecasts. This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' }))) {
       return;
     }
 
@@ -450,13 +450,15 @@ export default function ForwardSpendingSurveyTab({
 
   // Delete forecast
   const deleteForecast = async (forecastId: string) => {
-    if (!(await confirm({ title: 'Delete this forecast?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete this forecast?', description: "The forecast will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' }))) {
       return;
     }
 
+    const snapshot = forecasts.find(f => f.id === forecastId);
+
     try {
       setDeleteLoading(forecastId);
-      
+
       const response = await apiFetch(`/api/fss/forecasts?id=${forecastId}`, {
         method: 'DELETE'
       });
@@ -466,10 +468,35 @@ export default function ForwardSpendingSurveyTab({
       }
 
       setForecasts(prev => prev.filter(f => f.id !== forecastId));
-      toast.success('Forecast deleted');
+      toast.success(`Removed ${snapshot?.forecast_year || ''} forecast`.trim(), snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              const res = await apiFetch(`/api/fss/forecasts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  activity_id: activityId,
+                  forecast_year: snapshot.forecast_year,
+                  amount: snapshot.amount,
+                  currency: snapshot.currency,
+                  value_date: (snapshot as any).value_date,
+                }),
+              });
+              if (!res.ok) throw new Error('restore failed');
+              const { forecast: restored } = await res.json();
+              setForecasts(prev => [...prev, restored || snapshot].sort((a: any, b: any) => a.forecast_year - b.forecast_year));
+              toast.success('Forecast restored');
+            } catch {
+              toast.error("Couldn't restore the forecast. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
     } catch (err) {
       console.error('[FSS Tab] Error deleting forecast:', err);
-      toast.error('Failed to delete forecast');
+      toast.error("Couldn't remove the forecast. Please try again in a moment.");
     } finally {
       setDeleteLoading(null);
     }
@@ -533,7 +560,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="space-y-2">
               <Label htmlFor="extraction_date" className="flex items-center gap-2">
                 Extraction Date <RequiredDot />
-                <HelpTextTooltip content="Date when forecast data was extracted">
+                <HelpTextTooltip content="The date when you pulled these forward-spending figures from your planning system. This helps reviewers judge how current the forecasts are.">
                   <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </Label>
@@ -554,7 +581,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="space-y-2">
               <Label htmlFor="priority" className="flex items-center gap-2">
                 Priority Level
-                <HelpTextTooltip content="Moderate confidence in funding">
+                <HelpTextTooltip content="How confident you are that this forecast will actually happen. High means funding is already committed; Low means it's only tentatively planned.">
                   <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </Label>
@@ -579,7 +606,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="space-y-2">
               <Label htmlFor="phaseout_year" className="flex items-center gap-2">
                 Phaseout Year
-                <HelpTextTooltip content="Expected end year of funding">
+                <HelpTextTooltip content="The year funding for this activity is expected to stop. Leave blank if the activity is open-ended or funding continues indefinitely.">
                   <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </Label>

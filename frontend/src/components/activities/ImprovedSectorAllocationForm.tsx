@@ -41,6 +41,7 @@ import { SectorAllocationModeToggle } from '@/components/activities/SectorAlloca
 import { useSectorAllocationMode, SectorAllocationMode } from '@/hooks/use-sector-allocation-mode';
 import { Lock, ExternalLink, BarChart2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface Sector {
   code: string;
@@ -288,6 +289,7 @@ function ImprovedSectorAllocationFormInner({
   const userActionInProgressRef = useRef(false);
   const userActionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveCompletedRef = useRef(false);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Handle column sorting
   const handleSort = (field: SortField) => {
@@ -724,32 +726,49 @@ function ImprovedSectorAllocationFormInner({
   };
 
   // Remove a sector
-  const removeSector = (id: string) => {
+  const removeSector = async (id: string) => {
+    const snapshot = allocations.find(a => a.id === id);
+    const sectorLabel = snapshot ? `${snapshot.code} ${snapshot.name}` : 'this sector';
+    const ok = await confirm({
+      title: 'Remove this sector?',
+      description: `"${sectorLabel}" will be removed from this activity. Percentages for the remaining sectors will stay as they are; you can redistribute afterward.`,
+      confirmLabel: 'Remove sector',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
+
     // Mark as user-initiated action
     userActionInProgressRef.current = true;
     pendingSaveCompletedRef.current = false;
-    
+
     const updated = allocations.filter(a => a.id !== id);
-    
-    console.log('[SectorForm] Removing sector without auto-redistribution:', {
-      removedSectorId: id,
-      remainingSectors: updated.length,
-      remainingPercentages: updated.map(a => ({ code: a.code, percentage: a.percentage }))
-    });
-    
+
     // Just remove the sector - keep existing percentages
     onChange(updated);
-    
+
     // Trigger autosave with the updated sectors (save all sectors)
     setTimeout(() => {
       if (sectorsAutosave) {
-        console.log('[SectorForm] Triggering autosave after sector removal:', {
-          remainingSectors: updated.map(a => ({ code: a.code, percentage: a.percentage })),
-          totalSectors: updated.length
-        });
         sectorsAutosave.triggerFieldSave(updated);
       }
     }, 100);
+
+    if (snapshot) {
+      toast.success(`Removed ${snapshot.code} – ${snapshot.name}`, {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            userActionInProgressRef.current = true;
+            const restored = [...updated, snapshot];
+            onChange(restored);
+            setTimeout(() => {
+              if (sectorsAutosave) sectorsAutosave.triggerFieldSave(restored);
+            }, 100);
+          },
+        },
+      });
+    }
   };
 
   // Distribute percentages equally
@@ -1310,6 +1329,7 @@ function ImprovedSectorAllocationFormInner({
         )}
       </div>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

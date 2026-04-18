@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Hash, AlertCircle, Info, FileCode } from 'lucide-react';
+import { X, Hash, AlertCircle, Info, FileCode, CheckSquare, Square } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 import { LoadingText } from '@/components/ui/loading-text';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { cn } from '@/lib/utils';
 
 // Enhanced Tag interface with metadata
 interface Tag {
@@ -80,6 +82,71 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [apiAvailable, setApiAvailable] = useState(true);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  // Remove multiple tags at once
+  const removeSelectedTags = async () => {
+    if (selectedIds.size === 0) return;
+    const ok = await confirm({
+      title: `Remove ${selectedIds.size} tag${selectedIds.size === 1 ? '' : 's'}?`,
+      description: `The selected tag${selectedIds.size === 1 ? '' : 's'} will be removed from this activity. You can add them again anytime.`,
+      confirmLabel: `Remove ${selectedIds.size}`,
+      cancelLabel: 'Keep all',
+      destructive: true,
+    });
+    if (!ok) return;
+
+    const tagsToRemove = tags.filter(t => selectedIds.has(t.id));
+    const remaining = tags.filter(t => !selectedIds.has(t.id));
+
+    // Fire delete requests in parallel for API-backed tags
+    if (apiAvailable && activityId) {
+      await Promise.allSettled(
+        tagsToRemove
+          .filter(t => !t.id.startsWith('local-'))
+          .map(t => apiFetch(`/api/activities/${activityId}/tags/${t.id}`, { method: 'DELETE' }))
+      );
+    }
+
+    onChange(remaining);
+    exitSelectMode();
+    toast.success(`Removed ${tagsToRemove.length} tag${tagsToRemove.length === 1 ? '' : 's'}`, {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          // Re-link each removed tag
+          if (apiAvailable && activityId) {
+            await Promise.allSettled(
+              tagsToRemove
+                .filter(t => !t.id.startsWith('local-'))
+                .map(t => apiFetch(`/api/activities/${activityId}/tags`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ tag_id: t.id }),
+                }))
+            );
+          }
+          onChange([...remaining, ...tagsToRemove]);
+          toast.success('Tags restored');
+        },
+      },
+    });
+  };
 
   // Fetch available tags with debounce
   const fetchTags = useCallback(async (query: string) => {
@@ -91,21 +158,27 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       const data = await response.json();
-      
+
       // Enhance tags with metadata if available
       const enhancedTags = data.map((tag: any) => ({
         ...tag,
         addedBy: tag.created_by ? { id: tag.created_by, name: 'Unknown User' } : undefined,
         addedAt: tag.created_at
       }));
-      
+
       setAvailableTags(Array.isArray(enhancedTags) ? enhancedTags : []);
+
+      // Recovered from offline — let the user know
+      if (!apiAvailable) {
+        setApiAvailable(true);
+        toast.success('Reconnected — your changes are saving.');
+      }
     } catch (error) {
       console.error('Error fetching tags:', error);
       setApiAvailable(false);
       setAvailableTags([]);
       if (apiAvailable) {
-        toast.warning('Tags API unavailable. You can still create tags manually.');
+        toast.warning("Can't reach the tags service. You can still add tags; they'll save when the activity is saved.");
       }
     } finally {
       setLoading(false);
@@ -124,6 +197,15 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
 
     return () => clearTimeout(timer);
   }, [searchQuery, fetchTags]);
+
+  // While offline, quietly retry every 30s to detect reconnection
+  useEffect(() => {
+    if (apiAvailable) return;
+    const interval = setInterval(() => {
+      fetchTags(searchQuery || '');
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [apiAvailable, fetchTags, searchQuery]);
 
   // Add a new tag
   const addTag = async (tagName: string) => {
@@ -196,8 +278,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         toast.success('Tag added successfully');
       } catch (error) {
         console.error('Error creating tag:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        toast.error(`Failed to create tag: ${errorMessage}`);
+        toast.error("Couldn't add the tag. Please try again in a moment.");
       }
     } else {
       // Local mode or no activity ID - just update local state
@@ -216,11 +297,43 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   };
 
 
+  // Re-attach a tag (used by Undo on the "Tag removed" toast)
+  const restoreTag = async (tag: Tag) => {
+    if (apiAvailable && activityId && !tag.id.startsWith('local-')) {
+      try {
+        const linkResponse = await apiFetch(`/api/activities/${activityId}/tags`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag_id: tag.id }),
+        });
+        if (!linkResponse.ok) throw new Error('Failed to restore tag');
+        onChange([...tags, tag]);
+        toast.success('Tag restored');
+      } catch (error) {
+        console.error('Error restoring tag:', error);
+        toast.error("Couldn't restore the tag. Please add it again manually.");
+      }
+    } else {
+      onChange([...tags, tag]);
+      toast.success('Tag restored');
+    }
+  };
+
   // Remove a tag
   const removeTag = async (tagId: string) => {
+    const tagToRemove = tags.find(t => t.id === tagId);
+    const ok = await confirm({
+      title: 'Remove this tag?',
+      description: tagToRemove
+        ? `"${tagToRemove.name}" will be removed from this activity. You can add it again anytime.`
+        : 'This tag will be removed from the activity.',
+      confirmLabel: 'Remove tag',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
     if (apiAvailable && activityId && !tagId.startsWith('local-')) {
       try {
-        // Remove the tag-activity relationship
         const response = await apiFetch(`/api/activities/${activityId}/tags/${tagId}`, {
           method: 'DELETE'
         });
@@ -231,16 +344,18 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         }
 
         onChange(tags.filter(t => t.id !== tagId));
-        toast.success('Tag removed');
+        toast.success('Tag removed', tagToRemove ? {
+          action: { label: 'Undo', onClick: () => restoreTag(tagToRemove) },
+        } : undefined);
       } catch (error) {
         console.error('Error removing tag:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        toast.error(`Failed to remove tag: ${errorMessage}`);
+        toast.error("Couldn't remove the tag. Please try again in a moment.");
       }
     } else {
-      // Local mode or local tag - just update local state
       onChange(tags.filter(t => t.id !== tagId));
-      toast.success('Tag removed');
+      toast.success('Tag removed', tagToRemove ? {
+        action: { label: 'Undo', onClick: () => restoreTag(tagToRemove) },
+      } : undefined);
     }
   };
 
@@ -335,34 +450,81 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
           </Button>
         </div>
 
+        {/* Selection toolbar */}
+        {tags.length > 0 && (
+          <div className="flex items-center justify-between">
+            {selectMode ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size} selected
+                </span>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={removeSelectedTags}
+                  disabled={selectedIds.size === 0}
+                >
+                  Remove selected
+                </Button>
+                <Button size="sm" variant="ghost" onClick={exitSelectMode}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectMode(true)}
+                className="gap-1.5"
+              >
+                <CheckSquare className="h-4 w-4" />
+                Select
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Selected Tags */}
         <div className="space-y-4">
           {tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag, index) => (
+              {tags.map((tag, index) => {
+                const isChecked = selectedIds.has(tag.id);
+                return (
                 <div key={tag.id} className="relative">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge
                         variant={getTagColorVariant(tag, index)}
-                        className="pl-2 pr-1 py-1 flex items-center gap-1 hover:shadow-md transition-all group"
+                        onClick={selectMode ? () => toggleSelected(tag.id) : undefined}
+                        className={cn(
+                          "pl-2 pr-1 py-1 flex items-center gap-1 hover:shadow-md transition-all group",
+                          selectMode && "cursor-pointer",
+                          selectMode && isChecked && "ring-2 ring-primary ring-offset-1"
+                        )}
                       >
-                        {isIatiImportedTag(tag) ? (
+                        {selectMode ? (
+                          isChecked
+                            ? <CheckSquare className="w-3 h-3" />
+                            : <Square className="w-3 h-3" />
+                        ) : isIatiImportedTag(tag) ? (
                           <FileCode className="w-3 h-3" />
                         ) : (
                           <Hash className="w-3 h-3" />
                         )}
                         {tag.name}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeTag(tag.id);
-                          }}
-                          className="hover:bg-black/10 rounded-full p-0.5 transition-colors ml-1"
-                          aria-label={`Remove ${tag.name} tag`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                        {!selectMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTag(tag.id);
+                            }}
+                            className="hover:bg-foreground/10 rounded-full p-0.5 transition-colors ml-1"
+                            aria-label={`Remove ${tag.name} tag`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -396,7 +558,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                     </TooltipContent>
                   </Tooltip>
                 </div>
-              ))}
+              );})}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -411,18 +573,19 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
 
         {/* API Status Notice */}
         {!apiAvailable && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-yellow-900 mb-2 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Offline Mode
+          <div className="bg-muted border border-border rounded-lg p-4">
+            <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              Working offline
             </h4>
-            <p className="text-xs text-yellow-800">
-              Tags API is currently unavailable. You can still create and edit tags locally, and they will be saved when you save the activity.
+            <p className="text-xs text-muted-foreground">
+              We can't reach the tags service right now. Tags you add will save with the activity when you next save.
             </p>
           </div>
         )}
 
       </div>
+      <ConfirmDialog />
     </TooltipProvider>
   );
 }

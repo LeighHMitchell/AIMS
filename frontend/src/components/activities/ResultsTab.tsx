@@ -425,10 +425,33 @@ export function ResultsTab({
 
   // Handle deleting a result
   const handleDeleteResult = async (resultId: string) => {
-    if (await confirm({ title: 'Delete this result?', description: 'All indicators, targets, and progress data for this result will be permanently lost.', confirmLabel: 'Delete result', cancelLabel: 'Keep result' })) {
+    if (await confirm({ title: 'Delete this result?', description: "All its indicators, targets, and progress data will be removed along with it. You'll have a moment to undo the top-level result; indicators will need to be re-added manually.", confirmLabel: 'Delete result', cancelLabel: 'Keep result' })) {
+      const snapshot = results.find(r => r.id === resultId);
       const success = await deleteResult(resultId);
       if (success) {
         onResultsChange?.(results);
+        toast.success('Result removed', snapshot ? {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                const ok = await createResult({
+                  activity_id: activityId,
+                  type: (snapshot as any).type,
+                  title: (snapshot as any).title,
+                  description: (snapshot as any).description,
+                  aggregation_status: (snapshot as any).aggregation_status,
+                } as any);
+                if (ok) {
+                  fetchResults();
+                  toast.success('Result restored (indicators must be re-added)');
+                }
+              } catch {
+                toast.error("Couldn't restore the result. Please add it again manually.");
+              }
+            },
+          },
+        } : undefined);
       }
     }
   };
@@ -656,6 +679,30 @@ export function ResultsTab({
           )}
       </div>
 
+      {/* Summary bar: gives reviewers a scan-at-a-glance count before they dive in */}
+      {displayResults.length > 0 && (() => {
+        const resultCount = displayResults.length;
+        const indicatorCount = displayResults.reduce(
+          (sum: number, r: ActivityResult) => sum + (r.indicators?.length || 0),
+          0
+        );
+        const periodCount = displayResults.reduce(
+          (sum: number, r: ActivityResult) =>
+            sum + (r.indicators?.reduce((s: number, i: ResultIndicator) => s + (i.periods?.length || 0), 0) || 0),
+          0
+        );
+        const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+        return (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground bg-muted/50 border border-border rounded-md px-4 py-2">
+            <span className="font-medium text-foreground">{plural(resultCount, 'result')}</span>
+            <span>·</span>
+            <span>{plural(indicatorCount, 'indicator')}</span>
+            <span>·</span>
+            <span>{plural(periodCount, 'reporting period')}</span>
+          </div>
+        );
+      })()}
+
       {/* Add Result Modal */}
       <Dialog open={showAddResult && !readOnly} onOpenChange={(open) => { if (!open) setShowAddResult(false); }}>
         <DialogContent className="sm:max-w-[600px]">
@@ -757,7 +804,11 @@ export function ResultsTab({
       {/* Main Content - Simple List */}
       {displayResults.length === 0 && !showDummyData ? (
         <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
-          <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <img
+            src="/images/empty-haybales.png"
+            alt="No results yet"
+            className="h-32 mx-auto mb-4 opacity-80"
+          />
           <h3 className="text-lg font-medium mb-2">No results added yet</h3>
           <p className="text-muted-foreground">
             Track what this activity achieves. Add your first result (output, outcome, or impact) to get started.
@@ -942,8 +993,28 @@ export function ResultsTab({
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              {/* Indicators Section - Simplified */}
-              <div className="ml-10 mt-4">
+              {/* Collapse toggle — shows measure count, lets user expand details on demand */}
+              <button
+                type="button"
+                onClick={() => toggleResult(result.id)}
+                className="ml-10 mt-2 mb-1 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-expanded={expandedResults.includes(result.id)}
+              >
+                {expandedResults.includes(result.id)
+                  ? <ChevronDown className="h-4 w-4" />
+                  : <ChevronRight className="h-4 w-4" />}
+                <span>
+                  {result.indicators && result.indicators.length > 0
+                    ? `${result.indicators.length} measure${result.indicators.length === 1 ? '' : 's'}`
+                    : 'No measures yet'}
+                </span>
+                <span className="text-xs opacity-70">
+                  {expandedResults.includes(result.id) ? '(hide)' : '(show)'}
+                </span>
+              </button>
+
+              {/* Indicators Section - Simplified (collapsed by default) */}
+              <div className={cn("ml-10 mt-4", !expandedResults.includes(result.id) && "hidden")}>
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-lg font-medium text-foreground">How will we measure this?</h4>
                             {!readOnly && (
@@ -1291,7 +1362,7 @@ export function ResultsTab({
                                                   size="sm"
                                                   variant="ghost"
                                                   onClick={async () => {
-                                                    if (await confirm({ title: 'Delete this period?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+                                                    if (await confirm({ title: 'Delete this period?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
                                                       try {
                                                         const { error } = await supabase
                                                           .from('indicator_periods')

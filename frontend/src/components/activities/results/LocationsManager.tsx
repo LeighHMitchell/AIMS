@@ -59,7 +59,7 @@ export function LocationsManager({
   };
 
   const handleDelete = async (locationId: string) => {
-    if (await confirm({ title: 'Delete location reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete location reference?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteLocation(entityType, entityId, locationId);
       if (success) {
         onUpdate();

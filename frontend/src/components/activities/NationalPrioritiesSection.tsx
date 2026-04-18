@@ -252,14 +252,38 @@ export function NationalPrioritiesSection({
       onChange?.();
     } catch (error: any) {
       console.error("Error adding allocation:", error);
-      toast.error(error.message || "Failed to add alignment");
+      toast.error("Couldn't add the alignment. Please try again in a moment.");
     } finally {
       setSaving(false);
     }
   };
 
+  // Re-create an allocation (used by Undo after delete)
+  const restoreAllocation = async (snapshot: ActivityNationalPriority) => {
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}/national-priorities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nationalPriorityId: snapshot.nationalPriorityId,
+          significance: snapshot.significance,
+          rationale: snapshot.rationale || null,
+        }),
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || "Failed to restore allocation");
+      toast.success("Alignment restored");
+      await fetchAllocations();
+      onChange?.();
+    } catch (error) {
+      console.error("Error restoring allocation:", error);
+      toast.error("Couldn't restore the alignment. Please add it again manually.");
+    }
+  };
+
   const handleDeleteAllocation = async () => {
     if (!selectedAllocation) return;
+    const snapshot = selectedAllocation;
 
     try {
       setSaving(true);
@@ -274,14 +298,19 @@ export function NationalPrioritiesSection({
         throw new Error(result.error || "Failed to remove allocation");
       }
 
-      toast.success("Priority allocation removed");
+      toast.success("Priority allocation removed", {
+        action: {
+          label: "Undo",
+          onClick: () => restoreAllocation(snapshot),
+        },
+      });
       setDeleteDialogOpen(false);
       setSelectedAllocation(null);
       await fetchAllocations();
       onChange?.();
     } catch (error: any) {
       console.error("Error deleting allocation:", error);
-      toast.error(error.message || "Failed to remove allocation");
+      toast.error("Couldn't remove the alignment. Please try again in a moment.");
     } finally {
       setSaving(false);
     }

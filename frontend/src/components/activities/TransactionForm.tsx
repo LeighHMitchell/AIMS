@@ -16,6 +16,7 @@ import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 import { format } from "date-fns";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
   Transaction, 
   TransactionType, 
@@ -689,8 +690,12 @@ export default function TransactionForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Transaction Type */}
             <div className="space-y-2">
-              <Label htmlFor="transaction_type">
+              <Label htmlFor="transaction_type" className="flex items-center gap-2">
                 Transaction Type <RequiredDot />
+                <HelpTextTooltip>
+                  What kind of financial movement this is — e.g. a commitment (money promised),
+                  disbursement (money sent), expenditure (money spent), or incoming funds received.
+                </HelpTextTooltip>
               </Label>
               <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
                 <PopoverTrigger asChild>
@@ -863,8 +868,12 @@ export default function TransactionForm({
 
             {/* Value Date (optional) */}
             <div className="space-y-2">
-              <Label htmlFor="value_date">
+              <Label htmlFor="value_date" className="flex items-center gap-2">
                 Value Date
+                <HelpTextTooltip>
+                  The date used for currency conversion. Usually the same as the transaction
+                  date, but can differ if the exchange rate was locked in earlier.
+                </HelpTextTooltip>
               </Label>
               <Input
                 id="value_date"
@@ -1274,8 +1283,12 @@ export default function TransactionForm({
 
                 {/* Flow Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="flow_type">
+                  <Label htmlFor="flow_type" className="flex items-center gap-2">
                     Flow Type
+                    <HelpTextTooltip>
+                      The broad category the money flows under — e.g. ODA (official
+                      development assistance), private flows, or other official flows.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.flow_type || ''}
@@ -1303,8 +1316,12 @@ export default function TransactionForm({
 
                 {/* Finance Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="finance_type">
+                  <Label htmlFor="finance_type" className="flex items-center gap-2">
                     Finance Type
+                    <HelpTextTooltip>
+                      How the money is provided — e.g. grant (no repayment), loan,
+                      equity, or debt relief.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.finance_type || ''}
@@ -1332,8 +1349,12 @@ export default function TransactionForm({
 
                 {/* Aid Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="aid_type">
+                  <Label htmlFor="aid_type" className="flex items-center gap-2">
                     Aid Type
+                    <HelpTextTooltip>
+                      The delivery mechanism — e.g. budget support, project-type
+                      intervention, technical assistance, or scholarships.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.aid_type || ''}
@@ -1361,8 +1382,12 @@ export default function TransactionForm({
 
                 {/* Tied Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="tied_status">
+                  <Label htmlFor="tied_status" className="flex items-center gap-2">
                     Tied Status
+                    <HelpTextTooltip>
+                      Whether the funds are tied to procurement from specific countries
+                      or organisations (tied), fully open (untied), or partially restricted.
+                    </HelpTextTooltip>
                   </Label>
                   <Select
                     value={formData.tied_status || ''}

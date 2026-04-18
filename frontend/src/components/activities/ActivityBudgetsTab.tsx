@@ -2901,12 +2901,26 @@ export default function ActivityBudgetsTab({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this budget?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The budget record will be permanently removed.
+              {(() => {
+                const b = showDeleteConfirm !== null ? budgets[showDeleteConfirm] : null;
+                if (!b) return "This budget record will be permanently deleted. This can't be undone.";
+                const amount = (b as any).value != null ? `${(b as any).currency || ''} ${Number((b as any).value).toLocaleString()}`.trim() : null;
+                const period = (b as any).period_start && (b as any).period_end ? `${(b as any).period_start} → ${(b as any).period_end}` : null;
+                const details = [amount, period].filter(Boolean).join(' • ');
+                return details
+                  ? `This budget (${details}) will be permanently deleted. This can't be undone.`
+                  : "This budget record will be permanently deleted. This can't be undone.";
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteBudget}>Delete</AlertDialogAction>
+            <AlertDialogCancel>Keep</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteBudget}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete budget
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

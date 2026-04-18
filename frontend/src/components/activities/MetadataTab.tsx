@@ -159,13 +159,48 @@ const getActionIcon = (action: string) => {
   }
 };
 
+// Turn raw DB field names like `activity_description` into human labels like "Activity description"
+const humanizeFieldName = (raw: string): string => {
+  const dict: Record<string, string> = {
+    title: 'Title',
+    description: 'Description',
+    activity_description: 'Description',
+    activity_status: 'Activity status',
+    publication_status: 'Publication status',
+    submission_status: 'Submission status',
+    iati_identifier: 'IATI identifier',
+    partner_id: 'Partner code',
+    reporting_org_id: 'Reporting organisation',
+    planned_start_date: 'Planned start date',
+    planned_end_date: 'Planned end date',
+    actual_start_date: 'Actual start date',
+    actual_end_date: 'Actual end date',
+    total_budget: 'Total budget',
+    total_disbursed: 'Total disbursed',
+    collaboration_type: 'Collaboration type',
+    default_flow_type: 'Default flow type',
+    default_finance_type: 'Default finance type',
+    default_aid_type: 'Default aid type',
+    default_tied_status: 'Default tied status',
+    humanitarian: 'Humanitarian flag',
+    language: 'Narrative language',
+  };
+  if (dict[raw]) return dict[raw];
+  // Fallback: turn snake_case into Sentence case
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/^(\w)/, (c) => c.toUpperCase())
+    .replace(/^./, (c) => c.toUpperCase());
+};
+
 const getActionDescription = (log: ActivityLog): string => {
   const user = log.details.user?.name || 'Unknown user';
   const action = log.action;
   const metadata = log.details.metadata;
 
   if (metadata?.fieldChanged) {
-    return `${user} updated ${metadata.fieldChanged}`;
+    return `${user} updated ${humanizeFieldName(metadata.fieldChanged).toLowerCase()}`;
   }
 
   switch (action.toLowerCase()) {
@@ -224,6 +259,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [savingReportingOrg, setSavingReportingOrg] = useState(false);
   const [language, setLanguage] = useState<string>('en');
+  const [showTechnical, setShowTechnical] = useState(false);
   
   const { user } = useUser();
   const { organizations, loading: organizationsLoading } = useOrganizations();
@@ -408,6 +444,14 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowTechnical(!showTechnical)}
+          className="text-muted-foreground"
+        >
+          {showTechnical ? 'Hide technical details' : 'Show technical details'}
+        </Button>
         <Button variant="outline" size="sm" onClick={fetchMetadata}>
           <RefreshCw className="h-4 w-4 mr-1" />
           Refresh
@@ -437,13 +481,15 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                 <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.iati_identifier || 'Not assigned'}</code>
               </td>
             </tr>
-            {/* UUID */}
-            <tr>
-              <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">UUID</td>
-              <td className="px-4 py-3">
-                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.id}</code>
-              </td>
-            </tr>
+            {/* UUID (technical) */}
+            {showTechnical && (
+              <tr>
+                <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">UUID</td>
+                <td className="px-4 py-3">
+                  <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.id}</code>
+                </td>
+              </tr>
+            )}
             {/* Activity Status - show code and name */}
             <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Activity Status</td>
@@ -624,9 +670,9 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                         {format(new Date(log.created_at), 'MMM d, yyyy')}
                       </time>
                     </div>
-                    {log.details.metadata?.fieldChanged && (
+                    {log.details.metadata?.fieldChanged && showTechnical && (
                       <div className="mt-1 text-xs text-muted-foreground">
-                        <span className="font-medium">Field:</span> {log.details.metadata.fieldChanged}
+                        <span className="font-medium">Field:</span> {humanizeFieldName(log.details.metadata.fieldChanged)}
                         {log.details.metadata.oldValue && log.details.metadata.newValue && (
                           <div className="mt-1 font-mono">
                             <span className="text-destructive">- {JSON.stringify(log.details.metadata.oldValue)}</span>

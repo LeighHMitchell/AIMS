@@ -28,6 +28,7 @@ import { formatLanguageDisplay } from '@/data/language-codes';
 import { HumanitarianScopeModal } from '@/components/modals/HumanitarianScopeModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface HumanitarianTabProps {
   activityId: string;
@@ -48,6 +49,7 @@ export function HumanitarianTab({
   const [isSaving, setIsSaving] = useState(false);
   const [humanitarian, setHumanitarian] = useState(false);
   const [scopes, setScopes] = useState<HumanitarianScope[]>([]);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<HumanitarianScope | null>(null);
   const [emergencyMap, setEmergencyMap] = useState<Record<string, CountryEmergency>>({});
@@ -179,10 +181,32 @@ export function HumanitarianTab({
   };
 
   const handleDeleteScope = async (scopeId?: string) => {
+    const snapshot = scopes.find(s => s.id === scopeId);
+    const scopeLabel = snapshot
+      ? [getScopeTypeName((snapshot as any).type), (snapshot as any).code].filter(Boolean).join(' ')
+      : 'this scope';
+    const ok = await confirm({
+      title: 'Remove this humanitarian scope?',
+      description: `"${scopeLabel || 'This scope'}" will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: 'Remove scope',
+      cancelLabel: 'Keep',
+    });
+    if (!ok) return;
+
+    const previousScopes = scopes;
     const newScopes = scopes.filter(s => s.id !== scopeId);
     setScopes(newScopes);
     await saveHumanitarianData(humanitarian, newScopes);
-    toast.success('Humanitarian scope deleted');
+    toast.success(`Removed ${scopeLabel || 'humanitarian scope'}`, snapshot ? {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          setScopes(previousScopes);
+          await saveHumanitarianData(humanitarian, previousScopes);
+          toast.success('Scope restored');
+        },
+      },
+    } : undefined);
   };
 
   if (isLoading) {
@@ -408,6 +432,7 @@ export function HumanitarianTab({
         onSave={handleSaveScope}
         editingScope={editingScope}
       />
+      <ConfirmDialog />
     </div>
   );
 }

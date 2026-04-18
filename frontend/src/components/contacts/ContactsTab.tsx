@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy, Users } from 'lucide-react';
+import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2, Copy, Users, CheckSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import ContactForm from './ContactForm';
 import ContactSearchBar from './ContactSearchBar';
 import { PersonCard } from '@/components/rolodex/PersonCard';
@@ -78,6 +80,20 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   const [contactsView, setContactsView] = useState<'table' | 'cards'>('table');
   const saveInProgressRef = useRef(false);
   const lastNotifiedCountRef = useRef<number>(-1);
+  // Bulk-select state
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+  const toggleContactSelected = (id: string) => {
+    setSelectedContactIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const exitContactSelectMode = () => {
+    setSelectMode(false);
+    setSelectedContactIds(new Set());
+  };
 
   // Fetch contacts from database
   const fetchContacts = useCallback(async (force = false) => {
@@ -264,19 +280,76 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     setShowForm(true);
   };
 
+  // Bulk remove selected contacts
+  const handleBulkDelete = async () => {
+    if (selectedContactIds.size === 0) return;
+    const count = selectedContactIds.size;
+    if (!(await confirm({
+      title: `Remove ${count} contact${count === 1 ? '' : 's'}?`,
+      description: `The selected contact${count === 1 ? '' : 's'} will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: `Remove ${count}`,
+      cancelLabel: 'Keep all',
+    }))) return;
+
+    try {
+      const previousContacts = contacts;
+      const updatedContacts = contacts.filter(c => !selectedContactIds.has(c.id || ''));
+      await saveContacts(updatedContacts);
+      exitContactSelectMode();
+      toast.success(`Removed ${count} contact${count === 1 ? '' : 's'}`, {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await saveContacts(previousContacts);
+              toast.success('Contacts restored');
+            } catch {
+              toast.error("Couldn't restore the contacts. Please add them again manually.");
+            }
+          },
+        },
+      });
+    } catch {
+      toast.error("Couldn't remove the contacts. Please try again in a moment.");
+    }
+  };
+
   // Handle delete contact
   const handleDelete = async (contactId: string) => {
-    if (!(await confirm({ title: 'Delete this contact?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    const snapshot = contacts.find(c => c.id === contactId);
+    const contactName = snapshot
+      ? `${snapshot.firstName || ''} ${snapshot.lastName || ''}`.trim() || 'this contact'
+      : 'this contact';
+    if (!(await confirm({
+      title: 'Remove this contact?',
+      description: `"${contactName}" will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Keep',
+      destructive: true,
+    }))) {
       return;
     }
 
     try {
+      const previousContacts = contacts;
       const updatedContacts = contacts.filter(c => c.id !== contactId);
       await saveContacts(updatedContacts);
-      toast.success('Contact deleted successfully');
+      toast.success(`Removed ${contactName}`, snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await saveContacts(previousContacts);
+              toast.success('Contact restored');
+            } catch {
+              toast.error("Couldn't restore the contact. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
     } catch (error) {
       console.error('[ContactsTab] Error deleting contact:', error);
-      toast.error('Failed to delete contact');
+      toast.error("Couldn't remove the contact. Please try again in a moment.");
     }
   };
 
@@ -409,23 +482,55 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
             <HelpTextTooltip content="People linked to this specific activity for questions, documentation, or coordination. Duplicate detection prevents adding the same person twice." />
           </div>
           {contacts.length > 0 && (
-            <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
-              <button
-                type="button"
-                onClick={() => setContactsView('table')}
-                className={`p-1.5 rounded transition-colors ${contactsView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Table view"
-              >
-                <TableIcon className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setContactsView('cards')}
-                className={`p-1.5 rounded transition-colors ${contactsView === 'cards' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Card view"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
+            <div className="flex items-center gap-2">
+              {!readOnly && contactsView === 'table' && (
+                selectMode ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedContactIds.size} selected
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleBulkDelete}
+                      disabled={selectedContactIds.size === 0}
+                    >
+                      Remove selected
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={exitContactSelectMode}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectMode(true)}
+                    className="gap-1.5"
+                  >
+                    <CheckSquare className="h-4 w-4" />
+                    Select
+                  </Button>
+                )
+              )}
+              <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setContactsView('table')}
+                  className={`p-1.5 rounded transition-colors ${contactsView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Table view"
+                >
+                  <TableIcon className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setContactsView('cards'); exitContactSelectMode(); }}
+                  className={`p-1.5 rounded transition-colors ${contactsView === 'cards' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Card view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -442,6 +547,24 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
           <Table>
             <TableHeader>
               <TableRow>
+                {selectMode && (
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={
+                        contacts.length > 0 &&
+                        contacts.every(c => selectedContactIds.has(c.id || ''))
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedContactIds(new Set(contacts.map(c => c.id || '').filter(Boolean)));
+                        } else {
+                          setSelectedContactIds(new Set());
+                        }
+                      }}
+                      aria-label="Select all contacts"
+                    />
+                  </TableHead>
+                )}
                 <TableHead>Name</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Organisation</TableHead>
@@ -458,7 +581,24 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                   : contact.organisation;
 
                 return (
-                  <TableRow key={contact.id || index}>
+                  <TableRow
+                    key={contact.id || index}
+                    className={cn(
+                      selectMode && "cursor-pointer",
+                      selectMode && selectedContactIds.has(contact.id || '') && "bg-muted/50"
+                    )}
+                    onClick={selectMode ? () => toggleContactSelected(contact.id || '') : undefined}
+                  >
+                    {selectMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedContactIds.has(contact.id || '')}
+                          onCheckedChange={() => toggleContactSelected(contact.id || '')}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${[contact.firstName, contact.lastName].filter(Boolean).join(' ')}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 flex-shrink-0">
@@ -510,8 +650,9 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
                         <div className="flex gap-1">
                           <button
                             type="button"
-                            onClick={() => handleDelete(contact.id || '')}
-                            className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(contact.id || ''); }}
+                            disabled={selectMode}
+                            className="p-1.5 rounded hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
                             title="Remove contact"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />

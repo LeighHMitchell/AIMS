@@ -801,8 +801,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     return aeOptions.filter(opt => opt.category === category);
   }, [aeOptions, nationalPlanOptions, planBasedCategories]);
 
-  // Calculate completion percentage
-  const completionPercentage = useMemo(() => {
+  // Calculate completion: number answered, total, and percentage
+  const completion = useMemo(() => {
     const fields = [
       formData.implementingPartner,
       formData.formallyApprovedByGov != null,
@@ -842,8 +842,14 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       formData.genderDisaggregatedIndicators != null,
     ];
     const filled = fields.filter(Boolean).length;
-    return Math.round((filled / fields.length) * 100);
+    const total = fields.length;
+    return {
+      answered: filled,
+      total,
+      percent: Math.round((filled / total) * 100),
+    };
   }, [formData]);
+  const completionPercentage = completion.percent;
 
   // Autosave logic
   const autoSave = useCallback(async () => {
@@ -1130,7 +1136,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         className="border-b px-6 py-5 bg-cover bg-center bg-no-repeat relative overflow-hidden rounded-t-lg"
         style={{ backgroundImage: 'url(https://www.effectivecooperation.org/sites/default/files/imported/images/Colors_GPEDC.png)' }}
       >
-        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute inset-0 bg-foreground/10" />
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -1146,9 +1152,14 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Progress value={completionPercentage} className="w-24 h-2 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
-              <span className="text-sm font-bold text-white">{completionPercentage}%</span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-xs text-white/80">
+                {completion.answered} of {completion.total} questions answered
+              </span>
+              <div className="flex items-center gap-2">
+                <Progress value={completionPercentage} className="w-24 h-2 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                <span className="text-sm font-bold text-white">{completionPercentage}%</span>
+              </div>
             </div>
             {isSaving ? (
               <div className="flex items-center gap-1.5 text-xs text-white/70">

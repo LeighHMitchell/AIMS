@@ -63,7 +63,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
 
   // Handle delete link
   const handleDeleteLink = async (linkId: string) => {
-    if (!(await confirm({ title: 'Remove this link?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
+    if (!(await confirm({ title: 'Remove this link?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Keep' }))) return;
     
     try {
       const response = await apiFetch(`/api/activities/${activityId}/linked/${linkId}`, {

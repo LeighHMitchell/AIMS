@@ -352,9 +352,11 @@ export function DocumentsAndImagesTab({
         <div className="text-center py-12">
           {documents.length === 0 ? (
             <>
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <FileImage className="w-8 h-8 text-muted-foreground" />
-              </div>
+              <img
+                src="/images/empty-bookshelf.png"
+                alt="No documents"
+                className="h-32 mx-auto mb-4 opacity-80"
+              />
               <h3 className="text-lg font-medium text-foreground mb-1">
                 No documents yet
               </h3>
@@ -368,7 +370,11 @@ export function DocumentsAndImagesTab({
             </>
           ) : (
             <>
-              <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <img
+                src="/images/empty-bookshelf.png"
+                alt="No documents match"
+                className="h-24 mx-auto mb-4 opacity-60"
+              />
               <p className="text-muted-foreground">No documents match your filters</p>
             </>
           )}

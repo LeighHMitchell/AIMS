@@ -20,6 +20,8 @@ import { useOrganizations } from '@/hooks/use-organizations';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-fetch';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 
 interface ParticipatingOrganization {
   id: string;
@@ -66,6 +68,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
   const [addingOrg, setAddingOrg] = useState(false);
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [selectedRole, setSelectedRole] = useState<'extending' | 'implementing' | 'government' | 'funding'>('implementing');
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const { organizations, loading: orgsLoading } = useOrganizations();
 
@@ -125,8 +128,42 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
     }
   };
 
+  // Re-add an organization (used by Undo)
+  const restoreParticipatingOrg = async (snapshot: ParticipatingOrganization) => {
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organization_id: snapshot.organization_id,
+          role_type: snapshot.role_type,
+          iati_role_code: snapshot.iati_role_code,
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to restore organization');
+      toast.success('Organisation restored');
+      await fetchParticipatingOrgs();
+    } catch (error) {
+      console.error('Error restoring organization:', error);
+      toast.error("Couldn't restore the organisation. Please add it again manually.");
+    }
+  };
+
   // Remove participating organization
   const removeParticipatingOrg = async (organizationId: string, roleType: string) => {
+    const snapshot = participatingOrgs.find(
+      org => org.organization_id === organizationId && org.role_type === roleType
+    );
+    const orgName = snapshot?.organization?.name || 'this organisation';
+    const ok = await confirm({
+      title: 'Remove this organisation?',
+      description: `"${orgName}" will be removed from this activity (${ROLE_LABELS[roleType as keyof typeof ROLE_LABELS]} role). You can add it again anytime.`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
+
     try {
       const response = await apiFetch(`/api/activities/${activityId}/participating-organizations?organization_id=${organizationId}&role_type=${roleType}`,
         { method: 'DELETE' }
@@ -139,10 +176,12 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
       setParticipatingOrgs(participatingOrgs.filter(
         org => !(org.organization_id === organizationId && org.role_type === roleType)
       ));
-      toast.success('Organization removed successfully');
+      toast.success(`Removed "${orgName}"`, snapshot ? {
+        action: { label: 'Undo', onClick: () => restoreParticipatingOrg(snapshot) },
+      } : undefined);
     } catch (error) {
       console.error('Error removing organization:', error);
-      toast.error('Failed to remove organization');
+      toast.error("Couldn't remove the organisation. Please try again in a moment.");
     }
   };
 
@@ -180,6 +219,10 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Participating Organisations
+            <HelpTextTooltip>
+              Organisations that play a role in this activity — funders, implementers,
+              government departments, and extending partners.
+            </HelpTextTooltip>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -189,7 +232,13 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
 
           {/* Add Organization Form */}
           <div className="border border-border rounded-lg p-4 bg-muted">
-            <h3 className="text-sm font-medium text-foreground mb-3">Add Organization</h3>
+            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              Add Organisation
+              <HelpTextTooltip>
+                Pick an organisation and choose its role. You can add the same
+                organisation with multiple roles (e.g. both funder and implementer).
+              </HelpTextTooltip>
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <OrganizationCombobox
@@ -201,6 +250,17 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                 />
               </div>
               <div>
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-xs font-medium text-muted-foreground">Role</span>
+                  <HelpTextTooltip>
+                    <div className="text-xs space-y-1">
+                      <p><strong>Funding:</strong> Provides the money for the activity.</p>
+                      <p><strong>Implementing:</strong> Delivers the activity on the ground.</p>
+                      <p><strong>Extending:</strong> Passes funds through to the implementer.</p>
+                      <p><strong>Government:</strong> A government partner involved in delivery or oversight.</p>
+                    </div>
+                  </HelpTextTooltip>
+                </div>
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value as any)}
@@ -232,9 +292,13 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
         <Card>
           <CardContent className="py-8">
             <div className="text-center text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium mb-2">No organizations added yet</p>
-              <p className="text-sm">Select an organization above and choose its role (funder, implementer, etc.) to get started.</p>
+              <img
+                src="/images/empty-puzzle-piece.webp"
+                alt="No organisations"
+                className="h-32 mx-auto mb-4 opacity-50"
+              />
+              <p className="text-lg font-medium mb-2 text-foreground">No organisations added yet</p>
+              <p className="text-sm">Select an organisation above and choose its role (funder, implementer, etc.) to get started.</p>
             </div>
           </CardContent>
         </Card>
@@ -300,6 +364,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
           </AlertDescription>
         </Alert>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

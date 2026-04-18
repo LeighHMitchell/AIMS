@@ -717,18 +717,48 @@ export default function CountriesRegionsTab({
 
   // Remove country allocation
   const removeCountry = (id: string) => {
+    const snapshot = countries.find(c => c.id === id);
     isDirtyRef.current = true;
     const updatedCountries = countries.filter(c => c.id !== id);
     setCountries(updatedCountries);
     onCountriesChange?.(updatedCountries);
+    if (snapshot) {
+      const countryName = (snapshot as any).countryName || (snapshot as any).name || 'country';
+      toast.success(`Removed ${countryName}`, {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            isDirtyRef.current = true;
+            const restored = [...updatedCountries, snapshot];
+            setCountries(restored);
+            onCountriesChange?.(restored);
+          },
+        },
+      });
+    }
   };
 
   // Remove region allocation
   const removeRegion = (id: string) => {
+    const snapshot = regions.find(r => r.id === id);
     isDirtyRef.current = true;
     const updatedRegions = regions.filter(r => r.id !== id);
     setRegions(updatedRegions);
     onRegionsChange?.(updatedRegions);
+    if (snapshot) {
+      const regionName = (snapshot as any).regionName || (snapshot as any).name || 'region';
+      toast.success(`Removed ${regionName}`, {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            isDirtyRef.current = true;
+            const restored = [...updatedRegions, snapshot];
+            setRegions(restored);
+            onRegionsChange?.(restored);
+          },
+        },
+      });
+    }
   };
 
   // Update custom geography percentage

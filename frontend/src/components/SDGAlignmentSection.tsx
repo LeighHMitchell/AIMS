@@ -58,6 +58,7 @@ import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
 import { toast } from "sonner";
 import { apiFetch } from '@/lib/api-fetch';
 import SDGIconHover from "@/components/ui/SDGIconHover";
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 // Alignment strength types
 type AlignmentStrength = 'primary' | 'secondary' | 'indirect';
@@ -120,6 +121,7 @@ export default function SDGAlignmentSection({
   const [targetPopoverOpen, setTargetPopoverOpen] = useState<{ [key: number]: boolean }>({});
   const [modalGoalId, setModalGoalId] = useState<number | null>(null);
   const [targetSearch, setTargetSearch] = useState('');
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Save state tracking
   const [isSaving, setIsSaving] = useState(false);
@@ -214,11 +216,33 @@ export default function SDGAlignmentSection({
     }
   };
 
-  const removeGoal = (goalId: number) => {
+  const removeGoal = async (goalId: number) => {
     if (!canEdit) return;
+    const goal = SDG_GOALS.find(g => g.id === goalId);
+    const ok = await confirm({
+      title: 'Remove this SDG?',
+      description: goal
+        ? `"Goal ${goal.id}: ${goal.name}" will be removed along with any targets and notes you've added. You can add it again anytime.`
+        : 'This SDG and its targets will be removed from the activity.',
+      confirmLabel: 'Remove SDG',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
+    // Snapshot the removed mappings so we can restore on Undo
+    const removedMappings = mappings.filter(m => m.sdgGoal === goalId);
     setHasUserEdited(true);
     setMappings(prev => prev.filter(m => m.sdgGoal !== goalId));
     if (modalGoalId === goalId) setModalGoalId(null);
+    toast.success(goal ? `Removed Goal ${goal.id}` : 'SDG removed', {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          setHasUserEdited(true);
+          setMappings(prev => [...prev, ...removedMappings]);
+        },
+      },
+    });
   };
 
   const addTarget = (goalId: number, targetId: string) => {
@@ -582,7 +606,7 @@ export default function SDGAlignmentSection({
                                       e.stopPropagation();
                                       removeTarget(goalId, mapping.sdgTarget);
                                     }}
-                                    className="ml-0.5 hover:bg-black/10 rounded-full p-0.5"
+                                    className="ml-0.5 hover:bg-foreground/10 rounded-full p-0.5"
                                   >
                                     <X className="h-3 w-3" />
                                   </button>
@@ -752,6 +776,7 @@ export default function SDGAlignmentSection({
           </p>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

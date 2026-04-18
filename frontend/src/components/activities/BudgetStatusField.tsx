@@ -152,7 +152,7 @@ export function BudgetStatusField({
   const isPartial = budgetStatus === "partial";
 
   return (
-    <div className="space-y-4 p-4 bg-muted rounded-lg border">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           Budget Status

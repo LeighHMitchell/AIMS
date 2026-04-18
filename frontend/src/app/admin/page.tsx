@@ -15,6 +15,7 @@ import { BudgetClassificationsManagement } from "@/components/admin/BudgetClassi
 import { DomesticBudgetManagement } from "@/components/admin/DomesticBudgetManagement"
 import { SectorMappingsManagement } from "@/components/admin/SectorMappingsManagement"
 import { FAQManagement } from "@/components/admin/FAQManagement"
+import { PageHelpManagement } from "@/components/admin/PageHelpManagement"
 import { CountrySectorVocabularyManagement } from "@/components/admin/CountrySectorVocabularyManagement"
 import { PendingValidationsManagement } from "@/components/admin/PendingValidationsManagement"
 import { IATIImportLogsManagement } from "@/components/admin/IATIImportLogsManagement"
@@ -36,7 +37,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "page-help", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "pb-sectors"]
 
   useEffect(() => {
@@ -106,7 +107,7 @@ function AdminPageContent() {
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground">You don't have permission to access this page</p>
           </div>
@@ -153,6 +154,10 @@ function AdminPageContent() {
             <TabsTrigger value="faq" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <HelpCircle className="h-4 w-4" />
               FAQ
+            </TabsTrigger>
+            <TabsTrigger value="page-help" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <HelpCircle className="h-4 w-4" />
+              Page Help
             </TabsTrigger>
             <TabsTrigger value="systems" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Settings className="h-4 w-4" />
@@ -210,6 +215,10 @@ function AdminPageContent() {
 
           <TabsContent value="faq" className="space-y-6">
             <FAQManagement />
+          </TabsContent>
+
+          <TabsContent value="page-help" className="space-y-6">
+            <PageHelpManagement />
           </TabsContent>
 
           <TabsContent value="systems" className="space-y-6">

@@ -210,15 +210,36 @@ export function FinancingTermsTab({
 
   // Handle delete loan status
   const handleDeleteLoanStatus = async (id: string, year: number) => {
-    if (await confirm({ title: 'Delete loan status?', description: `Are you sure you want to delete the loan status for year ${year}?`, confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete loan status?', description: `Are you sure you want to delete the loan status for year ${year}?`, confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+      const snapshot = loanStatuses.find(s => s.id === id);
       await deleteLoanStatus(id);
+      toast.success(`Removed loan status for ${year}`, snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              // Re-create via the same path used for adding
+              await createLoanStatus({
+                activity_id: activityId,
+                year: snapshot.year,
+                value: (snapshot as any).value,
+                currency: (snapshot as any).currency,
+                value_date: (snapshot as any).value_date,
+              } as any);
+              toast.success('Loan status restored');
+            } catch {
+              toast.error("Couldn't restore the loan status. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-foreground"></div>
       </div>
     );
   }
@@ -429,7 +450,7 @@ export function FinancingTermsTab({
               >
                 {savingLoanTerms ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/40 border-t-white" />
                     Saving...
                   </>
                 ) : (

@@ -9,6 +9,7 @@ import { useUser } from '@/hooks/useUser';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import {
   UserPlus,
   ArrowRightLeft,
@@ -160,10 +161,10 @@ export default function FocalPointsTab({
     if (!user) return;
     
     const confirmMessage = focalPoint.email === user.email
-      ? 'Remove yourself as focal point? You can reassign this role to someone else afterward.'
-      : `Remove ${focalPoint.name} as focal point? The role can be reassigned afterward.`;
-    
-    if (!(await confirm({ title: 'Remove focal point?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
+      ? "Remove yourself as focal point? You'll have a moment to undo, and you can reassign this role to someone else."
+      : `Remove ${focalPoint.name} as focal point? You'll have a moment to undo.`;
+
+    if (!(await confirm({ title: 'Remove focal point?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Keep', destructive: true }))) return;
 
     setActionLoading(`remove-${focalPoint.id}`);
     try {
@@ -183,11 +184,32 @@ export default function FocalPointsTab({
         throw new Error(error.error || 'Failed to remove focal point');
       }
 
-      toast.success('Focal point removed');
+      const restoreFocalPoint = async () => {
+        try {
+          const res = await apiFetch(`/api/activities/${activityId}/focal-points`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: focalPoint.id,
+              type: focalPoint.type,
+              action: 'assign',
+              current_user_id: user.id,
+            }),
+          });
+          if (!res.ok) throw new Error('Failed to restore focal point');
+          toast.success('Focal point restored');
+          fetchFocalPoints();
+        } catch {
+          toast.error("Couldn't restore the focal point. Please reassign manually.");
+        }
+      };
+      toast.success(`Removed ${focalPoint.name} as focal point`, {
+        action: { label: 'Undo', onClick: restoreFocalPoint },
+      });
       fetchFocalPoints();
     } catch (error) {
       console.error('Error removing focal point:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to remove focal point');
+      toast.error("Couldn't remove the focal point. Please try again in a moment.");
     } finally {
       setActionLoading(null);
     }
@@ -534,6 +556,12 @@ export default function FocalPointsTab({
                   {governmentFocalPoints.length > 0 && (
                     <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                   )}
+                  <HelpTextTooltip>
+                    Government officials who can review, endorse, and approve this
+                    activity. They'll receive notifications when updates need their
+                    attention. You can assign multiple focal points, and the role
+                    can be handed off to another person at any time.
+                  </HelpTextTooltip>
                 </CardTitle>
                 <CardDescription className="text-xs mt-1.5">
                   Government officials responsible for reviewing, endorsing, and approving this activity.
@@ -573,6 +601,12 @@ export default function FocalPointsTab({
                   {developmentPartnerFocalPoints.length > 0 && (
                     <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
                   )}
+                  <HelpTextTooltip>
+                    Staff from the funding or implementing organisation who own the
+                    day-to-day information for this activity. They'll be the main
+                    point of contact for updates and questions, and will receive
+                    notifications about activity changes.
+                  </HelpTextTooltip>
                 </CardTitle>
                 <CardDescription className="text-xs mt-1.5">
                   Main contacts responsible for updating and managing the activity information.

@@ -59,7 +59,7 @@ export function ReferencesManager({
   };
 
   const handleDelete = async (referenceId: string) => {
-    if (await confirm({ title: 'Delete this reference?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this reference?', description: 'This can’t be undone.', confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
       const success = await deleteReference(entityType, entityId, referenceId);
       if (success) {
         onUpdate();

@@ -169,7 +169,6 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
         if (error) throw error;
 
         setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
         onCapitalSpendChange?.(null); // Notify parent
       } catch (err) {
         console.error('Error saving capital spend:', err);
@@ -208,7 +207,6 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
       if (error) throw error;
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
       onCapitalSpendChange?.(roundedValue); // Notify parent
     } catch (err) {
       console.error('Error saving capital spend:', err);
@@ -222,6 +220,9 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCapitalSpend(e.target.value);
     setError(null);
+    // Once the user edits, the current value is no longer what's in the database
+    // so drop the green tick until the next successful save.
+    setSaved(false);
   };
 
   const handleBlur = () => {
@@ -236,7 +237,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-foreground"></div>
       </div>
     );
   }
@@ -255,7 +256,15 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   isSaved={saved}
                   hasValue={!!capitalSpend}
                 >
-                  Capital Spend Percentage
+                  <span className="inline-flex items-center gap-2">
+                    Capital Spend Percentage
+                    <HelpTextTooltip>
+                      The share of the activity's total budget that pays for long-lived
+                      assets — buildings, roads, vehicles, equipment. The rest (the
+                      "recurrent" share) covers ongoing running costs like staff,
+                      training, and supplies.
+                    </HelpTextTooltip>
+                  </span>
                 </LabelSaveIndicator>
                 <div className="relative max-w-xs">
                   <Input
@@ -290,7 +299,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   isSaved={saved}
                   hasValue={!!capitalSpend}
                 >
-                  Recurrent Spend Percentage
+                  <span className="inline-flex items-center gap-2">
+                    Recurrent Spend Percentage
+                    <HelpTextTooltip>
+                      The share that covers ongoing operating costs — salaries,
+                      training, consumables, running expenses. Calculated automatically
+                      as 100% minus the capital spend percentage.
+                    </HelpTextTooltip>
+                  </span>
                 </LabelSaveIndicator>
                 <div className="relative max-w-xs">
                   <Input

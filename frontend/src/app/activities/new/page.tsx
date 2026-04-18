@@ -3126,6 +3126,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "iati":
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">IATI Link</h2>
+            <HelpTextTooltip content="Synchronise this activity with the IATI Registry and Datastore. Enabling sync ensures updates here are reflected in your published IATI file, keeping internal records and the official public dataset consistent.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
           <IATISyncPanel
             activityId={general.id || ''}
             iatiIdentifier={general.iatiIdentifier}
@@ -3146,6 +3152,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "excel-import":
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-foreground">Excel Import</h2>
+            <HelpTextTooltip content="Import activity data from an Excel spreadsheet. Download the template, fill it out, then drop it back in to review and apply the values.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
           <ActivityExcelImportTab
             activityId={general.id || null}
           />
@@ -3155,8 +3167,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       return (
         <div className="bg-card rounded-lg shadow-sm border border-border p-8">
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-3xl font-semibold text-foreground">Import Single Activity</h2>
-            <HelpTextTooltip content="Import activity data from an IATI-compliant XML file. You can review and select which fields to import.">
+            <h2 className="text-3xl font-semibold text-foreground">XML Import</h2>
+            <HelpTextTooltip content="Import activity data from an IATI-compliant XML file. Search the registry, upload a file, or paste a URL. You'll review every field before anything is applied.">
               <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
             </HelpTextTooltip>
           </div>
@@ -5483,13 +5495,18 @@ function NewActivityPageContent() {
       ]
     },
     {
-      title: "Strategic Alignment",
+      title: "Alignment",
       sections: [
         { id: "national_plans", label: "Plan Alignment" },
         { id: "sdg", label: "SDG Alignment" },
+        { id: "policy_markers", label: "Policy Markers" },
+      ]
+    },
+    {
+      title: "Classification",
+      sections: [
         { id: "tags", label: "Tags" },
         { id: "working_groups", label: "Working Groups" },
-        { id: "policy_markers", label: "Policy Markers" },
       ]
     },
     {
@@ -5852,7 +5869,8 @@ function NewActivityPageContent() {
                activeSection !== 'metadata' &&
                activeSection !== 'government' &&
                activeSection !== 'readiness_checklist' &&
-               activeSection !== 'xml-import' && (
+               activeSection !== 'xml-import' &&
+               activeSection !== 'excel-import' && (
                 <div className="flex items-center gap-3 mb-6">
                   <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
                   <HelpTextTooltip content={getSectionHelpText(activeSection)}>

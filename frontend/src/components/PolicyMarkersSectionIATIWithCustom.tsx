@@ -232,7 +232,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       } catch (error: any) {
         console.error('Error fetching IATI policy markers:', error);
         setAvailableMarkers(FALLBACK_IATI_MARKERS);
-        toast.error(`Failed to load policy markers: ${error.message}. Using offline markers.`);
+        toast.error("Couldn't load the latest policy markers. Showing the saved list instead.");
       } finally {
         setLoading(false);
       }
@@ -317,17 +317,40 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
   };
 
   // ---- Remove marker ----
-  const removeMarker = (markerUuid: string) => {
+  const removeMarker = async (markerUuid: string) => {
+    const marker = availableMarkers.find(m => (m.uuid || m.id) === markerUuid);
+    const ok = await confirm({
+      title: 'Remove this policy marker?',
+      description: marker
+        ? `"${marker.name}" will be removed from this activity, along with its significance and rationale. You can add it again anytime.`
+        : 'This policy marker will be removed from the activity.',
+      confirmLabel: 'Remove marker',
+      cancelLabel: 'Keep',
+      destructive: true,
+    });
+    if (!ok) return;
+    // Snapshot the removed entry so Undo can restore it with its significance + rationale
+    const removedEntry = selectedMarkers.get(markerUuid);
     const newSelectedMarkers = new Map(selectedMarkers);
     newSelectedMarkers.delete(markerUuid);
     setSelectedMarkers(newSelectedMarkers);
     triggerSave(newSelectedMarkers);
-    toast.success('Policy marker removed');
+    toast.success(marker ? `Removed "${marker.name}"` : 'Policy marker removed', removedEntry ? {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const restored = new Map(newSelectedMarkers);
+          restored.set(markerUuid, removedEntry);
+          setSelectedMarkers(restored);
+          triggerSave(restored);
+        },
+      },
+    } : undefined);
   };
 
   // ---- Delete custom marker definition ----
   const deleteCustomMarker = async (markerId: string) => {
-    if (!(await confirm({ title: 'Delete custom policy marker?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
+    if (!(await confirm({ title: 'Delete custom policy marker?', description: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel', destructive: true }))) return;
     try {
       const response = await apiFetch(`/api/policy-markers?id=${markerId}`, { method: 'DELETE' });
       if (!response.ok) {

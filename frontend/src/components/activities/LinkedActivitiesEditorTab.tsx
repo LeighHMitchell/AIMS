@@ -391,25 +391,49 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       }
     }
 
-    if (!(await confirm({ title: 'Remove linked activity?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) return;
-    
+    if (!(await confirm({ title: 'Remove linked activity?', description: confirmMessage, confirmLabel: 'Remove', cancelLabel: 'Keep' }))) return;
+
+    // Snapshot for Undo
+    const snapshot = linkedActivities.find(l => l.id === linkedActivityId);
+
     try {
       setSaving(true);
-      
+
       const response = await apiFetch(`/api/activities/${activityId}/linked/${linkedActivityId}`, {
         method: 'DELETE'
       });
-      
+
       if (!response.ok) throw new Error('Failed to delete link');
-      
-      toast.success('Link removed successfully');
+
+      toast.success('Link removed', snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await apiFetch(`/api/activities/${activityId}/linked`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  linked_activity_id: (snapshot as any).linked_activity_id,
+                  relationship_type: (snapshot as any).relationship_type,
+                  narrative: (snapshot as any).narrative,
+                }),
+              });
+              await fetchLinkedActivities();
+              toast.success('Link restored');
+            } catch {
+              toast.error("Couldn't restore the link. Please add it again manually.");
+            }
+          },
+        },
+      } : undefined);
       await fetchLinkedActivities();
-      
+
       // Update last saved timestamp
       setLastSaved(new Date());
     } catch (error) {
       console.error('Error deleting link:', error);
-      toast.error('Failed to remove link');
+      toast.error("Couldn't remove the link. Please try again in a moment.");
     } finally {
       setSaving(false);
     }

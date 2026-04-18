@@ -916,7 +916,16 @@ export default function TransactionList({
       return;
     }
     
-    if (await confirm({ title: 'Delete this transaction?', description: 'This action cannot be undone. The transaction will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    const txn = transactions.find(t => (t.uuid || t.id) === uuid);
+    const amount = txn?.value != null ? `${txn.currency || ''} ${Number(txn.value).toLocaleString()}`.trim() : null;
+    const txnDate = txn?.transaction_date || (txn as any)?.value_date;
+    const txnRef = (txn as any)?.transaction_reference || (txn as any)?.reference;
+    const details = [amount, txnDate, txnRef].filter(Boolean).join(' • ');
+    const description = details
+      ? `This transaction (${details}) will be permanently deleted from this activity. This can't be undone.`
+      : "This transaction will be permanently deleted from this activity. This can't be undone.";
+
+    if (await confirm({ title: 'Delete this transaction?', description, confirmLabel: 'Delete transaction', cancelLabel: 'Keep' })) {
       setIsLoading(true);
       try {
         await onDelete?.(uuid);

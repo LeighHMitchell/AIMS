@@ -256,7 +256,7 @@ export default function TransactionTab({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading transactions...</p>
         </div>
       </div>

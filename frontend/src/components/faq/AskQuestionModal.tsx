@@ -15,9 +15,12 @@ import { apiFetch } from '@/lib/api-fetch';
 interface AskQuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Optional — when provided, attaches the page context to the submission so admins see where the question came from. */
+  sourcePageSlug?: string;
+  sourcePageTitle?: string;
 }
 
-export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
+export function AskQuestionModal({ isOpen, onClose, sourcePageSlug, sourcePageTitle }: AskQuestionModalProps) {
   const { user } = useUser();
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
@@ -53,6 +56,8 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
             .split(',')
             .map(t => t.trim())
             .filter(t => t.length > 0),
+          sourcePageSlug: sourcePageSlug || null,
+          sourcePageTitle: sourcePageTitle || null,
         }),
       });
 
@@ -99,6 +104,11 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {sourcePageTitle && (
+            <div className="rounded-md border bg-surface-muted px-3 py-2 text-xs text-muted-foreground">
+              Asking about: <span className="font-medium text-foreground">{sourcePageTitle}</span>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="question">Your Question <RequiredDot /></Label>
             <Textarea

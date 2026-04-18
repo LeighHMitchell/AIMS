@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConditions } from '@/hooks/use-conditions';
+import { toast } from 'sonner';
 import { 
   ConditionsTabProps, 
   ConditionType, 
@@ -289,12 +290,31 @@ export function ConditionsTab({
 
   // Handle deleting a condition
   const handleDeleteCondition = async (conditionId: string) => {
-    if (await confirm({ title: 'Delete this condition?', description: 'This action cannot be undone. The condition will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete this condition?', description: "The condition will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+      const snapshot = conditions.find(c => c.id === conditionId);
       setIsDeleting(conditionId);
       const success = await deleteCondition(conditionId);
       setIsDeleting(null);
       if (success) {
         onConditionsChange?.(conditions);
+        toast.success('Condition removed', snapshot ? {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                await createCondition({
+                  activity_id: activityId,
+                  type: (snapshot as any).type,
+                  narrative: (snapshot as any).narrative,
+                  attached: (snapshot as any).attached,
+                } as any);
+                toast.success('Condition restored');
+              } catch {
+                toast.error("Couldn't restore the condition. Please add it again manually.");
+              }
+            },
+          },
+        } : undefined);
       }
     }
   };
@@ -484,7 +504,11 @@ export function ConditionsTab({
             </div>
           </CardHeader>
           <CardContent className="text-center pb-8">
-            <ScrollText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <img
+              src="/images/empty-canal-lock.png"
+              alt="No conditions"
+              className="h-32 mx-auto mb-4 opacity-80"
+            />
             <h3 className="text-lg font-medium mb-2">No conditions</h3>
             <p className="text-muted-foreground">
               Use the button above to add your first condition.

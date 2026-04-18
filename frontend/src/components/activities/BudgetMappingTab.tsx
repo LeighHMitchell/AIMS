@@ -3,6 +3,7 @@
 import React from "react";
 import { Plus, Pencil, Trash2, AlertCircle, ChevronDown, ChevronRight, Sparkles, Check, RefreshCw, Info } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CountryBudgetItems, Narrative } from "@/types/country-budget-items";
@@ -240,9 +241,14 @@ export default function BudgetMappingTab({
   };
 
   const handleDelete = async (vocabularyCode: string) => {
-    if (!(await confirm({ title: 'Delete budget items?', description: 'Are you sure you want to delete all budget items for this vocabulary?', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Delete budget items?', description: 'All budget items for this vocabulary will be removed. You\u2019ll have a moment to undo.', confirmLabel: 'Delete', cancelLabel: 'Keep' }))) {
       return;
     }
+
+    // Snapshot items for this vocabulary so Undo can restore them
+    const snapshot: CountryBudgetItems | null = countryBudgetItems.find(
+      c => c.vocabulary === vocabularyCode
+    ) || null;
 
     try {
       setSaving(true);
@@ -256,9 +262,32 @@ export default function BudgetMappingTab({
 
       await loadCountryBudgetItems();
       await loadSuggestions();
+
+      toast.success(`Removed ${snapshot?.budget_items?.length || 0} budget item${snapshot?.budget_items?.length === 1 ? '' : 's'}`, snapshot ? {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              await apiFetch(`/api/activities/${activityId}/country-budget-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  vocabulary: snapshot.vocabulary,
+                  budget_items: snapshot.budget_items,
+                  activity_id: activityId,
+                }),
+              });
+              await loadCountryBudgetItems();
+              toast.success('Budget items restored');
+            } catch {
+              toast.error("Couldn't restore the budget items. Please add them again manually.");
+            }
+          },
+        },
+      } : undefined);
     } catch (err) {
       console.error('Error deleting budget mapping:', err);
-      setError('Failed to delete budget mapping');
+      setError("Couldn't remove the budget items. Please try again in a moment.");
     } finally {
       setSaving(false);
     }
@@ -318,8 +347,8 @@ export default function BudgetMappingTab({
 
         <CardContent>
           <div className="space-y-6">
-            {/* Skeleton for suggestions */}
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-4 border border-amber-200">
+            {/* Skeleton for suggestions — neutral to match the real card's appearance (no yellow flash) */}
+            <div className="bg-muted/30 rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2 mb-3">
                 <Skeleton className="h-5 w-5" />
                 <Skeleton className="h-5 w-48" />
@@ -603,9 +632,15 @@ export default function BudgetMappingTab({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg">Country Budget Item Mappings</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Country Budget Item Mappings
+                <HelpTextTooltip>
+                  Link this activity to line items in the national budget, so government
+                  reviewers can see which of their own budget categories the activity supports.
+                </HelpTextTooltip>
+              </CardTitle>
               <CardDescription>
-                Map this activity to budget classification codes
+                Map this activity to budget classification codes used by the government.
               </CardDescription>
             </div>
             {availableVocabularies.length > 0 && (
@@ -630,7 +665,11 @@ export default function BudgetMappingTab({
 
           {countryBudgetItems.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <img
+                src="/images/empty-scaffolding.png"
+                alt="No budget mappings"
+                className="h-32 mx-auto mb-4 opacity-80"
+              />
               <h3 className="text-lg font-medium mb-2">No budget mappings</h3>
               <p className="text-muted-foreground mb-4">Map activity sectors to government budget classifications.</p>
               {hasSuggestions ? (
@@ -654,8 +693,24 @@ export default function BudgetMappingTab({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-medium">Vocabulary</TableHead>
-                    <TableHead className="font-medium">Classification Type</TableHead>
+                    <TableHead className="font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        Vocabulary
+                        <HelpTextTooltip>
+                          Which classification list the budget code comes from
+                          (e.g. COFOG, national chart of accounts, donor-defined).
+                        </HelpTextTooltip>
+                      </span>
+                    </TableHead>
+                    <TableHead className="font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        Classification Type
+                        <HelpTextTooltip>
+                          The level of the classification — e.g. sector, sub-sector,
+                          function, or programme.
+                        </HelpTextTooltip>
+                      </span>
+                    </TableHead>
                     <TableHead className="font-medium">Budget Classification</TableHead>
                     <TableHead className="font-medium w-24">Percentage</TableHead>
                     {totalBudgetUSD != null && totalBudgetUSD > 0 && (

@@ -171,7 +171,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   };
 
   const handleDelete = async (relationshipId: string) => {
-    if (!(await confirm({ title: 'Remove linked activity?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Cancel' }))) {
+    if (!(await confirm({ title: 'Remove linked activity?', description: 'Are you sure you want to remove this linked activity?', confirmLabel: 'Remove', cancelLabel: 'Keep' }))) {
       return;
     }
 

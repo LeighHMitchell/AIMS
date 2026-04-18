@@ -16,6 +16,8 @@ import { TourOverlay } from "@/components/tour/TourOverlay"
 import { isVisitorUser, exitVisitorMode } from "@/lib/visitor"
 import { UserPlus, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PageHelpBubble } from "@/components/help/PageHelpBubble"
+import { resolvePageHelp } from "@/lib/help-page-slugs"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -161,6 +163,13 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Contextual Page Help bubble — renders only on pages registered in help-page-slugs */}
+      {!isVisitor && (() => {
+        const pageHelp = resolvePageHelp(pathname);
+        if (!pageHelp) return null;
+        return <PageHelpBubble pageSlug={pageHelp.slug} pageTitle={pageHelp.title} />;
+      })()}
     </div>
   );
 

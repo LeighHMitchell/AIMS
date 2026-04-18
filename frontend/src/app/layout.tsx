@@ -48,10 +48,10 @@ export default function RootLayout({
                 </LoadingBarProvider>
               </Suspense>
             </MobileGate>
-            <Toaster 
-              position="top-center" 
-              richColors 
-              closeButton 
+            <Toaster
+              position="top-center"
+              richColors
+              closeButton
               duration={5000}
               visibleToasts={5}
               expand={true}
@@ -59,6 +59,11 @@ export default function RootLayout({
               toastOptions={{
                 style: {
                   fontSize: '14px',
+                },
+                actionButtonStyle: {
+                  backgroundColor: '#166534', // dark green (tailwind green-800)
+                  color: '#ffffff',
+                  fontWeight: 500,
                 },
               }}
             />

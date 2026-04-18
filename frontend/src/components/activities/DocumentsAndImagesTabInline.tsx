@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { DocumentCardInlineFixed } from './DocumentCardInlineFixed';
 import {
   IatiDocumentLink,
@@ -292,7 +293,8 @@ export function DocumentsAndImagesTabInline({
   const [pendingUploadedDocument, setPendingUploadedDocument] = React.useState<IatiDocumentLink | null>(null);
   const [showMetadataModal, setShowMetadataModal] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
-  
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Track new document being added
@@ -405,9 +407,28 @@ export function DocumentsAndImagesTabInline({
     setShowMetadataModal(false);
   };
   
-  const handleDeleteDocument = (url: string) => {
+  const handleDeleteDocument = async (url: string) => {
+    const snapshot = documents.find(doc => doc.url === url);
+    const label = snapshot?.title?.[0]?.text || snapshot?.url || 'this document';
+    const ok = await confirm({
+      title: 'Remove this document?',
+      description: `"${label}" will be removed from this activity. You'll have a moment to undo.`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Keep',
+    });
+    if (!ok) return;
+
+    const previousDocuments = documents;
     onChange(documents.filter(doc => doc.url !== url));
-    toast.success('Document deleted successfully');
+    toast.success(`Removed ${label}`, snapshot ? {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          onChange(previousDocuments);
+          toast.success('Document restored');
+        },
+      },
+    } : undefined);
   };
 
   const handleDownloadDocument = (doc: IatiDocumentLink) => {
@@ -662,10 +683,10 @@ export function DocumentsAndImagesTabInline({
           {/* Add Documents Section */}
           <div className="w-full">
             <div className="mt-4">
-              <div 
+              <div
                 className={cn(
-                  "bg-muted rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
-                  isDragOver ? "border-blue-500 bg-blue-100 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted",
+                  "bg-card rounded-lg p-8 border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[300px] flex items-center justify-center",
+                  isDragOver ? "border-blue-500 bg-blue-50 scale-[1.02]" : "border-input hover:border-gray-400 hover:bg-muted/30",
                   !activityId && "opacity-50 cursor-not-allowed"
                 )}
                 onDragOver={handleDragOver}
@@ -676,9 +697,13 @@ export function DocumentsAndImagesTabInline({
                 <div className="text-center max-w-md">
                   <div className="mb-6">
                     {isDragOver ? (
-                      <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
+                      <FileUp className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse" />
                     ) : (
-                      <Upload className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                      <img
+                        src="/images/empty-message-bottle.png"
+                        alt=""
+                        className="h-40 mx-auto mb-4 opacity-80"
+                      />
                     )}
                   </div>
                   <h4 className="text-2xl font-medium text-foreground mb-3">
@@ -1001,14 +1026,11 @@ export function DocumentsAndImagesTabInline({
           ) : (
             /* Empty State */
             <div className="text-center py-16 text-muted-foreground">
-              <div className="flex justify-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                  <Cloud className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                  <ExternalLink className="w-8 h-8 text-muted-foreground" />
-                </div>
-              </div>
+              <img
+                src="/images/empty-bookshelf.png"
+                alt="Empty library"
+                className="h-40 mx-auto mb-6 opacity-80"
+              />
               <h3 className="text-xl font-medium mb-2 text-foreground">No documents added yet</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Upload files (PDFs, images, Word docs) or paste links to documents hosted online to build your activity&rsquo;s library.
@@ -1029,6 +1051,7 @@ export function DocumentsAndImagesTabInline({
           isEditing={!!editingDocument}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

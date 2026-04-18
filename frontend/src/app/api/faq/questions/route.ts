@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userId, question, context, tags, relatedFaqId } = body;
+    const { userId, question, context, tags, relatedFaqId, sourcePageSlug, sourcePageTitle } = body;
 
     // Validation
     if (!userId) {
@@ -338,6 +338,8 @@ export async function POST(request: NextRequest) {
         tags: tags || [],
         related_faq_id: relatedFaqId || null,
         status: 'pending',
+        source_page_slug: typeof sourcePageSlug === 'string' && sourcePageSlug.trim() ? sourcePageSlug.trim() : null,
+        source_page_title: typeof sourcePageTitle === 'string' && sourcePageTitle.trim() ? sourcePageTitle.trim() : null,
       })
       .select()
       .single();

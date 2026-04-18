@@ -144,12 +144,29 @@ export default function GovernmentEndorsementTab({
   };
 
   const handleDelete = async () => {
-    if (await confirm({ title: 'Delete government endorsement?', description: 'This action cannot be undone. The endorsement will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' })) {
+    if (await confirm({ title: 'Delete government endorsement?', description: "The endorsement will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' })) {
+      const snapshot = { ...formData };
       const success = await deleteEndorsement();
       if (success) {
         setFormData({});
         setHasUnsavedChanges(false);
         setLastSaved(null);
+        toast.success('Endorsement removed', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                const ok = await saveEndorsement(snapshot, false);
+                if (ok) {
+                  setFormData(snapshot);
+                  toast.success('Endorsement restored');
+                }
+              } catch {
+                toast.error("Couldn't restore the endorsement. Please re-enter manually.");
+              }
+            },
+          },
+        });
       }
     }
   };
@@ -242,7 +259,9 @@ export default function GovernmentEndorsementTab({
   };
 
   const handleDeleteRef = async (refId: string) => {
-    if (!(await confirm({ title: 'Delete project reference?', description: 'This action cannot be undone. The project reference will be permanently removed.', confirmLabel: 'Delete', cancelLabel: 'Cancel' }))) return;
+    if (!(await confirm({ title: 'Delete project reference?', description: "The reference will be removed. You'll have a moment to undo.", confirmLabel: 'Delete', cancelLabel: 'Keep' }))) return;
+
+    const snapshot = projectReferences.find(r => r.id === refId);
 
     try {
       const response = await apiFetch(`/api/activities/${activityId}/project-references?referenceId=${refId}`,
@@ -250,13 +269,34 @@ export default function GovernmentEndorsementTab({
       );
 
       if (response.ok) {
-        toast.success('Reference deleted');
+        toast.success('Reference removed', snapshot ? {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                await apiFetch(`/api/activities/${activityId}/project-references`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    code: (snapshot as any).code,
+                    description: (snapshot as any).description,
+                    is_primary: (snapshot as any).is_primary,
+                  }),
+                });
+                await fetchProjectReferences();
+                toast.success('Reference restored');
+              } catch {
+                toast.error("Couldn't restore the reference. Please add it again manually.");
+              }
+            },
+          },
+        } : undefined);
         fetchProjectReferences();
       } else {
-        toast.error('Failed to delete reference');
+        toast.error("Couldn't remove the reference. Please try again in a moment.");
       }
     } catch (error) {
-      toast.error('Failed to delete reference');
+      toast.error("Couldn't remove the reference. Please try again in a moment.");
     }
   };
 

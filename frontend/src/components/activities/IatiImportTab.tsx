@@ -1853,7 +1853,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     navigator.clipboard.writeText(logText).then(() => {
       toast.success('Debug logs copied to clipboard');
     }).catch(() => {
-      toast.error('Failed to copy debug logs');
+      toast.error('Couldn’t copy debug logs. Please try again in a moment.');
     });
   };
   
@@ -3239,7 +3239,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           return;
         } catch (error) {
           console.error('[Multi-Activity] Error during multi-activity detection:', error);
-          toast.error('Failed to parse multiple activities: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast.error('Couldn’t parse multiple activities:. Please try again in a moment.' + (error instanceof Error ? error.message : 'Unknown error'));
           setImportStatus({ stage: 'idle', progress: 0 });
           setIsParsing(false);
           isParsingRef.current = false;
@@ -6259,7 +6259,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               }
             } catch (error) {
               console.error('[IATI Import] Failed to fetch organizations:', error);
-              toast.error('Failed to load organizations. Please try again.');
+              toast.error('Couldn’t load organizations. Please try again.. Please try again in a moment.');
             }
             
             return; // Exit here - reporting org selection modal will handle the rest
@@ -6319,7 +6319,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         stage: 'error', 
         message: error instanceof Error ? error.message : 'Failed to parse XML file. Please ensure it\'s a valid IATI XML document.' 
       });
-      toast.error('Failed to parse XML file', {
+      toast.error('Couldn’t parse XML file. Please try again in a moment.', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
     } finally {
@@ -6833,7 +6833,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         }, 100);
       } catch (error) {
         console.error('[External Publisher] Failed to fetch organizations:', error);
-        toast.error('Failed to load organizations. Please try again.');
+        toast.error('Couldn’t load organizations. Please try again.. Please try again in a moment.');
         // Fall back to showing field selection without modal
         setImportStatus({ stage: 'previewing', progress: 100 });
       }
@@ -8509,7 +8509,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (!otherIdentifiersResponse.ok) {
             const errorData = await otherIdentifiersResponse.json();
             console.error('[IATI Import] Other identifiers import API error:', errorData);
-            toast.error('Failed to import other identifiers', {
+            toast.error('Couldn’t import other identifiers. Please try again in a moment.', {
               description: errorData.error || 'Could not import other identifier data. Main activity data was imported successfully.'
             });
           } else {
@@ -8520,7 +8520,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (otherIdentifiersError) {
           console.error('[IATI Import] Other identifiers import network error:', otherIdentifiersError);
-          toast.error('Failed to import other identifiers', {
+          toast.error('Couldn’t import other identifiers. Please try again in a moment.', {
             description: 'Network error occurred while importing other identifiers. Please check your connection and try again.'
           });
         }
@@ -8685,7 +8685,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   });
                 } else {
                   importSummary.errors.push(`Sector import failed: ${errorData.error || sectorResponse.statusText}`);
-                  toast.error('Failed to import sectors', {
+                  toast.error('Couldn’t import sectors. Please try again in a moment.', {
                     description: `API Error: ${errorData.error || sectorResponse.statusText}. Main activity data was imported successfully.`
                   });
                 }
@@ -8700,7 +8700,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               console.error('[IATI Import] Sector import network error:', sectorError);
               importSummary.sectors.failed = sectorsToImport.length;
               importSummary.errors.push(`Sector import exception: ${sectorError instanceof Error ? sectorError.message : 'Unknown error'}`);
-              toast.error('Failed to import sectors', {
+              toast.error('Couldn’t import sectors. Please try again in a moment.', {
                 description: 'Network error occurred while importing sectors. Please check your connection and try again.'
               });
             }
@@ -8832,7 +8832,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             console.error('[IATI Import] Locations import API error:', errorData);
             importSummary.locations.failed = locationsToImport.length;
             importSummary.errors.push(`Locations import failed: ${errorData.error || 'Unknown error'}`);
-            toast.error('Failed to import locations', {
+            toast.error('Couldn’t import locations. Please try again in a moment.', {
               description: errorData.error || 'Could not import location data. Main activity data was imported successfully.'
             });
           } else {
@@ -8846,7 +8846,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           console.error('[IATI Import] Locations import network error:', locationError);
           importSummary.locations.failed = importSummary.locations.attempted;
           importSummary.errors.push(`Locations import exception: ${locationError instanceof Error ? locationError.message : 'Unknown error'}`);
-          toast.error('Failed to import locations', {
+          toast.error('Couldn’t import locations. Please try again in a moment.', {
             description: 'Network error occurred while importing locations. Please check your connection and try again.'
           });
         }
@@ -8872,7 +8872,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (!fssResponse.ok) {
             const errorData = await fssResponse.json();
             console.error('[IATI Import] FSS import API error:', errorData);
-            toast.error('Failed to import Forward Spending Survey', {
+            toast.error('Couldn’t import Forward Spending Survey. Please try again in a moment.', {
               description: errorData.error || 'Could not import FSS data. Main activity data was imported successfully.'
             });
           } else {
@@ -8883,7 +8883,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (fssError) {
           console.error('[IATI Import] FSS import network error:', fssError);
-          toast.error('Failed to import FSS', {
+          toast.error('Couldn’t import FSS. Please try again in a moment.', {
             description: 'Network error occurred while importing FSS. Please check your connection and try again.'
           });
         }
@@ -8914,7 +8914,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (!docResponse.ok) {
             const errorData = await docResponse.json();
             console.error('[IATI Import] Document import API error:', errorData);
-            toast.error('Failed to import document links', {
+            toast.error('Couldn’t import document links. Please try again in a moment.', {
               description: errorData.error || 'Could not import documents. Main activity data was imported successfully.'
             });
           } else {
@@ -8937,7 +8937,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (docError) {
           console.error('[IATI Import] Document import network error:', docError);
-          toast.error('Failed to import documents', {
+          toast.error('Couldn’t import documents. Please try again in a moment.', {
             description: 'Network error occurred while importing documents. Please check your connection and try again.'
           });
         }
@@ -8999,7 +8999,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (!contactsResponse.ok) {
             const errorData = await contactsResponse.json();
             console.error('[IATI Import] Contacts import API error:', errorData);
-            toast.error('Failed to import contacts', {
+            toast.error('Couldn’t import contacts. Please try again in a moment.', {
               description: errorData.error || 'Could not import contact data. Main activity data was imported successfully.'
             });
           } else {
@@ -9010,7 +9010,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (contactError) {
           console.error('[IATI Import] Contacts import network error:', contactError);
-          toast.error('Failed to import contacts', {
+          toast.error('Couldn’t import contacts. Please try again in a moment.', {
             description: 'Network error occurred while importing contacts. Please check your connection and try again.'
           });
         }
@@ -9037,7 +9037,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (!humanitarianResponse.ok) {
             const errorText = await humanitarianResponse.text();
             console.error('[IATI Import] Humanitarian data import error:', errorText);
-            toast.error('Failed to import humanitarian data', {
+            toast.error('Couldn’t import humanitarian data. Please try again in a moment.', {
               description: 'Could not import humanitarian data. Main activity data was imported successfully.'
             });
           } else {
@@ -9049,7 +9049,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (error) {
           console.error('[IATI Import] Error importing humanitarian data:', error);
-          toast.error('Failed to import humanitarian data', {
+          toast.error('Couldn’t import humanitarian data. Please try again in a moment.', {
             description: 'Network error occurred while importing humanitarian data.'
           });
         }
@@ -9182,7 +9182,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (budgetsError) {
           console.error('[IATI Import] Budgets import error:', budgetsError);
-          toast.error('Failed to import budgets', {
+          toast.error('Couldn’t import budgets. Please try again in a moment.', {
             description: 'Main activity data was imported successfully.'
           });
         }
@@ -9260,13 +9260,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
             invalidateActivityCache(effectiveActivityId);
           } else if (errorCount > 0) {
-            toast.error('Failed to import country budget items', {
+            toast.error('Couldn’t import country budget items. Please try again in a moment.', {
               description: `All ${errorCount} vocabulary group(s) failed to import`
             });
           }
         } catch (cbiError) {
           console.error('[IATI Import] Country budget items import error:', cbiError);
-          toast.error('Failed to import country budget items', {
+          toast.error('Couldn’t import country budget items. Please try again in a moment.', {
             description: 'An error occurred while processing country budget items.'
           });
         }
@@ -9442,7 +9442,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (disbursementsError) {
           console.error('[IATI Import] Planned disbursements import error:', disbursementsError);
-          toast.error('Failed to import planned disbursements', {
+          toast.error('Couldn’t import planned disbursements. Please try again in a moment.', {
             description: 'Main activity data was imported successfully.'
           });
         }
@@ -9696,7 +9696,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               importSummary.policyMarkers.failed = importedPolicyMarkers.length;
               importSummary.errors.push(`Policy markers import failed: ${errorMessage}`);
               
-                toast.error('Failed to import policy markers', {
+                toast.error('Couldn’t import policy markers. Please try again in a moment.', {
                 description: errorMessage
                 });
               } else {
@@ -9720,7 +9720,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             stack: policyMarkersError.stack,
             name: policyMarkersError.name
           });
-          toast.error('Failed to import policy markers', {
+          toast.error('Couldn’t import policy markers. Please try again in a moment.', {
             description: `An error occurred while processing policy markers: ${policyMarkersError.message}`
           });
         }
@@ -9841,7 +9841,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (tagsError: any) {
           console.error('[IATI Import] Tags import error:', tagsError);
-          toast.error('Failed to import tags', {
+          toast.error('Couldn’t import tags. Please try again in a moment.', {
             description: `An error occurred while processing tags: ${tagsError.message}`
           });
         }
@@ -9884,7 +9884,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 errorMessage = errorText || errorMessage;
               }
               
-              toast.error('Failed to import results', {
+              toast.error('Couldn’t import results. Please try again in a moment.', {
                 description: errorMessage
               });
             } else {
@@ -9914,7 +9914,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
         } catch (resultsError: any) {
           console.error('[IATI Import] Results import error:', resultsError);
-          toast.error('Failed to import results', {
+          toast.error('Couldn’t import results. Please try again in a moment.', {
             description: `An error occurred while processing results: ${resultsError.message}`
           });
         }
@@ -10011,7 +10011,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (conditionsError: any) {
           console.error('[IATI Import] Conditions import error:', conditionsError);
-          toast.error('Failed to import conditions', {
+          toast.error('Couldn’t import conditions. Please try again in a moment.', {
             description: `An error occurred while processing conditions: ${conditionsError.message}`
           });
         }
@@ -10347,7 +10347,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             invalidateActivityCache(effectiveActivityId);
           } else if (errorCount > 0) {
-            toast.error('Failed to import transactions', {
+            toast.error('Couldn’t import transactions. Please try again in a moment.', {
               description: `All ${errorCount} transaction(s) failed to import`
             });
           } else {
@@ -10358,7 +10358,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         } catch (transactionsError: any) {
           console.error('[IATI Import] Transactions import error:', transactionsError);
-          toast.error('Failed to import transactions', {
+          toast.error('Couldn’t import transactions. Please try again in a moment.', {
             description: 'An error occurred while processing transactions.'
           });
         }
@@ -10766,14 +10766,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
 
           if (errorCount > 0 && successCount === 0) {
-            toast.error('Failed to import related activities', {
+            toast.error('Couldn’t import related activities. Please try again in a moment.', {
               description: `${errorCount} relationship(s) could not be created`
             });
           }
 
         } catch (relatedActivitiesError: any) {
           console.error('[IATI Import] Related activities import error:', relatedActivitiesError);
-          toast.error('Failed to import related activities', {
+          toast.error('Couldn’t import related activities. Please try again in a moment.', {
             description: `An error occurred: ${relatedActivitiesError.message}`
           });
         }
@@ -12468,6 +12468,37 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       {/* Import Method Selection and Input */}
       {importStatus.stage === 'idle' && !selectedFile && !xmlContent && !snippetContent && (
         <div>
+            {/* Plain instruction line — matches Excel / XML Import below-header pattern. */}
+            <p className="text-sm text-muted-foreground mb-2">
+              Search the public IATI registry for an activity already published by another
+              organisation, upload an XML file, or paste a URL. You&rsquo;ll review every field
+              before it&rsquo;s applied &mdash; nothing overwrites your current data until you confirm.
+            </p>
+            <details className="mb-6 group">
+              <summary className="cursor-pointer text-muted-foreground text-xs inline-flex items-center gap-1 hover:text-foreground hover:underline">
+                <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+                New to IATI? Quick primer and glossary
+              </summary>
+              <div className="mt-2 pl-4 space-y-2 text-xs text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">IATI</strong> (International Aid Transparency Initiative) is a global
+                  standard for publishing aid data. Organisations publish activity data in a
+                  shared XML format so everyone &mdash; governments, donors, researchers &mdash;
+                  can see the same consistent information.
+                </p>
+                <p className="font-medium text-foreground pt-2">Common terms you&rsquo;ll see:</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li><strong className="text-foreground">IATI identifier</strong> &mdash; a unique code for this activity (e.g. <code className="text-[11px]">XM-DAC-41114-PROJ-001</code>).</li>
+                  <li><strong className="text-foreground">Reporting organisation</strong> &mdash; who publishes the data.</li>
+                  <li><strong className="text-foreground">Aid type</strong> &mdash; how the money is delivered (e.g. project aid, technical assistance, budget support).</li>
+                  <li><strong className="text-foreground">Flow type</strong> &mdash; broad category (ODA, private flows, other official flows).</li>
+                  <li><strong className="text-foreground">Finance type</strong> &mdash; grant, loan, equity, or debt relief.</li>
+                  <li><strong className="text-foreground">Tied status</strong> &mdash; whether funds must be spent with specific suppliers (tied) or can be spent freely (untied).</li>
+                  <li><strong className="text-foreground">Collaboration type</strong> &mdash; bilateral, multilateral, or public-private.</li>
+                </ul>
+              </div>
+            </details>
+
             {/* Method Selection */}
             <div className="mb-6">
               <Label className="text-base font-medium">Import Method</Label>
@@ -13026,7 +13057,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           });
                         }).catch((err) => {
                           console.error('Failed to copy:', err);
-                          toast.error('Failed to copy log', {
+                          toast.error('Couldn’t copy log. Please try again in a moment.', {
                             description: 'Please try copying from the console instead'
                           });
                         });
@@ -13604,7 +13635,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               </Button>
             </div>
             
-            <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+            <div className="bg-zinc-950 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
               {debugLogs.length === 0 ? (
                 <div className="text-muted-foreground">No debug logs captured yet. Try importing an XML file to see logs here.</div>
               ) : (
