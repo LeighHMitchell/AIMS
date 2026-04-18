@@ -552,7 +552,7 @@ export function BudgetTable({
                             {/* Activity Info */}
                             {budget.activity && (
                               <div className="bg-white rounded-lg border border-border p-4">
-                                <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Activity</h3>
+                                <h3 className="text-section-label uppercase text-muted-foreground mb-3">Activity</h3>
                                 <div className="space-y-1">
                                   <p className="font-medium text-body">{activityTitle}</p>
                                   {budget.activity.iati_identifier && (
@@ -569,7 +569,7 @@ export function BudgetTable({
                           <div className="space-y-4">
                             {/* Budget Metadata */}
                             <div className="bg-white rounded-lg border border-border p-4">
-                              <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Budget Details</h3>
+                              <h3 className="text-section-label uppercase text-muted-foreground mb-3">Budget Details</h3>
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                   <span className="text-helper text-muted-foreground">Value Date</span>

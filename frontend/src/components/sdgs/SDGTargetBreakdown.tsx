@@ -121,7 +121,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
       {/* Unfunded Targets */}
       {unfundedTargets.length > 0 && !compact && (
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Unfunded Targets</p>
+          <p className="text-section-label font-medium text-muted-foreground mb-2 uppercase">Unfunded Targets</p>
           <div className="flex flex-wrap gap-2">
             {unfundedTargets.map(target => (
               <span

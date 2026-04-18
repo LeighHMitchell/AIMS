@@ -424,7 +424,7 @@ export default function TransparencyIndexPage() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted text-section-label font-semibold text-muted-foreground uppercase">
                   <div className="col-span-1">Rank</div>
                   <div className="col-span-4">Organization</div>
                   <div className="col-span-2 text-center">Projects</div>

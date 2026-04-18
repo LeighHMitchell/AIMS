@@ -8719,19 +8719,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider text-center w-20">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase text-center w-20">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-32">
                   Field
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-40">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-40">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-40">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-40">
                   Status
                 </th>
               </tr>
@@ -8817,19 +8817,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-12">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase w-12">
                   Import
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Policy Marker
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Current Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Import Value
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                   Status
                 </th>
               </tr>
@@ -10855,7 +10855,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                   <>
                     <tr className="bg-muted">
                       <td colSpan={3} className="px-3 py-2">
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        <div className="flex items-center gap-2 text-section-label font-medium text-muted-foreground uppercase">
                           <Lock className="h-3 w-3" />
                           Non-DAC Sectors
                         </div>

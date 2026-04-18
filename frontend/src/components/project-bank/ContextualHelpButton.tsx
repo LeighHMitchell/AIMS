@@ -83,7 +83,7 @@ export function ContextualHelpButton({ stage }: ContextualHelpButtonProps) {
               {/* Relevant to current stage */}
               {relevantDefs.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Relevant to this stage</h4>
+                  <h4 className="text-section-label font-semibold uppercase text-muted-foreground mb-3">Relevant to this stage</h4>
                   <div className="space-y-3">
                     {relevantDefs.map(d => (
                       <div key={d.term} className="p-3 rounded-lg bg-muted/30 border">
@@ -98,7 +98,7 @@ export function ContextualHelpButton({ stage }: ContextualHelpButtonProps) {
               {/* Other terms */}
               {otherDefs.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">All terms</h4>
+                  <h4 className="text-section-label font-semibold uppercase text-muted-foreground mb-3">All terms</h4>
                   <div className="space-y-3">
                     {otherDefs.map(d => (
                       <div key={d.term} className="p-3 rounded-lg">

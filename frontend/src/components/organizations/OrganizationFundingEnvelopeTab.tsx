@@ -554,25 +554,25 @@ export default function OrganizationFundingEnvelopeTab({
               {sortedEnvelopes.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                   <div className="bg-muted rounded-lg p-3 text-center">
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Past</div>
+                    <div className="text-section-label text-muted-foreground uppercase">Past</div>
                     <div className="text-lg font-semibold text-foreground">
                       {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.past))}
                     </div>
                   </div>
                   <div className="bg-muted rounded-lg p-3 text-center">
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Current</div>
+                    <div className="text-section-label text-muted-foreground uppercase">Current</div>
                     <div className="text-lg font-semibold text-foreground">
                       {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.current))}
                     </div>
                   </div>
                   <div className="bg-muted rounded-lg p-3 text-center">
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Future</div>
+                    <div className="text-section-label text-muted-foreground uppercase">Future</div>
                     <div className="text-lg font-semibold text-foreground">
                       {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.future))}
                     </div>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3 text-center">
-                    <div className="text-xs text-blue-600 uppercase tracking-wide">All (indicative)</div>
+                    <div className="text-section-label text-blue-600 uppercase">All (indicative)</div>
                     <div className="text-lg font-semibold text-blue-900">
                       {formatCurrencyCompact(
                         calculateSubtotal(categorizedEnvelopes.past) +

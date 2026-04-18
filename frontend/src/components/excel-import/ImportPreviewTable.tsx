@@ -56,7 +56,7 @@ export function ImportPreviewTable({ preview, onValueOverride, repeatGroups }: I
             return (
               <React.Fragment key={group.key}>
                 <tr className="bg-muted/30 border-t">
-                  <td colSpan={3} className="px-4 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                  <td colSpan={3} className="px-4 py-2 font-medium text-section-label uppercase text-muted-foreground">
                     {group.label}
                   </td>
                 </tr>

@@ -4277,12 +4277,12 @@ export default function OrganizationProfilePage() {
                           <table className="w-full">
                             <thead className="bg-surface-muted">
                               <tr className="border-b border-border">
-                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Document</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Source</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Format</th>
-                                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                                <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Link</th>
+                                <th className="text-left py-3 px-4 text-section-label font-medium text-muted-foreground uppercase">Document</th>
+                                <th className="text-left py-3 px-4 text-section-label font-medium text-muted-foreground uppercase">Type</th>
+                                <th className="text-left py-3 px-4 text-section-label font-medium text-muted-foreground uppercase">Source</th>
+                                <th className="text-left py-3 px-4 text-section-label font-medium text-muted-foreground uppercase">Format</th>
+                                <th className="text-left py-3 px-4 text-section-label font-medium text-muted-foreground uppercase">Date</th>
+                                <th className="text-right py-3 px-4 text-section-label font-medium text-muted-foreground uppercase">Link</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border">

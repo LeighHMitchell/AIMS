@@ -399,12 +399,12 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
       <table className="w-full">
         <thead className="bg-surface-muted">
           <tr className="bg-muted border-b">
-            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Title</th>
-            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Date</th>
-            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Time</th>
-            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Location</th>
-            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
-            <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3" />
+            <th className="text-left text-section-label font-medium text-muted-foreground uppercase px-4 py-3">Title</th>
+            <th className="text-left text-section-label font-medium text-muted-foreground uppercase px-4 py-3">Date</th>
+            <th className="text-left text-section-label font-medium text-muted-foreground uppercase px-4 py-3">Time</th>
+            <th className="text-left text-section-label font-medium text-muted-foreground uppercase px-4 py-3">Location</th>
+            <th className="text-left text-section-label font-medium text-muted-foreground uppercase px-4 py-3">Status</th>
+            <th className="text-right text-section-label font-medium text-muted-foreground uppercase px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-border">

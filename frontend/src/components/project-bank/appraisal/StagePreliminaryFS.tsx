@@ -776,7 +776,7 @@ export function ViabilityDecisionSidebar({ wizard }: { wizard: UseAppraisalWizar
 
   return (
     <div className="p-4 rounded-lg border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20">
-      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Viability Decision</div>
+      <div className="text-section-label font-semibold uppercase text-muted-foreground mb-2">Viability Decision</div>
       <div className="text-body font-bold mb-1 text-foreground">
         {routing.label}
       </div>

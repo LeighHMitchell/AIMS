@@ -920,7 +920,7 @@ export function CumulativeFinancialOverview({
             )}
             {plannedBudgets.length > 0 && (
               <>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
+                <p className="text-section-label font-semibold text-muted-foreground uppercase mb-1 mt-2 pt-2 border-t border-border">Planned Disbursements & Budgets</p>
                 <table className="w-full text-body">
                   <tbody>
                     {plannedBudgets.map(renderRow)}

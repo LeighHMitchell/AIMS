@@ -160,7 +160,7 @@ export default function WorkingGroupEditorNavigation({
           >
             <div
               id={`group-${groupIndex}`}
-              className="text-xs font-bold text-black uppercase mb-2 tracking-wide px-1 flex items-center gap-1"
+              className="text-section-label font-bold text-black uppercase mb-2 px-1 flex items-center gap-1"
               role="heading"
               aria-level={3}
             >

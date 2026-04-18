@@ -136,7 +136,7 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
   return (
     <div className={`p-4 rounded-lg border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20 ${className || ''}`}>
       <div className="mb-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="text-section-label font-semibold uppercase text-muted-foreground">
           {stage ? STAGE_TITLES[stage] : 'Project Score'}
         </div>
       </div>

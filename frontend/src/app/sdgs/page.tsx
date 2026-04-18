@@ -172,7 +172,7 @@ export default function SDGListingPage() {
                           </Link>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: sdg.color }}>
+                          <span className="text-section-label font-bold uppercase" style={{ color: sdg.color }}>
                             {sdg.id}
                           </span>
                         </td>

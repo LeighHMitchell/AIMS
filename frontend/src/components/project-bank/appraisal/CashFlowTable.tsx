@@ -499,7 +499,7 @@ function CashFlowChart({
   return (
     <div className="border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cash Flow Overview</h4>
+        <h4 className="text-section-label font-medium text-muted-foreground uppercase">Cash Flow Overview</h4>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 border rounded-md p-0.5">
             <button

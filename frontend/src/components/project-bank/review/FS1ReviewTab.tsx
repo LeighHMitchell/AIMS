@@ -716,7 +716,7 @@ export function FS1ReviewTab() {
                   <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
                     {NARRATIVE_SECTIONS.map(section => (
                       <div key={section.key} className="px-4 py-3">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                        <p className="text-section-label font-semibold text-muted-foreground uppercase mb-1">
                           {section.label}
                         </p>
                         <p className="text-body whitespace-pre-wrap">

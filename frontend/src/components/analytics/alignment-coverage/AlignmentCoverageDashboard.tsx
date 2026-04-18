@@ -647,7 +647,7 @@ export function AlignmentCoverageDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b font-medium text-xs text-muted-foreground uppercase tracking-wider">
+              <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b font-medium text-section-label text-muted-foreground uppercase">
                 <span className="w-5" />
                 <span className="w-4" />
                 <span className="flex-shrink-0 w-[60px]">Code</span>
@@ -733,7 +733,7 @@ export function AlignmentCoverageDashboard() {
           <div className="mt-4">
             {drillNode && coverageData?.activitiesByPriority[drillNode.id]?.length ? (
               <div className="border rounded-md overflow-hidden">
-                <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="flex items-center gap-3 py-2 px-3 bg-muted/50 border-b text-section-label font-medium text-muted-foreground uppercase">
                   <span className="flex-1">Activity</span>
                   <span className="w-[120px] text-right">Disbursed</span>
                   <span className="w-[40px]"></span>

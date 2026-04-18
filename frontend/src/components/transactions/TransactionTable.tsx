@@ -1295,7 +1295,7 @@ export function TransactionTable({
                       
                       {/* Parties Involved Flowcard */}
                       <div className="bg-white rounded-lg border border-border p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Parties Involved</h3>
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">Parties Involved</h3>
                         <div className="flex items-center gap-3">
                           <div className="flex-1 p-3 bg-muted/30 rounded-lg border border-border">
                             <div className="flex items-center gap-2">
@@ -1343,7 +1343,7 @@ export function TransactionTable({
                     {transaction.description && (
                         <div className="bg-white rounded-lg border border-border p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xs uppercase tracking-wide text-muted-foreground">Description</h3>
+                            <h3 className="text-section-label uppercase text-muted-foreground">Description</h3>
                             {onEdit && (
                               <button className="text-muted-foreground hover:text-foreground transition-colors">
                                 <Pencil className="h-3 w-3 text-muted-foreground" />
@@ -1356,14 +1356,14 @@ export function TransactionTable({
                       
                       {!transaction.description && (
                         <div className="bg-white rounded-lg border border-border p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Description</h3>
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-2">Description</h3>
                           <p className="text-body text-muted-foreground italic">No additional details provided.</p>
                       </div>
                     )}
                     
                       {/* Humanitarian & Validation Status */}
                       <div className="bg-white rounded-lg border border-border p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Status Indicators</h3>
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">Status Indicators</h3>
                         <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -1394,12 +1394,12 @@ export function TransactionTable({
                       {/* Linked Activities */}
                       {(transaction.provider_org_activity_id || transaction.receiver_org_activity_id) && (
                         <div className="bg-white rounded-lg border border-border p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Linked Activities</h3>
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">Linked Activities</h3>
                           <div className="space-y-3">
                             {transaction.provider_org_activity_id && (
                               <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Provider Activity</span>
+                                  <span className="text-section-label font-semibold text-foreground uppercase">Provider Activity</span>
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(transaction.provider_org_activity_id || '');
@@ -1435,7 +1435,7 @@ export function TransactionTable({
                             {transaction.receiver_org_activity_id && (
                               <div className="p-3 bg-muted/30 rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Receiver Activity</span>
+                                  <span className="text-section-label font-semibold text-foreground uppercase">Receiver Activity</span>
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(transaction.receiver_org_activity_id || '');
@@ -1473,7 +1473,7 @@ export function TransactionTable({
                       
                       {/* Classifications Grid */}
                       <div className="bg-white rounded-lg border border-border p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">IATI Classifications</h3>
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">IATI Classifications</h3>
                         <div className="grid grid-cols-1 gap-2">
                           {(transaction.aid_type || transaction.effective_aid_type) && (
                             <Tooltip>
@@ -1574,7 +1574,7 @@ export function TransactionTable({
                       {/* Geographic & Sector Targeting */}
                       {(transaction.sector_code || transaction.sectors?.length || transaction.recipient_country_code || transaction.recipient_countries?.length || transaction.recipient_region_code || transaction.recipient_regions?.length) && (
                         <div className="bg-white rounded-lg border border-border p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Geographic & Sector Targeting</h3>
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">Geographic & Sector Targeting</h3>
                           <div className="space-y-2">
                           {transaction.sector_code && (
                               <div className="flex items-center gap-2">
@@ -1647,7 +1647,7 @@ export function TransactionTable({
                       {/* Aid Types (Multiple) */}
                         {transaction.aid_types && transaction.aid_types.length > 0 && (
                         <div className="bg-white rounded-lg border border-border p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Aid Types</h3>
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">Aid Types</h3>
                           <div className="flex flex-wrap gap-2">
                             {transaction.aid_types.map((aidType, idx) => (
                               <div key={idx} className="flex items-center gap-2">
@@ -1662,7 +1662,7 @@ export function TransactionTable({
                       {/* System Identifiers */}
                       {transaction.transaction_reference && (
                         <div className="bg-white rounded-lg border border-border p-4">
-                          <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">System Identifiers</h3>
+                          <h3 className="text-section-label uppercase text-muted-foreground mb-3">System Identifiers</h3>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-helper text-muted-foreground">Transaction Reference</span>
@@ -1685,7 +1685,7 @@ export function TransactionTable({
                         
                       {/* Transaction Metadata */}
                       <div className="bg-white rounded-lg border border-border p-4">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Transaction Metadata</h3>
+                        <h3 className="text-section-label uppercase text-muted-foreground mb-3">Transaction Metadata</h3>
                         <div className="space-y-3">
                           {/* Created By */}
                           {transaction.created_by && (

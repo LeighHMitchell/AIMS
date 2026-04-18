@@ -327,7 +327,7 @@ export default function SectorsListingPage() {
           {/* Hierarchical tree */}
           {viewMode === 'list' && <div className="border border-border rounded-lg overflow-hidden">
             {/* Header row */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 border-b border-border text-section-label font-medium text-muted-foreground uppercase">
               <div className="w-4 flex-shrink-0" />
               <div className="w-12 flex-shrink-0">Code</div>
               <div className="flex-1">Name</div>

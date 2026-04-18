@@ -211,13 +211,13 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
           {/* IDs Section - Always displayed */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Activity ID</div>
+              <div className="text-section-label font-medium text-muted-foreground uppercase">Activity ID</div>
               <div className="text-sm font-mono bg-muted px-3 py-1.5 rounded-lg">
                 {activity.partner_id || 'Activity ID not reported'}
               </div>
             </div>
             <div className="space-y-1">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">IATI ID</div>
+              <div className="text-section-label font-medium text-muted-foreground uppercase">IATI ID</div>
               <div className="text-sm font-mono bg-muted px-3 py-1.5 rounded-lg text-xs leading-tight">
                 {activity.iati_id || 'IATI Identifier not reported'}
               </div>
@@ -237,7 +237,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 {(activity.created_by_org_name || activity.created_by_org_acronym) && (
                   <div className="bg-muted rounded-lg p-3 border">
                     <div className="flex justify-between items-center py-2 min-h-[3.5rem]">
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reported by</div>
+                      <div className="text-section-label font-medium text-muted-foreground uppercase">Reported by</div>
                       <div className="text-body font-medium text-foreground text-right">
                         {activity.created_by_org_name}
                         {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
@@ -254,33 +254,33 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                 {activity.publication_status === 'published' && (
                   <>
                     <div className="bg-muted rounded-lg p-3 border">
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Budgeted</div>
+                      <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Total Budgeted</div>
                       <div className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</div>
                     </div>
                     
                     <div className="bg-muted rounded-lg p-3 border">
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Disbursed</div>
+                      <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Total Disbursed</div>
                       <div className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</div>
                     </div>
                   </>
                 )}
                 
                 <div className="bg-muted rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Aid Type</div>
+                  <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Aid Type</div>
                   <div className="text-body text-foreground">
                     {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
                   </div>
                 </div>
                 
                 <div className="bg-muted rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Flow Type</div>
+                  <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Flow Type</div>
                   <div className="text-body text-foreground">
                     {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
                   </div>
                 </div>
                 
                 <div className="bg-muted rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Tied Status</div>
+                  <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Tied Status</div>
                   <div className="text-body text-foreground">
                     {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
                   </div>

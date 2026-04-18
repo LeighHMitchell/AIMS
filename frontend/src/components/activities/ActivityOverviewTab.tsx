@@ -85,7 +85,7 @@ function KpiTile({
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="text-section-label font-medium text-muted-foreground uppercase">
         {label}
       </div>
       <div className="text-2xl font-semibold tabular-nums leading-tight">
@@ -228,7 +228,7 @@ export function ActivityOverviewTab({
           <SectionHeading icon={FileText} title="At a glance" />
           <div className="space-y-3">
             <div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+              <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">
                 Status
               </div>
               <Badge className={cn("text-body font-medium", status.className)}>
@@ -236,14 +236,14 @@ export function ActivityOverviewTab({
               </Badge>
             </div>
             <div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+              <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">
                 Timeline
               </div>
               <div className="text-body">{timeline}</div>
             </div>
             {typeof activity?.reportingOrg?.name === "string" && activity.reportingOrg.name && (
               <div>
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">
                   Reported by
                 </div>
                 <div className="text-body font-medium">

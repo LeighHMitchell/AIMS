@@ -819,7 +819,7 @@ export default function EnhancedAidFlowGraph({
               {/* Financial Summary */}
               {(inflow > 0 || outflow > 0) && (
                 <div className="mt-4 p-3 bg-muted rounded-lg space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Financial Summary</div>
+                  <div className="text-section-label font-medium text-muted-foreground uppercase">Financial Summary</div>
                   
                   {inflow > 0 && (
                     <div className="flex justify-between items-center">

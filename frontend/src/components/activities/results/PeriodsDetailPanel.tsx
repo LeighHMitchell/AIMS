@@ -138,7 +138,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
         {/* Target and Actual values */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground uppercase tracking-wide">
+            <div className="flex items-center gap-1 text-section-label text-muted-foreground uppercase">
               <Target className="h-3 w-3" />
               Target
             </div>
@@ -147,7 +147,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
             </div>
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground uppercase tracking-wide">
+            <div className="flex items-center gap-1 text-section-label text-muted-foreground uppercase">
               <CheckCircle className="h-3 w-3" />
               Actual
             </div>
@@ -185,7 +185,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                 {/* Target details */}
                 {hasTargetDetails && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    <div className="text-section-label font-medium text-muted-foreground uppercase">
                       Target Details
                     </div>
                     
@@ -240,7 +240,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
                 {/* Actual details */}
                 {hasActualDetails && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    <div className="text-section-label font-medium text-muted-foreground uppercase">
                       Actual Details
                     </div>
                     

@@ -278,22 +278,22 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
             <table className="min-w-full divide-y divide-border">
               <thead className="bg-surface-muted">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                     Provider
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                     Receiver
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-section-label font-medium text-muted-foreground uppercase">
                     Source Activity
                   </th>
                 </tr>

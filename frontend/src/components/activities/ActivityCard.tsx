@@ -301,7 +301,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         {/* IDs */}
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Activity ID</span>
+            <span className="text-section-label font-medium text-muted-foreground uppercase">Activity ID</span>
             {activity.partner_id ? (
               <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {activity.partner_id}
@@ -311,7 +311,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">IATI ID</span>
+            <span className="text-section-label font-medium text-muted-foreground uppercase">IATI ID</span>
             {activity.iati_id ? (
               <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {activity.iati_id}
@@ -371,7 +371,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           <div className="space-y-2">
             {(activity.created_by_org_acronym || activity.created_by_org_name) && (
               <div className="flex justify-between items-center py-2 min-h-[3.5rem] border-t border-border">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reported by</span>
+                <span className="text-section-label font-medium text-muted-foreground uppercase">Reported by</span>
                 <span className="text-body text-foreground font-medium text-right">
                   {activity.created_by_org_name}
                   {activity.created_by_org_acronym && activity.created_by_org_name !== activity.created_by_org_acronym && (
@@ -386,41 +386,41 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             {activity.publication_status === 'published' && (
               <>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Budgeted</span>
+                  <span className="text-section-label font-medium text-muted-foreground uppercase">Total Budgeted</span>
                   <span className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-border">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Disbursed</span>
+                  <span className="text-section-label font-medium text-muted-foreground uppercase">Total Disbursed</span>
                   <span className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</span>
                 </div>
               </>
             )}
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Aid Type</span>
+              <span className="text-section-label font-medium text-muted-foreground uppercase">Default Aid Type</span>
               <span className="text-body text-foreground">
                 {activity.default_aid_type ? (AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Finance Type</span>
+              <span className="text-section-label font-medium text-muted-foreground uppercase">Default Finance Type</span>
               <span className="text-body text-foreground">
                 {activity.default_finance_type ? (FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Flow Type</span>
+              <span className="text-section-label font-medium text-muted-foreground uppercase">Default Flow Type</span>
               <span className="text-body text-foreground">
                 {activity.default_flow_type ? (FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Tied Status</span>
+              <span className="text-section-label font-medium text-muted-foreground uppercase">Default Tied Status</span>
               <span className="text-body text-foreground">
                 {activity.default_tied_status ? (TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status) : 'Not reported'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default Modality</span>
+              <span className="text-section-label font-medium text-muted-foreground uppercase">Default Modality</span>
               <span className="text-body text-foreground">
                 {activity.default_aid_modality ? (MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality) : 'Not reported'}
               </span>

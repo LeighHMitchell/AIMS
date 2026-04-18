@@ -140,7 +140,7 @@ export default function PolicyMarkersListingPage() {
           {/* List View */}
           {viewMode === 'list' && (
             <div className="border border-border rounded-lg overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border text-section-label font-medium text-muted-foreground uppercase">
                 <div className="w-10 flex-shrink-0" />
                 <div className="flex-1">Name</div>
                 <div className="w-40 hidden md:block">Category</div>
