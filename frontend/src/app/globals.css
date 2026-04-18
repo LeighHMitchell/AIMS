@@ -329,6 +329,15 @@ select:focus {
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Tabular figures only where number alignment matters — data tables and
+     monospaced code. Prose, headings, and inline numbers in sentences
+     keep proportional figures (better rhythm in body text). */
+  table,
+  .font-mono,
+  [class*=" font-mono"],
+  [class*="tabular-nums"] {
     font-variant-numeric: tabular-nums;
   }
 
