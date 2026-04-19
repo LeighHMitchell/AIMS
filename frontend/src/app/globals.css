@@ -81,14 +81,6 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Debug: Test if CSS is loading */
-.tailwind-test {
-  background-color: #ff0000 !important;
-  color: white !important;
-  padding: 1rem !important;
-  border-radius: 0.5rem !important;
-}
-
 /* Fix for search container clipping */
 .search-container {
   position: relative;
@@ -263,58 +255,6 @@ select:focus {
     @apply hidden!;
   }
 
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --surface-muted: #2a2a28;
-
-    /* Calendar Color Scheme (dark mode) */
-    --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */
-    --calendar-pale-slate: 230 7% 82%; /* #cfd0d5 */
-    --calendar-blue-slate: 221 16% 35%; /* #4c5568 */
-    --calendar-cool-steel: 205 20% 57%; /* #7b95a7 */
-    --calendar-platinum: 214 33% 96%; /* #f1f4f8 */
-
-    /* Brand palette (dark mode) */
-    --brand-scarlet: 0 72% 50%;
-    --brand-pale-slate: 230 7% 82%;
-    --brand-blue-slate: 221 16% 55%; /* lighter in dark mode for contrast */
-    --brand-cool-steel: 205 20% 67%; /* lighter in dark mode */
-    --brand-platinum: 214 15% 20%; /* dark equivalent */
-
-    --chart-1: 220 70% 50%; --chart-2: 160 60% 45%; --chart-3: 30 80% 55%; --chart-4: 280 65% 60%; --chart-5: 340 75% 55%;
-  }
-  .maplibregl-popup-content {
-    @apply bg-transparent! shadow-none! p-0! rounded-none!;
-  }
-  .maplibregl-popup-tip {
-    @apply hidden!;
-  }
   .mapboxgl-popup-content, .maplibregl-popup-content {
     @apply bg-transparent! shadow-none! p-0! rounded-none!;
   }
@@ -926,30 +866,9 @@ body:has([data-radix-dialog-content]) {
   min-width: 100%;
 }
 
-/* Force left alignment for Reported by column in activities table */
-table td:has(div:contains("AA-AAA")) {
-  text-align: left !important;
-}
-
 /* Force left alignment for all Reported by column content */
 .activities-table td:nth-child(4) {
   text-align: left !important;
-}
-
-
-/* Debug overlay for test marker - temporarily disabled */
-.leaflet-container.debug-mode::after {
-  content: "🎯 Looking for red pin at center" !important;
-  position: absolute !important;
-  top: 10px !important;
-  right: 10px !important;
-  background: rgba(220, 38, 38, 0.9) !important;
-  color: white !important;
-  padding: 8px !important;
-  border-radius: 4px !important;
-  font-size: 12px !important;
-  z-index: 10000 !important;
-  pointer-events: none !important;
 }
 
 /* Aid Effectiveness gradient animation */
