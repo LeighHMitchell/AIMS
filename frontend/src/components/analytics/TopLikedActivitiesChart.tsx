@@ -12,7 +12,7 @@ import {
   Cell,
   ReferenceLine,
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { TrendingUp } from 'lucide-react'
 import {
@@ -163,7 +163,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
   }, [data])
 
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+    return <ChartLoadingPlaceholder />
   }
 
   // Check if we have no data - but only show simple empty state in compact mode

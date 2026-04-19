@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeftRight, BarChart3, Table } from "lucide-react";
 import { MeasureType, FragmentationData } from "@/types/national-priorities";
@@ -93,7 +93,7 @@ export function LocationFragmentationChart({
 
       {/* Chart Content */}
       {loading ? (
-        <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+        <ChartLoadingPlaceholder />
       ) : error ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

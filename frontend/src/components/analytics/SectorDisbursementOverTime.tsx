@@ -31,7 +31,7 @@ import {
   TooltipProps,
 } from 'recharts'
 import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, SlidersHorizontal, Check, Search } from 'lucide-react'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import html2canvas from 'html2canvas'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
@@ -894,7 +894,7 @@ export function SectorDisbursementOverTime({
   if (compact) {
     // Show loading until: data loaded, custom years loaded, AND defaults initialized
     if ((loading && data.length === 0) || customYearsLoading || !hasInitialized) {
-      return <div className="h-full w-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (error) {
       return <div className="h-full w-full flex items-center justify-center text-destructive"><p className="text-body">{error}</p></div>

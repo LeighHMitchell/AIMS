@@ -28,7 +28,7 @@ import {
   TooltipProps,
 } from 'recharts'
 import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
@@ -560,7 +560,7 @@ export function ProjectOrgCountsBySector({
   if (compact) {
     // Show loading if still loading OR if custom years haven't loaded yet
     if ((loading && sectors.length === 0) || customYearsLoading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (error) {
       return <div className="h-full flex items-center justify-center text-destructive"><p className="text-body">{error}</p></div>

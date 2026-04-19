@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuarter } from 'date-fns'
 import { supabase } from '@/lib/supabase'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -222,7 +222,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (!data || data.length === 0) {
       return (
@@ -283,7 +283,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

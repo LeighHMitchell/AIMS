@@ -9,7 +9,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -984,7 +984,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     return (
       <Card className="bg-card border-border">
         <CardContent className="pt-6">
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     );
@@ -1278,7 +1278,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         {viewMode === "table" && (
           <div className="space-y-4">
             {activitiesLoading && !data?.chartData?.sectorData ? (
-              <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+              <ChartLoadingPlaceholder />
             ) : data?.chartData?.sectorData ? (
               <div className="border rounded-lg overflow-hidden">
                 <Table>

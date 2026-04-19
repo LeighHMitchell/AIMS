@@ -5,16 +5,9 @@ import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Home,
-  Activity,
   Users,
-  Building,
   BarChart3,
-  Settings,
-  UserCheck,
   Search,
-  Calendar,
-  FileText,
-  Map,
   Briefcase,
   Database,
   Shield,
@@ -30,26 +23,14 @@ import {
   FolderKanban,
   LayoutDashboard,
   ListTodo,
-  PlusCircle,
   TrendingDown,
-  Handshake,
   ArrowLeft,
   MapPin,
   ShieldCheck,
 } from "lucide-react"
-import {
-  HomeIcon,
-  MagnifierIcon,
-  UnorderedListIcon,
-  CurrencyDollarIcon,
-  UsersGroupIcon,
-  Stack3Icon,
-  InfoCircleIcon,
-} from "@/components/ui/icons"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
 import { GlassButton } from "@/components/ui/glass-button"
 import {
   DropdownMenu,
@@ -61,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
 import { apiFetch } from '@/lib/api-fetch';
-import { getCurrentModule, type AetherModule } from '@/lib/navigation-utils';
+import { getCurrentModule } from '@/lib/navigation-utils';
 
 interface SidebarNavProps {
   userRole?: string
@@ -158,22 +139,20 @@ export function SidebarNav({
   const aimsNavGroups = [
     {
       label: "EXPLORE",
-      icon: MagnifierIcon,
-      isAnimated: true,
+      icon: Search,
       defaultOpen: true,
       items: [
         { name: "Dashboards", href: "/analytics-dashboard", show: true },
         { name: "Plan Alignment", href: "/alignment", show: true },
         { name: "Atlas", href: "/atlas", show: true },
         { name: "Search", href: "/search", show: true },
-        { name: "Portfolios", href: "/partners", show: true },
+        { name: "Development Partners", href: "/partners", show: true },
         { name: "Reports", href: "/reports", show: true },
       ]
     },
     {
       label: "ACTIVITIES",
-      icon: UnorderedListIcon,
-      isAnimated: true,
+      icon: ListTodo,
       defaultOpen: true,
       items: [
         { name: "Activity List", href: "/activities", show: true },
@@ -182,8 +161,7 @@ export function SidebarNav({
     },
     {
       label: "FINANCES",
-      icon: CurrencyDollarIcon,
-      isAnimated: true,
+      icon: Wallet,
       defaultOpen: true,
       items: [
         { name: "Transactions", href: "/transactions", show: true },
@@ -193,8 +171,7 @@ export function SidebarNav({
     },
     {
       label: "ACTORS",
-      icon: UsersGroupIcon,
-      isAnimated: true,
+      icon: Users,
       defaultOpen: true,
       items: [
         { name: "Organizations", href: "/organizations", show: true },
@@ -204,7 +181,6 @@ export function SidebarNav({
     {
       label: "PROFILES",
       icon: BarChart3,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "SDGs", href: "/sdgs", show: true },
@@ -217,7 +193,6 @@ export function SidebarNav({
     {
       label: "ADVANCED",
       icon: Shield,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Transparency Index", href: "/transparency-index", show: true },
@@ -226,8 +201,7 @@ export function SidebarNav({
     },
     {
       label: "OPERATIONS",
-      icon: Stack3Icon,
-      isAnimated: true,
+      icon: LayoutDashboard,
       defaultOpen: true,
       items: [
         { name: "Calendar", href: "/calendar", show: true },
@@ -238,8 +212,7 @@ export function SidebarNav({
     },
     {
       label: "SUPPORT",
-      icon: InfoCircleIcon,
-      isAnimated: true,
+      icon: HelpCircle,
       defaultOpen: true,
       items: [
         { name: "FAQ", href: "/faq", show: true },
@@ -252,7 +225,6 @@ export function SidebarNav({
     {
       label: "PROJECTS",
       icon: FolderKanban,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Project List", href: "/project-bank/projects", show: true },
@@ -262,7 +234,6 @@ export function SidebarNav({
     {
       label: "REVIEW BOARD",
       icon: ShieldCheck,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Phase 1: Intake Reviews", href: "/project-bank/review?tab=intake", show: true },
@@ -275,7 +246,6 @@ export function SidebarNav({
     {
       label: "MONITORING",
       icon: CalendarClock,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Monitoring Dashboard", href: "/project-bank/monitoring", show: true },
@@ -284,7 +254,6 @@ export function SidebarNav({
     {
       label: "SEE TRANSFERS",
       icon: TrendingDown,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "All Transfers", href: "/project-bank/transfers", show: true },
@@ -293,7 +262,6 @@ export function SidebarNav({
     {
       label: "SUPPORT",
       icon: HelpCircle,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Build History", href: "/build-history", show: true },
@@ -307,7 +275,6 @@ export function SidebarNav({
     {
       label: "LAND BANK",
       icon: MapPin,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Dashboard", href: "/land-bank", show: true },
@@ -320,7 +287,6 @@ export function SidebarNav({
     {
       label: "SUPPORT",
       icon: HelpCircle,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Build History", href: "/build-history", show: true },
@@ -334,7 +300,6 @@ export function SidebarNav({
     {
       label: "SUPPORT",
       icon: HelpCircle,
-      isAnimated: false,
       defaultOpen: true,
       items: [
         { name: "Build History", href: "/build-history", show: true },
@@ -361,35 +326,61 @@ export function SidebarNav({
 
   // Top-level navigation items
   const topLevelItems = currentModule === 'project-bank'
-    ? [{ name: "DASHBOARD", href: "/project-bank", icon: HomeIcon, isAnimated: true, show: true }]
+    ? [{ name: "Dashboard", href: "/project-bank", icon: Home, show: true }]
     : currentModule === 'land-bank'
-    ? [{ name: "DASHBOARD", href: "/land-bank", icon: HomeIcon, isAnimated: true, show: true }]
+    ? [{ name: "Dashboard", href: "/land-bank", icon: Home, show: true }]
     : currentModule === 'aims'
-    ? [{ name: "WORKSPACE", href: "/dashboard", icon: Briefcase, isAnimated: true, show: true }]
+    ? [{ name: "Workspace", href: "/dashboard", icon: Briefcase, show: true }]
     : []
 
   // Show "Back to Home" link when inside a module
   const showBackToHome = currentModule === 'project-bank' || currentModule === 'aims' || currentModule === 'land-bank'
 
+  // Module metadata for the context chip
+  const moduleLabel = currentModule === 'aims'
+    ? 'AIMS'
+    : currentModule === 'project-bank'
+    ? 'Project Bank'
+    : currentModule === 'land-bank'
+    ? 'Land Bank'
+    : null
+
+  const moduleAccentVar = currentModule === 'aims'
+    ? 'var(--nav-accent-aims)'
+    : currentModule === 'project-bank'
+    ? 'var(--nav-accent-project-bank)'
+    : currentModule === 'land-bank'
+    ? 'var(--nav-accent-land-bank)'
+    : null
+
   return (
     <TooltipProvider delayDuration={100} skipDelayDuration={0}>
       <nav className="px-4 py-6">
-        <div className="space-y-4">
-          {/* Back to Home link */}
-          {showBackToHome && (
-            <div className="pb-2">
+        <div
+          key={currentModule}
+          className="space-y-4"
+          style={{ animation: 'sidebar-module-fade-in 200ms ease-out' }}
+        >
+          {/* Module Context Chip + Back to Home */}
+          {showBackToHome && moduleLabel && !isCollapsed && (
+            <div className="pb-3 mb-1 border-b border-border/60 dark:border-gray-700/50">
               <Link
                 href="/home"
-                className="group flex items-center gap-2 py-1.5 px-3 ml-2 text-helper font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                className="group flex items-center gap-1.5 px-3 text-helper font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className={cn(
-                  "whitespace-nowrap",
-                  isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
-                )}>
-                  Back to Home
-                </span>
+                <ArrowLeft className="h-3 w-3 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                <span className="whitespace-nowrap">All modules</span>
               </Link>
+              <div className="mt-2 px-3 flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: `hsl(${moduleAccentVar})` }}
+                />
+                <span className="text-section-label font-semibold uppercase tracking-wider text-foreground">
+                  {moduleLabel}
+                </span>
+              </div>
             </div>
           )}
 
@@ -534,19 +525,15 @@ export function SidebarNav({
                   <Link
                     href={item.href}
                     className={cn(
-                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-body font-bold rounded-md",
-                      "transition-colors duration-200",
-                      "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
+                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-body font-semibold rounded-md",
+                      "transition-colors duration-150",
+                      "hover:bg-[hsl(var(--nav-hover-bg))]",
                       isActive
-                        ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                        : "text-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100"
+                        ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))]"
+                        : "text-foreground hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-200"
                     )}
                   >
-                    {item.isAnimated ? (
-                      <ItemIcon size={20} className="flex-shrink-0" />
-                    ) : (
-                      <ItemIcon className="h-5 w-5 flex-shrink-0" />
-                    )}
+                    <ItemIcon className="h-4 w-4 flex-shrink-0" />
                     <span
                       className={cn(
                         "whitespace-nowrap",
@@ -607,33 +594,25 @@ export function SidebarNav({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => toggleGroup(group.label)}
-                          className="flex w-full items-center justify-center px-3 py-2 text-body font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50"
+                          className="flex w-full items-center justify-center px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-[hsl(var(--nav-hover-bg))]"
                         >
-                          {group.isAnimated ? (
-                            <GroupIcon size={20} className="flex-shrink-0" />
-                          ) : (
-                            <GroupIcon className="h-5 w-5 flex-shrink-0" />
-                          )}
+                          <GroupIcon className="h-4 w-4 flex-shrink-0" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="font-bold">
+                      <TooltipContent side="right" className="font-semibold">
                         {group.label}
                       </TooltipContent>
                     </Tooltip>
                   ) : (
                     <CollapsibleTrigger asChild>
-                      <button className="flex w-full items-center justify-between px-3 py-2 text-body font-bold text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-muted dark:hover:bg-gray-800/50">
-                        <div className="flex items-center gap-3">
-                          {group.isAnimated ? (
-                            <GroupIcon size={20} className="flex-shrink-0" />
-                          ) : (
-                            <GroupIcon className="h-5 w-5 flex-shrink-0" />
-                          )}
+                      <button className="flex w-full items-center justify-between px-3 py-1.5 text-section-label font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-[hsl(var(--nav-hover-bg))] dark:hover:bg-gray-800/30">
+                        <div className="flex items-center gap-2.5">
+                          <GroupIcon className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} />
                           <span>{group.label}</span>
                         </div>
                         <ChevronRight
                           className={cn(
-                            "h-3.5 w-3.5 transition-transform duration-200",
+                            "h-3 w-3 transition-transform duration-200 opacity-60",
                             isOpen && "rotate-90"
                           )}
                         />
@@ -683,13 +662,14 @@ export function SidebarNav({
                           const linkContent = (
                             <Link
                               href={item.href}
+                              aria-current={isActive ? 'page' : undefined}
                               className={cn(
-                                "group relative flex items-center justify-between py-2 px-3 text-body font-medium rounded-md",
-                                "transition-colors duration-200",
-                                "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
+                                "group relative flex items-center justify-between py-1.5 px-3 text-body font-medium rounded-md",
+                                "transition-colors duration-150",
+                                "hover:bg-[hsl(var(--nav-hover-bg))]",
                                 isActive
-                                  ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                                  : "text-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100",
+                                  ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))] font-semibold"
+                                  : "text-foreground hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-300 dark:hover:text-gray-100",
                                 // Add left padding for connector when not collapsed
                                 !isCollapsed && "ml-6 pl-6"
                               )}
@@ -710,7 +690,12 @@ export function SidebarNav({
                                 {item.name}
                               </span>
                               {!isCollapsed && itemCount != null && itemCount > 0 && (
-                                <span className="text-[11px] tabular-nums text-muted-foreground dark:text-muted-foreground font-normal ml-auto">
+                                <span className={cn(
+                                  "text-[11px] tabular-nums font-normal ml-auto",
+                                  isActive
+                                    ? "text-[hsl(var(--nav-active-fg))] opacity-80"
+                                    : "text-muted-foreground dark:text-muted-foreground"
+                                )}>
                                   {itemCount.toLocaleString()}
                                 </span>
                               )}

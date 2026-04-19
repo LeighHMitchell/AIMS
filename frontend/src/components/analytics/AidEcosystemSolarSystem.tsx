@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as d3 from 'd3'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, SlidersHorizontal, Search, Check } from 'lucide-react'
 import {
@@ -488,7 +488,7 @@ export function AidEcosystemSolarSystem({
 
   // Render loading state
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+    return <ChartLoadingPlaceholder />
   }
 
   // Render error state

@@ -13,7 +13,7 @@ import {
   Label
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
@@ -278,7 +278,7 @@ export function SDGCoverageChart({
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (chartData.length === 0) {
       return (
@@ -337,7 +337,7 @@ export function SDGCoverageChart({
           <CardDescription>Number of activities and financial weight mapped to each SDG</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )

@@ -133,7 +133,7 @@ export default function NewGroupPage() {
     <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <Breadcrumbs items={[
-          { label: "Portfolios", href: "/partners" },
+          { label: "Development Partners", href: "/partners" },
           { label: "New Group" },
         ]} />
 

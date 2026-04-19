@@ -28,13 +28,20 @@ import {
   LineChart,
   MapPin,
   Network,
-  Info
+  Info,
+  ChevronDown,
 } from 'lucide-react'
 import { format, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { AnalyticsDashboardSkeleton } from '@/components/skeletons'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
@@ -651,11 +658,12 @@ export default function AnalyticsDashboardPage() {
         {/* Main Dashboard Content */}
         <div className="mx-auto p-6">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Analytics</h1>
-            <p className="text-muted-foreground mt-2 max-w-2xl">
-              Financial and portfolio performance across all activities.
-            </p>
+          <div className="flex items-center gap-3 mb-6">
+            <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
+              <p className="text-muted-foreground mt-1">Comprehensive financial and operational analytics across the aid portfolio</p>
+            </div>
           </div>
 
           {/* Error Display */}
@@ -668,16 +676,63 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                <TabsList className="h-auto bg-transparent p-0 gap-6 border-b mb-6 flex flex-wrap rounded-none justify-start overflow-x-auto">
-                  <TabsTrigger value="portfolio-summary" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Portfolio Summary</TabsTrigger>
-                  <TabsTrigger value="aid-on-budget" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Aid on Budget</TabsTrigger>
-                  <TabsTrigger value="humanitarian" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Humanitarian</TabsTrigger>
-                  <TabsTrigger value="sector-thematic" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Sector & Thematic</TabsTrigger>
-                  <TabsTrigger value="partner-network" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Partner Network</TabsTrigger>
-                  <TabsTrigger value="aid-ecosystem" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Aid Ecosystem</TabsTrigger>
-                  <TabsTrigger value="operations" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Operations</TabsTrigger>
-                  <TabsTrigger value="tree-map" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground whitespace-nowrap data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">Tree Map</TabsTrigger>
-                </TabsList>
+                {(() => {
+                  const primaryTabs = [
+                    { value: 'portfolio-summary', label: 'Portfolio Summary' },
+                    { value: 'sector-thematic', label: 'Sector & Thematic' },
+                    { value: 'partner-network', label: 'Partner Network' },
+                    { value: 'operations', label: 'Operations' },
+                  ];
+                  const overflowTabs = [
+                    { value: 'aid-on-budget', label: 'Aid on Budget' },
+                    { value: 'humanitarian', label: 'Humanitarian' },
+                    { value: 'aid-ecosystem', label: 'Aid Ecosystem' },
+                    { value: 'tree-map', label: 'Tree Map' },
+                  ];
+                  const activeOverflow = overflowTabs.find((t) => t.value === activeTab);
+                  return (
+                    <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                      {primaryTabs.map((t) => (
+                        <TabsTrigger
+                          key={t.value}
+                          value={t.value}
+                          className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                        >
+                          {t.label}
+                        </TabsTrigger>
+                      ))}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                              activeOverflow
+                                ? "bg-muted text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {activeOverflow ? activeOverflow.label : 'More views'}
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-[10rem]">
+                          {overflowTabs.map((t) => (
+                            <DropdownMenuItem
+                              key={t.value}
+                              onSelect={() => handleTabChange(t.value)}
+                              className={cn(
+                                activeTab === t.value && 'bg-muted font-medium',
+                              )}
+                            >
+                              {t.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TabsList>
+                  );
+                })()}
 
                 {/* ==================== PORTFOLIO SUMMARY TAB ==================== */}
                 {/* Contains: Main overview charts, Dashboard, Top 10 rankings */}
@@ -685,8 +740,9 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Main Overview Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Overview</h2>
-
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Overview</h2>
+                      <p className="text-muted-foreground mb-4">Key financial metrics and portfolio performance at a glance</p>
+                      
                       {/* Full-width Financial Totals Chart */}
                       <div className="mb-6">
                         <CompactChartCard
@@ -807,7 +863,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Top 10 Rankings Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Top 10 Rankings</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Top 10 Rankings</h2>
                       <p className="text-muted-foreground mb-4">Leading organizations by various performance metrics</p>
                       <ChartGrid>
                         <CompactChartCard
@@ -852,7 +908,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* National Priorities Dashboard Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">National Priorities Dashboard</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">National Priorities Dashboard</h2>
                       <p className="text-muted-foreground mb-4">Comprehensive view of alignment with national development priorities</p>
                       <NationalPrioritiesDashboard />
                     </div>
@@ -864,7 +920,7 @@ export default function AnalyticsDashboardPage() {
                 <TabsContent value="aid-on-budget">
                   <div className="space-y-8">
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Aid on Budget</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid on Budget</h2>
                       <p className="text-muted-foreground mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
                       <EnhancedAidOnBudgetChart
                         refreshKey={refreshKey}
@@ -878,7 +934,7 @@ export default function AnalyticsDashboardPage() {
                 <TabsContent value="humanitarian">
                   <div className="space-y-8">
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Humanitarian Aid</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Humanitarian Aid</h2>
                       <p className="text-muted-foreground mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
                       <ChartGrid>
                         <CompactChartCard
@@ -915,7 +971,7 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Sectors Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Sector Analysis</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Sector Analysis</h2>
                       <p className="text-muted-foreground mb-4">Financial flows and coordination across development sectors</p>
 
                       {/* Sector Filters */}
@@ -968,7 +1024,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* SDGs Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Sustainable Development Goals</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Sustainable Development Goals</h2>
                       <p className="text-muted-foreground mb-4">Activity alignment with the UN Sustainable Development Goals</p>
                       <SDGAnalytics
                         dateRange={dateRange}
@@ -979,7 +1035,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Policy Markers Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Policy Markers</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
                       <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
                       <PolicyMarkersChart refreshKey={refreshKey} />
                     </div>
@@ -992,7 +1048,7 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Network Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Aid Flow Network</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Flow Network</h2>
                       <p className="text-muted-foreground mb-4">Interactive visualization of aid flows between donors and recipients</p>
                       <div className="w-full">
                         <AidFlowMap height={500} />
@@ -1001,7 +1057,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Participating Organizations Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Participating Organizations Flow</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Participating Organizations Flow</h2>
                       <p className="text-muted-foreground mb-4">
                         4-tier Sankey visualization showing the flow of organizations across IATI participating-org roles:
                         Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
@@ -1017,7 +1073,7 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Aid Ecosystem Charts - Two Column Layout */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Aid Ecosystem Analysis</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Ecosystem Analysis</h2>
                       <p className="text-muted-foreground mb-4">Visualizing organizational roles and financial gravity in the aid system</p>
                       <ChartGrid>
                         <CompactChartCard
@@ -1052,7 +1108,7 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Activity Status Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Activity Status</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Activity Status</h2>
                       <p className="text-muted-foreground mb-4">Distribution of activities by status and transaction analysis</p>
                       <ChartGrid>
                         <CompactChartCard
@@ -1083,7 +1139,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Transaction Calendar Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Transaction Calendar</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Transaction Calendar</h2>
                       <p className="text-muted-foreground mb-4">Daily transaction activity heatmap showing patterns and trends over time</p>
                       <TransactionActivityCalendar
                         dateRange={dateRange}
@@ -1093,7 +1149,7 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Additional Analytics Section */}
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Additional Analytics</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Additional Analytics</h2>
                       <p className="text-muted-foreground mb-4">Extended analytics and visualizations</p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Aid by Sector */}
@@ -1331,7 +1387,7 @@ export default function AnalyticsDashboardPage() {
                 <TabsContent value="tree-map">
                   <div className="space-y-8">
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground mb-4">Intervention Tree Map</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Intervention Tree Map</h2>
                       <p className="text-muted-foreground mb-4">
                         Explore interventions by violence type, approach, and specific programs.
                         Click on categories to drill down into the hierarchy.

@@ -16,7 +16,7 @@ import {
   Legend,
   LabelList,
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle } from 'lucide-react'
@@ -260,7 +260,7 @@ export function OrganizationalPositioningMap({
 
   // Render loading state
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+    return <ChartLoadingPlaceholder />
   }
 
   // Render error state

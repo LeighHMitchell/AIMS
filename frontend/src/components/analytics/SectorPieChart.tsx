@@ -10,7 +10,7 @@ import {
   Legend
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 
 interface SectorPieChartProps {
   dateRange: {
@@ -210,7 +210,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

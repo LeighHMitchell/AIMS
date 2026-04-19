@@ -12,7 +12,7 @@ import {
   Cell
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart3, DollarSign, Wallet, Calendar } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
@@ -238,7 +238,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 
