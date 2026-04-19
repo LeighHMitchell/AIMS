@@ -714,7 +714,16 @@ export function AlignmentCoverageDashboard() {
             </Card>
           )}
         </>
-      ) : null}
+      ) : (
+        <Card>
+          <CardContent className="py-16 text-center text-muted-foreground">
+            <h3 className="text-lg font-medium text-foreground mb-2">No alignment data yet</h3>
+            <p className="text-body max-w-md mx-auto">
+              Activities haven't been mapped to this plan's priority areas yet. Open an activity and add alignments from the <span className="font-medium text-foreground">Alignment</span> tab to see coverage here.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Drill-down Dialog */}
       <Dialog open={!!drillNode} onOpenChange={(open) => !open && setDrillNode(null)}>

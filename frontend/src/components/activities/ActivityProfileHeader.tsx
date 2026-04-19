@@ -521,7 +521,7 @@ export function ActivityProfileHeader({
               </button>
             </div>
 
-            {/* Subtitle line: reporting org · status · humanitarian */}
+            {/* Subtitle line — identity only: reporting org + activity status (+ humanitarian if set) */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
               {/* Reporting org (publisher) */}
               {reportingOrg && (
@@ -548,70 +548,10 @@ export function ActivityProfileHeader({
 
               {reportingOrg && <div className="h-3.5 w-px bg-border" />}
 
-              {/* Activity status */}
+              {/* Activity status — the one badge that always matters */}
               <Badge className={cn(statusClassName, "text-helper")}>{statusLabel}</Badge>
 
-              {/* Publication status */}
-              {activity.publicationStatus && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-helper",
-                    activity.publicationStatus === "published"
-                      ? "border-[hsl(var(--success-icon))]/30 text-[hsl(var(--success-icon))]"
-                      : "border-border text-muted-foreground"
-                  )}
-                >
-                  {activity.publicationStatus === "published" ? "Published" : "Unpublished"}
-                </Badge>
-              )}
-
-              {/* IATI sync */}
-              {activity.iatiIdentifier && activity.autoSync && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="outline" className="text-helper border-border text-muted-foreground">
-                        {activity.syncStatus === "live" ? (
-                          <>
-                            <RefreshCw className="h-3 w-3 mr-1 text-[hsl(var(--success-icon))]" />
-                            Synced
-                          </>
-                        ) : activity.syncStatus === "outdated" ? (
-                          <>
-                            <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
-                            Outdated
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="h-3 w-3 mr-1" />
-                            IATI
-                          </>
-                        )}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="text-helper space-y-1">
-                        <p className="font-medium">IATI Sync Status</p>
-                        {activity.lastSyncTime && (
-                          <p>Last synced: {format(new Date(activity.lastSyncTime), "dd MMM yyyy HH:mm")}</p>
-                        )}
-                        <p className="text-[hsl(var(--success-icon))]">Auto-sync enabled</p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-
-              {/* IATI imported (not auto-synced) */}
-              {activity.iatiIdentifier && !activity.autoSync && (
-                <Badge className="text-helper bg-[#124e5f] text-white hover:bg-[#0d3a47]">
-                  <Globe className="h-3 w-3 mr-1" />
-                  Imported from IATI
-                </Badge>
-              )}
-
-              {/* Humanitarian */}
+              {/* Humanitarian — only shown when true; visually distinct for a reason */}
               {activity.humanitarian && (
                 <Badge className="text-helper bg-destructive text-white hover:bg-destructive">Humanitarian</Badge>
               )}
@@ -623,58 +563,72 @@ export function ActivityProfileHeader({
       {/* ── Metadata Strip ──────────────────────────────────────────── */}
       <div className="mt-8 pb-2">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          {/* IDs */}
-          {(activity as any).auto_ref && (
-            <span className="inline-flex items-center gap-1 group text-helper">
-              <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                {(activity as any).auto_ref}
-              </code>
-              <button
-                onClick={() => onCopyToClipboard((activity as any).auto_ref, "activityId")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {copiedId === "activityId" ? (
-                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                ) : (
-                  <Copy className="w-3 h-3 text-muted-foreground" />
+          {/* IDs — primary ID inline, others behind a dropdown */}
+          {(() => {
+            const primaryId = activity.iatiIdentifier || activity.partnerId || (activity as any).auto_ref
+            const primaryType: "iatiIdentifier" | "activityId" = activity.iatiIdentifier
+              ? "iatiIdentifier"
+              : "activityId"
+            const primaryLabel = activity.iatiIdentifier ? "IATI ID" : activity.partnerId ? "Ref" : "ID"
+
+            // Collect all secondary IDs (non-primary)
+            const secondaryIds: Array<{ label: string; value: string; type: "iatiIdentifier" | "activityId" }> = []
+            if ((activity as any).auto_ref && (activity as any).auto_ref !== primaryId) {
+              secondaryIds.push({ label: "Internal ref", value: (activity as any).auto_ref, type: "activityId" })
+            }
+            if (activity.partnerId && activity.partnerId !== primaryId) {
+              secondaryIds.push({ label: "Partner ID", value: activity.partnerId, type: "activityId" })
+            }
+            if (activity.iatiIdentifier && activity.iatiIdentifier !== primaryId) {
+              secondaryIds.push({ label: "IATI ID", value: activity.iatiIdentifier, type: "iatiIdentifier" })
+            }
+
+            if (!primaryId) return null
+
+            return (
+              <span className="inline-flex items-center gap-1.5 group text-helper">
+                <span className="text-muted-foreground">{primaryLabel}</span>
+                <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  {primaryId}
+                </code>
+                <button
+                  onClick={() => onCopyToClipboard(primaryId, primaryType)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Copy"
+                >
+                  {copiedId === primaryType ? (
+                    <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-muted-foreground" />
+                  )}
+                </button>
+                {secondaryIds.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                        title="More identifiers"
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[260px]">
+                      {secondaryIds.map((id, i) => (
+                        <DropdownMenuItem
+                          key={i}
+                          onClick={() => onCopyToClipboard(id.value, id.type)}
+                          className="flex flex-col items-start gap-0.5 cursor-pointer"
+                        >
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{id.label}</span>
+                          <code className="text-xs font-mono text-foreground">{id.value}</code>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
-              </button>
-            </span>
-          )}
-          {activity.partnerId && (
-            <span className="inline-flex items-center gap-1 group text-helper">
-              <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                {activity.partnerId}
-              </code>
-              <button
-                onClick={() => onCopyToClipboard(activity.partnerId, "activityId")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {copiedId === "activityId" ? (
-                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                ) : (
-                  <Copy className="w-3 h-3 text-muted-foreground" />
-                )}
-              </button>
-            </span>
-          )}
-          {activity.iatiIdentifier && (
-            <span className="inline-flex items-center gap-1 group text-helper">
-              <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
-                {activity.iatiIdentifier}
-              </code>
-              <button
-                onClick={() => onCopyToClipboard(activity.iatiIdentifier || "", "iatiIdentifier")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {copiedId === "iatiIdentifier" ? (
-                  <Check className="w-3 h-3 text-[hsl(var(--success-icon))]" />
-                ) : (
-                  <Copy className="w-3 h-3 text-muted-foreground" />
-                )}
-              </button>
-            </span>
-          )}
+              </span>
+            )
+          })()}
 
           {/* Separator */}
           {(activity.partnerId || activity.iatiIdentifier || (activity as any).auto_ref) && (
@@ -742,6 +696,64 @@ export function ActivityProfileHeader({
           <span className="text-helper text-muted-foreground">
             Updated <span className="font-medium text-foreground">{formatDate(activity.updatedAt)}</span>
           </span>
+
+          {/* Publication status — quiet inline indicator */}
+          {activity.publicationStatus && (
+            <>
+              <div className="h-3.5 w-px bg-border" />
+              <span className="inline-flex items-center gap-1.5 text-helper text-muted-foreground">
+                <span
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    activity.publicationStatus === "published"
+                      ? "bg-[hsl(var(--success-icon))]"
+                      : "bg-muted-foreground/50"
+                  )}
+                  aria-hidden="true"
+                />
+                {activity.publicationStatus === "published" ? "Published" : "Unpublished"}
+              </span>
+            </>
+          )}
+
+          {/* IATI sync — quiet inline indicator */}
+          {activity.iatiIdentifier && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1.5 text-helper text-muted-foreground cursor-help">
+                    {activity.autoSync && activity.syncStatus === "live" ? (
+                      <>
+                        <RefreshCw className="h-3 w-3 text-[hsl(var(--success-icon))]" />
+                        IATI synced
+                      </>
+                    ) : activity.autoSync && activity.syncStatus === "outdated" ? (
+                      <>
+                        <AlertCircle className="h-3 w-3 text-yellow-600" />
+                        IATI outdated
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-3 w-3" />
+                        From IATI
+                      </>
+                    )}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-helper space-y-1">
+                    <p className="font-medium">IATI Sync Status</p>
+                    {activity.lastSyncTime && (
+                      <p>Last synced: {format(new Date(activity.lastSyncTime), "dd MMM yyyy HH:mm")}</p>
+                    )}
+                    {activity.autoSync && (
+                      <p className="text-[hsl(var(--success-icon))]">Auto-sync enabled</p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 

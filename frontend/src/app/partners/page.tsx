@@ -956,24 +956,21 @@ export default function PartnersPage() {
       <div className="min-h-screen">
         <div className="w-full space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <Users className="h-8 w-8 text-muted-foreground" />
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Partner Summary</h1>
-              <p className="text-muted-foreground mt-1">Overview of development partners grouped by type and portfolio</p>
-            </div>
+          <div className="mb-6">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Development Partners</h1>
+            <p className="text-muted-foreground mt-2 max-w-2xl">
+              Who reports aid to Myanmar, and how much they've committed.
+            </p>
           </div>
 
           {/* Main Content */}
           <Tabs value={groupBy} onValueChange={(value) => setGroupBy(value as 'type' | 'custom')}>
             <div className="flex items-center justify-between mb-6">
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                <TabsTrigger value="type" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  <Building2 className="h-4 w-4" />
-                  Development Partners
+              <TabsList className="h-auto bg-transparent p-0 gap-6 border-b mb-6 flex flex-wrap rounded-none justify-start">
+                <TabsTrigger value="type" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">
+                  By Type
                 </TabsTrigger>
-                <TabsTrigger value="custom" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                  <FolderOpen className="h-4 w-4" />
+                <TabsTrigger value="custom" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">
                   Custom Groups
                 </TabsTrigger>
               </TabsList>
@@ -1085,7 +1082,7 @@ export default function PartnersPage() {
                       Bilateral Partners
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      Development partners organized by country
+                      Development partners organized by country. Zero values mean no transactions reported for that period yet.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
