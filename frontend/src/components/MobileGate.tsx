@@ -1,31 +1,53 @@
 "use client"
 
-import { Monitor } from "lucide-react"
+import { Monitor, X } from "lucide-react"
+import { useEffect, useState } from "react"
+
+const DISMISS_KEY = "aims.small-screen-notice.dismissed"
 
 export function MobileGate({ children }: { children: React.ReactNode }) {
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(DISMISS_KEY) === "1") {
+      setDismissed(true)
+    }
+  }, [])
+
+  const handleDismiss = () => {
+    sessionStorage.setItem(DISMISS_KEY, "1")
+    setDismissed(true)
+  }
+
   return (
     <>
-      {/* Mobile blocking screen - visible on screens smaller than lg (1024px) */}
-      <div className="flex lg:hidden fixed inset-0 z-[9999] bg-white flex-col items-center justify-center p-8 text-center">
-        <div className="flex flex-col items-center gap-6 max-w-sm">
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-            <Monitor className="w-8 h-8 text-muted-foreground" />
+      {children}
+      {!dismissed && (
+        <div
+          role="status"
+          className="md:hidden fixed bottom-4 left-4 right-4 z-[9999] flex items-start gap-3 rounded-lg border bg-background p-4 shadow-lg"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+            <Monitor className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="space-y-2">
-            <p className="text-lg font-medium text-foreground">
-              Move to your computer
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Best on a bigger screen
             </p>
-            <p className="text-body text-muted-foreground leading-relaxed">
-              This tool needs your full attention (and works best on bigger screens)
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              This tool works best on a computer — some features may be hard to use here.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            aria-label="Dismiss"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      </div>
-
-      {/* App content - only visible on lg screens and above */}
-      <div className="hidden lg:contents">
-        {children}
-      </div>
+      )}
     </>
   )
 }
