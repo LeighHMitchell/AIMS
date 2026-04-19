@@ -359,8 +359,48 @@ export function allocateAcrossFiscalYears(
 }
 
 /**
+ * Splits a budget record across fiscal years proportionally.
+ *
+ * @param budgetRecord - Budget record with period_start, period_end, value/usd_value, currency
+ * @param customYear - The custom year definition
+ * @returns Array of fiscal year allocations
+ */
+export function splitBudgetAcrossFiscalYears(
+  budgetRecord: {
+    period_start: string
+    period_end: string
+    value?: number | string
+    usd_value?: number | string
+    currency?: string
+  },
+  customYear: CustomYear
+): FiscalYearAllocation[] {
+  if (!budgetRecord.period_start || !budgetRecord.period_end) {
+    return []
+  }
+
+  // Prefer USD value, fallback to value if currency is USD
+  let value = parseFloat(String(budgetRecord.usd_value)) || 0
+
+  if (!value && budgetRecord.currency === 'USD' && budgetRecord.value) {
+    value = parseFloat(String(budgetRecord.value)) || 0
+  }
+
+  if (!value) {
+    return []
+  }
+
+  return allocateAcrossFiscalYears(
+    budgetRecord.period_start,
+    budgetRecord.period_end,
+    value,
+    customYear
+  )
+}
+
+/**
  * Splits a planned disbursement record across fiscal years proportionally.
- * 
+ *
  * @param pdRecord - Planned disbursement record
  * @param customYear - The custom year definition
  * @returns Array of fiscal year allocations
