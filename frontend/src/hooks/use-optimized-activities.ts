@@ -1,21 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SystemTotals } from '@/lib/system-totals';
 import { apiFetch } from '@/lib/api-fetch';
 
-/**
- * Optimized Activities Hook
- * 
- * Performance improvements:
- * 1. Implements debounced search
- * 2. Uses optimized API endpoint with server-side pagination
- * 3. Implements request cancellation
- * 4. Caches results for better UX
- * 5. Includes system-wide totals for portfolio percentage calculations
- * 
- * Drop-in replacement for existing activity fetching logic
- */
-
-// Re-export SystemTotals for consumers of this hook
 export type { SystemTotals } from '@/lib/system-totals';
 
 interface Activity {
@@ -76,7 +63,6 @@ interface UseOptimizedActivitiesReturn {
     setFlowTypes: (types: string[]) => void;
     tiedStatuses: string[];
     setTiedStatuses: (statuses: string[]) => void;
-    // Legacy single-value getters for backward compatibility
     activityStatus: string;
     setActivityStatus: (status: string) => void;
     submissionStatus: string;
@@ -96,39 +82,31 @@ interface UseOptimizedActivitiesReturn {
     lastQueryTime: number;
     avgQueryTime: number;
   };
-  /** System-wide totals for calculating portfolio percentage shares */
   systemTotals: SystemTotals | null;
 }
 
+interface ActivitiesResponse {
+  activities: Activity[];
+  totalCount: number;
+  totalPages: number;
+  systemTotals: SystemTotals | null;
+  queryTime: number;
+}
+
+const EMPTY_ACTIVITIES: Activity[] = [];
+
 export function useOptimizedActivities(
-  options: UseOptimizedActivitiesOptions = {}
+  options: UseOptimizedActivitiesOptions = {},
 ): UseOptimizedActivitiesReturn {
-  const {
-    pageSize = 20,
-    enableOptimization = true,
-    onError,
-    viewMode = 'table'
-  } = options;
+  const { pageSize = 20, onError, viewMode = 'table' } = options;
 
-  // Force enable optimization for debugging
-  const forceEnableOptimization = true;
-
-  // State
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [systemTotals, setSystemTotals] = useState<SystemTotals | null>(null);
-  
-  // Sorting
+
   const [sortField, setSortField] = useState('updatedAt');
   const [sortOrder, setSortOrder] = useState('desc');
-  
-  // Filters - use arrays for multi-select
+
   const [activityStatuses, setActivityStatuses] = useState<string[]>([]);
   const [submissionStatuses, setSubmissionStatuses] = useState<string[]>([]);
   const [reportedByOrgs, setReportedByOrgs] = useState<string[]>([]);
@@ -136,7 +114,6 @@ export function useOptimizedActivities(
   const [flowTypes, setFlowTypes] = useState<string[]>([]);
   const [tiedStatuses, setTiedStatuses] = useState<string[]>([]);
 
-  // Legacy single-value setters for backward compatibility
   const setActivityStatus = useCallback((status: string) => {
     setActivityStatuses(status === 'all' ? [] : [status]);
   }, []);
@@ -156,7 +133,6 @@ export function useOptimizedActivities(
     setTiedStatuses(status === 'all' ? [] : [status]);
   }, []);
 
-  // Legacy single-value getters for backward compatibility
   const activityStatus = activityStatuses.length === 1 ? activityStatuses[0] : 'all';
   const submissionStatus = submissionStatuses.length === 1 ? submissionStatuses[0] : 'all';
   const reportedBy = reportedByOrgs.length === 1 ? reportedByOrgs[0] : 'all';
@@ -164,39 +140,37 @@ export function useOptimizedActivities(
   const flowType = flowTypes.length === 1 ? flowTypes[0] : 'all';
   const tiedStatus = tiedStatuses.length === 1 ? tiedStatuses[0] : 'all';
 
-  // Performance tracking
-  const [lastQueryTime, setLastQueryTime] = useState(0);
-  const queryTimesRef = useRef<number[]>([]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  // Request cancellation
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Cache for quick page changes
-  const cacheRef = useRef<Map<string, any>>(new Map());
-
-  // Handle sorting
-  const handleSort = useCallback((field: string) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
-    setCurrentPage(1); // Reset to first page when sorting changes
-  }, [sortField, sortOrder]);
-
-  // Fetch activities
-  const fetchActivities = useCallback(async (showLoading = true, bypassCache = false) => {
-    // Cancel any in-flight request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Generate cache key inline to avoid dependency issues
-    const cacheKey = JSON.stringify({
-      page: currentPage,
-      limit: pageSize,
-      search: debouncedSearchQuery,
+  const queryKey = useMemo(
+    () => [
+      'activities',
+      'list',
+      {
+        page: currentPage,
+        pageSize,
+        search: debouncedSearchQuery,
+        sortField,
+        sortOrder,
+        activityStatuses,
+        submissionStatuses,
+        reportedByOrgs,
+        aidTypes,
+        flowTypes,
+        tiedStatuses,
+        viewMode,
+      },
+    ],
+    [
+      currentPage,
+      pageSize,
+      debouncedSearchQuery,
       sortField,
       sortOrder,
       activityStatuses,
@@ -205,46 +179,24 @@ export function useOptimizedActivities(
       aidTypes,
       flowTypes,
       tiedStatuses,
-      viewMode
-    });
+      viewMode,
+    ],
+  );
 
-    // Clear cache if bypassing
-    if (bypassCache) {
-      cacheRef.current.clear();
-    }
+  const queryTimesRef = useRef<number[]>([]);
+  const [lastQueryTime, setLastQueryTime] = useState(0);
 
-    // Check cache first (unless bypassing)
-    if (!bypassCache) {
-      const cached = cacheRef.current.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < 60000) {
-        setActivities(cached.data);
-        setTotalCount(cached.totalCount);
-        setTotalPages(cached.totalPages);
-        setSystemTotals(cached.systemTotals || null);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      setError(null);
-
+  const query = useQuery<ActivitiesResponse, Error>({
+    queryKey,
+    queryFn: async ({ signal }) => {
       const startTime = Date.now();
 
-      // Build query parameters with cache-busting timestamp
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: pageSize.toString(),
         sortField,
         sortOrder,
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
-        // Array filters - comma-separated
         ...(activityStatuses.length > 0 && { activityStatuses: activityStatuses.join(',') }),
         ...(submissionStatuses.length > 0 && { submissionStatuses: submissionStatuses.join(',') }),
         ...(reportedByOrgs.length > 0 && { reportedByOrgs: reportedByOrgs.join(',') }),
@@ -252,24 +204,14 @@ export function useOptimizedActivities(
         ...(flowTypes.length > 0 && { flowTypes: flowTypes.join(',') }),
         ...(tiedStatuses.length > 0 && { tiedStatuses: tiedStatuses.join(',') }),
         ...(viewMode === 'card' && { includeImages: 'true' }),
-        _t: Date.now().toString() // Cache-busting timestamp
       });
 
-      // Try optimized endpoint first, fallback to lightweight simple endpoint
       let endpoint = `/api/activities-optimized?${params}`;
-      
-      let response = await apiFetch(endpoint, {
-        signal: abortControllerRef.current.signal,
-        cache: 'no-store',
-      });
+      let response = await apiFetch(endpoint, { signal, cache: 'no-store' });
 
-      // If optimized endpoint fails, try lightweight endpoint with server-side pagination
       if (!response.ok) {
         endpoint = `/api/activities-simple?${params}`;
-        response = await apiFetch(endpoint, {
-          signal: abortControllerRef.current.signal,
-          cache: 'no-store',
-        });
+        response = await apiFetch(endpoint, { signal, cache: 'no-store' });
       }
 
       if (!response.ok) {
@@ -277,117 +219,106 @@ export function useOptimizedActivities(
       }
 
       const data = await response.json();
-
-      // Performance tracking
-      const queryTime = Date.now() - startTime;
-      setLastQueryTime(queryTime);
-      queryTimesRef.current.push(queryTime);
-      
-      if (queryTimesRef.current.length > 10) {
-        queryTimesRef.current = queryTimesRef.current.slice(-10);
-      }
-
-      // Handle both optimized and regular API response formats
-      const activities = data.activities || data.data || [];
-      const rawTotal = (data.pagination?.total ?? data.pagination?.totalCount ?? data.totalCount);
+      const activities: Activity[] = data.activities || data.data || [];
+      const rawTotal = data.pagination?.total ?? data.pagination?.totalCount ?? data.totalCount;
       const totalCount = typeof rawTotal === 'number' ? rawTotal : activities.length;
-      const totalPages = data.pagination?.totalPages ?? (typeof rawTotal === 'number' ? Math.ceil(totalCount / pageSize) : 1);
-      
-      // Parse system-wide totals for portfolio percentage calculations
-      const parsedSystemTotals: SystemTotals | null = data.systemTotals || null;
+      const totalPages =
+        data.pagination?.totalPages ??
+        (typeof rawTotal === 'number' ? Math.ceil(totalCount / pageSize) : 1);
 
-      setActivities(activities);
-      setTotalCount(totalCount);
-      setTotalPages(totalPages);
-      setSystemTotals(parsedSystemTotals);
+      const queryTime = Date.now() - startTime;
 
-      // Cache the result (including system totals)
-      cacheRef.current.set(cacheKey, {
-        data: activities,
+      return {
+        activities,
         totalCount,
         totalPages,
-        systemTotals: parsedSystemTotals,
-        timestamp: Date.now()
-      });
+        systemTotals: (data.systemTotals as SystemTotals | null) || null,
+        queryTime,
+      };
+    },
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
+  });
 
-      // Set loading to false AFTER data is successfully set
-      // Add a small delay to prevent any flash of empty state
-      setTimeout(() => setLoading(false), 50);
-
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        return;
-      }
-
-      console.error('[Activities Hook] Error fetching activities:', error);
-
-      // Handle specific error types
-      let errorMessage = 'Failed to fetch activities';
-
-      if (error.message && error.message.includes('DATABASE_CONNECTION_ERROR')) {
-        errorMessage = 'Database connection issue. Please try again later.';
-      } else if (error.message && error.message.includes('503')) {
-        errorMessage = 'Service temporarily unavailable. Please try again later.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      setError(errorMessage);
-      // Set loading to false on error with small delay for consistency
-      setTimeout(() => setLoading(false), 50);
-
-      if (onError) {
-        onError(errorMessage);
-      }
+  useEffect(() => {
+    if (!query.data) return;
+    setLastQueryTime(query.data.queryTime);
+    queryTimesRef.current.push(query.data.queryTime);
+    if (queryTimesRef.current.length > 10) {
+      queryTimesRef.current = queryTimesRef.current.slice(-10);
     }
-  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatuses, submissionStatuses, reportedByOrgs, aidTypes, flowTypes, tiedStatuses, viewMode, onError]);
+  }, [query.data]);
 
-  // Debounce search query
+  const errorMessage = useMemo(() => {
+    if (!query.error) return null;
+    const raw = query.error.message || 'Failed to fetch activities';
+    if (raw.includes('DATABASE_CONNECTION_ERROR')) {
+      return 'Database connection issue. Please try again later.';
+    }
+    if (raw.includes('503')) {
+      return 'Service temporarily unavailable. Please try again later.';
+    }
+    return raw;
+  }, [query.error]);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1);
-    }, 300);
+    if (errorMessage && onError) onError(errorMessage);
+  }, [errorMessage, onError]);
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Fetch data when key dependencies change
-  useEffect(() => {
-    fetchActivities();
-  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatuses, submissionStatuses, reportedByOrgs, aidTypes, flowTypes, tiedStatuses, viewMode]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+  const handleSort = useCallback(
+    (field: string) => {
+      if (sortField === field) {
+        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortOrder('asc');
       }
-    };
-  }, []);
+      setCurrentPage(1);
+    },
+    [sortField],
+  );
 
-  // Handle page changes
   const setPage = useCallback((page: number) => {
     setCurrentPage(page);
   }, []);
 
-  // Remove activity from local state and clear cache
-  const removeActivity = useCallback((id: string) => {
-    setActivities(prev => prev.filter(activity => activity.id !== id));
-    setTotalCount(prev => prev - 1);
-    // Clear cache to prevent stale data from being used
-    cacheRef.current.clear();
-  }, []);
+  const queryClient = useQueryClient();
 
-  // Calculate average query time
-  const avgQueryTime = queryTimesRef.current.length > 0 
-    ? queryTimesRef.current.reduce((a, b) => a + b, 0) / queryTimesRef.current.length 
-    : 0;
+  const removeActivity = useCallback(
+    (id: string) => {
+      queryClient.setQueriesData<ActivitiesResponse>(
+        { queryKey: ['activities', 'list'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            activities: old.activities.filter((a) => a.id !== id),
+            totalCount: Math.max(0, old.totalCount - 1),
+          };
+        },
+      );
+    },
+    [queryClient],
+  );
+
+  const refetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['activities', 'list'] });
+  }, [queryClient]);
+
+  const avgQueryTime =
+    queryTimesRef.current.length > 0
+      ? queryTimesRef.current.reduce((a, b) => a + b, 0) / queryTimesRef.current.length
+      : 0;
+
+  const activities = query.data?.activities ?? EMPTY_ACTIVITIES;
+  const totalCount = query.data?.totalCount ?? 0;
+  const totalPages = query.data?.totalPages ?? 0;
+  const systemTotals = query.data?.systemTotals ?? null;
 
   return {
     activities,
-    loading,
-    error,
+    loading: query.isFetching,
+    error: errorMessage,
     totalCount,
     totalPages,
     currentPage,
@@ -397,10 +328,9 @@ export function useOptimizedActivities(
     sorting: {
       sortField,
       sortOrder,
-      handleSort
+      handleSort,
     },
     filters: {
-      // Array-based multi-select filters
       activityStatuses,
       setActivityStatuses,
       submissionStatuses,
@@ -413,7 +343,6 @@ export function useOptimizedActivities(
       setFlowTypes,
       tiedStatuses,
       setTiedStatuses,
-      // Legacy single-value getters for backward compatibility
       activityStatus,
       setActivityStatus,
       submissionStatus,
@@ -425,14 +354,14 @@ export function useOptimizedActivities(
       flowType,
       setFlowType,
       tiedStatus,
-      setTiedStatus
+      setTiedStatus,
     },
-    refetch: () => fetchActivities(true, true), // Always bypass cache on refetch
+    refetch,
     removeActivity,
     performance: {
       lastQueryTime,
-      avgQueryTime
+      avgQueryTime,
     },
-    systemTotals
+    systemTotals,
   };
 }

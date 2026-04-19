@@ -4,8 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { GlassButton } from "@/components/ui/glass-button"
-import { apiFetch } from "@/lib/api-fetch"
-import type { ModuleStats } from "@/types/project-bank"
+import { useModuleStats } from "@/hooks/use-module-stats"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useUser } from "@/hooks/useUser"
 import { AnimatePresence, motion } from "motion/react"
@@ -13,7 +12,7 @@ import { AppleHelloEnglishEffect } from "@/components/ui/apple-hello-effect"
 import releases from "@/data/releases.json"
 
 export default function HomePage() {
-  const [stats, setStats] = useState<ModuleStats | null>(null)
+  const { data: stats = null } = useModuleStats()
   const { user } = useUser()
   const [showHello, setShowHello] = useState(false)
   const [writingDone, setWritingDone] = useState(false)
@@ -40,20 +39,6 @@ export default function HomePage() {
       }
     }, 2500)
   }
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await apiFetch("/api/module-stats")
-        if (res.ok) {
-          setStats(await res.json())
-        }
-      } catch {
-        // Stats are optional
-      }
-    }
-    fetchStats()
-  }, [])
 
   const modules = [
     {
