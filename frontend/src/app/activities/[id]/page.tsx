@@ -3961,7 +3961,7 @@ export default function ActivityDetailPage() {
                   onChange={setGovernmentInputs}
                   plannedStartDate={activity.plannedStartDate}
                   plannedEndDate={activity.plannedEndDate}
-                  readOnly={!permissions.canEditGovInputs}
+                  readOnly={true}
                 />
               </TabsContent>
             </Tabs>

@@ -11,6 +11,7 @@ import OrganisationsSection from "@/components/OrganisationsSection";
 import ContactsTab from "@/components/contacts/ContactsTab";
 import FocalPointsTab from "@/components/activities/FocalPointsTab";
 import { GovernmentInputsSectionEnhanced } from "@/components/GovernmentInputsSectionEnhanced";
+import { isGovernmentUser, isDevelopmentPartnerUser } from "@/lib/activity-permissions";
 import { AutosaveBannerUpload, AutosaveIconUpload } from "@/components/ui/autosave-upload";
 import { toast } from "sonner";
 import { Transaction } from "@/types/transaction";
@@ -3199,6 +3200,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
             onChange={setGovernmentInputs}
             plannedStartDate={general.plannedStartDate}
             plannedEndDate={general.plannedEndDate}
+            readOnly={!user || (!isGovernmentUser(user) && !isDevelopmentPartnerUser(user))}
           />
         </div>
       );
