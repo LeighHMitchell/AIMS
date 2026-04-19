@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Lock, Unlock, CalendarRange, SplitSquareHorizontal, Trash2, Info } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, X, FileText, CheckCircle2, Circle, CircleSlash, Wallet, DollarSign, FileCheck, BarChart3, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Lock, Unlock, CalendarRange, SplitSquareHorizontal, Trash2, Info, Package } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentDropzone, UploadedDocument } from "@/components/ui/document-dropzone";
 import { apiFetch } from "@/lib/api-fetch";
@@ -90,6 +91,29 @@ function getRiskLevel(score: number): { label: string; color: string; badgeClass
 
 // ─── Government Inputs Types ────────────────────────────────────────────────
 
+export type InKindItemType = 'staff' | 'facilities' | 'equipment' | 'services' | 'other';
+
+export interface InKindItem {
+  id: string;
+  type: InKindItemType;
+  description: string;
+  estimatedValueLocal?: number;
+  estimatedValueUSD?: number;
+}
+
+export interface OtherContribution {
+  id: string;
+  description: string;
+}
+
+const IN_KIND_TYPE_LABELS: Record<InKindItemType, string> = {
+  staff: 'Staff Time',
+  facilities: 'Facilities',
+  equipment: 'Equipment',
+  services: 'Services',
+  other: 'Other',
+};
+
 interface GovernmentInputs {
   onBudgetClassification?: {
     onPlan?: string;
@@ -119,8 +143,12 @@ interface GovernmentInputs {
       amountLocal: number;
       amountUSD: number;
     }>;
+    // Structured in-kind items (replaces legacy inKindContributions string)
+    inKindItems?: InKindItem[];
+    /** @deprecated use inKindItems */
     inKindContributions?: string;
     sourceOfFunding?: string;
+    otherContributions?: OtherContribution[];
   };
 
   riskAssessment?: RiskAssessment;
@@ -146,6 +174,7 @@ interface GovernmentInputsSectionProps {
   onChange: (inputs: GovernmentInputs) => void;
   plannedStartDate?: string;
   plannedEndDate?: string;
+  readOnly?: boolean;
 }
 
 // ─── Helper Functions ───────────────────────────────────────────────────────
@@ -183,7 +212,20 @@ export function GovernmentInputsSectionEnhanced({
   onChange,
   plannedStartDate,
   plannedEndDate,
+  readOnly = false,
 }: GovernmentInputsSectionProps) {
+  // Migrate legacy inKindContributions string → inKindItems on first render
+  useEffect(() => {
+    const rgc = governmentInputs.rgcContribution;
+    if (rgc?.inKindContributions && typeof rgc.inKindContributions === 'string' && !rgc.inKindItems?.length) {
+      const migrated = { ...rgc };
+      migrated.inKindItems = [{ id: crypto.randomUUID(), type: 'other' as InKindItemType, description: rgc.inKindContributions }];
+      delete migrated.inKindContributions;
+      onChange({ ...governmentInputs, rgcContribution: migrated });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const updateField = (path: string, value: any) => {
     const keys = path.split(".");
     const newInputs = { ...governmentInputs };
@@ -370,6 +412,12 @@ export function GovernmentInputsSectionEnhanced({
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        {readOnly && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-muted border border-border text-body text-muted-foreground">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>This section is view-only. Government staff and donor partners can edit these fields.</span>
+          </div>
+        )}
         <Tabs defaultValue="budget-finance" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="budget-finance" className="flex items-center gap-2">
@@ -443,8 +491,9 @@ export function GovernmentInputsSectionEnhanced({
                           : ""
                       }
                       onValueChange={(value) =>
-                        updateField(`onBudgetClassification.${dimension.key}`, value)
+                        !readOnly && updateField(`onBudgetClassification.${dimension.key}`, value)
                       }
+                      disabled={readOnly}
                       className="flex gap-6"
                     >
                       <div className="flex items-center space-x-2">
@@ -484,6 +533,7 @@ export function GovernmentInputsSectionEnhanced({
                     category="budget-supporting"
                     documents={budgetDocs}
                     onDocumentsChange={setBudgetDocs}
+                    disabled={readOnly}
                   />
                 </div>
               </CardContent>
@@ -513,8 +563,9 @@ export function GovernmentInputsSectionEnhanced({
                   <RadioGroup
                     value={governmentInputs.rgcContribution?.isProvided ? "yes" : "no"}
                     onValueChange={(value) =>
-                      updateField("rgcContribution.isProvided", value === "yes")
+                      !readOnly && updateField("rgcContribution.isProvided", value === "yes")
                     }
+                    disabled={readOnly}
                     className="flex gap-6"
                   >
                     <div className="flex items-center space-x-2">
@@ -547,8 +598,9 @@ export function GovernmentInputsSectionEnhanced({
                           <Label className="text-body font-medium">Currency</Label>
                           <CurrencySelector
                             value={rgc?.currency || undefined}
-                            onValueChange={(value) => updateField("rgcContribution.currency", value)}
+                            onValueChange={(value) => !readOnly && updateField("rgcContribution.currency", value)}
                             placeholder="Select currency"
+                            disabled={readOnly}
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -556,8 +608,9 @@ export function GovernmentInputsSectionEnhanced({
                           <Input
                             type="date"
                             value={rgc?.valueDate || ""}
-                            onChange={(e) => updateField("rgcContribution.valueDate", e.target.value)}
-                            className="h-10"
+                            onChange={(e) => !readOnly && updateField("rgcContribution.valueDate", e.target.value)}
+                            readOnly={readOnly}
+                            className={cn("h-10", readOnly && "bg-muted")}
                           />
                         </div>
                       </div>
@@ -831,30 +884,204 @@ export function GovernmentInputsSectionEnhanced({
                       </div>
                     )}
 
-                    {/* Additional Details */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-body font-medium text-foreground mb-2">
-                          In-Kind Contributions
-                        </label>
-                        <Textarea
-                          placeholder="Describe any in-kind contributions (staff time, facilities, equipment, etc.)"
-                          value={governmentInputs.rgcContribution?.inKindContributions || ""}
-                          onChange={(e) => updateField("rgcContribution.inKindContributions", e.target.value)}
-                          rows={3}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-body font-medium text-foreground mb-2">
-                          Source of Funding
-                        </label>
+                    {/* Source of Funding */}
+                    <div>
+                      <label className="block text-body font-medium text-foreground mb-2">
+                        Source of Funding
+                      </label>
+                      {readOnly ? (
+                        <p className="text-body text-foreground">
+                          {rgc?.sourceOfFunding || <span className="text-muted-foreground">—</span>}
+                        </p>
+                      ) : (
                         <Textarea
                           placeholder="Specify the government budget line or funding source"
-                          value={governmentInputs.rgcContribution?.sourceOfFunding || ""}
+                          value={rgc?.sourceOfFunding || ""}
                           onChange={(e) => updateField("rgcContribution.sourceOfFunding", e.target.value)}
                           rows={3}
                         />
+                      )}
+                    </div>
+
+                    {/* In-Kind Contributions */}
+                    <div className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="font-medium text-foreground">In-Kind Contributions</h4>
+                        </div>
+                        {!readOnly && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const items = rgc?.inKindItems || [];
+                              updateField("rgcContribution.inKindItems", [
+                                ...items,
+                                { id: crypto.randomUUID(), type: 'staff' as InKindItemType, description: '', estimatedValueLocal: undefined, estimatedValueUSD: undefined },
+                              ]);
+                            }}
+                            className="gap-1.5"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Item
+                          </Button>
+                        )}
                       </div>
+
+                      {(!rgc?.inKindItems || rgc.inKindItems.length === 0) && (
+                        <p className="text-body text-muted-foreground">
+                          {readOnly ? 'No in-kind contributions recorded.' : 'No in-kind contributions added yet. Click "Add Item" to begin.'}
+                        </p>
+                      )}
+
+                      {(rgc?.inKindItems || []).map((item, idx) => (
+                        <div key={item.id} className="flex gap-2 items-start p-3 bg-muted/30 rounded-lg border">
+                          {readOnly ? (
+                            <div className="flex-1 space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-helper">{IN_KIND_TYPE_LABELS[item.type]}</Badge>
+                                {item.estimatedValueLocal != null && item.estimatedValueLocal > 0 && (
+                                  <span className="text-helper text-muted-foreground">
+                                    {rgc?.currency ? `${item.estimatedValueLocal.toLocaleString()} ${rgc.currency}` : item.estimatedValueLocal.toLocaleString()}
+                                    {item.estimatedValueUSD ? ` ($ ${item.estimatedValueUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : ''}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-body">{item.description}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-36 shrink-0">
+                                <Select
+                                  value={item.type}
+                                  onValueChange={(val) => {
+                                    const updated = [...(rgc?.inKindItems || [])];
+                                    updated[idx] = { ...item, type: val as InKindItemType };
+                                    updateField("rgcContribution.inKindItems", updated);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-9 text-body">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(Object.entries(IN_KIND_TYPE_LABELS) as [InKindItemType, string][]).map(([v, l]) => (
+                                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Input
+                                placeholder="Description"
+                                value={item.description}
+                                onChange={(e) => {
+                                  const updated = [...(rgc?.inKindItems || [])];
+                                  updated[idx] = { ...item, description: e.target.value };
+                                  updateField("rgcContribution.inKindItems", updated);
+                                }}
+                                className="h-9 flex-1"
+                              />
+                              <div className="w-32 shrink-0">
+                                <Input
+                                  type="number"
+                                  placeholder={`Value${rgc?.currency ? ` (${rgc.currency})` : ''}`}
+                                  value={item.estimatedValueLocal ?? ''}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || undefined;
+                                    const usd = val && exchangeRate ? Math.round(val * exchangeRate * 100) / 100 : undefined;
+                                    const updated = [...(rgc?.inKindItems || [])];
+                                    updated[idx] = { ...item, estimatedValueLocal: val, estimatedValueUSD: usd };
+                                    updateField("rgcContribution.inKindItems", updated);
+                                  }}
+                                  className="h-9 text-right tabular-nums"
+                                />
+                              </div>
+                              <button
+                                onClick={() => {
+                                  updateField("rgcContribution.inKindItems", (rgc?.inKindItems || []).filter((_, i) => i !== idx));
+                                }}
+                                className="text-muted-foreground hover:text-destructive transition-colors mt-2"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* In-kind totals */}
+                      {(rgc?.inKindItems || []).some(i => i.estimatedValueLocal) && (
+                        <div className="flex justify-between text-body font-medium pt-1 border-t">
+                          <span>Total In-Kind (estimated)</span>
+                          <span className="tabular-nums">
+                            {(rgc?.inKindItems || []).reduce((s, i) => s + (i.estimatedValueLocal || 0), 0).toLocaleString()}
+                            {rgc?.currency ? ` ${rgc.currency}` : ''}
+                            {exchangeRate ? ` ($ ${(rgc?.inKindItems || []).reduce((s, i) => s + (i.estimatedValueUSD || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Other Contributions */}
+                    <div className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-foreground">Other Contributions</h4>
+                        {!readOnly && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const items = rgc?.otherContributions || [];
+                              updateField("rgcContribution.otherContributions", [
+                                ...items,
+                                { id: crypto.randomUUID(), description: '' },
+                              ]);
+                            }}
+                            className="gap-1.5"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-body text-muted-foreground -mt-1">
+                        e.g. policy support, coordination, technical advice
+                      </p>
+
+                      {(!rgc?.otherContributions || rgc.otherContributions.length === 0) && (
+                        <p className="text-body text-muted-foreground">
+                          {readOnly ? 'No other contributions recorded.' : 'None added yet.'}
+                        </p>
+                      )}
+
+                      {(rgc?.otherContributions || []).map((item, idx) => (
+                        <div key={item.id} className="flex gap-2 items-center">
+                          {readOnly ? (
+                            <p className="text-body flex-1">{item.description}</p>
+                          ) : (
+                            <>
+                              <Input
+                                placeholder="Describe this contribution"
+                                value={item.description}
+                                onChange={(e) => {
+                                  const updated = [...(rgc?.otherContributions || [])];
+                                  updated[idx] = { ...item, description: e.target.value };
+                                  updateField("rgcContribution.otherContributions", updated);
+                                }}
+                                className="h-9 flex-1"
+                              />
+                              <button
+                                onClick={() => {
+                                  updateField("rgcContribution.otherContributions", (rgc?.otherContributions || []).filter((_, i) => i !== idx));
+                                }}
+                                className="text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
@@ -934,8 +1161,9 @@ export function GovernmentInputsSectionEnhanced({
                         <RadioGroup
                           value={currentScore?.toString() || ""}
                           onValueChange={(value) =>
-                            updateField(`riskAssessment.${question.id}`, { score: parseInt(value) })
+                            !readOnly && updateField(`riskAssessment.${question.id}`, { score: parseInt(value) })
                           }
+                          disabled={readOnly}
                           className="flex gap-6"
                         >
                           {RISK_LEVELS.map((level) => (
@@ -988,8 +1216,9 @@ export function GovernmentInputsSectionEnhanced({
                   <RadioGroup
                     value={governmentInputs.evaluationResults?.hasEvaluation ? "yes" : "no"}
                     onValueChange={(value) =>
-                      updateField("evaluationResults.hasEvaluation", value === "yes")
+                      !readOnly && updateField("evaluationResults.hasEvaluation", value === "yes")
                     }
+                    disabled={readOnly}
                     className="flex gap-6"
                   >
                     <div className="flex items-center space-x-2">
@@ -1023,6 +1252,7 @@ export function GovernmentInputsSectionEnhanced({
                         category="evaluation"
                         documents={evaluationDocs}
                         onDocumentsChange={setEvaluationDocs}
+                        disabled={readOnly}
                       />
                     </div>
 
@@ -1034,8 +1264,9 @@ export function GovernmentInputsSectionEnhanced({
                       <RadioGroup
                         value={governmentInputs.evaluationResults?.inNationalFramework ? "yes" : "no"}
                         onValueChange={(value) =>
-                          updateField("evaluationResults.inNationalFramework", value === "yes")
+                          !readOnly && updateField("evaluationResults.inNationalFramework", value === "yes")
                         }
+                        disabled={readOnly}
                         className="flex gap-6"
                       >
                         <div className="flex items-center space-x-2">
@@ -1062,8 +1293,10 @@ export function GovernmentInputsSectionEnhanced({
                           placeholder="e.g., NRF-2.3.1"
                           value={governmentInputs.evaluationResults?.nationalIndicatorRef || ""}
                           onChange={(e) =>
-                            updateField("evaluationResults.nationalIndicatorRef", e.target.value)
+                            !readOnly && updateField("evaluationResults.nationalIndicatorRef", e.target.value)
                           }
+                          readOnly={readOnly}
+                          className={readOnly ? 'bg-muted' : ''}
                         />
                       </div>
                     )}
