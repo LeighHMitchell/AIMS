@@ -1,10 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import {
-  splitBudgetAcrossFiscalYears,
-  getTransactionFiscalYear,
+  allocateAcrossCalendarYears,
+  allocateAcrossFiscalYears,
+  getFiscalYearForDate,
 } from '@/utils/year-allocation';
-import { CustomYear, CustomYearRow, toCustomYear, getCustomYearLabel } from '@/types/custom-years';
+import { fetchCustomYearById } from '@/lib/custom-year-server';
+import { getCustomYearLabel } from '@/types/custom-years';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +16,6 @@ interface ChartDataPoint {
   disbursements: number;
   expenditures: number;
   totalSpending: number;
-  sortKey: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -36,22 +37,7 @@ export async function GET(request: NextRequest) {
     const isExport = searchParams.get('export') === 'true';
 
     const supabaseAdmin = supabase;
-
-    // Fetch custom year definition if provided. Only applied when timePeriod === 'year'.
-    let customYear: CustomYear | null = null;
-    if (customYearId && timePeriod === 'year') {
-      const { data: cyData, error: cyError } = await supabaseAdmin
-        .from('custom_years')
-        .select('*')
-        .eq('id', customYearId)
-        .single();
-
-      if (cyError) {
-        console.error('[Budget vs Spending API] Custom year fetch error:', cyError);
-      } else if (cyData) {
-        customYear = toCustomYear(cyData as CustomYearRow);
-      }
-    }
+    const customYear = await fetchCustomYearById(supabaseAdmin, customYearId);
 
     // Build the base query for activities with transactions
     let activitiesQuery = supabaseAdmin
@@ -66,8 +52,6 @@ export async function GET(request: NextRequest) {
         transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
           value_usd,
-          value,
-          currency,
           transaction_date,
           receiver_activity_uuid
         )
@@ -98,63 +82,79 @@ export async function GET(request: NextRequest) {
     const dataMap = new Map<string, ChartDataPoint>();
     const defaultCurrency = 'USD';
 
-    const ensurePeriod = (periodKey: string, sortKey: number): ChartDataPoint => {
-      let periodData = dataMap.get(periodKey);
-      if (!periodData) {
-        periodData = {
-          period: periodKey,
-          budget: 0,
-          disbursements: 0,
-          expenditures: 0,
-          totalSpending: 0,
-          sortKey,
-        };
-        dataMap.set(periodKey, periodData);
-      }
-      return periodData;
-    };
-
-    // Process budget data first
+    // Process budget data first — pro-rata split period-spanning budgets across years
+    // so a Jun 2025 – Aug 2025 budget contributes to 2025 proportionally rather than
+    // dumping the full amount into period_start's year (also matters across year boundaries).
+    // When a custom fiscal year is supplied, we split across that fiscal year's boundaries.
     budgetData?.forEach((budget: any) => {
-      if (customYear) {
-        // Fiscal year bucketing (proportional across fiscal years)
-        const allocations = splitBudgetAcrossFiscalYears(
-          {
-            period_start: budget.period_start,
-            period_end: budget.period_end,
-            value: budget.value,
-            usd_value: budget.usd_value,
-            currency: budget.currency,
-          },
-          customYear
-        );
-        allocations.forEach(({ fiscalYear, label, amount }) => {
-          const periodData = ensurePeriod(label, fiscalYear);
-          periodData.budget += amount;
-        });
-      } else {
-        const startDate = new Date(budget.period_start);
-        if (isNaN(startDate.getTime())) return;
+      const usdValue = parseFloat(budget.usd_value?.toString() || '0') || 0;
+      if (!budget.period_start || usdValue === 0) return;
 
-        let periodKey: string;
-        let sortKey: number;
-        if (timePeriod === 'quarter') {
-          const quarter = Math.floor(startDate.getMonth() / 3) + 1;
-          periodKey = `${startDate.getFullYear()}-Q${quarter}`;
-          sortKey = startDate.getFullYear() * 10 + quarter;
+      const periodEnd = budget.period_end || budget.period_start;
+
+      if (timePeriod === 'year') {
+        if (customYear) {
+          const allocations = allocateAcrossFiscalYears(
+            budget.period_start,
+            periodEnd,
+            usdValue,
+            customYear
+          );
+          for (const allocation of allocations) {
+            const periodKey = allocation.label;
+            if (!dataMap.has(periodKey)) {
+              dataMap.set(periodKey, {
+                period: periodKey,
+                budget: 0,
+                disbursements: 0,
+                expenditures: 0,
+                totalSpending: 0,
+              });
+            }
+            dataMap.get(periodKey)!.budget += allocation.amount;
+          }
         } else {
-          periodKey = startDate.getFullYear().toString();
-          sortKey = startDate.getFullYear();
+          const allocations = allocateAcrossCalendarYears(
+            budget.period_start,
+            periodEnd,
+            usdValue
+          );
+          for (const allocation of allocations) {
+            const periodKey = allocation.year.toString();
+            if (!dataMap.has(periodKey)) {
+              dataMap.set(periodKey, {
+                period: periodKey,
+                budget: 0,
+                disbursements: 0,
+                expenditures: 0,
+                totalSpending: 0,
+              });
+            }
+            dataMap.get(periodKey)!.budget += allocation.amount;
+          }
         }
-
-        const periodData = ensurePeriod(periodKey, sortKey);
-        // Use only USD-converted value - no fallback to original currency
-        periodData.budget += parseFloat(budget.usd_value?.toString() || '0') || 0;
+      } else {
+        // Quarterly bucketing keeps prior behaviour (period_start-based) — the
+        // allocator is year-granular, so quarterly pro-rata would need a separate helper.
+        const startDate = new Date(budget.period_start);
+        const quarter = Math.floor(startDate.getMonth() / 3) + 1;
+        const periodKey = `${startDate.getFullYear()}-Q${quarter}`;
+        if (!dataMap.has(periodKey)) {
+          dataMap.set(periodKey, {
+            period: periodKey,
+            budget: 0,
+            disbursements: 0,
+            expenditures: 0,
+            totalSpending: 0,
+          });
+        }
+        dataMap.get(periodKey)!.budget += usdValue;
       }
     });
 
     // Process activities and their transactions
     activities?.forEach((activity: any) => {
+      // Process transactions - use transaction date, not activity start date (USD only)
       activity.transactions?.forEach((transaction: any) => {
         // Exclude internal transfers (pooled fund flows) to avoid double-counting
         if (transaction.receiver_activity_uuid) return;
@@ -167,37 +167,33 @@ export async function GET(request: NextRequest) {
         }
 
         // Use transaction date to determine the period, not activity start date
-        const rawDate = transaction.transaction_date || activity.planned_start_date;
-        if (!rawDate) return;
-        const transactionDate = new Date(rawDate);
-        if (isNaN(transactionDate.getTime())) return;
+        const transactionDate = transaction.transaction_date
+          ? new Date(transaction.transaction_date)
+          : (activity.planned_start_date ? new Date(activity.planned_start_date) : new Date());
 
         let periodKey: string;
-        let sortKey: number;
-
-        if (customYear) {
-          const allocation = getTransactionFiscalYear(
-            {
-              transaction_date: rawDate,
-              value: transaction.value,
-              value_usd: transaction.value_usd,
-              currency: transaction.currency,
-            },
-            customYear
-          );
-          if (!allocation) return;
-          periodKey = allocation.label;
-          sortKey = allocation.fiscalYear;
-        } else if (timePeriod === 'quarter') {
+        if (timePeriod === 'quarter') {
           const quarter = Math.floor(transactionDate.getMonth() / 3) + 1;
           periodKey = `${transactionDate.getFullYear()}-Q${quarter}`;
-          sortKey = transactionDate.getFullYear() * 10 + quarter;
+        } else if (customYear) {
+          const fy = getFiscalYearForDate(transactionDate, customYear);
+          periodKey = getCustomYearLabel(customYear, fy);
         } else {
           periodKey = transactionDate.getFullYear().toString();
-          sortKey = transactionDate.getFullYear();
         }
 
-        const periodData = ensurePeriod(periodKey, sortKey);
+        // Initialize period data if not exists
+        if (!dataMap.has(periodKey)) {
+          dataMap.set(periodKey, {
+            period: periodKey,
+            budget: 0,
+            disbursements: 0,
+            expenditures: 0,
+            totalSpending: 0,
+          });
+        }
+
+        const periodData = dataMap.get(periodKey)!;
 
         switch (transaction.transaction_type) {
           case '2': // Commitment
@@ -221,10 +217,24 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // Convert to array and sort by period
-    const chartData = Array.from(dataMap.values())
-      .sort((a, b) => a.sortKey - b.sortKey)
-      .map(({ sortKey, ...rest }) => rest);
+    // Convert to array and sort by period. Fiscal-year labels like "AUFY2024-25" don't
+    // parseInt cleanly, so we extract the first 4-digit run as the ordering key.
+    const extractYear = (period: string): number => {
+      const match = period.match(/\d{4}/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
+    const chartData = Array.from(dataMap.values()).sort((a, b) => {
+      if (timePeriod === 'quarter') {
+        // Sort quarters: 2023-Q1, 2023-Q2, etc.
+        const [yearA, quarterA] = a.period.split('-Q');
+        const [yearB, quarterB] = b.period.split('-Q');
+        if (yearA !== yearB) {
+          return parseInt(yearA) - parseInt(yearB);
+        }
+        return parseInt(quarterA) - parseInt(quarterB);
+      }
+      return extractYear(a.period) - extractYear(b.period);
+    });
 
     // Handle export request
     if (isExport) {
@@ -236,7 +246,7 @@ export async function GET(request: NextRequest) {
         row.expenditures.toString(),
         row.totalSpending.toString()
       ]);
-
+      
       const csvContent = [csvHeaders, ...csvRows]
         .map(row => row.join(','))
         .join('\n');
@@ -269,8 +279,7 @@ export async function GET(request: NextRequest) {
         aidType,
         financeType,
         flowType,
-        timePeriod,
-        customYearId: customYearId || null,
+        timePeriod
       }
     });
 

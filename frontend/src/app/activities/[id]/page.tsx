@@ -165,7 +165,17 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { CodelistTooltip } from "@/components/ui/codelist-tooltip"
-import { splitBudgetAcrossYears, splitPlannedDisbursementAcrossYears } from "@/utils/year-allocation"
+import {
+  splitBudgetAcrossYears,
+  splitPlannedDisbursementAcrossYears,
+  splitBudgetAcrossFiscalYears,
+  splitPlannedDisbursementAcrossFiscalYears,
+  getFiscalYearForDate,
+  estimateMonthlyAmount,
+} from "@/utils/year-allocation"
+import { useCustomYears } from "@/hooks/useCustomYears"
+import { CustomYearSelector } from "@/components/ui/custom-year-selector"
+import { getCustomYearLabel } from "@/types/custom-years"
 import { getTransactionUSDValue, getTransactionUSDValueSync, normalizeTransactionType } from "@/lib/transaction-usd-helper"
 import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
 
@@ -457,6 +467,15 @@ export default function ActivityDetailPage() {
   const [budgetYearView, setBudgetYearView] = useState<'chart' | 'table'>('chart')
   const [budgetAllocationMethod, setBudgetAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
   const [budgetVsSpendAllocationMethod, setBudgetVsSpendAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
+
+  // Custom Year / Fiscal Year selector — drives every year-bucketed financial card on this page
+  const {
+    customYears,
+    selectedId: selectedCustomYearId,
+    setSelectedId: setSelectedCustomYearId,
+    selectedYear: selectedCustomYear,
+    loading: customYearsLoading,
+  } = useCustomYears()
   
   // Force scroll to top after description collapses - runs synchronously before paint
   useLayoutEffect(() => {
@@ -1099,6 +1118,28 @@ export default function ActivityDetailPage() {
     return sum;
   }, 0) : 0;
 
+  // Count records that contributed $0 to USD totals because neither a usd_value
+  // nor a USD-denominated value was available. These are "pending USD conversion".
+  const pendingBudgetCount = (budgets || []).filter((b: any) => {
+    const hasUsd = b.usd_value != null && Number(b.usd_value) > 0;
+    const isUsd = b.currency === 'USD' && b.value && Number(b.value) > 0;
+    return !hasUsd && !isUsd;
+  }).length;
+  const pendingPlannedCount = (plannedDisbursements || []).filter((pd: any) => {
+    const hasUsd = pd.usdAmount != null && Number(pd.usdAmount) > 0;
+    const isUsd = pd.currency === 'USD' && pd.amount && Number(pd.amount) > 0;
+    return !hasUsd && !isUsd;
+  }).length;
+  const pendingTransactionCount = ((activity?.transactions as any[]) || []).filter((t: any) => {
+    const type = normalizeTransactionType(t.transaction_type);
+    if (type !== '2' && type !== '3' && type !== '4') return false;
+    const stored = t.value_usd ?? t.value_USD ?? t.usd_value;
+    const hasUsd = stored != null && Number(stored) > 0;
+    const isUsd = t.currency === 'USD' && t.value && Number(t.value) > 0;
+    return !hasUsd && !isUsd;
+  }).length;
+  const totalPendingUsdCount = pendingBudgetCount + pendingPlannedCount + pendingTransactionCount;
+
   // Calculate progress percentages - must be before early returns
   const financialDeliveryPercent = financials.totalCommitment > 0 
     ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / financials.totalCommitment) * 100)
@@ -1560,7 +1601,31 @@ export default function ActivityDetailPage() {
                 </div>
               </div>
             </div>
+            {totalPendingUsdCount > 0 && (
+              <div className="border-t border-border px-5 py-2">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-helper text-amber-900 ring-1 ring-amber-200"
+                  title={`Budgets: ${pendingBudgetCount} · Planned disbursements: ${pendingPlannedCount} · Transactions: ${pendingTransactionCount}`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  {totalPendingUsdCount} {totalPendingUsdCount === 1 ? 'record' : 'records'} pending USD conversion
+                </span>
+              </div>
+            )}
           </div>
+
+          {/* ── Year-type selector — controls every year-bucketed card below ─── */}
+          {customYears.length > 0 && (
+            <div className="mb-3 flex items-center justify-end gap-2">
+              <span className="text-helper text-muted-foreground">Year basis</span>
+              <CustomYearSelector
+                customYears={customYears}
+                selectedId={selectedCustomYearId}
+                onSelect={setSelectedCustomYearId}
+                loading={customYearsLoading}
+              />
+            </div>
+          )}
 
           {/* ── Charts Row ──────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1568,9 +1633,11 @@ export default function ActivityDetailPage() {
             <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-helper font-semibold text-foreground">Budget by Year</CardTitle>
-                  <HelpTextTooltip 
-                    content="Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                  <CardTitle className="text-helper font-semibold text-foreground">
+                    Budget by {selectedCustomYear ? selectedCustomYear.shortName?.trim() || 'Period' : 'Year'}
+                  </CardTitle>
+                  <HelpTextTooltip
+                    content="Allocates budget amounts proportionally across years based on the number of days in each year. The year basis (calendar year or fiscal year) is controlled by the selector above."
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -1587,23 +1654,40 @@ export default function ActivityDetailPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const budgetsByYearMap = new Map<number, number>()
+                      // Use the same allocator as the chart so CSV totals match what the user sees.
+                      const buckets = new Map<number, { label: string; amount: number }>()
                       ;(budgets || []).forEach(budget => {
-                        if (budget.period_start) {
-                          const year = new Date(budget.period_start).getFullYear()
-                          const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                          budgetsByYearMap.set(year, (budgetsByYearMap.get(year) || 0) + (usdValue || 0))
+                        if (budget.period_start && budget.period_end) {
+                          if (selectedCustomYear) {
+                            splitBudgetAcrossFiscalYears(budget, selectedCustomYear).forEach(({ fiscalYear, label, amount }) => {
+                              const prev = buckets.get(fiscalYear)
+                              buckets.set(fiscalYear, { label, amount: (prev?.amount || 0) + amount })
+                            })
+                          } else {
+                            splitBudgetAcrossYears(budget).forEach(({ year, amount }) => {
+                              const prev = buckets.get(year)
+                              buckets.set(year, { label: String(year), amount: (prev?.amount || 0) + amount })
+                            })
+                          }
+                        } else if (budget.period_start) {
+                          const date = new Date(budget.period_start)
+                          const usdValue = Number(budget.usd_value) || (budget.currency === 'USD' ? Number(budget.value) || 0 : 0)
+                          const key = selectedCustomYear ? getFiscalYearForDate(date, selectedCustomYear) : date.getFullYear()
+                          const label = selectedCustomYear ? getCustomYearLabel(selectedCustomYear, key) : String(key)
+                          const prev = buckets.get(key)
+                          buckets.set(key, { label, amount: (prev?.amount || 0) + usdValue })
                         }
                       })
-                      const budgetData = Array.from(budgetsByYearMap.entries())
-                        .map(([year, amount]) => ({ year, amount }))
-                        .sort((a, b) => a.year - b.year)
-                      
+                      const budgetData = Array.from(buckets.entries())
+                        .map(([key, { label, amount }]) => ({ key, label, amount }))
+                        .sort((a, b) => a.key - b.key)
+
+                      const periodHeader = selectedCustomYear ? selectedCustomYear.name : 'Year'
                       const csvContent = [
-                        ['Year', 'Budget'],
-                        ...budgetData.map(item => [item.year, item.amount])
+                        [periodHeader, 'Budget'],
+                        ...budgetData.map(item => [item.label, item.amount])
                       ].map(row => row.join(',')).join('\n')
-                      
+
                       const blob = new Blob([csvContent], { type: 'text/csv' })
                       const url = window.URL.createObjectURL(blob)
                       const a = document.createElement('a')
@@ -1621,25 +1705,33 @@ export default function ActivityDetailPage() {
               </CardHeader>
               <CardContent className="p-3 pt-0 flex flex-col flex-1">
                 {(() => {
-                  // Calculate budgets by year
-                  const budgetsByYear = new Map<number, number>()
+                  // Calculate budgets by year (calendar) or fiscal year (when a custom year is selected)
+                  const buckets = new Map<number, { label: string; amount: number }>()
                   ;(budgets || []).forEach(budget => {
                     if (budget.period_start && budget.period_end) {
-                      // Always use proportional allocation
-                      const allocations = splitBudgetAcrossYears(budget)
-                      allocations.forEach(({ year, amount }) => {
-                        budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + amount)
-                      })
+                      if (selectedCustomYear) {
+                        splitBudgetAcrossFiscalYears(budget, selectedCustomYear).forEach(({ fiscalYear, label, amount }) => {
+                          const prev = buckets.get(fiscalYear)
+                          buckets.set(fiscalYear, { label, amount: (prev?.amount || 0) + amount })
+                        })
+                      } else {
+                        splitBudgetAcrossYears(budget).forEach(({ year, amount }) => {
+                          const prev = buckets.get(year)
+                          buckets.set(year, { label: String(year), amount: (prev?.amount || 0) + amount })
+                        })
+                      }
                     } else if (budget.period_start) {
-                      // Fallback to period-start allocation if no end date
-                      const year = new Date(budget.period_start).getFullYear()
-                      const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                      budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + (usdValue || 0))
+                      const date = new Date(budget.period_start)
+                      const usdValue = Number(budget.usd_value) || (budget.currency === 'USD' ? Number(budget.value) || 0 : 0)
+                      const key = selectedCustomYear ? getFiscalYearForDate(date, selectedCustomYear) : date.getFullYear()
+                      const label = selectedCustomYear ? getCustomYearLabel(selectedCustomYear, key) : String(key)
+                      const prev = buckets.get(key)
+                      buckets.set(key, { label, amount: (prev?.amount || 0) + usdValue })
                     }
                   })
-                  const budgetData = Array.from(budgetsByYear.entries())
-                    .map(([year, amount]) => ({ year, amount }))
-                    .sort((a, b) => a.year - b.year)
+                  const budgetData = Array.from(buckets.entries())
+                    .map(([key, { label, amount }]) => ({ key, label, amount }))
+                    .sort((a, b) => a.key - b.key)
 
                   if (budgetData.length === 0) {
                     return (
@@ -1655,14 +1747,14 @@ export default function ActivityDetailPage() {
                         <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
-                              <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                              <th className="text-left py-1 text-muted-foreground font-medium">{selectedCustomYear ? selectedCustomYear.shortName?.trim() || 'Period' : 'Year'}</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Budget</th>
                             </tr>
                           </thead>
                           <tbody>
                             {budgetData.map((item) => (
-                              <tr key={item.year} className="border-b border-border">
-                                <td className="py-1 text-foreground">{item.year}</td>
+                              <tr key={item.key} className="border-b border-border">
+                                <td className="py-1 text-foreground">{item.label}</td>
                                 <td className="text-right py-1 text-foreground font-medium">
                                   {formatCurrencyShort(item.amount)}
                                 </td>
@@ -1691,7 +1783,7 @@ export default function ActivityDetailPage() {
                             </linearGradient>
                           </defs>
                           <XAxis
-                            dataKey="year"
+                            dataKey="label"
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
@@ -1714,7 +1806,7 @@ export default function ActivityDetailPage() {
                                     <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.label}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
                                         </tr>
                                       </thead>
@@ -1753,9 +1845,11 @@ export default function ActivityDetailPage() {
             <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-helper font-semibold text-foreground">Planned vs Actual</CardTitle>
-                  <HelpTextTooltip 
-                    content="Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                  <CardTitle className="text-helper font-semibold text-foreground">
+                    Planned vs Actual{selectedCustomYear ? ` (${selectedCustomYear.shortName?.trim() || selectedCustomYear.name})` : ''}
+                  </CardTitle>
+                  <HelpTextTooltip
+                    content="Planned disbursements are split proportionally across the selected year basis. Transactions are bucketed by their transaction date. The year basis is controlled by the selector above."
                     side="top"
                     sideOffset={8}
                   />
@@ -1774,47 +1868,57 @@ export default function ActivityDetailPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const plannedDisbursementsByYearMap = new Map<number, number>()
-                      const disbursementsByYearMap = new Map<number, number>()
-                      const expendituresByYearMap = new Map<number, number>()
+                      // Use the same allocator + bucketing as the chart so CSV totals match what's rendered.
+                      const buckets = new Map<number, { label: string; planned: number; disb: number; exp: number }>()
+                      const ensure = (key: number, label: string) => {
+                        const prev = buckets.get(key)
+                        if (prev) return prev
+                        const next = { label, planned: 0, disb: 0, exp: 0 }
+                        buckets.set(key, next)
+                        return next
+                      }
 
                       ;(plannedDisbursements || []).forEach((pd: any) => {
-                        if (pd.period_start) {
-                          const year = new Date(pd.period_start).getFullYear()
-                          const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
-                          plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + (usdValue || 0))
-                        }
-                      })
-
-                      const transactions = activity?.transactions || []
-                      transactions.forEach((t: any) => {
-                        if (t.transaction_date) {
-                          const year = new Date(t.transaction_date).getFullYear()
-                          const usdValue = getTransactionUSDValueSync(t)
-
-                          if (normalizeTransactionType(t.transaction_type) === '3') {
-                            disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + usdValue)
-                          } else if (normalizeTransactionType(t.transaction_type) === '4') {
-                            expendituresByYearMap.set(year, (expendituresByYearMap.get(year) || 0) + usdValue)
+                        if (pd.period_start && pd.period_end) {
+                          if (selectedCustomYear) {
+                            splitPlannedDisbursementAcrossFiscalYears(pd, selectedCustomYear).forEach(({ fiscalYear, label, amount }) => {
+                              ensure(fiscalYear, label).planned += amount
+                            })
+                          } else {
+                            splitPlannedDisbursementAcrossYears(pd).forEach(({ year, amount }) => {
+                              ensure(year, String(year)).planned += amount
+                            })
                           }
+                        } else if (pd.period_start) {
+                          const date = new Date(pd.period_start)
+                          const usdValue = Number(pd.usd_amount) || (pd.currency === 'USD' ? Number(pd.value) || 0 : 0)
+                          const key = selectedCustomYear ? getFiscalYearForDate(date, selectedCustomYear) : date.getFullYear()
+                          const label = selectedCustomYear ? getCustomYearLabel(selectedCustomYear, key) : String(key)
+                          ensure(key, label).planned += usdValue
                         }
                       })
 
-                      const allYears = new Set([
-                        ...Array.from(plannedDisbursementsByYearMap.keys()),
-                        ...Array.from(disbursementsByYearMap.keys()),
-                        ...Array.from(expendituresByYearMap.keys())
-                      ])
+                      ;(activity?.transactions || []).forEach((t: any) => {
+                        if (!t.transaction_date) return
+                        const date = new Date(t.transaction_date)
+                        const usdValue = getTransactionUSDValueSync(t)
+                        const key = selectedCustomYear ? getFiscalYearForDate(date, selectedCustomYear) : date.getFullYear()
+                        const label = selectedCustomYear ? getCustomYearLabel(selectedCustomYear, key) : String(key)
+                        const bucket = ensure(key, label)
+                        if (normalizeTransactionType(t.transaction_type) === '3') {
+                          bucket.disb += usdValue
+                        } else if (normalizeTransactionType(t.transaction_type) === '4') {
+                          bucket.exp += usdValue
+                        }
+                      })
 
-                      const csvData = Array.from(allYears).sort().map(year => [
-                        year,
-                        plannedDisbursementsByYearMap.get(year) || 0,
-                        disbursementsByYearMap.get(year) || 0,
-                        expendituresByYearMap.get(year) || 0
-                      ])
+                      const csvData = Array.from(buckets.entries())
+                        .sort(([a], [b]) => a - b)
+                        .map(([, { label, planned, disb, exp }]) => [label, planned, disb, exp])
 
+                      const periodHeader = selectedCustomYear ? selectedCustomYear.name : 'Year'
                       const csvContent = [
-                        ['Year', 'Planned Disbursements', 'Disbursements', 'Expenditures'],
+                        [periodHeader, 'Planned Disbursements', 'Disbursements', 'Expenditures'],
                         ...csvData
                       ].map(row => row.join(',')).join('\n')
 
@@ -1835,55 +1939,55 @@ export default function ActivityDetailPage() {
               </CardHeader>
               <CardContent className="p-3 pt-0 flex flex-col flex-1">
                 {(() => {
-                  // Calculate planned disbursements and actuals by year
-                  const plannedDisbursementsByYearMap = new Map<number, number>()
-                  const disbursementsByYearMap = new Map<number, number>()
-                  const expendituresByYearMap = new Map<number, number>()
+                  // Calculate planned disbursements and actuals — bucketed by calendar year, or fiscal year when a CustomYear is selected.
+                  const buckets = new Map<number, { label: string; plannedDisbursements: number; disbursements: number; expenditures: number }>()
+                  const ensure = (key: number, label: string) => {
+                    const prev = buckets.get(key)
+                    if (prev) return prev
+                    const next = { label, plannedDisbursements: 0, disbursements: 0, expenditures: 0 }
+                    buckets.set(key, next)
+                    return next
+                  }
 
-                  // Process planned disbursements
+                  // Process planned disbursements with proportional allocation across the selected year basis
                   ;(plannedDisbursements || []).forEach((pd: any) => {
                     if (pd.period_start && pd.period_end) {
-                      // Always use proportional allocation
-                      const allocations = splitPlannedDisbursementAcrossYears(pd)
-                      allocations.forEach(({ year, amount }) => {
-                        plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + amount)
-                      })
+                      if (selectedCustomYear) {
+                        splitPlannedDisbursementAcrossFiscalYears(pd, selectedCustomYear).forEach(({ fiscalYear, label, amount }) => {
+                          ensure(fiscalYear, label).plannedDisbursements += amount
+                        })
+                      } else {
+                        splitPlannedDisbursementAcrossYears(pd).forEach(({ year, amount }) => {
+                          ensure(year, String(year)).plannedDisbursements += amount
+                        })
+                      }
                     } else if (pd.period_start) {
-                      // Fallback to period-start allocation if no end date
-                      const year = new Date(pd.period_start).getFullYear()
-                      const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
-                      plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + (usdValue || 0))
+                      const date = new Date(pd.period_start)
+                      const usdValue = Number(pd.usd_amount) || (pd.currency === 'USD' ? Number(pd.value) || 0 : 0)
+                      const key = selectedCustomYear ? getFiscalYearForDate(date, selectedCustomYear) : date.getFullYear()
+                      const label = selectedCustomYear ? getCustomYearLabel(selectedCustomYear, key) : String(key)
+                      ensure(key, label).plannedDisbursements += usdValue
                     }
                   })
 
                   // Process transactions - use USD values for consistency with hero cards
-                  const transactions = activity?.transactions || []
-                  transactions.forEach((t: any) => {
-                    if (t.transaction_date) {
-                      const year = new Date(t.transaction_date).getFullYear()
-                      const usdValue = getTransactionUSDValueSync(t)
-
-                      if (normalizeTransactionType(t.transaction_type) === '3') { // Disbursement
-                        disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + usdValue)
-                      } else if (normalizeTransactionType(t.transaction_type) === '4') { // Expenditure
-                        expendituresByYearMap.set(year, (expendituresByYearMap.get(year) || 0) + usdValue)
-                      }
+                  ;(activity?.transactions || []).forEach((t: any) => {
+                    if (!t.transaction_date) return
+                    const date = new Date(t.transaction_date)
+                    const usdValue = getTransactionUSDValueSync(t)
+                    const key = selectedCustomYear ? getFiscalYearForDate(date, selectedCustomYear) : date.getFullYear()
+                    const label = selectedCustomYear ? getCustomYearLabel(selectedCustomYear, key) : String(key)
+                    const bucket = ensure(key, label)
+                    if (normalizeTransactionType(t.transaction_type) === '3') {
+                      bucket.disbursements += usdValue
+                    } else if (normalizeTransactionType(t.transaction_type) === '4') {
+                      bucket.expenditures += usdValue
                     }
                   })
 
-                  // Combine all years
-                  const allYears = new Set([
-                    ...Array.from(plannedDisbursementsByYearMap.keys()),
-                    ...Array.from(disbursementsByYearMap.keys()),
-                    ...Array.from(expendituresByYearMap.keys())
-                  ])
-
-                  const chartData = Array.from(allYears).sort().map(year => ({
-                    year,
-                    plannedDisbursements: plannedDisbursementsByYearMap.get(year) || 0,
-                    disbursements: disbursementsByYearMap.get(year) || 0,
-                    expenditures: expendituresByYearMap.get(year) || 0
-                  }))
+                  const chartData = Array.from(buckets.entries())
+                    .sort(([a], [b]) => a - b)
+                    .map(([key, b]) => ({ key, ...b }))
 
                   if (chartData.length === 0) {
                     return (
@@ -1899,7 +2003,7 @@ export default function ActivityDetailPage() {
                         <table className="w-full text-helper">
                           <thead className="bg-surface-muted">
                             <tr className="border-b border-border">
-                              <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                              <th className="text-left py-1 text-muted-foreground font-medium">{selectedCustomYear ? selectedCustomYear.shortName?.trim() || 'Period' : 'Year'}</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Planned</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Disb.</th>
                               <th className="text-right py-1 text-muted-foreground font-medium">Exp.</th>
@@ -1907,8 +2011,8 @@ export default function ActivityDetailPage() {
                           </thead>
                           <tbody>
                             {chartData.map((item) => (
-                              <tr key={item.year} className="border-b border-border">
-                                <td className="py-1 text-foreground">{item.year}</td>
+                              <tr key={item.key} className="border-b border-border">
+                                <td className="py-1 text-foreground">{item.label}</td>
                                 <td className="text-right py-1 font-medium" style={{ color: '#cfd0d5' }}>{formatCurrencyShort(item.plannedDisbursements)}</td>
                                 <td className="text-right py-1 font-medium" style={{ color: '#7b95a7' }}>{formatCurrencyShort(item.disbursements)}</td>
                                 <td className="text-right py-1 font-medium" style={{ color: '#dc2625' }}>{formatCurrencyShort(item.expenditures)}</td>
@@ -1942,8 +2046,8 @@ export default function ActivityDetailPage() {
                           barGap={0}
                           key="budget-vs-spend-proportional"
                         >
-                          <XAxis 
-                            dataKey="year" 
+                          <XAxis
+                            dataKey="label"
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
@@ -1968,7 +2072,7 @@ export default function ActivityDetailPage() {
                                     <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.label}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Amount</th>
                                         </tr>
                                       </thead>

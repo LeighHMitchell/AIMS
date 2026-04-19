@@ -1,6 +1,47 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import sectorGroupData from '@/data/SectorGroup.json'
+import { parseISO, differenceInDays, max as dateMax, min as dateMin } from 'date-fns'
+import { fetchCustomYearById } from '@/lib/custom-year-server'
+
+/**
+ * Compute what portion of a period-spanning record falls inside the requested
+ * [windowStart, windowEnd] window, and return the proportionally allocated value.
+ *
+ * Why this exists: previously we gated budgets/PDs on
+ * `period_start >= dateFrom AND period_end <= dateTo`, which silently drops any
+ * record whose period straddles the window boundary (e.g. a 2-year budget over
+ * a 1-year FY selection). Using overlap days gives us the actual FY-weighted
+ * contribution without requiring the client to fetch every record.
+ *
+ * Returns 0 when there's no overlap, inputs are invalid, or the record is
+ * missing a period.
+ */
+function overlapAllocate(
+  periodStart: string | null | undefined,
+  periodEnd: string | null | undefined,
+  value: number,
+  windowStart: Date,
+  windowEnd: Date
+): number {
+  if (!periodStart || !value) return 0
+  const startRaw = parseISO(periodStart)
+  // Treat missing period_end as a single-date record (zero-length period).
+  const endRaw = periodEnd ? parseISO(periodEnd) : startRaw
+  if (isNaN(startRaw.getTime()) || isNaN(endRaw.getTime())) return 0
+
+  const start = startRaw < endRaw ? startRaw : endRaw
+  const end = startRaw < endRaw ? endRaw : startRaw
+  const totalDays = differenceInDays(end, start) + 1
+  if (totalDays <= 0) return 0
+
+  const overlapStart = dateMax([start, windowStart])
+  const overlapEnd = dateMin([end, windowEnd])
+  if (overlapStart > overlapEnd) return 0
+
+  const overlapDays = differenceInDays(overlapEnd, overlapStart) + 1
+  return value * (overlapDays / totalDays)
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -67,9 +108,24 @@ export async function GET(request: Request) {
     const orgType = searchParams.get('orgType') || 'all' // Filter by org type if needed
     const sectorCodes = searchParams.get('sectorCodes') || '' // Comma-separated sector codes
     const sectorLevel = searchParams.get('sectorLevel') || 'group' // group, category, or sector
+    const customYearId = searchParams.get('customYearId') || ''
+
+    // Accepted for cache-key parity with other analytics routes; the actual
+    // pro-rata math below uses the already-computed [dateFrom, dateTo] window
+    // which the client derives from the selected custom year.
+    await fetchCustomYearById(supabase, customYearId)
+
+    const windowStart = parseISO(dateFrom)
+    const windowEnd = parseISO(dateTo)
+    if (isNaN(windowStart.getTime()) || isNaN(windowEnd.getTime())) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid dateFrom/dateTo' },
+        { status: 400 }
+      )
+    }
 
     // Check cache first
-    const cacheKey = `all-donors:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}`
+    const cacheKey = `all-donors:${dateFrom}:${dateTo}:${orgType}:${sectorCodes}:${sectorLevel}:${customYearId}`
     const cached = getCached(cacheKey)
     if (cached) {
       return NextResponse.json(cached)
@@ -170,11 +226,15 @@ export async function GET(request: Request) {
     }>()
 
     // 1. AGGREGATE TOTAL BUDGETS BY REPORTING ORG
+    // Pull any budget whose period OVERLAPS the window, then allocate the
+    // portion of days that fall inside [dateFrom, dateTo]. A simple
+    // period_start >= dateFrom AND period_end <= dateTo filter would silently
+    // drop multi-year budgets that straddle the window edge.
     const { data: budgets, error: budgetsError } = await supabase
       .from('activity_budgets')
       .select('activity_id, usd_value, period_start, period_end')
-      .gte('period_start', dateFrom)
-      .lte('period_end', dateTo)
+      .lte('period_start', dateTo)
+      .gte('period_end', dateFrom)
 
     if (budgetsError) {
       console.error('[AllDonors API] Error fetching budgets:', budgetsError)
@@ -206,8 +266,19 @@ export async function GET(request: Request) {
         const orgInfo = orgMap.get(reportingOrgId)
         if (!orgInfo) return
 
-        let budgetValue = parseFloat(budget.usd_value) || 0
-        if (isNaN(budgetValue)) return
+        const rawBudgetValue = parseFloat(budget.usd_value) || 0
+        if (isNaN(rawBudgetValue) || rawBudgetValue === 0) return
+
+        // Pro-rata allocate the portion of this budget's period that sits
+        // inside the selected window.
+        let budgetValue = overlapAllocate(
+          budget.period_start,
+          budget.period_end,
+          rawBudgetValue,
+          windowStart,
+          windowEnd
+        )
+        if (budgetValue === 0) return
 
         // Apply sector percentage if filtering
         const sectorPct = sectorPercentages.get(budget.activity_id)
@@ -235,11 +306,13 @@ export async function GET(request: Request) {
 
 
     // 2. AGGREGATE TOTAL PLANNED DISBURSEMENTS BY PROVIDER ORG
+    // Overlap-based filter so multi-period PDs that straddle the window edge
+    // are included, with their value pro-rated to the window.
     const { data: plannedDisbursements, error: pdError } = await supabase
       .from('planned_disbursements')
       .select('provider_org_id, usd_amount, period_start, period_end, activity_id')
-      .gte('period_start', dateFrom)
-      .lte('period_end', dateTo)
+      .lte('period_start', dateTo)
+      .gte('period_end', dateFrom)
       .not('provider_org_id', 'is', null)
 
     if (pdError) {
@@ -252,8 +325,18 @@ export async function GET(request: Request) {
       if (sectorFilteredActivityIds && pd.activity_id && !sectorFilteredActivityIds.has(pd.activity_id)) return
 
       const providerOrgId = pd.provider_org_id
-      let pdValue = parseFloat(pd.usd_amount) || 0
-      if (isNaN(pdValue)) return
+      const rawPdValue = parseFloat(pd.usd_amount) || 0
+      if (isNaN(rawPdValue) || rawPdValue === 0) return
+
+      // Pro-rata allocate the portion of this PD's period inside the window.
+      let pdValue = overlapAllocate(
+        pd.period_start,
+        pd.period_end,
+        rawPdValue,
+        windowStart,
+        windowEnd
+      )
+      if (pdValue === 0) return
 
       // Apply sector percentage if filtering
       if (pd.activity_id) {

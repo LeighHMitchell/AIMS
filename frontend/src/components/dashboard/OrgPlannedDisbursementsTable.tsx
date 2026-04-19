@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { Banknote, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { apiFetch } from '@/lib/api-fetch';
+import { estimateMonthlyAmount } from '@/utils/year-allocation';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 
@@ -226,11 +227,26 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium text-foreground">
-                        <span className="text-helper text-muted-foreground mr-1 font-normal">{d.currency}</span>
-                        {formatCurrency(d.amount)}
-                      </span>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-foreground">
+                          <span className="text-helper text-muted-foreground mr-1 font-normal">{d.currency}</span>
+                          {formatCurrency(d.amount)}
+                        </span>
+                      </div>
+                      {(() => {
+                        const monthly = estimateMonthlyAmount({
+                          period_start: d.period_start,
+                          period_end: d.period_end,
+                          amount: d.amount,
+                        });
+                        if (!monthly || monthly.months < 2) return null;
+                        return (
+                          <span className="text-helper text-muted-foreground">
+                            ~{formatCurrency(monthly.monthly)}/mo
+                          </span>
+                        );
+                      })()}
                     </div>
                   </TableCell>
                   <TableCell>

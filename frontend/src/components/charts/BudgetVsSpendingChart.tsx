@@ -16,8 +16,8 @@ import { toast } from "sonner";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
+import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 
 interface AnalyticsFilters {
   donor: string;
@@ -48,22 +48,20 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('USD');
-
   const {
     customYears,
-    selectedId: selectedCustomYearId,
-    setSelectedId: setSelectedCustomYearId,
+    selectedId: customYearId,
+    setSelectedId: setCustomYearId,
     selectedYear,
     loading: customYearsLoading,
   } = useCustomYears();
 
-  // Fetch chart data whenever filters or custom year change
+  // Fetch chart data whenever filters or the selected custom year change so the
+  // server can re-bucket by fiscal year.
   useEffect(() => {
-    // Wait until custom years finish loading so we don't do two fetches
-    if (customYearsLoading) return;
     fetchChartData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, selectedCustomYearId, customYearsLoading]);
+  }, [filters, customYearId]);
 
   const fetchChartData = async () => {
     try {
@@ -77,9 +75,9 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
         flowType: filters.flowType,
         timePeriod: filters.timePeriod,
       });
-      // Only send customYearId when showing yearly buckets; quarter view stays on calendar quarters
-      if (selectedCustomYearId && filters.timePeriod === 'year') {
-        queryParams.set('customYearId', selectedCustomYearId);
+
+      if (customYearId) {
+        queryParams.set('customYearId', customYearId);
       }
 
       const response = await apiFetch(`/api/analytics/budget-vs-spending?${queryParams}`);
@@ -151,39 +149,18 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
     return null;
   };
 
-  // Toolbar is rendered in every state so users can change year type even when empty/loading.
-  const toolbar = filters.timePeriod === 'year' ? (
-    <div className="flex items-center justify-end mb-4">
-      <CustomYearSelector
-        customYears={customYears}
-        selectedId={selectedCustomYearId}
-        onSelect={setSelectedCustomYearId}
-        loading={customYearsLoading}
-        placeholder="Year type"
-      />
-    </div>
-  ) : null;
-
   // Loading state
   if (loading) {
-    return (
-      <div className="w-full">
-        {toolbar}
-        <div className="h-96 flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
-      </div>
-    );
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   // Error state
   if (error) {
     return (
-      <div className="w-full">
-        {toolbar}
-        <div className="flex items-center justify-center h-96">
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertCircle className="h-6 w-6" />
-            <span>{error}</span>
-          </div>
+      <div className="flex items-center justify-center h-96">
+        <div className="flex items-center gap-2 text-destructive">
+          <AlertCircle className="h-6 w-6" />
+          <span>{error}</span>
         </div>
       </div>
     );
@@ -192,14 +169,11 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   // No data state
   if (!data || data.length === 0) {
     return (
-      <div className="w-full">
-        {toolbar}
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center text-muted-foreground">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No data available</p>
-            <p className="text-body">Try adjusting your filters to see results.</p>
-          </div>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center text-muted-foreground">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p className="text-lg font-medium">No data available</p>
+          <p className="text-body">Try adjusting your filters to see results.</p>
         </div>
       </div>
     );
@@ -207,7 +181,19 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
 
   return (
     <div className="w-full">
-      {toolbar}
+      {/* Year-type selector (only meaningful in year mode; FY bucketing doesn't apply to quarters) */}
+      {filters.timePeriod === 'year' && (
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <span className="text-body text-muted-foreground">Year type:</span>
+          <CustomYearSelector
+            customYears={customYears}
+            selectedId={customYearId}
+            onSelect={setCustomYearId}
+            loading={customYearsLoading}
+          />
+        </div>
+      )}
+
       {/* Chart Legend */}
       <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-muted rounded-lg">
         <div className="flex items-center gap-2">
@@ -296,12 +282,13 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
       <div className="mt-4 text-body text-muted-foreground">
         <p>
           <strong>Period:</strong>{' '}
-          {filters.timePeriod === 'year'
-            ? (selectedYear ? selectedYear.name : 'Calendar Year')
-            : 'Financial Quarter'}{' '}
-          |
-          <strong> Currency:</strong> {currency} |
-          <strong> Data Points:</strong> {data.length}
+          {filters.timePeriod === 'quarter'
+            ? 'Financial Quarter'
+            : selectedYear
+            ? selectedYear.name
+            : 'Calendar Year'}{' '}
+          | <strong>Currency:</strong> {currency} |{' '}
+          <strong>Data Points:</strong> {data.length}
         </p>
       </div>
     </div>

@@ -411,7 +411,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   useEffect(() => {
     fetchData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter, selectedSectorsStr, sectorAggregationLevel])
+  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter, selectedSectorsStr, sectorAggregationLevel, calendarType])
 
   const fetchData = async () => {
     try {
@@ -422,6 +422,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         dateTo: effectiveDateRange.to.toISOString(),
         orgType: orgTypeFilter
       })
+
+      if (calendarType) {
+        queryParams.set('customYearId', calendarType)
+      }
 
       // Add sector filter if any sectors are selected
       if (selectedSectors.size > 0) {
