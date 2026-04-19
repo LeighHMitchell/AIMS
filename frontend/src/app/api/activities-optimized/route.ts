@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
         created_via,
         recipient_countries,
         recipient_regions,
+        is_pooled_fund,
         activity_sdg_mappings (
           id,
           sdg_goal,
@@ -386,25 +387,103 @@ export async function GET(request: NextRequest) {
         console.error('[AIMS Optimized] Participating orgs fetch error:', participatingOrgsError);
       }
 
-      // Fetch organization names in a follow-up query (depends on participatingOrgs)
-      if (participatingOrgs.length > 0) {
-        const orgIds = [...new Set(participatingOrgs.map((o: any) => o.organization_id).filter(Boolean))];
-        if (orgIds.length > 0) {
-          const { data: orgsData } = await supabase
-            .from('organizations')
-            .select('id, name, acronym, logo')
-            .in('id', orgIds);
+      // Process transactions (no follow-up needed)
+      const { data: transactions, error: txError } = transactionsResult;
+      if (!txError && transactions) {
+        transactions.forEach((t: any) => {
+          const current = summariesMap.get(t.activity_id) || {
+            commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
+            totalTransactions: 0, totalBudget: 0, totalBudgetOriginal: 0,
+            totalDisbursed: 0, totalPlannedDisbursementsUSD: 0, totalPlannedDisbursementsOriginal: 0
+          };
 
-          if (orgsData) {
-            const orgsLookup = new Map(orgsData.map((o: any) => [o.id, o]));
-            participatingOrgs = participatingOrgs.map((po: any) => ({
-              ...po,
-              organizations: orgsLookup.get(po.organization_id) || null
-            }));
+          current.totalTransactions++;
+          const transactionValue = t.value_usd || 0;
+
+          switch(t.transaction_type) {
+            case '2': current.commitments += transactionValue; break;
+            case '3': current.disbursements += transactionValue; current.totalDisbursed += transactionValue; break;
+            case '4': current.expenditures += transactionValue; current.totalDisbursed += transactionValue; break;
+            case '1': case '11': current.inflows += transactionValue; break;
           }
-        }
 
-        // Process participating orgs into the map
+          summariesMap.set(t.activity_id, current);
+        });
+      }
+
+      // Ensure all activities have budget data
+      activityIds.forEach((activityId: string) => {
+        if (!summariesMap.has(activityId)) {
+          summariesMap.set(activityId, {
+            commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
+            totalTransactions: 0,
+            totalBudget: budgetMap.get(activityId) || 0,
+            totalBudgetOriginal: budgetOriginalMap.get(activityId) || 0,
+            totalDisbursed: 0,
+            totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0,
+            totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0
+          });
+        } else {
+          const summary = summariesMap.get(activityId)!;
+          summary.totalBudget = budgetMap.get(activityId) || 0;
+          summary.totalBudgetOriginal = budgetOriginalMap.get(activityId) || 0;
+          summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activityId) || 0;
+          summary.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(activityId) || 0;
+        }
+      });
+
+      // Process subnational breakdowns (no follow-up needed)
+      const { data: breakdowns, error: breakdownsError } = breakdownsResult;
+      if (breakdownsError) {
+        console.error('[AIMS Optimized] Subnational breakdowns fetch error:', breakdownsError);
+      } else if (breakdowns) {
+        breakdowns.forEach((b: any) => {
+          if (!subnationalBreakdownsMap.has(b.activity_id)) {
+            subnationalBreakdownsMap.set(b.activity_id, []);
+          }
+          subnationalBreakdownsMap.get(b.activity_id)!.push(b);
+        });
+      }
+
+      // Process policy markers result
+      const { data: activityPolicyMarkers, error: policyMarkersError } = policyMarkersResult;
+      if (policyMarkersError) {
+        console.error('[AIMS Optimized] Policy markers fetch error:', policyMarkersError);
+      }
+
+      // Gather IDs for all follow-up queries, then run them in parallel
+      const orgIds = participatingOrgs.length > 0
+        ? [...new Set(participatingOrgs.map((o: any) => o.organization_id).filter(Boolean))]
+        : [];
+      const markerIds = activityPolicyMarkers && activityPolicyMarkers.length > 0
+        ? [...new Set(activityPolicyMarkers.map((m: any) => m.policy_marker_id).filter(Boolean))]
+        : [];
+      const creatorIds = [...new Set(activities.map((a: any) => a.created_by).filter(Boolean))];
+
+      // Run all follow-up queries in parallel instead of sequentially
+      const [orgsLookupResult, markerDetailsResult, usersResult] = await Promise.all([
+        orgIds.length > 0
+          ? supabase.from('organizations').select('id, name, acronym, logo').in('id', orgIds)
+          : Promise.resolve({ data: null, error: null }),
+        markerIds.length > 0
+          ? supabase.from('policy_markers').select('uuid, code, name, iati_code, is_iati_standard').in('uuid', markerIds)
+          : Promise.resolve({ data: null, error: null }),
+        creatorIds.length > 0
+          ? supabase.from('users').select('id, first_name, last_name, department, job_title').in('id', creatorIds)
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+      // Process organization lookup results
+      if (orgsLookupResult.data) {
+        const orgsLookup = new Map(orgsLookupResult.data.map((o: any) => [o.id, o]));
+        participatingOrgs = participatingOrgs.map((po: any) => ({
+          ...po,
+          organizations: orgsLookup.get(po.organization_id) || null
+        }));
+      }
+
+      // Process participating orgs into the map
+      if (participatingOrgs.length > 0) {
         participatingOrgs.forEach((org: any) => {
           const activityId = org.activity_id;
           if (!participatingOrgsMap.has(activityId)) {
@@ -456,116 +535,36 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Process transactions
-      const { data: transactions, error: txError } = transactionsResult;
-      if (!txError && transactions) {
-        transactions.forEach((t: any) => {
-          const current = summariesMap.get(t.activity_id) || {
-            commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
-            totalTransactions: 0, totalBudget: 0, totalBudgetOriginal: 0,
-            totalDisbursed: 0, totalPlannedDisbursementsUSD: 0, totalPlannedDisbursementsOriginal: 0
-          };
-
-          current.totalTransactions++;
-          const transactionValue = t.value_usd || 0;
-
-          switch(t.transaction_type) {
-            case '2': current.commitments += transactionValue; break;
-            case '3': current.disbursements += transactionValue; current.totalDisbursed += transactionValue; break;
-            case '4': current.expenditures += transactionValue; current.totalDisbursed += transactionValue; break;
-            case '1': case '11': current.inflows += transactionValue; break;
+      // Process policy marker details
+      if (activityPolicyMarkers && activityPolicyMarkers.length > 0 && markerDetailsResult.data) {
+        const markerDetailsMap = new Map(markerDetailsResult.data.map((m: any) => [m.uuid, m]));
+        activityPolicyMarkers.forEach((apm: any) => {
+          if (!policyMarkersMap.has(apm.activity_id)) {
+            policyMarkersMap.set(apm.activity_id, []);
           }
-
-          summariesMap.set(t.activity_id, current);
+          const markerDetail = markerDetailsMap.get(apm.policy_marker_id);
+          if (markerDetail) {
+            policyMarkersMap.get(apm.activity_id)!.push({
+              ...apm,
+              code: markerDetail.code,
+              name: markerDetail.name,
+              iati_code: markerDetail.iati_code,
+              is_iati_standard: markerDetail.is_iati_standard
+            });
+          }
         });
       }
 
-      // Ensure all activities have budget data
-      activityIds.forEach((activityId: string) => {
-        if (!summariesMap.has(activityId)) {
-          summariesMap.set(activityId, {
-            commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
-            totalTransactions: 0,
-            totalBudget: budgetMap.get(activityId) || 0,
-            totalBudgetOriginal: budgetOriginalMap.get(activityId) || 0,
-            totalDisbursed: 0,
-            totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0,
-            totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0
+      // Process creator profiles
+      if (usersResult.data) {
+        usersResult.data.forEach((user: any) => {
+          const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Unknown';
+          creatorProfilesMap.set(user.id, {
+            name: fullName,
+            department: user.department || null,
+            jobTitle: user.job_title || null
           });
-        } else {
-          const summary = summariesMap.get(activityId)!;
-          summary.totalBudget = budgetMap.get(activityId) || 0;
-          summary.totalBudgetOriginal = budgetOriginalMap.get(activityId) || 0;
-          summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activityId) || 0;
-          summary.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(activityId) || 0;
-        }
-      });
-
-      // Process subnational breakdowns
-      const { data: breakdowns, error: breakdownsError } = breakdownsResult;
-      if (breakdownsError) {
-        console.error('[AIMS Optimized] Subnational breakdowns fetch error:', breakdownsError);
-      } else if (breakdowns) {
-        breakdowns.forEach((b: any) => {
-          if (!subnationalBreakdownsMap.has(b.activity_id)) {
-            subnationalBreakdownsMap.set(b.activity_id, []);
-          }
-          subnationalBreakdownsMap.get(b.activity_id)!.push(b);
         });
-      }
-
-      // Process policy markers
-      const { data: activityPolicyMarkers, error: policyMarkersError } = policyMarkersResult;
-      if (policyMarkersError) {
-        console.error('[AIMS Optimized] Policy markers fetch error:', policyMarkersError);
-      } else if (activityPolicyMarkers && activityPolicyMarkers.length > 0) {
-        // Fetch policy marker details for all markers
-        const markerIds = [...new Set(activityPolicyMarkers.map((m: any) => m.policy_marker_id).filter(Boolean))];
-        if (markerIds.length > 0) {
-          const { data: markerDetails } = await supabase
-            .from('policy_markers')
-            .select('uuid, code, name, iati_code, is_iati_standard')
-            .in('uuid', markerIds);
-
-          if (markerDetails) {
-            const markerDetailsMap = new Map(markerDetails.map((m: any) => [m.uuid, m]));
-            activityPolicyMarkers.forEach((apm: any) => {
-              if (!policyMarkersMap.has(apm.activity_id)) {
-                policyMarkersMap.set(apm.activity_id, []);
-              }
-              const markerDetail = markerDetailsMap.get(apm.policy_marker_id);
-              if (markerDetail) {
-                policyMarkersMap.get(apm.activity_id)!.push({
-                  ...apm,
-                  code: markerDetail.code,
-                  name: markerDetail.name,
-                  iati_code: markerDetail.iati_code,
-                  is_iati_standard: markerDetail.is_iati_standard
-                });
-              }
-            });
-          }
-        }
-      }
-
-      // Fetch creator profiles for metadata columns (from users table)
-      const creatorIds = [...new Set(activities.map((a: any) => a.created_by).filter(Boolean))];
-      if (creatorIds.length > 0) {
-        const { data: users } = await supabase
-          .from('users')
-          .select('id, first_name, last_name, department, job_title')
-          .in('id', creatorIds);
-
-        if (users) {
-          users.forEach((user: any) => {
-            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Unknown';
-            creatorProfilesMap.set(user.id, {
-              name: fullName,
-              department: user.department || null,
-              jobTitle: user.job_title || null
-            });
-          });
-        }
       }
     }
 
@@ -642,6 +641,7 @@ export async function GET(request: NextRequest) {
         downvote_count: activity.downvote_count || 0,
         banner: activity.banner, // Include banner for card view
         icon: activity.icon, // Include icon for card view
+        isPooledFund: activity.is_pooled_fund || false,
         createdAt: activity.created_at,
         updatedAt: activity.updated_at,
         createdVia: activity.created_via || 'manual',

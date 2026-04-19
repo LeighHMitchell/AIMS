@@ -52,7 +52,7 @@ const HARD_TTL_MS = 30 * 60 * 1000; // 30 minutes (absolute upper bound)
  * - Uses pre-aggregated data from activity_budgets, planned_disbursements, 
  *   and activity_transaction_summaries tables
  * - Expected query time: 5-50ms
- * - Results cached for 2 minutes to reduce database load
+ * - Results cached for 10 minutes to reduce database load
  * 
  * @param forceRefresh - If true, bypasses cache and fetches fresh data
  * @returns SystemTotals object with aggregated financial totals
