@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { BarChart3, DollarSign } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
@@ -129,7 +129,7 @@ export function Top10TotalFinancialValueChart({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

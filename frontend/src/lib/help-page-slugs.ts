@@ -29,7 +29,7 @@ export const PAGE_HELP_SLUGS: readonly PageHelpSlug[] = [
   { route: '/alignment', slug: 'alignment', title: 'Plan Alignment' },
   { route: '/atlas', slug: 'atlas', title: 'Atlas' },
   { route: '/search', slug: 'search', title: 'Search' },
-  { route: '/partners', slug: 'partners', title: 'Portfolios' },
+  { route: '/partners', slug: 'partners', title: 'Development Partners' },
   { route: '/reports', slug: 'reports', title: 'Reports' },
 
   // --- ACTIVITIES ---

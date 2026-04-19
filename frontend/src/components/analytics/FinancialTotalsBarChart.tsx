@@ -15,7 +15,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
@@ -831,7 +831,7 @@ export function FinancialTotalsBarChart({
   // Compact mode
   if (compact) {
     if (loading || customYearsLoading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
 
     if (error || chartData.length === 0) {
@@ -869,7 +869,7 @@ export function FinancialTotalsBarChart({
   // Full view
   if (loading || customYearsLoading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

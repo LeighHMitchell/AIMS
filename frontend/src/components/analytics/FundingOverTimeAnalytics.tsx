@@ -33,7 +33,7 @@ import {
   Info,
   Maximize2
 } from 'lucide-react'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { exportChartToJPG, downloadCSV, convertToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import {
@@ -532,7 +532,7 @@ export function FundingOverTimeAnalytics() {
       ) : loading ? (
         <Card>
           <CardContent className="py-6">
-            <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+            <ChartLoadingPlaceholder />
           </CardContent>
         </Card>
       ) : chartData.length === 0 ? (

@@ -15,7 +15,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -388,7 +388,7 @@ export function FundingByModalityChart() {
     const chartHeight = expanded ? "100%" : "100%";
 
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+      return <ChartLoadingPlaceholder />;
     }
 
     if (error) {

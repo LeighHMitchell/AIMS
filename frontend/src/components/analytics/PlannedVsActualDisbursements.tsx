@@ -14,7 +14,7 @@ import {
   Legend,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, BarChart3, TrendingUpIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
@@ -357,7 +357,7 @@ export function PlannedVsActualDisbursements({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

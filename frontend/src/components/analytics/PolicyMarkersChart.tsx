@@ -12,7 +12,7 @@ import {
   Legend,
   Cell
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -421,7 +421,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

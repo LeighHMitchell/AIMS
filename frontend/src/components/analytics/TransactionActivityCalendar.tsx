@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { TransactionCalendarHeatmap } from '@/components/activities/TransactionCalendarHeatmap'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Calendar } from 'lucide-react'
 
 interface TransactionActivityCalendarProps {
@@ -179,7 +179,7 @@ export function TransactionActivityCalendar({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )

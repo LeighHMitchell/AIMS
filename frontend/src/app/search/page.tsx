@@ -3,17 +3,51 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MainLayout } from '@/components/layout/main-layout'
 import { SearchResultsSkeleton } from '@/components/ui/skeleton-loader'
 import { SearchResultRow } from '@/components/search'
 import { GlobalSearchBar } from '@/components/search/GlobalSearchBar'
 import { cn } from '@/lib/utils'
-import { Search, Activity, Building2, PieChart, Tag, Users, Contact2 } from 'lucide-react'
+import { Search, Activity, Building2, PieChart, Tag, Users, Contact2, Clock, X, Sparkles, ArrowRight } from 'lucide-react'
 import type { SearchResult, SearchResultType } from '@/types/search'
 import { normalizeSearchResults } from '@/lib/search-normalizer'
 import { LoadingText } from '@/components/ui/loading-text'
+
+const RECENT_SEARCHES_KEY = 'aims:recent-searches'
+const MAX_RECENT_SEARCHES = 6
+
+const SUGGESTED_QUERIES: string[] = [
+  'Health',
+  'Education',
+  'Climate',
+  'Infrastructure',
+  'Gender',
+  'Agriculture',
+]
+
+function readRecentSearches(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(RECENT_SEARCHES_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed)
+      ? parsed.filter((v): v is string => typeof v === 'string').slice(0, MAX_RECENT_SEARCHES)
+      : []
+  } catch {
+    return []
+  }
+}
+
+function writeRecentSearches(values: string[]) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(values.slice(0, MAX_RECENT_SEARCHES)))
+  } catch {
+    // ignore quota errors
+  }
+}
 
 // Result type ordering and labels
 const searchResultOrder: SearchResultType[] = [
@@ -57,6 +91,34 @@ function SearchPageContent() {
   const [page, setPage] = useState(1)
   const [totalResults, setTotalResults] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const [recentSearches, setRecentSearches] = useState<string[]>([])
+
+  useEffect(() => {
+    setRecentSearches(readRecentSearches())
+  }, [])
+
+  const rememberSearch = useCallback((value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return
+    setRecentSearches((prev) => {
+      const next = [trimmed, ...prev.filter((v) => v.toLowerCase() !== trimmed.toLowerCase())].slice(0, MAX_RECENT_SEARCHES)
+      writeRecentSearches(next)
+      return next
+    })
+  }, [])
+
+  const removeRecentSearch = useCallback((value: string) => {
+    setRecentSearches((prev) => {
+      const next = prev.filter((v) => v !== value)
+      writeRecentSearches(next)
+      return next
+    })
+  }, [])
+
+  const clearRecentSearches = useCallback(() => {
+    writeRecentSearches([])
+    setRecentSearches([])
+  }, [])
 
   const ITEMS_PER_PAGE = 20
 
@@ -139,9 +201,12 @@ function SearchPageContent() {
       return
     }
 
+    // Remember this search locally
+    rememberSearch(newQuery)
+
     // Perform search
     performSearch(newQuery, 1, true)
-  }, [router, performSearch])
+  }, [router, performSearch, rememberSearch])
 
   // Filter results by type
   const getFilteredResults = useCallback((type?: string) => {
@@ -220,18 +285,90 @@ function SearchPageContent() {
             />
           </div>
           
-          {/* Searchable content badges - shown when no query */}
+          {/* Empty state - shown when no query */}
           {!query && (
-            <div className="mt-6 text-center">
-              <p className="text-muted-foreground text-body mb-3">Search across</p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Badge variant="outline">Activities</Badge>
-                <Badge variant="outline">Organisations</Badge>
-                <Badge variant="outline">Users</Badge>
-                <Badge variant="outline">Sectors</Badge>
-                <Badge variant="outline">Tags</Badge>
-                <Badge variant="outline">Contacts</Badge>
-              </div>
+            <div className="mt-8 w-full max-w-2xl space-y-8">
+              {recentSearches.length > 0 && (
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-section-label">Recent searches</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearRecentSearches}
+                      className="text-helper text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  <ul className="space-y-1">
+                    {recentSearches.map((term) => (
+                      <li
+                        key={term}
+                        className="group flex items-center gap-2 rounded-md hover:bg-muted/60 transition-colors"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleSearchSubmit(term)}
+                          className="flex-1 flex items-center gap-3 px-3 py-2 text-left"
+                        >
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-body text-foreground">{term}</span>
+                          <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${term}`}
+                          onClick={() => removeRecentSearch(term)}
+                          className="px-2 py-2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              <section>
+                <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-section-label">Try searching for</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTED_QUERIES.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => handleSearchSubmit(q)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-body text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="text-section-label text-muted-foreground mb-3">Search covers</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {searchResultOrder.map((type) => {
+                    const Icon = resultTypeIcons[type]
+                    return (
+                      <div
+                        key={type}
+                        className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-body text-muted-foreground"
+                      >
+                        <Icon className="h-4 w-4" />
+                        {resultTypeLabels[type]}
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
             </div>
           )}
           

@@ -15,7 +15,7 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,7 +90,7 @@ export function AidPredictabilityChart() {
   }, [fetchData]);
 
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+    return <ChartLoadingPlaceholder />;
   }
 
   if (error) {

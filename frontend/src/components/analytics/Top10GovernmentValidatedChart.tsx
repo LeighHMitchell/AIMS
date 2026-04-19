@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { BarChart3, CheckCircle2, Table as TableIcon } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
@@ -164,7 +164,7 @@ export function Top10GovernmentValidatedChart({
   // Compact mode renders just the chart
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (!data || data.length === 0) {
       return (
@@ -194,7 +194,7 @@ export function Top10GovernmentValidatedChart({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

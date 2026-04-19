@@ -7,11 +7,18 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { USER_ROLES } from "@/types/user"
@@ -29,6 +36,8 @@ import {
   ClipboardList,
   Bell,
   Users,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
@@ -326,86 +335,116 @@ export default function Dashboard() {
                 router.push(url.pathname + url.search, { scroll: false });
               }}
             >
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap" data-tour="dashboard-tabs">
-                <TabsTrigger
-                  value="overview"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Overview
-                </TabsTrigger>
-                {!isVisitor && (
-                  <TabsTrigger
-                    value="my-portfolio"
-                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              {(() => {
+                const primaryTabs = [
+                  { value: 'overview', label: 'Overview', icon: LayoutDashboard, show: true },
+                  { value: 'my-portfolio', label: 'My Portfolio', icon: Briefcase, show: !isVisitor },
+                  { value: 'locations', label: 'Locations', icon: MapPin, show: true },
+                  { value: 'flows', label: 'Aid Flows', icon: ArrowRightLeft, show: true },
+                  { value: 'data-clinic', label: 'Data Quality', icon: ClipboardCheck, show: true },
+                ].filter((t) => t.show);
+                const overflowTabs = [
+                  { value: 'my-team', label: 'My Team', icon: Users, show: !isVisitor },
+                  { value: 'notifications', label: 'Notifications', icon: Bell, show: !isVisitor, badge: unreadNotificationCount },
+                  { value: 'bookmarks', label: 'Bookmarks', icon: Bookmark, show: !isVisitor },
+                  { value: 'tasks', label: 'Tasking', icon: ClipboardList, show: !isVisitor },
+                ].filter((t) => t.show);
+                const activeOverflow = overflowTabs.find((t) => t.value === activeTab);
+                const overflowUnread = overflowTabs.reduce(
+                  (sum, t) => sum + (t.badge ?? 0),
+                  0,
+                );
+                return (
+                  <TabsList
+                    className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap"
+                    data-tour="dashboard-tabs"
                   >
-                    <Briefcase className="h-4 w-4" />
-                    My Portfolio
-                  </TabsTrigger>
-                )}
-                {!isVisitor && (
-                  <TabsTrigger
-                    value="my-team"
-                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    <Users className="h-4 w-4" />
-                    My Team
-                  </TabsTrigger>
-                )}
-                {!isVisitor && (
-                  <TabsTrigger
-                    value="notifications"
-                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    <Bell className="h-4 w-4" />
-                    Notifications
-                    {unreadNotificationCount > 0 && (
-                      <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-helper justify-center">
-                        {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
-                      </Badge>
+                    {primaryTabs.map((t) => {
+                      const Icon = t.icon;
+                      return (
+                        <TabsTrigger
+                          key={t.value}
+                          value={t.value}
+                          className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {t.label}
+                        </TabsTrigger>
+                      );
+                    })}
+                    {overflowTabs.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                              activeOverflow
+                                ? "bg-muted text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {activeOverflow ? (
+                              <>
+                                {(() => {
+                                  const Icon = activeOverflow.icon;
+                                  return <Icon className="h-4 w-4" />;
+                                })()}
+                                {activeOverflow.label}
+                              </>
+                            ) : (
+                              <>
+                                <MoreHorizontal className="h-4 w-4" />
+                                More
+                              </>
+                            )}
+                            {!activeOverflow && overflowUnread > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="h-5 min-w-5 px-1 text-helper justify-center"
+                              >
+                                {overflowUnread > 99 ? '99+' : overflowUnread}
+                              </Badge>
+                            )}
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-[12rem]">
+                          {overflowTabs.map((t) => {
+                            const Icon = t.icon;
+                            return (
+                              <DropdownMenuItem
+                                key={t.value}
+                                onSelect={() => {
+                                  setActiveTab(t.value);
+                                  const url = new URL(window.location.href);
+                                  url.searchParams.set('tab', t.value);
+                                  router.push(url.pathname + url.search, { scroll: false });
+                                }}
+                                className={cn(
+                                  "flex items-center gap-2",
+                                  activeTab === t.value && 'bg-muted font-medium',
+                                )}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span className="flex-1">{t.label}</span>
+                                {(t.badge ?? 0) > 0 && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="ml-auto h-5 min-w-5 px-1 text-helper justify-center"
+                                  >
+                                    {(t.badge ?? 0) > 99 ? '99+' : t.badge}
+                                  </Badge>
+                                )}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
-                  </TabsTrigger>
-                )}
-                <TabsTrigger
-                  value="locations"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <MapPin className="h-4 w-4" />
-                  Locations
-                </TabsTrigger>
-                <TabsTrigger
-                  value="flows"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <ArrowRightLeft className="h-4 w-4" />
-                  Aid Flows
-                </TabsTrigger>
-                <TabsTrigger
-                  value="data-clinic"
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <ClipboardCheck className="h-4 w-4" />
-                  Data Quality
-                </TabsTrigger>
-                {!isVisitor && (
-                  <TabsTrigger
-                    value="bookmarks"
-                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    <Bookmark className="h-4 w-4" />
-                    Bookmarks
-                  </TabsTrigger>
-                )}
-                {!isVisitor && (
-                  <TabsTrigger
-                    value="tasks"
-                    className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                    Tasking
-                  </TabsTrigger>
-                )}
-              </TabsList>
+                  </TabsList>
+                );
+              })()}
 
               {/* Overview Tab Content */}
               <TabsContent value="overview" className="space-y-6">

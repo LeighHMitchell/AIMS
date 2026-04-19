@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { MeasureType, FragmentationData } from "@/types/national-priorities";
@@ -51,7 +51,7 @@ export function ProgramFragmentationChart({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     );
   }
 

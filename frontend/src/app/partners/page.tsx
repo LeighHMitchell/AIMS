@@ -951,6 +951,17 @@ export default function PartnersPage() {
     );
   }
 
+  const hasNoFinancialData =
+    (summaryData.totalAmount ?? 0) === 0 &&
+    (summaryData.totalActiveProjects ?? 0) === 0;
+  const hasNoOrganizations = (summaryData.totalOrganizations ?? 0) === 0;
+  const orgCount = summaryData.totalOrganizations ?? 0;
+  const orgNoun = orgCount === 1 ? 'organisation' : 'organisations';
+  const orgVerb = orgCount === 1 ? 'is' : 'are';
+  const noDataMessage = hasNoOrganizations
+    ? 'Once organisations are added to the system, they will appear here grouped by country and institutional type.'
+    : `${orgCount} ${orgNoun} ${orgVerb} registered, but no disbursements have been recorded for the years shown. Add transactions to activities to populate the funding summary below.`;
+
   return (
     <MainLayout>
       <div className="min-h-screen">
@@ -959,12 +970,43 @@ export default function PartnersPage() {
           <div className="flex items-center gap-3 mb-6">
             <Users className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Partner Summary</h1>
+              <h1 className="text-3xl font-bold text-foreground">Development Partners</h1>
               <p className="text-muted-foreground mt-1">Overview of development partners grouped by type and portfolio</p>
             </div>
           </div>
 
+          {hasNoFinancialData && (
+            <Card className="bg-white border border-border">
+              <CardContent className="py-16 px-6">
+                <div className="mx-auto max-w-xl text-center space-y-4">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted">
+                    <DollarSign className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {hasNoOrganizations
+                      ? "No development partners yet"
+                      : "No disbursement data yet"}
+                  </h2>
+                  <p className="text-body text-muted-foreground">{noDataMessage}</p>
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    <Button asChild size="sm" variant="default">
+                      <a href="/activities">
+                        <Activity className="h-4 w-4 mr-2" />
+                        Open activities
+                      </a>
+                    </Button>
+                    <Button onClick={fetchSummaryData} size="sm" variant="outline">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Main Content */}
+          {!hasNoFinancialData && (
           <Tabs value={groupBy} onValueChange={(value) => setGroupBy(value as 'type' | 'custom')}>
             <div className="flex items-center justify-between mb-6">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
@@ -1571,6 +1613,7 @@ export default function PartnersPage() {
               </div>
             </TabsContent></>)}
           </Tabs>
+          )}
         </div>
       </div>
 

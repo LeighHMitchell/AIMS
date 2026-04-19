@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -355,7 +355,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
     const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+      return <ChartLoadingPlaceholder />;
     }
 
     if (!data || data.length === 0) {

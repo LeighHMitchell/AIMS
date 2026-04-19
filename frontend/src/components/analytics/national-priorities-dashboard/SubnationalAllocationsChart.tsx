@@ -48,7 +48,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LoadingText } from "@/components/ui/loading-text";
+import { LoadingText, ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
@@ -434,7 +434,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
+      return <ChartLoadingPlaceholder />;
     }
 
     if (!data || data.length === 0) {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle, Download, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { FundingSourceSankey } from '@/components/activities/FinancialAnalyticsTab'
@@ -210,7 +210,7 @@ export function AllActivitiesFundingSourceBreakdown({
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (error || !fundingSourceData.providers || fundingSourceData.providers.length === 0) {
       return (
@@ -242,7 +242,7 @@ export function AllActivitiesFundingSourceBreakdown({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )

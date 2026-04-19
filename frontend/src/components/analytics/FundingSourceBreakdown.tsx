@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 // Inline currency formatter to avoid initialization issues
@@ -218,7 +218,7 @@ export function FundingSourceBreakdown({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )

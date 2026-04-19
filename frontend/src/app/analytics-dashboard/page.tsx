@@ -28,13 +28,20 @@ import {
   LineChart,
   MapPin,
   Network,
-  Info
+  Info,
+  ChevronDown,
 } from 'lucide-react'
 import { format, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { AnalyticsDashboardSkeleton } from '@/components/skeletons'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
@@ -669,16 +676,63 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                  <TabsTrigger value="portfolio-summary" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Portfolio Summary</TabsTrigger>
-                  <TabsTrigger value="aid-on-budget" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Aid on Budget</TabsTrigger>
-                  <TabsTrigger value="humanitarian" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Humanitarian</TabsTrigger>
-                  <TabsTrigger value="sector-thematic" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Sector & Thematic</TabsTrigger>
-                  <TabsTrigger value="partner-network" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Partner Network</TabsTrigger>
-                  <TabsTrigger value="aid-ecosystem" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Aid Ecosystem</TabsTrigger>
-                  <TabsTrigger value="operations" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Operations</TabsTrigger>
-                  <TabsTrigger value="tree-map" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Tree Map</TabsTrigger>
-                </TabsList>
+                {(() => {
+                  const primaryTabs = [
+                    { value: 'portfolio-summary', label: 'Portfolio Summary' },
+                    { value: 'sector-thematic', label: 'Sector & Thematic' },
+                    { value: 'partner-network', label: 'Partner Network' },
+                    { value: 'operations', label: 'Operations' },
+                  ];
+                  const overflowTabs = [
+                    { value: 'aid-on-budget', label: 'Aid on Budget' },
+                    { value: 'humanitarian', label: 'Humanitarian' },
+                    { value: 'aid-ecosystem', label: 'Aid Ecosystem' },
+                    { value: 'tree-map', label: 'Tree Map' },
+                  ];
+                  const activeOverflow = overflowTabs.find((t) => t.value === activeTab);
+                  return (
+                    <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                      {primaryTabs.map((t) => (
+                        <TabsTrigger
+                          key={t.value}
+                          value={t.value}
+                          className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                        >
+                          {t.label}
+                        </TabsTrigger>
+                      ))}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                              activeOverflow
+                                ? "bg-muted text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {activeOverflow ? activeOverflow.label : 'More views'}
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-[10rem]">
+                          {overflowTabs.map((t) => (
+                            <DropdownMenuItem
+                              key={t.value}
+                              onSelect={() => handleTabChange(t.value)}
+                              className={cn(
+                                activeTab === t.value && 'bg-muted font-medium',
+                              )}
+                            >
+                              {t.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TabsList>
+                  );
+                })()}
 
                 {/* ==================== PORTFOLIO SUMMARY TAB ==================== */}
                 {/* Contains: Main overview charts, Dashboard, Top 10 rankings */}

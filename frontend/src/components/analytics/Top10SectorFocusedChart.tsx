@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Target, Table as TableIcon } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
@@ -148,7 +148,7 @@ export function Top10SectorFocusedChart({
   // Compact mode renders just the chart
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (!data || data.length === 0) {
       return (
@@ -178,7 +178,7 @@ export function Top10SectorFocusedChart({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

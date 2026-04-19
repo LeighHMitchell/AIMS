@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, SlidersHorizontal, Check, Search } from 'lucide-react'
@@ -781,7 +781,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (!chartData || chartData.length === 0) {
       return (
@@ -823,7 +823,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
   if (loading || customYearsLoading) {
     return (
-      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      <ChartLoadingPlaceholder />
     )
   }
 

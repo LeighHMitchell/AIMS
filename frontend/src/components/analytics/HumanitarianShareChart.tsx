@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LoadingText } from '@/components/ui/loading-text'
+import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { supabase } from '@/lib/supabase'
 import { BarChart3, PieChart, Table } from 'lucide-react'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
@@ -139,7 +139,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+      return <ChartLoadingPlaceholder />
     }
     if (!data || data.total === 0) {
       return (
@@ -181,7 +181,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
           <CardDescription>Share of total international aid</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
+          <ChartLoadingPlaceholder />
         </CardContent>
       </Card>
     )
