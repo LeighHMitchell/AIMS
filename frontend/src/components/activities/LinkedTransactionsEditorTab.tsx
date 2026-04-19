@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  ChevronDownRight, 
-  ChevronUpRight, 
+  ArrowDownRight, 
+  ArrowUpRight, 
   Download, 
   ExternalLink,
   Building2,
@@ -163,10 +163,10 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
       case '1':
       case '2':
       case '12':
-        return <ChevronDownRight className="w-4 h-4 text-[hsl(var(--success-icon))]" />;
+        return <ArrowDownRight className="w-4 h-4 text-[hsl(var(--success-icon))]" />;
       case '3':
       case '4':
-        return <ChevronUpRight className="w-4 h-4 text-destructive" />;
+        return <ArrowUpRight className="w-4 h-4 text-destructive" />;
       default:
         return <DollarSign className="w-4 h-4 text-muted-foreground" />;
     }
