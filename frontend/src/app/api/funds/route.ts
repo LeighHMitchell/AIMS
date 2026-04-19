@@ -41,36 +41,56 @@ export async function GET(request: NextRequest) {
     }
 
     const fundIds = funds.map(f => f.id)
+    const reportingOrgIds = [...new Set(funds.map((f: { reporting_org_id?: string }) => f.reporting_org_id).filter(Boolean))] as string[]
 
-    // Get incoming transactions (contributions) for all funds
-    const { data: allIncoming } = await supabase
-      .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, provider_org_name, provider_org_id, transaction_date')
-      .in('activity_id', fundIds)
-      .in('transaction_type', ['1', '11', '13'])
+    // Wave 2: queries that depend only on `funds` — run in parallel
+    const emptyResult = <T,>() => Promise.resolve({ data: [] as T[] })
+    const [
+      incomingResult,
+      outgoingResult,
+      parentRelsResult,
+      reverseRelsResult,
+      reportingOrgsResult,
+    ] = await Promise.all([
+      supabase
+        .from('transactions')
+        .select('activity_id, transaction_type, value, value_usd, provider_org_name, provider_org_id, transaction_date')
+        .in('activity_id', fundIds)
+        .in('transaction_type', ['1', '11', '13']),
+      supabase
+        .from('transactions')
+        .select('activity_id, transaction_type, value, value_usd, transaction_date, receiver_activity_uuid')
+        .in('activity_id', fundIds)
+        .in('transaction_type', ['2', '3']),
+      supabase
+        .from('activity_relationships')
+        .select('activity_id, related_activity_id')
+        .in('activity_id', fundIds)
+        .eq('relationship_type', '1')
+        .not('related_activity_id', 'is', null),
+      supabase
+        .from('activity_relationships')
+        .select('activity_id, related_activity_id')
+        .in('related_activity_id', fundIds)
+        .eq('relationship_type', '2'),
+      reportingOrgIds.length > 0
+        ? supabase
+            .from('organizations')
+            .select('id, name, acronym, logo')
+            .in('id', reportingOrgIds)
+        : emptyResult<{ id: string; name: string; acronym: string | null; logo: string | null }>(),
+    ])
 
-    // Get outgoing transactions (disbursements) for all funds - include receiver for sector split
-    const { data: allOutgoing } = await supabase
-      .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, transaction_date, receiver_activity_uuid')
-      .in('activity_id', fundIds)
-      .in('transaction_type', ['2', '3'])
+    const allIncoming = incomingResult.data
+    const allOutgoing = outgoingResult.data
+    const allParentRels = parentRelsResult.data
+    const allReverseRels = reverseRelsResult.data
 
-    // Get child counts via activity_relationships
-    const { data: allParentRels } = await supabase
-      .from('activity_relationships')
-      .select('activity_id, related_activity_id')
-      .in('activity_id', fundIds)
-      .eq('relationship_type', '1')
-      .not('related_activity_id', 'is', null)
+    let reportingOrgById: Record<string, { name: string; acronym: string | null; logo: string | null }> = {}
+    reportingOrgsResult.data?.forEach((o: { id: string; name: string; acronym: string | null; logo?: string | null }) => {
+      reportingOrgById[o.id] = { name: o.name, acronym: o.acronym ?? null, logo: o.logo ?? null }
+    })
 
-    const { data: allReverseRels } = await supabase
-      .from('activity_relationships')
-      .select('activity_id, related_activity_id')
-      .in('related_activity_id', fundIds)
-      .eq('relationship_type', '2')
-
-    // Get child activity sectors
     const childIdsByFund: Record<string, Set<string>> = {}
     fundIds.forEach(id => { childIdsByFund[id] = new Set() })
 
@@ -88,65 +108,54 @@ export async function GET(request: NextRequest) {
     const allChildIds = new Set<string>()
     Object.values(childIdsByFund).forEach(s => s.forEach(id => allChildIds.add(id)))
 
-    // Fetch child activity titles, acronyms, and identifiers for display
-    let childActivityDetails: Record<string, { title: string; acronym: string | null; identifier: string }> = {}
-    if (allChildIds.size > 0) {
-      const { data: childActivities } = await supabase
-        .from('activities')
-        .select('id, title_narrative, acronym, iati_identifier')
-        .in('id', Array.from(allChildIds))
-      childActivities?.forEach((a: { id: string; title_narrative: string | null; acronym: string | null; iati_identifier: string | null }) => {
-        childActivityDetails[a.id] = {
-          title: a.title_narrative || 'Untitled activity',
-          acronym: a.acronym || null,
-          identifier: a.iati_identifier || a.id,
-        }
-      })
-    }
-
-    let sectorsByActivity: Record<string, string[]> = {}
-    if (allChildIds.size > 0) {
-      const { data: sectors } = await supabase
-        .from('activity_sectors')
-        .select('activity_id, sector_name')
-        .in('activity_id', Array.from(allChildIds))
-
-      sectors?.forEach(s => {
-        if (!sectorsByActivity[s.activity_id]) sectorsByActivity[s.activity_id] = []
-        if (s.sector_name && !sectorsByActivity[s.activity_id].includes(s.sector_name)) {
-          sectorsByActivity[s.activity_id].push(s.sector_name)
-        }
-      })
-    }
-
-    // Resolve donor org acronyms (provider_org_id -> organizations)
     const providerOrgIds = new Set<string>()
     allIncoming?.forEach((t: { provider_org_id?: string }) => {
       if (t.provider_org_id) providerOrgIds.add(t.provider_org_id)
     })
-    let orgById: Record<string, { name: string; acronym: string | null }> = {}
-    if (providerOrgIds.size > 0) {
-      const { data: orgs } = await supabase
-        .from('organizations')
-        .select('id, name, acronym')
-        .in('id', Array.from(providerOrgIds))
-      orgs?.forEach((o: { id: string; name: string; acronym: string | null }) => {
-        orgById[o.id] = { name: o.name, acronym: o.acronym ?? null }
-      })
-    }
 
-    // Resolve fund manager (reporting org) per fund
-    const reportingOrgIds = [...new Set(funds.map((f: { reporting_org_id?: string }) => f.reporting_org_id).filter(Boolean))] as string[]
-    let reportingOrgById: Record<string, { name: string; acronym: string | null; logo: string | null }> = {}
-    if (reportingOrgIds.length > 0) {
-      const { data: reportingOrgs } = await supabase
-        .from('organizations')
-        .select('id, name, acronym, logo')
-        .in('id', reportingOrgIds)
-      reportingOrgs?.forEach((o: { id: string; name: string; acronym: string | null; logo?: string | null }) => {
-        reportingOrgById[o.id] = { name: o.name, acronym: o.acronym ?? null, logo: o.logo ?? null }
-      })
-    }
+    // Wave 3: queries that depend on wave 2 results — run in parallel
+    const [childActivitiesResult, sectorsResult, donorOrgsResult] = await Promise.all([
+      allChildIds.size > 0
+        ? supabase
+            .from('activities')
+            .select('id, title_narrative, acronym, iati_identifier')
+            .in('id', Array.from(allChildIds))
+        : emptyResult<{ id: string; title_narrative: string | null; acronym: string | null; iati_identifier: string | null }>(),
+      allChildIds.size > 0
+        ? supabase
+            .from('activity_sectors')
+            .select('activity_id, sector_name')
+            .in('activity_id', Array.from(allChildIds))
+        : emptyResult<{ activity_id: string; sector_name: string | null }>(),
+      providerOrgIds.size > 0
+        ? supabase
+            .from('organizations')
+            .select('id, name, acronym')
+            .in('id', Array.from(providerOrgIds))
+        : emptyResult<{ id: string; name: string; acronym: string | null }>(),
+    ])
+
+    let childActivityDetails: Record<string, { title: string; acronym: string | null; identifier: string }> = {}
+    childActivitiesResult.data?.forEach((a: { id: string; title_narrative: string | null; acronym: string | null; iati_identifier: string | null }) => {
+      childActivityDetails[a.id] = {
+        title: a.title_narrative || 'Untitled activity',
+        acronym: a.acronym || null,
+        identifier: a.iati_identifier || a.id,
+      }
+    })
+
+    let sectorsByActivity: Record<string, string[]> = {}
+    sectorsResult.data?.forEach((s: { activity_id: string; sector_name: string | null }) => {
+      if (!sectorsByActivity[s.activity_id]) sectorsByActivity[s.activity_id] = []
+      if (s.sector_name && !sectorsByActivity[s.activity_id].includes(s.sector_name)) {
+        sectorsByActivity[s.activity_id].push(s.sector_name)
+      }
+    })
+
+    let orgById: Record<string, { name: string; acronym: string | null }> = {}
+    donorOrgsResult.data?.forEach((o: { id: string; name: string; acronym: string | null }) => {
+      orgById[o.id] = { name: o.name, acronym: o.acronym ?? null }
+    })
 
     // Build fund summaries
     const fundSummaries = funds.map(fund => {

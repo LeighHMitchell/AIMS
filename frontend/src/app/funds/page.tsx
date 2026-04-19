@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
+import dynamic from "next/dynamic"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,9 +39,14 @@ import { Search, DollarSign, Users, Layers, TrendingUp, ChevronsUpDown, Wallet, 
 import { EmptyState } from "@/components/ui/empty-state"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
 import { useUser } from "@/hooks/useUser"
-import { exportActivityToPDF } from "@/lib/activity-export"
-import { FundFlowSankey } from "@/components/charts/FundFlowSankey"
+// Lazy-load export utils — pulls in jspdf, jspdf-autotable, xlsx (~1MB) only when a user exports
+const loadActivityExport = () => import("@/lib/activity-export")
+const FundFlowSankey = dynamic(
+  () => import("@/components/charts/FundFlowSankey").then(mod => mod.FundFlowSankey),
+  { ssr: false, loading: () => <div className="h-[150px] w-full" /> }
+)
 import { OrganizationLogo } from "@/components/ui/organization-logo"
+import { MountWhenVisible } from "@/components/ui/mount-when-visible"
 import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
 import { formatActivityDate } from "@/lib/date-utils"
 
@@ -164,6 +170,7 @@ export default function FundsPage() {
   const handleExportPDF = useCallback(async (fundId: string) => {
     toast.loading("Generating PDF...", { id: "fund-export-pdf" })
     try {
+      const { exportActivityToPDF } = await loadActivityExport()
       await exportActivityToPDF(fundId)
       toast.success("PDF exported successfully", { id: "fund-export-pdf" })
     } catch (err) {
@@ -539,13 +546,18 @@ export default function FundsPage() {
                     {/* Fund flow Sankey (donors → fund → sectors) */}
                     <div className="mb-3">
                       <p className="text-helper text-muted-foreground mb-1">Fund Flow</p>
-                      <FundFlowSankey
-                        fundTitle={fund.acronym ? `${fund.title} (${fund.acronym})` : fund.title}
-                        topDonors={fund.topDonors}
-                        topChildFlows={fund.childFlows}
-                        height={150}
-                        className="w-full"
-                      />
+                      <MountWhenVisible
+                        rootMargin="400px"
+                        placeholder={<div className="h-[150px] w-full" />}
+                      >
+                        <FundFlowSankey
+                          fundTitle={fund.acronym ? `${fund.title} (${fund.acronym})` : fund.title}
+                          topDonors={fund.topDonors}
+                          topChildFlows={fund.childFlows}
+                          height={150}
+                          className="w-full"
+                        />
+                      </MountWhenVisible>
                     </div>
 
                     {/* Date range */}

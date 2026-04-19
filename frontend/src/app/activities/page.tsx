@@ -63,7 +63,8 @@ import {
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, Heart,
   Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck, Activity as ActivityIcon
 } from "lucide-react";
-import { exportActivityToPDF, exportActivityToExcel } from "@/lib/activity-export";
+// Lazy-load export utils — pulls in jspdf, jspdf-autotable, xlsx (~1MB) only when a user exports
+const loadActivityExport = () => import("@/lib/activity-export");
 import { useUser } from "@/hooks/useUser";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
@@ -1103,6 +1104,7 @@ const router = useRouter();
   const handleExportActivityPDF = async (activityId: string) => {
     toast.loading("Generating PDF...", { id: "export-pdf" });
     try {
+      const { exportActivityToPDF } = await loadActivityExport();
       await exportActivityToPDF(activityId);
       toast.success("PDF exported successfully", { id: "export-pdf" });
     } catch (error) {
@@ -1114,6 +1116,7 @@ const router = useRouter();
   const handleExportActivityExcel = async (activityId: string) => {
     toast.loading("Generating Excel...", { id: "export-excel" });
     try {
+      const { exportActivityToExcel } = await loadActivityExport();
       await exportActivityToExcel(activityId);
       toast.success("Excel exported successfully", { id: "export-excel" });
     } catch (error) {
