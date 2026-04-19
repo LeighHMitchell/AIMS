@@ -305,6 +305,7 @@ export default function WorkingGroupsPage() {
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               <Input
+                aria-label="Search working groups"
                 placeholder="Search working groups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

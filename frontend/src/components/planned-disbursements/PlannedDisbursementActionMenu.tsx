@@ -28,7 +28,7 @@ export function PlannedDisbursementActionMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="h-8 w-8 shrink-0 bg-card/90 hover:bg-card">
+        <Button variant="outline" size="icon" className="h-8 w-8 shrink-0 bg-card/90 hover:bg-card" aria-label="Planned disbursement actions">
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

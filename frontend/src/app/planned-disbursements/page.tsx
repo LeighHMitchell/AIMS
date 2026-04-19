@@ -409,8 +409,9 @@ export default function PlannedDisbursementsPage() {
         <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
-              <Label className="text-helper text-muted-foreground">Search</Label>
+              <Label htmlFor="planned-disbursements-search" className="text-helper text-muted-foreground">Search</Label>
               <Input
+                id="planned-disbursements-search"
                 placeholder="Search planned disbursements..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

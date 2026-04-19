@@ -233,6 +233,7 @@ export default function SectorsListingPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                aria-label="Search sectors by name or code"
                 placeholder="Search by name or code..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}

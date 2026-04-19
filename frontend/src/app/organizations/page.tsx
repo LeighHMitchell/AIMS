@@ -1714,6 +1714,7 @@ function OrganizationsPageContent() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
+                aria-label={activeFilter === 'custom_groups' ? 'Search custom groups' : 'Search organizations'}
                 placeholder={activeFilter === 'custom_groups' ? "Search custom groups..." : "Search organizations..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
