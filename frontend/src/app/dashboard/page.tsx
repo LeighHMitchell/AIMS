@@ -52,14 +52,14 @@ import { ValidationRulesCard } from "@/components/data-clinic/ValidationRulesCar
 import { TaskingTab } from "@/components/tasks/TaskingTab"
 import { NotificationTabs } from "@/components/NotificationTabs"
 import { MyTeamTab } from "@/components/dashboard/MyTeamTab"
-import { apiFetch } from '@/lib/api-fetch';
+import { useNotificationCount } from '@/hooks/use-notification-count';
 import { isVisitorUser, VISITOR_BLOCKED_DASHBOARD_TABS } from '@/lib/visitor';
 
 export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, permissions, isLoading } = useUser();
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const { data: unreadNotificationCount = 0 } = useNotificationCount(user?.id);
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
 
@@ -74,16 +74,6 @@ export default function Dashboard() {
     }
     setActiveTab(tabFromUrl);
   }, [searchParams, isVisitor]);
-
-  // Fetch unread notification count for the tab badge
-  useEffect(() => {
-    if (user?.id) {
-      apiFetch(`/api/notifications/user?userId=${user.id}&limit=1`)
-        .then(res => res.json())
-        .then(data => setUnreadNotificationCount(data.unreadCount || 0))
-        .catch(err => console.error('Failed to fetch notification count:', err));
-    }
-  }, [user?.id]);
 
   // Loading state
   if (isLoading) {

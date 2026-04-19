@@ -8,6 +8,7 @@ import { UserMenu } from "@/components/UserMenu"
 import { SettingsMenu } from "@/components/SettingsMenu"
 import { SystemSettingsProvider } from "@/contexts/SystemSettingsContext"
 import { LoadingBarProvider } from "@/components/providers/LoadingBarProvider"
+import { QueryProvider } from "@/components/providers/QueryProvider"
 import { TourProvider } from "@/components/tour/TourProvider"
 import { Toaster } from "sonner"
 import { MobileGate } from "@/components/MobileGate"
@@ -38,36 +39,38 @@ export default function RootLayout({
       </head>
       <body className={`${GeistSans.className} ${GeistMono.variable} antialiased`}>
         <SystemSettingsProvider>
-          <UserProvider>
-            <MobileGate>
-              <Suspense fallback={null}>
-                <LoadingBarProvider>
-                  <TourProvider>
-                    {children}
-                  </TourProvider>
-                </LoadingBarProvider>
-              </Suspense>
-            </MobileGate>
-            <Toaster
-              position="top-center"
-              richColors
-              closeButton
-              duration={5000}
-              visibleToasts={5}
-              expand={true}
-              gap={12}
-              toastOptions={{
-                style: {
-                  fontSize: '14px',
-                },
-                actionButtonStyle: {
-                  backgroundColor: '#166534', // dark green (tailwind green-800)
-                  color: '#ffffff',
-                  fontWeight: 500,
-                },
-              }}
-            />
-          </UserProvider>
+          <QueryProvider>
+            <UserProvider>
+              <MobileGate>
+                <Suspense fallback={null}>
+                  <LoadingBarProvider>
+                    <TourProvider>
+                      {children}
+                    </TourProvider>
+                  </LoadingBarProvider>
+                </Suspense>
+              </MobileGate>
+              <Toaster
+                position="top-center"
+                richColors
+                closeButton
+                duration={5000}
+                visibleToasts={5}
+                expand={true}
+                gap={12}
+                toastOptions={{
+                  style: {
+                    fontSize: '14px',
+                  },
+                  actionButtonStyle: {
+                    backgroundColor: 'hsl(var(--success-text))',
+                    color: 'hsl(var(--primary-foreground))',
+                    fontWeight: 500,
+                  },
+                }}
+              />
+            </UserProvider>
+          </QueryProvider>
         </SystemSettingsProvider>
       </body>
     </html>

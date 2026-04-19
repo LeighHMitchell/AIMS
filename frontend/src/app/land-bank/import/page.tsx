@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, FileJson, FileSpreadsheet, AlertTriangle, ChevronUpFromLine } from "lucide-react"
+import { Upload, FileJson, FileSpreadsheet, AlertTriangle, ArrowUpFromLine } from "lucide-react"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
@@ -169,7 +169,7 @@ export default function ImportParcelsPage() {
         ]} />
 
         <div className="flex items-center gap-3 mb-6">
-          <ChevronUpFromLine className="h-8 w-8 text-muted-foreground" />
+          <ArrowUpFromLine className="h-8 w-8 text-muted-foreground" />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Import Parcels</h1>
             <p className="text-muted-foreground mt-1">

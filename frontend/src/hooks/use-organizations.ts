@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Organization } from '@/components/ui/organization-searchable-select';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -6,57 +7,51 @@ interface UseOrganizationsProps {
   onError?: (error: string) => void;
 }
 
+const EMPTY_ORGS: Organization[] = [];
+
 export function useOrganizations({ onError }: UseOrganizationsProps = {}) {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch organizations
-  const fetchOrganizations = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
+  const query = useQuery<Organization[]>({
+    queryKey: ['organizations', 'list'],
+    queryFn: async () => {
       const response = await apiFetch('/api/organizations');
-      
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to fetch organizations');
       }
+      return response.json();
+    },
+    staleTime: 5 * 60_000,
+  });
 
-      const data = await response.json();
-      setOrganizations(data);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch organizations';
-      setError(errorMessage);
-      onError?.(errorMessage);
-      console.error('[AIMS] Error fetching organizations:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [onError]);
+  const organizations = useMemo(() => query.data ?? EMPTY_ORGS, [query.data]);
+  const errorMessage = query.error instanceof Error ? query.error.message : null;
 
-  // Filter organizations by type (for government partners)
-  const getOrganizationsByType = useCallback((type: string) => {
-    return organizations.filter(org => org.organisation_type === type);
-  }, [organizations]);
-
-  // Get organization by ID
-  const getOrganizationById = useCallback((id: string) => {
-    return organizations.find(org => org.id === id);
-  }, [organizations]);
-
-  // Fetch on mount
   useEffect(() => {
-    fetchOrganizations();
-  }, []);
+    if (errorMessage && onError) {
+      onError(errorMessage);
+    }
+  }, [errorMessage, onError]);
+
+  const fetchOrganizations = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
+
+  const getOrganizationsByType = useCallback(
+    (type: string) => organizations.filter(org => org.organisation_type === type),
+    [organizations],
+  );
+
+  const getOrganizationById = useCallback(
+    (id: string) => organizations.find(org => org.id === id),
+    [organizations],
+  );
 
   return {
     organizations,
-    loading,
-    error,
+    loading: query.isPending,
+    error: errorMessage,
     fetchOrganizations,
     getOrganizationsByType,
     getOrganizationById,
   };
-} 
+}
