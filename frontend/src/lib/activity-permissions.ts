@@ -38,14 +38,22 @@ export interface ActivityPermissions {
   canEditOtherContributions: boolean;
   canRequestToJoin: boolean;
   canApproveJoinRequests: boolean;
+  canEditGovInputs: boolean;
 }
 
 // Check if user is from a government organization
 export function isGovernmentUser(user: User | null): boolean {
   if (!user) return false;
-  return user.role === USER_ROLES.GOV_PARTNER_TIER_1 || 
+  return user.role === USER_ROLES.GOV_PARTNER_TIER_1 ||
          user.role === USER_ROLES.GOV_PARTNER_TIER_2 ||
          user.role === USER_ROLES.SUPER_USER;
+}
+
+// Check if user is a development partner (donor)
+export function isDevelopmentPartnerUser(user: User | null): boolean {
+  if (!user) return false;
+  return user.role === USER_ROLES.DEV_PARTNER_TIER_1 ||
+         user.role === USER_ROLES.DEV_PARTNER_TIER_2;
 }
 
 // Check if user is the activity creator
@@ -80,10 +88,12 @@ export function getActivityPermissions(
       canEditOtherContributions: false,
       canRequestToJoin: false,
       canApproveJoinRequests: false,
+      canEditGovInputs: false,
     };
   }
 
   const isGovUser = isGovernmentUser(user);
+  const isDonorUser = isDevelopmentPartnerUser(user);
   const isCreator = activity ? isActivityCreator(user, activity) : false;
   const isContributor = activity ? isActivityContributor(user, activity) : false;
   const isSuperUser = user.role === USER_ROLES.SUPER_USER;
@@ -91,22 +101,25 @@ export function getActivityPermissions(
   return {
     // Edit activity metadata (title, description, etc.)
     canEditActivity: isSuperUser || isCreator || (isGovUser && activity?.submissionStatus === 'draft'),
-    
+
     // Validation permissions (government users only)
     canValidateActivity: isGovUser && activity?.submissionStatus === 'submitted',
     canRejectActivity: isGovUser && activity?.submissionStatus === 'submitted',
-    
+
     // Contributor management
     canNominateContributors: isCreator || isSuperUser,
-    
+
     // Contribution permissions
     canEditOwnContributions: (isContributor || isCreator) && activity?.submissionStatus !== 'validated',
     canViewOtherContributions: isCreator || isGovUser || isSuperUser,
     canEditOtherContributions: isSuperUser,
-    
+
     // Join request permissions
     canRequestToJoin: !isContributor && !isCreator,
     canApproveJoinRequests: isCreator || isGovUser || isSuperUser,
+
+    // Government inputs — editable by gov staff and donors
+    canEditGovInputs: isSuperUser || isGovUser || isDonorUser,
   };
 }
 

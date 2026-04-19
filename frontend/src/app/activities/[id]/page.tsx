@@ -105,6 +105,7 @@ import { ActivityProfileHeader } from "@/components/activities/ActivityProfileHe
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
+import { GovernmentInputsSectionEnhanced } from "@/components/GovernmentInputsSectionEnhanced"
 import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -544,6 +545,7 @@ export default function ActivityDetailPage() {
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({})
   const [governmentEndorsement, setGovernmentEndorsement] = useState<any>(null)
   const [loadingEndorsement, setLoadingEndorsement] = useState(false)
+  const [governmentInputs, setGovernmentInputs] = useState<any>({})
   const [countryAllocations, setCountryAllocations] = useState<any[]>([])
   const [regionAllocations, setRegionAllocations] = useState<any[]>([])
   const [reportingOrg, setReportingOrg] = useState<any>(null)
@@ -613,6 +615,15 @@ export default function ActivityDetailPage() {
           case 'library':
             await fetchDocuments();
             break;
+          case 'gov-inputs': {
+            const activityId = Array.isArray(params.id) ? params.id[0] : params.id;
+            const res = await apiFetch(`/api/activities/${activityId}/government-inputs`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.governmentInputs) setGovernmentInputs(data.governmentInputs);
+            }
+            break;
+          }
         }
         setLoadedTabs(prev => new Set([...prev, activeTab]));
       } finally {
@@ -684,6 +695,26 @@ export default function ActivityDetailPage() {
       setLoadingEndorsement(false);
     }
   }
+
+  const saveGovernmentInputs = useCallback(async (inputs: any) => {
+    if (!params?.id || !user?.id) return;
+    try {
+      await apiFetch(`/api/activities/${params.id}/government-inputs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...inputs, userId: user.id }),
+      });
+    } catch (error) {
+      console.error('Error saving government inputs:', error);
+    }
+  }, [params?.id, user?.id]);
+
+  // Debounced auto-save for government inputs
+  useEffect(() => {
+    if (!params?.id || !user?.id || Object.keys(governmentInputs).length === 0) return;
+    const id = setTimeout(() => saveGovernmentInputs(governmentInputs), 2000);
+    return () => clearTimeout(id);
+  }, [governmentInputs, params?.id, user?.id]);
 
   const fetchActivityLocations = async () => {
     if (!params?.id) return;
@@ -828,6 +859,7 @@ export default function ActivityDetailPage() {
           setBanner(found.banner || null)
           setBannerPosition(found.bannerPosition ?? 50)
           setSdgMappings(found.sdgMappings || [])
+          setGovernmentInputs(found.governmentInputs || {})
           
           // Convert partner data to display format
           const allPartners: Partner[] = []
@@ -2176,6 +2208,9 @@ export default function ActivityDetailPage() {
                     { value: "related-activities", label: "Related" },
                     { value: "library", label: "Library" },
                     { value: "discussion", label: "Discussion" },
+                  ]},
+                  { id: "government", label: "Government", tabs: [
+                    { value: "gov-inputs", label: "Gov Inputs" },
                   ]},
                 ];
                 const activeGroup = TAB_GROUPS.find(g => g.tabs.some(t => t.value === activeTab)) ?? TAB_GROUPS[0];
@@ -3916,6 +3951,18 @@ export default function ActivityDetailPage() {
                 {activeTab === "discussion" && (
                   <PublicCommentsThread activityId={activity.id} />
                 )}
+              </TabsContent>
+
+              {/* Government Inputs Tab */}
+              <TabsContent value="gov-inputs" className="p-6 border-0">
+                <GovernmentInputsSectionEnhanced
+                  activityId={activity.id}
+                  governmentInputs={governmentInputs}
+                  onChange={setGovernmentInputs}
+                  plannedStartDate={activity.plannedStartDate}
+                  plannedEndDate={activity.plannedEndDate}
+                  readOnly={!permissions.canEditGovInputs}
+                />
               </TabsContent>
             </Tabs>
           </Card>
