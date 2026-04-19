@@ -495,3 +495,29 @@ export function getTransactionFiscalYear(
     amount: value
   }
 }
+
+export function estimateMonthlyAmount(record: {
+  period_start?: string | null
+  period_end?: string | null
+  amount: number
+}): { monthly: number; months: number } | null {
+  if (!record.period_start || !record.period_end || !record.amount) {
+    return null
+  }
+
+  const start = parseISO(record.period_start)
+  const end = parseISO(record.period_end)
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return null
+  }
+
+  const months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth()) +
+    1
+  if (months <= 0) {
+    return null
+  }
+
+  return { monthly: record.amount / months, months }
+}
