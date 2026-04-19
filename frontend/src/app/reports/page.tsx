@@ -232,27 +232,22 @@ export default function ReportsPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8 text-muted-foreground" />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-            <p className="text-muted-foreground mt-1">
-              Download pre-formatted reports or design your own custom pivot tables.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Reports</h1>
+          <p className="text-muted-foreground mt-2 max-w-2xl">
+            Pre-formatted downloads and custom pivot tables.
+          </p>
         </div>
 
         {/* Tabs for Standard vs Custom Reports */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              <FileText className="h-4 w-4" />
+          <TabsList className="h-auto bg-transparent p-0 gap-6 border-b mb-6 flex flex-wrap rounded-none w-full justify-start">
+            <TabsTrigger value="standard" className="rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors">
               Standard Reports
             </TabsTrigger>
-            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              <BarChart3 className="h-4 w-4" />
+            <TabsTrigger value="custom" className="group rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors gap-2">
               Design Your Own
-              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white group-data-[state=active]:bg-white group-data-[state=active]:text-[#3C6255]">
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white">
                 New
               </span>
             </TabsTrigger>

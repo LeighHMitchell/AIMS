@@ -850,8 +850,8 @@ export default function Atlas() {
         <CardContent>
           <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
             <TabsContent value="map" className="space-y-4">
-              {/* Filters Bar - Above the map */}
-              <div className="flex items-end gap-2">
+              {/* Filters Row - what data is shown on the map */}
+              <div className="flex items-end gap-2 flex-wrap">
                 {/* Status Filter */}
                 <div className="flex flex-col gap-1">
                   <label className="text-helper font-medium text-muted-foreground">Status</label>
@@ -1017,9 +1017,12 @@ export default function Atlas() {
                     placeholder="Search..."
                   />
                 </div>
+              </div>
 
+              {/* Map Controls Row - how the map itself behaves */}
+              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border/50">
                 {/* 3D / View Controls */}
-                <div className="flex items-center gap-2 self-end">
+                <div className="flex items-center gap-2">
                   <Map3DController
                     map={mapInstance}
                     homeCountryCenter={homeCountryCenter}
@@ -1030,7 +1033,7 @@ export default function Atlas() {
                 <div className="flex-1" />
 
                 {/* Map Style & Controls */}
-                <div className="flex items-center gap-2 self-end shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <MapStyleSelect value={mapStyle} onChange={setMapStyle} triggerClassName="w-[170px] h-9" />
 
                   {/* Layers Popover */}
