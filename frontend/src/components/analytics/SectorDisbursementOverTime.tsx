@@ -70,6 +70,7 @@ const AVAILABLE_YEARS = Array.from(
 
 interface YearData {
   year: number
+  label?: string
   planned: number
   actual: number
 }
@@ -340,6 +341,9 @@ export function SectorDisbursementOverTime({
         if (organizationId) {
           params.append('organizationId', organizationId)
         }
+        if (calendarType) {
+          params.append('customYearId', calendarType)
+        }
 
         const response = await apiFetch(`/api/analytics/disbursements-by-sector?${params.toString()}`)
 
@@ -383,7 +387,9 @@ export function SectorDisbursementOverTime({
     }
 
     fetchData()
-  }, [refreshKey, organizationId]) // Only refetch on refreshKey or organizationId change, not on date range change
+    // Refetch when the selected calendar/custom year changes so the server can
+    // re-bucket by fiscal year; still avoid re-fetching on date-range tweaks.
+  }, [refreshKey, organizationId, calendarType])
 
   // Aggregate data based on aggregation level (group, category, or sector)
   const aggregatedData = useMemo(() => {

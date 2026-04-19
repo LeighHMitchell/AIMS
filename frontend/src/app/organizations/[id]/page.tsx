@@ -131,6 +131,13 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+import { useCustomYears } from '@/hooks/useCustomYears'
+import { CustomYearSelector } from '@/components/ui/custom-year-selector'
+import {
+  allocateAcrossFiscalYears,
+  getTransactionFiscalYear,
+} from '@/utils/year-allocation'
+import { getCustomYearLabel } from '@/types/custom-years'
 
 interface Organization {
   id: string
@@ -261,9 +268,9 @@ export default function OrganizationProfilePage() {
   const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, totalValue: number, x: number, y: number} | null>(null)
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [budgetsByYear, setBudgetsByYear] = useState<Array<{ year: number; amount: number }>>([])
-  const [plannedDisbursementsByYear, setPlannedDisbursementsByYear] = useState<Array<{ year: number; amount: number }>>([])
-  const [disbursementsByYear, setDisbursementsByYear] = useState<Array<{ year: number; disbursements: number; expenditures: number }>>([])
+  // Raw rows kept so we can re-bucket whenever the CustomYear selection changes
+  const [rawOrgBudgets, setRawOrgBudgets] = useState<Array<{ period_start: string; period_end?: string | null; value: number; currency?: string; usd_value?: number | null }>>([])
+  const [rawOrgPlannedDisbursements, setRawOrgPlannedDisbursements] = useState<Array<{ period_start: string; period_end?: string | null; amount: number; currency?: string; usd_amount?: number | null }>>([])
   const [sectorAllocations, setSectorAllocations] = useState<Array<{ code: string; name: string; percentage: number }>>([])
   const [sectorVisualizationTab, setSectorVisualizationTab] = useState<'sankey' | 'sunburst'>('sankey')
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
@@ -329,6 +336,106 @@ export default function OrganizationProfilePage() {
     profilePhoto?: string
     isPrimary?: boolean
   }>>([])
+
+  // CustomYear (Calendar / Fiscal Year) selection — drives all year-bucketed cards on this page
+  const {
+    customYears,
+    selectedId: selectedCustomYearId,
+    setSelectedId: setSelectedCustomYearId,
+    selectedYear: selectedCustomYear,
+  } = useCustomYears()
+
+  // Re-bucket budgets across the selected CustomYear (calendar year as fallback).
+  // Pro-rata splits any budget whose period spans a year boundary.
+  const budgetsByYear = useMemo(() => {
+    const map = new Map<string, { year: number; label: string; amount: number }>()
+    for (const b of rawOrgBudgets) {
+      if (!b.period_start) continue
+      const usdValue = b.usd_value || (b.currency === 'USD' ? b.value : 0)
+      if (!usdValue) continue
+      const periodEnd = b.period_end || b.period_start
+      if (selectedCustomYear) {
+        const allocs = allocateAcrossFiscalYears(b.period_start, periodEnd, usdValue, selectedCustomYear)
+        for (const a of allocs) {
+          const existing = map.get(a.fiscalYearLabel)
+          if (existing) {
+            existing.amount += a.allocatedValue
+          } else {
+            map.set(a.fiscalYearLabel, { year: a.fiscalYearStart, label: a.fiscalYearLabel, amount: a.allocatedValue })
+          }
+        }
+      } else {
+        const year = new Date(b.period_start).getFullYear()
+        const key = String(year)
+        const existing = map.get(key)
+        if (existing) existing.amount += usdValue
+        else map.set(key, { year, label: String(year), amount: usdValue })
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.year - b.year)
+  }, [rawOrgBudgets, selectedCustomYear])
+
+  // Re-bucket planned disbursements
+  const plannedDisbursementsByYear = useMemo(() => {
+    const map = new Map<string, { year: number; label: string; amount: number }>()
+    for (const pd of rawOrgPlannedDisbursements) {
+      if (!pd.period_start) continue
+      const usdAmount = pd.usd_amount || pd.amount || 0
+      if (!usdAmount) continue
+      const periodEnd = pd.period_end || pd.period_start
+      if (selectedCustomYear) {
+        const allocs = allocateAcrossFiscalYears(pd.period_start, periodEnd, usdAmount, selectedCustomYear)
+        for (const a of allocs) {
+          const existing = map.get(a.fiscalYearLabel)
+          if (existing) {
+            existing.amount += a.allocatedValue
+          } else {
+            map.set(a.fiscalYearLabel, { year: a.fiscalYearStart, label: a.fiscalYearLabel, amount: a.allocatedValue })
+          }
+        }
+      } else {
+        const year = new Date(pd.period_start).getFullYear()
+        const key = String(year)
+        const existing = map.get(key)
+        if (existing) existing.amount += usdAmount
+        else map.set(key, { year, label: String(year), amount: usdAmount })
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.year - b.year)
+  }, [rawOrgPlannedDisbursements, selectedCustomYear])
+
+  // Re-bucket transactions (disbursements type=3, expenditures type=4)
+  const disbursementsByYear = useMemo(() => {
+    const map = new Map<string, { year: number; label: string; disbursements: number; expenditures: number }>()
+    for (const txn of transactions) {
+      if (!txn.transaction_date) continue
+      if (txn.transaction_type !== '3' && txn.transaction_type !== '4') continue
+      const usdValue = txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)
+      if (!usdValue) continue
+      let key: string
+      let yearNum: number
+      let label: string
+      if (selectedCustomYear) {
+        const fyStart = getTransactionFiscalYear(txn.transaction_date, selectedCustomYear)
+        label = getCustomYearLabel(selectedCustomYear, fyStart)
+        yearNum = fyStart
+        key = label
+      } else {
+        const y = new Date(txn.transaction_date).getFullYear()
+        yearNum = y
+        label = String(y)
+        key = label
+      }
+      let entry = map.get(key)
+      if (!entry) {
+        entry = { year: yearNum, label, disbursements: 0, expenditures: 0 }
+        map.set(key, entry)
+      }
+      if (txn.transaction_type === '3') entry.disbursements += usdValue
+      else if (txn.transaction_type === '4') entry.expenditures += usdValue
+    }
+    return Array.from(map.values()).sort((a, b) => a.year - b.year)
+  }, [transactions, selectedCustomYear])
 
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar()
@@ -515,15 +622,18 @@ export default function OrganizationProfilePage() {
             const financeTypeMapByValue = new Map<string, number>()
 
 
+            // Restrict to published activities so the modality chart matches the hero cards
+            // (which already filter by publication_status === 'published').
             for (const activity of activitiesWithBudgets) {
+              if (activity.publication_status !== 'published') continue
               const financeType = activity.defaultFinanceType
               if (financeType) {
                 const label = financeTypeLabels[financeType] || `Type ${financeType}`
-                
+
                 // Count by number of activities
                 const currentCount = financeTypeMapByCount.get(label) || 0
                 financeTypeMapByCount.set(label, currentCount + 1)
-                
+
                 // Sum by value (use totalPlannedBudgetUSD or commitments)
                 const activityValue = activity.totalPlannedBudgetUSD || activity.total_budget || 0
                 const currentValue = financeTypeMapByValue.get(label) || 0
@@ -566,8 +676,8 @@ export default function OrganizationProfilePage() {
 
             setModalityCompositionByCount(modalityDataByCount)
             setModalityCompositionByValue(modalityDataByValue)
-            // Default to count view
-            setModalityComposition(modalityDataByCount)
+            // Default to value view (dollar weight is more meaningful than activity count)
+            setModalityComposition(modalityDataByValue)
 
             // Fetch documents from activities
             try {
@@ -726,22 +836,8 @@ export default function OrganizationProfilePage() {
               }).then(async (res) => {
                 if (!res.ok) return
                 const budgets = await res.json()
-                const budgetsByYearMap = new Map<number, number>()
-
-                for (const budget of budgets) {
-                  if (!budget.period_start) continue
-                  const year = new Date(budget.period_start).getFullYear()
-                  const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                  if (usdValue) {
-                    const currentAmount = budgetsByYearMap.get(year) || 0
-                    budgetsByYearMap.set(year, currentAmount + usdValue)
-                  }
-                }
-
-                const budgetsByYearArray = Array.from(budgetsByYearMap.entries())
-                  .map(([year, amount]) => ({ year, amount }))
-                  .sort((a, b) => a.year - b.year)
-                setBudgetsByYear(budgetsByYearArray)
+                // Store raw rows; bucketing happens in useMemo (FY-aware)
+                setRawOrgBudgets(budgets || [])
               }).catch(err => {
                 if (err instanceof Error && err.name === 'AbortError') return
                 console.warn('Failed to fetch org budgets:', err)
@@ -753,61 +849,19 @@ export default function OrganizationProfilePage() {
               }).then(async (res) => {
                 if (!res.ok) return
                 const plannedDisbursements = await res.json()
-                const pdByYearMap = new Map<number, number>()
-
-                for (const pd of plannedDisbursements) {
-                  if (!pd.period_start) continue
-                  const usdAmount = pd.usd_amount || pd.amount || 0
-                  if (!usdAmount) continue
-                  const year = new Date(pd.period_start).getFullYear()
-                  const currentAmount = pdByYearMap.get(year) || 0
-                  pdByYearMap.set(year, currentAmount + usdAmount)
-                }
-
-                const pdArray = Array.from(pdByYearMap.entries())
-                  .map(([year, amount]) => ({ year, amount }))
-                  .sort((a, b) => a.year - b.year)
-                setPlannedDisbursementsByYear(pdArray)
+                setRawOrgPlannedDisbursements(plannedDisbursements || [])
               }).catch(err => {
                 if (err instanceof Error && err.name === 'AbortError') return
                 console.warn('Failed to fetch org planned disbursements:', err)
               }),
 
-              // Org transactions (for hero cards + disbursements by year chart)
+              // Org transactions (drives hero cards + the disbursementsByYear useMemo)
               apiFetch(`/api/organizations/${params.id}/transactions`, {
                 signal: abortControllerRef.current?.signal
               }).then(async (res) => {
                 if (!res.ok) return
                 const orgTransactions = await res.json()
-
-                // Set transactions state for hero cards (calculateTotals reads from this)
                 setTransactions(orgTransactions)
-
-                // Build disbursements by year for chart
-                const disbByYearMap = new Map<number, { disbursements: number; expenditures: number }>()
-                for (const txn of orgTransactions) {
-                  if (!txn.transaction_date) continue
-                  const year = new Date(txn.transaction_date).getFullYear()
-                  if (!disbByYearMap.has(year)) {
-                    disbByYearMap.set(year, { disbursements: 0, expenditures: 0 })
-                  }
-                  const yearData = disbByYearMap.get(year)!
-                  const usdValue = txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)
-                  if (txn.transaction_type === '3') {
-                    yearData.disbursements += usdValue
-                  } else if (txn.transaction_type === '4') {
-                    yearData.expenditures += usdValue
-                  }
-                }
-
-                const disbArray = Array.from(disbByYearMap.entries())
-                  .map(([year, data]) => ({
-                    year,
-                    disbursements: data.disbursements,
-                    expenditures: data.expenditures
-                  }))
-                  .sort((a, b) => a.year - b.year)
-                setDisbursementsByYear(disbArray)
               }).catch(err => {
                 if (err instanceof Error && err.name === 'AbortError') return
                 console.warn('Failed to fetch org transactions:', err)
@@ -1037,6 +1091,27 @@ export default function OrganizationProfilePage() {
       .filter(txn => txn.transaction_date && new Date(txn.transaction_date).getFullYear() === currentYear - 1)
       .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
 
+    // Count records that contributed $0 to USD totals because neither a usd_value
+    // nor a USD-denominated value was available. Surfaced as a chip so users
+    // know totals understate when conversions are missing.
+    const pendingTransactionCount = safeTransactions.filter(txn => {
+      const type = txn.transaction_type
+      if (type !== '2' && type !== '3' && type !== '4') return false
+      const hasUsd = txn.value_usd != null && Number(txn.value_usd) > 0
+      const isUsd = txn.currency === 'USD' && txn.value && Number(txn.value) > 0
+      return !hasUsd && !isUsd
+    }).length
+    const pendingBudgetCount = (rawOrgBudgets || []).filter(b => {
+      const hasUsd = b.usd_value != null && Number(b.usd_value) > 0
+      const isUsd = b.currency === 'USD' && b.value && Number(b.value) > 0
+      return !hasUsd && !isUsd
+    }).length
+    const pendingPlannedCount = (rawOrgPlannedDisbursements || []).filter(pd => {
+      const hasUsd = pd.usd_amount != null && Number(pd.usd_amount) > 0
+      const isUsd = pd.currency === 'USD' && pd.amount && Number(pd.amount) > 0
+      return !hasUsd && !isUsd
+    }).length
+
     return {
       totalBudget,
       totalPortfolioValue,
@@ -1046,6 +1121,10 @@ export default function OrganizationProfilePage() {
       totalTransactions,
       currentYearCommitments,
       lastYearCommitments,
+      pendingTransactionCount,
+      pendingBudgetCount,
+      pendingPlannedCount,
+      pendingUsdCount: pendingTransactionCount + pendingBudgetCount + pendingPlannedCount,
       activeActivities: safeActivities.filter(a => ['2', '3'].includes(a.activity_status)).length, // 2=Implementation, 3=Finalisation
       pipelineActivities: safeActivities.filter(a => a.activity_status === '1').length, // 1=Pipeline/Identification
       closedActivities: safeActivities.filter(a => ['4', '5', '6'].includes(a.activity_status)).length, // 4=Closed, 5=Cancelled, 6=Suspended
@@ -1691,23 +1770,38 @@ export default function OrganizationProfilePage() {
               </div>
             </div>
 
-            {/* Total Committed */}
+            {/* Total Committed — falls back to total Budgeted when no commitment transactions exist,
+                so budget-only orgs don't see a misleading $0. */}
             <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
-              <p className="text-helper font-medium text-muted-foreground truncate">Total Committed</p>
-              <p className="text-3xl font-bold text-foreground">
-                {formatCurrencyShort(totals.totalPortfolioValue)}
-              </p>
-              <div className="text-helper text-muted-foreground">
-                <p className="flex items-center gap-1">
-                  {yoyStats.commitmentChange >= 0 ? (
-                    <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
-                  ) : (
-                    <svg className="w-2.5 h-2.5" style={{ color: '#DC2625' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,10" /></svg>
-                  )}
-                  <span>{yoyStats.commitmentChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.commitmentChange)} vs last year</span>
-                </p>
-                <p>{formatCurrencyShort(yoyStats.currentYearCommitments)} committed this year</p>
-              </div>
+              {(() => {
+                const hasCommitments = (totals.totalPortfolioValue || 0) > 0
+                const value = hasCommitments ? totals.totalPortfolioValue : totals.totalBudget
+                const label = hasCommitments ? 'Total Committed' : 'Budgeted'
+                const subtitle = hasCommitments
+                  ? `${formatCurrencyShort(yoyStats.currentYearCommitments)} committed this year`
+                  : 'No commitments recorded yet'
+                return (
+                  <>
+                    <p className="text-helper font-medium text-muted-foreground truncate">{label}</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {formatCurrencyShort(value)}
+                    </p>
+                    <div className="text-helper text-muted-foreground">
+                      {hasCommitments && (
+                        <p className="flex items-center gap-1">
+                          {yoyStats.commitmentChange >= 0 ? (
+                            <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
+                          ) : (
+                            <svg className="w-2.5 h-2.5" style={{ color: '#DC2625' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,10" /></svg>
+                          )}
+                          <span>{yoyStats.commitmentChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.commitmentChange)} vs last year</span>
+                        </p>
+                      )}
+                      <p>{subtitle}</p>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
 
             {/* Total Disbursed */}
@@ -1810,6 +1904,34 @@ export default function OrganizationProfilePage() {
               )
             )}
           </div>
+
+          {/* Missing-USD-conversion indicator — surfaces records that drop $0 into totals */}
+          {totals.pendingUsdCount > 0 && (
+            <div className="mb-6">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-helper text-amber-900 ring-1 ring-amber-200"
+                title={`Transactions: ${totals.pendingTransactionCount} · Budgets: ${totals.pendingBudgetCount} · Planned disbursements: ${totals.pendingPlannedCount}`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {totals.pendingUsdCount} {totals.pendingUsdCount === 1 ? 'record' : 'records'} pending USD conversion
+              </span>
+            </div>
+          )}
+
+          {/* Year-type selector — controls all year-bucketed cards below (Budget by Year, Budget vs Actuals, etc.) */}
+          {customYears.length > 0 && (
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-helper text-muted-foreground">
+                Year-bucketed charts use the selected calendar/fiscal year. Budgets and planned disbursements that span period boundaries are split pro-rata by day.
+              </p>
+              <CustomYearSelector
+                customYears={customYears}
+                selectedId={selectedCustomYearId}
+                onSelect={setSelectedCustomYearId}
+                className="w-56"
+              />
+            </div>
+          )}
 
           {/* Charts Section - Row 2: Chart Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -2031,7 +2153,7 @@ export default function OrganizationProfilePage() {
                     size="sm"
                     onClick={() => {
                       const data = budgetsByYear.map(item => ({
-                        year: item.year,
+                        year: item.label,
                         budget: item.amount
                       }))
                       exportToCSV(data, 'budget-by-year.csv', ['Year', 'Budget'])
@@ -2055,8 +2177,8 @@ export default function OrganizationProfilePage() {
                         </thead>
                         <tbody>
                           {budgetsByYear.map((item) => (
-                            <tr key={item.year} className="border-b border-border">
-                              <td className="py-1 text-foreground">{item.year}</td>
+                            <tr key={item.label} className="border-b border-border">
+                              <td className="py-1 text-foreground">{item.label}</td>
                               <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(item.amount)}</td>
                             </tr>
                           ))}
@@ -2081,7 +2203,7 @@ export default function OrganizationProfilePage() {
                             </linearGradient>
                           </defs>
                           <XAxis
-                            dataKey="year"
+                            dataKey="label"
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
@@ -2100,7 +2222,7 @@ export default function OrganizationProfilePage() {
                                     <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-surface-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.label}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
                                         </tr>
                                       </thead>
@@ -2128,7 +2250,7 @@ export default function OrganizationProfilePage() {
                       ) : (
                         <BarChart data={budgetsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
                           <XAxis
-                            dataKey="year"
+                            dataKey="label"
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
@@ -2147,7 +2269,7 @@ export default function OrganizationProfilePage() {
                                     <table className="text-helper w-full border-collapse">
                                       <thead className="bg-surface-muted">
                                         <tr className="bg-surface-muted border-b border-border">
-                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.label}</th>
                                           <th className="text-right px-3 py-2 text-muted-foreground font-medium">Budget</th>
                                         </tr>
                                       </thead>
@@ -2209,15 +2331,15 @@ export default function OrganizationProfilePage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const allYears = new Set([
-                        ...plannedDisbursementsByYear.map(b => b.year),
-                        ...disbursementsByYear.map(d => d.year)
+                      const allKeys = new Set<string>([
+                        ...plannedDisbursementsByYear.map(b => b.label),
+                        ...disbursementsByYear.map(d => d.label)
                       ])
-                      const data = Array.from(allYears).sort().map(year => ({
-                        year,
-                        planned_disbursements: plannedDisbursementsByYear.find(b => b.year === year)?.amount || 0,
-                        disbursements: disbursementsByYear.find(d => d.year === year)?.disbursements || 0,
-                        expenditures: disbursementsByYear.find(d => d.year === year)?.expenditures || 0
+                      const data = Array.from(allKeys).sort().map(label => ({
+                        year: label,
+                        planned_disbursements: plannedDisbursementsByYear.find(b => b.label === label)?.amount || 0,
+                        disbursements: disbursementsByYear.find(d => d.label === label)?.disbursements || 0,
+                        expenditures: disbursementsByYear.find(d => d.label === label)?.expenditures || 0
                       }))
                       exportToCSV(data, 'budget-vs-actuals.csv', ['Year', 'Planned_Disbursements', 'Disbursements', 'Expenditures'])
                     }}
@@ -2230,29 +2352,20 @@ export default function OrganizationProfilePage() {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 {(() => {
-                  // Combine planned disbursements and actual disbursement data
-                  const allYears = new Set([
-                    ...plannedDisbursementsByYear.map(b => b.year),
-                    ...disbursementsByYear.map(d => d.year)
-                  ])
-                  
-                  const chartData = Array.from(allYears).sort().map(year => {
-                    const plannedDisbursements = plannedDisbursementsByYear.find(b => b.year === year)?.amount || 0
-                    const disbData = disbursementsByYear.find(d => d.year === year)
-                    
-                    return {
+                  // Combine planned disbursements and actual disbursement data, keyed by FY label
+                  const labelToYear = new Map<string, number>()
+                  for (const b of plannedDisbursementsByYear) labelToYear.set(b.label, b.year)
+                  for (const d of disbursementsByYear) labelToYear.set(d.label, d.year)
+
+                  const chartData = Array.from(labelToYear.entries())
+                    .map(([label, year]) => ({
                       year,
-                      plannedDisbursements,
-                      disbursements: disbData?.disbursements || 0,
-                      expenditures: disbData?.expenditures || 0
-                    }
-                  })
-                  
-                  console.log('[OrgProfile] Budget vs Actuals chart data:', {
-                    plannedDisbursementsByYear,
-                    disbursementsByYear,
-                    chartData
-                  })
+                      label,
+                      plannedDisbursements: plannedDisbursementsByYear.find(b => b.label === label)?.amount || 0,
+                      disbursements: disbursementsByYear.find(d => d.label === label)?.disbursements || 0,
+                      expenditures: disbursementsByYear.find(d => d.label === label)?.expenditures || 0,
+                    }))
+                    .sort((a, b) => a.year - b.year)
                   
                   return chartData.length > 0 ? (
                     budgetVsActualsView === 'table' ? (
@@ -2268,8 +2381,8 @@ export default function OrganizationProfilePage() {
                           </thead>
                           <tbody>
                             {chartData.map((item) => (
-                              <tr key={item.year} className="border-b border-border">
-                                <td className="py-1 text-foreground">{item.year}</td>
+                              <tr key={item.label} className="border-b border-border">
+                                <td className="py-1 text-foreground">{item.label}</td>
                                 <td className="text-right py-1 text-foreground">{formatCurrencyShort(item.plannedDisbursements)}</td>
                                 <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(item.disbursements)}</td>
                                 <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(item.expenditures)}</td>
@@ -2296,7 +2409,7 @@ export default function OrganizationProfilePage() {
                         {budgetVsActualsChartType === 'bar' ? (
                           <BarChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }} barCategoryGap="20%" barGap={0}>
                             <XAxis
-                              dataKey="year"
+                              dataKey="label"
                               tick={{ fontSize: 10, fill: '#64748b' }}
                               axisLine={{ stroke: '#e5e7eb' }}
                               tickLine={false}
@@ -2315,7 +2428,7 @@ export default function OrganizationProfilePage() {
                                       <table className="text-helper w-full border-collapse">
                                         <thead className="bg-surface-muted">
                                           <tr className="bg-surface-muted border-b border-border">
-                                            <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                            <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.label}</th>
                                             <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
                                           </tr>
                                         </thead>
@@ -2370,7 +2483,7 @@ export default function OrganizationProfilePage() {
                               </linearGradient>
                             </defs>
                             <XAxis
-                              dataKey="year"
+                              dataKey="label"
                               tick={{ fontSize: 10, fill: '#64748b' }}
                               axisLine={{ stroke: '#e5e7eb' }}
                               tickLine={false}
@@ -2389,7 +2502,7 @@ export default function OrganizationProfilePage() {
                                       <table className="text-helper w-full border-collapse">
                                         <thead className="bg-surface-muted">
                                           <tr className="bg-surface-muted border-b border-border">
-                                            <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.year}</th>
+                                            <th className="text-left px-3 py-2 text-muted-foreground font-medium">{payload[0].payload.label}</th>
                                             <th className="text-right px-3 py-2 text-muted-foreground font-medium">Value</th>
                                           </tr>
                                         </thead>

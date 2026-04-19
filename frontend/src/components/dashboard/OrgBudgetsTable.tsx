@@ -24,6 +24,7 @@ import {
 import { format } from 'date-fns';
 import { Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { estimateMonthlyAmount } from '@/utils/year-allocation';
 import type { TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
 
@@ -231,11 +232,26 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                       <span className="text-body">{BUDGET_TYPE_LABELS[budget.type] || `Type ${budget.type}`}</span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium text-foreground">
-                          <span className="text-helper text-muted-foreground mr-1 font-normal">{budget.currency}</span>
-                          {formatCurrency(budget.value)}
-                        </span>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-foreground">
+                            <span className="text-helper text-muted-foreground mr-1 font-normal">{budget.currency}</span>
+                            {formatCurrency(budget.value)}
+                          </span>
+                        </div>
+                        {(() => {
+                          const monthly = estimateMonthlyAmount({
+                            period_start: budget.period_start,
+                            period_end: budget.period_end,
+                            amount: budget.value,
+                          });
+                          if (!monthly || monthly.months < 2) return null;
+                          return (
+                            <span className="text-helper text-muted-foreground">
+                              ~{formatCurrency(monthly.monthly)}/mo
+                            </span>
+                          );
+                        })()}
                       </div>
                     </TableCell>
                     <TableCell>

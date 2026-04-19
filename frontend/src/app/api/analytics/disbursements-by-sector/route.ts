@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import sectorGroupData from '@/data/SectorGroup.json';
+import {
+  allocateAcrossCalendarYears,
+  allocateAcrossFiscalYears,
+  getFiscalYearForDate,
+} from '@/utils/year-allocation';
+import { fetchCustomYearById } from '@/lib/custom-year-server';
+import { getCustomYearLabel } from '@/types/custom-years';
 
 // Build sector hierarchy lookup map for O(1) access
 interface SectorHierarchy {
@@ -47,6 +54,9 @@ export async function GET(request: NextRequest) {
     const donor = searchParams.get('donor');
     const sector = searchParams.get('sector');
     const organizationId = searchParams.get('organizationId');
+    const customYearId = searchParams.get('customYearId');
+
+    const customYear = await fetchCustomYearById(supabase, customYearId);
 
     // Fetch all activities with their sectors
     let activitiesQuery = supabase
@@ -159,7 +169,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Process data by sector and year (with hierarchy information)
+    // Process data by sector and year (with hierarchy information).
+    // Year key is the fiscal-year integer (matches calendar year when no customYear
+    // is supplied), and we keep the display label alongside for the client.
     const sectorDataMap = new Map<string, {
       sectorCode: string;
       sectorName: string;
@@ -167,8 +179,11 @@ export async function GET(request: NextRequest) {
       groupName: string;
       categoryCode: string;
       categoryName: string;
-      yearlyData: Map<number, { planned: number; actual: number }>;
+      yearlyData: Map<number, { label: string; planned: number; actual: number }>;
     }>();
+
+    const yearLabel = (year: number): string =>
+      customYear ? getCustomYearLabel(customYear, year) : year.toString();
 
     // Build activity sectors map
     const activitySectorsMap = new Map<string, any[]>();
@@ -194,38 +209,66 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Process planned disbursements - use only USD-converted values, no fallback
+    // Process planned disbursements - use only USD-converted values, no fallback.
+    // Pro-rata split across the selected fiscal/calendar years so a PD crossing a
+    // year boundary doesn't dump the whole amount into period_start's year.
     plannedDisbursements?.forEach(pd => {
       if (!pd.period_start) return;
-      
-      const year = new Date(pd.period_start).getFullYear();
+
       const amount = parseFloat(pd.usd_amount?.toString() || '0') || 0;
+      if (amount === 0) return;
+
       const activitySectors = activitySectorsMap.get(pd.activity_id) || [];
-      
+      if (activitySectors.length === 0) return;
+
+      const periodEnd = pd.period_end || pd.period_start;
+      const yearAllocations = customYear
+        ? allocateAcrossFiscalYears(pd.period_start, periodEnd, amount, customYear).map(a => ({
+            year: a.fiscalYear,
+            label: a.label,
+            amount: a.amount,
+          }))
+        : allocateAcrossCalendarYears(pd.period_start, periodEnd, amount).map(a => ({
+            year: a.year,
+            label: a.year.toString(),
+            amount: a.amount,
+          }));
+
       // Allocate to sectors based on activity sector percentages
       activitySectors.forEach(sector => {
         const sectorData = sectorDataMap.get(sector.sector_code);
         if (!sectorData) return;
-        
-        const yearData = sectorData.yearlyData.get(year) || { planned: 0, actual: 0 };
-        yearData.planned += amount * (sector.percentage / 100);
-        sectorData.yearlyData.set(year, yearData);
+
+        yearAllocations.forEach(allocation => {
+          const yearData = sectorData.yearlyData.get(allocation.year) || {
+            label: allocation.label,
+            planned: 0,
+            actual: 0,
+          };
+          yearData.planned += allocation.amount * (sector.percentage / 100);
+          sectorData.yearlyData.set(allocation.year, yearData);
+        });
       });
     });
 
-    // Process actual disbursements
+    // Process actual disbursements — transactions are point-in-time so bucket by the
+    // fiscal (or calendar) year containing the transaction_date.
     transactions?.forEach(transaction => {
       if (!transaction.transaction_date) return;
-      
-      const year = new Date(transaction.transaction_date).getFullYear();
+
+      const txDate = new Date(transaction.transaction_date);
+      const year = customYear
+        ? getFiscalYearForDate(txDate, customYear)
+        : txDate.getFullYear();
+      const label = yearLabel(year);
       const transactionValue = transaction.value_usd || 0;
       const activitySectors = activitySectorsMap.get(transaction.activity_id) || [];
-      
+
       // Check if this transaction has sector lines
       const sectorLines = transactionSectorLines.filter(
         sl => sl.transaction_id === transaction.uuid
       );
-      
+
       if (sectorLines.length > 0) {
         // Use transaction-level sector allocation
         sectorLines.forEach(line => {
@@ -244,8 +287,8 @@ export async function GET(request: NextRequest) {
             };
             sectorDataMap.set(line.sector_code, sectorData);
           }
-          
-          const yearData = sectorData.yearlyData.get(year) || { planned: 0, actual: 0 };
+
+          const yearData = sectorData.yearlyData.get(year) || { label, planned: 0, actual: 0 };
           yearData.actual += transactionValue * (line.percentage / 100);
           sectorData.yearlyData.set(year, yearData);
         });
@@ -265,8 +308,8 @@ export async function GET(request: NextRequest) {
           };
           sectorDataMap.set(transaction.sector_code, sectorData);
         }
-        
-        const yearData = sectorData.yearlyData.get(year) || { planned: 0, actual: 0 };
+
+        const yearData = sectorData.yearlyData.get(year) || { label, planned: 0, actual: 0 };
         yearData.actual += transactionValue;
         sectorData.yearlyData.set(year, yearData);
       } else {
@@ -274,8 +317,8 @@ export async function GET(request: NextRequest) {
         activitySectors.forEach(sector => {
           const sectorData = sectorDataMap.get(sector.sector_code);
           if (!sectorData) return;
-          
-          const yearData = sectorData.yearlyData.get(year) || { planned: 0, actual: 0 };
+
+          const yearData = sectorData.yearlyData.get(year) || { label, planned: 0, actual: 0 };
           yearData.actual += transactionValue * (sector.percentage / 100);
           sectorData.yearlyData.set(year, yearData);
         });
@@ -299,6 +342,7 @@ export async function GET(request: NextRequest) {
         categoryName: sector.categoryName,
         years: Array.from(sector.yearlyData.entries()).map(([year, data]) => ({
           year,
+          label: data.label,
           planned: data.planned,
           actual: data.actual
         })).sort((a, b) => a.year - b.year)

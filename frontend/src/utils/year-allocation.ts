@@ -359,8 +359,45 @@ export function allocateAcrossFiscalYears(
 }
 
 /**
+ * Splits a budget record across fiscal years proportionally.
+ *
+ * @param budgetRecord - Budget record with period_start, period_end, value/usd_value, currency
+ * @param customYear - The custom year definition
+ * @returns Array of fiscal year allocations
+ */
+export function splitBudgetAcrossFiscalYears(
+  budgetRecord: {
+    period_start: string
+    period_end: string
+    value?: number | string
+    usd_value?: number | string
+    currency?: string
+  },
+  customYear: CustomYear
+): FiscalYearAllocation[] {
+  if (!budgetRecord.period_start || !budgetRecord.period_end) {
+    return []
+  }
+
+  let value = parseFloat(String(budgetRecord.usd_value)) || 0
+  if (!value && budgetRecord.currency === 'USD' && budgetRecord.value) {
+    value = parseFloat(String(budgetRecord.value)) || 0
+  }
+  if (!value) {
+    return []
+  }
+
+  return allocateAcrossFiscalYears(
+    budgetRecord.period_start,
+    budgetRecord.period_end,
+    value,
+    customYear
+  )
+}
+
+/**
  * Splits a planned disbursement record across fiscal years proportionally.
- * 
+ *
  * @param pdRecord - Planned disbursement record
  * @param customYear - The custom year definition
  * @returns Array of fiscal year allocations
@@ -454,4 +491,40 @@ export function getTransactionFiscalYear(
     label: getCustomYearLabel(customYear, fiscalYear),
     amount: value
   }
+}
+
+/**
+ * Estimates a per-month figure for a record with a period range.
+ * Uses calendar-month count (inclusive of partial months at both ends).
+ *
+ * Example: a 50m budget from 2025-01-15 to 2025-06-10 spans 6 calendar months
+ * (Jan, Feb, Mar, Apr, May, Jun) → returns ~$8.33m/mo.
+ *
+ * @param record - Object with period_start, period_end, and amount
+ * @returns Monthly estimate plus the month count, or null when inputs are invalid
+ */
+export function estimateMonthlyAmount(record: {
+  period_start?: string | null
+  period_end?: string | null
+  amount: number
+}): { monthly: number; months: number } | null {
+  if (!record.period_start || !record.period_end || !record.amount) {
+    return null
+  }
+
+  const start = parseISO(record.period_start)
+  const end = parseISO(record.period_end)
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return null
+  }
+
+  const months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth()) +
+    1
+  if (months <= 0) {
+    return null
+  }
+
+  return { monthly: record.amount / months, months }
 }

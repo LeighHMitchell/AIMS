@@ -1,5 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import {
+  allocateAcrossCalendarYears,
+  allocateAcrossFiscalYears,
+  getFiscalYearForDate,
+} from '@/utils/year-allocation';
+import { fetchCustomYearById } from '@/lib/custom-year-server';
+import { getCustomYearLabel } from '@/types/custom-years';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,9 +33,11 @@ export async function GET(request: NextRequest) {
     const financeType = searchParams.get('financeType') || 'all';
     const flowType = searchParams.get('flowType') || 'all';
     const timePeriod = searchParams.get('timePeriod') || 'year';
+    const customYearId = searchParams.get('customYearId');
     const isExport = searchParams.get('export') === 'true';
 
     const supabaseAdmin = supabase;
+    const customYear = await fetchCustomYearById(supabaseAdmin, customYearId);
 
     // Build the base query for activities with transactions
     let activitiesQuery = supabaseAdmin
@@ -73,31 +82,74 @@ export async function GET(request: NextRequest) {
     const dataMap = new Map<string, ChartDataPoint>();
     const defaultCurrency = 'USD';
 
-    // Process budget data first
+    // Process budget data first — pro-rata split period-spanning budgets across years
+    // so a Jun 2025 – Aug 2025 budget contributes to 2025 proportionally rather than
+    // dumping the full amount into period_start's year (also matters across year boundaries).
+    // When a custom fiscal year is supplied, we split across that fiscal year's boundaries.
     budgetData?.forEach((budget: any) => {
-      const startDate = new Date(budget.period_start);
-      
-      let periodKey: string;
-      if (timePeriod === 'quarter') {
-        const quarter = Math.floor(startDate.getMonth() / 3) + 1;
-        periodKey = `${startDate.getFullYear()}-Q${quarter}`;
+      const usdValue = parseFloat(budget.usd_value?.toString() || '0') || 0;
+      if (!budget.period_start || usdValue === 0) return;
+
+      const periodEnd = budget.period_end || budget.period_start;
+
+      if (timePeriod === 'year') {
+        if (customYear) {
+          const allocations = allocateAcrossFiscalYears(
+            budget.period_start,
+            periodEnd,
+            usdValue,
+            customYear
+          );
+          for (const allocation of allocations) {
+            const periodKey = allocation.label;
+            if (!dataMap.has(periodKey)) {
+              dataMap.set(periodKey, {
+                period: periodKey,
+                budget: 0,
+                disbursements: 0,
+                expenditures: 0,
+                totalSpending: 0,
+              });
+            }
+            dataMap.get(periodKey)!.budget += allocation.amount;
+          }
+        } else {
+          const allocations = allocateAcrossCalendarYears(
+            budget.period_start,
+            periodEnd,
+            usdValue
+          );
+          for (const allocation of allocations) {
+            const periodKey = allocation.year.toString();
+            if (!dataMap.has(periodKey)) {
+              dataMap.set(periodKey, {
+                period: periodKey,
+                budget: 0,
+                disbursements: 0,
+                expenditures: 0,
+                totalSpending: 0,
+              });
+            }
+            dataMap.get(periodKey)!.budget += allocation.amount;
+          }
+        }
       } else {
-        periodKey = startDate.getFullYear().toString();
+        // Quarterly bucketing keeps prior behaviour (period_start-based) — the
+        // allocator is year-granular, so quarterly pro-rata would need a separate helper.
+        const startDate = new Date(budget.period_start);
+        const quarter = Math.floor(startDate.getMonth() / 3) + 1;
+        const periodKey = `${startDate.getFullYear()}-Q${quarter}`;
+        if (!dataMap.has(periodKey)) {
+          dataMap.set(periodKey, {
+            period: periodKey,
+            budget: 0,
+            disbursements: 0,
+            expenditures: 0,
+            totalSpending: 0,
+          });
+        }
+        dataMap.get(periodKey)!.budget += usdValue;
       }
-
-      if (!dataMap.has(periodKey)) {
-        dataMap.set(periodKey, {
-          period: periodKey,
-          budget: 0,
-          disbursements: 0,
-          expenditures: 0,
-          totalSpending: 0,
-        });
-      }
-
-      const periodData = dataMap.get(periodKey)!;
-      // Use only USD-converted value - no fallback to original currency
-      periodData.budget += parseFloat(budget.usd_value?.toString() || '0') || 0;
     });
 
     // Process activities and their transactions
@@ -123,6 +175,9 @@ export async function GET(request: NextRequest) {
         if (timePeriod === 'quarter') {
           const quarter = Math.floor(transactionDate.getMonth() / 3) + 1;
           periodKey = `${transactionDate.getFullYear()}-Q${quarter}`;
+        } else if (customYear) {
+          const fy = getFiscalYearForDate(transactionDate, customYear);
+          periodKey = getCustomYearLabel(customYear, fy);
         } else {
           periodKey = transactionDate.getFullYear().toString();
         }
@@ -162,7 +217,12 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // Convert to array and sort by period
+    // Convert to array and sort by period. Fiscal-year labels like "AUFY2024-25" don't
+    // parseInt cleanly, so we extract the first 4-digit run as the ordering key.
+    const extractYear = (period: string): number => {
+      const match = period.match(/\d{4}/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
     const chartData = Array.from(dataMap.values()).sort((a, b) => {
       if (timePeriod === 'quarter') {
         // Sort quarters: 2023-Q1, 2023-Q2, etc.
@@ -172,10 +232,8 @@ export async function GET(request: NextRequest) {
           return parseInt(yearA) - parseInt(yearB);
         }
         return parseInt(quarterA) - parseInt(quarterB);
-      } else {
-        // Sort years
-        return parseInt(a.period) - parseInt(b.period);
       }
+      return extractYear(a.period) - extractYear(b.period);
     });
 
     // Handle export request

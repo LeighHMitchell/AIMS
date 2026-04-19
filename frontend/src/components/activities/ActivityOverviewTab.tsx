@@ -214,10 +214,14 @@ export function ActivityOverviewTab({
     .map((s: any) => s.sdg_goal ?? s.goal ?? s.code ?? s.sdgCode)
     .filter(Boolean);
 
+  // Use the same denominator as the Financial Summary Strip so both surfaces show the same percentage.
+  // Budget is the canonical denominator; we fall back to commitments only when no budget is recorded.
   const primaryAmount =
-    financials.totalCommitment > 0
-      ? financials.totalCommitment
-      : totalBudgeted;
+    totalBudgeted > 0
+      ? totalBudgeted
+      : financials.totalCommitment;
+  const totalSpent =
+    (financials.totalDisbursement || 0) + (financials.totalExpenditure || 0);
 
   return (
     <div className="space-y-10">
@@ -287,16 +291,14 @@ export function ActivityOverviewTab({
               }
             />
           </div>
-          {primaryAmount > 0 && financials.totalDisbursement > 0 && (
+          {primaryAmount > 0 && totalSpent > 0 && (
             <div className="pt-2">
               <div className="flex items-center justify-between text-helper text-muted-foreground mb-1">
-                <span>Disbursement progress</span>
+                <span>{totalBudgeted > 0 ? '% of budget spent' : '% of commitments spent'}</span>
                 <span className="tabular-nums">
                   {Math.min(
                     100,
-                    Math.round(
-                      (financials.totalDisbursement / primaryAmount) * 100
-                    )
+                    Math.round((totalSpent / primaryAmount) * 100)
                   )}
                   %
                 </span>
@@ -307,7 +309,7 @@ export function ActivityOverviewTab({
                   style={{
                     width: `${Math.min(
                       100,
-                      (financials.totalDisbursement / primaryAmount) * 100
+                      (totalSpent / primaryAmount) * 100
                     )}%`,
                   }}
                 />

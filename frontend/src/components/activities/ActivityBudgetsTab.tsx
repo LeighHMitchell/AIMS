@@ -20,6 +20,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { apiFetch } from '@/lib/api-fetch';
+import { estimateMonthlyAmount } from '@/utils/year-allocation';
 // USD conversion now happens server-side - no client-side API needed
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 // Removed shared HeroCard import - using local simple version
@@ -2024,9 +2025,24 @@ export default function ActivityBudgetsTab({
                         {budget.type === 1 ? 'Original' : 'Revised'}
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '160px' }}>
-                        <span className="font-medium">
-                          <span className="text-muted-foreground text-helper">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className="font-medium">
+                            <span className="text-muted-foreground text-helper">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </span>
+                          {(() => {
+                            const monthly = estimateMonthlyAmount({
+                              period_start: budget.period_start,
+                              period_end: budget.period_end,
+                              amount: Number(budget.value),
+                            });
+                            if (!monthly || monthly.months < 2) return null;
+                            return (
+                              <span className="text-helper text-muted-foreground">
+                                ~{monthly.monthly.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
                         <span>
