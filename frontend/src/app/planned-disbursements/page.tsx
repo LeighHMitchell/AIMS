@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,7 @@ import {
 } from "@/components/planned-disbursements/PlannedDisbursementsTable";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
-import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
-import { CustomYearSelector } from "@/components/ui/custom-year-selector";
-import { useCustomYears } from "@/hooks/useCustomYears";
 import { PlannedDisbursementsListSkeleton } from "@/components/skeletons/FullScreenSkeletons";
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { apiFetch } from '@/lib/api-fetch';
@@ -78,42 +75,6 @@ export default function PlannedDisbursementsPage() {
       localStorage.setItem(PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
     }
   }, [visibleColumns]);
-
-  // Yearly summary state for chart
-  const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
-  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
-
-  // Custom year selection for chart
-  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
-
-  // Year range filter for chart
-  const [chartStartYear, setChartStartYear] = useState<number | null>(null);
-  const [chartEndYear, setChartEndYear] = useState<number | null>(null);
-
-  // Filter yearly summary data by year range
-  const filteredYearlySummary = useMemo(() => {
-    if (!yearlySummary) return [];
-    return yearlySummary.filter(item => {
-      if (chartStartYear && item.year < chartStartYear) return false;
-      if (chartEndYear && item.year > chartEndYear) return false;
-      return true;
-    });
-  }, [yearlySummary, chartStartYear, chartEndYear]);
-
-  // Calculate actual data year range (from unfiltered data)
-  const dataYearRange = useMemo(() => {
-    if (!yearlySummary || yearlySummary.length === 0) return { min: null, max: null };
-    const years = yearlySummary.map(d => d.year);
-    return { min: Math.min(...years), max: Math.max(...years) };
-  }, [yearlySummary]);
-
-  // Auto-select "Data" range when data first loads
-  useEffect(() => {
-    if (dataYearRange.min !== null && dataYearRange.max !== null && chartStartYear === null && chartEndYear === null) {
-      setChartStartYear(dataYearRange.min);
-      setChartEndYear(dataYearRange.max);
-    }
-  }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
 
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar();
@@ -187,41 +148,6 @@ export default function PlannedDisbursementsPage() {
       setLoading(false);
     }
   };
-
-  // Fetch yearly summary when filters change
-  useEffect(() => {
-    const fetchYearlySummary = async () => {
-      setYearlySummaryLoading(true);
-      try {
-        const params = new URLSearchParams();
-        // Pass types as comma-separated values if any are selected
-        if (filters.types.length > 0) params.append('types', filters.types.join(','));
-        // Pass organizations as comma-separated values if any are selected
-        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
-        if (searchQuery) params.append('search', searchQuery);
-        
-        // Add custom year params if selected
-        if (selectedYear) {
-          params.append('startMonth', selectedYear.startMonth.toString());
-          params.append('startDay', selectedYear.startDay.toString());
-          params.append('endMonth', selectedYear.endMonth.toString());
-          params.append('endDay', selectedYear.endDay.toString());
-        }
-
-        const response = await apiFetch(`/api/planned-disbursements/yearly-summary?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          setYearlySummary(data.years || []);
-        }
-      } catch (error) {
-        console.error('Error fetching yearly summary:', error);
-      } finally {
-        setYearlySummaryLoading(false);
-      }
-    };
-
-    fetchYearlySummary();
-  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -469,33 +395,6 @@ export default function PlannedDisbursementsPage() {
               />
             </div>
         </FilterBar>
-
-        {/* Yearly Summary Chart */}
-        <YearlyTotalsBarChart
-          title="Planned Disbursement Totals by Year"
-          description="Yearly planned disbursement totals in USD (filtered)"
-          loading={yearlySummaryLoading}
-          singleSeriesData={filteredYearlySummary}
-          singleSeriesColor="#7b95a7"
-          singleSeriesLabel="Planned Disbursement"
-          height={280}
-          selectedYear={selectedYear}
-          startYear={chartStartYear}
-          endYear={chartEndYear}
-          onStartYearChange={setChartStartYear}
-          onEndYearChange={setChartEndYear}
-          dataMinYear={dataYearRange.min}
-          dataMaxYear={dataYearRange.max}
-          headerControls={
-            <CustomYearSelector
-              customYears={customYears}
-              selectedId={selectedCustomYearId}
-              onSelect={setSelectedCustomYearId}
-              loading={customYearsLoading}
-              placeholder="Year Type"
-            />
-          }
-        />
 
         {/* Planned Disbursements Table */}
         {loading && disbursements.length === 0 ? (
